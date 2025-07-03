@@ -1,0 +1,81 @@
+<body>
+  <div class="banner">🎅 Live Santa Sleigh Tracker</div>
+  <div id="map"></div>
+  <div id="last-updated" style="text-align:center;font-size:1.15em;padding:12px 0 0 0;"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const firebaseURL = "https://santa-sleigh-tracker-4dccd-default-rtdb.europe-west1.firebasedatabase.app/location/current.json";
+    const fallbackCoords = { lat: 66.5436, lng: 25.8473 }; // Lapland 🎅
+
+    const map = L.map("map").setView([fallbackCoords.lat, fallbackCoords.lng], 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map);
+
+    const sleighIcon = L.icon({
+      iconUrl: "https://i.imgur.com/JucbtoM.png",
+      iconSize: [64, 64],
+      iconAnchor: [32, 32],
+      popupAnchor: [0, -32],
+    });
+
+    const marker = L.marker([fallbackCoords.lat, fallbackCoords.lng], { icon: sleighIcon })
+      .addTo(map)
+      .bindPopup("Santa is here!");
+
+    const lastUpdatedEl = document.getElementById("last-updated");
+
+    function formatDateTime(dt) {
+      // Formats date like "03/07/2025 15:07:32"
+      return dt.toLocaleString('en-GB', {
+        hour12: false,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+
+    async function updateLocation() {
+      try {
+        const response = await fetch(firebaseURL);
+        const data = await response.json();
+
+        if (
+          data &&
+          typeof data.lat === "number" &&
+          typeof data.lng === "number" &&
+          typeof data.ts === "string"
+        ) {
+          const gpsTime = new Date(data.ts);
+          const now = Date.now();
+          const ageInMs = now - gpsTime.getTime();
+
+          if (ageInMs < 5 * 60 * 1000) {
+            const newLatLng = [data.lat, data.lng];
+            marker.setLatLng(newLatLng);
+            map.panTo(newLatLng);
+            marker.getPopup().setContent("🎁 Santa's Current Location");
+            lastUpdatedEl.textContent = "Last updated: " + formatDateTime(gpsTime);
+            return;
+          }
+        }
+
+        // fallback
+        marker.setLatLng([fallbackCoords.lat, fallbackCoords.lng]);
+        map.panTo([fallbackCoords.lat, fallbackCoords.lng]);
+        marker.getPopup().setContent("🎄 GPS inactive – fallback to Lapland");
+        lastUpdatedEl.textContent = "Last updated: N/A – showing Lapland location";
+
+      } catch (e) {
+        console.error("Error fetching or parsing location:", e);
+        marker.setLatLng([fallbackCoords.lat, fallbackCoords.lng]);
+        map.panTo([fallbackCoords.lat, fallbackCoords.lng]);
+        marker.getPopup().setContent("🎄 GPS fetch failed – fallback to Lapland");
+        lastUpdatedEl.textContent = "Last updated: N/A – fetch error";
+      }
+    }
+
+    updateLocation();
+    setInterval(updateLocation, 10000);
+  </script>
+</body>
