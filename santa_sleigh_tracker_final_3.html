@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Santa Sleigh Tracker — v2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    :root{
+      --bg:#020617; /* slate-950 */
+      --panel:#0b1220ee;
+      --accent:#ffeb3b;
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --err:#ef4444;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    #map{height:100dvh;width:100vw}
+
+    /* Top status panel */
+    .panel{
+      position:fixed;inset:auto 12px 12px 12px;top:12px;z-index:1000;pointer-events:none
+    }
+    .card{pointer-events:auto;display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--panel);backdrop-filter:blur(8px);border-radius:16px;padding:12px 14px;box-shadow:0 8px 28px #0008}
+    .status{font-weight:700;letter-spacing:.01em}
+    .dot{width:10px;height:10px;border-radius:999px;display:inline-block;margin-right:8px;vertical-align:middle}
+    .muted{opacity:.85;font-weight:600}
+    .meta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+    .btn{border:0;border-radius:12px;padding:10px 12px;font-weight:700;background:#111827;color:#fff;cursor:pointer}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+
+    /* Small helper toast at bottom */
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#111827dd;border-radius:14px;padding:10px 14px;font-weight:600;z-index:999}
+
+    @media (max-width:640px){
+      .card{flex-direction:column;align-items:flex-start}
+      .meta{width:100%;justify-content:space-between}
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div class="card">
+      <div class="status" id="statusText"><span class="dot" id="statusDot" style="background:var(--warn)"></span>🎄 Santa is currently in Lapland preparing for Christmas</div>
+      <div class="meta">
+        <div class="muted" id="lastUpdated">Last update: —</div>
+        <div class="muted" id="age">Age: —</div>
+        <button class="btn" id="followBtn" title="Keep the map centred on Santa">Follow Santa: ON</button>
+        <button class="btn" id="recenterBtn" title="Re-centre on Santa">Re‑centre</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+  <div class="toast" id="toast" style="display:none"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // ===== Config =====
+    const firebaseURL = "https://santa-sleigh-tracker-4dccd-default-rtdb.europe-west1.firebasedatabase.app/location/current.json";
+    const REFRESH_MS = 10_000;           // Polling interval
+    const STALE_MS   = 5 * 60_000;       // Consider location stale after 5 minutes
+    const FETCH_TIMEOUT_MS = 7_000;      // Abort fetch if it takes too long
+    const fallback = { lat: 66.5436, lng: 25.8473 }; // Lapland 🎅
+
+    // ===== Map setup =====
+    const map = L.map('map', { zoomControl: true }).setView([fallback.lat, fallback.lng], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const sleighIcon = L.icon({
+      iconUrl: 'https://i.imgur.com/JucbtoM.png',
+      iconSize: [64, 64],
+      iconAnchor: [32, 32],
+      popupAnchor: [0, -32],
+    });
+
+    const marker = L.marker([fallback.lat, fallback.lng], { icon: sleighIcon }).addTo(map).bindPopup("Santa is here!");
+
+    // Optional: trailing path of Santa
+    const trail = L.polyline([], { weight: 3, opacity: 0.9 }).addTo(map);
+
+    // UI refs
+    const followBtn = document.getElementById('followBtn');
+    const recenterBtn = document.getElementById('recenterBtn');
+    const statusText = document.getElementById('statusText');
+    const statusDot  = document.getElementById('statusDot');
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+    const ageEl = document.getElementById('age');
+    const toast = document.getElementById('toast');
+
+    // Follow mode toggling
+    let followSanta = true;
+    followBtn.addEventListener('click', () => {
+      followSanta = !followSanta;
+      followBtn.textContent = `Follow Santa: ${followSanta ? 'ON' : 'OFF'}`;
+      showToast(`Follow mode ${followSanta ? 'enabled' : 'disabled'}`);
+      if (followSanta) map.panTo(marker.getLatLng());
+    });
+    map.on('dragstart zoomstart', () => { if (followSanta) { followSanta = false; followBtn.textContent = 'Follow Santa: OFF'; } });
+    recenterBtn.addEventListener('click', () => { map.panTo(marker.getLatLng()); followSanta = true; followBtn.textContent = 'Follow Santa: ON'; });
+
+    // Niceties
+    const fmt = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short', timeZone: 'Europe/London' });
+
+    function setStatus(kind, text){
+      const colors = { ok: 'var(--ok)', warn: 'var(--warn)', err: 'var(--err)' };
+      statusDot.style.background = colors[kind] || 'var(--warn)';
+      statusText.innerHTML = `${text}`;
+    }
+
+    function showToast(text){
+      toast.textContent = text; toast.style.display = 'block';
+      clearTimeout(showToast._t); showToast._t = setTimeout(()=> toast.style.display = 'none', 2000);
+    }
+
+    // Smoothly animate marker from A -> B over duration
+    function animateMarker(from, to, duration = 1000){
+      const start = performance.now();
+      function step(now){
+        const t = Math.min(1, (now - start) / duration);
+        const lat = from.lat + (to.lat - from.lat) * t;
+        const lng = from.lng + (to.lng - from.lng) * t;
+        marker.setLatLng([lat, lng]);
+        if (followSanta) map.panTo([lat, lng], { animate: false });
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    let lastPoint = L.latLng(fallback.lat, fallback.lng);
+    let lastTs = null;
+    let backoff = REFRESH_MS; // simple backoff on repeated failures
+
+    async function updateLocation(){
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+      try {
+        const res = await fetch(firebaseURL, { cache: 'no-store', signal: controller.signal, headers: { 'Accept': 'application/json' } });
+        clearTimeout(timeout);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const isValid = data && typeof data.lat === 'number' && typeof data.lng === 'number' && typeof data.ts === 'string';
+        if (!isValid){ throw new Error('Bad payload'); }
+
+        const ts = new Date(data.ts).getTime();
+        const ageMs = Date.now() - ts;
+        lastUpdatedEl.textContent = `Last update: ${fmt.format(new Date(ts))}`;
+        ageEl.textContent = `Age: ${Math.floor(ageMs/1000)}s`;
+
+        if (ageMs < STALE_MS){
+          // live position
+          setStatus('ok', '🎅 Santa is out on his sleigh delivering joy!');
+          const nextPoint = L.latLng(data.lat, data.lng);
+          trail.addLatLng(nextPoint);
+          animateMarker(lastPoint, nextPoint);
+          lastPoint = nextPoint;
+          marker.getPopup().setContent("🎁 Santa\'s Current Location");
+          backoff = REFRESH_MS; // reset backoff on success
+        } else {
+          // stale -> fallback
+          setStatus('warn', '🎄 GPS inactive — showing Lapland (stale position)');
+          goFallback();
+        }
+      } catch (err){
+        clearTimeout(timeout);
+        console.error('Fetch error', err);
+        setStatus('err', '🎄 GPS fetch failed — showing Lapland');
+        goFallback();
+        backoff = Math.min(backoff * 1.5, 60_000); // cap at 60s
+      } finally {
+        scheduleNext();
+      }
+    }
+
+    function goFallback(){
+      const next = L.latLng(fallback.lat, fallback.lng);
+      animateMarker(marker.getLatLng(), next, 600);
+      marker.getPopup().setContent('🎄 Fallback to Lapland');
+    }
+
+    let timer;
+    function scheduleNext(){
+      clearTimeout(timer);
+      timer = setTimeout(updateLocation, backoff);
+    }
+
+    // Kick off
+    setStatus('warn', '🎄 Santa is currently in Lapland preparing for Christmas');
+    updateLocation();
+  </script>
+</body>
+</html>
