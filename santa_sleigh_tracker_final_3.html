@@ -11,7 +11,6 @@
     body { height: 100vh; overflow: hidden; }
     #map { height: 100vh; width: 100vw; }
 
-    /* Top child-facing status header */
     .status-popup {
       position: absolute;
       top: 24px; left: 50%; transform: translateX(-50%);
@@ -30,7 +29,6 @@
       line-height: 1.25;
     }
 
-    /* Bottom info/controls box */
     .info-popup {
       position: fixed;
       left: 50%; transform: translateX(-50%);
@@ -48,11 +46,10 @@
     .info-popup .controls {
       display: inline-flex; gap: 12px; align-items: center; flex-wrap: nowrap; white-space: nowrap;
     }
-    .muted { opacity: .9; font-weight: 600; }
+    .muted { opacity: .9; font-weight: 600; display: none; }
     .btn { background:#0b1220; color:#fff; border:1px solid #ffffff26; border-radius: 10px; padding:6px 10px; font-size:.85em; font-weight:800; cursor:pointer }
     .btn:disabled{opacity:.7; cursor:not-allowed}
 
-    /* Snow overlay */
     #snow { position: fixed; inset: 0; z-index: 1000; pointer-events: none; }
 
     @media (max-width: 600px) {
@@ -62,10 +59,8 @@
   </style>
 </head>
 <body>
-  <!-- Child-facing headline -->
   <div class="status-popup" id="status-box">🎄 Santa is currently in Lapland preparing for Christmas!</div>
 
-  <!-- Bottom info / controls -->
   <div class="info-popup">
     <span class="muted" id="lastUpdated">Last update: —</span>
     <span class="muted" id="age">Age: —</span>
@@ -80,14 +75,12 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    // ===== Config =====
     const firebaseURL = "https://santa-sleigh-tracker-4dccd-default-rtdb.europe-west1.firebasedatabase.app/location/current.json";
     const REFRESH_MS = 10_000;
-    const STALE_MS   = 5 * 60_000;  // 5 minutes
+    const STALE_MS   = 5 * 60_000;
     const FETCH_TIMEOUT_MS = 7_000;
-    const fallbackCoords = { lat: 66.5436, lng: 25.8473 }; // Lapland 🎅
+    const fallbackCoords = { lat: 66.5436, lng: 25.8473 };
 
-    // ===== Map =====
     const map = L.map("map").setView([fallbackCoords.lat, fallbackCoords.lng], 13);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
 
@@ -102,17 +95,14 @@
       .addTo(map)
       .bindPopup("Santa is here!");
 
-    // Optional breadcrumb trail
     const trail = L.polyline([], { weight: 3, opacity: 0.9 }).addTo(map);
 
-    // ===== UI refs =====
     const statusBox = document.getElementById("status-box");
     const lastUpdatedEl = document.getElementById('lastUpdated');
     const ageEl = document.getElementById('age');
     const followBtn = document.getElementById('followBtn');
     const recenterBtn = document.getElementById('recenterBtn');
 
-    // ===== Helpers =====
     const fmt = new Intl.DateTimeFormat('en-GB', {
       hour: '2-digit', minute: '2-digit', second: '2-digit',
       day: '2-digit', month: 'short', timeZone: 'Europe/London'
@@ -122,27 +112,32 @@
       marker.getPopup().setContent("🎁 Santa's Current Location");
       statusBox.textContent = '🎅 Santa is out on his sleigh delivering joy!';
     }
+
     function setLapland(message){
       marker.getPopup().setContent(message || "🎄 GPS inactive – fallback to Lapland");
       statusBox.textContent = '🎄 Santa is currently in Lapland preparing for Christmas!';
     }
 
-    // Follow / recenter logic
     let followSanta = true;
     followBtn.addEventListener('click', () => {
       followSanta = !followSanta;
       followBtn.textContent = `Follow Santa: ${followSanta ? 'ON' : 'OFF'}`;
       if (followSanta) map.panTo(marker.getLatLng());
     });
+
     map.on('dragstart zoomstart', () => {
-      if (followSanta) { followSanta = false; followBtn.textContent = 'Follow Santa: OFF'; }
-    });
-    recenterBtn.addEventListener('click', () => {
-      map.panTo(marker.getLatLng());
-      followSanta = true; followBtn.textContent = 'Follow Santa: ON';
+      if (followSanta) {
+        followSanta = false;
+        followBtn.textContent = 'Follow Santa: OFF';
+      }
     });
 
-    // Smooth marker animation
+    recenterBtn.addEventListener('click', () => {
+      map.panTo(marker.getLatLng());
+      followSanta = true;
+      followBtn.textContent = 'Follow Santa: ON';
+    });
+
     function animateMarker(from, to, duration = 1000){
       const start = performance.now();
       function step(now){
@@ -162,8 +157,9 @@
     async function updateLocation() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
       try {
-        const response = await fetch(firebaseURL, { cache: 'no-store', signal: controller.signal, headers: { 'Accept': 'application/json' } });
+        const response = await fetch(firebaseURL, { cache: 'no-store', signal: controller.signal });
         clearTimeout(timeout);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
@@ -174,11 +170,13 @@
         const gpsTime = new Date(data.ts).getTime();
         const ageMs = Date.now() - gpsTime;
 
-        lastUpdatedEl.textContent = `Last update: ${fmt.format(new Date(gpsTime))}`;
         if (ageMs < STALE_MS) {
+          lastUpdatedEl.style.display = 'inline';
+          lastUpdatedEl.textContent = `Last update: ${fmt.format(new Date(gpsTime))}`;
           ageEl.style.display = 'inline';
-          ageEl.textContent = `Age: ${Math.floor(ageMs/1000)}s`;
+          ageEl.textContent = `Age: ${Math.floor(ageMs / 1000)}s`;
         } else {
+          lastUpdatedEl.style.display = 'none';
           ageEl.style.display = 'none';
         }
 
@@ -192,7 +190,6 @@
           return;
         }
 
-        // Stale -> Lapland
         goFallback('🎄 GPS inactive – fallback to Lapland');
       } catch (e) {
         clearTimeout(timeout);
@@ -207,7 +204,8 @@
     function goFallback(msg){
       const next = L.latLng(fallbackCoords.lat, fallbackCoords.lng);
       animateMarker(marker.getLatLng(), next, 600);
-      ageEl.style.display = 'none';   // hide age when stale/fallback
+      lastUpdatedEl.style.display = 'none';
+      ageEl.style.display = 'none';
       setLapland(msg);
     }
 
@@ -217,11 +215,11 @@
       timer = setTimeout(updateLocation, backoff);
     }
 
-    // Kick off
+    // Initial boot
     setLapland();
     updateLocation();
 
-    // ===== Snow (subtle) =====
+    // Snow overlay
     const snow = document.getElementById('snow');
     const ctx = snow.getContext('2d');
     function resize(){ snow.width = window.innerWidth; snow.height = window.innerHeight; }
