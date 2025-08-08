@@ -2,152 +2,109 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Santa Sleigh Tracker — v2</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Santa Sleigh Tracker</title>
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    :root{
-      --bg:#0b0f1a; /* night sky */
-      --panel:linear-gradient(135deg,#0f172a,#111827 60%);
-      --accent:#ffd700; /* gold */
-      --ok:#16a34a;  /* green */
-      --warn:#e11d48; /* festive red */
-      --ink:#e5e7eb;
+    html, body { height: 100%; margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #001; color: white; }
+    body { height: 100vh; overflow: hidden; }
+    #map { height: 100vh; width: 100vw; }
+    .status-popup {
+      position: absolute;
+      top: 24px; left: 50%; transform: translateX(-50%);
+      background: rgba(24,24,24,0.93);
+      color: #fff;
+      padding: 16px 18px 12px 18px;
+      font-size: 1.25em;
+      font-weight: 700;
+      border-radius: 18px;
+      box-shadow: 0 4px 32px #0006;
+      z-index: 2000;
+      text-align: center;
+      min-width: 300px;
+      max-width: 95vw;
+      letter-spacing: 0.01em;
+      line-height: 1.25;
     }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-    #map{height:100dvh;width:100vw}
-
-    /* Snow canvas overlay */
-    #snow{position:fixed;inset:0;pointer-events:none;z-index:500}
-
-    /* Top status panel */
-    .panel{position:fixed;inset:auto 12px 12px 12px;top:12px;z-index:900}
-    .card{display:flex;gap:14px;align-items:center;justify-content:space-between;background:var(--panel);backdrop-filter:blur(8px);border-radius:20px;padding:14px 16px;box-shadow:0 10px 34px #0009;border:1px solid #ffffff22}
-    .left{display:flex;gap:12px;align-items:center}
-    .badge{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 12px;font-weight:800;letter-spacing:.01em;background:#1f2937;color:#fff;box-shadow:inset 0 0 0 1px #ffffff22}
-    .badge.ok{background:#064e3b}
-    .badge.warn{background:#7f1d1d}
-    .badge .dot{width:10px;height:10px;border-radius:999px;display:inline-block}
-    .title{font-weight:800}
-    .meta{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
-    .muted{opacity:.9;font-weight:600}
-    .btn{border:0;border-radius:12px;padding:10px 12px;font-weight:800;background:#0b1220;color:#fff;cursor:pointer;box-shadow:inset 0 0 0 1px #ffffff22}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
-
-    /* Helper toast */
-    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:#0b1220cc;border-radius:14px;padding:10px 14px;font-weight:700;z-index:950;box-shadow:0 6px 22px #0008;border:1px solid #ffffff22}
-
-    @media (max-width:640px){
-      .card{flex-direction:column;align-items:flex-start}
-      .meta{width:100%;justify-content:space-between}
+    .sub { font-size: .75em; font-weight: 600; opacity: .9; margin-top: 6px; letter-spacing: .01em; }
+    .controls { display: inline-flex; gap: 8px; margin-top: 10px; }
+    .btn { background:#0b1220; color:#fff; border:1px solid #ffffff26; border-radius: 10px; padding:6px 10px; font-size:.75em; font-weight:800; cursor:pointer }
+    .btn:disabled{opacity:.7; cursor:not-allowed}
+    /* Snow overlay */
+    #snow { position: fixed; inset: 0; z-index: 1000; pointer-events: none; }
+    @media (max-width: 600px) {
+      .status-popup { font-size: 1em; padding: 12px 10px 10px 10px; min-width: 160px; }
+      .controls { flex-wrap: wrap; }
     }
   </style>
 </head>
 <body>
-  <div class="panel">
-    <div class="card">
-      <div class="left">
-        <div class="badge warn" id="statusBadge">
-          <span class="dot" id="statusDot"></span>
-          <span id="statusText">🎄 Santa is currently in Lapland preparing for Christmas!</span>
-        </div>
-      </div>
-      <div class="meta">
-        <div class="muted" id="lastUpdated">Last update: —</div>
-        <div class="muted" id="age">Age: —</div>
-        <button class="btn" id="followBtn" title="Keep the map centred on Santa">Follow Santa: ON</button>
-        <button class="btn" id="recenterBtn" title="Re-centre on Santa">Re‑centre</button>
-      </div>
+  <div class="status-popup" id="status-box">
+    🎄 Santa is currently in Lapland preparing for Christmas!
+    <div class="sub"><span id="lastUpdated">Last update: —</span> &nbsp; <span id="age">Age: —</span></div>
+    <div class="controls">
+      <button class="btn" id="followBtn" title="Keep the map centred on Santa">Follow Santa: ON</button>
+      <button class="btn" id="recenterBtn" title="Re‑centre on Santa">Re‑centre</button>
     </div>
   </div>
-      <div class="meta">
-        <div class="muted" id="lastUpdated">Last update: —</div>
-        <div class="muted" id="age">Age: —</div>
-        <button class="btn" id="followBtn" title="Keep the map centred on Santa">Follow Santa: ON</button>
-        <button class="btn" id="recenterBtn" title="Re-centre on Santa">Re‑centre</button>
-      </div>
-    </div>
-  </div>
-
   <canvas id="snow"></canvas>
   <div id="map"></div>
-  <div class="toast" id="toast" style="display:none"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    // ===== Config =====
+    // ===== Config (tweak to taste) =====
     const firebaseURL = "https://santa-sleigh-tracker-4dccd-default-rtdb.europe-west1.firebasedatabase.app/location/current.json";
-    const REFRESH_MS = 10_000;           // Polling interval
+    const REFRESH_MS = 10_000;           // Poll interval
     const STALE_MS   = 5 * 60_000;       // Consider location stale after 5 minutes
     const FETCH_TIMEOUT_MS = 7_000;      // Abort fetch if it takes too long
-    const fallback = { lat: 66.5436, lng: 25.8473 }; // Lapland 🎅
+    const fallbackCoords = { lat: 66.5436, lng: 25.8473 }; // Lapland 🎅
 
-    // ===== Map setup =====
-    const map = L.map('map', { zoomControl: true }).setView([fallback.lat, fallback.lng], 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    // ===== Map =====
+    const map = L.map("map").setView([fallbackCoords.lat, fallbackCoords.lng], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
 
     const sleighIcon = L.icon({
-      iconUrl: 'https://i.imgur.com/JucbtoM.png',
+      iconUrl: "https://i.imgur.com/JucbtoM.png",
       iconSize: [64, 64],
       iconAnchor: [32, 32],
       popupAnchor: [0, -32],
     });
 
-    const marker = L.marker([fallback.lat, fallback.lng], { icon: sleighIcon }).addTo(map).bindPopup("Santa is here!");
+    const marker = L.marker([fallbackCoords.lat, fallbackCoords.lng], { icon: sleighIcon })
+      .addTo(map)
+      .bindPopup("Santa is here!");
 
-    // Optional: trailing path of Santa
     const trail = L.polyline([], { weight: 3, opacity: 0.9 }).addTo(map);
 
-    // UI refs
-    const followBtn = document.getElementById('followBtn');
-    const recenterBtn = document.getElementById('recenterBtn');
-    const statusText = document.getElementById('statusText');
-    const statusDot  = document.getElementById('statusDot');
+    // ===== UI refs =====
+    const statusBox = document.getElementById("status-box");
     const lastUpdatedEl = document.getElementById('lastUpdated');
     const ageEl = document.getElementById('age');
-    const toast = document.getElementById('toast');
+    const followBtn = document.getElementById('followBtn');
+    const recenterBtn = document.getElementById('recenterBtn');
 
-    // Follow mode toggling
+    // ===== Behaviour =====
+    const fmt = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short', timeZone: 'Europe/London' });
+
+    function setLive(){
+      marker.getPopup().setContent("🎁 Santa's Current Location");
+      statusBox.firstChild && (statusBox.firstChild.nodeValue = '🎅 Santa is out on his sleigh delivering joy!');
+    }
+    function setLapland(message){
+      marker.getPopup().setContent(message || "🎄 GPS inactive – fallback to Lapland");
+      statusBox.firstChild && (statusBox.firstChild.nodeValue = '🎄 Santa is currently in Lapland preparing for Christmas!');
+    }
+
     let followSanta = true;
     followBtn.addEventListener('click', () => {
       followSanta = !followSanta;
       followBtn.textContent = `Follow Santa: ${followSanta ? 'ON' : 'OFF'}`;
-      showToast(`Follow mode ${followSanta ? 'enabled' : 'disabled'}`);
       if (followSanta) map.panTo(marker.getLatLng());
     });
     map.on('dragstart zoomstart', () => { if (followSanta) { followSanta = false; followBtn.textContent = 'Follow Santa: OFF'; } });
     recenterBtn.addEventListener('click', () => { map.panTo(marker.getLatLng()); followSanta = true; followBtn.textContent = 'Follow Santa: ON'; });
 
-    // Niceties
-    const fmt = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short', timeZone: 'Europe/London' });
-
-    function setStatus(kind){
-      const badge = document.getElementById('statusBadge');
-      badge.classList.remove('ok','warn');
-      if(kind==='ok'){
-        badge.classList.add('ok');
-        statusText.textContent = '🎅 Santa is out on his sleigh delivering joy!';
-        statusDot.style.background = 'var(--ok)';
-      } else {
-        badge.classList.add('warn');
-        statusText.textContent = '🎄 Santa is currently in Lapland preparing for Christmas!';
-        statusDot.style.background = 'var(--warn)';
-      }
-    };
-      statusDot.style.background = colors[kind] || 'var(--warn)';
-      statusText.innerHTML = `${text}`;
-    }
-
-    function showToast(text){
-      toast.textContent = text; toast.style.display = 'block';
-      clearTimeout(showToast._t); showToast._t = setTimeout(()=> toast.style.display = 'none', 2000);
-    }
-
-    // Smoothly animate marker from A -> B over duration
     function animateMarker(from, to, duration = 1000){
       const start = performance.now();
       function step(now){
@@ -161,57 +118,52 @@
       requestAnimationFrame(step);
     }
 
-    let lastPoint = L.latLng(fallback.lat, fallback.lng);
-    let lastTs = null;
-    let backoff = REFRESH_MS; // simple backoff on repeated failures
+    let lastPoint = L.latLng(fallbackCoords.lat, fallbackCoords.lng);
+    let backoff = REFRESH_MS;
 
-    async function updateLocation(){
+    async function updateLocation() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
       try {
-        const res = await fetch(firebaseURL, { cache: 'no-store', signal: controller.signal, headers: { 'Accept': 'application/json' } });
+        const response = await fetch(firebaseURL, { cache: 'no-store', signal: controller.signal, headers: { 'Accept': 'application/json' } });
         clearTimeout(timeout);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
 
-        const isValid = data && typeof data.lat === 'number' && typeof data.lng === 'number' && typeof data.ts === 'string';
-        if (!isValid){ throw new Error('Bad payload'); }
+        const valid = data && typeof data.lat === 'number' && typeof data.lng === 'number' && typeof data.ts === 'string';
+        if (!valid) throw new Error('Bad payload');
 
-        const ts = new Date(data.ts).getTime();
-        const ageMs = Date.now() - ts;
-        lastUpdatedEl.textContent = `Last update: ${fmt.format(new Date(ts))}`;
+        const gpsTime = new Date(data.ts).getTime();
+        const ageMs = Date.now() - gpsTime;
+        lastUpdatedEl.textContent = `Last update: ${fmt.format(new Date(gpsTime))}`;
         ageEl.textContent = `Age: ${Math.floor(ageMs/1000)}s`;
 
-        if (ageMs < STALE_MS){
-          // live position
-          setStatus('ok');
-          const nextPoint = L.latLng(data.lat, data.lng);
-          trail.addLatLng(nextPoint);
-          animateMarker(lastPoint, nextPoint);
-          lastPoint = nextPoint;
-          marker.getPopup().setContent("🎁 Santa\'s Current Location");
-          backoff = REFRESH_MS; // reset backoff on success
-        } else {
-          // stale -> fallback
-          setStatus('warn');
-          goFallback();
+        if (ageMs < STALE_MS) {
+          const newLatLng = L.latLng(data.lat, data.lng);
+          trail.addLatLng(newLatLng);
+          animateMarker(lastPoint, newLatLng);
+          lastPoint = newLatLng;
+          setLive();
+          backoff = REFRESH_MS;
+          return;
         }
-      } catch (err){
+
+        // stale
+        goFallback('🎄 GPS inactive – fallback to Lapland');
+      } catch (e) {
         clearTimeout(timeout);
-        console.error('Fetch error', err);
-        setStatus('err', '🎄 GPS fetch failed — showing Lapland');
-        goFallback();
-        backoff = Math.min(backoff * 1.5, 60_000); // cap at 60s
+        console.error("Error fetching or parsing location:", e);
+        goFallback('🎄 GPS fetch failed – fallback to Lapland');
+        backoff = Math.min(backoff * 1.5, 60_000);
       } finally {
         scheduleNext();
       }
     }
 
-    function goFallback(){
-      const next = L.latLng(fallback.lat, fallback.lng);
+    function goFallback(msg){
+      const next = L.latLng(fallbackCoords.lat, fallbackCoords.lng);
       animateMarker(marker.getLatLng(), next, 600);
-      marker.getPopup().setContent('🎄 Fallback to Lapland');
-      setStatus('warn');
+      setLapland(msg);
     }
 
     let timer;
@@ -221,27 +173,22 @@
     }
 
     // Kick off
-    setStatus('warn');
+    setLapland();
     updateLocation();
 
-    // ===== Snow effect =====
+    // ===== Snow (subtle) =====
     const snow = document.getElementById('snow');
     const ctx = snow.getContext('2d');
-    let flakes = [];
     function resize(){ snow.width = window.innerWidth; snow.height = window.innerHeight; }
     window.addEventListener('resize', resize); resize();
-    const FLAKE_COUNT = 120;
-    function initFlakes(){
-      flakes = Array.from({length:FLAKE_COUNT}, () => ({
-        x: Math.random()*snow.width,
-        y: Math.random()*snow.height,
-        r: Math.random()*2 + 0.8,
-        s: Math.random()*0.6 + 0.3,
-        a: Math.random()*Math.PI*2
-      }));
-    }
-    initFlakes();
-    function drawSnow(){
+    let flakes = Array.from({length: 120}, () => ({
+      x: Math.random()*snow.width,
+      y: Math.random()*snow.height,
+      r: Math.random()*2 + 0.8,
+      s: Math.random()*0.6 + 0.3,
+      a: Math.random()*Math.PI*2
+    }));
+    (function drawSnow(){
       ctx.clearRect(0,0,snow.width,snow.height);
       for(const f of flakes){
         f.y += f.s; f.x += Math.sin(f.a+=0.01)*0.3;
@@ -249,8 +196,7 @@
         ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
       }
       requestAnimationFrame(drawSnow);
-    }
-    drawSnow();
+    })();
   </script>
 </body>
 </html>
