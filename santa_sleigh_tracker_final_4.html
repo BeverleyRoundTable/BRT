@@ -4,10 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Santa Sleigh Tracker</title>
-  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <!-- Removed Google Fonts – now using ultra-fast system font stack -->
   <style>
-    html, body { height: 100%; margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #001; color: white; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #001;
+      color: white;
+    }
     body { height: 100vh; overflow: hidden; }
     #map { height: 100vh; width: 100vw; }
 
@@ -47,7 +54,16 @@
       display: inline-flex; gap: 12px; align-items: center; flex-wrap: nowrap; white-space: nowrap;
     }
     .muted { opacity: .9; font-weight: 600; display: none; }
-    .btn { background:#0b1220; color:#fff; border:1px solid #ffffff26; border-radius: 10px; padding:6px 10px; font-size:.85em; font-weight:800; cursor:pointer }
+    .btn {
+      background:#0b1220;
+      color:#fff;
+      border:1px solid #ffffff26;
+      border-radius: 10px;
+      padding:6px 10px;
+      font-size:.85em;
+      font-weight:800;
+      cursor:pointer
+    }
     .btn:disabled{opacity:.7; cursor:not-allowed}
 
     #snow { position: fixed; inset: 0; z-index: 1000; pointer-events: none; }
@@ -57,6 +73,8 @@
       .info-popup { font-size: 0.8em; bottom: 10px; gap: 8px; }
     }
   </style>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
   <div class="status-popup" id="status-box">🎄 Santa is currently in Lapland preparing for Christmas!</div>
@@ -74,6 +92,7 @@
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
   <script>
     const firebaseURL = "https://santa-sleigh-tracker-4dccd-default-rtdb.europe-west1.firebasedatabase.app/location/current.json";
     const REFRESH_MS = 10000;
@@ -156,6 +175,7 @@
     let lastPoint = L.latLng(fallbackCoords.lat, fallbackCoords.lng);
     let backoff = REFRESH_MS;
 
+    // 🔐 SECURE version — fetches from hidden secret-key child
     async function updateLocation() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -167,7 +187,7 @@
 
         const raw = await response.json();
 
-        // 🔐 Extract the secret inner child 
+        // SECRET CHILD EXTRACTION
         const secretKey = Object.keys(raw)[0];
         const data = raw[secretKey];
 
@@ -201,7 +221,7 @@
 
       } catch (e) {
         clearTimeout(timeout);
-        console.error("Error fetching or parsing location:", e);
+        console.error("Error:", e);
         goFallback('🎄 GPS fetch failed – fallback to Lapland');
         backoff = Math.min(backoff * 1.5, 60000);
       } finally {
@@ -244,7 +264,11 @@
       for(const f of flakes) {
         f.y += f.s; f.x += Math.sin(f.a+=0.01)*0.3;
         if(f.y > snow.height) { f.y = -5; f.x = Math.random()*snow.width; }
-        ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.globalAlpha = 0.9; 
+        ctx.beginPath(); 
+        ctx.arc(f.x,f.y,f.r,0,Math.PI*2); 
+        ctx.fillStyle = '#fff'; 
+        ctx.fill();
       }
       requestAnimationFrame(drawSnow);
     })();
