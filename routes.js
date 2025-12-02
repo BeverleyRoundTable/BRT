@@ -215,7 +215,7 @@ function startRoutes() {
 
         /* 🔥 NEW: Interactive GPX viewer link */
         const gpxViewer = gpx
-            ? `https://www.gpsvisualizer.com/display?format=gpx&url=${encodeURIComponent(gpx)}`
+            ? `https://raw.githack.com/BeverleyRoundTable/BRT/main/gpx_viewer.html?gpx=${encodeURIComponent(gpx)}`
             : "";
 
         return `
