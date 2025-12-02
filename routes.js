@@ -81,12 +81,13 @@ function startRoutes() {
         /* RESPONSIVE IMAGE FIXES */
         .santa-route-map img,
         .santa-route-sponsor img {
-            max-width: 100%;
-            width: 100%;
-            height: auto;
-            display: block;
-            margin: 10px auto;
-            border-radius: 10px;
+            width: 33%;
+    max-width: 250px;      /* prevents it becoming huge on desktop */
+    min-width: 120px;      /* keeps it readable on mobile */
+    height: auto;
+    display: block;
+    margin: 10px auto;
+    border-radius: 10px;
         }
 
         .santa-route-sponsor {
