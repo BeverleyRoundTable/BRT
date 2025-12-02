@@ -1,9 +1,75 @@
 function startRoutes() {
-    // Inject CSS once
+
+    // Inject FULL CSS once
     if (!document.getElementById("santa-routes-style")) {
         const style = document.createElement("style");
         style.id = "santa-routes-style";
         style.textContent = `
+            /* Make all route text white */
+            .santa-route-card,
+            .santa-route-card * {
+                color: #ffffff !important;
+            }
+
+            /* Card background styling */
+            .santa-route-card {
+                background: rgba(0, 0, 0, 0.55);
+                border: 1px solid rgba(255,255,255,0.15);
+                border-radius: 14px;
+                padding: 1.2rem;
+                margin: 1.5rem auto;
+                max-width: 720px;
+                backdrop-filter: blur(6px);
+            }
+
+            /* Highlight card (Tonight / Next) */
+            .santa-route-card--highlight {
+                border-color: #ffcf5c !important;
+                box-shadow: 0 0 18px rgba(255,207,92,0.5);
+            }
+
+            .santa-route-name {
+                font-size: 1.35rem;
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+            }
+
+            .santa-route-date {
+                font-size: 1.05rem;
+                margin-bottom: 0.5rem;
+                opacity: 0.9;
+            }
+
+            .santa-route-notes,
+            .santa-route-streets {
+                font-size: 1rem;
+                margin-bottom: 0.35rem;
+                line-height: 1.5;
+            }
+
+            .santa-btn {
+                display: inline-block;
+                padding: 0.35rem 0.9rem;
+                border-radius: 30px;
+                background: #ff3b3b;
+                color: #fff !important;
+                text-decoration: none !important;
+                margin-right: 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            .santa-btn--ghost {
+                background: transparent !important;
+                border: 1px solid rgba(255,255,255,0.8) !important;
+            }
+
+            .santa-route-sponsor {
+                margin-top: 0.6rem;
+                font-size: 0.9rem;
+                opacity: 0.9;
+            }
+
+            /* Error message styling */
             .santa-no-route {
                 color: #ffffff !important;
                 font-size: 1.15rem !important;
