@@ -215,9 +215,7 @@ function startRoutes() {
 
         /* 🔥 NEW: Interactive GPX viewer link */
         const gpxViewer = gpx
-            ? `https://www.gpsvisualizer.com/display_map?format=gpx&data=${encodeURIComponent(
-                  gpx
-              )}`
+            ? `https://www.gpsvisualizer.com/display?format=gpx&url=${encodeURIComponent(gpx)}`
             : "";
 
         return `
