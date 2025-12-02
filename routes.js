@@ -27,7 +27,7 @@ function startRoutes() {
             line-height: 1.6 !important;
         }
 
-        /* CARD LAYOUT FIXES */
+        /* CARD LAYOUT */
         .santa-route-card {
             background: rgba(0,0,0,0.45);
             border: 1px solid rgba(255,255,255,0.15);
@@ -78,16 +78,24 @@ function startRoutes() {
             border: 2px solid #fff;
         }
 
-        /* RESPONSIVE IMAGE FIXES */
-        .santa-route-map img,
+        /* MAP: BIG on mobile */
+        .santa-route-map img {
+            width: 80% !important;
+            max-width: 500px;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+            border-radius: 12px;
+        }
+
+        /* SPONSOR IMAGE: 1/3 of map width */
         .santa-route-sponsor img {
-            width: 33%;
-    max-width: 250px;      /* prevents it becoming huge on desktop */
-    min-width: 120px;      /* keeps it readable on mobile */
-    height: auto;
-    display: block;
-    margin: 10px auto;
-    border-radius: 10px;
+            width: 30% !important;
+            max-width: 180px;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+            border-radius: 12px;
         }
 
         .santa-route-sponsor {
@@ -96,6 +104,7 @@ function startRoutes() {
             margin-top: 15px;
         }
 
+        /* DESKTOP LAYOUT */
         @media (min-width: 700px) {
             .santa-route-main {
                 flex-direction: row;
@@ -115,8 +124,8 @@ function startRoutes() {
         document.head.appendChild(style);
     }
 
-    const tonightEl = document.getElementById('tonights-route');
-    const allEl = document.getElementById('all-routes');
+    const tonightEl = document.getElementById("tonights-route");
+    const allEl = document.getElementById("all-routes");
 
     if (!tonightEl || !allEl) {
         console.warn("Waiting for Carrd DOM…");
@@ -145,10 +154,12 @@ function startRoutes() {
             );
 
             const todayIso = new Date().toISOString().slice(0, 10);
-
             let tonight = routes.find((r) => r.date === todayIso);
             let next = tonight || routes.find((r) => r.date >= todayIso);
 
+            /* -----------------------------
+               NEXT / TODAY ROUTE
+            ------------------------------*/
             if (next) {
                 const isTonight = next.date === todayIso;
                 const title = isTonight
@@ -160,6 +171,20 @@ function startRoutes() {
                     createRouteCard(next, true);
             }
 
+            /* -----------------------------
+               ADD DIVIDER BEFORE FULL LIST
+            ------------------------------*/
+            const dividerHTML = `
+                <div style="margin: 35px 0 15px; text-align:center;">
+                    <hr style="border:0; height:2px; width:65%; background:rgba(255,255,255,0.3); border-radius:4px;">
+                    <h2 class="santa-section-title" style="margin-top:1rem;">📜 Full Route List</h2>
+                </div>
+            `;
+            allEl.insertAdjacentHTML("beforebegin", dividerHTML);
+
+            /* -----------------------------
+               FULL ROUTE LIST
+            ------------------------------*/
             allEl.innerHTML = routes
                 .map((r) => createRouteCard(r, false))
                 .join("");
