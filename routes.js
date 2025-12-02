@@ -10,7 +10,7 @@ function startRoutes() {
     console.log("ROUTE SCRIPT INITIALISED");
 
     const ROUTES_URL =
-        "https://script.google.com/macros/s/AKfycbyvkVzbY9Q59W44PTStHgxbXsvp5PSqZp3IFrhM7PeE4EuY6uuE1obyFEK5tfQp_zGTHg/exec";
+    "https://script.google.com/macros/s/AKfycbyvkVzbY9Q59W44PTStHgxbXsvp5PSqZp3IFrhM7PeE4EuY6uuE1obyFEK5tfQp_zGTHg/exec?function=getRoutes";
 
     (async function () {
         try {
