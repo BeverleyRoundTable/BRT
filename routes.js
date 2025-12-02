@@ -1,4 +1,22 @@
 function startRoutes() {
+    // Inject CSS once
+    if (!document.getElementById("santa-routes-style")) {
+        const style = document.createElement("style");
+        style.id = "santa-routes-style";
+        style.textContent = `
+            .santa-no-route {
+                color: #ffffff !important;
+                font-size: 1.15rem !important;
+                text-align: center !important;
+                opacity: 0.9 !important;
+                margin: 20px auto !important;
+                max-width: 700px !important;
+                line-height: 1.6 !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     const tonightEl = document.getElementById('tonights-route');
     const allEl = document.getElementById('all-routes');
 
@@ -10,7 +28,7 @@ function startRoutes() {
     console.log("ROUTE SCRIPT INITIALISED");
 
     const ROUTES_URL =
-    "https://script.google.com/macros/s/AKfycbx0cr7b-3GsKuI02aoITSNDnNNJWJ_HE_IbCm4Iu3PWUrytvMrvwXRYTeKHXaryrEfViw/exec?function=getRoutes";
+        "https://script.google.com/macros/s/AKfycbx0cr7b-3GsKuI02aoITSNDnNNJWJ_HE_IbCm4Iu3PWUrytvMrvwXRYTeKHXaryrEfViw/exec?function=getRoutes";
 
     (async function () {
         try {
@@ -49,6 +67,7 @@ function startRoutes() {
             allEl.innerHTML = routes
                 .map((r) => createRouteCard(r, false))
                 .join("");
+
         } catch (err) {
             console.error(err);
             tonightEl.innerHTML =
