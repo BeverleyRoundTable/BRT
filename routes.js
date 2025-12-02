@@ -149,6 +149,7 @@ function startRoutes() {
                 return;
             }
 
+            /* Sort routes by date */
             routes.sort((a, b) =>
                 (a.date || "").localeCompare(b.date || "")
             );
@@ -172,7 +173,7 @@ function startRoutes() {
             }
 
             /* -----------------------------
-               ADD DIVIDER BEFORE FULL LIST
+               DIVIDER BEFORE FULL LIST
             ------------------------------*/
             const dividerHTML = `
                 <div style="margin: 35px 0 15px; text-align:center;">
@@ -196,6 +197,9 @@ function startRoutes() {
         }
     })();
 
+    /* =====================================================
+       CARD BUILDER — includes GPX interactive viewer
+    ===================================================== */
     function createRouteCard(route, highlight) {
         const name = route.routeName || "";
         const dateLabel =
@@ -209,6 +213,13 @@ function startRoutes() {
         const mapImg = route.mapImageUrl || "";
         const sponsorImg = route.sponsorUrl || "";
 
+        /* 🔥 NEW: Interactive GPX viewer link */
+        const gpxViewer = gpx
+            ? `https://www.gpsvisualizer.com/display_map?format=gpx&data=${encodeURIComponent(
+                  gpx
+              )}`
+            : "";
+
         return `
 <article class="santa-route-card ${highlight ? "santa-route-card--highlight" : ""}">
 <div class="santa-route-main">
@@ -217,9 +228,10 @@ function startRoutes() {
         ${dateLabel ? `<p class="santa-route-date">📅 ${escapeHtml(dateLabel)}</p>` : ""}
         ${notes ? `<p class="santa-route-notes">${escapeHtml(notes)}</p>` : ""}
         ${streets ? `<p class="santa-route-streets"><strong>Key streets:</strong> ${escapeHtml(streets)}</p>` : ""}
+
         <div class="santa-route-actions">
-            ${mapImg ? `<a href="${mapImg}" class="santa-btn" target="_blank">View map</a>` : ""}
-            ${gpx ? `<a href="${gpx}" class="santa-btn santa-btn--ghost" target="_blank">Download GPX</a>` : ""}
+            ${mapImg ? `<a href="${mapImg}" class="santa-btn" target="_blank">View Map</a>` : ""}
+            ${gpxViewer ? `<a href="${gpxViewer}" class="santa-btn santa-btn--ghost" target="_blank">Interactive GPX Map</a>` : ""}
         </div>
     </div>
 
@@ -230,12 +242,13 @@ ${sponsorImg ? `<div class="santa-route-sponsor"><span>Proudly sponsored by</spa
 </article>`;
     }
 
+    /* Escape text */
     function escapeHtml(str) {
         return String(str).replace(/[&<>"]/g, (s) => ({
             "&": "&amp;",
             "<": "&lt;",
             ">": "&gt;",
-            '"': "&quot;",
+            '"': "&quot;"
         })[s]);
     }
 }
