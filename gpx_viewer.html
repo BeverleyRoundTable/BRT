@@ -36,21 +36,30 @@
 
 <script>
 (function () {
+
   function getQueryParam(name) {
     const params = new URLSearchParams(window.location.search);
     return params.get(name);
   }
 
+  // NEW: support full GPX URLs OR filename-based GPX
+  const fullUrl = getQueryParam("gpx");
   const fileName = getQueryParam("file");
 
-  if (!fileName) {
-    alert("No GPX file specified.");
+  let gpxUrl = "";
+
+  if (fullUrl) {
+    // Use full URL from Carrd sheet
+    gpxUrl = fullUrl;
+  } else if (fileName) {
+    // Fallback: load from GitHub GPX folder
+    gpxUrl =
+      "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/GPX/" +
+      fileName;
+  } else {
+    alert("No GPX file provided.\n\nUse either ?gpx=fullURL or ?file=filename.gpx");
     return;
   }
-
-  const gpxUrl =
-    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/GPX/" +
-    fileName;
 
   const map = L.map("map");
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -72,6 +81,7 @@
       map.fitBounds(e.target.getBounds());
     })
     .addTo(map);
+
 })();
 </script>
 
