@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Santa Sleigh Donations – Setup Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        background: #111;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        padding: 30px;
+        max-width: 900px;
+        margin: auto;
+    }
+    h1, h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #ffd700;
+    }
+    h2 { margin-top: 50px; }
+    .step {
+        background: rgba(255,255,255,0.05);
+        padding: 20px 25px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.15);
+        margin-bottom: 35px;
+        box-shadow: 0 0 14px rgba(255,215,0,0.15);
+    }
+    a.button {
+        display: inline-block;
+        background: #e53935;
+        padding: 12px 18px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: bold;
+        color: #fff;
+        margin-top: 12px;
+    }
+    pre {
+        background: #222;
+        padding: 12px;
+        border-radius: 8px;
+        overflow-x: auto;
+        border: 1px solid rgba(255,255,255,0.2);
+        white-space: pre-wrap;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>🎁 Santa Sleigh Donations Thermometer Setup Guide</h1>
+<p style="text-align:center; max-width:700px; margin:auto;">
+Add a live-updating donation total to your website — powered by Google Sheets & Apps Script.
+</p>
+
+<!-- STEP 1 -->
+<h2>1️⃣ Make a Copy of the Master Sheet</h2>
+<div class="step">
+    <p>Your donations total comes directly from Google Sheets.</p>
+
+    <a class="button" target="_blank"
+       href="https://docs.google.com/spreadsheets/d/1bJoOlWvZ6uGd_EuazFOTV-5pXfi1-Bd_cVhojquF-u0/copy">
+       📄 Make a Copy of the Santa Sheet
+    </a>
+
+    <p><strong>Update these cells:</strong></p>
+    <ul>
+        <li><strong>E1</strong> → Current total raised</li>
+        <li><strong>E2</strong> → Last updated date</li>
+        <li><strong>E3</strong> → Fundraising target</li>
+    </ul>
+</div>
+
+<!-- STEP 2 -->
+<h2>2️⃣ Confirm Your Apps Script (Already Included)</h2>
+<div class="step">
+    <p>The script for donations is already included in your sheet.</p>
+
+    <p><strong>You only need to deploy it:</strong></p>
+
+    <ol>
+        <li>Extensions → Apps Script</li>
+        <li>Deploy → <strong>New Deployment</strong></li>
+        <li>Type: <strong>Web App</strong></li>
+        <li>Access: <strong>Anyone</strong></li>
+        <li>Deploy → Copy the URL</li>
+    </ol>
+
+    <p><strong>Your URL will look like:</strong></p>
+
+<pre>
+https://script.google.com/macros/s/XXXXXXX/exec?function=getDonations
+</pre>
+
+    <p>You will paste this URL into both thermometer widgets.</p>
+</div>
+
+<!-- STEP 3 -->
+<h2>3️⃣ Add the Mini Thermometer</h2>
+<div class="step">
+    <p>Paste this where you want the <strong>small bar version</strong> to appear:</p>
+
+<pre>
+<!-- Mini Donation Bar -->
+<div id="mini-bar-section" class="brt-mini-bar-wrapper">
+  <div class="brt-mini-label">Together we've raised:</div>
+  <div class="brt-mini-bar-track">
+    <div class="brt-mini-bar-fill" id="brt-mini-bar-fill"></div>
+  </div>
+  <div id="brt-mini-val" class="brt-mini-amount">Loading…</div>
+</div>
+</pre>
+
+    <p><strong>Add this script to your page footer</strong> (replace the URL):</p>
+
+<pre>
+<script>
+const BRT_MINI_URL =
+"YOUR_SCRIPT_URL_HERE?function=getDonations";
+
+document.addEventListener("DOMContentLoaded", function () {
+  const fill = document.getElementById("brt-mini-bar-fill");
+  const valEl = document.getElementById("brt-mini-val");
+
+  fetch(BRT_MINI_URL)
+    .then(r => r.json())
+    .then(data => {
+      const total = Number(data.total || 0);
+      const target = Number(data.target || 0);
+      const pct = target > 0 ? Math.min(100, (total / target) * 100) : 0;
+
+      fill.style.width = pct + "%";
+      valEl.textContent = `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
+    });
+});
+</script>
+</pre>
+
+</div>
+
+<!-- STEP 4 -->
+<h2>4️⃣ Add the Full Thermometer</h2>
+<div class="step">
+    <p>This is the full vertical thermometer widget.</p>
+
+<pre>
+<!-- Full Thermometer -->
+<div id="main-thermo-section" class="brt-thermo-wrapper">
+  <!-- your thermometer HTML goes here (same as in your master file) -->
+</div>
+</pre>
+
+    <p><strong>Add this script to the bottom of the page:</strong></p>
+
+<pre>
+<script>
+const BRT_THERMO_URL =
+"YOUR_SCRIPT_URL_HERE?function=getDonations";
+
+document.addEventListener("DOMContentLoaded", function () {
+  fetch(BRT_THERMO_URL)
+    .then(r => r.json())
+    .then(data => {
+      const total = Number(data.total || 0);
+      const target = Number(data.target || 0);
+      const pct = target>0? Math.min(100,(total/target)*100):0;
+
+      document.getElementById("brt-thermo-fill").style.height = pct + "%";
+      document.getElementById("brt-thermo-amount").textContent =
+        "£" + total.toLocaleString("en-GB") +
+        " raised of £" + target.toLocaleString("en-GB");
+    });
+});
+</script>
+</pre>
+
+</div>
+
+<!-- STEP 5 -->
+<h2>5️⃣ Replace the Script URL</h2>
+<div class="step">
+<p>Everywhere you see:</p>
+<pre>YOUR_SCRIPT_URL_HERE</pre>
+
+<p>Replace with your own Apps Script Deployment URL.</p>
+</div>
+
+<h2>🎉 You're Done!</h2>
+<div class="step">
+<p>Your donations thermometer now updates instantly whenever you change the values in your Google Sheet.</p>
+</div>
+
+</body>
+</html>
