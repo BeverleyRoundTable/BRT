@@ -84,19 +84,26 @@ This guide is designed for Round Tables, Lions, Scouts, Schools, Community Parad
 <!-- STEP 2 -->
 <h2>2️⃣ Add the Apps Script (Powers Live Updates)</h2>
 <div class="step">
-    <p>Your sheet needs a small script so your website can load routes dynamically. In Google Sheets:</p>
-    
+    <p>Your sheet needs a small script so your website can load routes dynamically.</p>
+
+    <p><strong>⚠️ Important note:</strong><br>
+    When you make a copy of this sheet, the Apps Script code is copied too — but the deployment is <em>not</em>.
+    You must create a <strong>NEW DEPLOYMENT</strong> (not re-deploy).</p>
+
     <ol>
         <li>Click <strong>Extensions → Apps Script</strong></li>
-        <li>Delete anything there</li>
-        <li>Paste in the three functions below</li>
-        <li>Click <strong>Deploy → New Deployment → Web App</strong></li>
+        <li>Delete anything already in the code window</li>
+        <li>Paste in the full script below</li>
+        <li>Click <strong>Deploy → New Deployment</strong></li>
+        <li>Select <strong>Web App</strong></li>
         <li>Set access to <strong>Anyone</strong></li>
-        <li>Copy your Web App URL</li>
+        <li>Click <strong>Deploy</strong></li>
+        <li>Copy the generated <strong>Web App URL</strong></li>
     </ol>
 
     <p><strong>Paste this script:</strong></p>
-    <pre>
+
+<pre>
 // --- Replace entire file with this ---
 
 function getRoutes() {
@@ -127,10 +134,10 @@ function doGet(e) {
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 }
-    </pre>
+</pre>
 
-    <p><strong>This URL is important:</strong><br>
-    You’ll paste your deployment URL into <em>your copy of route.js</em>.</p>
+    <p><strong>Your Web App URL is essential:</strong><br>
+    You’ll paste it into your own <code>route.js</code> file.</p>
 </div>
 
 <!-- STEP 3 -->
