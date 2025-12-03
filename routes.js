@@ -29,79 +29,87 @@ function startRoutes() {
 
         /* CARD LAYOUT */
         .santa-route-card {
-            background: rgba(0,0,0,0.45);
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(2px);
             border: 1px solid rgba(255,255,255,0.15);
             border-radius: 16px;
-            padding: 20px;
-            margin: 25px auto;
+            padding: 22px;
+            margin: 30px auto;
             max-width: 900px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.25);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.18);
+        }
+
+        /* TONIGHT / NEXT ROUTE HIGHLIGHT */
+        .santa-route-card--highlight {
+            border: 2px solid rgba(255,215,0,0.6) !important;
+            box-shadow: 0 0 25px rgba(255,215,0,0.45) !important;
         }
 
         .santa-route-main {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 18px;
         }
 
         .santa-route-name {
-            color: #ffffff !important;
             font-size: 1.8rem !important;
             text-align: center;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
         }
 
         .santa-route-date {
             text-align: center;
         }
 
+        /* BUTTONS */
         .santa-route-actions {
             text-align: center;
-            margin-top: 10px;
+            margin-top: 15px !important;
+            margin-bottom: 10px !important;
         }
 
-        /* BUTTONS */
         .santa-btn {
             display: inline-block;
             background: #e53935;
-            padding: 8px 16px;
-            border-radius: 12px;
+            padding: 10px 18px !important;
+            border-radius: 14px !important;
             color: #fff !important;
-            margin: 5px;
-            text-decoration: none;
+            margin: 6px;
             font-weight: 600;
             border: 2px solid transparent;
+            text-decoration: none !important;
         }
 
         .santa-btn--ghost {
-            background: transparent;
-            border: 2px solid #fff;
+            background: transparent !important;
+            border: 2px solid #fff !important;
         }
 
-        /* MAP: BIG on mobile */
+        /* MAP PREVIEW */
         .santa-route-map img {
-            width: 80% !important;
-            max-width: 500px;
+            width: 100% !important;
+            max-width: 480px !important;
             height: auto;
             display: block;
             margin: 10px auto;
-            border-radius: 12px;
+            border-radius: 14px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.35);
         }
 
-        /* SPONSOR IMAGE: 1/3 of map width */
-        .santa-route-sponsor img {
-            width: 30% !important;
-            max-width: 180px;
-            height: auto;
-            display: block;
-            margin: 10px auto;
-            border-radius: 12px;
-        }
-
+        /* SPONSOR */
         .santa-route-sponsor {
             text-align: center;
             font-size: 1rem;
-            margin-top: 15px;
+            margin-top: 25px !important;
+            margin-bottom: 5px !important;
+        }
+
+        .santa-route-sponsor img {
+            width: 220px !important;
+            max-width: 40% !important;
+            height: auto;
+            display: block;
+            margin: 10px auto;
         }
 
         /* DESKTOP LAYOUT */
@@ -158,9 +166,7 @@ function startRoutes() {
             let tonight = routes.find((r) => r.date === todayIso);
             let next = tonight || routes.find((r) => r.date >= todayIso);
 
-            /* -----------------------------
-               NEXT / TODAY ROUTE
-            ------------------------------*/
+            /* NEXT / TONIGHT ROUTE */
             if (next) {
                 const isTonight = next.date === todayIso;
                 const title = isTonight
@@ -172,9 +178,7 @@ function startRoutes() {
                     createRouteCard(next, true);
             }
 
-            /* -----------------------------
-               DIVIDER BEFORE FULL LIST
-            ------------------------------*/
+            /* DIVIDER BEFORE FULL LIST */
             const dividerHTML = `
                 <div style="margin: 35px 0 15px; text-align:center;">
                     <hr style="border:0; height:2px; width:65%; background:rgba(255,255,255,0.3); border-radius:4px;">
@@ -183,9 +187,7 @@ function startRoutes() {
             `;
             allEl.insertAdjacentHTML("beforebegin", dividerHTML);
 
-            /* -----------------------------
-               FULL ROUTE LIST
-            ------------------------------*/
+            /* FULL ROUTE LIST */
             allEl.innerHTML = routes
                 .map((r) => createRouteCard(r, false))
                 .join("");
@@ -198,7 +200,7 @@ function startRoutes() {
     })();
 
     /* =====================================================
-       CARD BUILDER — includes GPX interactive viewer
+       CARD BUILDER
     ===================================================== */
     function createRouteCard(route, highlight) {
         const name = route.routeName || "";
@@ -213,7 +215,7 @@ function startRoutes() {
         const mapImg = route.mapImageUrl || "";
         const sponsorImg = route.sponsorUrl || "";
 
-        /* 🔥 NEW: Interactive GPX viewer link */
+        /* Interactive GPX button link */
         const gpxViewer = gpx
             ? `https://raw.githack.com/BeverleyRoundTable/BRT/main/gpx_viewer.html?gpx=${encodeURIComponent(gpx)}`
             : "";
@@ -240,7 +242,6 @@ ${sponsorImg ? `<div class="santa-route-sponsor"><span>Proudly sponsored by</spa
 </article>`;
     }
 
-    /* Escape text */
     function escapeHtml(str) {
         return String(str).replace(/[&<>"]/g, (s) => ({
             "&": "&amp;",
