@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Santa Sleigh Tracker – Setup Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        background: #111;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        padding: 30px;
+        max-width: 900px;
+        margin: auto;
+    }
+    h1, h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #ffd700;
+    }
+    h2 {
+        margin-top: 50px;
+    }
+    .step {
+        background: rgba(255,255,255,0.05);
+        padding: 20px 25px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.15);
+        margin-bottom: 35px;
+        box-shadow: 0 0 14px rgba(255,215,0,0.15);
+    }
+    a.button {
+        display: inline-block;
+        background: #e53935;
+        padding: 12px 18px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: bold;
+        color: #fff;
+        margin-top: 12px;
+    }
+    pre {
+        background: #222;
+        padding: 12px;
+        border-radius: 8px;
+        overflow-x: auto;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+</style>
+
+</head>
+<body>
+
+<h1>🎅 Santa Sleigh Tracker Setup Guide</h1>
+<p style="text-align:center; max-width:700px; margin:auto;">
+Set up your own live Santa Sleigh Tracker in under 10 minutes.
+<br>
+This guide is designed for Round Tables, Lions, Scouts, Schools, Community Parades and local festive groups.
+</p>
+
+<!-- STEP 1 -->
+<h2>1️⃣ Make a Copy of the Google Sheet</h2>
+<div class="step">
+    <p>This sheet powers your entire Santa Tracker — routes, GPX links, map images, sponsors and more.</p>
+    <p><strong>Click below to create your own version:</strong></p>
+    
+    <a class="button" target="_blank"
+       href="https://docs.google.com/spreadsheets/d/1bJoOlWvZ6uGd_EuazFOTV-5pXfi1-Bd_cVhojquF-u0/copy">
+       📄 Make a Copy of the Santa Sheet
+    </a>
+
+    <p style="margin-top:20px;"><strong>You will update:</strong></p>
+    <ul>
+        <li>Route names</li>
+        <li>Dates & times</li>
+        <li>GPX file URLs</li>
+        <li>Map preview images</li>
+        <li>Sponsor logo URLs</li>
+    </ul>
+</div>
+
+<!-- STEP 2 -->
+<h2>2️⃣ Add the Apps Script (Powers Live Updates)</h2>
+<div class="step">
+    <p>Your sheet needs a small script so your website can load routes dynamically. In Google Sheets:</p>
+    
+    <ol>
+        <li>Click <strong>Extensions → Apps Script</strong></li>
+        <li>Delete anything there</li>
+        <li>Paste in the three functions below</li>
+        <li>Click <strong>Deploy → New Deployment → Web App</strong></li>
+        <li>Set access to <strong>Anyone</strong></li>
+        <li>Copy your Web App URL</li>
+    </ol>
+
+    <p><strong>Paste this script:</strong></p>
+    <pre>
+// --- Replace entire file with this ---
+
+function getRoutes() {
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName("Routes");
+  const values = sh.getRange(2, 1, sh.getLastRow()-1, sh.getLastColumn()).getValues();
+  const headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+
+  const routes = values.map(r => {
+    let obj = {};
+    headers.forEach((h,i)=> obj[h] = r[i]);
+    if (obj.streets) obj.streets = obj.streets.split(",").map(s => s.trim());
+    return obj;
+  });
+
+  return routes;
+}
+
+function doGet(e) {
+  const fn = e.parameter.function;
+  let data = {};
+
+  if (fn === "getRoutes") {
+    data.routes = getRoutes();
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+    </pre>
+
+    <p><strong>This URL is important:</strong><br>
+    You’ll paste your deployment URL into <em>your copy of route.js</em>.</p>
+</div>
+
+<!-- STEP 3 -->
+<h2>3️⃣ Host Your GPX Files</h2>
+<div class="step">
+    <p>You’ll upload your GPX route files (e.g., NorthRoute.gpx) somewhere your sheet can link to.</p>
+    
+    <p><strong>Best recommended method:</strong></p>
+    <ul>
+        <li>Create a GitHub account (free)</li>
+        <li>Create a new repository</li>
+        <li>Add a folder named <code>GPX</code></li>
+        <li>Upload all your <code>.gpx</code> files</li>
+    </ul>
+
+    <p>Your GPX URLs will look like:</p>
+
+    <pre>https://raw.githubusercontent.com/YOURNAME/YOURREPO/main/GPX/RouteName.gpx</pre>
+
+    <p>Add each GPX URL into your Google Sheet under <strong>gpxUrl</strong>.</p>
+</div>
+
+<!-- STEP 4 -->
+<h2>4️⃣ Upload Your route.js File</h2>
+<div class="step">
+    <p>This file connects your website to your Google Sheet and your GPX viewer.</p>
+
+    <p><strong>Download the template:</strong></p>
+    <a class="button" href="#" onclick="alert('I will prepare route.js for you next!'); return false;">
+        📁 Download route.js Template
+    </a>
+
+    <p><strong>Edit TWO lines only:</strong></p>
+
+    <pre>// 1. Replace with YOUR Script Web App URL
+const ROUTES_URL = "YOUR_WEB_APP_URL?function=getRoutes";
+
+// 2. Viewer URL (use Ben’s GPX Viewer)
+const GPX_VIEWER = "https://brt-23f.pages.dev/gpx_viewer.html?gpx=";
+    </pre>
+
+    <p>Upload this file into your GitHub repo (same place as your GPX folder).</p>
+
+    <p>Your Carrd or website will load this automatically.</p>
+</div>
+
+<!-- DONE -->
+<h2>🎉 You're Done!</h2>
+<div class="step">
+    <p>Your Santa Sleigh Tracker is now live!</p>
+    <ul>
+        <li>Editing your Google Sheet updates your site instantly</li>
+        <li>No code required</li>
+        <li>No map hosting needed</li>
+        <li>Uses the shared GPX Viewer provided by Beverley Round Table</li>
+    </ul>
+</div>
+
+</body>
+</html>
