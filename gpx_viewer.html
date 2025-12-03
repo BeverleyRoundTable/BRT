@@ -69,12 +69,27 @@
     maxZoom: 19,
   }).addTo(map);
 
+  // --- Custom Bauble Icons (Prevent Squashing) ---
+  const startIcon = L.icon({
+    iconUrl: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+    iconSize: [42, 42],      // Perfect bauble size
+    iconAnchor: [21, 38],    // Bottom-middle sits on road
+    popupAnchor: [0, -38],
+  });
+
+  const endIcon = L.icon({
+    iconUrl: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
+    iconSize: [42, 42],
+    iconAnchor: [21, 38],
+    popupAnchor: [0, -38],
+  });
+
   const gpx = new L.GPX(gpxUrl, {
     async: true,
     marker_options: {
-      startIconUrl: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
-      endIconUrl:   "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
-      shadowUrl:    "https://unpkg.com/leaflet-gpx@1.7.0/pin-shadow.png",
+      startIcon: startIcon,
+      endIcon: endIcon,
+      shadowUrl: ""
     },
     polyline_options: {
       color: "#d31c1c",
