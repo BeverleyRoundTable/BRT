@@ -58,9 +58,9 @@ All you need to do is embed the blocks below.
 <div class="step">
 <p>Paste this where you want the mini bar to appear on your site:</p>
 
-<pre>
-&lt;!-- Mini Santa Sleigh Donation Bar --&gt;
-&lt;style&gt;
+<pre><code>
+<!-- Mini Santa Sleigh Donation Bar -->
+<style>
 .brt-mini-bar-wrapper {
   width: 100%;
   max-width: 420px;
@@ -85,21 +85,21 @@ All you need to do is embed the blocks below.
   border-radius: 8px;
   transition: width 1.8s cubic-bezier(.25,1.50,.45,1);
 }
-&lt;/style&gt;
+</style>
 
-&lt;div id="mini-bar-section" class="brt-mini-bar-wrapper"&gt;
-  &lt;div class="brt-mini-label"&gt;Together we've raised:&lt;/div&gt;
-  &lt;div class="brt-mini-bar-track"&gt;
-    &lt;div class="brt-mini-bar-fill" id="brt-mini-bar-fill"&gt;&lt;/div&gt;
-  &lt;/div&gt;
-  &lt;div id="brt-mini-val" class="brt-mini-amount"&gt;Loading…&lt;/div&gt;
-&lt;/div&gt;
-</pre>
+<div id="mini-bar-section" class="brt-mini-bar-wrapper">
+  <div class="brt-mini-label">Together we've raised:</div>
+  <div class="brt-mini-bar-track">
+    <div class="brt-mini-bar-fill" id="brt-mini-bar-fill"></div>
+  </div>
+  <div id="brt-mini-val" class="brt-mini-amount">Loading…</div>
+</div>
+</code></pre>
 
 <p><b>Then add this to your page footer:</b></p>
 
-<pre>
-&lt;script&gt;
+<pre><code>
+<script>
 document.addEventListener("DOMContentLoaded", function () {
 
   const miniSection = document.getElementById("mini-bar-section");
@@ -139,8 +139,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }, { rootMargin: "200px" }).observe(miniSection);
 
 });
-&lt;/script&gt;
-</pre>
+</script>
+</code></pre>
 
 <p><b>Replace:</b> <code>YOUR_SCRIPT_URL_HERE</code> with the same Apps Script URL you used for GPX.</p>
 </div>
@@ -151,42 +151,42 @@ document.addEventListener("DOMContentLoaded", function () {
 <div class="step">
 <p>Paste this where you want the large thermometer to appear:</p>
 
-<pre>
-&lt;!-- Full Santa Sleigh Thermometer --&gt;
-&lt;style&gt;
+<pre><code>
+<!-- Full Santa Sleigh Thermometer -->
+<style>
 /* (Your entire provided stylesheet goes here exactly as written) */
 [PLACEHOLDER — INSERT FULL CSS FROM YOUR MESSAGE]
-&lt;/style&gt;
+</style>
 
-&lt;div id="main-thermo-section" class="brt-thermo-wrapper"&gt;
-  &lt;div class="brt-thermo-card"&gt;
-    &lt;h3 class="brt-thermo-title"&gt;Santa Sleigh Fundraiser&lt;/h3&gt;
-    &lt;div class="brt-thermo-layout"&gt;
-      &lt;div class="brt-thermo"&gt;
-        &lt;div class="brt-thermo-inner"&gt;
-          &lt;div class="brt-thermo-fill" id="brt-thermo-fill"&gt;&lt;/div&gt;
-          &lt;div class="brt-thermo-snow-layer" id="brt-thermo-snow"&gt;&lt;/div&gt;
-        &lt;/div&gt;
-        &lt;div class="brt-thermo-bulb"&gt;
-          &lt;div class="brt-bulb-glow"&gt;&lt;/div&gt;
-          &lt;img src="https://i.ibb.co/4gVK7tpJ/Santa-Marker-6.png"
-               class="brt-bulb-logo" /&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-      &lt;div class="brt-thermo-text"&gt;
-        &lt;div id="brt-thermo-amount"&gt;Loading total…&lt;/div&gt;
-        &lt;div id="brt-thermo-last-updated"&gt;&lt;/div&gt;
-        &lt;div id="brt-thermo-error" class="brt-thermo-error"&gt;&lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/div&gt;
-</pre>
+<div id="main-thermo-section" class="brt-thermo-wrapper">
+  <div class="brt-thermo-card">
+    <h3 class="brt-thermo-title">Santa Sleigh Fundraiser</h3>
+    <div class="brt-thermo-layout">
+      <div class="brt-thermo">
+        <div class="brt-thermo-inner">
+          <div class="brt-thermo-fill" id="brt-thermo-fill"></div>
+          <div class="brt-thermo-snow-layer" id="brt-thermo-snow"></div>
+        </div>
+        <div class="brt-thermo-bulb">
+          <div class="brt-bulb-glow"></div>
+          <img src="https://i.ibb.co/4gVK7tpJ/Santa-Marker-6.png"
+               class="brt-bulb-logo" />
+        </div>
+      </div>
+      <div class="brt-thermo-text">
+        <div id="brt-thermo-amount">Loading total…</div>
+        <div id="brt-thermo-last-updated"></div>
+        <div id="brt-thermo-error" class="brt-thermo-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</code></pre>
 
 <p><b>Then add this to your footer:</b></p>
 
-<pre>
-&lt;script&gt;
+<pre><code>
+<script>
 document.addEventListener("DOMContentLoaded", function () {
 
   const thermoSection = document.getElementById("main-thermo-section");
@@ -248,8 +248,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }, { rootMargin: "400px" }).observe(thermoSection);
 
 });
-&lt;/script&gt;
-</pre>
+</script>
+</code></pre>
 
 <p><b>Replace:</b> <code>YOUR_SCRIPT_URL_HERE</code> with your own Apps Script deployment URL.</p>
 </div>
