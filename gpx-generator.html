@@ -88,11 +88,11 @@ This guide is designed for Round Tables, Lions, Scouts, Schools, Community Parad
 
     <p><strong>⚠️ Important note:</strong><br>
     When you make a copy of this sheet, the Apps Script code is copied too — but the deployment is <em>not</em>.
-    You must create a <strong>NEW DEPLOYMENT</strong> (not re-deploy).</p>
+    You must create a <strong>NEW DEPLOYMENT</strong>.</p>
 
     <ol>
         <li>Click <strong>Extensions → Apps Script</strong></li>
-        <li><strong>Do NOT delete anything</strong> — the correct code is already copied over</li>
+        <li><strong>Do NOT delete anything</strong> — code is already copied</li>
         <li>Click <strong>Deploy → New Deployment</strong></li>
         <li>Select <strong>Web App</strong></li>
         <li>Set access to <strong>Anyone</strong></li>
@@ -103,8 +103,6 @@ This guide is designed for Round Tables, Lions, Scouts, Schools, Community Parad
     <p><strong>This is the script already included in your copy:</strong></p>
 
 <pre>
-// --- Script already included in your sheet ---
-
 function getRoutes() {
   const ss = SpreadsheetApp.getActive();
   const sh = ss.getSheetByName("Routes");
@@ -136,25 +134,22 @@ function doGet(e) {
 </pre>
 
     <p><strong>Your Web App URL is essential:</strong><br>
-    You’ll paste it into your own <code>route.js</code> file.</p>
+    You’ll paste it into <code>route.js</code>.</p>
 </div>
 
 <!-- STEP 3 -->
 <h2>3️⃣ Host Your GPX Files</h2>
 <div class="step">
-    <p>You’ll upload your GPX route files (e.g., NorthRoute.gpx) somewhere your sheet can link to.</p>
-    
-    <p><strong>Best recommended method:</strong></p>
+    <p>You’ll upload your GPX route files somewhere your sheet can link to.</p>
+
     <ul>
-        <li>Create a GitHub account (free)</li>
+        <li>Create a GitHub account</li>
         <li>Create a new repository</li>
         <li>Add a folder named <code>GPX</code></li>
-        <li>Upload all your <code>.gpx</code> files</li>
+        <li>Upload your <code>.gpx</code> files</li>
     </ul>
 
-    <p>Your GPX URLs will look like:</p>
-
-    <pre>https://raw.githubusercontent.com/YOURNAME/YOURREPO/main/GPX/RouteName.gpx</pre>
+<pre>https://raw.githubusercontent.com/YOURNAME/YOURREPO/main/GPX/RouteName.gpx</pre>
 
     <p>Add each GPX URL into your Google Sheet under <strong>gpxUrl</strong>.</p>
 </div>
@@ -166,7 +161,7 @@ function doGet(e) {
 
     <p><strong>Download the template:</strong></p>
 
-    <a class="button" 
+    <a class="button"
        href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/routes.js"
        download="routes.js">
        📁 Download route.js Template
@@ -178,13 +173,36 @@ function doGet(e) {
 // 1. Replace with YOUR Script Web App URL
 const ROUTES_URL = "YOUR_WEB_APP_URL?function=getRoutes";
 
-// 2. Viewer URL (use Ben’s GPX Viewer)
+// 2. Viewer URL (use Ben’s GPX Viewer - NO CHANGE NEEDED)
 const GPX_VIEWER = "https://brt-23f.pages.dev/gpx_viewer.html?gpx=";
 </pre>
 
-    <p>Upload this file into your GitHub repo (same place as your GPX folder).</p>
+    <p>Upload this file into your GitHub repo (anywhere is fine).</p>
+</div>
 
-    <p>Your Carrd or website will load this automatically.</p>
+<!-- STEP 5 -->
+<h2>5️⃣ Embed the Tracker on Your Website</h2>
+<div class="step">
+    <p>Paste this code where you want the Santa Tracker to appear.</p>
+    <p><strong>Carrd:</strong> Add → Embed → Code → paste this:</p>
+
+<pre>
+<!-- ROUTE CONTAINERS -->
+<div id="tonights-route"></div>
+<div id="all-routes"></div>
+
+<!-- LOAD YOUR routes.js -->
+<script>
+(function() {
+    const s = document.createElement("script");
+    s.src = "https://raw.githubusercontent.com/YOURNAME/YOURREPO/main/routes.js?v=" + Date.now();
+    document.body.appendChild(s);
+})();
+</script>
+</pre>
+
+    <p><strong>Replace the GitHub link</strong> with your own <code>routes.js</code> raw file.</p>
+    <p>Your tracker will now load automatically from your Google Sheet.</p>
 </div>
 
 </body>
