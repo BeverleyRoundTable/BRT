@@ -59,8 +59,8 @@ All you need to do is embed the blocks below.
 <p>Paste this where you want the mini bar to appear on your site:</p>
 
 <pre><code>
-<!-- Mini Santa Sleigh Donation Bar -->
-<style>
+&lt;!-- Mini Santa Sleigh Donation Bar --&gt;
+&lt;style&gt;
 .brt-mini-bar-wrapper {
   width: 100%;
   max-width: 420px;
@@ -85,21 +85,21 @@ All you need to do is embed the blocks below.
   border-radius: 8px;
   transition: width 1.8s cubic-bezier(.25,1.50,.45,1);
 }
-</style>
+&lt;/style&gt;
 
-<div id="mini-bar-section" class="brt-mini-bar-wrapper">
-  <div class="brt-mini-label">Together we've raised:</div>
-  <div class="brt-mini-bar-track">
-    <div class="brt-mini-bar-fill" id="brt-mini-bar-fill"></div>
-  </div>
-  <div id="brt-mini-val" class="brt-mini-amount">Loading…</div>
-</div>
+&lt;div id="mini-bar-section" class="brt-mini-bar-wrapper"&gt;
+  &lt;div class="brt-mini-label"&gt;Together we've raised:&lt;/div&gt;
+  &lt;div class="brt-mini-bar-track"&gt;
+    &lt;div class="brt-mini-bar-fill" id="brt-mini-bar-fill"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div id="brt-mini-val" class="brt-mini-amount"&gt;Loading…&lt;/div&gt;
+&lt;/div&gt;
 </code></pre>
 
 <p><b>Then add this to your page footer:</b></p>
 
 <pre><code>
-<script>
+&lt;script&gt;
 document.addEventListener("DOMContentLoaded", function () {
 
   const miniSection = document.getElementById("mini-bar-section");
@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let miniLoaded = false;
 
-  const loadMiniThermo = () => {
+  const loadMiniThermo = () =&gt; {
     if (miniLoaded) return;
     miniLoaded = true;
 
@@ -119,30 +119,30 @@ document.addEventListener("DOMContentLoaded", function () {
     const valEl = document.getElementById("brt-mini-val");
 
     fetch(BRT_MINI_URL)
-      .then(r => r.json())
-      .then(data => {
+      .then(r =&gt; r.json())
+      .then(data =&gt; {
         const total = Number(data.total || 0);
         const target = Number(data.target || 0);
-        const pct = target > 0 ? Math.min(100, (total/target)*100) : 0;
+        const pct = target &gt; 0 ? Math.min(100, (total/target)*100) : 0;
 
-        requestAnimationFrame(() => { fill.style.width = pct + "%"; });
+        requestAnimationFrame(() =&gt; { fill.style.width = pct + "%"; });
 
         valEl.textContent =
           `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
       });
   };
 
-  new IntersectionObserver(entries => {
+  new IntersectionObserver(entries =&gt; {
     if (entries[0].isIntersecting) {
       loadMiniThermo();
     }
   }, { rootMargin: "200px" }).observe(miniSection);
 
 });
-</script>
+&lt;/script&gt;
 </code></pre>
 
-<p><b>Replace:</b> <code>YOUR_SCRIPT_URL_HERE</code> with the same Apps Script URL you used for GPX.</p>
+<p><b>Replace:</b> <code>YOUR_SCRIPT_URL_HERE</code> with your Apps Script URL.</p>
 </div>
 
 
@@ -152,41 +152,41 @@ document.addEventListener("DOMContentLoaded", function () {
 <p>Paste this where you want the large thermometer to appear:</p>
 
 <pre><code>
-<!-- Full Santa Sleigh Thermometer -->
-<style>
-/* (Your entire provided stylesheet goes here exactly as written) */
-[PLACEHOLDER — INSERT FULL CSS FROM YOUR MESSAGE]
-</style>
+&lt;!-- Full Santa Sleigh Thermometer --&gt;
+&lt;style&gt;
+/* (Your full thermometer CSS goes here – unchanged) */
+[PLACEHOLDER — INSERT FULL CSS HERE]
+&lt;/style&gt;
 
-<div id="main-thermo-section" class="brt-thermo-wrapper">
-  <div class="brt-thermo-card">
-    <h3 class="brt-thermo-title">Santa Sleigh Fundraiser</h3>
-    <div class="brt-thermo-layout">
-      <div class="brt-thermo">
-        <div class="brt-thermo-inner">
-          <div class="brt-thermo-fill" id="brt-thermo-fill"></div>
-          <div class="brt-thermo-snow-layer" id="brt-thermo-snow"></div>
-        </div>
-        <div class="brt-thermo-bulb">
-          <div class="brt-bulb-glow"></div>
-          <img src="https://i.ibb.co/4gVK7tpJ/Santa-Marker-6.png"
-               class="brt-bulb-logo" />
-        </div>
-      </div>
-      <div class="brt-thermo-text">
-        <div id="brt-thermo-amount">Loading total…</div>
-        <div id="brt-thermo-last-updated"></div>
-        <div id="brt-thermo-error" class="brt-thermo-error"></div>
-      </div>
-    </div>
-  </div>
-</div>
+&lt;div id="main-thermo-section" class="brt-thermo-wrapper"&gt;
+  &lt;div class="brt-thermo-card"&gt;
+    &lt;h3 class="brt-thermo-title"&gt;Santa Sleigh Fundraiser&lt;/h3&gt;
+    &lt;div class="brt-thermo-layout"&gt;
+      &lt;div class="brt-thermo"&gt;
+        &lt;div class="brt-thermo-inner"&gt;
+          &lt;div class="brt-thermo-fill" id="brt-thermo-fill"&gt;&lt;/div&gt;
+          &lt;div class="brt-thermo-snow-layer" id="brt-thermo-snow"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="brt-thermo-bulb"&gt;
+          &lt;div class="brt-bulb-glow"&gt;&lt;/div&gt;
+          &lt;img src="https://i.ibb.co/4gVK7tpJ/Santa-Marker-6.png"
+               class="brt-bulb-logo" /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class="brt-thermo-text"&gt;
+        &lt;div id="brt-thermo-amount"&gt;Loading total…&lt;/div&gt;
+        &lt;div id="brt-thermo-last-updated"&gt;&lt;/div&gt;
+        &lt;div id="brt-thermo-error" class="brt-thermo-error"&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
 </code></pre>
 
 <p><b>Then add this to your footer:</b></p>
 
 <pre><code>
-<script>
+&lt;script&gt;
 document.addEventListener("DOMContentLoaded", function () {
 
   const thermoSection = document.getElementById("main-thermo-section");
@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let thermoLoaded = false;
 
-  const initThermometer = () => {
+  const initThermometer = () =&gt; {
     if (thermoLoaded) return;
     thermoLoaded = true;
 
@@ -205,7 +205,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Snow layer generator
     const snowLayer = document.getElementById("brt-thermo-snow");
     if (snowLayer) {
-      for (let i = 0; i < 24; i++) {
+      for (let i = 0; i &lt; 24; i++) {
         const s = document.createElement("span");
         s.className = "brt-snowflake";
         s.textContent = "•";
@@ -217,8 +217,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     fetch(BRT_THERMO_URL)
-      .then(r => r.json())
-      .then(data => {
+      .then(r =&gt; r.json())
+      .then(data =&gt; {
         const fill = document.getElementById("brt-thermo-fill");
         const amount = document.getElementById("brt-thermo-amount");
         const last = document.getElementById("brt-thermo-last-updated");
@@ -227,7 +227,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const target = Number(data.target || 0);
         const pct = Math.min(100, (total / target) * 100);
 
-        requestAnimationFrame(() => {
+        requestAnimationFrame(() =&gt; {
           fill.style.height = pct + "%";
         });
 
@@ -237,21 +237,21 @@ document.addEventListener("DOMContentLoaded", function () {
         last.textContent =
           "Last updated: " + (data.lastUpdatePretty || "Not yet updated");
       })
-      .catch(() => {
+      .catch(() =&gt; {
         const err = document.getElementById("brt-thermo-error");
         if (err) err.textContent = "Couldn't load donation total.";
       });
   };
 
-  new IntersectionObserver(entries => {
+  new IntersectionObserver(entries =&gt; {
     if (entries[0].isIntersecting) initThermometer();
   }, { rootMargin: "400px" }).observe(thermoSection);
 
 });
-</script>
+&lt;/script&gt;
 </code></pre>
 
-<p><b>Replace:</b> <code>YOUR_SCRIPT_URL_HERE</code> with your own Apps Script deployment URL.</p>
+<p><b>Replace:</b> <code>YOUR_SCRIPT_URL_HERE</code> with your Apps Script URL.</p>
 </div>
 
 <h2>🎉 You're Done!</h2>
