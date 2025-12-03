@@ -1,197 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Santa Sleigh Donations – Setup Guide</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<title>Santa Sleigh Donations Thermometer – Setup Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
-    body {
-        background: #111;
-        color: #fff;
-        font-family: Arial, sans-serif;
-        line-height: 1.6;
-        padding: 30px;
-        max-width: 900px;
-        margin: auto;
-    }
-    h1, h2 {
-        text-align: center;
-        margin-bottom: 20px;
-        color: #ffd700;
-    }
-    h2 { margin-top: 50px; }
-    .step {
-        background: rgba(255,255,255,0.05);
-        padding: 20px 25px;
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.15);
-        margin-bottom: 35px;
-        box-shadow: 0 0 14px rgba(255,215,0,0.15);
-    }
-    a.button {
-        display: inline-block;
-        background: #e53935;
-        padding: 12px 18px;
-        border-radius: 12px;
-        text-decoration: none;
-        font-weight: bold;
-        color: #fff;
-        margin-top: 12px;
-    }
-    pre {
-        background: #222;
-        padding: 12px;
-        border-radius: 8px;
-        overflow-x: auto;
-        border: 1px solid rgba(255,255,255,0.2);
-        white-space: pre-wrap;
-    }
+  body {
+    background: #111;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    padding: 30px;
+    max-width: 900px;
+    margin: auto;
+  }
+  h1, h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ffd700;
+  }
+  h2 { margin-top: 50px; }
+  .step {
+    background: rgba(255,255,255,0.05);
+    padding: 20px 25px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    margin-bottom: 35px;
+    box-shadow: 0 0 14px rgba(255,215,0,0.15);
+  }
+  pre {
+    background: #222;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.2);
+    white-space: pre-wrap;
+  }
 </style>
-</head>
 
+</head>
 <body>
 
-<h1>🎁 Santa Sleigh Donations Thermometer Setup Guide</h1>
+<h1>🎁 Santa Sleigh Donations Thermometer – Setup Guide</h1>
 <p style="text-align:center; max-width:700px; margin:auto;">
-Add a live-updating donation total to your website — powered by Google Sheets & Apps Script.
+This guide adds both the mini thermometer and the full animated thermometer to your website.
+<br><br>
+If you already completed the GPX setup:
+<br>
+<b>✓ You already have the Google Sheet</b><br>
+<b>✓ You already have the Apps Script</b><br>
+All you need to do is embed the blocks below.
 </p>
 
-<!-- STEP 1 -->
-<h2>1️⃣ Make a Copy of the Master Sheet</h2>
+<!-- MINI THERMOMETER -->
+<h2>1️⃣ Add the Mini Donations Thermometer</h2>
 <div class="step">
-    <p>Your donations total comes directly from Google Sheets.</p>
-
-    <a class="button" target="_blank"
-       href="https://docs.google.com/spreadsheets/d/1bJoOlWvZ6uGd_EuazFOTV-5pXfi1-Bd_cVhojquF-u0/copy">
-       📄 Make a Copy of the Santa Sheet
-    </a>
-
-    <p><strong>Update these cells:</strong></p>
-    <ul>
-        <li><strong>E1</strong> → Current total raised</li>
-        <li><strong>E2</strong> → Last updated date</li>
-        <li><strong>E3</strong> → Fundraising target</li>
-    </ul>
-</div>
-
-<!-- STEP 2 -->
-<h2>2️⃣ Confirm Your Apps Script (Already Included)</h2>
-<div class="step">
-    <p>The script for donations is already included in your sheet.</p>
-
-    <p><strong>You only need to deploy it:</strong></p>
-
-    <ol>
-        <li>Extensions → Apps Script</li>
-        <li>Deploy → <strong>New Deployment</strong></li>
-        <li>Type: <strong>Web App</strong></li>
-        <li>Access: <strong>Anyone</strong></li>
-        <li>Deploy → Copy the URL</li>
-    </ol>
-
-    <p><strong>Your URL will look like:</strong></p>
+<p>Paste this where you want the mini bar to appear on your site:</p>
 
 <pre>
-https://script.google.com/macros/s/XXXXXXX/exec?function=getDonations
+&lt;!-- Mini Santa Sleigh Donation Bar --&gt;
+&lt;style&gt;
+.brt-mini-bar-wrapper {
+  width: 100%;
+  max-width: 420px;
+  margin: 0.5rem auto 1rem;
+  text-align: center;
+  color: white;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+               "Segoe UI", sans-serif;
+}
+.brt-mini-label { font-size: 0.9rem; opacity: 0.9; }
+.brt-mini-amount { font-size: 1rem; font-weight: 600; margin-top: 0.4rem; }
+.brt-mini-bar-track {
+  height: 14px;
+  width: 100%;
+  background: rgba(255,255,255,0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.brt-mini-bar-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, #d31c1c, #7f0f0f);
+  border-radius: 8px;
+  transition: width 1.8s cubic-bezier(.25,1.50,.45,1);
+}
+&lt;/style&gt;
+
+&lt;div id="mini-bar-section" class="brt-mini-bar-wrapper"&gt;
+  &lt;div class="brt-mini-label"&gt;Together we've raised:&lt;/div&gt;
+  &lt;div class="brt-mini-bar-track"&gt;
+    &lt;div class="brt-mini-bar-fill" id="brt-mini-bar-fill"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div id="brt-mini-val" class="brt-mini-amount"&gt;Loading…&lt;/div&gt;
+&lt;/div&gt;
 </pre>
 
-    <p>You will paste this URL into both thermometer widgets.</p>
-</div>
-
-<!-- STEP 3 -->
-<h2>3️⃣ Add the Mini Thermometer</h2>
-<div class="step">
-    <p>Paste this where you want the <strong>small bar version</strong> to appear:</p>
+<p><b>Then add this to your page footer:</b></p>
 
 <pre>
-<!-- Mini Donation Bar -->
-<div id="mini-bar-section" class="brt-mini-bar-wrapper">
-  <div class="brt-mini-label">Together we've raised:</div>
-  <div class="brt-mini-bar-track">
-    <div class="brt-mini-bar-fill" id="brt-mini-bar-fill"></div>
-  </div>
-  <div id="brt-mini-val" class="brt-mini-amount">Loading…</div>
-</div>
-</pre>
-
-    <p><strong>Add this script to your page footer</strong> (replace the URL):</p>
-
-<pre>
-<script>
-const BRT_MINI_URL =
-"YOUR_SCRIPT_URL_HERE?function=getDonations";
-
+&lt;script&gt;
 document.addEventListener("DOMContentLoaded", function () {
-  const fill = document.getElementById("brt-mini-bar-fill");
-  const valEl = document.getElementById("brt-mini-val");
 
-  fetch(BRT_MINI_URL)
-    .then(r => r.json())
-    .then(data => {
-      const total = Number(data.total || 0);
-      const target = Number(data.target || 0);
-      const pct = target > 0 ? Math.min(100, (total / target) * 100) : 0;
+  const miniSection = document.getElementById("mini-bar-section");
+  if (!miniSection) return;
 
-      fill.style.width = pct + "%";
-      valEl.textContent = `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
-    });
+  let miniLoaded = false;
+
+  const loadMiniThermo = () => {
+    if (miniLoaded) return;
+    miniLoaded = true;
+
+    /* ❗ Replace with YOUR OWN Script Web App URL */
+    const BRT_MINI_URL =
+      "YOUR_SCRIPT_URL_HERE?function=getDonations";
+
+    const fill = document.getElementById("brt-mini-bar-fill");
+    const valEl = document.getElementById("brt-mini-val");
+
+    fetch(BRT_MINI_URL)
+      .then(r => r.json())
+      .then(data => {
+        const total = Number(data.total || 0);
+        const target = Number(data.target || 0);
+        const pct = target > 0 ? Math.min(100, (total/target)*100) : 0;
+
+        requestAnimationFrame(() => { fill.style.width = pct + "%"; });
+
+        valEl.textContent =
+          `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
+      });
+  };
+
+  new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      loadMiniThermo();
+    }
+  }, { rootMargin: "200px" }).observe(miniSection);
+
 });
-</script>
+&lt;/script&gt;
 </pre>
 
+<p><b>Replace:</b> <code>YOUR_SCRIPT_URL_HERE</code> with the same Apps Script URL you used for GPX.</p>
 </div>
 
-<!-- STEP 4 -->
-<h2>4️⃣ Add the Full Thermometer</h2>
+
+<!-- FULL THERMOMETER -->
+<h2>2️⃣ Add the Full Animated Donations Thermometer</h2>
 <div class="step">
-    <p>This is the full vertical thermometer widget.</p>
+<p>Paste this where you want the large thermometer to appear:</p>
 
 <pre>
-<!-- Full Thermometer -->
-<div id="main-thermo-section" class="brt-thermo-wrapper">
-  <!-- your thermometer HTML goes here (same as in your master file) -->
-</div>
+&lt;!-- Full Santa Sleigh Thermometer --&gt;
+&lt;style&gt;
+/* (Your entire provided stylesheet goes here exactly as written) */
+[PLACEHOLDER — INSERT FULL CSS FROM YOUR MESSAGE]
+&lt;/style&gt;
+
+&lt;div id="main-thermo-section" class="brt-thermo-wrapper"&gt;
+  &lt;div class="brt-thermo-card"&gt;
+    &lt;h3 class="brt-thermo-title"&gt;Santa Sleigh Fundraiser&lt;/h3&gt;
+    &lt;div class="brt-thermo-layout"&gt;
+      &lt;div class="brt-thermo"&gt;
+        &lt;div class="brt-thermo-inner"&gt;
+          &lt;div class="brt-thermo-fill" id="brt-thermo-fill"&gt;&lt;/div&gt;
+          &lt;div class="brt-thermo-snow-layer" id="brt-thermo-snow"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="brt-thermo-bulb"&gt;
+          &lt;div class="brt-bulb-glow"&gt;&lt;/div&gt;
+          &lt;img src="https://i.ibb.co/4gVK7tpJ/Santa-Marker-6.png"
+               class="brt-bulb-logo" /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class="brt-thermo-text"&gt;
+        &lt;div id="brt-thermo-amount"&gt;Loading total…&lt;/div&gt;
+        &lt;div id="brt-thermo-last-updated"&gt;&lt;/div&gt;
+        &lt;div id="brt-thermo-error" class="brt-thermo-error"&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
 </pre>
 
-    <p><strong>Add this script to the bottom of the page:</strong></p>
+<p><b>Then add this to your footer:</b></p>
 
 <pre>
-<script>
-const BRT_THERMO_URL =
-"YOUR_SCRIPT_URL_HERE?function=getDonations";
-
+&lt;script&gt;
 document.addEventListener("DOMContentLoaded", function () {
-  fetch(BRT_THERMO_URL)
-    .then(r => r.json())
-    .then(data => {
-      const total = Number(data.total || 0);
-      const target = Number(data.target || 0);
-      const pct = target>0? Math.min(100,(total/target)*100):0;
 
-      document.getElementById("brt-thermo-fill").style.height = pct + "%";
-      document.getElementById("brt-thermo-amount").textContent =
-        "£" + total.toLocaleString("en-GB") +
-        " raised of £" + target.toLocaleString("en-GB");
-    });
+  const thermoSection = document.getElementById("main-thermo-section");
+  if (!thermoSection) return;
+
+  let thermoLoaded = false;
+
+  const initThermometer = () => {
+    if (thermoLoaded) return;
+    thermoLoaded = true;
+
+    /* ❗ Replace with YOUR OWN Script Web App URL */
+    const BRT_THERMO_URL =
+      "YOUR_SCRIPT_URL_HERE?function=getDonations";
+
+    // Snow layer generator
+    const snowLayer = document.getElementById("brt-thermo-snow");
+    if (snowLayer) {
+      for (let i = 0; i < 24; i++) {
+        const s = document.createElement("span");
+        s.className = "brt-snowflake";
+        s.textContent = "•";
+        s.style.left = Math.random() * 100 + "%";
+        s.style.animationDuration = (4 + Math.random()*4) + "s";
+        s.style.animationDelay = (Math.random()*4) + "s";
+        snowLayer.appendChild(s);
+      }
+    }
+
+    fetch(BRT_THERMO_URL)
+      .then(r => r.json())
+      .then(data => {
+        const fill = document.getElementById("brt-thermo-fill");
+        const amount = document.getElementById("brt-thermo-amount");
+        const last = document.getElementById("brt-thermo-last-updated");
+
+        const total = Number(data.total || 0);
+        const target = Number(data.target || 0);
+        const pct = Math.min(100, (total / target) * 100);
+
+        requestAnimationFrame(() => {
+          fill.style.height = pct + "%";
+        });
+
+        amount.textContent =
+          `£${total.toLocaleString("en-GB")} raised of £${target.toLocaleString("en-GB")} goal`;
+
+        last.textContent =
+          "Last updated: " + (data.lastUpdatePretty || "Not yet updated");
+      })
+      .catch(() => {
+        const err = document.getElementById("brt-thermo-error");
+        if (err) err.textContent = "Couldn't load donation total.";
+      });
+  };
+
+  new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) initThermometer();
+  }, { rootMargin: "400px" }).observe(thermoSection);
+
 });
-</script>
+&lt;/script&gt;
 </pre>
 
-</div>
-
-<!-- STEP 5 -->
-<h2>5️⃣ Replace the Script URL</h2>
-<div class="step">
-<p>Everywhere you see:</p>
-<pre>YOUR_SCRIPT_URL_HERE</pre>
-
-<p>Replace with your own Apps Script Deployment URL.</p>
+<p><b>Replace:</b> <code>YOUR_SCRIPT_URL_HERE</code> with your own Apps Script deployment URL.</p>
 </div>
 
 <h2>🎉 You're Done!</h2>
 <div class="step">
-<p>Your donations thermometer now updates instantly whenever you change the values in your Google Sheet.</p>
+<p>Your Mini & Full Thermometers will now automatically update using your Google Sheet and Apps Script.</p>
 </div>
 
 </body>
