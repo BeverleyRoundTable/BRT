@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Santa Sleigh Address Lookup – Setup Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+  body {
+    background: #111;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    padding: 30px;
+    max-width: 900px;
+    margin: auto;
+  }
+  h1, h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ffd700;
+  }
+  h2 { margin-top: 50px; }
+  .step {
+    background: rgba(255,255,255,0.05);
+    padding: 20px 25px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    margin-bottom: 35px;
+    box-shadow: 0 0 14px rgba(255,215,0,0.15);
+  }
+  pre {
+    background: #222;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.2);
+    white-space: pre-wrap;
+  }
+</style>
+
+</head>
+<body>
+
+<h1>📍 Santa Sleigh Address Lookup – Setup Guide</h1>
+<p style="text-align:center; max-width:700px; margin:auto;">
+Let visitors type their street name and instantly see
+which Santa route they are part of — powered by your Google Sheet.
+<br><br>
+If you already completed the GPX setup:
+<br>
+<b>✓ You already have the Google Sheet</b><br>
+<b>✓ You already have the Apps Script</b><br>
+<b>✓ No new deployments required</b><br>
+You only need to embed the Address Lookup below.
+</p>
+
+<!-- STEP 1 -->
+<h2>1️⃣ Add the Address Lookup Box</h2>
+<div class="step">
+<p>Paste this where you want the street search box to appear:</p>
+
+<pre><code>
+<!-- Address Lookup -->
+<div id="lookup-wrapper">
+
+  <div id="sleigh-search-box" style="text-align:center;">
+    <input id="searchInput" placeholder="Type your street name...">
+    <button onclick="searchStreet()">Search</button>
+  </div>
+
+  <div id="results"></div>
+
+</div>
+
+<style>
+#lookup-wrapper {
+  width: 50%;
+  margin: 0 auto;
+  min-width: 280px;
+}
+
+#sleigh-search-box input {
+  padding: 12px 16px;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 1rem;
+  margin-bottom: 14px;
+  background-image: url('https://i.ibb.co/4gVK7tpJ/Santa-Marker-6.png');
+  background-size: 22px;
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  padding-left: 46px;
+}
+
+#sleigh-search-box input:focus {
+  outline: none;
+  box-shadow: 0 0 14px rgba(211,28,28,0.8);
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
+#sleigh-search-box button {
+  padding: 12px 20px;
+  background: #D31C1C;
+  border: none;
+  color: white;
+  border-radius: 18px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow:
+    0 0 8px rgba(211,28,28,0.6),
+    0 0 16px rgba(211,28,28,0.5);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+#sleigh-search-box button:hover {
+  transform: scale(1.04);
+  box-shadow:
+    0 0 14px rgba(211,28,28,0.8),
+    0 0 24px rgba(211,28,28,0.7);
+}
+
+.route-card {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(5px);
+  border-radius: 15px;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#lookup-wrapper img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+#results {
+  -webkit-user-select: none;
+  user-select: none;
+}
+</style>
+</code></pre>
+
+</div>
+
+<!-- STEP 2 -->
+<h2>2️⃣ Add the Lookup Script (Footer)</h2>
+<div class="step">
+<p>Paste this script into your footer.<br>
+<b>Only change one thing → YOUR Script URL.</b></p>
+
+<pre><code>
+<script>
+let roads = [];
+
+// Load from your Apps Script
+// ❗ Replace the URL with YOUR OWN deployment
+fetch("YOUR_SCRIPT_URL_HERE?function=getAddressLookup")
+  .then(r => r.json())
+  .then(data => roads = data);
+
+// Normalise text for matching
+function normalise(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+// Search function
+function searchStreet() {
+  const input = document.getElementById("searchInput").value;
+  const clean = normalise(input);
+
+  const matches = roads.filter(r =>
+    normalise(r.street + r.suffix).includes(clean)
+  );
+
+  displayResults(matches);
+}
+
+// Display results
+function displayResults(list) {
+  const container = document.getElementById("results");
+  container.innerHTML = "";
+
+  if (list.length === 0) {
+    container.innerHTML = "<p>No matching streets found.</p>";
+    return;
+  }
+
+  list.forEach(item => {
+    container.innerHTML += `
+      <div class="route-card">
+        <h3>${item.route} – ${item.day} (${item.date})</h3>
+        <p><strong>📍 ${item.street} ${item.suffix}</strong></p>
+        ${item.notes ? `<p>📝 ${item.notes}</p>` : ""}
+      </div>`;
+  });
+}
+</script>
+</code></pre>
+
+<p><b>Replace:</b> <code>YOUR_SCRIPT_URL_HERE</code> with your Apps Script deployment URL (same sheet as GPX + thermometer).</p>
+</div>
+
+<h2>🎉 You're Done!</h2>
+<div class="step">
+<p>Your Address Lookup will now automatically load streets from your shared Google Sheet, and instantly show:</p>
+<ul>
+  <li>Route Name</li>
+  <li>Day</li>
+  <li>Date</li>
+  <li>Notes</li>
+  <li>Which streets belong to which route</li>
+</ul>
+</div>
+
+</body>
+</html>
