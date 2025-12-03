@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Santa Sleigh Tracker – Complete Setup Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+  body {
+    background: #111;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    padding: 30px;
+    max-width: 950px;
+    margin: auto;
+  }
+  h1, h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ffd700;
+  }
+  h2 { margin-top: 50px; }
+
+  .intro {
+    text-align:center;
+    max-width:720px;
+    margin:0 auto 30px;
+  }
+
+  .step {
+    background: rgba(255,255,255,0.05);
+    padding: 20px 25px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    margin-bottom: 35px;
+    box-shadow: 0 0 14px rgba(255,215,0,0.15);
+  }
+
+  ul { margin-left: 1.3rem; }
+
+  pre {
+    background: #222;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.2);
+    white-space: pre-wrap;
+    font-size: 0.86rem;
+  }
+
+  .copy-btn {
+    display:inline-block;
+    margin-bottom:8px;
+    padding:6px 12px;
+    border-radius:8px;
+    border:none;
+    background:#e53935;
+    color:#fff;
+    font-size:0.8rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .copy-btn.copied {
+    background:#2e7d32;
+  }
+
+  .note {
+    font-size:0.9rem;
+    opacity:0.9;
+  }
+</style>
+</head>
+<body>
+
+<h1>🎅 Santa Sleigh Tracker – Complete Setup Guide</h1>
+<p class="intro">
+Create your own live Santa Sleigh tracker for your Round Table or community group.<br>
+This guide uses <strong>Firebase Realtime Database</strong>, the <strong>GPS Logger app</strong> and
+<strong>GitHub Pages</strong>, so families can watch Santa move live across your town.
+</p>
+
+<!-- STEP 1 -->
+<h2>1️⃣ Create a Firebase Project</h2>
+<div class="step">
+  <ol>
+    <li>Go to <a href="https://console.firebase.google.com" target="_blank">https://console.firebase.google.com</a></li>
+    <li>Click <strong>Add project</strong>.</li>
+    <li>Name it something like <code>santa-sleigh-tracker-yourtown</code>.</li>
+    <li><strong>Disable Google Analytics</strong> when asked.</li>
+    <li>Click <strong>Create project</strong> and wait for Firebase to finish.</li>
+  </ol>
+</div>
+
+<!-- STEP 2 -->
+<h2>2️⃣ Add a Realtime Database</h2>
+<div class="step">
+  <ol>
+    <li>In the left-hand menu, go to <strong>Build → Realtime Database</strong>.</li>
+    <li>Click <strong>Create Database</strong>.</li>
+    <li>Select region <strong>europe-west1 (Belgium)</strong>  
+        <span class="note">(the example HTML assumes this region).</span></li>
+    <li>Choose <strong>Start in test mode</strong> for now (we’ll lock writes in the rules).</li>
+  </ol>
+
+  <p>Your database URL will look like:</p>
+
+  <pre>https://YOUR-PROJECT-ID-default-rtdb.europe-west1.firebasedatabase.app/</pre>
+
+  <p>You’ll use this base URL in the tracker HTML and in the GPS Logger app.</p>
+</div>
+
+<!-- STEP 3 -->
+<h2>3️⃣ Create the Sleigh Data Structure</h2>
+<div class="step">
+  <p>In the Realtime Database data view:</p>
+  <ol>
+    <li>At the root <code>/</code>, click the <strong>+</strong> button.</li>
+    <li>Create a node called <code>location</code>.</li>
+    <li>Inside <code>location</code>, create a child called <code>current</code>.</li>
+    <li>Inside <code>current</code>, create a child with a <strong>secret key</strong> name — any random string, e.g. <code>abc123xyz789</code>.</li>
+    <li>Inside that secret key node, add the following three fields:</li>
+  </ol>
+
+  <pre>
+location
+ └── current
+      └── YOUR_SECRET_KEY
+           ├── lat: 66.5436
+           ├── lng: 25.8473
+           └── ts: "2025-11-01T00:00:00Z"
+  </pre>
+
+  <p class="note">
+    ✅ The tracker HTML reads <code>location/current.json</code> and then takes the first child (your secret key).  
+    So this exact structure is required.
+  </p>
+</div>
+
+<!-- STEP 4 -->
+<h2>4️⃣ Lock Down the Database Rules</h2>
+<div class="step">
+  <p>Open the <strong>Rules</strong> tab and replace everything with:</p>
+
+  <button class="copy-btn" data-target="rules-code">Copy rules</button>
+  <pre id="rules-code">
+{
+  "rules": {
+    ".read": true,
+
+    "location": {
+      "current": {
+        ".write": false,
+
+        "$secret": {
+          ".write": "$secret === 'YOUR_SECRET_KEY'"
+        }
+      }
+    }
+  }
+}
+  </pre>
+
+  <p>Now click <strong>Publish</strong>.</p>
+
+  <p class="note">
+    🔐 This means:
+    <br>• Anyone can <strong>read</strong> the sleigh’s location (needed for the public map).  
+    • Only a client writing to <code>/location/current/YOUR_SECRET_KEY</code> can update it.  
+    • All other write paths under <code>location/current</code> are blocked.
+  </p>
+</div>
+
+<!-- STEP 5 -->
+<h2>5️⃣ Configure the GPS Logger App</h2>
+<div class="step">
+  <p>Install GPS Logger on the device that will be on the sleigh.</p>
+
+  <ul>
+    <li>Android: <a href="https://gpslogger.app" target="_blank">https://gpslogger.app</a></li>
+    <li>Direct APK (if needed):  
+        <a href="https://drive.google.com/file/d/15Iwu2c9ajV_h81RXGdnZY3CSWi2foWdE/view" target="_blank">
+          Google Drive link
+        </a></li>
+    <li>iOS alternative: <a href="https://apps.apple.com/app/owntracks/id692424691" target="_blank">OwnTracks</a>  
+        <span class="note">(you’d configure it similarly with HTTP PUT → Firebase)</span></li>
+  </ul>
+
+  <h3>⚙ 5.1 Enable logging to custom URL</h3>
+  <ol>
+    <li>Open the app.</li>
+    <li>Go to <strong>Settings → Logging details → Log to custom URL</strong>.</li>
+    <li>Enable:
+      <ul>
+        <li>✅ <strong>Log to custom URL</strong></li>
+        <li>✅ <strong>Validate SSL certificate</strong></li>
+        <li>Optional: ✅ <strong>Discard offline locations</strong></li>
+      </ul>
+    </li>
+  </ol>
+
+  <h3>⚙ 5.2 Enter your Firebase write URL</h3>
+  <p>In the URL field, enter:</p>
+
+  <pre>https://YOUR-PROJECT-ID-default-rtdb.europe-west1.firebasedatabase.app/location/current/YOUR_SECRET_KEY.json</pre>
+
+  <p>Example:</p>
+
+  <pre>https://santa-sleigh-tracker-4dccd-default-rtdb.europe-west1.firebasedatabase.app/location/current/abcdefg12345.json</pre>
+
+  <p class="note">
+    ✅ Use the same <code>YOUR_SECRET_KEY</code> you created in step 3.  
+    ✅ Do <strong>not</strong> quote it.  
+    ❌ Don’t send to <code>/location/current.json</code> – that would break permissions.
+  </p>
+
+  <h3>⚙ 5.3 Method, headers &amp; body</h3>
+
+  <ul>
+    <li><strong>HTTP method:</strong> <code>PUT</code></li>
+    <li><strong>HTTP headers:</strong> <code>Content-Type: application/json</code></li>
+  </ul>
+
+  <p>JSON body:</p>
+  <button class="copy-btn" data-target="gps-body-code">Copy JSON body</button>
+  <pre id="gps-body-code">
+{
+  "lat": %LAT,
+  "lng": %LON,
+  "ts": "%TIME"
+}
+  </pre>
+
+  <p class="note">
+    GPS Logger substitutes:  
+    • <code>%LAT</code> → latitude  
+    • <code>%LON</code> → longitude  
+    • <code>%TIME</code> → timestamp in ISO format
+  </p>
+
+  <h3>⚙ Recommended settings</h3>
+  <ul>
+    <li>Auto-send interval: <strong>10 seconds</strong></li>
+    <li>Logging interval: <strong>10 seconds</strong></li>
+    <li>Accuracy filter: <strong>20–40 metres</strong></li>
+    <li>GPS priority: <strong>High accuracy</strong></li>
+    <li>Keep GPS on between fixes: <strong>Enabled</strong></li>
+  </ul>
+
+  <p class="note">
+    Once you hit <strong>Start Logging</strong>, you should see live updates under:  
+    <code>location → current → YOUR_SECRET_KEY</code> in Firebase.  
+    The <code>lat</code>, <code>lng</code> and <code>ts</code> values will keep changing.
+  </p>
+</div>
+
+<!-- STEP 6 -->
+<h2>6️⃣ Create Your Tracker HTML on GitHub</h2>
+<div class="step">
+  <ol>
+    <li>Create an account at <a href="https://github.com" target="_blank">https://github.com</a> if you don’t have one.</li>
+    <li>Create a new <strong>public</strong> repository, e.g. <code>SantaSleighTracker</code>.</li>
+    <li>Click <strong>Add file → Create new file</strong>.</li>
+    <li>Name it something like: <code>santa_sleigh_tracker_final.html</code>.</li>
+  </ol>
+
+  <p>Now open one of Ben’s templates and copy the entire file:</p>
+  <ul>
+    <li><strong>With donation panel:</strong>  
+      <a href="https://github.com/BeverleyRoundTable/BRT/tree/main" target="_blank">
+      BRT repo (use highest <code>_final_X</code> version)
+      </a></li>
+    <li><strong>No donation version:</strong>  
+      <a href="https://github.com/BeverleyRoundTable/BRT/blob/main/santa_sleigh_tracker_no_donation.html.html" target="_blank">
+        santa_sleigh_tracker_no_donation.html.html
+      </a>
+    </li>
+  </ul>
+
+  <p>Paste the HTML into your new GitHub file.</p>
+
+  <p class="note">
+    ✏️ <strong>Only change one line</strong> in that file: the <code>firebaseURL</code> (or similar) variable.  
+    Set it to your own Firebase base URL, for example:
+  </p>
+
+  <pre>const firebaseURL = "https://YOUR-PROJECT-ID-default-rtdb.europe-west1.firebasedatabase.app";</pre>
+
+  <p class="note">
+    🔒 Do <strong>not</strong> put your <code>YOUR_SECRET_KEY</code> inside this HTML file –  
+    it only ever lives in Firebase rules + the GPS logger app.
+  </p>
+</div>
+
+<!-- STEP 7 -->
+<h2>7️⃣ Publish via GitHub Pages</h2>
+<div class="step">
+  <ol>
+    <li>In your repo, go to <strong>Settings → Pages</strong>.</li>
+    <li>Under <strong>Build and deployment</strong>:
+      <ul>
+        <li><strong>Source:</strong> Deploy from a branch</li>
+        <li><strong>Branch:</strong> <code>main</code> / <code>root</code></li>
+      </ul>
+    </li>
+    <li>Click <strong>Save</strong>.</li>
+  </ol>
+
+  <p>After a minute or two, your tracker will be live at a URL like:</p>
+
+  <pre>https://YOUR-GITHUB-NAME.github.io/SantaSleighTracker/santa_sleigh_tracker_final.html</pre>
+
+  <p class="note">
+    🌍 That URL is your public live map – we’ll embed it next.
+  </p>
+</div>
+
+<!-- STEP 8 -->
+<h2>8️⃣ Embed the Tracker on Your Website / Carrd</h2>
+<div class="step">
+  <p>Paste this snippet wherever your site allows custom HTML (Carrd, WordPress, Squarespace, etc.):</p>
+
+  <button class="copy-btn" data-target="embed-code">Copy embed</button>
+  <pre id="embed-code">
+&lt;!-- 🎅 Santa Sleigh Tracker Embed --&gt;
+&lt;div style="width:90vw;max-width:1000px;margin:0 auto;padding:0 8px;"&gt;
+  &lt;iframe
+    src="https://YOUR-GITHUB-NAME.github.io/SantaSleighTracker/santa_sleigh_tracker_final.html"
+    style="
+      width:100%;
+      height:80vh;
+      min-height:480px;
+      border:none;
+      border-radius:15px;
+      box-shadow:0 4px 18px #0002;
+      display:block;
+      margin:0 auto;
+      overflow:hidden;
+    "
+    allowfullscreen
+    loading="lazy"
+  &gt;&lt;/iframe&gt;
+&lt;/div&gt;
+  </pre>
+
+  <p class="note">
+    ✅ Replace the <code>src</code> value with your own GitHub Pages URL.  
+    The iframe is fully responsive and looks good on mobile and desktop.
+  </p>
+</div>
+
+<!-- STEP 9 -->
+<h2>9️⃣ Optional – Custom Santa Marker Icon</h2>
+<div class="step">
+  <p>To use a custom marker on the map:</p>
+  <ol>
+    <li>Upload your PNG to <a href="https://imgbb.com" target="_blank">https://imgbb.com</a>.</li>
+    <li>Copy the direct image URL.</li>
+    <li>In your tracker HTML, find the Leaflet marker config line that looks like:</li>
+  </ol>
+
+  <pre>iconUrl: "https://i.ibb.co/0jP05w6J/Santa-Marker.png",</pre>
+
+  <p>Replace the URL with your own.</p>
+
+  <p>Generic Santa roundel marker you can use:</p>
+  <pre>https://i.ibb.co/Z1BzZS2T/Santa-Marker-7.png</pre>
+
+  <p class="note">
+    🎨 Canva template if you want to customise your own icon:  
+    <a href="https://www.canva.com/design/DAGsAtEm17E/FdUkOlakUWAvNBundCsm8A/edit" target="_blank">
+      Santa marker Canva design
+    </a>
+  </p>
+</div>
+
+<!-- STEP 10 -->
+<h2>🔟 You’re Ready to Roll!</h2>
+<div class="step">
+  <ul>
+    <li>Start GPS logging on the sleigh phone using GPS Logger.</li>
+    <li>Watch Realtime Database update under <code>location/current/YOUR_SECRET_KEY</code>.</li>
+    <li>Open your GitHub Pages tracker URL – the sleigh should move live.</li>
+    <li>Share the embedded page link on your website, socials and posters.</li>
+  </ul>
+
+  <p class="note">
+    If the map doesn’t move, check:
+    <br>• GPS Logger URL exactly matches your Firebase path (including <code>.json</code>).  
+    <br>• Rules include your <code>YOUR_SECRET_KEY</code> and are published.  
+    <br>• <code>firebaseURL</code> in your HTML uses the correct project ID + region.
+  </p>
+</div>
+
+<script>
+  // Simple copy-to-clipboard for all code blocks
+  document.querySelectorAll(".copy-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-target");
+      const pre = document.getElementById(id);
+      if (!pre) return;
+      const text = pre.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add("copied");
+        btn.textContent = "Copied!";
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.textContent = "Copy code";
+        }, 1500);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
