@@ -61,8 +61,7 @@
 
 <h1>🖼️ Google Drive Photo Carousel – Setup Guide</h1>
 <p style="text-align:center;max-width:700px;margin:auto;">
-Add a live-updating photo carousel to your website.
-<br><br>
+Add a live-updating photo carousel to your website.<br><br>
 Just drop images into a Google Drive folder — your site updates automatically.
 </p>
 
@@ -107,7 +106,7 @@ function doGet() {
     let file = files.next();
 
     if (file.getMimeType().startsWith("image/")) {
-      // Use Advanced Drive API to get a full-quality thumbnail (fast)
+      // Use Advanced Drive API to get full-quality thumbnail
       const thumbnail = Drive.Files.get(file.getId(), {
         fields: "thumbnailLink"
       });
@@ -125,11 +124,7 @@ function doGet() {
 }
   </pre>
 
-  <p>
-    Replace:  
-    <code>'YOUR_FOLDER_ID_HERE'</code>  
-    with your real Google Drive folder ID.
-  </p>
+  <p><code>YOUR_FOLDER_ID_HERE</code> must be replaced with the Drive folder ID.</p>
 </div>
 
 
@@ -137,40 +132,46 @@ function doGet() {
 <h2>3️⃣ Enable the Advanced Drive API</h2>
 <div class="step">
   <ol>
-    <li>In Apps Script, click <strong>Services</strong> (puzzle-piece icon).</li>
+    <li>In Apps Script, click <strong>Services</strong> (puzzle icon).</li>
     <li>Click <strong>+ Add a service</strong>.</li>
-    <li>Select **Drive API**.</li>
+    <li>Select <strong>Drive API</strong>.</li>
     <li>Click <strong>Add</strong>.</li>
   </ol>
-
-  <p>❗This is required to call <code>Drive.Files.get()</code>.</p>
 </div>
 
 
 <!-- STEP 4 -->
 <h2>4️⃣ Create the HTML File “index”</h2>
 <div class="step">
-  <p>Your project must include a file called <strong>index.html</strong> for the template.</p>
+  <p>Your project must include <strong>index.html</strong> for the template.</p>
 
   <ol>
-    <li>In Apps Script → click <strong>+ → HTML</strong> & name it <code>index</code>.</li>
-    <li>Paste the following simple carousel template:</li>
+    <li>In Apps Script → click <strong>+ → HTML</strong>.</li>
+    <li>Name it <code>index</code>.</li>
+    <li>Paste the following HTML:</li>
   </ol>
 
   <button class="copy-btn" data-target="carousel-html">Copy Carousel HTML</button>
   <pre id="carousel-html">
-<!DOCTYPE html>
-<html>
-  <body style="background:#000;margin:0;padding:0;text-align:center;">
-    <h2 style="color:white;padding:10px 0;">Santa Sleigh Gallery</h2>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;body style="background:#000;margin:0;padding:0;text-align:center;font-family:sans-serif;"&gt;
 
-    <? images.forEach(function(img) { ?>
-      <img src="<?= img ?>" 
-           style="max-width:95%;margin:10px;border-radius:12px;">
-    <? }); ?>
+    &lt;h2 style="color:white;padding:10px 0;font-size:1.4rem;margin:0 auto;text-align:center;"&gt;
+      Santa Sleigh Gallery
+    &lt;/h2&gt;
 
-  </body>
-</html>
+    &lt;div style="width:100%;max-width:900px;margin:0 auto;text-align:center;"&gt;
+      &lt;? images.forEach(function(img) { ?&gt;
+        &lt;img 
+          src="&lt;?= img ?&gt;" 
+          style="max-width:92%;margin:12px auto;border-radius:14px;display:block;"
+        &gt;
+      &lt;? }); ?&gt;
+    &lt;/div&gt;
+
+  &lt;/body&gt;
+&lt;/html&gt;
   </pre>
 </div>
 
@@ -186,18 +187,12 @@ function doGet() {
     <li>Click <strong>Deploy</strong>.</li>
     <li>Copy your Web App URL.</li>
   </ol>
-
-  <p>Example:</p>
-  <pre>https://script.google.com/macros/s/AKfycbXXXXX/exec</pre>
-
-  <p class="note">Your Drive folder’s photos will now appear automatically.</p>
 </div>
 
 
 <!-- STEP 6 -->
 <h2>6️⃣ Embed on Your Website / Carrd</h2>
 <div class="step">
-  <p>Paste this anywhere you want the gallery to appear:</p>
 
   <button class="copy-btn" data-target="embed-code">Copy Embed Code</button>
   <pre id="embed-code">
@@ -208,58 +203,40 @@ function doGet() {
 &gt;&lt;/iframe&gt;
   </pre>
 
-  <p><b>Replace:</b> <code>YOUR_WEB_APP_URL_HERE</code>  
-  with your Apps Script Web App URL.</p>
-
-  <p>This works perfectly in:</p>
-  <ul>
-    <li>Carrd (Pro)</li>
-    <li>WordPress</li>
-    <li>Wix</li>
-    <li>Squarespace</li>
-    <li>GitHub Pages</li>
-    <li>Any modern site builder</li>
-  </ul>
+  <p>Replace <code>YOUR_WEB_APP_URL_HERE</code> with your deployment URL.</p>
 </div>
 
 
 <!-- STEP 7 -->
 <h2>7️⃣ Add or Remove Photos — Auto-Updates!</h2>
 <div class="step">
-  <p>Whenever you want to update the carousel:</p>
-
-  <ul>
-    <li>Open your Google Drive folder</li>
-    <li>Drag in new photos</li>
-    <li>Delete old ones</li>
-  </ul>
-
-  <p>✔ No re-deployment  
-     ✔ No editing code  
-     ✔ Carousel updates instantly</p>
+  <p>✔ Drag new photos into the folder</p>
+  <p>✔ Remove old ones</p>
+  <p>✔ Your site updates instantly, no deployment needed.</p>
 </div>
 
 
-<!-- DONE -->
 <h2>🎉 You're Done!</h2>
 <div class="step">
-  <p>Your website now has a fully automatic photo carousel powered by Google Drive & Apps Script.</p>
+  <p>Your site now has a fully automatic photo carousel powered by Google Drive.</p>
 </div>
 
 
 <script>
-  // Copy button script
+  // Copy button logic
   document.querySelectorAll(".copy-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = btn.getAttribute("data-target");
       const pre = document.getElementById(id);
-      if (!pre) return;
       const text = pre.textContent;
+
       navigator.clipboard.writeText(text).then(() => {
         btn.textContent = "Copied!";
         btn.classList.add("copied");
         setTimeout(() => {
-          btn.textContent = "Copy";
+          btn.textContent = btn.dataset.target.includes("html") ? "Copy Carousel HTML" :
+                            btn.dataset.target.includes("script") ? "Copy Script" :
+                            "Copy Embed Code";
           btn.classList.remove("copied");
         }, 1500);
       });
