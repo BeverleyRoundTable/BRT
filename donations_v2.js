@@ -7,21 +7,30 @@
         return;
     }
 
-    /* FIX: ensure clean API URL without double ? */
-    const DONATE_URL =
-        apiBase.replace(/\?$/, "") + "?function=getDonations";
+    const DONATE_URL = apiBase + "?function=getDonations";
 
-    /* ------------------------------------------------------------
-       Inject CSS once
-    ------------------------------------------------------------ */
+    /* ---------------------------------------------------------
+       FIX: LEAFLET-PROOF ISOLATION CSS
+       Prevents Carrd / Leaflet from styling the widgets
+    --------------------------------------------------------- */
     if (!document.getElementById("donations-v2-style")) {
         const css = `
+        /* Reset inherited styles that Leaflet/Carrd may force */
+        [data-santa-mini], 
+        [data-santa-thermo] {
+            all: initial;
+            * { all: revert; }
+        }
+
+        /* Wrapper styles (re-applied after reset) */
         .santa-mini-wrapper,
         .santa-thermo-wrapper {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
             color: white;
             margin: 1.2rem auto;
             max-width: 420px;
+            width: 100%;
+            text-align: center;
         }
 
         /* MINI BAR */
@@ -40,15 +49,14 @@
             transition: width 1s ease-out;
         }
         .santa-mini-label {
-            text-align: center;
             margin-bottom: 0.25rem;
             opacity: 0.9;
             font-size: 0.9rem;
         }
         .santa-mini-val {
-            text-align: center;
             margin-top: 0.5rem;
             font-weight: 600;
+            font-size: 1rem;
         }
 
         /* FULL THERMOMETER */
@@ -95,6 +103,7 @@
             font-size: 0.85rem;
             line-height: 1.4;
             width: 140px;
+            color: white;
         }
 
         .santa-thermo-info strong {
@@ -123,9 +132,9 @@
         document.head.appendChild(style);
     }
 
-    /* ------------------------------------------------------------
-       Inject MINI bar
-    ------------------------------------------------------------ */
+    /* ---------------------------------------------------------
+       Create MINI thermometer markup
+    --------------------------------------------------------- */
     function injectMini(el) {
         el.innerHTML = `
             <div class="santa-mini-wrapper">
@@ -138,9 +147,9 @@
         `;
     }
 
-    /* ------------------------------------------------------------
-       Inject FULL thermometer
-    ------------------------------------------------------------ */
+    /* ---------------------------------------------------------
+       Create FULL thermometer markup
+    --------------------------------------------------------- */
     function injectThermo(el) {
         el.innerHTML = `
             <div class="santa-thermo-wrapper">
@@ -155,30 +164,29 @@
                             <div id="thermoLast" style="opacity:0.8;"></div>
                         </div>
                     </div>
-                    <img src="https://i.ibb.co/cKn7fxSj/Santa-Marker-9.png"
-                         class="santa-thermo-logo">
+                    <img src="https://i.ibb.co/cKn7fxSj/Santa-Marker-9.png" class="santa-thermo-logo">
                 </div>
             </div>
         `;
     }
 
-    /* ------------------------------------------------------------
-       Apply API data to UI
-    ------------------------------------------------------------ */
+    /* ---------------------------------------------------------
+       Update both widgets with API data
+    --------------------------------------------------------- */
     function updateUI(data) {
         const total = Number(data.total || 0);
         const target = Number(data.target || 0);
         const pct = target > 0 ? Math.min(100, (total / target) * 100) : 0;
 
-        /* Mini bar */
+        /* Mini widget */
         const mf = document.getElementById("miniFill");
         const mv = document.getElementById("miniVal");
 
         if (mf) mf.style.width = pct + "%";
-        if (mv) mv.textContent =
-            `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
+        if (mv)
+            mv.textContent = `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
 
-        /* Full thermometer */
+        /* Full widget */
         const tf = document.getElementById("thermoFill");
         const ta = document.getElementById("thermoAmount");
         const tl = document.getElementById("thermoLast");
@@ -189,23 +197,20 @@
                 `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
 
         let last = data.lastUpdatePretty || "";
-        if (!last || last === "1 January 1970")
-            last = "Awaiting first update";
+        if (!last || last === "1 January 1970") last = "Awaiting first update";
 
         if (tl) tl.textContent = "Last updated: " + last;
     }
 
-    /* ------------------------------------------------------------
-       Fetch data from API
-    ------------------------------------------------------------ */
+    /* ---------------------------------------------------------
+       Fetch data + apply update
+    --------------------------------------------------------- */
     fetch(DONATE_URL)
         .then(r => r.json())
         .then(updateUI)
         .catch(err => console.error("Donations v2 error:", err));
 
-    /* ------------------------------------------------------------
-       Insert widgets wherever requested
-    ------------------------------------------------------------ */
+    /* Inject widget containers */
     document.querySelectorAll("[data-santa-mini]").forEach(injectMini);
     document.querySelectorAll("[data-santa-thermo]").forEach(injectThermo);
 
