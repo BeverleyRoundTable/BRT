@@ -7,9 +7,13 @@
         return;
     }
 
-    const DONATE_URL = apiBase + "?function=getDonations";
+    /* FIX: ensure clean API URL without double ? */
+    const DONATE_URL =
+        apiBase.replace(/\?$/, "") + "?function=getDonations";
 
-    /* Inject CSS once */
+    /* ------------------------------------------------------------
+       Inject CSS once
+    ------------------------------------------------------------ */
     if (!document.getElementById("donations-v2-style")) {
         const css = `
         .santa-mini-wrapper,
@@ -119,7 +123,9 @@
         document.head.appendChild(style);
     }
 
-    /* Create Mini HTML */
+    /* ------------------------------------------------------------
+       Inject MINI bar
+    ------------------------------------------------------------ */
     function injectMini(el) {
         el.innerHTML = `
             <div class="santa-mini-wrapper">
@@ -132,7 +138,9 @@
         `;
     }
 
-    /* Create Full Thermometer HTML */
+    /* ------------------------------------------------------------
+       Inject FULL thermometer
+    ------------------------------------------------------------ */
     function injectThermo(el) {
         el.innerHTML = `
             <div class="santa-thermo-wrapper">
@@ -154,41 +162,51 @@
         `;
     }
 
-    /* Load + Push Data Into UI */
+    /* ------------------------------------------------------------
+       Apply API data to UI
+    ------------------------------------------------------------ */
     function updateUI(data) {
         const total = Number(data.total || 0);
         const target = Number(data.target || 0);
         const pct = target > 0 ? Math.min(100, (total / target) * 100) : 0;
 
-        /* Mini */
+        /* Mini bar */
         const mf = document.getElementById("miniFill");
         const mv = document.getElementById("miniVal");
 
         if (mf) mf.style.width = pct + "%";
-        if (mv) mv.textContent = `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
+        if (mv) mv.textContent =
+            `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
 
-        /* Full */
+        /* Full thermometer */
         const tf = document.getElementById("thermoFill");
         const ta = document.getElementById("thermoAmount");
         const tl = document.getElementById("thermoLast");
 
         if (tf) tf.style.height = pct + "%";
-        if (ta) ta.innerHTML =
-            `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
+        if (ta)
+            ta.innerHTML =
+                `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
 
         let last = data.lastUpdatePretty || "";
-        if (!last || last === "1 January 1970") last = "Awaiting first update";
+        if (!last || last === "1 January 1970")
+            last = "Awaiting first update";
 
         if (tl) tl.textContent = "Last updated: " + last;
     }
 
-    /* Load donation totals */
+    /* ------------------------------------------------------------
+       Fetch data from API
+    ------------------------------------------------------------ */
     fetch(DONATE_URL)
         .then(r => r.json())
         .then(updateUI)
         .catch(err => console.error("Donations v2 error:", err));
 
-    /* Inject UI elements */
+    /* ------------------------------------------------------------
+       Insert widgets wherever requested
+    ------------------------------------------------------------ */
     document.querySelectorAll("[data-santa-mini]").forEach(injectMini);
     document.querySelectorAll("[data-santa-thermo]").forEach(injectThermo);
+
 })();
