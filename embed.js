@@ -1,5 +1,5 @@
 (function() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbwOMOUkx0dsKi9ofpUPykuwyydiGI0ea0736ifHwuYy24_RWxpwiyYAn75VtoY6vg/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyDPLQpTYVHOF6Wa7hVP5Oa-5KpJ4C95BWdvqaAnIJQBEpnFxWGlV8BtN5r9CDv8bFO/exec";
 
     // ============================================================
     // UTILITIES
