@@ -117,33 +117,28 @@
 
 <script>
 /* ------------------------------------------------------------
-   STEP 1 — Read sleigh parameter (?sleigh=sleigh247)
+   STEP 1 — Read API parameter
+   Accepts ?api= or ?sleigh_api=
 ------------------------------------------------------------ */
 const urlParams = new URLSearchParams(window.location.search);
-const sleighId = urlParams.get("sleigh") || "sleigh247";
+const apiUrl =
+    urlParams.get("api") ||
+    urlParams.get("sleigh_api");
 
-/* ------------------------------------------------------------
-   STEP 2 — Master sheet (gets api_url for this sleigh)
------------------------------------------------------------- */
-const MASTER_URL = "YOUR_MASTER_SCRIPT_URL_HERE";
+/* If no API is defined → stop */
+if (!apiUrl) {
+  alert("No API provided. Add ?api=YOUR_GOOGLE_SCRIPT_URL_HERE");
+}
 
+/* Utility loader */
 async function loadJSON(url){
   const r = await fetch(url, {cache:"no-store"});
   return r.json();
 }
 
 async function init(){
-  /* Load master lookup */
-  const lookup = await loadJSON(MASTER_URL);
-  const entry = lookup.sleighs.find(s => s.id === sleighId);
-
-  if(!entry){
-    alert("Unknown sleigh: " + sleighId);
-    return;
-  }
-
-  /* Now load THAT sleigh’s data */
-  const data = await loadJSON(entry.api_url);
+  /* Load sleigh JSON directly from user’s API */
+  const data = await loadJSON(apiUrl);
 
   const settings = data.settings || {};
   const routes = data.routes || [];
