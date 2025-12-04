@@ -10,19 +10,19 @@
     const DONATE_URL = apiBase + "?function=getDonations";
 
     /* ---------------------------------------------------------
-       FIX: LEAFLET-PROOF ISOLATION CSS
-       Prevents Carrd / Leaflet from styling the widgets
+       Leaflet-proof + Carrd-proof CSS Isolation
     --------------------------------------------------------- */
     if (!document.getElementById("donations-v2-style")) {
         const css = `
-        /* Reset inherited styles that Leaflet/Carrd may force */
-        [data-santa-mini], 
-        [data-santa-thermo] {
-            all: initial;
-            * { all: revert; }
+        /* Scope all thermometer styles so Leaflet/Carrd cannot override them */
+        .donations-v2 * {
+            all: unset;
+            display: revert;
+            box-sizing: border-box;
+            font-family: inherit;
         }
 
-        /* Wrapper styles (re-applied after reset) */
+        /* Core container */
         .santa-mini-wrapper,
         .santa-thermo-wrapper {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
@@ -72,14 +72,12 @@
             text-align: center;
             margin-bottom: 1rem;
         }
-
         .santa-thermo-layout {
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 1.5rem;
         }
-
         .santa-thermo-bar {
             width: 26px;
             height: 260px;
@@ -91,25 +89,21 @@
             flex-direction: column;
             justify-content: flex-end;
         }
-
         .santa-thermo-fill {
             width: 100%;
             height: 0%;
             background: linear-gradient(#d31c1c, #7f0f0f);
             transition: height 1.4s ease-out;
         }
-
         .santa-thermo-info {
             font-size: 0.85rem;
             line-height: 1.4;
             width: 140px;
             color: white;
         }
-
         .santa-thermo-info strong {
             font-size: 1rem;
         }
-
         .santa-thermo-logo {
             width: 64px;
             height: 64px;
@@ -133,9 +127,10 @@
     }
 
     /* ---------------------------------------------------------
-       Create MINI thermometer markup
+       MINI thermometer markup
     --------------------------------------------------------- */
     function injectMini(el) {
+        el.classList.add("donations-v2");
         el.innerHTML = `
             <div class="santa-mini-wrapper">
                 <div class="santa-mini-label">Together we’ve raised:</div>
@@ -148,9 +143,10 @@
     }
 
     /* ---------------------------------------------------------
-       Create FULL thermometer markup
+       FULL thermometer markup
     --------------------------------------------------------- */
     function injectThermo(el) {
+        el.classList.add("donations-v2");
         el.innerHTML = `
             <div class="santa-thermo-wrapper">
                 <div class="santa-thermo-card">
@@ -171,14 +167,13 @@
     }
 
     /* ---------------------------------------------------------
-       Update both widgets with API data
+       Update UI from API
     --------------------------------------------------------- */
     function updateUI(data) {
         const total = Number(data.total || 0);
         const target = Number(data.target || 0);
         const pct = target > 0 ? Math.min(100, (total / target) * 100) : 0;
 
-        /* Mini widget */
         const mf = document.getElementById("miniFill");
         const mv = document.getElementById("miniVal");
 
@@ -186,31 +181,28 @@
         if (mv)
             mv.textContent = `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
 
-        /* Full widget */
         const tf = document.getElementById("thermoFill");
         const ta = document.getElementById("thermoAmount");
         const tl = document.getElementById("thermoLast");
 
         if (tf) tf.style.height = pct + "%";
         if (ta)
-            ta.innerHTML =
-                `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
+            ta.innerHTML = `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
 
         let last = data.lastUpdatePretty || "";
         if (!last || last === "1 January 1970") last = "Awaiting first update";
-
         if (tl) tl.textContent = "Last updated: " + last;
     }
 
     /* ---------------------------------------------------------
-       Fetch data + apply update
+       Fetch data
     --------------------------------------------------------- */
     fetch(DONATE_URL)
         .then(r => r.json())
         .then(updateUI)
         .catch(err => console.error("Donations v2 error:", err));
 
-    /* Inject widget containers */
+    /* Inject widgets */
     document.querySelectorAll("[data-santa-mini]").forEach(injectMini);
     document.querySelectorAll("[data-santa-thermo]").forEach(injectThermo);
 
