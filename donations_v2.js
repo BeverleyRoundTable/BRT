@@ -176,7 +176,7 @@
                             <div id="thermoLast" style="opacity:0.8;"></div>
                         </div>
                     </div>
-                    <img src="https://i.ibb.co/cKn7fxSj/Santa-Marker-9.png" class="santa-thermo-logo">
+                    <img src="https://i.ibb.co/qMwrvjqM/Santa-Marker-10.png" class="santa-thermo-logo">
                 </div>
             </div>
         `;
