@@ -1,219 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Santa Sleigh Tracker</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Santa Sleigh Tracker</title>
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
-      background: #001;
-      color: white;
-    }
-    body { height: 100vh; overflow: hidden; }
-    #map { height: 100vh; width: 100vw; }
+<style>
+  html, body {
+    margin:0; padding:0;
+    height:100%;
+    background:#001;
+    color:white;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
+  }
+  #map { width:100vw; height:100vh; }
 
-    .status-popup {
-      position: absolute;
-      top: 24px; left: 50%; transform: translateX(-50%);
-      background: rgba(24,24,24,0.93);
-      color: #fff;
-      padding: 16px 18px 12px 18px;
-      font-size: 1.25em;
-      font-weight: 700;
-      border-radius: 18px;
-      box-shadow: 0 4px 32px #0006;
-      z-index: 2000;
-      text-align: center;
-      min-width: 300px;
-      max-width: 95vw;
-    }
+  .status-popup {
+    position:absolute;
+    top:24px; left:50%; transform:translateX(-50%);
+    background:rgba(24,24,24,0.93);
+    padding:16px 18px 12px 18px;
+    font-size:1.25em; font-weight:700;
+    border-radius:18px;
+    box-shadow:0 4px 32px #0006;
+    z-index:2000;
+    text-align:center;
+    min-width:250px;
+  }
 
-    .info-popup {
-      position: fixed;
-      left: 50%; transform: translateX(-50%);
-      bottom: 16px;
-      background: rgba(20,20,20,0.92);
-      padding: 10px 12px;
-      border-radius: 12px;
-      z-index: 2000;
-      display: inline-flex;
-      gap: 12px;
-      font-size: 0.85em;
-      font-weight: 700;
-    }
+  .donate-box {
+    position:fixed;
+    bottom:70px;
+    left:50%; transform:translateX(-50%);
+    z-index:2000;
+  }
 
-    .muted { opacity: .9; display: none; }
+  .donate-btn {
+    background:var(--primaryColor,#d31c1c);
+    color:#fff;
+    padding:12px 20px;
+    border-radius:14px;
+    font-weight:800;
+    text-decoration:none;
+    box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  }
 
-    .btn {
-      background:#0b1220; color:#fff;
-      border:1px solid #ffffff26;
-      border-radius: 10px;
-      padding:6px 10px;
-      font-size:.85em;
-      font-weight:800;
-      cursor:pointer;
-    }
+  .info-popup {
+    position:fixed;
+    left:50%; transform:translateX(-50%);
+    bottom:16px;
+    background:rgba(20,20,20,0.92);
+    padding:10px 12px;
+    border-radius:12px;
+    font-size:.85em;
+    font-weight:700;
+    display:flex; gap:12px;
+    z-index:2000;
+  }
 
-    .donate-box {
-      position: fixed;
-      bottom: 70px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 2000;
-      text-align: center;
-    }
-
-    .donate-btn {
-      background: var(--primaryColor, #d31c1c);
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 14px;
-      font-weight: 800;
-      text-decoration: none;
-      font-size: 1.05em;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-      display: inline-block;
-    }
-  </style>
+  .muted { display:none; opacity:.9; }
+</style>
 </head>
 
 <body>
 
-  <div class="status-popup" id="status-box">
-    🎄 Santa is currently in Lapland preparing for Christmas!
-  </div>
+<div class="status-popup" id="statusBox">
+  🎄 Santa is currently in Lapland preparing for Christmas!
+</div>
 
-  <div class="donate-box">
-    <a id="donateLink" href="#" target="_blank" class="donate-btn">
-      🎁 DONATE & SUPPORT US
-    </a>
-  </div>
+<div class="donate-box">
+  <a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a>
+</div>
 
-  <div class="info-popup">
-    <span class="muted" id="lastUpdated">Last update: —</span>
-    <span class="muted" id="age">Age: —</span>
-    <button class="btn" id="followBtn">Follow Santa: ON</button>
-    <button class="btn" id="recenterBtn">Re-centre</button>
-  </div>
+<div class="info-popup">
+  <span id="lastUpdated" class="muted">Last update: —</span>
+  <span id="age" class="muted">Age: —</span>
+  <button class="btn" id="followBtn">Follow Santa: ON</button>
+  <button class="btn" id="recenterBtn">Re-centre</button>
+</div>
 
-  <canvas id="snow"></canvas>
-  <div id="map"></div>
+<canvas id="snow"></canvas>
+<div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <script>
-    // ============================================================
-    // 1. API URL — CHANGE THIS ONLY
-    // ============================================================
-    const API_URL = "YOUR_WEBAPP_URL_HERE";
+<script>
+/* ============================================================
+   1) BOOTSTRAP: Load Sheet → get api_url → load full dataset
+============================================================ */
+const MASTER_SHEET_URL =
+  "https://script.google.com/macros/s/AKfycbyDPLQpTYVHOF6Wa7hVP5Oa-5KpJ4C95BWdvqaAnIJQBEpnFxWGlV8BtN5r9CDv8bFO/exec";
 
-    const FALLBACK_LAT = 66.5436;
-    const FALLBACK_LNG = 25.8473;
-    const REFRESH_MS = 10000;
-    const STALE_MS   = 5 * 60000;
+async function loadSheet(url){
+  const res = await fetch(url,{cache:"no-store"});
+  return res.json();
+}
 
-    function todayISO(){ return new Date().toISOString().slice(0,10); }
-    function normaliseDate(d){ try{return new Date(d).toISOString().slice(0,10);}catch(e){return "";} }
+async function initTracker() {
 
-    async function initTracker() {
+  /* FIRST LOAD — loads only Settings so we can get user api_url */
+  const bootstrap = await loadSheet(MASTER_SHEET_URL);
+  const userApiURL = bootstrap.settings.api_url;
 
-      const statusBox = document.getElementById("status-box");
-      const donateLink = document.getElementById("donateLink");
+  if(!userApiURL){
+    alert("Error: No api_url found in Settings tab.");
+    return;
+  }
 
-      // Load Google Sheet data
-      let data = {};
-      try {
-        const res = await fetch(API_URL, { cache: "no-store" });
-        data = await res.json();
-      } catch (err) {
-        console.error("Sheet load failed:", err);
+  /* SECOND LOAD — loads user's real data */
+  const data = await loadSheet(userApiURL);
+
+  const settings = data.settings || {};
+  const tracker  = data.tracker  || {};
+  const routes   = data.routes   || [];
+
+  /* Apply theme */
+  document.documentElement.style.setProperty(
+    "--primaryColor",
+    settings.primary_color || "#d31c1c"
+  );
+
+  /* Donate button */
+  document.getElementById("donateLink").href =
+    tracker.donate_url || "#";
+
+  /* Setup map */
+  const FALLBACK = {
+    lat: tracker.fallback_lat || 66.5436,
+    lng: tracker.fallback_lng || 25.8473
+  };
+
+  const map = L.map("map").setView([FALLBACK.lat, FALLBACK.lng],
+    settings.default_map_zoom || 13
+  );
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
+    .addTo(map);
+
+  /* Sleigh icon (dynamic) */
+  const icon = L.icon({
+    iconUrl: tracker.map_icon ||
+             "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
+    iconSize:[64,64],
+    iconAnchor:[32,32]
+  });
+
+  const marker = L.marker([FALLBACK.lat,FALLBACK.lng],{icon}).addTo(map);
+
+  /* Build Firebase URL */
+  function buildFirebaseURL(){
+    if(!tracker.firebase_url) return null;
+    const base = tracker.firebase_url.replace(/\/$/,"");
+    const path = (tracker.firebase_path || "/location/current").replace(/^\/?/,"/");
+    const auth = tracker.secret ? `?auth=${encodeURIComponent(tracker.secret)}` : "";
+    return base + path + ".json" + auth;
+  }
+
+  const firebaseURL = buildFirebaseURL();
+
+  async function updateLocation(){
+    if(!firebaseURL) return;
+
+    try {
+      const raw = await (await fetch(firebaseURL,{cache:"no-store"})).json();
+      const key = raw && Object.keys(raw)[0];
+      const p = raw[key];
+
+      if(p && typeof p.lat==="number" && typeof p.lng==="number"){
+        marker.setLatLng([p.lat,p.lng]);
       }
-
-      const settings = data.settings || {};
-      const routes   = data.routes || [];
-      const tracker  = data.tracker || {};
-
-      // Apply primary colour theme
-      document.documentElement.style.setProperty("--primaryColor", settings.primary_color || "#d31c1c");
-
-      // Donate link
-      donateLink.href = tracker.donate_url || "#";
-
-      // Fallback coords
-      const fallbackCoords = {
-        lat: tracker.fallback_lat || FALLBACK_LAT,
-        lng: tracker.fallback_lng || FALLBACK_LNG
-      };
-
-      // Map
-      const map = L.map("map").setView(
-        [fallbackCoords.lat, fallbackCoords.lng],
-        settings.default_map_zoom || 13
-      );
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
-      // 🟥 Dynamic sleigh icon
-      const sleighIcon = L.icon({
-        iconUrl: tracker.map_icon || "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
-        iconSize:[64,64],
-        iconAnchor:[32,32]
-      });
-
-      const marker = L.marker([fallbackCoords.lat,fallbackCoords.lng], {icon:sleighIcon}).addTo(map);
-
-      let lastPoint = L.latLng(fallbackCoords.lat, fallbackCoords.lng);
-
-      // ============================================================
-      // FIREBASE URL BUILDER
-      // ============================================================
-      function buildFirebaseURL() {
-        if (!tracker.firebase_url) return null;
-        const base = tracker.firebase_url.replace(/\/$/,"");
-        const path = (tracker.firebase_path||"/location/current").replace(/^\/?/,"/");
-        const auth = tracker.secret ? `?auth=${encodeURIComponent(tracker.secret)}` : "";
-        return base + path + ".json" + auth;
-      }
-
-      const firebaseURL = buildFirebaseURL();
-
-      async function updateLocation(){
-        if (!firebaseURL) return;
-
-        try {
-          const res = await fetch(firebaseURL,{cache:"no-store"});
-          const raw = await res.json();
-
-          const key = raw && Object.keys(raw)[0];
-          const point = raw[key];
-
-          if (!point || typeof point.lat !== "number" || typeof point.lng !== "number") {
-            return;
-          }
-
-          const newLatLng = L.latLng(point.lat, point.lng);
-          marker.setLatLng(newLatLng);
-          lastPoint = newLatLng;
-
-        } catch(err){
-          console.log("GPS fetch failed:", err);
-        }
-
-        setTimeout(updateLocation, REFRESH_MS);
-      }
-
-      updateLocation();
+    } catch(e){
+      console.log("GPS fetch error:",e);
     }
 
-    window.addEventListener("load", initTracker);
-  </script>
+    setTimeout(updateLocation, 10000);
+  }
+
+  updateLocation();
+}
+
+window.addEventListener("load", initTracker);
+</script>
 </body>
 </html>
