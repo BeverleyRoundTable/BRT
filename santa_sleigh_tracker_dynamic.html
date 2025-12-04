@@ -14,7 +14,9 @@
     background:#001;
     color:white;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
+    overflow:hidden;
   }
+
   #map { width:100vw; height:100vh; }
 
   .status-popup {
@@ -31,7 +33,7 @@
 
   .sponsor-popup {
     position:absolute;
-    top:90px; 
+    top:90px;
     left:50%; transform:translateX(-50%);
     background:rgba(24,24,24,0.93);
     padding:10px 14px;
@@ -39,7 +41,7 @@
     border-radius:14px;
     box-shadow:0 4px 24px #0006;
     z-index:2000;
-    display:flex;
+    display:none;
     align-items:center;
     gap:10px;
   }
@@ -47,21 +49,30 @@
   .sponsor-popup img {
     height:36px; width:36px;
     border-radius:50%;
+    object-fit:cover;
   }
 
+  /* Full-width donate bar */
   .donate-box {
     position:fixed;
-    bottom:70px;
-    left:50%; transform:translateX(-50%);
+    bottom:95px;
+    width:90%;
+    left:50%;
+    transform:translateX(-50%);
     z-index:2000;
   }
 
   .donate-btn {
     background:var(--primaryColor,#d31c1c);
-    color:#fff; padding:12px 20px;
+    color:#fff;
+    padding:14px 0;
+    width:100%;
+    display:block;
+    text-align:center;
     border-radius:14px;
     font-weight:800;
     text-decoration:none;
+    font-size:1.1em;
     box-shadow:0 4px 16px rgba(0,0,0,0.4);
   }
 
@@ -94,7 +105,7 @@
   🎄 Santa is currently in Lapland preparing for Christmas!
 </div>
 
-<div class="sponsor-popup" id="sponsorBox" style="display:none;">
+<div class="sponsor-popup" id="sponsorBox">
   <span id="sponsorText">Tonight’s sponsor</span>
   <img id="sponsorLogo" src="" alt="">
 </div>
@@ -118,16 +129,16 @@
 <script>
 /* ------------------------------------------------------------
    STEP 1 — Read API parameter
-   Accepts ?api= or ?sleigh_api=
+   Allows: ?api= or ?sleigh_api=
 ------------------------------------------------------------ */
 const urlParams = new URLSearchParams(window.location.search);
 const apiUrl =
     urlParams.get("api") ||
     urlParams.get("sleigh_api");
 
-/* If no API is defined → stop */
+/* If no API given, show message & stop */
 if (!apiUrl) {
-  alert("No API provided. Add ?api=YOUR_GOOGLE_SCRIPT_URL_HERE");
+  alert("No API provided. Add ?api=YOUR_GOOGLE_SCRIPT_URL");
 }
 
 /* Utility loader */
@@ -137,7 +148,8 @@ async function loadJSON(url){
 }
 
 async function init(){
-  /* Load sleigh JSON directly from user’s API */
+
+  /* Load sleigh JSON directly from their sheet */
   const data = await loadJSON(apiUrl);
 
   const settings = data.settings || {};
@@ -145,7 +157,7 @@ async function init(){
   const tracker = data.tracker || {};
   const today = new Date().toISOString().slice(0,10);
 
-  /* Theme colours */
+  /* Theme colour */
   document.documentElement.style.setProperty(
     "--primaryColor", settings.primary_color || "#d31c1c"
   );
@@ -155,12 +167,12 @@ async function init(){
     tracker.donate_url || "#";
 
   /* ------------------------------------------------------------
-     Sponsor logic — ONLY show if route.date === today
+     Sponsor logic — matches today's route
   ------------------------------------------------------------ */
   const todaysRoute = routes.find(r => r.date === today);
 
-  if(todaysRoute && todaysRoute.sponsorUrl){
-    document.getElementById("sponsorLogo").src = todaysRoute.sponsorUrl;
+  if(todaysRoute && todaysRoute.sponsor_url){
+    document.getElementById("sponsorLogo").src = todaysRoute.sponsor_url;
     document.getElementById("sponsorBox").style.display = "flex";
   } else {
     document.getElementById("sponsorBox").style.display = "none";
@@ -170,6 +182,7 @@ async function init(){
      Map + GPS tracking
   ------------------------------------------------------------ */
   const fallback = { lat:66.5436, lng:25.8473 };
+
   const map = L.map("map").setView(
     [fallback.lat, fallback.lng],
     settings.default_map_zoom || 13
@@ -186,8 +199,8 @@ async function init(){
   const marker = L.marker([fallback.lat,fallback.lng],{icon:markerIcon})
                   .addTo(map);
 
-  const followBtn = document.getElementById("followBtn");
   let follow = true;
+  const followBtn = document.getElementById("followBtn");
 
   followBtn.addEventListener("click",()=>{
     follow = !follow;
@@ -243,10 +256,11 @@ async function init(){
         lastUpdated.textContent = "Last update: " +
           new Date(p.ts).toLocaleTimeString("en-GB");
         ageEl.textContent = "Age: " + Math.floor(age/1000)+"s";
-      } else {
+      } 
+      else {
         statusBox.textContent = "🎄 Santa is currently in Lapland preparing for Christmas!";
       }
-    } catch(e){
+    } catch {
       statusBox.textContent = "🎄 Santa is currently in Lapland preparing for Christmas!";
     }
 
@@ -258,5 +272,6 @@ async function init(){
 
 init();
 </script>
+
 </body>
 </html>
