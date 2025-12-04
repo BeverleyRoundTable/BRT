@@ -229,18 +229,59 @@ async function init(){
 
     // Load GPX if available
     if (routeToShow && routeToShow.gpxUrl) {
-      new L.GPX(routeToShow.gpxUrl, {
-        async: true,
-        polyline_options: {
-          color: "#d31c1c",
-          weight: 5,
-          opacity: 0.85
-        }
-      })
-      .on("loaded", e => {
-        map.fitBounds(e.target.getBounds(), { padding: [40,40] });
-      })
-      .addTo(map);
+      // --- Custom Bauble Icons ---
+const startIcon = L.icon({
+  iconUrl: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+  iconSize: [42, 42],
+  iconAnchor: [21, 38],
+  popupAnchor: [0, -38],
+});
+
+const endIcon = L.icon({
+  iconUrl: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
+  iconSize: [42, 42],
+  iconAnchor: [21, 38],
+  popupAnchor: [0, -38],
+});
+
+// --- GPX Rendering ---
+const gpxLayer = new L.GPX(routeToShow.gpxUrl, {
+  async: true,
+  marker_options: {
+    startIcon: startIcon,
+    endIcon: endIcon,
+    wptIconUrls: {
+      "": "" // disables default marker icons for waypoints
+    }
+  },
+  polyline_options: {
+    color: "#d31c1c",
+    weight: 5,
+    opacity: 0.9,
+  }
+})
+.on("loaded", e => {
+
+  // Auto zoom to route
+  map.fitBounds(e.target.getBounds(), { padding: [50,50] });
+
+  // Get route points
+  const gpx = e.target;
+  const start = gpx.get_starting_point();
+  const end = gpx.get_ending_point();
+
+  // Explicit start marker
+  L.marker([start.lat, start.lon], { icon: startIcon })
+    .bindPopup("🎅 Start of Route")
+    .addTo(map);
+
+  // Explicit end marker
+  L.marker([end.lat, end.lon], { icon: endIcon })
+    .bindPopup("🎁 End of Route")
+    .addTo(map);
+})
+.addTo(map);
+
     }
   }
 
