@@ -1,5 +1,6 @@
 (function () {
-    // 1. Get API base from global, or from PAGE ?api= param
+
+    // 1. Get API base URL
     let apiBase = window.BRT_DONATE_API || null;
 
     if (!apiBase) {
@@ -8,16 +9,17 @@
     }
 
     if (!apiBase) {
-        console.error("❌ Donations v2: No API provided. Set window.BRT_DONATE_API or use ?api= on the PAGE URL.");
+        console.error("❌ Donations v2: No API provided.");
         return;
     }
 
-    // Make sure we don't double-append query params
+    // Ensure clean base URL
     apiBase = apiBase.replace(/\?.*$/, "");
-    const DONATE_URL = apiBase + "?function=getDonations";
+
+    const API_URL = apiBase;   // ← IMPORTANT: no ?function
 
     /* ---------------------------------------------------------
-       Basic, safe CSS (won't touch Leaflet)
+       SAFE CSS (Leaflet / Carrd compatible)
     --------------------------------------------------------- */
     if (!document.getElementById("donations-v2-style")) {
         const css = `
@@ -112,8 +114,8 @@
             margin: 1rem auto 0;
         }
 
-        @media (max-width: 500px) {
-            .santa-thermo-layout {
+        @media(max-width: 500px){
+            .santa-thermo-layout{
                 flex-direction: column;
             }
         }
@@ -124,7 +126,9 @@
         document.head.appendChild(style);
     }
 
-    /* MINI markup */
+    /* ---------------------------------------------------------
+       MINI thermometer markup
+    --------------------------------------------------------- */
     function injectMini(el) {
         el.innerHTML = `
             <div class="santa-mini-wrapper">
@@ -137,7 +141,7 @@
         `;
     }
 
-    /* FULL markup */
+    /* FULL thermometer markup */
     function injectThermo(el) {
         el.innerHTML = `
             <div class="santa-thermo-wrapper">
@@ -158,36 +162,43 @@
         `;
     }
 
-    /* Update UI */
-    function updateUI(data) {
+    /* ---------------------------------------------------------
+       Update UI from API
+    --------------------------------------------------------- */
+    function updateUI(fullData) {
+
+        const data = fullData.donations || {};   // <-- USE MACRO DONATIONS
+
         const total  = Number(data.total  || 0);
         const target = Number(data.target || 0);
         const pct    = target > 0 ? Math.min(100, (total / target) * 100) : 0;
 
+        // Mini
         const mf = document.getElementById("miniFill");
         const mv = document.getElementById("miniVal");
         if (mf) mf.style.width = pct + "%";
         if (mv) mv.textContent = `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
 
+        // Full
         const tf = document.getElementById("thermoFill");
         const ta = document.getElementById("thermoAmount");
         const tl = document.getElementById("thermoLast");
+
         if (tf) tf.style.height = pct + "%";
         if (ta) ta.innerHTML =
             `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
 
-        let last = data.lastUpdatePretty || "";
-        if (!last || last === "1 January 1970") last = "Awaiting first update";
+        const last = data.lastUpdatePretty || "Awaiting first update";
         if (tl) tl.textContent = "Last updated: " + last;
     }
 
-    /* Fetch data */
-    fetch(DONATE_URL)
+    /* Fetch the full macro output */
+    fetch(API_URL)
         .then(r => r.json())
         .then(updateUI)
         .catch(err => console.error("Donations v2 error:", err));
 
-    /* Inject widgets now */
+    /* Inject widgets */
     document.querySelectorAll("[data-santa-mini]").forEach(injectMini);
     document.querySelectorAll("[data-santa-thermo]").forEach(injectThermo);
 
