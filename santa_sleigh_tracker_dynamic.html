@@ -21,12 +21,13 @@
     position:absolute;
     top:24px; left:50%; transform:translateX(-50%);
     background:rgba(24,24,24,0.93);
-    padding:16px 18px;
+    padding:16px 18px 12px 18px;
     font-size:1.25em; font-weight:700;
     border-radius:18px;
     box-shadow:0 4px 32px #0006;
     z-index:2000;
     text-align:center;
+    min-width:250px;
   }
 
   .donate-box {
@@ -59,23 +60,27 @@
     z-index:2000;
   }
 
-  .muted { display:none; opacity:.9; }
+  .btn {
+    background:#0b1220; color:#fff;
+    border:1px solid #ffffff26;
+    border-radius:10px;
+    padding:6px 10px;
+    cursor:pointer;
+  }
 </style>
 </head>
 
 <body>
 
-<div class="status-popup" id="statusBox">
-  🎄 Santa is currently in Lapland preparing for Christmas!
-</div>
+<div class="status-popup" id="statusBox">Loading Santa…</div>
 
 <div class="donate-box">
   <a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a>
 </div>
 
 <div class="info-popup">
-  <span id="lastUpdated" class="muted">Last update: —</span>
-  <span id="age" class="muted">Age: —</span>
+  <span id="lastUpdated">Last update: —</span>
+  <span id="age">Age: —</span>
   <button class="btn" id="followBtn">Follow Santa: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
@@ -85,19 +90,20 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-// ============================================================
-// 1. LOAD MASTER SHEET → GET api_url → LOAD USER DATA
-// ============================================================
+/* ============================================================
+   LOAD MASTER → GET api_url → LOAD USER DATA
+============================================================ */
 const MASTER_SHEET_URL =
-  "https://script.google.com/macros/s/AKfycbyDPLQpTYVHOF6Wa7hVP5Oa-5KpJ4C95BWdvqaAnIJQBEpnFxWGlV8BtN5r9CDv8bFO/exec";
+  "YOUR_OWN_MASTER_SHEET_EXEC_URL_HERE";   // <-- CHANGE THIS
 
 async function loadSheet(url){
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url,{cache:"no-store"});
   return res.json();
 }
 
-async function initTracker(){
+async function initTracker() {
 
+  // 1) Load Settings (from your master sheet)
   const bootstrap = await loadSheet(MASTER_SHEET_URL);
   const userApiURL = bootstrap.settings.api_url;
 
@@ -106,60 +112,107 @@ async function initTracker(){
     return;
   }
 
+  // 2) Load user’s actual sheet data
   const data = await loadSheet(userApiURL);
 
   const settings = data.settings || {};
   const tracker  = data.tracker  || {};
 
+  // Theme
   document.documentElement.style.setProperty(
     "--primaryColor",
     settings.primary_color || "#d31c1c"
   );
 
-  document.getElementById("donateLink").href =
-    tracker.donate_url || "#";
+  // Donate button
+  const donateLink = document.getElementById("donateLink");
+  donateLink.href = tracker.donate_url || "#";
 
+  // Map fallback
   const FALLBACK = {
     lat: tracker.fallback_lat || 66.5436,
-    lng: tracker.fallback_lng || 25.8473
+    lng: tracker.fallback_lng || 25.8473   // Lapland fallback
   };
 
-  const map = L.map("map").setView(
-    [FALLBACK.lat, FALLBACK.lng],
+  // Map setup
+  const map = L.map("map").setView([FALLBACK.lat, FALLBACK.lng],
     settings.default_map_zoom || 13
   );
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
     .addTo(map);
 
-  const icon = L.icon({
-    iconUrl: tracker.map_icon || "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
-    iconSize:[64,64],
-    iconAnchor:[32,32]
+  // Marker
+  const marker = L.marker([FALLBACK.lat,FALLBACK.lng], {
+    icon: L.icon({
+      iconUrl: tracker.map_icon ||
+        "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
+      iconSize:[64,64],
+      iconAnchor:[32,32]
+    })
+  }).addTo(map);
+
+  /* -------------------------------------------------------
+     FOLLOW SANTA FEATURE
+  ------------------------------------------------------- */
+  let follow = true;
+  const followBtn = document.getElementById("followBtn");
+
+  followBtn.addEventListener("click", () => {
+    follow = !follow;
+    followBtn.textContent = follow ? "Follow Santa: ON" : "Follow Santa: OFF";
   });
 
-  const marker = L.marker([FALLBACK.lat,FALLBACK.lng], {icon}).addTo(map);
+  document.getElementById("recenterBtn").addEventListener("click", () => {
+    map.setView(marker.getLatLng(), map.getZoom());
+  });
 
-  function buildFirebaseURL(){
-    const base = tracker.firebase_url.replace(/\/$/,"");
-    const path = tracker.firebase_path.replace(/\/$/,"");
-    return base + path + ".json";
-  }
+  /* -------------------------------------------------------
+     Build Firebase URL
+  ------------------------------------------------------- */
+  const firebaseURL =
+    tracker.firebase_url.replace(/\/$/,"") +
+    tracker.firebase_path.replace(/\/$/,"") +
+    ".json";
 
-  const firebaseURL = buildFirebaseURL();
+  const statusBox = document.getElementById("statusBox");
+  const lastUpdatedSpan = document.getElementById("lastUpdated");
+  const ageSpan = document.getElementById("age");
 
   async function updateLocation(){
-    try{
+
+    try {
       const raw = await (await fetch(firebaseURL,{cache:"no-store"})).json();
       const key = Object.keys(raw)[0];
       const p = raw[key];
 
-      if(p && typeof p.lat==="number"){
-        marker.setLatLng([p.lat,p.lng]);
+      if(!p){ setTimeout(updateLocation, 10000); return; }
+
+      const latlng = L.latLng(p.lat, p.lng);
+      marker.setLatLng(latlng);
+
+      if(follow){
+        map.setView(latlng);
       }
 
-    } catch(err){
-      console.log("GPS fetch error:", err);
+      // --- Status update ---
+      const ts = new Date(p.ts);
+      const now = new Date();
+      const ageMs = now - ts;
+      const ageMin = Math.round(ageMs / 60000);
+
+      lastUpdatedSpan.textContent = "Last update: " + ts.toLocaleTimeString();
+      ageSpan.textContent = "Age: " + ageMin + " mins";
+
+      if(ageMs < 5*60000){
+        statusBox.textContent = "🎅 Santa is out on his sleigh delivering joy!";
+      }
+      else{
+        statusBox.textContent = "🎄 Santa is currently in Lapland preparing for Christmas!";
+      }
+
+    } catch(e){
+      console.log("GPS fetch error:", e);
     }
 
     setTimeout(updateLocation, 10000);
@@ -170,6 +223,5 @@ async function initTracker(){
 
 window.addEventListener("load", initTracker);
 </script>
-
 </body>
 </html>
