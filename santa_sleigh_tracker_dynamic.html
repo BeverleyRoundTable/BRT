@@ -177,13 +177,19 @@ async function init(){
     return r.sponsorurl || r.sponsorUrl || null;
   }
 
-  // Normalise dates (handles Google Sheets timestamps)
+ // Normalise any date format (Date object, GMT string, ISO string)
+function normaliseDate(d) {
+  const dt = new Date(d);
+  if (isNaN(dt)) return null;
+  return dt.toISOString().slice(0,10);  // always yyyy-mm-dd
+}
+
 const todaysRoute = routes.find(r => {
   if (!r.date) return false;
-  const d = String(r.date).slice(0,10);  // e.g. "2025-12-04"
-  return d === today;
+  const routeDate = normaliseDate(r.date);
+  return routeDate === today;
 });
-
+  
 const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
 
   if (sponsor && sponsor.trim() !== "") {
