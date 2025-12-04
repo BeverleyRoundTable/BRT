@@ -168,16 +168,16 @@ async function init(){
   /* ------------------------------------------------------------
      SPONSOR FALLBACK LOGIC
      1. Prefer today's route (matching date)
-     2. Otherwise show the first route with a sponsorUrl
+     2. Otherwise show the first route with a sponsorurl
   ------------------------------------------------------------ */
   let todaysRoute = routes.find(r => r.date === today);
 
   if (!todaysRoute) {
-    todaysRoute = routes.find(r => r.sponsorUrl);  // fallback
+    todaysRoute = routes.find(r => r.sponsorurl);  // fallback
   }
 
-  if (todaysRoute && todaysRoute.sponsorUrl) {
-    document.getElementById("sponsorLogo").src = todaysRoute.sponsorUrl;
+  if (todaysRoute && todaysRoute.sponsorurl) {
+    document.getElementById("sponsorLogo").src = todaysRoute.sponsorurl;
     document.getElementById("sponsorBox").style.display = "flex";
   } else {
     document.getElementById("sponsorBox").style.display = "none";
