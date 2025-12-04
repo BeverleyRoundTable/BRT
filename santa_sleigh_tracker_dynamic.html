@@ -128,7 +128,7 @@
 
 <script>
 /* ------------------------------------------------------------
-   STEP 1 — Read API parameter
+   READ API PARAMETER
 ------------------------------------------------------------ */
 const urlParams = new URLSearchParams(window.location.search);
 const apiUrl =
@@ -163,22 +163,18 @@ async function init(){
     tracker.donate_url || "#";
 
   /* ------------------------------------------------------------
-     SPONSOR LOGIC (supports sponsorurl and sponsorUrl)
-  ------------------------------------------------------------ */
+     SPONSOR — ONLY SHOW IF TODAYS ROUTE HAS sponsorurl
+------------------------------------------------------------ */
 
   function getSponsor(r) {
     return r.sponsorurl || r.sponsorUrl || null;
   }
 
-  let todaysRoute = routes.find(r => r.date === today);
-
-  if (!todaysRoute) {
-    todaysRoute = routes.find(r => getSponsor(r));
-  }
+  const todaysRoute = routes.find(r => r.date === today);
 
   const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
 
-  if (sponsor) {
+  if (sponsor && sponsor.trim() !== "") {
     document.getElementById("sponsorLogo").src = sponsor;
     document.getElementById("sponsorBox").style.display = "flex";
   } else {
@@ -187,7 +183,7 @@ async function init(){
 
   /* ------------------------------------------------------------
      MAP + TRACKING
-  ------------------------------------------------------------ */
+------------------------------------------------------------ */
   const fallback = { lat:66.5436, lng:25.8473 };
 
   const map = L.map("map").setView(
