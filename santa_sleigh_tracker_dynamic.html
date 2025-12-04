@@ -52,7 +52,6 @@
     object-fit:cover;
   }
 
-  /* Donate Button */
   .donate-box {
       position:fixed;
       bottom:110px;
@@ -130,7 +129,6 @@
 <script>
 /* ------------------------------------------------------------
    STEP 1 — Read API parameter
-   Accepts: ?api= or ?sleigh_api=
 ------------------------------------------------------------ */
 const urlParams = new URLSearchParams(window.location.search);
 const apiUrl =
@@ -156,28 +154,32 @@ async function init(){
   const tracker = data.tracker || {};
   const today = new Date().toISOString().slice(0,10);
 
-  /* Set primary theme color */
+  /* Theme */
   document.documentElement.style.setProperty(
     "--primaryColor", settings.primary_color || "#d31c1c"
   );
 
-  /* Set donate link */
   document.getElementById("donateLink").href =
     tracker.donate_url || "#";
 
   /* ------------------------------------------------------------
-     SPONSOR FALLBACK LOGIC
-     1. Prefer today's route (matching date)
-     2. Otherwise show the first route with a sponsorurl
+     SPONSOR LOGIC (supports sponsorurl and sponsorUrl)
   ------------------------------------------------------------ */
+
+  function getSponsor(r) {
+    return r.sponsorurl || r.sponsorUrl || null;
+  }
+
   let todaysRoute = routes.find(r => r.date === today);
 
   if (!todaysRoute) {
-    todaysRoute = routes.find(r => r.sponsorurl);  // fallback
+    todaysRoute = routes.find(r => getSponsor(r));
   }
 
-  if (todaysRoute && todaysRoute.sponsorurl) {
-    document.getElementById("sponsorLogo").src = todaysRoute.sponsorurl;
+  const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
+
+  if (sponsor) {
+    document.getElementById("sponsorLogo").src = sponsor;
     document.getElementById("sponsorBox").style.display = "flex";
   } else {
     document.getElementById("sponsorBox").style.display = "none";
@@ -225,7 +227,7 @@ async function init(){
     map.panTo(marker.getLatLng());
   });
 
-  /* Build Firebase URL */
+  /* Firebase */
   const firebaseURL =
     tracker.firebase_url.replace(/\/$/,"") +
     tracker.firebase_path +
@@ -258,15 +260,18 @@ async function init(){
         lastUpdated.style.display="inline";
         ageEl.style.display="inline";
 
-        lastUpdated.textContent = "Last update: " +
-          new Date(p.ts).toLocaleTimeString("en-GB");
+        lastUpdated.textContent =
+          "Last update: " + new Date(p.ts).toLocaleTimeString("en-GB");
+
         ageEl.textContent = "Age: " + Math.floor(age/1000)+"s";
       } 
       else {
-        statusBox.textContent = "🎄 Santa is currently in Lapland preparing for Christmas!";
+        statusBox.textContent =
+          "🎄 Santa is currently in Lapland preparing for Christmas!";
       }
     } catch {
-      statusBox.textContent = "🎄 Santa is currently in Lapland preparing for Christmas!";
+      statusBox.textContent =
+        "🎄 Santa is currently in Lapland preparing for Christmas!";
     }
 
     setTimeout(tick, REFRESH);
