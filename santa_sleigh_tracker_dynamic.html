@@ -25,65 +25,44 @@
 
   .status-popup {
     position:absolute;
-    top:24px; left:50%; transform:translateX(-50%);
-    background:rgba(24,24,24,0.93);
-    padding:16px 18px 12px;
-    font-size:1.25em; font-weight:700;
-    border-radius:18px; min-width:250px;
-    box-shadow:0 4px 32px #0006;
-    z-index:999999;
-    text-align:center;
-  }
-
-  /* ================================
-      SPONSOR BAR (NEW)
-     ================================ */
-  .sponsor-bar {
-    position:absolute;
-    top:100px;
+    top:24px;
     left:50%;
     transform:translateX(-50%);
     background:rgba(24,24,24,0.93);
-    padding:14px 20px;
-    font-size:1.1em;
+    padding:16px 18px 14px;
+    font-size:1.2em;
     font-weight:700;
-    border-radius:16px;
-    box-shadow:0 4px 28px #0008;
-    display:none;
-    align-items:center;
-    gap:14px;
-    z-index:999999 !important;
-  }
-
-  .sponsor-bar img {
-    height:40px;
-    width:40px;
-    border-radius:50%;
-    object-fit:cover;
+    border-radius:18px;
+    min-width:250px;
+    max-width:90%;
+    box-shadow:0 4px 32px #0006;
+    z-index:4000;
+    text-align:center;
+    line-height:1.25em;
   }
 
   .donate-box {
-      position:fixed;
-      bottom:110px;
-      left:50%;
-      transform:translateX(-50%);
-      width:70%;
-      max-width:420px;
-      z-index:2000;
+    position:fixed;
+    bottom:110px;
+    left:50%;
+    transform:translateX(-50%);
+    width:70%;
+    max-width:420px;
+    z-index:2000;
   }
 
   .donate-btn {
-      background:var(--primaryColor,#d31c1c);
-      color:#fff;
-      padding:14px 0;
-      width:100%;
-      display:block;
-      text-align:center;
-      border-radius:14px;
-      font-weight:800;
-      text-decoration:none;
-      font-size:1.05em;
-      box-shadow:0 4px 16px rgba(0,0,0,0.4);
+    background:var(--primaryColor,#d31c1c);
+    color:#fff;
+    padding:14px 0;
+    width:100%;
+    display:block;
+    text-align:center;
+    border-radius:14px;
+    font-weight:800;
+    text-decoration:none;
+    font-size:1.05em;
+    box-shadow:0 4px 16px rgba(0,0,0,0.4);
   }
 
   .info-popup {
@@ -97,7 +76,6 @@
     font-size:.85em; font-weight:700;
     z-index:2000;
   }
-
   .muted { display:none; opacity:.9; }
 
   .btn {
@@ -106,7 +84,6 @@
     border-radius:10px; padding:6px 10px;
     cursor:pointer; font-weight:800;
   }
-
 </style>
 </head>
 
@@ -114,12 +91,6 @@
 
 <div class="status-popup" id="statusBox">
   🎄 Santa is currently in Lapland preparing for Christmas!
-</div>
-
-<!-- ⭐ NEW SPONSOR BAR ⭐ -->
-<div class="sponsor-bar" id="sponsorBar">
-  <img id="sponsorLogo" src="" alt="">
-  <span id="sponsorText">Tonight’s sponsor</span>
 </div>
 
 <div class="donate-box">
@@ -135,36 +106,32 @@
 
 <div id="map"></div>
 
-
 <script>
-/* ------------------------------------------------------------
+/* -----------------------------------------------
    READ API PARAMETER
------------------------------------------------------------- */
+-------------------------------------------------- */
 const urlParams = new URLSearchParams(window.location.search);
-const apiUrl =
-    urlParams.get("api") ||
-    urlParams.get("sleigh_api");
+const apiUrl = urlParams.get("api") || urlParams.get("sleigh_api");
 
-if (!apiUrl) {
-  alert("No API provided. Use ?api=YOUR_GOOGLE_SCRIPT_URL");
-}
+if (!apiUrl) alert("No API provided. Use ?api=YOUR_SCRIPT_URL");
 
 async function loadJSON(url){
-  const r = await fetch(url, {cache:"no-store"});
+  const r = await fetch(url, { cache:"no-store" });
   return r.json();
 }
 
-/* Normalise date */
+/* -----------------------------------------------
+   DATE NORMALISER
+-------------------------------------------------- */
 function normaliseDate(d) {
   const dt = new Date(d);
   if (isNaN(dt)) return null;
   return dt.toISOString().slice(0,10);
 }
 
-
-/* ------------------------------------------------------------
+/* -----------------------------------------------
    MAIN INIT
------------------------------------------------------------- */
+-------------------------------------------------- */
 async function init(){
 
   const data = await loadJSON(apiUrl);
@@ -180,25 +147,39 @@ async function init(){
   );
   document.getElementById("donateLink").href = tracker.donate_url || "#";
 
-  /* ============================================================
-       SPONSOR LOGIC (FIXED)
-  ============================================================ */
+  /* -----------------------------------------------
+     SPONSOR LOGIC (Option B – inline logo)
+  -------------------------------------------------- */
   function getSponsor(r) {
-    return r.sponsorurl || r.sponsorUrl || null;
+    return r.sponsorurl || r.sponsorUrl || "";
   }
 
   const todaysRoute = routes.find(r => normaliseDate(r.date) === today);
-  const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
+  const sponsor = todaysRoute ? getSponsor(todaysRoute) : "";
 
-  if (sponsor) {
-    document.getElementById("sponsorLogo").src = sponsor;
-    document.getElementById("sponsorBar").style.display = "flex";
+  const statusBox = document.getElementById("statusBox");
+
+  function setActiveStatus(){
+    if (sponsor) {
+      statusBox.innerHTML = `
+        🎅 Santa is out on his sleigh spreading joy!<br>
+        <span style="font-size:0.75em;opacity:0.9;">Sponsored by:</span><br>
+        <img src="${sponsor}" style="height:32px;margin-top:4px;border-radius:6px;">
+      `;
+    } else {
+      statusBox.textContent =
+        "🎅 Santa is out on his sleigh spreading joy!";
+    }
   }
 
+  function setLaplandStatus(){
+    statusBox.textContent =
+      "🎄 Santa is currently in Lapland preparing for Christmas!";
+  }
 
-  /* ============================================================
-       MAP SETUP
-  ============================================================ */
+  /* -----------------------------------------------
+     MAP SETUP
+  -------------------------------------------------- */
   const fallback = { lat:66.5436, lng:25.8473 };
 
   const map = L.map("map").setView(
@@ -209,41 +190,33 @@ async function init(){
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
     .addTo(map);
 
-
-  /* ============================================================
-       GPX — TODAY OR NEXT FUTURE ROUTE
-  ============================================================ */
+  /* -----------------------------------------------
+     GPX OVERLAY — Today or next route
+  -------------------------------------------------- */
   if (tracker.enable_gpx_overlay === "true" || tracker.enable_gpx_overlay === true) {
 
-    let routeToShow = routes.find(r => normaliseDate(r.date) === today);
+    let routeToShow = todaysRoute;
 
     if (!routeToShow) {
       const futureRoutes = routes
         .map(r => ({ r, d: normaliseDate(r.date) }))
         .filter(x => x.d >= today)
         .sort((a,b) => a.d.localeCompare(b.d));
-
-      if (futureRoutes.length > 0) {
-        routeToShow = futureRoutes[0].r;
-      }
+      if (futureRoutes.length) routeToShow = futureRoutes[0].r;
     }
 
     if (routeToShow && routeToShow.gpxUrl) {
 
-      /* Santa bauble icons */
       const startIcon = L.icon({
         iconUrl: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
-        iconSize: [42, 42],
-        iconAnchor: [21, 38]
+        iconSize:[42,42], iconAnchor:[21,38]
       });
 
       const endIcon = L.icon({
         iconUrl: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
-        iconSize: [42, 42],
-        iconAnchor: [21, 38]
+        iconSize:[42,42], iconAnchor:[21,38]
       });
 
-      /* Render GPX */
       new L.GPX(routeToShow.gpxUrl, {
         async: true,
         marker_options: {
@@ -254,39 +227,26 @@ async function init(){
         polyline_options: {
           color: "#d31c1c",
           weight: 5,
-          opacity: 0.9,
+          opacity: 0.9
         }
       })
       .on("loaded", e => {
         map.fitBounds(e.target.getBounds(), { padding:[50,50] });
-
-        const gpx = e.target;
-        const start = gpx.get_starting_point();
-        const end = gpx.get_ending_point();
-
-        L.marker([start.lat, start.lon], { icon:startIcon })
-          .addTo(map)
-          .bindPopup("🎅 Start of Route");
-
-        L.marker([end.lat, end.lon], { icon:endIcon })
-          .addTo(map)
-          .bindPopup("🎁 End of Route");
       })
       .addTo(map);
     }
   }
 
-
-  /* ============================================================
-       LIVE GPS TRACKING
-  ============================================================ */
+  /* -----------------------------------------------
+     LIVE TRACKING
+  -------------------------------------------------- */
   const markerIcon = L.icon({
     iconUrl: tracker.map_icon || "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
     iconSize:[64,64], iconAnchor:[32,32]
   });
 
-  const marker = L.marker([fallback.lat,fallback.lng], {icon:markerIcon})
-                  .addTo(map);
+  const marker = L.marker([fallback.lat,fallback.lng],{icon:markerIcon})
+    .addTo(map);
 
   let follow = true;
   const followBtn = document.getElementById("followBtn");
@@ -296,19 +256,20 @@ async function init(){
     followBtn.textContent = `Follow Santa: ${follow?"ON":"OFF"}`;
   };
 
-  map.on("dragstart zoomstart", () => {
+  map.on("dragstart zoomstart", ()=>{
     follow = false;
-    followBtn.textContent = "Follow Santa: OFF";
+    followBtn.textContent="Follow Santa: OFF";
   });
 
   document.getElementById("recenterBtn").onclick = () => {
     follow = true;
-    followBtn.textContent = "Follow Santa: ON";
+    followBtn.textContent="Follow Santa: ON";
     map.panTo(marker.getLatLng());
   };
 
-
-  /* Firebase polling */
+  /* -----------------------------------------------
+     Firebase POLLING
+  -------------------------------------------------- */
   const firebaseURL =
     tracker.firebase_url.replace(/\/$/,"") +
     tracker.firebase_path +
@@ -328,9 +289,8 @@ async function init(){
       const ts = new Date(p.ts).getTime();
       const age = Date.now() - ts;
 
-      if (age < STALE_MS){
-        document.getElementById("statusBox").textContent =
-          "🎅 Santa is out on his sleigh delivering joy!";
+      if (age < STALE_MS) {
+        setActiveStatus();  // ⭐ show sponsor during active mode
 
         marker.setLatLng([p.lat,p.lng]);
         if(follow) map.panTo([p.lat,p.lng]);
@@ -342,12 +302,13 @@ async function init(){
           "Last update: " + new Date(p.ts).toLocaleTimeString("en-GB");
 
         document.getElementById("age").textContent =
-          "Age: " + Math.floor(age/1000) + "s";
+          "Age: " + Math.floor(age/1000)+"s";
+      } else {
+        setLaplandStatus();
       }
-    }
-    catch {
-      document.getElementById("statusBox").textContent =
-        "🎄 Santa is currently in Lapland preparing for Christmas!";
+
+    } catch {
+      setLaplandStatus();
     }
 
     setTimeout(tick, REFRESH);
