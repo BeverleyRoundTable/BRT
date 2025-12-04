@@ -19,6 +19,7 @@
 
   #map { width:100vw; height:100vh; }
 
+  /* STATUS BANNER */
   .status-popup {
     position:absolute;
     top:24px; left:50%; transform:translateX(-50%);
@@ -27,31 +28,33 @@
     font-size:1.25em; font-weight:700;
     border-radius:18px; min-width:250px;
     box-shadow:0 4px 32px #0006;
-    z-index:2000;
+    z-index:3000;
     text-align:center;
   }
 
+  /* SPONSOR POPUP (FIXED ABOVE HEADER) */
   .sponsor-popup {
     position:absolute;
-    top:90px;
+    top:95px;
     left:50%; transform:translateX(-50%);
     background:rgba(24,24,24,0.93);
     padding:10px 14px;
     font-size:1em; font-weight:700;
     border-radius:14px;
-    box-shadow:0 4px 24px #0006;
-    z-index:2000;
+    box-shadow:0 4px 24px #0008;
+    z-index:4000; /* ABOVE STATUS */
     display:none;
     align-items:center;
     gap:10px;
   }
 
   .sponsor-popup img {
-    height:36px; width:36px;
+    height:38px; width:38px;
     border-radius:50%;
     object-fit:cover;
   }
 
+  /* DONATE BUTTON */
   .donate-box {
       position:fixed;
       bottom:110px;
@@ -76,6 +79,7 @@
       box-shadow:0 4px 16px rgba(0,0,0,0.4);
   }
 
+  /* INFO BAR */
   .info-popup {
     position:fixed;
     left:50%; transform:translateX(-50%);
@@ -145,6 +149,13 @@ async function loadJSON(url){
   return r.json();
 }
 
+/* DATE NORMALISER */
+function normaliseDate(d) {
+  const dt = new Date(d);
+  if (isNaN(dt)) return null;
+  return dt.toISOString().slice(0, 10); // yyyy-mm-dd
+}
+
 async function init(){
 
   const data = await loadJSON(apiUrl);
@@ -153,13 +164,9 @@ async function init(){
   const routes = data.routes || [];
   const tracker = data.tracker || {};
 
-  /* ------------------------------------------------------------
-     UK LOCAL DATE (fix sponsor not showing)
-  ------------------------------------------------------------ */
+  /* TODAY (UK) */
   const today = new Date().toLocaleDateString("en-GB", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
+      year:"numeric", month:"2-digit", day:"2-digit"
   }).split("/").reverse().join("-");
 
   /* Theme */
@@ -171,26 +178,18 @@ async function init(){
     tracker.donate_url || "#";
 
   /* ------------------------------------------------------------
-     SPONSOR — ONLY SHOW IF TODAY MATCHES
+     SPONSOR DETECTION (WORKS NOW)
 ------------------------------------------------------------ */
   function getSponsor(r) {
     return r.sponsorurl || r.sponsorUrl || null;
   }
 
- // Normalise any date format (Date object, GMT string, ISO string)
-function normaliseDate(d) {
-  const dt = new Date(d);
-  if (isNaN(dt)) return null;
-  return dt.toISOString().slice(0,10);  // always yyyy-mm-dd
-}
+  const todaysRoute = routes.find(r => {
+    if (!r.date) return false;
+    return normaliseDate(r.date) === today;
+  });
 
-const todaysRoute = routes.find(r => {
-  if (!r.date) return false;
-  const routeDate = normaliseDate(r.date);
-  return routeDate === today;
-});
-  
-const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
+  const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
 
   if (sponsor && sponsor.trim() !== "") {
     document.getElementById("sponsorLogo").src = sponsor;
@@ -200,13 +199,13 @@ const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
   }
 
   /* ------------------------------------------------------------
-     MAP + TRACKING
+     MAP & TRACKING
 ------------------------------------------------------------ */
   const fallback = { lat:66.5436, lng:25.8473 };
 
   const map = L.map("map").setView(
     [fallback.lat, fallback.lng],
-    settings.default_map_zoom || 13
+    parseInt(settings.default_map_zoom || 13)
   );
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
@@ -257,7 +256,6 @@ const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
   async function tick(){
     try {
       const raw = await loadJSON(firebaseURL);
-
       const key = Object.keys(raw)[0];
       const p = raw[key];
 
