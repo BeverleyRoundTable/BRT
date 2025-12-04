@@ -1,28 +1,26 @@
 (function () {
-    const params = new URLSearchParams(window.location.search);
-    const apiBase = params.get("api");
+    // 1. Get API base from global, or from PAGE ?api= param
+    let apiBase = window.BRT_DONATE_API || null;
 
     if (!apiBase) {
-        console.error("❌ Donations v2: No API provided. Use ?api=YOUR_URL");
+        const params = new URLSearchParams(window.location.search);
+        apiBase = params.get("api");
+    }
+
+    if (!apiBase) {
+        console.error("❌ Donations v2: No API provided. Set window.BRT_DONATE_API or use ?api= on the PAGE URL.");
         return;
     }
 
+    // Make sure we don't double-append query params
+    apiBase = apiBase.replace(/\?.*$/, "");
     const DONATE_URL = apiBase + "?function=getDonations";
 
     /* ---------------------------------------------------------
-       Leaflet-proof + Carrd-proof CSS Isolation
+       Basic, safe CSS (won't touch Leaflet)
     --------------------------------------------------------- */
     if (!document.getElementById("donations-v2-style")) {
         const css = `
-        /* Scope all thermometer styles so Leaflet/Carrd cannot override them */
-        .donations-v2 * {
-            all: unset;
-            display: revert;
-            box-sizing: border-box;
-            font-family: inherit;
-        }
-
-        /* Core container */
         .santa-mini-wrapper,
         .santa-thermo-wrapper {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
@@ -114,8 +112,8 @@
             margin: 1rem auto 0;
         }
 
-        @media(max-width: 500px){
-            .santa-thermo-layout{
+        @media (max-width: 500px) {
+            .santa-thermo-layout {
                 flex-direction: column;
             }
         }
@@ -126,11 +124,8 @@
         document.head.appendChild(style);
     }
 
-    /* ---------------------------------------------------------
-       MINI thermometer markup
-    --------------------------------------------------------- */
+    /* MINI markup */
     function injectMini(el) {
-        el.classList.add("donations-v2");
         el.innerHTML = `
             <div class="santa-mini-wrapper">
                 <div class="santa-mini-label">Together we’ve raised:</div>
@@ -142,11 +137,8 @@
         `;
     }
 
-    /* ---------------------------------------------------------
-       FULL thermometer markup
-    --------------------------------------------------------- */
+    /* FULL markup */
     function injectThermo(el) {
-        el.classList.add("donations-v2");
         el.innerHTML = `
             <div class="santa-thermo-wrapper">
                 <div class="santa-thermo-card">
@@ -166,43 +158,36 @@
         `;
     }
 
-    /* ---------------------------------------------------------
-       Update UI from API
-    --------------------------------------------------------- */
+    /* Update UI */
     function updateUI(data) {
-        const total = Number(data.total || 0);
+        const total  = Number(data.total  || 0);
         const target = Number(data.target || 0);
-        const pct = target > 0 ? Math.min(100, (total / target) * 100) : 0;
+        const pct    = target > 0 ? Math.min(100, (total / target) * 100) : 0;
 
         const mf = document.getElementById("miniFill");
         const mv = document.getElementById("miniVal");
-
         if (mf) mf.style.width = pct + "%";
-        if (mv)
-            mv.textContent = `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
+        if (mv) mv.textContent = `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
 
         const tf = document.getElementById("thermoFill");
         const ta = document.getElementById("thermoAmount");
         const tl = document.getElementById("thermoLast");
-
         if (tf) tf.style.height = pct + "%";
-        if (ta)
-            ta.innerHTML = `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
+        if (ta) ta.innerHTML =
+            `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
 
         let last = data.lastUpdatePretty || "";
         if (!last || last === "1 January 1970") last = "Awaiting first update";
         if (tl) tl.textContent = "Last updated: " + last;
     }
 
-    /* ---------------------------------------------------------
-       Fetch data
-    --------------------------------------------------------- */
+    /* Fetch data */
     fetch(DONATE_URL)
         .then(r => r.json())
         .then(updateUI)
         .catch(err => console.error("Donations v2 error:", err));
 
-    /* Inject widgets */
+    /* Inject widgets now */
     document.querySelectorAll("[data-santa-mini]").forEach(injectMini);
     document.querySelectorAll("[data-santa-thermo]").forEach(injectThermo);
 
