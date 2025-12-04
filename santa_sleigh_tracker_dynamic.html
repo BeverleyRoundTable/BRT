@@ -88,10 +88,10 @@
 
 <script>
 /* ============================================================
-   1) BOOTSTRAP: Load Sheet → get api_url → load full dataset
+   BOOTSTRAP: Load Sheet → get api_url → load full data
 ============================================================ */
 const MASTER_SHEET_URL =
-  "https://script.google.com/macros/s/AKfycbyDPLQpTYVHOF6Wa7hVP5Oa-5KpJ4C95BWdvqaAnIJQBEpnFxWGlV8BtN5r9CDv8bFO/exec";
+  "YOUR_OWN_MASTER_SHEET_EXEC_URL_HERE";   // put YOUR master script URL here
 
 async function loadSheet(url){
   const res = await fetch(url,{cache:"no-store"});
@@ -100,33 +100,31 @@ async function loadSheet(url){
 
 async function initTracker() {
 
-  /* FIRST LOAD — loads only Settings so we can get user api_url */
+  /* Load Settings first */
   const bootstrap = await loadSheet(MASTER_SHEET_URL);
   const userApiURL = bootstrap.settings.api_url;
 
   if(!userApiURL){
-    alert("Error: No api_url found in Settings tab.");
+    alert("Error: api_url missing in Settings sheet");
     return;
   }
 
-  /* SECOND LOAD — loads user's real data */
+  /* Load user’s actual data */
   const data = await loadSheet(userApiURL);
 
   const settings = data.settings || {};
   const tracker  = data.tracker  || {};
-  const routes   = data.routes   || [];
 
-  /* Apply theme */
+  /* Theme colour */
   document.documentElement.style.setProperty(
     "--primaryColor",
     settings.primary_color || "#d31c1c"
   );
 
-  /* Donate button */
-  document.getElementById("donateLink").href =
-    tracker.donate_url || "#";
+  /* Donate URL */
+  document.getElementById("donateLink").href = tracker.donate_url || "#";
 
-  /* Setup map */
+  /* Map */
   const FALLBACK = {
     lat: tracker.fallback_lat || 66.5436,
     lng: tracker.fallback_lng || 25.8473
@@ -139,40 +137,37 @@ async function initTracker() {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
     .addTo(map);
 
-  /* Sleigh icon (dynamic) */
+  /* Marker icon */
   const icon = L.icon({
     iconUrl: tracker.map_icon ||
-             "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
+      "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
     iconSize:[64,64],
     iconAnchor:[32,32]
   });
 
   const marker = L.marker([FALLBACK.lat,FALLBACK.lng],{icon}).addTo(map);
 
-  /* Build Firebase URL */
+  /* Firebase URL builder */
   function buildFirebaseURL(){
-    if(!tracker.firebase_url) return null;
     const base = tracker.firebase_url.replace(/\/$/,"");
-    const path = (tracker.firebase_path || "/location/current").replace(/^\/?/,"/");
-    const auth = tracker.secret ? `?auth=${encodeURIComponent(tracker.secret)}` : "";
-    return base + path + ".json" + auth;
+    const path = tracker.firebase_path.replace(/\/$/,""); // IMPORTANT FIX
+    return base + path + ".json";
   }
 
   const firebaseURL = buildFirebaseURL();
 
   async function updateLocation(){
-    if(!firebaseURL) return;
-
     try {
       const raw = await (await fetch(firebaseURL,{cache:"no-store"})).json();
-      const key = raw && Object.keys(raw)[0];
+
+      const key = Object.keys(raw)[0];
       const p = raw[key];
 
-      if(p && typeof p.lat==="number" && typeof p.lng==="number"){
+      if(p && typeof p.lat==="number"){
         marker.setLatLng([p.lat,p.lng]);
       }
     } catch(e){
-      console.log("GPS fetch error:",e);
+      console.log("GPS fetch error:", e);
     }
 
     setTimeout(updateLocation, 10000);
