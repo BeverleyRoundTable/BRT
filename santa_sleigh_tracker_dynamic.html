@@ -59,6 +59,7 @@
       padding:6px 10px;
       font-size:.85em;
       font-weight:800;
+      cursor:pointer;
     }
 
     .donate-box {
@@ -71,7 +72,8 @@
     }
 
     .donate-btn {
-      background: #d31c1c; color: #fff;
+      background: var(--primaryColor, #d31c1c);
+      color: #fff;
       padding: 12px 20px;
       border-radius: 14px;
       font-weight: 800;
@@ -109,25 +111,24 @@
 
   <script>
     // ============================================================
-    // 1. API URL (ONLY THING OTHER GROUPS CHANGE)
+    // 1. API URL — CHANGE THIS ONLY
     // ============================================================
-    const API_URL = "YOUR_SCRIPT_WEBAPP_URL_HERE";
+    const API_URL = "YOUR_WEBAPP_URL_HERE";
 
-    // Fallback
     const FALLBACK_LAT = 66.5436;
     const FALLBACK_LNG = 25.8473;
-
     const REFRESH_MS = 10000;
     const STALE_MS   = 5 * 60000;
 
-    function todayISO() { return new Date().toISOString().slice(0,10); }
-    function normaliseDate(d){ try {return new Date(d).toISOString().slice(0,10);}catch(e){return "";} }
+    function todayISO(){ return new Date().toISOString().slice(0,10); }
+    function normaliseDate(d){ try{return new Date(d).toISOString().slice(0,10);}catch(e){return "";} }
 
     async function initTracker() {
 
       const statusBox = document.getElementById("status-box");
       const donateLink = document.getElementById("donateLink");
 
+      // Load Google Sheet data
       let data = {};
       try {
         const res = await fetch(API_URL, { cache: "no-store" });
@@ -140,15 +141,19 @@
       const routes   = data.routes || [];
       const tracker  = data.tracker || {};
 
-      // 🔥 DYNAMIC DONATE URL
+      // Apply primary colour theme
+      document.documentElement.style.setProperty("--primaryColor", settings.primary_color || "#d31c1c");
+
+      // Donate link
       donateLink.href = tracker.donate_url || "#";
 
-      // Map setup
+      // Fallback coords
       const fallbackCoords = {
         lat: tracker.fallback_lat || FALLBACK_LAT,
         lng: tracker.fallback_lng || FALLBACK_LNG
       };
 
+      // Map
       const map = L.map("map").setView(
         [fallbackCoords.lat, fallbackCoords.lng],
         settings.default_map_zoom || 13
@@ -156,7 +161,7 @@
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-      // 🟢 DYNAMIC MAP ICON
+      // 🟥 Dynamic sleigh icon
       const sleighIcon = L.icon({
         iconUrl: tracker.map_icon || "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
         iconSize:[64,64],
@@ -195,7 +200,6 @@
           }
 
           const newLatLng = L.latLng(point.lat, point.lng);
-
           marker.setLatLng(newLatLng);
           lastPoint = newLatLng;
 
