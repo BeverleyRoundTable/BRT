@@ -177,8 +177,14 @@ async function init(){
     return r.sponsorurl || r.sponsorUrl || null;
   }
 
-  const todaysRoute = routes.find(r => r.date === today);
-  const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
+  // Normalise dates (handles Google Sheets timestamps)
+const todaysRoute = routes.find(r => {
+  if (!r.date) return false;
+  const d = String(r.date).slice(0,10);  // e.g. "2025-12-04"
+  return d === today;
+});
+
+const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
 
   if (sponsor && sponsor.trim() !== "") {
     document.getElementById("sponsorLogo").src = sponsor;
