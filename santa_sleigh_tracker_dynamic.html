@@ -152,7 +152,15 @@ async function init(){
   const settings = data.settings || {};
   const routes = data.routes || [];
   const tracker = data.tracker || {};
-  const today = new Date().toISOString().slice(0,10);
+
+  /* ------------------------------------------------------------
+     UK LOCAL DATE (fix sponsor not showing)
+  ------------------------------------------------------------ */
+  const today = new Date().toLocaleDateString("en-GB", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).split("/").reverse().join("-");
 
   /* Theme */
   document.documentElement.style.setProperty(
@@ -163,15 +171,13 @@ async function init(){
     tracker.donate_url || "#";
 
   /* ------------------------------------------------------------
-     SPONSOR — ONLY SHOW IF TODAYS ROUTE HAS sponsorurl
+     SPONSOR — ONLY SHOW IF TODAY MATCHES
 ------------------------------------------------------------ */
-
   function getSponsor(r) {
     return r.sponsorurl || r.sponsorUrl || null;
   }
 
   const todaysRoute = routes.find(r => r.date === today);
-
   const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
 
   if (sponsor && sponsor.trim() !== "") {
