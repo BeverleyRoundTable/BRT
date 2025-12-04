@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Santa Sleigh Tracker</title>
 
+<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -21,6 +22,12 @@
     overflow:hidden;
   }
 
+  /* Fix stacking root for sponsor box */
+  body {
+    position: relative;
+    z-index: 1;
+  }
+
   #map { width:100vw; height:100vh; }
 
   .status-popup {
@@ -31,24 +38,24 @@
     font-size:1.25em; font-weight:700;
     border-radius:18px; min-width:250px;
     box-shadow:0 4px 32px #0006;
-    z-index:2000;
+    z-index:999999;
     text-align:center;
   }
 
   .sponsor-popup {
     position:absolute;
-    top:130px;                    /* moved down so it is visible */
+    top:130px;
     left:50%; transform:translateX(-50%);
     background:rgba(24,24,24,0.93);
     padding:10px 14px;
     font-size:1em; font-weight:700;
     border-radius:14px;
     box-shadow:0 4px 24px #0006;
-    z-index:2000;
     display:none;
     align-items:center;
     gap:10px;
-}
+    z-index:999999 !important; /* FORCE above map */
+  }
 
   .sponsor-popup img {
     height:36px; width:36px;
@@ -63,7 +70,7 @@
       transform:translateX(-50%);
       width:70%;
       max-width:420px;
-      z-index:2000;
+      z-index:999999;
   }
 
   .donate-btn {
@@ -89,7 +96,7 @@
     border-radius:12px;
     display:flex; gap:12px;
     font-size:.85em; font-weight:700;
-    z-index:2000;
+    z-index:999999;
   }
 
   .muted { display:none; opacity:.9; }
@@ -100,25 +107,28 @@
     border-radius:10px; padding:6px 10px;
     cursor:pointer; font-weight:800;
   }
-
 </style>
 </head>
 
 <body>
 
+<!-- STATUS -->
 <div class="status-popup" id="statusBox">
   🎄 Santa is currently in Lapland preparing for Christmas!
 </div>
 
+<!-- SPONSOR BOX -->
 <div class="sponsor-popup" id="sponsorBox">
   <span id="sponsorText">Tonight’s sponsor</span>
   <img id="sponsorLogo" src="" alt="">
 </div>
 
+<!-- DONATE BUTTON -->
 <div class="donate-box">
   <a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a>
 </div>
 
+<!-- INFO -->
 <div class="info-popup">
   <span id="lastUpdated" class="muted">Last update: —</span>
   <span id="age" class="muted">Age: —</span>
@@ -127,7 +137,6 @@
 </div>
 
 <div id="map"></div>
-
 
 <script>
 /* ------------------------------------------------------------
@@ -148,12 +157,12 @@ async function loadJSON(url){
 }
 
 /* ------------------------------------------------------------
-   NORMALISE ALL DATE FORMATS
+   NORMALISE DATE
 ------------------------------------------------------------ */
 function normaliseDate(d) {
   const dt = new Date(d);
   if (isNaN(dt)) return null;
-  return dt.toISOString().slice(0,10); // yyyy-mm-dd
+  return dt.toISOString().slice(0,10);
 }
 
 
@@ -163,7 +172,6 @@ function normaliseDate(d) {
 async function init(){
 
   const data = await loadJSON(apiUrl);
-
   const settings = data.settings || {};
   const routes = data.routes || [];
   const tracker = data.tracker || {};
@@ -176,10 +184,9 @@ async function init(){
   );
   document.getElementById("donateLink").href = tracker.donate_url || "#";
 
-
-  /* ============================================================
-       SPONSOR LOGIC
-  ============================================================ */
+  /* ------------------------------------------------------------
+      SPONSOR DETECTION
+  ------------------------------------------------------------ */
   function getSponsor(r) {
     return r.sponsorurl || r.sponsorUrl || null;
   }
@@ -192,10 +199,9 @@ async function init(){
     document.getElementById("sponsorBox").style.display = "flex";
   }
 
-
-  /* ============================================================
-       MAP SETUP
-  ============================================================ */
+  /* ------------------------------------------------------------
+      MAP
+  ------------------------------------------------------------ */
   const fallback = { lat:66.5436, lng:25.8473 };
 
   const map = L.map("map").setView(
@@ -203,99 +209,77 @@ async function init(){
     settings.default_map_zoom || 13
   );
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
-    .addTo(map);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-
-  /* ============================================================
-       GPX OVERLAY (Option B: Today OR next route)
-  ============================================================ */
+  /* ------------------------------------------------------------
+      GPX (today or next)
+  ------------------------------------------------------------ */
   if (tracker.enable_gpx_overlay === "true" || tracker.enable_gpx_overlay === true) {
 
-    // 1️⃣ Check today's route
     let routeToShow = routes.find(r => normaliseDate(r.date) === today);
 
-    // 2️⃣ Otherwise find the next date in the future
     if (!routeToShow) {
       const futureRoutes = routes
         .map(r => ({ r, d: normaliseDate(r.date) }))
         .filter(x => x.d >= today)
         .sort((a,b) => a.d.localeCompare(b.d));
 
-      if (futureRoutes.length > 0) {
-        routeToShow = futureRoutes[0].r;
-      }
+      if (futureRoutes.length > 0) routeToShow = futureRoutes[0].r;
     }
 
-    // Load GPX if available
     if (routeToShow && routeToShow.gpxUrl) {
-      // --- Custom Bauble Icons ---
-const startIcon = L.icon({
-  iconUrl: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
-  iconSize: [42, 42],
-  iconAnchor: [21, 38],
-  popupAnchor: [0, -38],
-});
 
-const endIcon = L.icon({
-  iconUrl: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
-  iconSize: [42, 42],
-  iconAnchor: [21, 38],
-  popupAnchor: [0, -38],
-});
+      const startIcon = L.icon({
+        iconUrl: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+        iconSize: [42, 42],
+        iconAnchor: [21, 38],
+      });
 
-// --- GPX Rendering ---
-const gpxLayer = new L.GPX(routeToShow.gpxUrl, {
-  async: true,
-  marker_options: {
-    startIcon: startIcon,
-    endIcon: endIcon,
-    wptIconUrls: {
-      "": "" // disables default marker icons for waypoints
-    }
-  },
-  polyline_options: {
-    color: "#d31c1c",
-    weight: 5,
-    opacity: 0.9,
-  }
-})
-.on("loaded", e => {
+      const endIcon = L.icon({
+        iconUrl: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
+        iconSize: [42, 42],
+        iconAnchor: [21, 38],
+      });
 
-  // Auto zoom to route
-  map.fitBounds(e.target.getBounds(), { padding: [50,50] });
+      const gpxLayer = new L.GPX(routeToShow.gpxUrl, {
+        async: true,
+        marker_options: {
+          startIcon,
+          endIcon,
+          wptIconUrls: { "": "" }
+        },
+        polyline_options: {
+          color: "#d31c1c",
+          weight: 5,
+          opacity: 0.9
+        }
+      })
+      .on("loaded", e => {
+        map.fitBounds(e.target.getBounds(), { padding: [50,50] });
 
-  // Get route points
-  const gpx = e.target;
-  const start = gpx.get_starting_point();
-  const end = gpx.get_ending_point();
+        const gpx = e.target;
+        const start = gpx.get_starting_point();
+        const end = gpx.get_ending_point();
 
-  // Explicit start marker
-  L.marker([start.lat, start.lon], { icon: startIcon })
-    .bindPopup("🎅 Start of Route")
-    .addTo(map);
+        L.marker([start.lat, start.lon], { icon: startIcon })
+          .bindPopup("🎅 Start of Route").addTo(map);
 
-  // Explicit end marker
-  L.marker([end.lat, end.lon], { icon: endIcon })
-    .bindPopup("🎁 End of Route")
-    .addTo(map);
-})
-.addTo(map);
-
+        L.marker([end.lat, end.lon], { icon: endIcon })
+          .bindPopup("🎁 End of Route").addTo(map);
+      })
+      .addTo(map);
     }
   }
 
-
-  /* ============================================================
-       LIVE GPS TRACKING
-  ============================================================ */
+  /* ------------------------------------------------------------
+      LIVE GPS TRACKING
+  ------------------------------------------------------------ */
   const markerIcon = L.icon({
     iconUrl: tracker.map_icon || "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
     iconSize:[64,64], iconAnchor:[32,32]
   });
 
-  const marker = L.marker([fallback.lat,fallback.lng],{icon:markerIcon})
-                  .addTo(map);
+  const marker = L.marker([fallback.lat,fallback.lng],{icon:markerIcon}).addTo(map);
 
   let follow = true;
   const followBtn = document.getElementById("followBtn");
@@ -316,8 +300,7 @@ const gpxLayer = new L.GPX(routeToShow.gpxUrl, {
     map.panTo(marker.getLatLng());
   };
 
-
-  /* Firebase polling */
+  /* Firebase poll */
   const firebaseURL =
     tracker.firebase_url.replace(/\/$/,"") +
     tracker.firebase_path +
