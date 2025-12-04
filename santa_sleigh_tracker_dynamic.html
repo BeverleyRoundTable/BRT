@@ -52,30 +52,30 @@
     object-fit:cover;
   }
 
-  /* Full-width donate bar */
+  /* Donate Button */
   .donate-box {
-  position:fixed;
-  bottom:110px;   /* nicely above the info bar */
-  left:50%;
-  transform:translateX(-50%);
-  width:70%;       /* cleaner width */
-  max-width:420px; /* prevents stupidly large bars on desktop */
-  z-index:2000;
-}
+      position:fixed;
+      bottom:110px;
+      left:50%;
+      transform:translateX(-50%);
+      width:70%;
+      max-width:420px;
+      z-index:2000;
+  }
 
-.donate-btn {
-  background:var(--primaryColor,#d31c1c);
-  color:#fff;
-  padding:14px 0;
-  width:100%;
-  display:block;
-  text-align:center;
-  border-radius:14px;
-  font-weight:800;
-  text-decoration:none;
-  font-size:1.05em;
-  box-shadow:0 4px 16px rgba(0,0,0,0.4);
-}
+  .donate-btn {
+      background:var(--primaryColor,#d31c1c);
+      color:#fff;
+      padding:14px 0;
+      width:100%;
+      display:block;
+      text-align:center;
+      border-radius:14px;
+      font-weight:800;
+      text-decoration:none;
+      font-size:1.05em;
+      box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  }
 
   .info-popup {
     position:fixed;
@@ -130,19 +130,18 @@
 <script>
 /* ------------------------------------------------------------
    STEP 1 — Read API parameter
-   Allows: ?api= or ?sleigh_api=
+   Accepts: ?api= or ?sleigh_api=
 ------------------------------------------------------------ */
 const urlParams = new URLSearchParams(window.location.search);
 const apiUrl =
     urlParams.get("api") ||
     urlParams.get("sleigh_api");
 
-/* If no API given, show message & stop */
 if (!apiUrl) {
-  alert("No API provided. Add ?api=YOUR_GOOGLE_SCRIPT_URL");
+  alert("No API provided. Use ?api=YOUR_GOOGLE_SCRIPT_URL");
 }
 
-/* Utility loader */
+/* Helper */
 async function loadJSON(url){
   const r = await fetch(url, {cache:"no-store"});
   return r.json();
@@ -150,7 +149,6 @@ async function loadJSON(url){
 
 async function init(){
 
-  /* Load sleigh JSON directly from their sheet */
   const data = await loadJSON(apiUrl);
 
   const settings = data.settings || {};
@@ -158,19 +156,25 @@ async function init(){
   const tracker = data.tracker || {};
   const today = new Date().toISOString().slice(0,10);
 
-  /* Theme colour */
+  /* Set primary theme color */
   document.documentElement.style.setProperty(
     "--primaryColor", settings.primary_color || "#d31c1c"
   );
 
-  /* Donate link */
+  /* Set donate link */
   document.getElementById("donateLink").href =
     tracker.donate_url || "#";
 
   /* ------------------------------------------------------------
-     Sponsor logic — matches today's route
+     SPONSOR FALLBACK LOGIC
+     1. Prefer today's route (matching date)
+     2. Otherwise show the first route with a sponsorUrl
   ------------------------------------------------------------ */
-  const todaysRoute = routes.find(r => r.date === today);
+  let todaysRoute = routes.find(r => r.date === today);
+
+  if (!todaysRoute) {
+    todaysRoute = routes.find(r => r.sponsorUrl);  // fallback
+  }
 
   if (todaysRoute && todaysRoute.sponsorUrl) {
     document.getElementById("sponsorLogo").src = todaysRoute.sponsorUrl;
@@ -180,7 +184,7 @@ async function init(){
   }
 
   /* ------------------------------------------------------------
-     Map + GPS tracking
+     MAP + TRACKING
   ------------------------------------------------------------ */
   const fallback = { lat:66.5436, lng:25.8473 };
 
