@@ -54,27 +54,28 @@
 
   /* Full-width donate bar */
   .donate-box {
-    position:fixed;
-    bottom:95px;
-    width:90%;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:2000;
-  }
+  position:fixed;
+  bottom:110px;   /* nicely above the info bar */
+  left:50%;
+  transform:translateX(-50%);
+  width:70%;       /* cleaner width */
+  max-width:420px; /* prevents stupidly large bars on desktop */
+  z-index:2000;
+}
 
-  .donate-btn {
-    background:var(--primaryColor,#d31c1c);
-    color:#fff;
-    padding:14px 0;
-    width:100%;
-    display:block;
-    text-align:center;
-    border-radius:14px;
-    font-weight:800;
-    text-decoration:none;
-    font-size:1.1em;
-    box-shadow:0 4px 16px rgba(0,0,0,0.4);
-  }
+.donate-btn {
+  background:var(--primaryColor,#d31c1c);
+  color:#fff;
+  padding:14px 0;
+  width:100%;
+  display:block;
+  text-align:center;
+  border-radius:14px;
+  font-weight:800;
+  text-decoration:none;
+  font-size:1.05em;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+}
 
   .info-popup {
     position:fixed;
@@ -171,8 +172,8 @@ async function init(){
   ------------------------------------------------------------ */
   const todaysRoute = routes.find(r => r.date === today);
 
-  if(todaysRoute && todaysRoute.sponsor_url){
-    document.getElementById("sponsorLogo").src = todaysRoute.sponsor_url;
+  if (todaysRoute && todaysRoute.sponsorUrl) {
+    document.getElementById("sponsorLogo").src = todaysRoute.sponsorUrl;
     document.getElementById("sponsorBox").style.display = "flex";
   } else {
     document.getElementById("sponsorBox").style.display = "none";
