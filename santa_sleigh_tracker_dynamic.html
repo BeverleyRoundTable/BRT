@@ -21,13 +21,12 @@
     position:absolute;
     top:24px; left:50%; transform:translateX(-50%);
     background:rgba(24,24,24,0.93);
-    padding:16px 18px 12px 18px;
+    padding:16px 18px;
     font-size:1.25em; font-weight:700;
     border-radius:18px;
     box-shadow:0 4px 32px #0006;
     z-index:2000;
     text-align:center;
-    min-width:250px;
   }
 
   .donate-box {
@@ -81,26 +80,24 @@
   <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
 
-<canvas id="snow"></canvas>
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-/* ============================================================
-   BOOTSTRAP: Load Sheet → get api_url → load full data
-============================================================ */
+// ============================================================
+// 1. LOAD MASTER SHEET → GET api_url → LOAD USER DATA
+// ============================================================
 const MASTER_SHEET_URL =
-  "YOUR_OWN_MASTER_SHEET_EXEC_URL_HERE";   // put YOUR master script URL here
+  "https://script.google.com/macros/s/AKfycbyDPLQpTYVHOF6Wa7hVP5Oa-5KpJ4C95BWdvqaAnIJQBEpnFxWGlV8BtN5r9CDv8bFO/exec";
 
 async function loadSheet(url){
-  const res = await fetch(url,{cache:"no-store"});
+  const res = await fetch(url, { cache: "no-store" });
   return res.json();
 }
 
-async function initTracker() {
+async function initTracker(){
 
-  /* Load Settings first */
   const bootstrap = await loadSheet(MASTER_SHEET_URL);
   const userApiURL = bootstrap.settings.api_url;
 
@@ -109,65 +106,60 @@ async function initTracker() {
     return;
   }
 
-  /* Load user’s actual data */
   const data = await loadSheet(userApiURL);
 
   const settings = data.settings || {};
   const tracker  = data.tracker  || {};
 
-  /* Theme colour */
   document.documentElement.style.setProperty(
     "--primaryColor",
     settings.primary_color || "#d31c1c"
   );
 
-  /* Donate URL */
-  document.getElementById("donateLink").href = tracker.donate_url || "#";
+  document.getElementById("donateLink").href =
+    tracker.donate_url || "#";
 
-  /* Map */
   const FALLBACK = {
     lat: tracker.fallback_lat || 66.5436,
     lng: tracker.fallback_lng || 25.8473
   };
 
-  const map = L.map("map").setView([FALLBACK.lat, FALLBACK.lng],
+  const map = L.map("map").setView(
+    [FALLBACK.lat, FALLBACK.lng],
     settings.default_map_zoom || 13
   );
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
     .addTo(map);
 
-  /* Marker icon */
   const icon = L.icon({
-    iconUrl: tracker.map_icon ||
-      "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
+    iconUrl: tracker.map_icon || "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
     iconSize:[64,64],
     iconAnchor:[32,32]
   });
 
-  const marker = L.marker([FALLBACK.lat,FALLBACK.lng],{icon}).addTo(map);
+  const marker = L.marker([FALLBACK.lat,FALLBACK.lng], {icon}).addTo(map);
 
-  /* Firebase URL builder */
   function buildFirebaseURL(){
     const base = tracker.firebase_url.replace(/\/$/,"");
-    const path = tracker.firebase_path.replace(/\/$/,""); // IMPORTANT FIX
+    const path = tracker.firebase_path.replace(/\/$/,"");
     return base + path + ".json";
   }
 
   const firebaseURL = buildFirebaseURL();
 
   async function updateLocation(){
-    try {
+    try{
       const raw = await (await fetch(firebaseURL,{cache:"no-store"})).json();
-
       const key = Object.keys(raw)[0];
       const p = raw[key];
 
       if(p && typeof p.lat==="number"){
         marker.setLatLng([p.lat,p.lng]);
       }
-    } catch(e){
-      console.log("GPS fetch error:", e);
+
+    } catch(err){
+      console.log("GPS fetch error:", err);
     }
 
     setTimeout(updateLocation, 10000);
@@ -178,5 +170,6 @@ async function initTracker() {
 
 window.addEventListener("load", initTracker);
 </script>
+
 </body>
 </html>
