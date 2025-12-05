@@ -2,19 +2,23 @@
 // Santa Sleigh Embed Generator
 // -------------------------------
 
-// Get API from URL
-const params = new URLSearchParams(window.location.search);
-const api = params.get("api") || "";
-document.getElementById("apiDisplay").textContent = api || "❌ No API found";
+// API supplied by embed.html BEFORE this file loads
+const api = window.EMBED_API || "";
 
-// Fallback if missing
+// Display API or warning message
+document.getElementById("apiDisplay").textContent =
+  api || "❌ No API found in ?api=";
+
+// fallback text for missing API
 function ensureApi() {
     return api || "YOUR_API_HERE";
 }
 
 // -------------------------------
-// Generate Embeds
+// Embed Snippets
 // -------------------------------
+
+// Mini thermometer
 const miniThermo = `
 <div data-santa-mini></div>
 <script>
@@ -25,6 +29,7 @@ document.head.appendChild(s);
 </script>
 `;
 
+// Full thermometer
 const fullThermo = `
 <div data-santa-thermo></div>
 <script>
@@ -35,6 +40,7 @@ document.head.appendChild(s);
 </script>
 `;
 
+// Carousel
 const carouselCode = `
 <iframe
 src="${ensureApi()}?mode=carousel"
@@ -43,6 +49,7 @@ loading="lazy">
 </iframe>
 `;
 
+// Address lookup
 const addressLookup = `
 <div id="santa-lookup"></div>
 <script>
@@ -53,16 +60,22 @@ const shadow = container.attachShadow({ mode: "open" });
 shadow.innerHTML = String.raw\`
 <style>
 #lookup-wrapper { width: 50%; margin: 0 auto; min-width: 280px; }
-#sleigh-search-box input { padding: 12px 16px; width: 100%; border-radius: 14px;
+#sleigh-search-box input {
+  padding: 12px 16px; width: 100%; border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.35);
   backdrop-filter: blur(8px); color: #fff; font-size: 1rem; margin-bottom: 14px;
   background-image: url('https://i.ibb.co/LDS2tJZZ/Santa-Marker.png');
   background-size: 22px; background-repeat: no-repeat; background-position: 12px center;
   padding-left: 46px;
 }
-#sleigh-search-box button { padding: 12px 20px; background: #D31C1C; border: none;
-  color:white; border-radius: 18px; cursor:pointer; font-weight:600; }
-.route-card { margin:1rem 0; padding:1rem; background:rgba(0,0,0,0.4); border-radius:15px; color:white; }
+#sleigh-search-box button {
+  padding: 12px 20px; background: #D31C1C; border: none; color:white;
+  border-radius: 18px; cursor:pointer; font-weight:600;
+}
+.route-card {
+  margin:1rem 0; padding:1rem; background:rgba(0,0,0,0.4);
+  border-radius:15px; color:white;
+}
 </style>
 
 <div id="lookup-wrapper">
@@ -84,11 +97,15 @@ fetch("${ensureApi()}?function=getAddressLookup")
  .then(d => roads = d);
 
 function normalise(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,""); }
+
 function searchStreet(){
  const clean = normalise(searchInput.value);
- const matches = roads.filter(r => normalise(r.street + r.suffix).includes(clean));
+ const matches = roads.filter(r =>
+    normalise(r.street + r.suffix).includes(clean)
+ );
  display(matches);
 }
+
 function display(list){
  results.innerHTML = "";
  if(list.length === 0){
@@ -96,24 +113,32 @@ function display(list){
    return;
  }
  list.forEach(item => {
-   results.innerHTML += \`<div class="route-card"><h3>\${item.route} – \${item.day} (\${item.date})</h3><p><strong>📍 \${item.street} \${item.suffix}</strong></p>\${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}</div>\`;
+   results.innerHTML += \`
+   <div class="route-card">
+      <h3>\${item.route} – \${item.day} (\${item.date})</h3>
+      <p><strong>📍 \${item.street} \${item.suffix}</strong></p>
+      \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
+   </div>\`;
  });
 }
+
 searchBtn.onclick = searchStreet;
 
 })();
 </script>
 `;
 
+// Tracker link
 const trackerLink = `
 https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${ensureApi()}
-`;
+`.trim();
 
+// Routes link
 const routesLink = `
 https://brt-23f.pages.dev/routes.html?api=${ensureApi()}
-`;
+`.trim();
 
-// Inject into page textareas
+// Inject into page
 document.getElementById("miniThermo").value = miniThermo.trim();
 document.getElementById("fullThermo").value = fullThermo.trim();
 document.getElementById("carouselCode").value = carouselCode.trim();
