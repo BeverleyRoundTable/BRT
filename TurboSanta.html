@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial; padding: 15px; }
+    .good { color: #0a0; font-weight: bold; }
+    .warn { color: #d69300; font-weight: bold; }
+    .bad  { color: #d31c1c; font-weight: bold; }
+    .row { margin-bottom: 12px; padding: 8px; border-radius: 8px;
+           border: 1px solid #ddd; background: #fafafa; }
+  </style>
+</head>
+<body>
+
+<h2>🎄 Turbo Santa Onboarding Checker</h2>
+<p>Review detected issues for your Sleigh setup:</p>
+
+<div id="results">Loading…</div>
+
+<script>
+google.script.run
+  .withSuccessHandler(renderResults)
+  .runOnboardingCheck();
+
+function renderResults(report) {
+  const container = document.getElementById("results");
+  container.innerHTML = "";
+
+  if (report.critical.length === 0 && report.warnings.length === 0) {
+    container.innerHTML = "<p class='good'>✔ Everything looks good! No required issues detected.</p>";
+    return;
+  }
+
+  if (report.critical.length > 0) {
+    container.innerHTML += `<h3 class='bad'>❌ Critical Issues</h3>`;
+    report.critical.forEach(i => {
+      container.innerHTML += `
+        <div class="row bad">
+          <strong>${i.section}</strong><br>
+          Missing: <code>${i.field}</code><br>
+          Example: <code>${i.example}</code>
+        </div>`;
+    });
+  }
+
+  if (report.warnings.length > 0) {
+    container.innerHTML += `<h3 class='warn'>⚠ Optional / Recommended Fixes</h3>`;
+    report.warnings.forEach(i => {
+      container.innerHTML += `
+        <div class="row warn">
+          <strong>${i.section}</strong><br>
+          Missing: <code>${i.field}</code><br>
+          Example: <code>${i.example}</code>
+        </div>`;
+    });
+  }
+}
+</script>
+
+</body>
+</html>
