@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>Santa Sleigh – Embed Code Generator</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
     body {
@@ -48,20 +48,14 @@
     }
 </style>
 
-<!-- IMPORTANT FIX: Load API BEFORE embed.js -->
-<script>
-    const params = new URLSearchParams(window.location.search);
-    window.EMBED_API = params.get("api") || "";
-</script>
-
-<script src="embed.js"></script>
+<script src="embed_generator.js" defer></script>
 </head>
 
 <body>
 
 <h1>🎅 Santa Sleigh – Embed Generator</h1>
 <p style="text-align:center;color:#ccc;">
-    API detected from URL: <span id="apiDisplay"></span>
+Detected API: <span id="apiDisplay"></span>
 </p>
 
 <div class="block">
@@ -89,13 +83,13 @@
 </div>
 
 <div class="block">
-    <h2>Tracker Page Link</h2>
+    <h2>Tracker Link</h2>
     <textarea id="trackerLink"></textarea>
     <button class="copy" onclick="copyCode('trackerLink')">Copy</button>
 </div>
 
 <div class="block">
-    <h2>Routes Page Link</h2>
+    <h2>Routes Link</h2>
     <textarea id="routesLink"></textarea>
     <button class="copy" onclick="copyCode('routesLink')">Copy</button>
 </div>
