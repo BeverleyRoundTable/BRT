@@ -1,155 +1,122 @@
-/* -----------------------------------------------------------
-   Santa Sleigh — Universal Embed Generator
-   Users paste their API URL below. Everything else builds
-   automatically. No Google Sheets needed.
------------------------------------------------------------- */
+// -------------------------------
+// Santa Sleigh Embed Generator
+// -------------------------------
 
-const API = "PASTE_YOUR_API_URL_HERE";  
-// Example:
-// const API = "https://script.google.com/macros/s/AKfycb.../exec";
+// Get API from URL
+const params = new URLSearchParams(window.location.search);
+const api = params.get("api") || "";
+document.getElementById("apiDisplay").textContent = api || "❌ No API found";
 
-// -----------------------------------------------------------
-// BUILDERS
-// -----------------------------------------------------------
+// Fallback if missing
+function ensureApi() {
+    return api || "YOUR_API_HERE";
+}
 
-// Mini Thermometer
-function buildMiniThermo() {
-  return `
+// -------------------------------
+// Generate Embeds
+// -------------------------------
+const miniThermo = `
 <div data-santa-mini></div>
 <script>
 const s = document.createElement('script');
 s.src = 'https://brt-23f.pages.dev/donations_v2.js';
-s.onload = () => { window.BRT_DONATE_API = '${API}'; BRT_DONATE_INIT(); };
+s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); };
 document.head.appendChild(s);
 </script>
-`.trim();
-}
+`;
 
-// Full Thermometer
-function buildFullThermo() {
-  return `
+const fullThermo = `
 <div data-santa-thermo></div>
 <script>
 const s = document.createElement('script');
 s.src = 'https://brt-23f.pages.dev/donations_v2.js';
-s.onload = () => { window.BRT_DONATE_API = '${API}'; BRT_DONATE_INIT(); };
+s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); };
 document.head.appendChild(s);
 </script>
-`.trim();
-}
+`;
 
-// Carousel
-function buildCarousel() {
-  return `
+const carouselCode = `
 <iframe
-  src="${API}?mode=carousel"
-  style="width:100%;height:450px;border:none;border-radius:12px;overflow:hidden;"
-  loading="lazy">
+src="${ensureApi()}?mode=carousel"
+style="width:100%;height:450px;border:none;border-radius:12px;overflow:hidden;"
+loading="lazy">
 </iframe>
-`.trim();
-}
+`;
 
-// Tracker + Routes Links
-function buildTrackerURL() {
-  return `https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${API}`;
-}
-
-function buildRoutesURL() {
-  return `https://brt-23f.pages.dev/routes.html?api=${API}`;
-}
-
-// Address Lookup (Shadow DOM, safe version)
-function buildAddressLookup() {
-  return `
+const addressLookup = `
 <div id="santa-lookup"></div>
 <script>
 (function() {
 const container = document.getElementById("santa-lookup");
 const shadow = container.attachShadow({ mode: "open" });
 
-shadow.innerHTML = \`
+shadow.innerHTML = String.raw\`
 <style>
 #lookup-wrapper { width: 50%; margin: 0 auto; min-width: 280px; }
-#sleigh-search-box input {
-  padding: 12px 16px; width: 100%; border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.25);
-  background: rgba(0,0,0,0.35); backdrop-filter: blur(8px);
-  color: #fff; font-size: 1rem; margin-bottom: 14px;
+#sleigh-search-box input { padding: 12px 16px; width: 100%; border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px); color: #fff; font-size: 1rem; margin-bottom: 14px;
   background-image: url('https://i.ibb.co/LDS2tJZZ/Santa-Marker.png');
-  background-size: 22px; background-repeat: no-repeat;
-  background-position: 12px center; padding-left: 46px;
+  background-size: 22px; background-repeat: no-repeat; background-position: 12px center;
+  padding-left: 46px;
 }
-#sleigh-search-box button {
-  padding: 12px 20px; background: #D31C1C; border: none;
-  color: white; border-radius: 18px; cursor: pointer;
-  font-weight: 600;
-}
-.route-card {
-  margin: 1rem 0; padding: 1rem;
-  background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
-  border-radius: 15px; color: white;
-}
+#sleigh-search-box button { padding: 12px 20px; background: #D31C1C; border: none;
+  color:white; border-radius: 18px; cursor:pointer; font-weight:600; }
+.route-card { margin:1rem 0; padding:1rem; background:rgba(0,0,0,0.4); border-radius:15px; color:white; }
 </style>
 
 <div id="lookup-wrapper">
-  <div id="sleigh-search-box">
-    <input id="searchInput" placeholder="Type your street name..." />
-    <button id="searchBtn">Search</button>
-  </div>
-  <div id="results"></div>
+ <div id="sleigh-search-box">
+  <input id="searchInput" placeholder="Type your street name..." />
+  <button id="searchBtn">Search</button>
+ </div>
+ <div id="results"></div>
 </div>
 \`;
 
+const searchInput = shadow.querySelector("#searchInput");
+const searchBtn = shadow.querySelector("#searchBtn");
+const results = shadow.querySelector("#results");
+
 let roads = [];
-fetch("${API}?function=getAddressLookup")
-  .then(r => r.json())
-  .then(data => roads = data);
+fetch("${ensureApi()}?function=getAddressLookup")
+ .then(r => r.json())
+ .then(d => roads = d);
 
-function normalise(str) {
-  return str.toLowerCase().replace(/[^a-z0-9]/g, "");
+function normalise(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,""); }
+function searchStreet(){
+ const clean = normalise(searchInput.value);
+ const matches = roads.filter(r => normalise(r.street + r.suffix).includes(clean));
+ display(matches);
 }
-
-function searchStreet() {
-  const clean = normalise(shadow.querySelector("#searchInput").value);
-  const matches = roads.filter(r => 
-    normalise(r.street + r.suffix).includes(clean)
-  );
-  display(matches);
+function display(list){
+ results.innerHTML = "";
+ if(list.length === 0){
+   results.innerHTML = "<p>No matching streets found.</p>";
+   return;
+ }
+ list.forEach(item => {
+   results.innerHTML += \`<div class="route-card"><h3>\${item.route} – \${item.day} (\${item.date})</h3><p><strong>📍 \${item.street} \${item.suffix}</strong></p>\${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}</div>\`;
+ });
 }
-
-function display(list) {
-  const out = shadow.querySelector("#results");
-  out.innerHTML = "";
-  if (list.length === 0) {
-    out.innerHTML = "<p>No matching streets found.</p>";
-    return;
-  }
-  list.forEach(item => {
-    out.innerHTML += \`
-      <div class="route-card">
-        <h3>\${item.route} – \${item.day} (\${item.date})</h3>
-        <p><strong>📍 \${item.street} \${item.suffix}</strong></p>
-        \${item.notes ? "<p>📝 " + item.notes + "</p>" : ""}
-      </div>
-    \`;
-  });
-}
-
-shadow.querySelector("#searchBtn").onclick = searchStreet;
+searchBtn.onclick = searchStreet;
 
 })();
 </script>
-`.trim();
-}
+`;
 
-// -----------------------------------------------------------
-// OUTPUT EVERYTHING
-// -----------------------------------------------------------
-console.log("===== MINI THERMOMETER EMBED =====\n", buildMiniThermo(), "\n");
-console.log("===== FULL THERMOMETER EMBED =====\n", buildFullThermo(), "\n");
-console.log("===== CAROUSEL EMBED =====\n", buildCarousel(), "\n");
-console.log("===== ADDRESS LOOKUP EMBED =====\n", buildAddressLookup(), "\n");
-console.log("===== TRACKER URL =====\n", buildTrackerURL(), "\n");
-console.log("===== ROUTES URL =====\n", buildRoutesURL(), "\n");
+const trackerLink = `
+https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${ensureApi()}
+`;
 
-console.log("\n🎄 All embed codes generated successfully!");
+const routesLink = `
+https://brt-23f.pages.dev/routes.html?api=${ensureApi()}
+`;
+
+// Inject into page textareas
+document.getElementById("miniThermo").value = miniThermo.trim();
+document.getElementById("fullThermo").value = fullThermo.trim();
+document.getElementById("carouselCode").value = carouselCode.trim();
+document.getElementById("addressLookup").value = addressLookup.trim();
+document.getElementById("trackerLink").value = trackerLink.trim();
+document.getElementById("routesLink").value = routesLink.trim();
