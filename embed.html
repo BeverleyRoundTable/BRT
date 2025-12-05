@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Santa Sleigh – Embed Code Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<style>
+    body {
+        background: #111;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        max-width: 900px;
+        margin: auto;
+    }
+    h1, h2 {
+        color: #ffd700;
+        text-align: center;
+    }
+    .block {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.12);
+        padding: 20px;
+        border-radius: 14px;
+        margin-bottom: 30px;
+    }
+    textarea {
+        width: 100%;
+        height: 140px;
+        background: #000;
+        color: #0f0;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #333;
+        font-family: monospace;
+        font-size: 0.9rem;
+        resize: vertical;
+    }
+    button.copy {
+        margin-top: 10px;
+        padding: 10px 18px;
+        border: none;
+        border-radius: 10px;
+        background: #d31c1c;
+        color: white;
+        cursor: pointer;
+    }
+</style>
+
+<script src="embed.js" defer></script>
+</head>
+
+<body>
+
+<h1>🎅 Santa Sleigh – Embed Generator</h1>
+<p style="text-align:center;color:#ccc;">API detected from URL: <span id="apiDisplay"></span></p>
+
+<div class="block">
+    <h2>Mini Thermometer</h2>
+    <textarea id="miniThermo"></textarea>
+    <button class="copy" onclick="copyCode('miniThermo')">Copy</button>
+</div>
+
+<div class="block">
+    <h2>Full Thermometer</h2>
+    <textarea id="fullThermo"></textarea>
+    <button class="copy" onclick="copyCode('fullThermo')">Copy</button>
+</div>
+
+<div class="block">
+    <h2>Carousel</h2>
+    <textarea id="carouselCode"></textarea>
+    <button class="copy" onclick="copyCode('carouselCode')">Copy</button>
+</div>
+
+<div class="block">
+    <h2>Address Lookup</h2>
+    <textarea id="addressLookup"></textarea>
+    <button class="copy" onclick="copyCode('addressLookup')">Copy</button>
+</div>
+
+<div class="block">
+    <h2>Tracker Page Link</h2>
+    <textarea id="trackerLink"></textarea>
+    <button class="copy" onclick="copyCode('trackerLink')">Copy</button>
+</div>
+
+<div class="block">
+    <h2>Routes Page Link</h2>
+    <textarea id="routesLink"></textarea>
+    <button class="copy" onclick="copyCode('routesLink')">Copy</button>
+</div>
+
+<script>
+function copyCode(id){
+    const el = document.getElementById(id);
+    el.select();
+    navigator.clipboard.writeText(el.value);
+}
+</script>
+
+</body>
+</html>
