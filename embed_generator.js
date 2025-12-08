@@ -263,18 +263,27 @@ document.body.appendChild(s);
 // GPX ANIMATION ROUTE LIST
 // -------------------------------
 async function loadRoutes() {
-  try {
-    const res = await fetch(\`\${ensureApi()}?function=getRouteNames\`);
-    const list = await res.json();
+    try {
+        const res = await fetch(ensureApi());
+        const json = await res.json();
 
-    const output = list
-      .map(r => \`https://brt-23f.pages.dev/gpx_animation.html?api=\${ensureApi()}&route=\${encodeURIComponent(r)}\`)
-      .join("\\n");
+        if (!json.routes || !Array.isArray(json.routes)) {
+            document.getElementById("gpxList").value = "No routes found in API.";
+            return;
+        }
 
-    document.getElementById("gpxList").value = output;
-  } catch (e) {
-    document.getElementById("gpxList").value = "Unable to load route list.";
-  }
+        const output = json.routes
+            .map(r => {
+                const route = r.routeName;
+                return `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(route)}`;
+            })
+            .join("\n");
+
+        document.getElementById("gpxList").value = output;
+
+    } catch (e) {
+        document.getElementById("gpxList").value = "Error reading GPX routes.";
+    }
 }
 loadRoutes();
 
