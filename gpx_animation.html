@@ -2,258 +2,180 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Sleigh TravelBoost Animator</title>
+<title>Santa Sleigh GPX Animation — Progressive Trail</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-    html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-        background: #000;
-        font-family: system-ui, sans-serif;
-    }
-
-    #map {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 1;
-    }
-
-    #animCanvas {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 10;
-        pointer-events: none;
-    }
-
-    #ui-labels {
-        position: absolute;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        text-align: center;
-        color: white;
-        z-index: 20;
-        font-size: 1rem;
-        text-shadow: 0 0 6px #000;
-        pointer-events: none;
-    }
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000;
+  }
+  #map { position: absolute; inset: 0; z-index: 1; }
+  #anim { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+  #label { position: absolute; bottom:12px; left:50%; transform:translateX(-50%); z-index:20; color:white; font-family:system-ui, sans-serif; text-shadow:0 0 8px black; font-size:1rem; }
 </style>
-
 </head>
 <body>
 
 <div id="map"></div>
-<canvas id="animCanvas"></canvas>
+<canvas id="anim"></canvas>
+<div id="label">Loading…</div>
 
-<div id="ui-labels">
-    <div id="routeName">Loading…</div>
-    <div style="font-size:0.8rem;opacity:0.7;">GPX Route + TravelBoost Animation</div>
-</div>
-
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-/* -------------------------------------------------------
-   URL PARAMS
-------------------------------------------------------- */
-const P = new URLSearchParams(window.location.search);
+const P = new URLSearchParams(location.search);
 const API = P.get("api");
-let ROUTE = P.get("route");
+const ROUTE = P.get("route");
 
 if (!API) {
-    document.body.innerHTML = "<h2 style='padding:20px;color:white;'>Missing ?api URL</h2>";
-    throw new Error("Missing API");
+  document.body.innerHTML = "<h2 style='color:white;padding:20px'>Missing api= parameter</h2>";
+  throw new Error("Missing API");
 }
 
-/* -------------------------------------------------------
-   GLOBALS
-------------------------------------------------------- */
-const canvas = document.getElementById("animCanvas");
+const canvas = document.getElementById("anim");
 const ctx = canvas.getContext("2d");
-let W = 0, H = 0;
-
-function resizeCanvas() {
-    W = canvas.width = window.innerWidth * devicePixelRatio;
-    H = canvas.height = window.innerHeight * devicePixelRatio;
-    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+let W=0, H=0;
+function resizeCanvas(){
+  W = canvas.width = window.innerWidth * devicePixelRatio;
+  H = canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
-/* -------------------------------------------------------
-   FETCH SETTINGS + ROUTES
-------------------------------------------------------- */
-async function loadMaster() {
-    const res = await fetch(API, { cache: "no-store" });
-    if (!res.ok) throw new Error("API error");
-    return res.json();
+async function fetchJSON(url){
+  const r = await fetch(url, {cache:"no-store"});
+  if (!r.ok) throw new Error("API fetch error "+r.status);
+  return r.json();
 }
 
-/* -------------------------------------------------------
-   GPX PARSER
-------------------------------------------------------- */
-async function loadGPX(url) {
-    const text = await fetch(url).then(r => r.text());
-    const xml = new DOMParser().parseFromString(text, "text/xml");
-    const pts = [...xml.getElementsByTagName("trkpt")];
-
-    return pts.map(pt => ({
-        lat: parseFloat(pt.getAttribute("lat")),
-        lon: parseFloat(pt.getAttribute("lon"))
-    }));
+async function loadGPX(url){
+  const xml = await (await fetch(url)).text();
+  const dom = new DOMParser().parseFromString(xml, "text/xml");
+  const pts = [...dom.getElementsByTagName("trkpt")];
+  return pts.map(p => ({lat: parseFloat(p.getAttribute("lat")), lon: parseFloat(p.getAttribute("lon"))}));
 }
 
-/* -------------------------------------------------------
-   PROJECT GPX INTO PIXEL SPACE
-------------------------------------------------------- */
-function projectPath(latLngs, padding = 60) {
-    let minLat = Infinity, maxLat = -Infinity;
-    let minLon = Infinity, maxLon = -Infinity;
+function projectPath(points, pad=60){
+  let minLat=Infinity,maxLat=-Infinity,minLon=Infinity,maxLon=-Infinity;
+  points.forEach(p => {
+    minLat = Math.min(minLat, p.lat);
+    maxLat = Math.max(maxLat, p.lat);
+    minLon = Math.min(minLon, p.lon);
+    maxLon = Math.max(maxLon, p.lon);
+  });
+  const viewW = W/devicePixelRatio, viewH = H/devicePixelRatio;
+  const spanLat = maxLat - minLat || 0.0001;
+  const spanLon = maxLon - minLon || 0.0001;
+  const scaleX = (viewW - pad*2)/spanLon;
+  const scaleY = (viewH - pad*2)/spanLat;
+  const scale = Math.min(scaleX, scaleY);
+  const ox = (viewW - scale*spanLon)/2;
+  const oy = (viewH - scale*spanLat)/2;
+  return points.map(p => ({
+    x: ox + (p.lon - minLon)*scale,
+    y: oy + (maxLat - p.lat)*scale
+  }));
+}
 
-    for (const p of latLngs) {
-        minLat = Math.min(minLat, p.lat);
-        maxLat = Math.max(maxLat, p.lat);
-        minLon = Math.min(minLon, p.lon);
-        maxLon = Math.max(maxLon, p.lon);
+function animate(path2d, sprite, settings){
+  const fps = Number(settings.travelboost_sprite_fps) || 14;
+  const frames = Number(settings.travelboost_sprite_frames) || 5;
+  const size = Number(settings.travelboost_sprite_size) || 128;
+  const speed = Number(settings.travelboost_speed) || 1.6;
+  const accent = settings.travelboost_accent_color || "#ffd700";
+
+  let posF = 0;
+  let frameIdx = 0;
+  let frameTimer = 0;
+
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+
+    // Determine current position
+    posF += speed;
+    if (posF >= path2d.length - 1) posF = path2d.length - 1;
+
+    const i = Math.floor(posF);
+    const t = posF - i;
+    const a = path2d[i];
+    const b = path2d[i + 1];
+    const px = a.x + (b.x - a.x)*t;
+    const py = a.y + (b.y - a.y)*t;
+
+    // Draw partial trail up to current position
+    ctx.save();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = accent;
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    for (let j = 0; j <= i; j++){
+      if (j === 0) ctx.moveTo(path2d[j].x, path2d[j].y);
+      else ctx.lineTo(path2d[j].x, path2d[j].y);
+    }
+    ctx.lineTo(px, py);
+    ctx.stroke();
+    ctx.restore();
+
+    // Sprite frame animation
+    frameTimer += 1/60;
+    if (frameTimer >= 1/fps) {
+      frameTimer = 0;
+      frameIdx = (frameIdx + 1) % frames;
     }
 
-    const viewW = W / devicePixelRatio;
-    const viewH = H / devicePixelRatio;
+    const fw = sprite.width / frames;
+    const fh = sprite.height;
 
-    const spanLat = maxLat - minLat || 1;
-    const spanLon = maxLon - minLon || 1;
-
-    const scaleX = (viewW - padding * 2) / spanLon;
-    const scaleY = (viewH - padding * 2) / spanLat;
-    const scale = Math.min(scaleX, scaleY);
-
-    const offsetX = (viewW - scale * spanLon) / 2;
-    const offsetY = (viewH - scale * spanLat) / 2;
-
-    return latLngs.map(p => ({
-        x: offsetX + (p.lon - minLon) * scale,
-        y: offsetY + (maxLat - p.lat) * scale
-    }));
-}
-
-/* -------------------------------------------------------
-   ANIMATOR
-------------------------------------------------------- */
-function animatePath(path, settings, sprite) {
-    const total = path.length;
-    let f = 0;
-    let frame = 0;
-    let frameTimer = 0;
-
-    const fps = settings.travelboost_sprite_fps || 14;
-    const speed = settings.travelboost_speed || 1.4;
-    const frames = settings.travelboost_sprite_frames || 5;
-    const size = settings.travelboost_sprite_size || 128;
-
-    function loop(ts) {
-        ctx.clearRect(0, 0, W, H);
-
-        // Draw glow route
-        ctx.save();
-        ctx.lineWidth = 6;
-        ctx.strokeStyle = settings.travelboost_accent_color || settings.primary_color || "#ffd700";
-        ctx.shadowColor = ctx.strokeStyle;
-        ctx.shadowBlur = 20;
-        ctx.beginPath();
-        for (let i = 0; i < path.length; i++) {
-            if (i === 0) ctx.moveTo(path[i].x, path[i].y);
-            else ctx.lineTo(path[i].x, path[i].y);
-        }
-        ctx.stroke();
-        ctx.restore();
-
-        // Position along path
-        f += speed;
-        if (f >= total - 1) f = 0;
-
-        const i = Math.floor(f);
-        const frac = f - i;
-
-        const a = path[i];
-        const b = path[i + 1];
-        const px = a.x + (b.x - a.x) * frac;
-        const py = a.y + (b.y - a.y) * frac;
-
-        // Animate sprite frames
-        frameTimer += 1 / 60;
-        if (frameTimer >= 1 / fps) {
-            frameTimer = 0;
-            frame = (frame + 1) % frames;
-        }
-
-        const fw = sprite.width / frames;
-        const fh = sprite.height;
-
-        ctx.drawImage(
-            sprite,
-            fw * frame, 0, fw, fh,
-            px - size / 2, py - size / 1.3,
-            size, (fh / fw) * size
-        );
-
-        requestAnimationFrame(loop);
-    }
+    ctx.drawImage(
+      sprite,
+      fw * frameIdx, 0, fw, fh,
+      px - size/2, py - size*0.9,
+      size, (fh/fw)*size
+    );
 
     requestAnimationFrame(loop);
+  }
+
+  loop();
 }
 
-/* -------------------------------------------------------
-   MAIN
-------------------------------------------------------- */
-(async function start() {
-    const master = await loadMaster();
-    const settings = master.settings;
-    let routes = master.routes;
+(async function main(){
+  const master = await fetchJSON(API);
+  const settings = master.settings;
+  const routes = master.routes;
 
-    if (!ROUTE) ROUTE = (settings.sleigh_name || "").trim();
+  const route = routes.find(r => r.routeName === ROUTE)
+              || routes.find(r => (r.routeName || "").toLowerCase() === ROUTE.toLowerCase());
 
-    let route =
-        routes.find(r => r.routeName === ROUTE) ||
-        routes.find(r => r.routeName.toLowerCase() === ROUTE?.toLowerCase());
+  if (!route) {
+    document.body.innerHTML = "<h2 style='color:white;padding:20px'>Route not found: " + ROUTE + "</h2>";
+    return;
+  }
 
-    if (!route) {
-        document.body.innerHTML = `<h2 style='color:white;padding:20px'>Route not found: ${ROUTE}</h2>`;
-        return;
-    }
+  document.getElementById("label").textContent = route.routeName + " – " + (route.date || "");
 
-    document.getElementById("routeName").textContent =
-        `${route.routeName} – ${route.date || ""}`;
+  // Leaflet map
+  const map = L.map("map", { zoomControl: false });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:19 }).addTo(map);
 
-    const gpxPoints = await loadGPX(route.gpxUrl);
+  // Load GPX
+  const gpx = await loadGPX(route.gpxUrl);
+  L.polyline(gpx, { color: "#999999", weight: 3, opacity: 0.3 }).addTo(map);  // optional faint base line
+  map.fitBounds(gpx.map(p => [p.lat, p.lon]), { padding: [40,40] });
 
-    /* ---- LEAFLET MAP ---- */
-    const map = L.map("map", { zoomControl: false });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-    L.polyline(gpxPoints, { color: settings.travelboost_accent_color || "#ffd700", weight: 4 }).addTo(map);
-    map.fitBounds(gpxPoints.map(p => [p.lat, p.lon]), { padding: [40, 40] });
+  // Project path
+  const path2d = projectPath(gpx);
 
-    /* ---- PROJECT TO CANVAS ---- */
-    const path2D = projectPath(gpxPoints);
+  // Load sprite
+  const sprite = new Image();
+  sprite.crossOrigin = "anonymous";
+  sprite.src = settings.travelboost_sprite;
 
-    /* ---- LOAD SPRITE ---- */
-    const sprite = new Image();
-    sprite.crossOrigin = "anonymous";
-    sprite.src = settings.travelboost_sprite;
-
-    sprite.onload = () => {
-        animatePath(path2D, settings, sprite);
-    };
+  sprite.onload = () => animate(path2d, sprite, settings);
 })();
 </script>
 
