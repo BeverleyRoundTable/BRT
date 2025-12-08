@@ -6,46 +6,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
-    body {
-        background: #111;
-        color: #fff;
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        max-width: 900px;
-        margin: auto;
-    }
-    h1, h2 {
-        color: #ffd700;
-        text-align: center;
-    }
-    .block {
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.12);
-        padding: 20px;
-        border-radius: 14px;
-        margin-bottom: 30px;
-    }
-    textarea {
-        width: 100%;
-        height: 140px;
-        background: #000;
-        color: #0f0;
-        padding: 12px;
-        border-radius: 10px;
-        border: 1px solid #333;
-        font-family: monospace;
-        font-size: 0.9rem;
-        resize: vertical;
-    }
-    button.copy {
-        margin-top: 10px;
-        padding: 10px 18px;
-        border: none;
-        border-radius: 10px;
-        background: #d31c1c;
-        color: white;
-        cursor: pointer;
-    }
+body {
+    background: #111;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+}
+h1, h2 {
+    color: #ffd700;
+    text-align: center;
+}
+.block {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 20px;
+    border-radius: 14px;
+    margin-bottom: 30px;
+}
+textarea {
+    width: 100%;
+    height: 140px;
+    background: #000;
+    color: #0f0;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    font-family: monospace;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+button.copy {
+    margin-top: 10px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 10px;
+    background: #d31c1c;
+    color: white;
+    cursor: pointer;
+}
 </style>
 
 <script src="embed_generator.js" defer></script>
@@ -83,15 +83,32 @@ Detected API: <span id="apiDisplay"></span>
 </div>
 
 <div class="block">
-    <h2>Tracker Link</h2>
+    <h2>Recommended Tracker Embed</h2>
+    <textarea id="recommendedTracker"></textarea>
+    <button class="copy" onclick="copyCode('recommendedTracker')">Copy</button>
+</div>
+
+<div class="block">
+    <h2>Raw Tracker Link</h2>
     <textarea id="trackerLink"></textarea>
     <button class="copy" onclick="copyCode('trackerLink')">Copy</button>
 </div>
 
 <div class="block">
-    <h2>Routes Link</h2>
+    <h2>Recommended Routes Embed</h2>
+    <textarea id="recommendedRoutes"></textarea>
+    <button class="copy" onclick="copyCode('recommendedRoutes')">Copy</button>
+</div>
+
+<div class="block">
+    <h2>Raw Routes Link</h2>
     <textarea id="routesLink"></textarea>
     <button class="copy" onclick="copyCode('routesLink')">Copy</button>
+</div>
+
+<div class="block">
+    <h2>GPX Animation Links (auto)</h2>
+    <textarea id="gpxList" style="height:200px;"></textarea>
 </div>
 
 <script>
