@@ -19,10 +19,7 @@ const miniThermo = `
 <script>
 const s = document.createElement('script');
 s.src = 'https://brt-23f.pages.dev/donations_v2.js';
-s.onload = () => {
-    window.BRT_DONATE_API = '${ensureApi()}';
-    BRT_DONATE_INIT();
-};
+s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); };
 document.head.appendChild(s);
 </script>
 `;
@@ -32,10 +29,7 @@ const fullThermo = `
 <script>
 const s = document.createElement('script');
 s.src = 'https://brt-23f.pages.dev/donations_v2.js';
-s.onload = () => {
-    window.BRT_DONATE_API = '${ensureApi()}';
-    BRT_DONATE_INIT();
-};
+s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); };
 document.head.appendChild(s);
 </script>
 `;
@@ -50,35 +44,36 @@ loading="lazy">
 
 
 // -------------------------------
-// ADDRESS LOOKUP (Dynamic Logo + Fuzzy + Nice Dates)
+// ADDRESS LOOKUP (Dynamic Logo + Dynamic Lookup Icon)
 // -------------------------------
 const addressLookup = `
 <div id="santa-lookup"></div>
 <script>
 (function() {
+
 const container = document.getElementById("santa-lookup");
 const shadow = container.attachShadow({ mode: "open" });
 
-// Defaults BEFORE API loads (no Santa marker fallback)
+// Defaults — replaced once API loads
 let lookupIcon = "";
 let overlayLogo = "";
 
-// Fetch dynamic icon for the INPUT FIELD
+// Dynamic lookup icon
 fetch("${ensureApi()}?function=getGlobalLogo&type=lookup")
   .then(r => r.json())
-  .then(d => { if (d?.url) lookupIcon = d.url; applyInputIcon(); })
+  .then(d => { if (d?.url) lookupIcon = d.url; })
   .catch(()=>{});
 
-// Fetch dynamic overlay logo (top branding)
+// Dynamic overlay logo
 fetch("${ensureApi()}?function=getGlobalLogo&type=overlay")
   .then(r => r.json())
-  .then(d => { if (d?.url) overlayLogo = d.url; applyOverlay(); })
+  .then(d => { if (d?.url) overlayLogo = d.url; })
   .catch(()=>{});
 
-// Inject HTML/UI
+// Shadow DOM structure
 shadow.innerHTML = String.raw\`
 <style>
-#lookup-wrapper { width: 50%; margin: 0 auto; min-width: 280px; position:relative; }
+#lookup-wrapper { width: 50%; margin: 0 auto; min-width: 280px; }
 
 #overlay-logo {
   display:block;
@@ -103,6 +98,26 @@ shadow.innerHTML = String.raw\`
   background-position:12px center;
   padding-left:46px;
 }
+
+#sleigh-search-box button {
+  padding:12px 20px;
+  background:#D31C1C;
+  border:none;
+  color:white;
+  border-radius:18px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.route-card {
+  margin:1rem 0;
+  padding:1rem;
+  background:rgba(255,255,255,0.08);
+  border-radius:15px;
+  color:white;
+  line-height:1.55;
+}
+.route-card h3 { margin:0 0 .3rem 0; }
 </style>
 
 <div id="lookup-wrapper">
@@ -115,47 +130,36 @@ shadow.innerHTML = String.raw\`
 </div>
 \`;
 
-// Load road data
+// Load address data
 let roads = [];
 fetch("${ensureApi()}?function=getAddressLookup")
  .then(r => r.json())
  .then(d => roads = d);
 
-// Apply dynamic INPUT icon
-function applyInputIcon(){
+// After layout loads, apply icons
+setTimeout(() => {
   const input = shadow.querySelector("#searchInput");
-  if (input && lookupIcon) {
+  if (input && lookupIcon)
     input.style.backgroundImage = "url('" + lookupIcon + "')";
-  }
-}
 
-// Apply OVERLAY LOGO
-function applyOverlay(){
-  const el = shadow.querySelector("#overlay-logo");
-  if (el && overlayLogo) {
-    el.src = overlayLogo;
-    el.classList.remove("hidden");
+  const logo = shadow.querySelector("#overlay-logo");
+  if (logo && overlayLogo) {
+    logo.src = overlayLogo;
+    logo.classList.remove("hidden");
   }
-}
+}, 200);
 
 // Helpers
-function normalise(s){
-  return s.toLowerCase().replace(/[^a-z0-9]/g,"");
-}
+function normalise(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,""); }
 
 function fuzzyScore(input, target) {
   if (!input || !target) return 0;
   if (target.includes(input)) return 200 + input.length;
 
-  let score = 0;
-  let pos = 0;
-  for (let i = 0; i < input.length; i++) {
-    const c = input[i];
+  let score = 0, pos = 0;
+  for (let c of input) {
     const found = target.indexOf(c, pos);
-    if (found >= 0) {
-      score += 4;
-      pos = found + 1;
-    }
+    if (found >= 0) { score += 4; pos = found + 1; }
   }
   return score;
 }
@@ -179,12 +183,11 @@ function searchStreet(){
   const clean = normalise(searchInput.value);
   if (!clean) return;
 
-  const scored = roads.map(r => {
-    const hay = normalise(r.street + " " + (r.suffix || ""));
-    return { ...r, score: fuzzyScore(clean, hay) };
-  });
-
-  const matches = scored
+  const matches = roads
+    .map(r => ({
+      ...r,
+      score: fuzzyScore(clean, normalise(r.street + " " + (r.suffix||"")))
+    }))
     .filter(x => x.score > 3)
     .sort((a,b) => b.score - a.score);
 
@@ -213,16 +216,17 @@ function display(list){
 }
 
 searchBtn.onclick = searchStreet;
+
 })();
 </script>
 `;
 
 
 // -------------------------------
-// Tracker and Routes
+// Tracker + Routes
 // -------------------------------
 const trackerLink = `
-https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic.html?api=${ensureApi()}
+https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${ensureApi()}
 `;
 
 const recommendedTracker = `
@@ -240,6 +244,7 @@ display:block;
 margin:0 auto;
 overflow:hidden;
 "
+allowfullscreen
 loading="lazy"
 ></iframe>
 </div>
@@ -267,7 +272,7 @@ loading="lazy"
 
 
 // -------------------------------
-// GPX ANIMATION ROUTE LIST
+// GPX Animation Route List
 // -------------------------------
 async function loadRoutes() {
     try {
