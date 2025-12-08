@@ -129,7 +129,7 @@ const recommendedTracker = `
 <!-- 🎅 Santa Sleigh Tracker Embed -->
 <div style="width:90vw;max-width:1000px;margin:0 auto;padding:0 8px;">
 <iframe
-src="https://brt-23f.pages.dev/santa_sleigh_tracker_final_1.html?api=${ensureApi()}"
+src="https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic.html?api=${ensureApi()}"
 style="
 width:100%;
 height:80vh;
