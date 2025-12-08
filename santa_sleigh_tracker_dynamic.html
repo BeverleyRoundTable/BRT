@@ -53,7 +53,7 @@
 
   .donate-btn {
     background:var(--primaryColor,#d31c1c);
-    color:#fff;
+    color:white;
     padding:14px 0;
     width:100%;
     display:block;
@@ -76,6 +76,7 @@
     font-size:.85em; font-weight:700;
     z-index:2000;
   }
+
   .muted { display:none; opacity:.9; }
 
   .btn {
@@ -83,6 +84,13 @@
     border:1px solid #ffffff26;
     border-radius:10px; padding:6px 10px;
     cursor:pointer; font-weight:800;
+  }
+
+  /* Optional logo overlay (if enabled via Settings) */
+  #logoOverlay {
+    position:absolute;
+    z-index:5000;
+    pointer-events:none;
   }
 </style>
 </head>
@@ -104,34 +112,38 @@
   <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
 
+<!-- Map -->
 <div id="map"></div>
 
+<!-- Logo overlay (positioned later via settings) -->
+<img id="logoOverlay" style="display:none;" />
+
 <script>
-/* -----------------------------------------------
+/* ------------------------------------------------------------
    READ API PARAMETER
--------------------------------------------------- */
+------------------------------------------------------------ */
 const urlParams = new URLSearchParams(window.location.search);
 const apiUrl = urlParams.get("api") || urlParams.get("sleigh_api");
 
-if (!apiUrl) alert("No API provided. Use ?api=YOUR_SCRIPT_URL");
+if (!apiUrl) alert("❌ No API provided. Use ?api=YOUR_SCRIPT_URL");
 
 async function loadJSON(url){
   const r = await fetch(url, { cache:"no-store" });
   return r.json();
 }
 
-/* -----------------------------------------------
+/* ------------------------------------------------------------
    DATE NORMALISER
--------------------------------------------------- */
+------------------------------------------------------------ */
 function normaliseDate(d) {
   const dt = new Date(d);
   if (isNaN(dt)) return null;
   return dt.toISOString().slice(0,10);
 }
 
-/* -----------------------------------------------
+/* ------------------------------------------------------------
    MAIN INIT
--------------------------------------------------- */
+------------------------------------------------------------ */
 async function init(){
 
   const data = await loadJSON(apiUrl);
@@ -145,17 +157,18 @@ async function init(){
   document.documentElement.style.setProperty(
     "--primaryColor", settings.primary_color || "#d31c1c"
   );
-  document.getElementById("donateLink").href = tracker.donate_url || "#";
+  document.getElementById("donateLink").href =
+    tracker.donate_url || settings.donate_url || "#";
 
-  /* -----------------------------------------------
-     SPONSOR LOGIC (Option B – inline logo)
-  -------------------------------------------------- */
+  /* ------------------------------------------------------------
+     SPONSOR LOGIC
+  ------------------------------------------------------------ */
   function getSponsor(r) {
     return r.sponsorurl || r.sponsorUrl || "";
   }
 
   const todaysRoute = routes.find(r => normaliseDate(r.date) === today);
-  const sponsor = todaysRoute ? getSponsor(todaysRoute) : "";
+  const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
 
   const statusBox = document.getElementById("statusBox");
 
@@ -177,9 +190,9 @@ async function init(){
       "🎄 Santa is currently in Lapland preparing for Christmas!";
   }
 
-  /* -----------------------------------------------
+  /* ------------------------------------------------------------
      MAP SETUP
-  -------------------------------------------------- */
+  ------------------------------------------------------------ */
   const fallback = { lat:66.5436, lng:25.8473 };
 
   const map = L.map("map").setView(
@@ -190,9 +203,47 @@ async function init(){
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
     .addTo(map);
 
-  /* -----------------------------------------------
-     GPX OVERLAY — Today or next route
-  -------------------------------------------------- */
+  /* ------------------------------------------------------------
+     OPTIONAL LOGO OVERLAY
+  ------------------------------------------------------------ */
+  if (settings.logo_overlay_enabled === "true" || settings.logo_overlay_enabled === true) {
+    const logo = document.getElementById("logoOverlay");
+    if (settings.logo_overlay_url){
+      logo.src = settings.logo_overlay_url;
+      logo.style.display = "block";
+      const size = Number(settings.logo_overlay_size || 64);
+      logo.style.width = size + "px";
+
+      // Position:
+      switch ((settings.logo_overlay_position || "").trim()){
+        case "bottom-right":
+          logo.style.bottom = "20px";
+          logo.style.right = "20px";
+          break;
+        case "top-right":
+          logo.style.top = "20px";
+          logo.style.right = "20px";
+          break;
+        case "bottom-left":
+          logo.style.bottom = "20px";
+          logo.style.left = "20px";
+          break;
+        case "top-left":
+          logo.style.top = "20px";
+          logo.style.left = "20px";
+          break;
+        case "center":
+          logo.style.top = "50%";
+          logo.style.left = "50%";
+          logo.style.transform = "translate(-50%, -50%)";
+          break;
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------
+     GPX OVERLAY
+  ------------------------------------------------------------ */
   if (tracker.enable_gpx_overlay === "true" || tracker.enable_gpx_overlay === true) {
 
     let routeToShow = todaysRoute;
@@ -208,12 +259,14 @@ async function init(){
     if (routeToShow && routeToShow.gpxUrl) {
 
       const startIcon = L.icon({
-        iconUrl: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+        iconUrl: settings.sleigh_icon_start ||
+                 "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
         iconSize:[42,42], iconAnchor:[21,38]
       });
 
       const endIcon = L.icon({
-        iconUrl: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
+        iconUrl: settings.sleigh_icon_end ||
+                 "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
         iconSize:[42,42], iconAnchor:[21,38]
       });
 
@@ -225,7 +278,7 @@ async function init(){
           wptIconUrls: { "": "" }
         },
         polyline_options: {
-          color: "#d31c1c",
+          color: settings.primary_color || "#d31c1c",
           weight: 5,
           opacity: 0.9
         }
@@ -237,11 +290,16 @@ async function init(){
     }
   }
 
-  /* -----------------------------------------------
-     LIVE TRACKING
-  -------------------------------------------------- */
+  /* ------------------------------------------------------------
+     LIVE TRACKING MARKER FROM SETTINGS
+  ------------------------------------------------------------ */
+  const liveIconUrl =
+    settings.sleigh_icon_live ||
+    settings.map_icon || 
+    "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png";
+
   const markerIcon = L.icon({
-    iconUrl: tracker.map_icon || "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png",
+    iconUrl: liveIconUrl,
     iconSize:[64,64], iconAnchor:[32,32]
   });
 
@@ -249,27 +307,26 @@ async function init(){
     .addTo(map);
 
   let follow = true;
-  const followBtn = document.getElementById("followBtn");
 
-  followBtn.onclick = () => {
+  document.getElementById("followBtn").onclick = () => {
     follow = !follow;
-    followBtn.textContent = `Follow Santa: ${follow?"ON":"OFF"}`;
+    event.target.textContent = `Follow Santa: ${follow?"ON":"OFF"}`;
   };
 
   map.on("dragstart zoomstart", ()=>{
     follow = false;
-    followBtn.textContent="Follow Santa: OFF";
+    document.getElementById("followBtn").textContent="Follow Santa: OFF";
   });
 
   document.getElementById("recenterBtn").onclick = () => {
     follow = true;
-    followBtn.textContent="Follow Santa: ON";
+    document.getElementById("followBtn").textContent="Follow Santa: ON";
     map.panTo(marker.getLatLng());
   };
 
-  /* -----------------------------------------------
-     Firebase POLLING
-  -------------------------------------------------- */
+  /* ------------------------------------------------------------
+     FIREBASE POLLING
+  ------------------------------------------------------------ */
   const firebaseURL =
     tracker.firebase_url.replace(/\/$/,"") +
     tracker.firebase_path +
@@ -290,7 +347,7 @@ async function init(){
       const age = Date.now() - ts;
 
       if (age < STALE_MS) {
-        setActiveStatus();  // ⭐ show sponsor during active mode
+        setActiveStatus();
 
         marker.setLatLng([p.lat,p.lng]);
         if(follow) map.panTo([p.lat,p.lng]);
