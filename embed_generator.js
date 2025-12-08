@@ -1,19 +1,32 @@
-// ----------------------------------------
+// ================================
 // Santa Sleigh Embed Generator
-// ----------------------------------------
+// Strict Mode – API REQUIRED
+// ================================
 
-// Extract API from ?api=
+// Read API from ?api=
 const params = new URLSearchParams(window.location.search);
-const api = params.get("api") || "";
-document.getElementById("apiDisplay").textContent = api || "❌ No API found";
+const api = params.get("api");
 
-function ensureApi() {
-    return api || "YOUR_API_HERE";
+// Strict Mode → Do NOT allow fallback
+if (!api) {
+    document.getElementById("apiDisplay").textContent =
+        "❌ No API detected – add ?api=YOUR_SCRIPT_URL";
+
+    // Disable all outputs so users cannot copy broken code
+    const fields = document.querySelectorAll("textarea");
+    fields.forEach(f => f.value = "❌ ERROR: No API detected. Add ?api=YOUR_SCRIPT_URL");
+
+    throw new Error("API missing – embed generator halted.");
 }
 
-// ----------------------------------------
-// Standard Embeds
-// ----------------------------------------
+document.getElementById("apiDisplay").textContent = api;
+
+// Helper
+function ensureApi() { return api; }
+
+// ================================
+// Mini Thermometer
+// ================================
 const miniThermo = `
 <div data-santa-mini></div>
 <script>
@@ -24,6 +37,9 @@ document.head.appendChild(s);
 </script>
 `;
 
+// ================================
+// Full Thermometer
+// ================================
 const fullThermo = `
 <div data-santa-thermo></div>
 <script>
@@ -34,6 +50,9 @@ document.head.appendChild(s);
 </script>
 `;
 
+// ================================
+// Carousel
+// ================================
 const carouselCode = `
 <iframe
 src="${ensureApi()}?mode=carousel"
@@ -42,10 +61,11 @@ loading="lazy">
 </iframe>
 `;
 
-// ----------------------------------------
-// ADDRESS LOOKUP — restored, working, dynamic logo
-// ----------------------------------------
-let addressLookupBase = `
+// ================================
+// ADDRESS LOOKUP — Corrected Version
+// FROM YOUR WORKING UI — WITH DYNAMIC ICON + API
+// ================================
+const addressLookup = `
 <div id="lookup-wrapper">
 
 <div id="sleigh-search-box" style="text-align:center;">
@@ -64,7 +84,6 @@ let addressLookupBase = `
   min-width: 280px;
 }
 
-/* Frosted input */
 #sleigh-search-box input {
   padding: 12px 16px;
   width: 100%;
@@ -75,7 +94,6 @@ let addressLookupBase = `
   color: #fff;
   font-size: 1rem;
   margin-bottom: 14px;
-
   background-size: 22px;
   background-repeat: no-repeat;
   background-position: 12px center;
@@ -125,14 +143,14 @@ let addressLookupBase = `
   to { opacity: 1; transform: translateY(0); }
 }
 
-#results { user-select:none; color:white; }
+#results { color: white; user-select: none; }
 </style>
 
 <script>
 let roads = [];
 
-// DYNAMIC ICON
-fetch("<<API>>?function=getGlobalLogo&type=lookup")
+// Load dynamic icon for the input
+fetch("${ensureApi()}?function=getGlobalLogo&type=lookup")
   .then(r => r.json())
   .then(d => {
     if (d?.url) {
@@ -141,12 +159,12 @@ fetch("<<API>>?function=getGlobalLogo&type=lookup")
     }
   });
 
-// LOAD ROADS
-fetch("<<API>>?function=getAddressLookup")
+// Load roads
+fetch("${ensureApi()}?function=getAddressLookup")
   .then(r => r.json())
   .then(data => roads = data);
 
-// Normalisation
+// Helpers
 function normalise(str) {
   return str.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -167,7 +185,7 @@ function displayResults(list) {
   container.innerHTML = "";
 
   if (list.length === 0) {
-    container.innerHTML = "<p>No matching streets found.</p>";
+    container.innerHTML = "<p style='color:white;'>No matching streets found.</p>";
     return;
   }
 
@@ -183,12 +201,9 @@ function displayResults(list) {
 </script>
 `;
 
-// Replace <<API>> placeholder
-const addressLookup = addressLookupBase.replace(/<<API>>/g, ensureApi());
-
-// ----------------------------------------
-// Tracker + Routes
-// ----------------------------------------
+// ================================
+// Tracker Embeds
+// ================================
 const trackerLink = `
 https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${ensureApi()}
 `;
@@ -197,22 +212,15 @@ const recommendedTracker = `
 <div style="width:90vw;max-width:1000px;margin:0 auto;padding:0 8px;">
 <iframe
 src="https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic.html?api=${ensureApi()}"
-style="
-width:100%;
-height:80vh;
-min-height:490px;
-border:none;
-border-radius:15px;
-box-shadow:0 4px 18px #0002;
-display:block;
-margin:0 auto;
-overflow:hidden;
-"
+style="width:100%;height:80vh;min-height:490px;border:none;border-radius:15px;overflow:hidden;box-shadow:0 4px 18px #0002;"
 loading="lazy"
 ></iframe>
 </div>
 `;
 
+// ================================
+// Routes
+// ================================
 const routesLink = `
 https://brt-23f.pages.dev/routes.html?api=${ensureApi()}
 `;
@@ -221,21 +229,15 @@ const recommendedRoutes = `
 <div style="width:100%;max-width:1000px;margin:0 auto;">
 <iframe
 src="https://brt-23f.pages.dev/routes.html?api=${ensureApi()}"
-style="
-width:100%;
-height:1200px;
-border:none;
-border-radius:15px;
-overflow:hidden;
-"
+style="width:100%;height:1200px;border:none;border-radius:15px;overflow:hidden;"
 loading="lazy"
 ></iframe>
 </div>
 `;
 
-// ----------------------------------------
-// GPX ANIMATIONS — FIXED LINE-BREAKS
-// ----------------------------------------
+// ================================
+// GPX Animation Routes — FIXED (line breaks)
+// ================================
 async function loadRoutes() {
     try {
         const res = await fetch(ensureApi());
@@ -247,11 +249,10 @@ async function loadRoutes() {
         }
 
         const output = json.routes
-            .map(r => {
-                const route = r.routeName;
-                return `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(route)}`;
-            })
-            .join("\r\n");  // REAL newlines
+            .map(r =>
+                `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r.routeName)}`
+            )
+            .join("\r\n");
 
         document.getElementById("gpxList").value = output;
 
@@ -261,16 +262,14 @@ async function loadRoutes() {
 }
 loadRoutes();
 
-// ----------------------------------------
-// Inject into the UI
-// ----------------------------------------
+// ================================
+// Inject into textareas
+// ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
 document.getElementById("fullThermo").value = fullThermo.trim();
 document.getElementById("carouselCode").value = carouselCode.trim();
 document.getElementById("addressLookup").value = addressLookup.trim();
-
 document.getElementById("trackerLink").value = trackerLink.trim();
 document.getElementById("recommendedTracker").value = recommendedTracker.trim();
-
 document.getElementById("routesLink").value = routesLink.trim();
 document.getElementById("recommendedRoutes").value = recommendedRoutes.trim();
