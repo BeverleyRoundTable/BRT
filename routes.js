@@ -30,6 +30,18 @@ function startRoutes() {
 
     console.log("ROUTES: Using API → " + ROUTES_URL);
 
+    /* ===== Friendly Date Formatter ===== */
+    function formatDate(d) {
+        const date = new Date(d);
+        if (isNaN(date)) return d;
+        return date.toLocaleDateString("en-GB", {
+            weekday: "short",
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        });
+    }
+
     (async function () {
         try {
             const res = await fetch(ROUTES_URL);
@@ -80,10 +92,11 @@ function startRoutes() {
         }
     })();
 
+
     /* --- CARD BUILDER --- */
     function createRouteCard(route, highlight) {
         const name = route.routeName || "";
-        const dateLabel = route.dateHuman || route.date || "";
+        const dateLabel = formatDate(route.date);  // ⭐ FRIENDLY DATE FIX
         const notes = route.notes || "";
         const streets = route.streets || "";
         const gpx = route.gpxUrl || "";
