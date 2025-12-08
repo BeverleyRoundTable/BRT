@@ -176,7 +176,7 @@
                             <div id="thermoLast" style="opacity:0.8;"></div>
                         </div>
                     </div>
-                    <img src="https://i.ibb.co/qMwrvjqM/Santa-Marker-10.png" class="santa-thermo-logo">
+                    <img class="santa-thermo-logo" id="thermoLogo" src="">
                 </div>
             </div>
         `;
@@ -186,23 +186,37 @@
        UPDATE UI
     --------------------------------------------------------- */
     function updateUI(fullData) {
-        const data = fullData.donations || {};
+        const donations = fullData.donations || {};
+        const settings = fullData.settings || {};
 
-        const total  = Number(data.total  || 0);
-        const target = Number(data.target || 0);
+        const total  = Number(donations.total  || 0);
+        const target = Number(donations.target || 0);
         const pct    = target > 0 ? Math.min(100, (total / target) * 100) : 0;
 
+        /* MINI BAR */
         const mf = document.getElementById("miniFill");
         const mv = document.getElementById("miniVal");
         if (mf) mf.style.width = pct + "%";
-        if (mv) mv.textContent = `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
+        if (mv) mv.textContent =
+            `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
 
+        /* THERMOMETER */
         const tf = document.getElementById("thermoFill");
         const ta = document.getElementById("thermoAmount");
         const tl = document.getElementById("thermoLast");
+        const logo = document.getElementById("thermoLogo");
+
         if (tf) tf.style.height = pct + "%";
-        if (ta) ta.innerHTML = `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
-        if (tl) tl.textContent = "Last updated: " + (data.lastUpdatePretty || "Awaiting first update");
+        if (ta) ta.innerHTML =
+            `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
+
+        if (tl) tl.textContent =
+            "Last updated: " + (donations.lastUpdatePretty || "Awaiting first update");
+
+        // ⭐ NEW — dynamic logo support (Settings → logo_overlay_url)
+        if (logo) {
+            logo.src = donations.logo || settings.logo_overlay_url || "";
+        }
     }
 
 })();
