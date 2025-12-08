@@ -251,14 +251,20 @@ async function loadGPX(url){
 
     ctx.rotate(angle);
 
-    ctx.drawImage(
-      sprite,
-      sx, sy, frameW, frameH,
-      -size/2,
-      -size * 0.6,  /* Santa sits ON the road */
-      size,
-      (frameH/frameW) * size
-    );
+    // anchor adjustments so Santa sits ON the GPX line
+const anchorX = size * 0.50;   // centre horizontally
+const anchorY = size * 0.62;   // lift up so sleigh rails sit on the line
+
+ctx.save();
+ctx.translate(px, py);
+ctx.rotate(angle + Math.PI); // keep rotation from last version
+
+ctx.drawImage(
+    sprite,
+    fw * frameIdx, 0, fw, fh,  // source frame
+    -anchorX, -anchorY,        // corrected anchor!
+    size, (fh/fw) * size       // draw size
+);
     ctx.restore();
   }
 
