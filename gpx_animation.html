@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Santa Sleigh GPX Animator</title>
 
-<!-- Leaflet CSS -->
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -22,7 +21,6 @@
     height: 100%;
   }
 
-  /* sprite */
   #sprite {
     position: absolute;
     width: var(--sprite-size, 128px);
@@ -40,30 +38,43 @@
 <div id="map"></div>
 <div id="sprite"></div>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- GPX Parser -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.min.js"></script>
 
 <script>
 // ------------------------------------------------------------
-// LOAD SETTINGS FROM GOOGLE SHEET
+// URL PARAM HELPERS
 // ------------------------------------------------------------
-const apiUrl = "YOUR_API_URL"; // <--- PUT YOUR GOOGLE SHEET API URL HERE
+const params = new URLSearchParams(window.location.search);
+const apiUrl = params.get("api") || "MISSING_API";
+const routeParam = params.get("route");
+
+// ------------------------------------------------------------
 let settings = {};
 let route = null;
 
+// ------------------------------------------------------------
+// LOAD SETTINGS JSON FROM GOOGLE SHEET
+// ------------------------------------------------------------
 async function loadSettings() {
   const res = await fetch(apiUrl);
   const json = await res.json();
+
   settings = json.settings;
-  route = json.routes[0];          // take first route for animation
+
+  // find route by ?route=NAME
+  if (routeParam) {
+    route = json.routes.find(r => r.routeName === routeParam);
+  }
+
+  // fallback to first route
+  if (!route) route = json.routes[0];
+
   return json;
 }
 
 // ------------------------------------------------------------
-// INIT MAP
+// MAP INIT
 // ------------------------------------------------------------
 let map = L.map("map", {
   zoomControl: false,
@@ -83,12 +94,12 @@ let frame = 0;
 
 function animateSprite() {
   const frameCount = Number(settings.travelboost_sprite_frames) || 5;
-  sprite.style.backgroundPositionX = `-${(frame % frameCount) * 100}%`;
+  sprite.style.backgroundPositionX = `-${(frame % frameCount) * (100 / frameCount)}%`;
   frame++;
 }
 
 // ------------------------------------------------------------
-// MOVE SPRITE ALONG ROUTE
+// MOVE SPRITE OVER MAP
 // ------------------------------------------------------------
 let idx = 0;
 function moveSprite() {
@@ -98,16 +109,16 @@ function moveSprite() {
   if (idx >= gpxCoords.length) idx = gpxCoords.length - 1;
 
   const latlng = gpxCoords[idx];
-  const screenPos = map.latLngToContainerPoint(latlng);
+  const pos = map.latLngToContainerPoint(latlng);
 
-  sprite.style.left = screenPos.x + "px";
-  sprite.style.top = screenPos.y + "px";
+  sprite.style.left = pos.x + "px";
+  sprite.style.top = pos.y + "px";
 
   requestAnimationFrame(moveSprite);
 }
 
 // ------------------------------------------------------------
-// LOAD GPX FILE
+// LOAD GPX
 // ------------------------------------------------------------
 async function loadGPX(url) {
   const xml = await (await fetch(url)).text();
@@ -120,11 +131,9 @@ async function loadGPX(url) {
 
   gpxCoords = coords;
 
-  // Fit map to route
   const bounds = L.latLngBounds(coords);
   map.fitBounds(bounds.pad(0.2));
 
-  // Draw GPX route
   L.polyline(coords, {
     color: settings.primary_color || "#ffd700",
     weight: 6,
@@ -133,29 +142,20 @@ async function loadGPX(url) {
 }
 
 // ------------------------------------------------------------
-// MAIN STARTUP
+// STARTUP
 // ------------------------------------------------------------
 (async function start() {
   const data = await loadSettings();
 
-  // Set sprite CSS variable
-  document.documentElement.style.setProperty(
-    "--sprite-url",
-    `url(${settings.travelboost_sprite})`
-  );
-  document.documentElement.style.setProperty(
-    "--total-frames",
-    settings.travelboost_sprite_frames || "5"
-  );
-  document.documentElement.style.setProperty(
-    "--sprite-size",
-    (settings.travelboost_sprite_size || 128) + "px"
-  );
+  // Configure sprite
+  document.documentElement.style.setProperty("--sprite-url", `url(${settings.travelboost_sprite})`);
+  document.documentElement.style.setProperty("--total-frames", settings.travelboost_sprite_frames || "5");
+  document.documentElement.style.setProperty("--sprite-size", (settings.travelboost_sprite_size || 128) + "px");
 
-  // Load GPX from route
+  // Load GPX
   await loadGPX(route.gpxUrl);
 
-  // Start animation loops
+  // Start animations
   setInterval(animateSprite, 1000 / (settings.travelboost_sprite_fps || 14));
   moveSprite();
 })();
