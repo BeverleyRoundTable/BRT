@@ -8,12 +8,17 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
-  body, html {
+  :root {
+    --accent: #ffd700;
+  }
+
+  html, body {
     margin: 0;
     padding: 0;
+    height: 100%;
     background: #0b0b0c;
     color: #fff;
-    height: 100%;
+    overflow: hidden;
   }
 
   #map {
@@ -21,110 +26,296 @@
     height: 100%;
   }
 
+  /* Snow overlay canvas */
+  #snowCanvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5000;
+  }
+
+  /* Sleigh “flame” effect */
   .travelboost-flame {
-    filter: drop-shadow(0 0 6px var(--accent));
+    filter: drop-shadow(0 0 8px var(--accent));
+  }
+
+  .travelboost-flame.no-shadow {
+    filter: none;
   }
 </style>
 </head>
 <body>
 
+<canvas id="snowCanvas"></canvas>
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 // -------------------------------------------------------
-// Read URL parameters
+// URL PARAMETERS
 // -------------------------------------------------------
 const params = new URLSearchParams(window.location.search);
-const API = params.get("api");
+const API   = params.get("api");
 const ROUTE = params.get("route");
 
 if (!API || !ROUTE) {
-  document.body.innerHTML = "<h2 style='padding:20px;'>Missing api or route parameter.</h2>";
-  throw new Error("Missing parameters");
+  document.body.innerHTML =
+    "<h2 style='padding:20px;font-family:system-ui;'>Missing <code>api</code> or <code>route</code> parameter.</h2>";
+  throw new Error("Missing api / route");
 }
 
 // -------------------------------------------------------
-// Fetch settings + routes from Google Sheets
+// FETCH DATA FROM MASTER API
 // -------------------------------------------------------
 async function fetchData() {
-  const url = API;
-  const response = await fetch(url);
-  const data = await response.json();
-  return data;
+  const response = await fetch(API, { cache: "no-store" });
+  if (!response.ok) throw new Error("API error " + response.status);
+  return response.json();
 }
 
+// Haversine distance (approx metres)
+function haversine(a, b) {
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(b[0] - a[0]);
+  const dLon = toRad(b[1] - a[1]);
+  const lat1 = toRad(a[0]);
+  const lat2 = toRad(b[0]);
+
+  const s =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+  return R * c;
+}
+
+// Build a slightly denser path if requested
+function smoothPath(points, mode) {
+  if (mode !== "smooth") return points;
+
+  const maxGap = 30; // metres
+  const out = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i];
+    const p2 = points[i+1];
+    out.push(p1);
+
+    const dist = haversine(p1, p2);
+    if (dist > maxGap) {
+      const steps = Math.min(10, Math.round(dist / maxGap));
+      for (let s = 1; s < steps; s++) {
+        const t = s / steps;
+        out.push([
+          p1[0] + (p2[0] - p1[0]) * t,
+          p1[1] + (p2[1] - p1[1]) * t
+        ]);
+      }
+    }
+  }
+  out.push(points[points.length - 1]);
+  return out;
+}
+
+// -------------------------------------------------------
+// MAIN
+// -------------------------------------------------------
 (async () => {
   const data = await fetchData();
-  const settings = data.settings;
-  const routes = data.routes;
+  const settings = data.settings || {};
+  const routes   = data.routes   || [];
 
-  const route = routes.find(r => r.routeName === ROUTE);
+  // Accent / shadow from settings
+  const accent = settings.travelboost_accent_color || settings.primary_color || "#d31c1c";
+  document.documentElement.style.setProperty("--accent", accent);
+
+  const shadowEnabled =
+    String(settings.travelboost_shadow || "").toLowerCase() === "true";
+
+  // Try exact match first, then case-insensitive
+  let route = routes.find(r => r.routeName === ROUTE);
   if (!route) {
-    document.body.innerHTML = `<h2 style='padding:20px;'>Route not found: ${ROUTE}</h2>`;
+    route = routes.find(r =>
+      (r.routeName || "").toLowerCase() === ROUTE.toLowerCase()
+    );
+  }
+
+  if (!route) {
+    document.body.innerHTML =
+      `<h2 style="padding:20px;font-family:system-ui;">Route not found: <code>${ROUTE}</code></h2>`;
     return;
   }
 
-  const gpxUrl = route.gpxUrl || route.gpxurl || route.gpx || route.GPX || "";
+  const gpxUrl =
+    route.gpxUrl || route.gpxurl || route.gpx || route.GPX || "";
+
   if (!gpxUrl) {
-    document.body.innerHTML = `<h2 style='padding:20px;'>No GPX URL for route: ${ROUTE}</h2>`;
+    document.body.innerHTML =
+      `<h2 style="padding:20px;font-family:system-ui;">No GPX URL set for route: <code>${ROUTE}</code></h2>`;
     return;
   }
 
-  // -------------------------------------------------------
-  // Setup Leaflet Map
-  // -------------------------------------------------------
-  const map = L.map("map", { zoomControl: false });
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-  }).addTo(map);
-
-  // -------------------------------------------------------
-  // Load and parse GPX
-  // -------------------------------------------------------
-  const gpxText = await fetch(gpxUrl).then(r => r.text());
-
+  // ---------------------------------------------------
+  // LOAD & PARSE GPX
+  // ---------------------------------------------------
+  const gpxText = await fetch(gpxUrl, { cache: "no-store" }).then(r => r.text());
   const parser = new DOMParser();
   const xml = parser.parseFromString(gpxText, "text/xml");
+  const trkpts = [...xml.getElementsByTagName("trkpt")];
 
-  const pts = [...xml.getElementsByTagName("trkpt")].map(pt => [
+  if (!trkpts.length) {
+    document.body.innerHTML =
+      `<h2 style="padding:20px;font-family:system-ui;">No track points found in GPX for: <code>${ROUTE}</code></h2>`;
+    return;
+  }
+
+  let pts = trkpts.map(pt => [
     parseFloat(pt.getAttribute("lat")),
     parseFloat(pt.getAttribute("lon"))
   ]);
 
-  const poly = L.polyline(pts, {
-    color: settings.travelboost_accent_color || "#d31c1c",
-    weight: 5,
-    opacity: 0.9
+  const gapMode = (settings.travelboost_gap_fill || "none").toLowerCase();
+  pts = smoothPath(pts, gapMode);
+
+  // ---------------------------------------------------
+  // LEAFLET MAP SETUP
+  // ---------------------------------------------------
+  const map = L.map("map", { zoomControl: false });
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19
   }).addTo(map);
 
-  map.fitBounds(poly.getBounds());
+  // Glow polyline underlay
+  const glowLine = L.polyline(pts, {
+    color: accent,
+    weight: 10,
+    opacity: 0.25
+  }).addTo(map);
 
-  // -------------------------------------------------------
-  // Sleigh Animation Marker
-  // -------------------------------------------------------
-  const sleighImg = settings.travelboost_sprite || settings.sleigh_icon_live;
-  const speed = Number(settings.travelboost_speed || 1);
+  // Main polyline
+  L.polyline(pts, {
+    color: accent,
+    weight: 5,
+    opacity: 0.95
+  }).addTo(map);
 
-  const sleighIcon = L.icon({
-    iconUrl: sleighImg,
-    iconSize: [48, 48],
-    className: "travelboost-flame"
+  map.fitBounds(glowLine.getBounds(), { padding: [40, 40] });
+
+  // ---------------------------------------------------
+  // START / END ICONS
+  // ---------------------------------------------------
+  const startUrl = settings.sleigh_icon_start ||
+    "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png";
+  const endUrl   = settings.sleigh_icon_end ||
+    "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png";
+  const liveUrl  = settings.travelboost_sprite ||
+    settings.sleigh_icon_live ||
+    "https://i.ibb.co/4ZMk1PD9/Santa-Marker-8.png";
+
+  const startIcon = L.icon({
+    iconUrl: startUrl,
+    iconSize: [42, 42],
+    iconAnchor: [21, 38]
+  });
+  const endIcon = L.icon({
+    iconUrl: endUrl,
+    iconSize: [42, 42],
+    iconAnchor: [21, 38]
+  });
+  const liveIcon = L.icon({
+    iconUrl: liveUrl,
+    iconSize: [52, 52],
+    iconAnchor: [26, 26],
+    className: shadowEnabled ? "travelboost-flame" : "travelboost-flame no-shadow"
   });
 
-  let index = 0;
-  const marker = L.marker(pts[0], { icon: sleighIcon }).addTo(map);
+  L.marker(pts[0], { icon: startIcon }).addTo(map);
+  L.marker(pts[pts.length - 1], { icon: endIcon }).addTo(map);
 
-  function animate() {
-    index += speed;
-    if (index >= pts.length) index = 0;
-    marker.setLatLng(pts[Math.floor(index)]);
-    requestAnimationFrame(animate);
+  const sleigh = L.marker(pts[0], { icon: liveIcon }).addTo(map);
+
+  // ---------------------------------------------------
+  // ANIMATION LOOP
+  // ---------------------------------------------------
+  let indexFloat = 0;
+  const speed = parseFloat(settings.travelboost_speed) || 1.2; // ~points per frame
+
+  function step() {
+    indexFloat += speed;
+    if (indexFloat >= pts.length) indexFloat = 0;
+
+    const i = Math.floor(indexFloat);
+    const frac = indexFloat - i;
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % pts.length];
+
+    const lat = p1[0] + (p2[0] - p1[0]) * frac;
+    const lng = p1[1] + (p2[1] - p1[1]) * frac;
+
+    sleigh.setLatLng([lat, lng]);
+    requestAnimationFrame(step);
   }
 
-  animate();
+  requestAnimationFrame(step);
+
+  // ---------------------------------------------------
+  // SNOW PARTICLES
+  // ---------------------------------------------------
+  const snowMode = (settings.travelboost_particle_effects || "snow").toLowerCase();
+  if (snowMode !== "none") {
+    const canvas = document.getElementById("snowCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    const flakes = [];
+    const FLAKE_COUNT = 90;
+
+    for (let i = 0; i < FLAKE_COUNT; i++) {
+      flakes.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: 1 + Math.random() * 2.2,
+        d: 0.5 + Math.random() * 1.5,
+        drift: (Math.random() - 0.5) * 0.7
+      });
+    }
+
+    function drawSnow() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.beginPath();
+      flakes.forEach(f => {
+        ctx.moveTo(f.x, f.y);
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, true);
+      });
+      ctx.fill();
+      updateSnow();
+      requestAnimationFrame(drawSnow);
+    }
+
+    function updateSnow() {
+      flakes.forEach(f => {
+        f.y += f.d;
+        f.x += f.drift;
+
+        if (f.y > canvas.height) {
+          f.y = -5;
+          f.x = Math.random() * canvas.width;
+        }
+        if (f.x > canvas.width) f.x = 0;
+        if (f.x < 0) f.x = canvas.width;
+      });
+    }
+
+    drawSnow();
+  }
 
 })();
 </script>
