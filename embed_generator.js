@@ -19,7 +19,10 @@ const miniThermo = `
 <script>
 const s = document.createElement('script');
 s.src = 'https://brt-23f.pages.dev/donations_v2.js';
-s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); };
+s.onload = () => {
+    window.BRT_DONATE_API = '${ensureApi()}';
+    BRT_DONATE_INIT();
+};
 document.head.appendChild(s);
 </script>
 `;
@@ -29,7 +32,10 @@ const fullThermo = `
 <script>
 const s = document.createElement('script');
 s.src = 'https://brt-23f.pages.dev/donations_v2.js';
-s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); };
+s.onload = () => {
+    window.BRT_DONATE_API = '${ensureApi()}';
+    BRT_DONATE_INIT();
+};
 document.head.appendChild(s);
 </script>
 `;
@@ -54,7 +60,7 @@ const shadow = container.attachShadow({ mode: "open" });
 
 // Defaults
 let lookupIcon = "https://i.ibb.co/LDS2tJZZ/Santa-Marker.png";
-let overlayLogo = ""; // NEW — overlay logo (global branding)
+let overlayLogo = ""; // overlay branding
 
 // Load dynamic icons
 fetch("${ensureApi()}?function=getGlobalLogo&type=lookup")
@@ -138,14 +144,13 @@ setTimeout(() => {
   if (input) input.style.backgroundImage = "url('" + lookupIcon + "')";
 }, 200);
 
-// Apply overlay logo when loaded
+// Overlay logo injection
 function applyOverlay(){
   const el = shadow.querySelector("#overlay-logo");
-  if (!el) return;
-  if (!overlayLogo) return;
-
-  el.src = overlayLogo;
-  el.classList.remove("hidden");
+  if (el && overlayLogo) {
+    el.src = overlayLogo;
+    el.classList.remove("hidden");
+  }
 }
 
 // Helpers
@@ -227,58 +232,6 @@ searchBtn.onclick = searchStreet;
 </script>
 `;
 
-// --------------------------------------
-// SEARCH
-// --------------------------------------
-function searchStreet(){
-  const clean = normalise(searchInput.value);
-  if (!clean) return;
-
-  const scored = roads.map(r => {
-    const hay = normalise(r.street + " " + (r.suffix || ""));
-    return { ...r, score: fuzzyScore(clean, hay) };
-  });
-
-  const matches = scored
-    .filter(x => x.score > 3)
-    .sort((a,b) => b.score - a.score);
-
-  display(matches);
-}
-
-// --------------------------------------
-// DISPLAY
-// --------------------------------------
-function display(list){
-  results.innerHTML = "";
-  if(list.length === 0){
-    results.innerHTML = "<p>No matching streets found.</p>";
-    return;
-  }
-
-  const now = new Date();
-
-  // Future routes first, then past
-  list.sort((a,b) => new Date(a.date) - new Date(b.date));
-
-  list.forEach(item => {
-    const niceDate = formatDate(item.date);
-
-    results.innerHTML += \`
-      <div class="route-card">
-        <h3>\${item.route} – \${item.day} (\${niceDate})</h3>
-        <p><strong>📍 \${item.street} \${item.suffix || ""}</strong></p>
-        \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
-      </div>
-    \`;
-  });
-}
-
-searchBtn.onclick = searchStreet;
-})();
-</script>
-`;
-
 // -------------------------------
 // Tracker and Routes
 // -------------------------------
@@ -287,7 +240,6 @@ https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${ensureApi()}
 `;
 
 const recommendedTracker = `
-<!-- 🎅 Santa Sleigh Tracker Embed -->
 <div style="width:90vw;max-width:1000px;margin:0 auto;padding:0 8px;">
 <iframe
 src="https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic.html?api=${ensureApi()}"
@@ -302,7 +254,6 @@ display:block;
 margin:0 auto;
 overflow:hidden;
 "
-allowfullscreen
 loading="lazy"
 ></iframe>
 </div>
@@ -313,7 +264,6 @@ https://brt-23f.pages.dev/routes.html?api=${ensureApi()}
 `;
 
 const recommendedRoutes = `
-<!-- 🎅 Sleigh Routes Embed -->
 <div style="width:100%;max-width:1000px;margin:0 auto;">
 <iframe
 src="https://brt-23f.pages.dev/routes.html?api=${ensureApi()}"
@@ -347,7 +297,7 @@ async function loadRoutes() {
                 const route = r.routeName;
                 return `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(route)}`;
             })
-            .join("\n");
+            .join("\\n");
 
         document.getElementById("gpxList").value = output;
 
