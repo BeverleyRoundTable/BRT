@@ -1,83 +1,139 @@
 function startAddressLookup() {
+  // --- Get API from URL ---
+  const params = new URLSearchParams(window.location.search);
+  const apiBase = params.get("api");
 
-    /* ===== Detect API from URL ===== */
-    const params = new URLSearchParams(window.location.search);
-    const apiBase = params.get("api");
+  if (!apiBase) {
+    console.error("❌ No API provided. Use ?api=YOUR_SCRIPT_URL");
+    const results = document.getElementById("results");
+    if (results) {
+      results.innerHTML =
+        "<p class='addr-no-results'>No API detected – add <code>?api=YOUR_SCRIPT_URL</code>.</p>";
+    }
+    return;
+  }
 
-    if (!apiBase) {
-        console.error("❌ No API provided. Use ?api=YOUR_SCRIPT_URL");
-        return;
+  const LOOKUP_URL = apiBase + "?function=getAddressLookup";
+
+  const inputEl = document.getElementById("searchInput");
+  const btnEl = document.getElementById("searchBtn");
+  const resultsEl = document.getElementById("results");
+
+  if (!inputEl || !btnEl || !resultsEl) {
+    // Wait for DOM if needed
+    return setTimeout(startAddressLookup, 200);
+  }
+
+  let rows = [];
+
+  // --- Helpers ---
+  function normalise(str) {
+    return String(str || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    return d.toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
+
+  function renderResults(query) {
+    const clean = normalise(query);
+    resultsEl.innerHTML = "";
+
+    if (!clean) {
+      resultsEl.innerHTML =
+        "<p class='addr-no-results'>Type a street name above to see your sleigh route.</p>";
+      return;
     }
 
-    const LOOKUP_URL = apiBase + "?function=getAddressLookup";
-    const LOGO_URL   = apiBase + "?function=getGlobalLogo&type=lookup";
+    const matches = rows.filter((r) => normalise(r.street).includes(clean));
 
-    let roads = [];
-
-    /* ===== Load input icon ===== */
-    fetch(LOGO_URL)
-        .then(r => r.json())
-        .then(d => {
-            if (d?.url) {
-                document.querySelector("#sleigh-search-box input").style.backgroundImage =
-                    `url('${d.url}')`;
-            }
-        });
-
-    /* ===== Load road data ===== */
-    fetch(LOOKUP_URL)
-        .then(r => r.json())
-        .then(data => roads = data);
-
-    /* ===== Helpers ===== */
-    function normalise(str) {
-        return str.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!matches.length) {
+      resultsEl.innerHTML =
+        "<p class='addr-no-results'>No matching streets found.</p>";
+      return;
     }
 
-    /* ===== Search ===== */
-    window.searchStreet = function () {
-        const input = document.getElementById("searchInput").value.trim();
-        const clean = normalise(input);
+    // Group by route
+    const byRoute = {};
+    matches.forEach((row) => {
+      if (!byRoute[row.route]) byRoute[row.route] = [];
+      byRoute[row.route].push(row);
+    });
 
-        const matches = roads.filter(r =>
-            normalise(r.street).includes(clean)
-        );
+    Object.keys(byRoute).forEach((routeName) => {
+      const list = byRoute[routeName];
+      const first = list[0] || {};
 
-        renderResults(matches);
-    };
+      const prettyDate = formatDate(first.date);
 
-    /* ===== Render Results ===== */
-    function renderResults(list) {
-        const container = document.getElementById("results");
-        container.innerHTML = "";
+      const streetsHtml = list
+        .map(
+          (r) =>
+            `<li>📍 <strong>${r.street}</strong></li>`
+        )
+        .join("");
 
-        if (!list.length) {
-            container.innerHTML = `<p style="color:white;text-align:center;">
-                No matching streets found.
-            </p>`;
-            return;
+      const card = document.createElement("article");
+      card.className = "addr-route-card";
+      card.innerHTML = `
+        <h2 class="addr-route-title">${routeName}</h2>
+        ${
+          prettyDate
+            ? `<p class="addr-route-date">📅 ${prettyDate}</p>`
+            : ""
         }
+        <ul class="addr-streets-list">
+          ${streetsHtml}
+        </ul>
+      `;
+      resultsEl.appendChild(card);
+    });
+  }
 
-        container.innerHTML = list.map(item => `
-            <div class="route-card">
-                <h3>${item.route}</h3>
-                <p>📅 ${item.day} — ${formatNiceDate(item.date)}</p>
-                <p><strong>📍 ${item.street}</strong></p>
-            </div>
-        `).join("");
-    }
+  // --- Wire events ---
+  btnEl.addEventListener("click", () => renderResults(inputEl.value));
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") renderResults(inputEl.value);
+  });
 
-    /* ===== Format to match routes UI ===== */
-    function formatNiceDate(iso) {
-        const d = new Date(iso);
-        return d.toLocaleDateString("en-GB", {
-            weekday: "short",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-        });
-    }
+  // --- Load address data ---
+  fetch(LOOKUP_URL)
+    .then((r) => r.json())
+    .then((data) => {
+      rows = Array.isArray(data) ? data : [];
+    })
+    .catch((err) => {
+      console.error("Address lookup error:", err);
+      resultsEl.innerHTML =
+        "<p class='addr-no-results'>Sorry – could not load address data.</p>";
+    });
+
+  // --- Pull logo from master API for the input icon ---
+  fetch(apiBase)
+    .then((r) => r.json())
+    .then((data) => {
+      const logo =
+        data &&
+        data.settings &&
+        data.settings.logo_overlay_url;
+
+      if (logo && inputEl) {
+        inputEl.style.backgroundImage = `url('${logo}')`;
+      }
+    })
+    .catch(() => {
+      // silent fail – just no logo
+    });
 }
 
-/* Run after page loads */
-setTimeout(startAddressLookup, 100);
+// kick off
+setTimeout(startAddressLookup, 50);
