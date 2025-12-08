@@ -86,7 +86,6 @@
     cursor:pointer; font-weight:800;
   }
 
-  /* Optional logo overlay (if enabled via Settings) */
   #logoOverlay {
     position:absolute;
     z-index:5000;
@@ -112,15 +111,12 @@
   <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
 
-<!-- Map -->
 <div id="map"></div>
-
-<!-- Logo overlay (positioned later via settings) -->
 <img id="logoOverlay" style="display:none;" />
 
 <script>
 /* ------------------------------------------------------------
-   READ API PARAMETER
+   UTILS
 ------------------------------------------------------------ */
 const urlParams = new URLSearchParams(window.location.search);
 const apiUrl = urlParams.get("api") || urlParams.get("sleigh_api");
@@ -132,20 +128,26 @@ async function loadJSON(url){
   return r.json();
 }
 
-/* ------------------------------------------------------------
-   DATE NORMALISER
------------------------------------------------------------- */
 function normaliseDate(d) {
   const dt = new Date(d);
-  if (isNaN(dt)) return null;
-  return dt.toISOString().slice(0,10);
+  return isNaN(dt) ? null : dt.toISOString().slice(0,10);
+}
+
+// Converts blob GitHub links → raw links automatically
+function normaliseGpxUrl(url){
+  if (!url) return url;
+  if (url.includes("github.com") && url.includes("/blob/")) {
+    return url
+      .replace("github.com","raw.githubusercontent.com")
+      .replace("/blob/","/");
+  }
+  return url;
 }
 
 /* ------------------------------------------------------------
    MAIN INIT
 ------------------------------------------------------------ */
 async function init(){
-
   const data = await loadJSON(apiUrl);
 
   const settings = data.settings || {};
@@ -157,6 +159,7 @@ async function init(){
   document.documentElement.style.setProperty(
     "--primaryColor", settings.primary_color || "#d31c1c"
   );
+
   document.getElementById("donateLink").href =
     tracker.donate_url || settings.donate_url || "#";
 
@@ -191,7 +194,7 @@ async function init(){
   }
 
   /* ------------------------------------------------------------
-     MAP SETUP
+     MAP
   ------------------------------------------------------------ */
   const fallback = { lat:66.5436, lng:25.8473 };
 
@@ -204,7 +207,7 @@ async function init(){
     .addTo(map);
 
   /* ------------------------------------------------------------
-     OPTIONAL LOGO OVERLAY
+     LOGO OVERLAY
   ------------------------------------------------------------ */
   if (settings.logo_overlay_enabled === "true" || settings.logo_overlay_enabled === true) {
     const logo = document.getElementById("logoOverlay");
@@ -214,49 +217,45 @@ async function init(){
       const size = Number(settings.logo_overlay_size || 64);
       logo.style.width = size + "px";
 
-      // Position:
       switch ((settings.logo_overlay_position || "").trim()){
-        case "bottom-right":
-          logo.style.bottom = "20px";
-          logo.style.right = "20px";
-          break;
-        case "top-right":
-          logo.style.top = "20px";
-          logo.style.right = "20px";
-          break;
-        case "bottom-left":
-          logo.style.bottom = "20px";
-          logo.style.left = "20px";
-          break;
-        case "top-left":
-          logo.style.top = "20px";
-          logo.style.left = "20px";
-          break;
+        case "bottom-right": logo.style.bottom="20px"; logo.style.right="20px"; break;
+        case "top-right": logo.style.top="20px"; logo.style.right="20px"; break;
+        case "bottom-left": logo.style.bottom="20px"; logo.style.left="20px"; break;
+        case "top-left": logo.style.top="20px"; logo.style.left="20px"; break;
         case "center":
-          logo.style.top = "50%";
-          logo.style.left = "50%";
-          logo.style.transform = "translate(-50%, -50%)";
+          logo.style.top="50%"; logo.style.left="50%";
+          logo.style.transform="translate(-50%, -50%)";
           break;
       }
     }
   }
 
   /* ------------------------------------------------------------
-     GPX OVERLAY
+     GPX OVERLAY — NOW WITH gpx_mode SUPPORT
   ------------------------------------------------------------ */
   if (tracker.enable_gpx_overlay === "true" || tracker.enable_gpx_overlay === true) {
 
-    let routeToShow = todaysRoute;
+    const gpxMode = tracker.gpx_mode || settings.gpx_mode || "next";
+    let routeToShow = null;
 
-    if (!routeToShow) {
-      const futureRoutes = routes
-        .map(r => ({ r, d: normaliseDate(r.date) }))
-        .filter(x => x.d >= today)
-        .sort((a,b) => a.d.localeCompare(b.d));
-      if (futureRoutes.length) routeToShow = futureRoutes[0].r;
+    if (gpxMode === "today") {
+      routeToShow = todaysRoute || null;
+
+    } else { // next and next_or_today behave identically except today gets priority
+      routeToShow = todaysRoute;
+      if (!routeToShow) {
+        const futureRoutes = routes
+          .map(r => ({ r, d: normaliseDate(r.date) }))
+          .filter(x => x.d >= today)
+          .sort((a,b) => a.d.localeCompare(b.d));
+
+        if (futureRoutes.length) routeToShow = futureRoutes[0].r;
+      }
     }
 
     if (routeToShow && routeToShow.gpxUrl) {
+
+      const gpxUrl = normaliseGpxUrl(routeToShow.gpxUrl);
 
       const startIcon = L.icon({
         iconUrl: settings.sleigh_icon_start ||
@@ -270,7 +269,7 @@ async function init(){
         iconSize:[42,42], iconAnchor:[21,38]
       });
 
-      new L.GPX(routeToShow.gpxUrl, {
+      new L.GPX(gpxUrl, {
         async: true,
         marker_options: {
           startIcon: startIcon,
@@ -291,7 +290,7 @@ async function init(){
   }
 
   /* ------------------------------------------------------------
-     LIVE TRACKING MARKER FROM SETTINGS
+     LIVE TRACKING MARKER
   ------------------------------------------------------------ */
   const liveIconUrl =
     settings.sleigh_icon_live ||
@@ -303,8 +302,7 @@ async function init(){
     iconSize:[64,64], iconAnchor:[32,32]
   });
 
-  const marker = L.marker([fallback.lat,fallback.lng],{icon:markerIcon})
-    .addTo(map);
+  const marker = L.marker([fallback.lat,fallback.lng],{icon:markerIcon}).addTo(map);
 
   let follow = true;
 
@@ -364,7 +362,7 @@ async function init(){
         setLaplandStatus();
       }
 
-    } catch {
+    } catch (e) {
       setLaplandStatus();
     }
 
