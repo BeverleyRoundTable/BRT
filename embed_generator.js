@@ -12,7 +12,7 @@ function ensureApi() {
 }
 
 // -------------------------------
-// Standard Embeds
+// Mini + Full Thermometer Embeds
 // -------------------------------
 const miniThermo = `
 <div data-santa-mini></div>
@@ -44,36 +44,35 @@ loading="lazy">
 
 
 // -------------------------------
-// ADDRESS LOOKUP (Dynamic Logo + Dynamic Lookup Icon)
+// ADDRESS LOOKUP (Dynamic Logos + Fuzzy Search)
 // -------------------------------
 const addressLookup = `
 <div id="santa-lookup"></div>
 <script>
-(function() {
+(function () {
 
 const container = document.getElementById("santa-lookup");
 const shadow = container.attachShadow({ mode: "open" });
 
-// Defaults — replaced once API loads
+// Defaults until API loads
 let lookupIcon = "";
 let overlayLogo = "";
 
-// Dynamic lookup icon
+// Load dynamic lookup icon
 fetch("${ensureApi()}?function=getGlobalLogo&type=lookup")
   .then(r => r.json())
   .then(d => { if (d?.url) lookupIcon = d.url; })
   .catch(()=>{});
 
-// Dynamic overlay logo
+// Load dynamic overlay logo
 fetch("${ensureApi()}?function=getGlobalLogo&type=overlay")
   .then(r => r.json())
   .then(d => { if (d?.url) overlayLogo = d.url; })
   .catch(()=>{});
 
-// Shadow DOM structure
 shadow.innerHTML = String.raw\`
 <style>
-#lookup-wrapper { width: 50%; margin: 0 auto; min-width: 280px; }
+#lookup-wrapper { width:50%; margin:0 auto; min-width:280px; }
 
 #overlay-logo {
   display:block;
@@ -84,8 +83,8 @@ shadow.innerHTML = String.raw\`
 #overlay-logo.hidden { display:none; }
 
 #sleigh-search-box input {
-  padding: 12px 16px;
-  width: 100%;
+  padding:12px 16px;
+  width:100%;
   border-radius:14px;
   border:1px solid rgba(255,255,255,0.25);
   background:rgba(0,0,0,0.35);
@@ -117,7 +116,6 @@ shadow.innerHTML = String.raw\`
   color:white;
   line-height:1.55;
 }
-.route-card h3 { margin:0 0 .3rem 0; }
 </style>
 
 <div id="lookup-wrapper">
@@ -130,34 +128,43 @@ shadow.innerHTML = String.raw\`
 </div>
 \`;
 
-// Load address data
+const searchInput = shadow.querySelector("#searchInput");
+const searchBtn = shadow.querySelector("#searchBtn");
+const results = shadow.querySelector("#results");
+const overlayImg = shadow.querySelector("#overlay-logo");
+
+// -------------------------------
+// Load Roads Data
+// -------------------------------
 let roads = [];
 fetch("${ensureApi()}?function=getAddressLookup")
- .then(r => r.json())
- .then(d => roads = d);
+  .then(r => r.json())
+  .then(d => roads = d);
 
-// After layout loads, apply icons
+// -------------------------------
+// Apply dynamic icons after DOM loads
+// -------------------------------
 setTimeout(() => {
-  const input = shadow.querySelector("#searchInput");
-  if (input && lookupIcon)
-    input.style.backgroundImage = "url('" + lookupIcon + "')";
-
-  const logo = shadow.querySelector("#overlay-logo");
-  if (logo && overlayLogo) {
-    logo.src = overlayLogo;
-    logo.classList.remove("hidden");
+  if (lookupIcon) searchInput.style.backgroundImage = "url('" + lookupIcon + "')";
+  if (overlayLogo) {
+    overlayImg.src = overlayLogo;
+    overlayImg.classList.remove("hidden");
   }
 }, 200);
 
-// Helpers
-function normalise(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,""); }
+// -------------------------------
+// Fuzzy Search Helpers
+// -------------------------------
+function normalise(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 
 function fuzzyScore(input, target) {
   if (!input || !target) return 0;
   if (target.includes(input)) return 200 + input.length;
 
   let score = 0, pos = 0;
-  for (let c of input) {
+  for (const c of input) {
     const found = target.indexOf(c, pos);
     if (found >= 0) { score += 4; pos = found + 1; }
   }
@@ -168,25 +175,24 @@ function formatDate(d) {
   const date = new Date(d);
   if (isNaN(date)) return "";
   return date.toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "long",
-    year: "numeric"
+    weekday:"short",
+    day:"numeric",
+    month:"long",
+    year:"numeric"
   });
 }
 
-const results = shadow.querySelector("#results");
-const searchInput = shadow.querySelector("#searchInput");
-const searchBtn = shadow.querySelector("#searchBtn");
-
-function searchStreet(){
+// -------------------------------
+// SEARCH
+// -------------------------------
+function searchStreet() {
   const clean = normalise(searchInput.value);
   if (!clean) return;
 
   const matches = roads
     .map(r => ({
       ...r,
-      score: fuzzyScore(clean, normalise(r.street + " " + (r.suffix||"")))
+      score: fuzzyScore(clean, normalise(r.street + " " + (r.suffix || "")))
     }))
     .filter(x => x.score > 3)
     .sort((a,b) => b.score - a.score);
@@ -194,9 +200,12 @@ function searchStreet(){
   display(matches);
 }
 
-function display(list){
+// -------------------------------
+// DISPLAY RESULTS
+// -------------------------------
+function display(list) {
   results.innerHTML = "";
-  if(list.length === 0){
+  if (list.length === 0) {
     results.innerHTML = "<p>No matching streets found.</p>";
     return;
   }
@@ -204,10 +213,11 @@ function display(list){
   list.sort((a,b) => new Date(a.date) - new Date(b.date));
 
   list.forEach(item => {
-    const niceDate = formatDate(item.date);
+    const nice = formatDate(item.date);
+
     results.innerHTML += \`
       <div class="route-card">
-        <h3>\${item.route} – \${item.day} (\${niceDate})</h3>
+        <h3>\${item.route} – \${item.day} (\${nice})</h3>
         <p><strong>📍 \${item.street} \${item.suffix || ""}</strong></p>
         \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
       </div>
@@ -223,7 +233,7 @@ searchBtn.onclick = searchStreet;
 
 
 // -------------------------------
-// Tracker + Routes
+// Tracker & Routes Embeds
 // -------------------------------
 const trackerLink = `
 https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${ensureApi()}
@@ -275,41 +285,38 @@ loading="lazy"
 // GPX Animation Route List
 // -------------------------------
 async function loadRoutes() {
-    try {
-        const res = await fetch(ensureApi());
-        const json = await res.json();
+  try {
+    const res = await fetch(ensureApi());
+    const json = await res.json();
 
-        if (!json.routes || !Array.isArray(json.routes)) {
-            document.getElementById("gpxList").value = "No routes found in API.";
-            return;
-        }
-
-        const output = json.routes
-            .map(r => {
-                const route = r.routeName;
-                return \`https://brt-23f.pages.dev/gpx_animation.html?api=\${ensureApi()}&route=\${encodeURIComponent(route)}\`;
-            })
-            .join("\\n");
-
-        document.getElementById("gpxList").value = output;
-
-    } catch (e) {
-        document.getElementById("gpxList").value = "Error reading GPX routes.";
+    if (!json.routes || !Array.isArray(json.routes)) {
+      document.getElementById("gpxList").value = "No routes found in API.";
+      return;
     }
+
+    const output = json.routes
+      .map(r =>
+        `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r.routeName)}`
+      )
+      .join("\\n");
+
+    document.getElementById("gpxList").value = output;
+
+  } catch (e) {
+    document.getElementById("gpxList").value = "Error reading GPX routes.";
+  }
 }
 loadRoutes();
 
 
 // -------------------------------
-// Output into UI
+// Inject into UI
 // -------------------------------
 document.getElementById("miniThermo").value = miniThermo.trim();
 document.getElementById("fullThermo").value = fullThermo.trim();
 document.getElementById("carouselCode").value = carouselCode.trim();
 document.getElementById("addressLookup").value = addressLookup.trim();
-
 document.getElementById("trackerLink").value = trackerLink.trim();
 document.getElementById("recommendedTracker").value = recommendedTracker.trim();
-
 document.getElementById("routesLink").value = routesLink.trim();
 document.getElementById("recommendedRoutes").value = recommendedRoutes.trim();
