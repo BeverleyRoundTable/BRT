@@ -2,206 +2,258 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Santa Sleigh GPX Animator</title>
+<title>Santa Sleigh TravelBoost Animator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <!-- Leaflet CSS -->
-<link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background: #000;
-  }
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        font-family: system-ui, sans-serif;
+    }
 
-  #map {
-    width: 100%;
-    height: 100%;
-  }
+    #map {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
 
-  /* Sprite icon */
-  #sprite {
-    position: absolute;
-    width: var(--sprite-size, 128px);
-    height: var(--sprite-size, 128px);
-    background-image: var(--sprite-url);
-    background-size: calc(var(--total-frames) * 100%) 100%;
-    image-rendering: pixelated;
-    pointer-events: none;
-  }
+    #animCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        pointer-events: none;
+    }
 
-  /* Sparkle trail */
-  .sparkle {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: radial-gradient(circle, #ffd700, transparent);
-    border-radius: 50%;
-    opacity: 0.8;
-    pointer-events: none;
-  }
+    #ui-labels {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        color: white;
+        z-index: 20;
+        font-size: 1rem;
+        text-shadow: 0 0 6px #000;
+        pointer-events: none;
+    }
 </style>
-</head>
 
+</head>
 <body>
+
 <div id="map"></div>
-<div id="sprite"></div>
+<canvas id="animCanvas"></canvas>
+
+<div id="ui-labels">
+    <div id="routeName">Loading…</div>
+    <div style="font-size:0.8rem;opacity:0.7;">GPX Route + TravelBoost Animation</div>
+</div>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- GPX → GeoJSON parser -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.min.js"></script>
-
 <script>
-// ------------------------------------------------------------
-// URL PARAMS
-// ------------------------------------------------------------
-const params = new URLSearchParams(location.search);
-const apiUrl = params.get("api");
-const routeName = params.get("route");
+/* -------------------------------------------------------
+   URL PARAMS
+------------------------------------------------------- */
+const P = new URLSearchParams(window.location.search);
+const API = P.get("api");
+let ROUTE = P.get("route");
 
-// Safety check
-if (!apiUrl || !routeName) {
-  document.body.innerHTML =
-    "<h2 style='color:white;text-align:center;margin-top:40px;'>Missing ?api= or ?route= parameter</h2>";
+if (!API) {
+    document.body.innerHTML = "<h2 style='padding:20px;color:white;'>Missing ?api URL</h2>";
+    throw new Error("Missing API");
 }
 
-// ------------------------------------------------------------
-// LOAD SETTINGS + ROUTE FROM GOOGLE SHEET
-// ------------------------------------------------------------
-let settings = {};
-let selectedRoute = null;
+/* -------------------------------------------------------
+   GLOBALS
+------------------------------------------------------- */
+const canvas = document.getElementById("animCanvas");
+const ctx = canvas.getContext("2d");
+let W = 0, H = 0;
 
-async function loadSettings() {
-  const res = await fetch(apiUrl);
-  const json = await res.json();
+function resizeCanvas() {
+    W = canvas.width = window.innerWidth * devicePixelRatio;
+    H = canvas.height = window.innerHeight * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
-  settings = json.settings;
-  selectedRoute = json.routes.find(r => r.routeName === routeName);
-
-  return json;
+/* -------------------------------------------------------
+   FETCH SETTINGS + ROUTES
+------------------------------------------------------- */
+async function loadMaster() {
+    const res = await fetch(API, { cache: "no-store" });
+    if (!res.ok) throw new Error("API error");
+    return res.json();
 }
 
-// ------------------------------------------------------------
-// INIT MAP
-// ------------------------------------------------------------
-let map = L.map("map", {
-  zoomControl: false,
-  attributionControl: false
-});
-
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 20
-}).addTo(map);
-
-// ------------------------------------------------------------
-// ANIMATION STATE
-// ------------------------------------------------------------
-let sprite = document.getElementById("sprite");
-let gpxCoords = [];
-let spriteIndex = 0;
-
-// ------------------------------------------------------------
-// SPRITE ANIMATION (FRAME CYCLING)
-// ------------------------------------------------------------
-function animateSprite() {
-  const frames = Number(settings.travelboost_sprite_frames || 5);
-  sprite.style.backgroundPositionX = `-${(spriteIndex % frames) * 100}%`;
-  spriteIndex++;
-}
-
-// ------------------------------------------------------------
-// MOVE ALONG ROUTE (INTERPOLATED)
-// ------------------------------------------------------------
-let progress = 0;
-
-function moveAlongRoute() {
-  if (!gpxCoords.length) return;
-
-  const speed = Number(settings.travelboost_speed) || 8; // pixels-ish per frame
-  progress += 0.002 * (speed / 5);
-
-  if (progress >= 1) progress = 1;
-
-  const idx = Math.floor(progress * (gpxCoords.length - 1));
-  const pos = gpxCoords[idx];
-
-  const point = map.latLngToContainerPoint(pos);
-  sprite.style.left = point.x + "px";
-  sprite.style.top = point.y + "px";
-
-  // Sparkles
-  createSparkle(point.x, point.y);
-
-  requestAnimationFrame(moveAlongRoute);
-}
-
-// ------------------------------------------------------------
-// SPARKLE EFFECT
-// ------------------------------------------------------------
-function createSparkle(x, y) {
-  const sp = document.createElement("div");
-  sp.className = "sparkle";
-  sp.style.left = x + "px";
-  sp.style.top = y + "px";
-  document.body.appendChild(sp);
-
-  setTimeout(() => sp.remove(), 500);
-}
-
-// ------------------------------------------------------------
-// LOAD GPX FILE + DRAW ROUTE
-// ------------------------------------------------------------
+/* -------------------------------------------------------
+   GPX PARSER
+------------------------------------------------------- */
 async function loadGPX(url) {
-  const xml = await (await fetch(url)).text();
-  const dom = new DOMParser().parseFromString(xml, "text/xml");
-  const geo = toGeoJSON.gpx(dom);
+    const text = await fetch(url).then(r => r.text());
+    const xml = new DOMParser().parseFromString(text, "text/xml");
+    const pts = [...xml.getElementsByTagName("trkpt")];
 
-  gpxCoords = geo.features[0].geometry.coordinates.map(c => ({
-    lat: c[1], lng: c[0]
-  }));
-
-  // Map → route view
-  const bounds = L.latLngBounds(gpxCoords);
-  map.fitBounds(bounds.pad(0.2));
-
-  // Main polyline using accent colour
-  L.polyline(gpxCoords, {
-    color: settings.travelboost_accent_color || "#ffd700",
-    weight: 6,
-    opacity: 0.9
-  }).addTo(map);
+    return pts.map(pt => ({
+        lat: parseFloat(pt.getAttribute("lat")),
+        lon: parseFloat(pt.getAttribute("lon"))
+    }));
 }
 
-// ------------------------------------------------------------
-// MAIN
-// ------------------------------------------------------------
+/* -------------------------------------------------------
+   PROJECT GPX INTO PIXEL SPACE
+------------------------------------------------------- */
+function projectPath(latLngs, padding = 60) {
+    let minLat = Infinity, maxLat = -Infinity;
+    let minLon = Infinity, maxLon = -Infinity;
+
+    for (const p of latLngs) {
+        minLat = Math.min(minLat, p.lat);
+        maxLat = Math.max(maxLat, p.lat);
+        minLon = Math.min(minLon, p.lon);
+        maxLon = Math.max(maxLon, p.lon);
+    }
+
+    const viewW = W / devicePixelRatio;
+    const viewH = H / devicePixelRatio;
+
+    const spanLat = maxLat - minLat || 1;
+    const spanLon = maxLon - minLon || 1;
+
+    const scaleX = (viewW - padding * 2) / spanLon;
+    const scaleY = (viewH - padding * 2) / spanLat;
+    const scale = Math.min(scaleX, scaleY);
+
+    const offsetX = (viewW - scale * spanLon) / 2;
+    const offsetY = (viewH - scale * spanLat) / 2;
+
+    return latLngs.map(p => ({
+        x: offsetX + (p.lon - minLon) * scale,
+        y: offsetY + (maxLat - p.lat) * scale
+    }));
+}
+
+/* -------------------------------------------------------
+   ANIMATOR
+------------------------------------------------------- */
+function animatePath(path, settings, sprite) {
+    const total = path.length;
+    let f = 0;
+    let frame = 0;
+    let frameTimer = 0;
+
+    const fps = settings.travelboost_sprite_fps || 14;
+    const speed = settings.travelboost_speed || 1.4;
+    const frames = settings.travelboost_sprite_frames || 5;
+    const size = settings.travelboost_sprite_size || 128;
+
+    function loop(ts) {
+        ctx.clearRect(0, 0, W, H);
+
+        // Draw glow route
+        ctx.save();
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = settings.travelboost_accent_color || settings.primary_color || "#ffd700";
+        ctx.shadowColor = ctx.strokeStyle;
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        for (let i = 0; i < path.length; i++) {
+            if (i === 0) ctx.moveTo(path[i].x, path[i].y);
+            else ctx.lineTo(path[i].x, path[i].y);
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        // Position along path
+        f += speed;
+        if (f >= total - 1) f = 0;
+
+        const i = Math.floor(f);
+        const frac = f - i;
+
+        const a = path[i];
+        const b = path[i + 1];
+        const px = a.x + (b.x - a.x) * frac;
+        const py = a.y + (b.y - a.y) * frac;
+
+        // Animate sprite frames
+        frameTimer += 1 / 60;
+        if (frameTimer >= 1 / fps) {
+            frameTimer = 0;
+            frame = (frame + 1) % frames;
+        }
+
+        const fw = sprite.width / frames;
+        const fh = sprite.height;
+
+        ctx.drawImage(
+            sprite,
+            fw * frame, 0, fw, fh,
+            px - size / 2, py - size / 1.3,
+            size, (fh / fw) * size
+        );
+
+        requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+}
+
+/* -------------------------------------------------------
+   MAIN
+------------------------------------------------------- */
 (async function start() {
-  const data = await loadSettings();
+    const master = await loadMaster();
+    const settings = master.settings;
+    let routes = master.routes;
 
-  // Apply sprite CSS variables
-  document.documentElement.style.setProperty(
-    "--sprite-url",
-    `url(${settings.travelboost_sprite})`
-  );
-  document.documentElement.style.setProperty(
-    "--sprite-size",
-    (settings.travelboost_sprite_size || 128) + "px"
-  );
-  document.documentElement.style.setProperty(
-    "--total-frames",
-    settings.travelboost_sprite_frames || "5"
-  );
+    if (!ROUTE) ROUTE = (settings.sleigh_name || "").trim();
 
-  await loadGPX(selectedRoute.gpxUrl);
+    let route =
+        routes.find(r => r.routeName === ROUTE) ||
+        routes.find(r => r.routeName.toLowerCase() === ROUTE?.toLowerCase());
 
-  // Timers
-  setInterval(animateSprite, 1000 / (settings.travelboost_sprite_fps || 14));
-  requestAnimationFrame(moveAlongRoute);
+    if (!route) {
+        document.body.innerHTML = `<h2 style='color:white;padding:20px'>Route not found: ${ROUTE}</h2>`;
+        return;
+    }
+
+    document.getElementById("routeName").textContent =
+        `${route.routeName} – ${route.date || ""}`;
+
+    const gpxPoints = await loadGPX(route.gpxUrl);
+
+    /* ---- LEAFLET MAP ---- */
+    const map = L.map("map", { zoomControl: false });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+    L.polyline(gpxPoints, { color: settings.travelboost_accent_color || "#ffd700", weight: 4 }).addTo(map);
+    map.fitBounds(gpxPoints.map(p => [p.lat, p.lon]), { padding: [40, 40] });
+
+    /* ---- PROJECT TO CANVAS ---- */
+    const path2D = projectPath(gpxPoints);
+
+    /* ---- LOAD SPRITE ---- */
+    const sprite = new Image();
+    sprite.crossOrigin = "anonymous";
+    sprite.src = settings.travelboost_sprite;
+
+    sprite.onload = () => {
+        animatePath(path2D, settings, sprite);
+    };
 })();
 </script>
 
