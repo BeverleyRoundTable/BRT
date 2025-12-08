@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Sleigh GPX Animation — Progressive Trail</title>
+<title>Santa Sleigh GPX Animator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
   html, body {
@@ -13,7 +13,16 @@
   }
   #map { position: absolute; inset: 0; z-index: 1; }
   #anim { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
-  #label { position: absolute; bottom:12px; left:50%; transform:translateX(-50%); z-index:20; color:white; font-family:system-ui, sans-serif; text-shadow:0 0 8px black; font-size:1rem; }
+  #label {
+    position: absolute;
+    bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    color: white;
+    font-family: system-ui, sans-serif;
+    font-size: 1rem;
+    text-shadow: 0 0 8px black;
+  }
 </style>
 </head>
 <body>
@@ -25,6 +34,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+/* ---------------------------------------------------
+   URL PARAMS
+--------------------------------------------------- */
 const P = new URLSearchParams(location.search);
 const API = P.get("api");
 const ROUTE = P.get("route");
@@ -34,67 +46,70 @@ if (!API) {
   throw new Error("Missing API");
 }
 
+/* ---------------------------------------------------
+   CANVAS SETUP
+--------------------------------------------------- */
 const canvas = document.getElementById("anim");
 const ctx = canvas.getContext("2d");
-let W=0, H=0;
-function resizeCanvas(){
+let W = 0, H = 0;
+
+function resizeCanvas() {
   W = canvas.width = window.innerWidth * devicePixelRatio;
   H = canvas.height = window.innerHeight * devicePixelRatio;
-  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
-async function fetchJSON(url){
+/* ---------------------------------------------------
+   HELPERS
+--------------------------------------------------- */
+async function fetchJSON(url) {
   const r = await fetch(url, {cache:"no-store"});
   if (!r.ok) throw new Error("API fetch error "+r.status);
   return r.json();
 }
 
-async function loadGPX(url){
+async function loadGPX(url) {
   const xml = await (await fetch(url)).text();
   const dom = new DOMParser().parseFromString(xml, "text/xml");
   const pts = [...dom.getElementsByTagName("trkpt")];
-  return pts.map(p => ({lat: parseFloat(p.getAttribute("lat")), lon: parseFloat(p.getAttribute("lon"))}));
-}
-
-function projectPath(points, pad=60){
-  let minLat=Infinity,maxLat=-Infinity,minLon=Infinity,maxLon=-Infinity;
-  points.forEach(p => {
-    minLat = Math.min(minLat, p.lat);
-    maxLat = Math.max(maxLat, p.lat);
-    minLon = Math.min(minLon, p.lon);
-    maxLon = Math.max(maxLon, p.lon);
-  });
-  const viewW = W/devicePixelRatio, viewH = H/devicePixelRatio;
-  const spanLat = maxLat - minLat || 0.0001;
-  const spanLon = maxLon - minLon || 0.0001;
-  const scaleX = (viewW - pad*2)/spanLon;
-  const scaleY = (viewH - pad*2)/spanLat;
-  const scale = Math.min(scaleX, scaleY);
-  const ox = (viewW - scale*spanLon)/2;
-  const oy = (viewH - scale*spanLat)/2;
-  return points.map(p => ({
-    x: ox + (p.lon - minLon)*scale,
-    y: oy + (maxLat - p.lat)*scale
+  return pts.map(p => ({
+    lat: parseFloat(p.getAttribute("lat")),
+    lon: parseFloat(p.getAttribute("lon"))
   }));
 }
 
-function animate(path2d, sprite, settings){
+/* ---------------------------------------------------
+   PROJECTION USING LEAFLET
+--------------------------------------------------- */
+function projectPathToMap(latLngPoints, map) {
+  return latLngPoints.map(p => {
+    const pt = map.latLngToContainerPoint([p.lat, p.lon]);
+    return { x: pt.x, y: pt.y };
+  });
+}
+
+/* ---------------------------------------------------
+   MAIN ANIMATION LOOP
+--------------------------------------------------- */
+function animate(path2d, sprite, settings) {
   const fps = Number(settings.travelboost_sprite_fps) || 14;
   const frames = Number(settings.travelboost_sprite_frames) || 5;
   const size = Number(settings.travelboost_sprite_size) || 128;
-  const speed = Number(settings.travelboost_speed) || 1.6;
+  const speed = Number(settings.travelboost_speed) || 1.4;
   const accent = settings.travelboost_accent_color || "#ffd700";
 
   let posF = 0;
   let frameIdx = 0;
   let frameTimer = 0;
 
-  function loop(){
-    ctx.clearRect(0,0,W,H);
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
 
-    // Determine current position
+    if (path2d.length < 2) return requestAnimationFrame(loop);
+
+    // Progress along route
     posF += speed;
     if (posF >= path2d.length - 1) posF = path2d.length - 1;
 
@@ -102,17 +117,17 @@ function animate(path2d, sprite, settings){
     const t = posF - i;
     const a = path2d[i];
     const b = path2d[i + 1];
-    const px = a.x + (b.x - a.x)*t;
-    const py = a.y + (b.y - a.y)*t;
+    const px = a.x + (b.x - a.x) * t;
+    const py = a.y + (b.y - a.y) * t;
 
-    // Draw partial trail up to current position
+    // Draw glowing progressive trail
     ctx.save();
     ctx.lineWidth = 6;
     ctx.strokeStyle = accent;
     ctx.shadowColor = accent;
     ctx.shadowBlur = 20;
     ctx.beginPath();
-    for (let j = 0; j <= i; j++){
+    for (let j = 0; j <= i; j++) {
       if (j === 0) ctx.moveTo(path2d[j].x, path2d[j].y);
       else ctx.lineTo(path2d[j].x, path2d[j].y);
     }
@@ -120,7 +135,7 @@ function animate(path2d, sprite, settings){
     ctx.stroke();
     ctx.restore();
 
-    // Sprite frame animation
+    // Animate sprite frames
     frameTimer += 1/60;
     if (frameTimer >= 1/fps) {
       frameTimer = 0;
@@ -134,7 +149,7 @@ function animate(path2d, sprite, settings){
       sprite,
       fw * frameIdx, 0, fw, fh,
       px - size/2, py - size*0.9,
-      size, (fh/fw)*size
+      size, (fh/fw) * size
     );
 
     requestAnimationFrame(loop);
@@ -143,34 +158,58 @@ function animate(path2d, sprite, settings){
   loop();
 }
 
-(async function main(){
+/* ---------------------------------------------------
+   MAIN
+--------------------------------------------------- */
+(async function main() {
   const master = await fetchJSON(API);
   const settings = master.settings;
   const routes = master.routes;
 
-  const route = routes.find(r => r.routeName === ROUTE)
-              || routes.find(r => (r.routeName || "").toLowerCase() === ROUTE.toLowerCase());
+  const route =
+    routes.find(r => r.routeName === ROUTE) ||
+    routes.find(r => (r.routeName || "").toLowerCase() === ROUTE.toLowerCase());
 
   if (!route) {
-    document.body.innerHTML = "<h2 style='color:white;padding:20px'>Route not found: " + ROUTE + "</h2>";
+    document.body.innerHTML =
+      "<h2 style='color:white;padding:20px'>Route not found: " + ROUTE + "</h2>";
     return;
   }
 
-  document.getElementById("label").textContent = route.routeName + " – " + (route.date || "");
+  document.getElementById("label").textContent =
+    `${route.routeName} – ${route.date || ""}`;
 
-  // Leaflet map
+  /* ----------------------------
+     LEAFLET MAP INITIALISATION
+  ----------------------------- */
   const map = L.map("map", { zoomControl: false });
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:19 }).addTo(map);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19
+  }).addTo(map);
 
-  // Load GPX
+  /* ----------------------------
+     LOAD GPX + DRAW BASE ROUTE
+  ----------------------------- */
   const gpx = await loadGPX(route.gpxUrl);
-  L.polyline(gpx, { color: "#999999", weight: 3, opacity: 0.3 }).addTo(map);  // optional faint base line
-  map.fitBounds(gpx.map(p => [p.lat, p.lon]), { padding: [40,40] });
+  const latLngs = gpx.map(p => [p.lat, p.lon]);
 
-  // Project path
-  const path2d = projectPath(gpx);
+  L.polyline(latLngs, { color: "#888", weight: 4, opacity: 0.3 }).addTo(map);
 
-  // Load sprite
+  map.fitBounds(latLngs, { padding: [50,50] });
+
+  /* ----------------------------
+     PROJECT PATH TO CANVAS
+  ----------------------------- */
+  let path2d = projectPathToMap(gpx, map);
+
+  // Reproject when map moves or zooms
+  map.on("move zoom", () => {
+    path2d = projectPathToMap(gpx, map);
+  });
+
+  /* ----------------------------
+     LOAD SPRITE AND START ANIM
+  ----------------------------- */
   const sprite = new Image();
   sprite.crossOrigin = "anonymous";
   sprite.src = settings.travelboost_sprite;
