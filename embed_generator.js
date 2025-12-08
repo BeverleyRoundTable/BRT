@@ -2,18 +2,17 @@
 // Santa Sleigh Embed Generator
 // -------------------------------
 
-// Get API from URL
+// Extract API from ?api=
 const params = new URLSearchParams(window.location.search);
 const api = params.get("api") || "";
 document.getElementById("apiDisplay").textContent = api || "❌ No API found";
 
-// Helper
 function ensureApi() {
     return api || "YOUR_API_HERE";
 }
 
 // -------------------------------
-// Generate Embeds
+// Standard Embeds
 // -------------------------------
 const miniThermo = `
 <div data-santa-mini></div>
@@ -53,16 +52,23 @@ const shadow = container.attachShadow({ mode: "open" });
 shadow.innerHTML = String.raw\`
 <style>
 #lookup-wrapper { width: 50%; margin: 0 auto; min-width: 280px; }
-#sleigh-search-box input { padding: 12px 16px; width: 100%; border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.35);
-  backdrop-filter: blur(8px); color: #fff; font-size: 1rem; margin-bottom: 14px;
-  background-image: url('https://i.ibb.co/LDS2tJZZ/Santa-Marker.png');
-  background-size: 22px; background-repeat: no-repeat; background-position: 12px center;
-  padding-left: 46px;
+#sleigh-search-box input {
+  padding: 12px 16px; width: 100%; border-radius:14px;
+  border:1px solid rgba(255,255,255,0.25);
+  background:rgba(0,0,0,0.35); backdrop-filter:blur(8px);
+  color:white; font-size:1rem; margin-bottom:14px;
+  background-image:url('https://i.ibb.co/LDS2tJZZ/Santa-Marker.png');
+  background-size:22px; background-repeat:no-repeat; background-position:12px center;
+  padding-left:46px;
 }
-#sleigh-search-box button { padding: 12px 20px; background: #D31C1C; border: none;
-  color:white; border-radius: 18px; cursor:pointer; font-weight:600; }
-.route-card { margin:1rem 0; padding:1rem; background:rgba(0,0,0,0.4); border-radius:15px; color:white; }
+#sleigh-search-box button {
+  padding:12px 20px; background:#D31C1C; border:none;
+  color:white; border-radius:18px; cursor:pointer; font-weight:600;
+}
+.route-card {
+  margin:1rem 0; padding:1rem; background:rgba(0,0,0,0.4);
+  border-radius:15px; color:white;
+}
 </style>
 
 <div id="lookup-wrapper">
@@ -74,21 +80,23 @@ shadow.innerHTML = String.raw\`
 </div>
 \`;
 
-const searchInput = shadow.querySelector("#searchInput");
-const searchBtn = shadow.querySelector("#searchBtn");
-const results = shadow.querySelector("#results");
-
 let roads = [];
 fetch("${ensureApi()}?function=getAddressLookup")
  .then(r => r.json())
  .then(d => roads = d);
 
 function normalise(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,""); }
+
+const results = shadow.querySelector("#results");
+const searchInput = shadow.querySelector("#searchInput");
+const searchBtn = shadow.querySelector("#searchBtn");
+
 function searchStreet(){
  const clean = normalise(searchInput.value);
  const matches = roads.filter(r => normalise(r.street + r.suffix).includes(clean));
  display(matches);
 }
+
 function display(list){
  results.innerHTML = "";
  if(list.length === 0){
@@ -96,27 +104,97 @@ function display(list){
    return;
  }
  list.forEach(item => {
-   results.innerHTML += \`<div class="route-card"><h3>\${item.route} – \${item.day} (\${item.date})</h3><p><strong>📍 \${item.street} \${item.suffix}</strong></p>\${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}</div>\`;
+   results.innerHTML += \`
+    <div class="route-card">
+      <h3>\${item.route} – \${item.day} (\${item.date})</h3>
+      <p><strong>📍 \${item.street} \${item.suffix}</strong></p>
+      \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
+    </div>\`;
  });
 }
-searchBtn.onclick = searchStreet;
 
+searchBtn.onclick = searchStreet;
 })();
 </script>
 `;
 
+// -------------------------------
+// Tracker and Routes
+// -------------------------------
 const trackerLink = `
 https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${ensureApi()}
+`;
+
+const recommendedTracker = `
+<!-- 🎅 Santa Sleigh Tracker Embed -->
+<div style="width:90vw;max-width:1000px;margin:0 auto;padding:0 8px;">
+<iframe
+src="https://brt-23f.pages.dev/santa_sleigh_tracker_final_1.html?api=${ensureApi()}"
+style="
+width:100%;
+height:80vh;
+min-height:490px;
+border:none;
+border-radius:15px;
+box-shadow:0 4px 18px #0002;
+display:block;
+margin:0 auto;
+overflow:hidden;
+"
+allowfullscreen
+loading="lazy"
+></iframe>
+</div>
 `;
 
 const routesLink = `
 https://brt-23f.pages.dev/routes.html?api=${ensureApi()}
 `;
 
-// Inject into textareas
+const recommendedRoutes = `
+<!-- ROUTE CONTAINERS -->
+<div id="tonights-route" class="santa-tonights-route"></div>
+<div id="all-routes" class="santa-route-list"></div>
+
+<!-- LOAD ROUTES.JS WITH AUTOMATIC CACHE-BUSTING -->
+<script>
+(function() {
+const s = document.createElement("script");
+s.src = "https://brt-23f.pages.dev/routes.js?api=${ensureApi()}&v=" + Date.now();
+document.body.appendChild(s);
+})();
+</script>
+`;
+
+// -------------------------------
+// GPX ANIMATION ROUTE LIST
+// -------------------------------
+async function loadRoutes() {
+    try {
+        const res = await fetch(`${ensureApi()}?function=getRouteNames`);
+        const list = await res.json();
+
+        const output = list
+          .map(r => `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r)}`)
+          .join("\\n");
+
+        document.getElementById("gpxList").value = output;
+    } catch (e) {
+        document.getElementById("gpxList").value = "Unable to load route list.";
+    }
+}
+loadRoutes();
+
+// -------------------------------
+// Inject all embed outputs
+// -------------------------------
 document.getElementById("miniThermo").value = miniThermo.trim();
 document.getElementById("fullThermo").value = fullThermo.trim();
 document.getElementById("carouselCode").value = carouselCode.trim();
 document.getElementById("addressLookup").value = addressLookup.trim();
+
 document.getElementById("trackerLink").value = trackerLink.trim();
+document.getElementById("recommendedTracker").value = recommendedTracker.trim();
+
 document.getElementById("routesLink").value = routesLink.trim();
+document.getElementById("recommendedRoutes").value = recommendedRoutes.trim();
