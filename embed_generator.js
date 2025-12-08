@@ -245,28 +245,20 @@ https://brt-23f.pages.dev/routes.html?api=${ensureApi()}
 `;
 
 const recommendedRoutes = `
-<!-- ROUTE CONTAINERS -->
-<div id="tonights-route" class="santa-tonights-route"></div>
-<div id="all-routes" class="santa-route-list"></div>
-
-<!-- LOAD ROUTES.JS WITH AUTOMATIC CACHE-BUSTING -->
-<script>
-(function() {
-
-  // ⭐ FIX: Ensure the embed page has ?api= in its own URL
-  const url = new URL(window.location.href);
-  if (!url.searchParams.get("api")) {
-      url.searchParams.set("api", "${ensureApi()}");
-      window.history.replaceState({}, "", url.toString());
-  }
-
-  // Load routes.js normally
-  const s = document.createElement("script");
-  s.src = "https://brt-23f.pages.dev/routes.js?v=" + Date.now();
-  document.body.appendChild(s);
-
-})();
-</script>
+<!-- 🎅 Sleigh Routes Embed -->
+<div style="width:100%;max-width:1000px;margin:0 auto;">
+<iframe
+src="https://brt-23f.pages.dev/routes.html?api=${ensureApi()}"
+style="
+width:100%;
+height:1200px;
+border:none;
+border-radius:15px;
+overflow:hidden;
+"
+loading="lazy"
+></iframe>
+</div>
 `;
 
 // -------------------------------
