@@ -52,3 +52,99 @@
 
     .address-search-input:focus {
       outline: none;
+      box-shadow: 0 0 14px rgba(211, 28, 28, 0.8);
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    .address-search button {
+      padding: 10px 22px;
+      border-radius: 999px;
+      border: none;
+      background: #d31c1c;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow:
+        0 0 8px rgba(211, 28, 28, 0.6),
+        0 0 16px rgba(211, 28, 28, 0.5);
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .address-search button:hover {
+      transform: scale(1.04);
+      box-shadow:
+        0 0 14px rgba(211, 28, 28, 0.8),
+        0 0 24px rgba(211, 28, 28, 0.7);
+    }
+
+    /* Cards */
+    .addr-route-card {
+      background: rgba(255,255,255,0.06);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 18px 20px 16px;
+      margin: 16px 0;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+    }
+
+    .addr-route-title {
+      margin: 0 0 8px;
+      font-size: 1.35rem;
+    }
+
+    .addr-route-date {
+      margin: 0 0 10px;
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
+
+    .addr-streets-list {
+      list-style: none;
+      padding: 0;
+      margin: 6px 0 0;
+      font-size: 0.98rem;
+    }
+
+    .addr-streets-list li {
+      margin: 2px 0;
+    }
+
+    .addr-no-results {
+      text-align: center;
+      margin-top: 18px;
+      opacity: 0.9;
+    }
+
+    @media (min-width: 700px) {
+      body {
+        padding-top: 60px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="address-root">
+    <div class="address-search">
+      <input
+        id="searchInput"
+        class="address-search-input"
+        type="text"
+        placeholder="Type your street name..."
+      />
+      <button id="searchBtn">Search</button>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+  <!-- Load address.js with cache-busting -->
+  <script>
+    (function () {
+      const s = document.createElement("script");
+      s.src = "https://brt-23f.pages.dev/address.js?v=" + Date.now();
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>
