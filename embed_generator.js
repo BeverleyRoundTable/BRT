@@ -52,18 +52,34 @@ const addressLookup = `
 const container = document.getElementById("santa-lookup");
 const shadow = container.attachShadow({ mode: "open" });
 
-// Temporary default — replaced dynamically below
+// Defaults
 let lookupIcon = "https://i.ibb.co/LDS2tJZZ/Santa-Marker.png";
+let overlayLogo = ""; // NEW — overlay logo (global branding)
 
-// Load from Settings sheet (global logos)
+// Load dynamic icons
 fetch("${ensureApi()}?function=getGlobalLogo&type=lookup")
   .then(r => r.json())
   .then(d => { if (d?.url) lookupIcon = d.url; })
   .catch(()=>{});
 
+fetch("${ensureApi()}?function=getGlobalLogo&type=overlay")
+  .then(r => r.json())
+  .then(d => { if (d?.url) overlayLogo = d.url; applyOverlay(); })
+  .catch(()=>{});
+
+// Inject HTML
 shadow.innerHTML = String.raw\`
 <style>
-#lookup-wrapper { width: 50%; margin: 0 auto; min-width: 280px; }
+#lookup-wrapper { width: 50%; margin: 0 auto; min-width: 280px; position:relative; }
+
+#overlay-logo {
+  display:block;
+  width:140px;
+  margin:0 auto 18px auto;
+  opacity:0.95;
+}
+#overlay-logo.hidden { display:none; }
+
 #sleigh-search-box input {
   padding: 12px 16px;
   width: 100%;
@@ -79,6 +95,7 @@ shadow.innerHTML = String.raw\`
   background-position:12px center;
   padding-left:46px;
 }
+
 #sleigh-search-box button {
   padding:12px 20px;
   background:#D31C1C;
@@ -88,6 +105,7 @@ shadow.innerHTML = String.raw\`
   cursor:pointer;
   font-weight:600;
 }
+
 .route-card {
   margin:1rem 0;
   padding:1rem;
@@ -100,11 +118,12 @@ shadow.innerHTML = String.raw\`
 </style>
 
 <div id="lookup-wrapper">
- <div id="sleigh-search-box">
-  <input id="searchInput" placeholder="Type your street name..." />
-  <button id="searchBtn">Search</button>
- </div>
- <div id="results"></div>
+  <img id="overlay-logo" class="hidden" />
+  <div id="sleigh-search-box">
+    <input id="searchInput" placeholder="Type your street name..." />
+    <button id="searchBtn">Search</button>
+  </div>
+  <div id="results"></div>
 </div>
 \`;
 
@@ -113,20 +132,27 @@ fetch("${ensureApi()}?function=getAddressLookup")
  .then(r => r.json())
  .then(d => roads = d);
 
-// Apply the dynamic icon AFTER shadow loads
+// Apply the dynamic input icon
 setTimeout(() => {
   const input = shadow.querySelector("#searchInput");
   if (input) input.style.backgroundImage = "url('" + lookupIcon + "')";
 }, 200);
 
-// --------------------------------------
-// Helpers (fuzzy search + date formatting)
-// --------------------------------------
+// Apply overlay logo when loaded
+function applyOverlay(){
+  const el = shadow.querySelector("#overlay-logo");
+  if (!el) return;
+  if (!overlayLogo) return;
+
+  el.src = overlayLogo;
+  el.classList.remove("hidden");
+}
+
+// Helpers
 function normalise(s){
   return s.toLowerCase().replace(/[^a-z0-9]/g,"");
 }
 
-// Fuzzy scoring system
 function fuzzyScore(input, target) {
   if (!input || !target) return 0;
   if (target.includes(input)) return 200 + input.length;
@@ -158,6 +184,48 @@ function formatDate(d) {
 const results = shadow.querySelector("#results");
 const searchInput = shadow.querySelector("#searchInput");
 const searchBtn = shadow.querySelector("#searchBtn");
+
+function searchStreet(){
+  const clean = normalise(searchInput.value);
+  if (!clean) return;
+
+  const scored = roads.map(r => {
+    const hay = normalise(r.street + " " + (r.suffix || ""));
+    return { ...r, score: fuzzyScore(clean, hay) };
+  });
+
+  const matches = scored
+    .filter(x => x.score > 3)
+    .sort((a,b) => b.score - a.score);
+
+  display(matches);
+}
+
+function display(list){
+  results.innerHTML = "";
+  if(list.length === 0){
+    results.innerHTML = "<p>No matching streets found.</p>";
+    return;
+  }
+
+  list.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  list.forEach(item => {
+    const niceDate = formatDate(item.date);
+    results.innerHTML += \`
+      <div class="route-card">
+        <h3>\${item.route} – \${item.day} (\${niceDate})</h3>
+        <p><strong>📍 \${item.street} \${item.suffix || ""}</strong></p>
+        \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
+      </div>
+    \`;
+  });
+}
+
+searchBtn.onclick = searchStreet;
+})();
+</script>
+`;
 
 // --------------------------------------
 // SEARCH
