@@ -252,9 +252,19 @@ const recommendedRoutes = `
 <!-- LOAD ROUTES.JS WITH AUTOMATIC CACHE-BUSTING -->
 <script>
 (function() {
-const s = document.createElement("script");
-s.src = "https://brt-23f.pages.dev/routes.js?api=${ensureApi()}&v=" + Date.now();
-document.body.appendChild(s);
+
+  // ⭐ FIX: Ensure the embed page has ?api= in its own URL
+  const url = new URL(window.location.href);
+  if (!url.searchParams.get("api")) {
+      url.searchParams.set("api", "${ensureApi()}");
+      window.history.replaceState({}, "", url.toString());
+  }
+
+  // Load routes.js normally
+  const s = document.createElement("script");
+  s.src = "https://brt-23f.pages.dev/routes.js?v=" + Date.now();
+  document.body.appendChild(s);
+
 })();
 </script>
 `;
