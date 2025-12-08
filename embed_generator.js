@@ -42,6 +42,9 @@ loading="lazy">
 </iframe>
 `;
 
+// -------------------------------
+// ADDRESS LOOKUP (Dynamic Logo + Fuzzy + Nice Dates)
+// -------------------------------
 const addressLookup = `
 <div id="santa-lookup"></div>
 <script>
@@ -49,26 +52,51 @@ const addressLookup = `
 const container = document.getElementById("santa-lookup");
 const shadow = container.attachShadow({ mode: "open" });
 
+// Temporary default — replaced dynamically below
+let lookupIcon = "https://i.ibb.co/LDS2tJZZ/Santa-Marker.png";
+
+// Load from Settings sheet (global logos)
+fetch("${ensureApi()}?function=getGlobalLogo&type=lookup")
+  .then(r => r.json())
+  .then(d => { if (d?.url) lookupIcon = d.url; })
+  .catch(()=>{});
+
 shadow.innerHTML = String.raw\`
 <style>
 #lookup-wrapper { width: 50%; margin: 0 auto; min-width: 280px; }
 #sleigh-search-box input {
-  padding: 12px 16px; width: 100%; border-radius:14px;
+  padding: 12px 16px;
+  width: 100%;
+  border-radius:14px;
   border:1px solid rgba(255,255,255,0.25);
-  background:rgba(0,0,0,0.35); backdrop-filter:blur(8px);
-  color:white; font-size:1rem; margin-bottom:14px;
-  background-image:url('https://i.ibb.co/LDS2tJZZ/Santa-Marker.png');
-  background-size:22px; background-repeat:no-repeat; background-position:12px center;
+  background:rgba(0,0,0,0.35);
+  backdrop-filter:blur(8px);
+  color:white;
+  font-size:1rem;
+  margin-bottom:14px;
+  background-size:22px;
+  background-repeat:no-repeat;
+  background-position:12px center;
   padding-left:46px;
 }
 #sleigh-search-box button {
-  padding:12px 20px; background:#D31C1C; border:none;
-  color:white; border-radius:18px; cursor:pointer; font-weight:600;
+  padding:12px 20px;
+  background:#D31C1C;
+  border:none;
+  color:white;
+  border-radius:18px;
+  cursor:pointer;
+  font-weight:600;
 }
 .route-card {
-  margin:1rem 0; padding:1rem; background:rgba(0,0,0,0.4);
-  border-radius:15px; color:white;
+  margin:1rem 0;
+  padding:1rem;
+  background:rgba(255,255,255,0.08);
+  border-radius:15px;
+  color:white;
+  line-height:1.55;
 }
+.route-card h3 { margin:0 0 .3rem 0; }
 </style>
 
 <div id="lookup-wrapper">
@@ -85,32 +113,97 @@ fetch("${ensureApi()}?function=getAddressLookup")
  .then(r => r.json())
  .then(d => roads = d);
 
-function normalise(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,""); }
+// Apply the dynamic icon AFTER shadow loads
+setTimeout(() => {
+  const input = shadow.querySelector("#searchInput");
+  if (input) input.style.backgroundImage = "url('" + lookupIcon + "')";
+}, 200);
+
+// --------------------------------------
+// Helpers (fuzzy search + date formatting)
+// --------------------------------------
+function normalise(s){
+  return s.toLowerCase().replace(/[^a-z0-9]/g,"");
+}
+
+// Fuzzy scoring system
+function fuzzyScore(input, target) {
+  if (!input || !target) return 0;
+  if (target.includes(input)) return 200 + input.length;
+
+  let score = 0;
+  let pos = 0;
+  for (let i = 0; i < input.length; i++) {
+    const c = input[i];
+    const found = target.indexOf(c, pos);
+    if (found >= 0) {
+      score += 4;
+      pos = found + 1;
+    }
+  }
+  return score;
+}
+
+function formatDate(d) {
+  const date = new Date(d);
+  if (isNaN(date)) return "";
+  return date.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+}
 
 const results = shadow.querySelector("#results");
 const searchInput = shadow.querySelector("#searchInput");
 const searchBtn = shadow.querySelector("#searchBtn");
 
+// --------------------------------------
+// SEARCH
+// --------------------------------------
 function searchStreet(){
- const clean = normalise(searchInput.value);
- const matches = roads.filter(r => normalise(r.street + r.suffix).includes(clean));
- display(matches);
+  const clean = normalise(searchInput.value);
+  if (!clean) return;
+
+  const scored = roads.map(r => {
+    const hay = normalise(r.street + " " + (r.suffix || ""));
+    return { ...r, score: fuzzyScore(clean, hay) };
+  });
+
+  const matches = scored
+    .filter(x => x.score > 3)
+    .sort((a,b) => b.score - a.score);
+
+  display(matches);
 }
 
+// --------------------------------------
+// DISPLAY
+// --------------------------------------
 function display(list){
- results.innerHTML = "";
- if(list.length === 0){
-   results.innerHTML = "<p>No matching streets found.</p>";
-   return;
- }
- list.forEach(item => {
-   results.innerHTML += \`
-    <div class="route-card">
-      <h3>\${item.route} – \${item.day} (\${item.date})</h3>
-      <p><strong>📍 \${item.street} \${item.suffix}</strong></p>
-      \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
-    </div>\`;
- });
+  results.innerHTML = "";
+  if(list.length === 0){
+    results.innerHTML = "<p>No matching streets found.</p>";
+    return;
+  }
+
+  const now = new Date();
+
+  // Future routes first, then past
+  list.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  list.forEach(item => {
+    const niceDate = formatDate(item.date);
+
+    results.innerHTML += \`
+      <div class="route-card">
+        <h3>\${item.route} – \${item.day} (\${niceDate})</h3>
+        <p><strong>📍 \${item.street} \${item.suffix || ""}</strong></p>
+        \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
+      </div>
+    \`;
+  });
 }
 
 searchBtn.onclick = searchStreet;
@@ -170,18 +263,18 @@ document.body.appendChild(s);
 // GPX ANIMATION ROUTE LIST
 // -------------------------------
 async function loadRoutes() {
-    try {
-        const res = await fetch(`${ensureApi()}?function=getRouteNames`);
-        const list = await res.json();
+  try {
+    const res = await fetch(\`\${ensureApi()}?function=getRouteNames\`);
+    const list = await res.json();
 
-        const output = list
-          .map(r => `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r)}`)
-          .join("\\n");
+    const output = list
+      .map(r => \`https://brt-23f.pages.dev/gpx_animation.html?api=\${ensureApi()}&route=\${encodeURIComponent(r)}\`)
+      .join("\\n");
 
-        document.getElementById("gpxList").value = output;
-    } catch (e) {
-        document.getElementById("gpxList").value = "Unable to load route list.";
-    }
+    document.getElementById("gpxList").value = output;
+  } catch (e) {
+    document.getElementById("gpxList").value = "Unable to load route list.";
+  }
 }
 loadRoutes();
 
