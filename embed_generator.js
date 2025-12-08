@@ -12,7 +12,7 @@ function ensureApi() {
 }
 
 // -------------------------------
-// Mini + Full Thermometer Embeds
+// Standard Embeds
 // -------------------------------
 const miniThermo = `
 <div data-santa-mini></div>
@@ -44,196 +44,151 @@ loading="lazy">
 
 
 // -------------------------------
-// ADDRESS LOOKUP (Dynamic Logos + Fuzzy Search)
+// ADDRESS LOOKUP (your exact working version + dynamic icon + dynamic API)
 // -------------------------------
 const addressLookup = `
-<div id="santa-lookup"></div>
-<script>
-(function () {
+<div id="lookup-wrapper">
 
-const container = document.getElementById("santa-lookup");
-const shadow = container.attachShadow({ mode: "open" });
+<div id="sleigh-search-box" style="text-align:center;">
+<input id="searchInput" placeholder="Type your street name...">
+<button onclick="searchStreet()">Search</button>
+</div>
 
-// Defaults until API loads
-let lookupIcon = "";
-let overlayLogo = "";
+<div id="results"></div>
 
-// Load dynamic lookup icon
-fetch("${ensureApi()}?function=getGlobalLogo&type=lookup")
-  .then(r => r.json())
-  .then(d => { if (d?.url) lookupIcon = d.url; })
-  .catch(()=>{});
+</div>
 
-// Load dynamic overlay logo
-fetch("${ensureApi()}?function=getGlobalLogo&type=overlay")
-  .then(r => r.json())
-  .then(d => { if (d?.url) overlayLogo = d.url; })
-  .catch(()=>{});
-
-shadow.innerHTML = String.raw\`
 <style>
-#lookup-wrapper { width:50%; margin:0 auto; min-width:280px; }
-
-#overlay-logo {
-  display:block;
-  width:140px;
-  margin:0 auto 18px auto;
-  opacity:0.95;
+#lookup-wrapper {
+  width: 50%;
+  margin: 0 auto;
+  min-width: 280px;
 }
-#overlay-logo.hidden { display:none; }
 
+/* Input styling */
 #sleigh-search-box input {
-  padding:12px 16px;
-  width:100%;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,0.25);
-  background:rgba(0,0,0,0.35);
-  backdrop-filter:blur(8px);
-  color:white;
-  font-size:1rem;
-  margin-bottom:14px;
-  background-size:22px;
-  background-repeat:no-repeat;
-  background-position:12px center;
-  padding-left:46px;
+  padding: 12px 16px;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 1rem;
+  margin-bottom: 14px;
+  background-size: 22px;
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  padding-left: 46px;
 }
 
+/* Glow on focus */
+#sleigh-search-box input:focus {
+  outline: none;
+  box-shadow: 0 0 14px rgba(211, 28, 28, 0.8);
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
+/* Button styling */
 #sleigh-search-box button {
-  padding:12px 20px;
-  background:#D31C1C;
-  border:none;
-  color:white;
-  border-radius:18px;
-  cursor:pointer;
-  font-weight:600;
+  padding: 12px 20px;
+  background: #D31C1C;
+  border: none;
+  color: white;
+  border-radius: 18px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow:
+  0 0 8px rgba(211, 28, 28, 0.6),
+  0 0 16px rgba(211, 28, 28, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
-.route-card {
-  margin:1rem 0;
-  padding:1rem;
-  background:rgba(255,255,255,0.08);
-  border-radius:15px;
-  color:white;
-  line-height:1.55;
+#sleigh-search-box button:hover {
+  transform: scale(1.04);
+  box-shadow:
+  0 0 14px rgba(211, 28, 28, 0.8),
+  0 0 24px rgba(211, 28, 28, 0.7);
 }
+
+/* Result cards */
+.route-card {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(5px);
+  border-radius: 15px;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#results { color: white; user-select:none; }
 </style>
 
-<div id="lookup-wrapper">
-  <img id="overlay-logo" class="hidden" />
-  <div id="sleigh-search-box">
-    <input id="searchInput" placeholder="Type your street name..." />
-    <button id="searchBtn">Search</button>
-  </div>
-  <div id="results"></div>
-</div>
-\`;
-
-const searchInput = shadow.querySelector("#searchInput");
-const searchBtn = shadow.querySelector("#searchBtn");
-const results = shadow.querySelector("#results");
-const overlayImg = shadow.querySelector("#overlay-logo");
-
-// -------------------------------
-// Load Roads Data
-// -------------------------------
+<script>
 let roads = [];
+
+// Load lookup icon dynamically
+fetch("${ensureApi()}?function=getGlobalLogo&type=lookup")
+  .then(r => r.json())
+  .then(d => {
+    if (d?.url) {
+      document.querySelector("#sleigh-search-box input").style.backgroundImage =
+        "url('" + d.url + "')";
+    }
+  });
+
+// Load road data dynamically
 fetch("${ensureApi()}?function=getAddressLookup")
   .then(r => r.json())
-  .then(d => roads = d);
+  .then(data => roads = data);
 
-// -------------------------------
-// Apply dynamic icons after DOM loads
-// -------------------------------
-setTimeout(() => {
-  if (lookupIcon) searchInput.style.backgroundImage = "url('" + lookupIcon + "')";
-  if (overlayLogo) {
-    overlayImg.src = overlayLogo;
-    overlayImg.classList.remove("hidden");
-  }
-}, 200);
-
-// -------------------------------
-// Fuzzy Search Helpers
-// -------------------------------
-function normalise(s) {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+// Normalisation
+function normalise(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-function fuzzyScore(input, target) {
-  if (!input || !target) return 0;
-  if (target.includes(input)) return 200 + input.length;
-
-  let score = 0, pos = 0;
-  for (const c of input) {
-    const found = target.indexOf(c, pos);
-    if (found >= 0) { score += 4; pos = found + 1; }
-  }
-  return score;
-}
-
-function formatDate(d) {
-  const date = new Date(d);
-  if (isNaN(date)) return "";
-  return date.toLocaleDateString("en-GB", {
-    weekday:"short",
-    day:"numeric",
-    month:"long",
-    year:"numeric"
-  });
-}
-
-// -------------------------------
-// SEARCH
-// -------------------------------
 function searchStreet() {
-  const clean = normalise(searchInput.value);
-  if (!clean) return;
+  const input = document.getElementById("searchInput").value;
+  const clean = normalise(input);
 
-  const matches = roads
-    .map(r => ({
-      ...r,
-      score: fuzzyScore(clean, normalise(r.street + " " + (r.suffix || "")))
-    }))
-    .filter(x => x.score > 3)
-    .sort((a,b) => b.score - a.score);
+  const matches = roads.filter(r =>
+    normalise(r.street + r.suffix).includes(clean)
+  );
 
-  display(matches);
+  displayResults(matches);
 }
 
-// -------------------------------
-// DISPLAY RESULTS
-// -------------------------------
-function display(list) {
-  results.innerHTML = "";
+function displayResults(list) {
+  const container = document.getElementById("results");
+  container.innerHTML = "";
+
   if (list.length === 0) {
-    results.innerHTML = "<p>No matching streets found.</p>";
+    container.innerHTML = "<p style='color:white;'>No matching streets found.</p>";
     return;
   }
 
-  list.sort((a,b) => new Date(a.date) - new Date(b.date));
-
   list.forEach(item => {
-    const nice = formatDate(item.date);
-
-    results.innerHTML += \`
-      <div class="route-card">
-        <h3>\${item.route} – \${item.day} (\${nice})</h3>
-        <p><strong>📍 \${item.street} \${item.suffix || ""}</strong></p>
-        \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
-      </div>
-    \`;
+    container.innerHTML += \`
+<div class="route-card">
+  <h3>\${item.route} – \${item.day} (\${item.date})</h3>
+  <p><strong>📍 \${item.street} \${item.suffix}</strong></p>
+  \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
+</div>\`;
   });
 }
-
-searchBtn.onclick = searchStreet;
-
-})();
 </script>
 `;
 
 
 // -------------------------------
-// Tracker & Routes Embeds
+// Tracker + Routes
 // -------------------------------
 const trackerLink = `
 https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${ensureApi()}
@@ -294,11 +249,12 @@ async function loadRoutes() {
       return;
     }
 
+    // FIXED NEWLINE BUG
     const output = json.routes
       .map(r =>
         `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r.routeName)}`
       )
-      .join("\\n");
+      .join("\\r\\n");
 
     document.getElementById("gpxList").value = output;
 
@@ -310,13 +266,15 @@ loadRoutes();
 
 
 // -------------------------------
-// Inject into UI
+// Inject all embed blocks
 // -------------------------------
 document.getElementById("miniThermo").value = miniThermo.trim();
 document.getElementById("fullThermo").value = fullThermo.trim();
 document.getElementById("carouselCode").value = carouselCode.trim();
 document.getElementById("addressLookup").value = addressLookup.trim();
+
 document.getElementById("trackerLink").value = trackerLink.trim();
 document.getElementById("recommendedTracker").value = recommendedTracker.trim();
+
 document.getElementById("routesLink").value = routesLink.trim();
 document.getElementById("recommendedRoutes").value = recommendedRoutes.trim();
