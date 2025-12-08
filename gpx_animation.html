@@ -2,538 +2,164 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa Sleigh TravelBoost Animator</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Santa Sleigh GPX Animator</title>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
   html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    background: radial-gradient(circle at top, #222 0, #050308 55%, #000 100%);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
-    color: #fff;
-    overflow: hidden;
-  }
-
-  #wrapper {
-    position: relative;
-    width: 100%;
-    height: 100%;
-  }
-
-  #canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
-  #overlay-ui {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 18px;
-    text-align: center;
-    z-index: 20;
-    pointer-events: none;
-  }
-
-  #route-label {
-    font-size: 1rem;
-    font-weight: 600;
-    padding: 8px 14px;
-    border-radius: 999px;
-    background: rgba(0,0,0,0.7);
-    border: 1px solid rgba(255,255,255,0.25);
-    display: inline-block;
-    margin-bottom: 6px;
-  }
-
-  #hint-label {
-    font-size: 0.8rem;
-    opacity: 0.8;
-  }
-
-  #error-box {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 20px;
     background: #000;
-    color: #fff;
-    z-index: 50;
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* sprite */
+  #sprite {
+    position: absolute;
+    width: var(--sprite-size, 128px);
+    height: var(--sprite-size, 128px);
+    background-image: var(--sprite-url);
+    background-repeat: no-repeat;
+    background-size: calc(var(--total-frames) * 100%) 100%;
+    image-rendering: pixelated;
+    pointer-events: none;
   }
 </style>
 </head>
 
 <body>
-<div id="wrapper">
-  <canvas id="canvas"></canvas>
-  <div id="overlay-ui">
-    <div id="route-label">Loading TravelBoost…</div>
-    <div id="hint-label">Route GPX + sprite animation</div>
-  </div>
-  <div id="error-box" style="display:none;"></div>
-</div>
+<div id="map"></div>
+<div id="sprite"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- GPX Parser -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.min.js"></script>
 
 <script>
-/* --------------------------------------------------------
-   URL PARAMS
---------------------------------------------------------- */
-const url = new URL(window.location.href);
-const apiUrl   = url.searchParams.get("api");
-const routeKey = url.searchParams.get("route") || url.searchParams.get("routeName");
+// ------------------------------------------------------------
+// LOAD SETTINGS FROM GOOGLE SHEET
+// ------------------------------------------------------------
+const apiUrl = "YOUR_API_URL"; // <--- PUT YOUR GOOGLE SHEET API URL HERE
+let settings = {};
+let route = null;
 
-if (!apiUrl) {
-  showFatal("No API URL provided. Use ?api=YOUR_MASTER_API&route=Route_Name");
+async function loadSettings() {
+  const res = await fetch(apiUrl);
+  const json = await res.json();
+  settings = json.settings;
+  route = json.routes[0];          // take first route for animation
+  return json;
 }
 
-/* --------------------------------------------------------
-   CANVAS + GLOBALS
---------------------------------------------------------- */
-const canvas = document.getElementById("canvas");
-const ctx    = canvas.getContext("2d");
+// ------------------------------------------------------------
+// INIT MAP
+// ------------------------------------------------------------
+let map = L.map("map", {
+  zoomControl: false,
+  attributionControl: false
+});
 
-let W = 0, H = 0;
-function resize() {
-  W = canvas.width  = window.innerWidth  * window.devicePixelRatio;
-  H = canvas.height = window.innerHeight * window.devicePixelRatio;
-  ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
-}
-window.addEventListener("resize", resize);
-resize();
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 20
+}).addTo(map);
 
-/* --------------------------------------------------------
-   ERROR HANDLER
---------------------------------------------------------- */
-function showFatal(msg) {
-  const box = document.getElementById("error-box");
-  box.textContent = msg;
-  box.style.display = "flex";
-  throw new Error(msg);
-}
+// ------------------------------------------------------------
+// ANIMATION ENGINE
+// ------------------------------------------------------------
+let sprite = document.getElementById("sprite");
+let gpxCoords = [];
+let frame = 0;
 
-/* --------------------------------------------------------
-   MAIN FLOW
---------------------------------------------------------- */
-(async function start() {
-  try {
-    const master = await fetch(apiUrl, { cache: "no-store" }).then(r => r.json());
-    const settings = master.settings || {};
-    const routes   = master.routes   || [];
-
-    const route = pickRoute(routes, settings);
-    if (!route || !route.gpxUrl) {
-      showFatal("No route with GPX found. Check your Routes sheet and travelboost_mode / &route parameter.");
-    }
-
-    document.getElementById("route-label").textContent =
-      (route.routeName || "Unknown Route") +
-      (route.date ? " – " + niceDate(route.date) : "");
-
-    const config = buildConfig(settings, route);
-    const gpxPoints = await loadGpxPoints(route.gpxUrl);
-
-    if (gpxPoints.length < 2) {
-      showFatal("GPX file has too few points to animate.");
-    }
-
-    const path2D = projectToCanvas(gpxPoints, config.padding);
-    const travelPath = (config.gapFill === "smooth")
-      ? densifyPath(path2D, 4)   // interpolate extra points
-      : path2D;
-
-    const metrics = buildPathMetrics(travelPath);
-    const sprite  = await loadSprite(config.spriteUrl);
-
-    runAnimationLoop({ config, sprite, travelPath, metrics });
-
-  } catch (err) {
-    console.error(err);
-    showFatal("TravelBoost failed: " + err);
-  }
-})();
-
-/* --------------------------------------------------------
-   CONFIG / SETTINGS HELPERS
---------------------------------------------------------- */
-function pickRoute(routes, settings) {
-  const todayIso = new Date().toISOString().slice(0,10);
-  const mode = (settings.travelboost_mode || "next_route").toLowerCase();
-
-  if (routeKey) {
-    return routes.find(r => (r.routeName || "").toLowerCase() === routeKey.toLowerCase()) || null;
-  }
-
-  const norm = d => {
-    const dt = new Date(d);
-    return isNaN(dt) ? null : dt.toISOString().slice(0,10);
-  };
-
-  if (mode === "today_route") {
-    return routes.find(r => norm(r.date) === todayIso) || null;
-  }
-
-  if (mode === "all_routes") {
-    // just pick first route with a GPX – good fallback
-    return routes.find(r => r.gpxUrl) || null;
-  }
-
-  // default: next_route
-  const future = routes
-    .map(r => ({ r, d: norm(r.date) }))
-    .filter(x => x.d && x.d >= todayIso)
-    .sort((a,b) => a.d.localeCompare(b.d));
-
-  return future.length ? future[0].r : routes.find(r => r.gpxUrl) || null;
+function animateSprite() {
+  const frameCount = Number(settings.travelboost_sprite_frames) || 5;
+  sprite.style.backgroundPositionX = `-${(frame % frameCount) * 100}%`;
+  frame++;
 }
 
-function buildConfig(settings, route) {
-  const primary = settings.primary_color || "#d31c1c";
-  const accent  = settings.travelboost_accent_color || settings.accent_color || primary;
+// ------------------------------------------------------------
+// MOVE SPRITE ALONG ROUTE
+// ------------------------------------------------------------
+let idx = 0;
+function moveSprite() {
+  if (!gpxCoords.length) return;
 
-  const frames  = Number(settings.travelboost_sprite_frames || 4);
-  const fps     = Number(settings.travelboost_sprite_fps    || 14);
-  const size    = Number(settings.travelboost_sprite_size   || 128);
-  const speed   = Number(settings.travelboost_speed         || 1.25); // pixels per frame-ish
+  idx++;
+  if (idx >= gpxCoords.length) idx = gpxCoords.length - 1;
 
-  return {
-    routeName  : route.routeName || "",
-    spriteUrl  : settings.travelboost_sprite,
-    frames,
-    fps,
-    size,
-    speed,
-    color      : accent,
-    gapFill    : (settings.travelboost_gap_fill || "smooth").toLowerCase(),   // smooth / none
-    particles  : (settings.travelboost_particle_effects || "snow").toLowerCase(), // snow / sparkle / magic / none
-    shadow     : String(settings.travelboost_shadow || "").toLowerCase() === "true",
-    padding    : 60
-  };
+  const latlng = gpxCoords[idx];
+  const screenPos = map.latLngToContainerPoint(latlng);
+
+  sprite.style.left = screenPos.x + "px";
+  sprite.style.top = screenPos.y + "px";
+
+  requestAnimationFrame(moveSprite);
 }
 
-/* --------------------------------------------------------
-   GPX LOADING + PROJECTION
---------------------------------------------------------- */
-async function loadGpxPoints(url) {
-  const text = await fetch(url, { cache: "no-store" }).then(r => r.text());
-  const xml  = new DOMParser().parseFromString(text, "application/xml");
-  const nodes = Array.from(xml.getElementsByTagName("trkpt"));
+// ------------------------------------------------------------
+// LOAD GPX FILE
+// ------------------------------------------------------------
+async function loadGPX(url) {
+  const xml = await (await fetch(url)).text();
+  const dom = new DOMParser().parseFromString(xml, "text/xml");
+  const geo = toGeoJSON.gpx(dom);
 
-  if (!nodes.length) {
-    // fall back for some GPX variants (rtept)
-    const alt = Array.from(xml.getElementsByTagName("rtept"));
-    if (!alt.length) return [];
-    return alt.map(n => ({
-      lat: parseFloat(n.getAttribute("lat")),
-      lon: parseFloat(n.getAttribute("lon"))
-    }));
-  }
-
-  return nodes.map(n => ({
-    lat: parseFloat(n.getAttribute("lat")),
-    lon: parseFloat(n.getAttribute("lon"))
+  const coords = geo.features[0].geometry.coordinates.map(c => ({
+    lat: c[1], lng: c[0]
   }));
+
+  gpxCoords = coords;
+
+  // Fit map to route
+  const bounds = L.latLngBounds(coords);
+  map.fitBounds(bounds.pad(0.2));
+
+  // Draw GPX route
+  L.polyline(coords, {
+    color: settings.primary_color || "#ffd700",
+    weight: 6,
+    opacity: 0.9
+  }).addTo(map);
 }
 
-function projectToCanvas(latLngs, padding) {
-  let minLat = Infinity, maxLat = -Infinity;
-  let minLon = Infinity, maxLon = -Infinity;
+// ------------------------------------------------------------
+// MAIN STARTUP
+// ------------------------------------------------------------
+(async function start() {
+  const data = await loadSettings();
 
-  latLngs.forEach(p => {
-    if (!isFinite(p.lat) || !isFinite(p.lon)) return;
-    if (p.lat < minLat) minLat = p.lat;
-    if (p.lat > maxLat) maxLat = p.lat;
-    if (p.lon < minLon) minLon = p.lon;
-    if (p.lon > maxLon) maxLon = p.lon;
-  });
+  // Set sprite CSS variable
+  document.documentElement.style.setProperty(
+    "--sprite-url",
+    `url(${settings.travelboost_sprite})`
+  );
+  document.documentElement.style.setProperty(
+    "--total-frames",
+    settings.travelboost_sprite_frames || "5"
+  );
+  document.documentElement.style.setProperty(
+    "--sprite-size",
+    (settings.travelboost_sprite_size || 128) + "px"
+  );
 
-  const width  = W / window.devicePixelRatio;
-  const height = H / window.devicePixelRatio;
-  const pad = padding;
+  // Load GPX from route
+  await loadGPX(route.gpxUrl);
 
-  const spanLon = maxLon - minLon || 1;
-  const spanLat = maxLat - minLat || 1;
-
-  const scaleX = (width  - pad * 2) / spanLon;
-  const scaleY = (height - pad * 2) / spanLat;
-  const scale  = Math.min(scaleX, scaleY);
-
-  const offsetX = (width  - scale * spanLon) / 2;
-  const offsetY = (height - scale * spanLat) / 2;
-
-  return latLngs.map(p => {
-    const x = offsetX + (p.lon - minLon) * scale;
-    const y = offsetY + (maxLat - p.lat) * scale; // invert Y (lat increases north)
-    return { x, y };
-  });
-}
-
-/* --------------------------------------------------------
-   PATH METRICS + DENSIFY
---------------------------------------------------------- */
-function buildPathMetrics(points) {
-  const segLengths = [];
-  let total = 0;
-  for (let i = 0; i < points.length - 1; i++) {
-    const dx = points[i+1].x - points[i].x;
-    const dy = points[i+1].y - points[i].y;
-    const len = Math.hypot(dx, dy);
-    segLengths.push(len);
-    total += len;
-  }
-  return { segLengths, totalLength: total };
-}
-
-function densifyPath(points, stepPx) {
-  if (points.length < 2) return points.slice();
-  const result = [points[0]];
-
-  for (let i = 0; i < points.length - 1; i++) {
-    const a = points[i];
-    const b = points[i+1];
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const dist = Math.hypot(dx, dy);
-    const steps = Math.max(1, Math.floor(dist / stepPx));
-
-    for (let s = 1; s <= steps; s++) {
-      const t = s / steps;
-      result.push({
-        x: a.x + dx * t,
-        y: a.y + dy * t
-      });
-    }
-  }
-  return result;
-}
-
-/* --------------------------------------------------------
-   SPRITE + PARTICLES
---------------------------------------------------------- */
-function loadSprite(url) {
-  return new Promise((resolve, reject) => {
-    if (!url) {
-      reject("No travelboost_sprite set in Settings.");
-      return;
-    }
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => reject("Failed to load sprite: " + url);
-    img.src = url;
-  });
-}
-
-const particles = [];
-function spawnParticles(x, y, config) {
-  const type = config.particles;
-  if (type === "none") return;
-
-  const count = 6;
-  for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 0.5 + Math.random() * 1.2;
-    particles.push({
-      x, y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 0.5,
-      life: 1,
-      type
-    });
-  }
-}
-
-function updateAndRenderParticles(dt, config) {
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    p.life -= dt * 1.2;
-    if (p.life <= 0) {
-      particles.splice(i, 1);
-      continue;
-    }
-    p.x += p.vx * dt * 60;
-    p.y += p.vy * dt * 60 + 0.4;
-
-    const alpha = Math.max(0, p.life);
-    ctx.save();
-    ctx.globalAlpha = alpha;
-
-    if (p.type === "snow") {
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (p.type === "sparkle") {
-      ctx.strokeStyle = config.color;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(p.x - 2, p.y);
-      ctx.lineTo(p.x + 2, p.y);
-      ctx.moveTo(p.x, p.y - 2);
-      ctx.lineTo(p.x, p.y + 2);
-      ctx.stroke();
-    } else { // magic
-      const rad = 3 + 3 * (1 - p.life);
-      const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rad);
-      grd.addColorStop(0, config.color);
-      grd.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = grd;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.restore();
-  }
-}
-
-/* --------------------------------------------------------
-   ANIMATION LOOP
---------------------------------------------------------- */
-function runAnimationLoop({ config, sprite, travelPath, metrics }) {
-  const dpr = window.devicePixelRatio || 1;
-  const viewW = W / dpr;
-  const viewH = H / dpr;
-
-  let tRoute = 0;          // 0–1 along path
-  let spriteFrame = 0;
-  let spriteTimer = 0;
-
-  let lastTime = performance.now();
-
-  function step(now) {
-    const dt = (now - lastTime) / 1000;
-    lastTime = now;
-
-    // Advance route position (looping)
-    const pxPerSec = config.speed * (config.fps || 14); // interpret speed as px/frame at base FPS
-    const deltaPx   = pxPerSec * dt;
-    const deltaT    = metrics.totalLength > 0 ? (deltaPx / metrics.totalLength) : 0;
-    tRoute = (tRoute + deltaT) % 1;
-
-    // Find current point on path
-    const totalLen = metrics.totalLength;
-    let targetDist = tRoute * totalLen;
-    let acc = 0;
-    let idx = 0;
-
-    while (idx < metrics.segLengths.length && acc + metrics.segLengths[idx] < targetDist) {
-      acc += metrics.segLengths[idx];
-      idx++;
-    }
-
-    let pos;
-    if (idx >= travelPath.length - 1) {
-      pos = travelPath[travelPath.length - 1];
-    } else {
-      const segLen = metrics.segLengths[idx] || 1;
-      const t = (targetDist - acc) / segLen;
-      const a = travelPath[idx];
-      const b = travelPath[idx + 1];
-      pos = {
-        x: a.x + (b.x - a.x) * t,
-        y: a.y + (b.y - a.y) * t
-      };
-    }
-
-    // Sprite frame update
-    spriteTimer += dt;
-    const frameDuration = 1 / (config.fps || 14);
-    while (spriteTimer >= frameDuration) {
-      spriteTimer -= frameDuration;
-      spriteFrame = (spriteFrame + 1) % config.frames;
-    }
-
-    // Clear
-    ctx.clearRect(0, 0, viewW, viewH);
-
-    // Draw route
-    ctx.save();
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = config.color;
-    ctx.shadowColor = config.color;
-    ctx.shadowBlur  = 20;
-    ctx.beginPath();
-    for (let i = 0; i < travelPath.length; i++) {
-      const p = travelPath[i];
-      if (i === 0) ctx.moveTo(p.x, p.y);
-      else ctx.lineTo(p.x, p.y);
-    }
-    ctx.stroke();
-    ctx.restore();
-
-    // Spawn & draw particles
-    spawnParticles(pos.x, pos.y, config);
-    updateAndRenderParticles(dt, config);
-
-    // Optional shadow under sprite
-    if (config.shadow) {
-      ctx.save();
-      ctx.globalAlpha = 0.45;
-      const grd = ctx.createRadialGradient(
-        pos.x, pos.y + config.size / 2, 0,
-        pos.x, pos.y + config.size / 2, config.size * 0.8
-      );
-      grd.addColorStop(0, "rgba(0,0,0,0.7)");
-      grd.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = grd;
-      ctx.beginPath();
-      ctx.ellipse(
-        pos.x,
-        pos.y + config.size * 0.45,
-        config.size * 0.7,
-        config.size * 0.35,
-        0, 0, Math.PI * 2
-      );
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // Draw sprite frame
-    const frameW = sprite.width / config.frames;
-    const frameH = sprite.height;
-    const sx = frameW * spriteFrame;
-    const sy = 0;
-
-    const drawW = config.size;
-    const drawH = (frameH / frameW) * config.size;
-
-    ctx.save();
-    ctx.translate(pos.x, pos.y);
-    ctx.drawImage(
-      sprite,
-      sx, sy, frameW, frameH,
-      -drawW / 2,
-      -drawH + 10,
-      drawW,
-      drawH
-    );
-    ctx.restore();
-
-    requestAnimationFrame(step);
-  }
-
-  requestAnimationFrame(step);
-}
-
-/* --------------------------------------------------------
-   UTIL
---------------------------------------------------------- */
-function niceDate(d) {
-  const dt = new Date(d);
-  if (isNaN(dt)) return d;
-  return dt.toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short"
-  });
-}
+  // Start animation loops
+  setInterval(animateSprite, 1000 / (settings.travelboost_sprite_fps || 14));
+  moveSprite();
+})();
 </script>
+
 </body>
 </html>
