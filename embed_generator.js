@@ -7,12 +7,12 @@
 const params = new URLSearchParams(window.location.search);
 const api = params.get("api");
 
-// Strict Mode → Do NOT allow fallback
+// Strict Mode → No fallback allowed
 if (!api) {
     document.getElementById("apiDisplay").textContent =
         "❌ No API detected – add ?api=YOUR_SCRIPT_URL";
 
-    // Disable all outputs so users cannot copy broken code
+    // Disable all outputs so users cannot copy invalid code
     const fields = document.querySelectorAll("textarea");
     fields.forEach(f => f.value = "❌ ERROR: No API detected. Add ?api=YOUR_SCRIPT_URL");
 
@@ -23,6 +23,7 @@ document.getElementById("apiDisplay").textContent = api;
 
 // Helper
 function ensureApi() { return api; }
+
 
 // ================================
 // Mini Thermometer
@@ -37,6 +38,7 @@ document.head.appendChild(s);
 </script>
 `;
 
+
 // ================================
 // Full Thermometer
 // ================================
@@ -50,8 +52,9 @@ document.head.appendChild(s);
 </script>
 `;
 
+
 // ================================
-// Carousel
+// Carousel Embed
 // ================================
 const carouselCode = `
 <iframe
@@ -61,145 +64,32 @@ loading="lazy">
 </iframe>
 `;
 
+
 // ================================
-// ADDRESS LOOKUP — Corrected Version
-// FROM YOUR WORKING UI — WITH DYNAMIC ICON + API
+// ADDRESS LOOKUP — FINAL iFrame Version
+// Works everywhere: Carrd, WordPress, Wix, Squarespace, etc.
 // ================================
 const addressLookup = `
-<div id="lookup-wrapper">
-
-<div id="sleigh-search-box" style="text-align:center;">
-<input id="searchInput" placeholder="Type your street name...">
-<button onclick="searchStreet()">Search</button>
+<div style="width:100%;max-width:900px;margin:0 auto;">
+<iframe
+id="addressFrame"
+src="https://brt-23f.pages.dev/address.html?api=${ensureApi()}"
+style="width:100%;border:none;border-radius:12px;transition:height .25s ease;"
+loading="lazy"
+></iframe>
 </div>
-
-<div id="results"></div>
-
-</div>
-
-<style>
-#lookup-wrapper {
-  width: 50%;
-  margin: 0 auto;
-  min-width: 280px;
-}
-
-#sleigh-search-box input {
-  padding: 12px 16px;
-  width: 100%;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.25);
-  background: rgba(0,0,0,0.35);
-  backdrop-filter: blur(8px);
-  color: #fff;
-  font-size: 1rem;
-  margin-bottom: 14px;
-  background-size: 22px;
-  background-repeat: no-repeat;
-  background-position: 12px center;
-  padding-left: 46px;
-}
-
-#sleigh-search-box input:focus {
-  outline: none;
-  box-shadow: 0 0 14px rgba(211, 28, 28, 0.8);
-  border: 1px solid rgba(255,255,255,0.4);
-}
-
-#sleigh-search-box button {
-  padding: 12px 20px;
-  background: #D31C1C;
-  border: none;
-  color: white;
-  border-radius: 18px;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow:
-  0 0 8px rgba(211, 28, 28, 0.6),
-  0 0 16px rgba(211, 28, 28, 0.5);
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
-}
-
-#sleigh-search-box button:hover {
-  transform: scale(1.04);
-  box-shadow:
-  0 0 14px rgba(211, 28, 28, 0.8),
-  0 0 24px rgba(211, 28, 28, 0.7);
-}
-
-.route-card {
-  margin: 1rem 0;
-  padding: 1rem;
-  background: rgba(0,0,0,0.4);
-  backdrop-filter: blur(5px);
-  border-radius: 15px;
-  color: white;
-  border: 1px solid rgba(255,255,255,0.2);
-  animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-#results { color: white; user-select: none; }
-</style>
 
 <script>
-let roads = [];
-
-// Load dynamic icon for the input
-fetch("${ensureApi()}?function=getGlobalLogo&type=lookup")
-  .then(r => r.json())
-  .then(d => {
-    if (d?.url) {
-      document.querySelector("#sleigh-search-box input").style.backgroundImage =
-        "url('" + d.url + "')";
-    }
-  });
-
-// Load roads
-fetch("${ensureApi()}?function=getAddressLookup")
-  .then(r => r.json())
-  .then(data => roads = data);
-
-// Helpers
-function normalise(str) {
-  return str.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function searchStreet() {
-  const input = document.getElementById("searchInput").value;
-  const clean = normalise(input);
-
-  const matches = roads.filter(r =>
-    normalise(r.street + r.suffix).includes(clean)
-  );
-
-  displayResults(matches);
-}
-
-function displayResults(list) {
-  const container = document.getElementById("results");
-  container.innerHTML = "";
-
-  if (list.length === 0) {
-    container.innerHTML = "<p style='color:white;'>No matching streets found.</p>";
-    return;
+// Receive auto-height updates from address.html
+window.addEventListener("message", (e) => {
+  if (e.data.addressLookupHeight) {
+    const frame = document.getElementById("addressFrame");
+    if (frame) frame.style.height = e.data.addressLookupHeight + "px";
   }
-
-  list.forEach(item => {
-    container.innerHTML += \`
-<div class="route-card">
-  <h3>\${item.route} – \${item.day} (\${item.date})</h3>
-  <p><strong>📍 \${item.street} \${item.suffix}</strong></p>
-  \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
-</div>\`;
-  });
-}
+});
 </script>
 `;
+
 
 // ================================
 // Tracker Embeds
@@ -218,8 +108,9 @@ loading="lazy"
 </div>
 `;
 
+
 // ================================
-// Routes
+// Routes Embed
 // ================================
 const routesLink = `
 https://brt-23f.pages.dev/routes.html?api=${ensureApi()}
@@ -235,8 +126,9 @@ loading="lazy"
 </div>
 `;
 
+
 // ================================
-// GPX Animation Routes — FIXED (line breaks)
+// GPX Animation Routes List
 // ================================
 async function loadRoutes() {
     try {
@@ -252,7 +144,7 @@ async function loadRoutes() {
             .map(r =>
                 `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r.routeName)}`
             )
-            .join("\r\n");
+            .join("\\r\\n");
 
         document.getElementById("gpxList").value = output;
 
@@ -262,8 +154,9 @@ async function loadRoutes() {
 }
 loadRoutes();
 
+
 // ================================
-// Inject into textareas
+// Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
 document.getElementById("fullThermo").value = fullThermo.trim();
