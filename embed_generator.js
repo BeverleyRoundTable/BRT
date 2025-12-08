@@ -48,9 +48,7 @@ loading="lazy">
 </iframe>
 `;
 
-// -------------------------------
-// ADDRESS LOOKUP (Dynamic Logo + Fuzzy + Nice Dates)
-// -------------------------------
+
 // -------------------------------
 // ADDRESS LOOKUP (Dynamic Logo + Fuzzy + Nice Dates)
 // -------------------------------
@@ -61,7 +59,7 @@ const addressLookup = `
 const container = document.getElementById("santa-lookup");
 const shadow = container.attachShadow({ mode: "open" });
 
-// Defaults BEFORE API loads
+// Defaults BEFORE API loads (no Santa marker fallback)
 let lookupIcon = "";
 let overlayLogo = "";
 
@@ -77,7 +75,7 @@ fetch("${ensureApi()}?function=getGlobalLogo&type=overlay")
   .then(d => { if (d?.url) overlayLogo = d.url; applyOverlay(); })
   .catch(()=>{});
 
-// Inject HTML
+// Inject HTML/UI
 shadow.innerHTML = String.raw\`
 <style>
 #lookup-wrapper { width: 50%; margin: 0 auto; min-width: 280px; position:relative; }
@@ -123,7 +121,7 @@ fetch("${ensureApi()}?function=getAddressLookup")
  .then(r => r.json())
  .then(d => roads = d);
 
-// Apply the INPUT ICON dynamically
+// Apply dynamic INPUT icon
 function applyInputIcon(){
   const input = shadow.querySelector("#searchInput");
   if (input && lookupIcon) {
@@ -131,7 +129,7 @@ function applyInputIcon(){
   }
 }
 
-// Apply OVERLAY LOGO dynamically
+// Apply OVERLAY LOGO
 function applyOverlay(){
   const el = shadow.querySelector("#overlay-logo");
   if (el && overlayLogo) {
@@ -139,15 +137,92 @@ function applyOverlay(){
     el.classList.remove("hidden");
   }
 }
+
+// Helpers
+function normalise(s){
+  return s.toLowerCase().replace(/[^a-z0-9]/g,"");
+}
+
+function fuzzyScore(input, target) {
+  if (!input || !target) return 0;
+  if (target.includes(input)) return 200 + input.length;
+
+  let score = 0;
+  let pos = 0;
+  for (let i = 0; i < input.length; i++) {
+    const c = input[i];
+    const found = target.indexOf(c, pos);
+    if (found >= 0) {
+      score += 4;
+      pos = found + 1;
+    }
+  }
+  return score;
+}
+
+function formatDate(d) {
+  const date = new Date(d);
+  if (isNaN(date)) return "";
+  return date.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+}
+
+const results = shadow.querySelector("#results");
+const searchInput = shadow.querySelector("#searchInput");
+const searchBtn = shadow.querySelector("#searchBtn");
+
+function searchStreet(){
+  const clean = normalise(searchInput.value);
+  if (!clean) return;
+
+  const scored = roads.map(r => {
+    const hay = normalise(r.street + " " + (r.suffix || ""));
+    return { ...r, score: fuzzyScore(clean, hay) };
+  });
+
+  const matches = scored
+    .filter(x => x.score > 3)
+    .sort((a,b) => b.score - a.score);
+
+  display(matches);
+}
+
+function display(list){
+  results.innerHTML = "";
+  if(list.length === 0){
+    results.innerHTML = "<p>No matching streets found.</p>";
+    return;
+  }
+
+  list.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  list.forEach(item => {
+    const niceDate = formatDate(item.date);
+    results.innerHTML += \`
+      <div class="route-card">
+        <h3>\${item.route} – \${item.day} (\${niceDate})</h3>
+        <p><strong>📍 \${item.street} \${item.suffix || ""}</strong></p>
+        \${item.notes ? \`<p>📝 \${item.notes}</p>\` : ""}
+      </div>
+    \`;
+  });
+}
+
+searchBtn.onclick = searchStreet;
 })();
 </script>
 `;
+
 
 // -------------------------------
 // Tracker and Routes
 // -------------------------------
 const trackerLink = `
-https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${ensureApi()}
+https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic.html?api=${ensureApi()}
 `;
 
 const recommendedTracker = `
@@ -190,6 +265,7 @@ loading="lazy"
 </div>
 `;
 
+
 // -------------------------------
 // GPX ANIMATION ROUTE LIST
 // -------------------------------
@@ -206,7 +282,7 @@ async function loadRoutes() {
         const output = json.routes
             .map(r => {
                 const route = r.routeName;
-                return `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(route)}`;
+                return \`https://brt-23f.pages.dev/gpx_animation.html?api=\${ensureApi()}&route=\${encodeURIComponent(route)}\`;
             })
             .join("\\n");
 
@@ -218,8 +294,9 @@ async function loadRoutes() {
 }
 loadRoutes();
 
+
 // -------------------------------
-// Inject all embed outputs
+// Output into UI
 // -------------------------------
 document.getElementById("miniThermo").value = miniThermo.trim();
 document.getElementById("fullThermo").value = fullThermo.trim();
