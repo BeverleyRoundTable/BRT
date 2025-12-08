@@ -4,19 +4,21 @@
 <meta charset="UTF-8" />
 <title>Santa Sleigh GPX Animation</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
   html, body {
-    margin: 0; padding: 0; height: 100%; overflow: hidden;
-    background: #000;
+    margin: 0; padding: 0; height: 100%;
+    background: #000; overflow: hidden;
   }
   #map { position: absolute; inset: 0; z-index: 1; }
   #anim { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
   #label {
-    position: absolute; bottom:12px; left:50%; transform:translateX(-50%);
-    z-index:20; color:white; font-family:system-ui;
-    text-shadow:0 0 8px black; font-size:1rem;
+    position: absolute; bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    color: white; font-family: system-ui, sans-serif;
+    text-shadow: 0 0 6px black; z-index: 20;
   }
 </style>
 </head>
@@ -30,47 +32,46 @@
 
 <script>
 /* ------------------------------------------------------------
-   URL PARAMS
+   PARAM PARSING
 ------------------------------------------------------------ */
 const P = new URLSearchParams(location.search);
-const API   = P.get("api");
+const API = P.get("api");
 const ROUTE = P.get("route");
 
 if (!API) {
-  document.body.innerHTML = "<h2 style='color:white;padding:20px'>Missing api= parameter</h2>";
+  document.body.innerHTML =
+    "<h2 style='color:white;padding:20px'>Missing api= parameter</h2>";
   throw new Error("Missing API");
 }
 
 /* ------------------------------------------------------------
-   CANVAS INIT
+   CANVAS SETUP
 ------------------------------------------------------------ */
 const canvas = document.getElementById("anim");
 const ctx = canvas.getContext("2d");
 
 let W = 0, H = 0;
-
-function resizeCanvas(){
-  W = canvas.width  = window.innerWidth  * devicePixelRatio;
+function resizeCanvas() {
+  W = canvas.width  = window.innerWidth * devicePixelRatio;
   H = canvas.height = window.innerHeight * devicePixelRatio;
   ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
 }
-
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
 /* ------------------------------------------------------------
    HELPERS
 ------------------------------------------------------------ */
-async function fetchJSON(url){
-  const r = await fetch(url, {cache:"no-store"});
-  if (!r.ok) throw new Error("API fetch " + r.status);
+async function fetchJSON(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error("API fetch error " + r.status);
   return r.json();
 }
 
-async function loadGPX(url){
-  const text = await fetch(url, {cache:"no-store"}).then(r => r.text());
-  const xml  = new DOMParser().parseFromString(text, "text/xml");
-  const pts  = [...xml.getElementsByTagName("trkpt")];
+async function loadGPX(url) {
+  const xml = await (await fetch(url)).text();
+  const dom = new DOMParser().parseFromString(xml, "text/xml");
+  const pts = [...dom.getElementsByTagName("trkpt")];
   return pts.map(p => ({
     lat: parseFloat(p.getAttribute("lat")),
     lon: parseFloat(p.getAttribute("lon"))
@@ -80,160 +81,146 @@ async function loadGPX(url){
 /* ------------------------------------------------------------
    MAIN
 ------------------------------------------------------------ */
-(async function main(){
-
-  /* FETCH MASTER JSON */
+(async function main() {
   const master = await fetchJSON(API);
   const settings = master.settings;
-  const routes   = master.routes;
+  const routes = master.routes;
 
-  /* MATCH ROUTE */
-  const route = routes.find(r =>
-       (r.routeName || "").toLowerCase() === ROUTE.toLowerCase()
-  );
+  const route = routes.find(r => r.routeName === ROUTE)
+            || routes.find(r => (r.routeName || "").toLowerCase() === ROUTE.toLowerCase());
 
-  if (!route){
+  if (!route) {
     document.body.innerHTML =
-      "<h2 style='color:white;padding:20px'>Route not found: "+ROUTE+"</h2>";
+      "<h2 style='color:white;padding:20px'>Route not found: " + ROUTE + "</h2>";
     return;
   }
 
   document.getElementById("label").textContent =
-    `${route.routeName} – ${route.date || ""}`;
+    route.routeName + " – " + (route.date || "");
 
-  /* --------------------------------------------------------
+  /* ------------------------------------------------------------
      LEAFLET MAP
-  -------------------------------------------------------- */
-  const map = L.map("map", { zoomControl:false });
-
+  ------------------------------------------------------------ */
+  const map = L.map("map", { zoomControl: false });
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom:19
+    maxZoom: 19
   }).addTo(map);
 
-  /* --------------------------------------------------------
-     LOAD GPX + DRAW BASELINE (FAINT)
-  -------------------------------------------------------- */
   const gpx = await loadGPX(route.gpxUrl);
 
-  map.fitBounds(gpx.map(p => [p.lat, p.lon]), { padding:[40,40] });
+  // Fit map to GPX route
+  map.fitBounds(gpx.map(p => [p.lat, p.lon]), { padding: [40, 40] });
 
-  /* faint base grey route */
-  L.polyline(gpx, { color:"#555", weight:3, opacity:0.25 }).addTo(map);
-
-  /* --------------------------------------------------------
-     PROJECT GPX → PIXELS EACH FRAME
-     (We do NOT pre-project because map pans/zooms)
-  -------------------------------------------------------- */
-
-  function projectToXY(lat, lon){
-    const point = map.latLngToContainerPoint([lat, lon]);
-    return { x: point.x, y: point.y };
+  const projected = [];
+  function refreshProjection() {
+    projected.length = 0;
+    for (const p of gpx) {
+      projected.push(
+        map.latLngToContainerPoint([p.lat, p.lon])
+      );
+    }
   }
+  refreshProjection();
+  map.on("move zoom", refreshProjection);
 
-  /* --------------------------------------------------------
-     LOAD SPRITE
-  -------------------------------------------------------- */
-  const spriteURL = settings.travelboost_sprite;
-  const frames    = Number(settings.travelboost_sprite_frames || 5);
-  const fps       = Number(settings.travelboost_sprite_fps    || 14);
-  const size      = Number(settings.travelboost_sprite_size   || 128);
-  const speed     = Number(settings.travelboost_speed         || 1.2);
-
-  const accent    = settings.travelboost_accent_color || "#ffd700";
-
+  /* ------------------------------------------------------------
+     LOAD SPRITE + START ANIMATION
+  ------------------------------------------------------------ */
   const sprite = new Image();
   sprite.crossOrigin = "anonymous";
-  sprite.src = spriteURL;
+  sprite.src = settings.travelboost_sprite;
 
-  sprite.onload = () => startAnimation();
+  sprite.onload = () =>
+    animate(projected, sprite, settings);
+})();
+  
+/* ------------------------------------------------------------
+   ANIMATION ENGINE
+------------------------------------------------------------ */
+function animate(path, sprite, settings) {
 
-  /* --------------------------------------------------------
-     ANIMATION LOOP
-  -------------------------------------------------------- */
-  function startAnimation(){
+  const fps      = Number(settings.travelboost_sprite_fps)   || 14;
+  const frames   = Number(settings.travelboost_sprite_frames)|| 5;
+  const size     = Number(settings.travelboost_sprite_size)  || 128;
+  const speed    = Number(settings.travelboost_speed)        || 1.5;
+  const accent   = settings.travelboost_accent_color || "#ffd700";
+  const shadowOn = settings.travelboost_shadow === true || settings.travelboost_shadow === "TRUE";
 
-    let posF = 0;           // floating index along GPX
-    let frameIdx = 0;
-    let frameTimer = 0;
+  // ★★★ Calibrated anchors — makes Santa sit exactly on the line
+  const anchorX = size * 0.50;   // horizontal centre
+  const anchorY = size * 0.78;   // sleigh rails perfectly on GPX
 
-    function animate(){
-      ctx.clearRect(0,0,W,H);
+  let frameIdx = 0;
+  let frameTimer = 0;
+  let pos = 0;
 
-      /* ---- progress along GPX ---- */
-      posF += speed;
-      if (posF >= gpx.length - 1) posF = 0;   // loop
+  const fw = sprite.width / frames;
+  const fh = sprite.height;
 
-      const i  = Math.floor(posF);
-      const t  = posF - i;
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
 
-      const A = gpx[i];
-      const B = gpx[i+1];
+    if (path.length < 2) return requestAnimationFrame(loop);
 
-      /* interpolate lat/lon */
-      const lat = A.lat + (B.lat - A.lat)*t;
-      const lon = A.lon + (B.lon - A.lon)*t;
+    // Advance along route
+    pos += speed;
+    if (pos >= path.length - 1) pos = path.length - 1;
 
-      /* project to screen */
-      const pA = projectToXY(A.lat, A.lon);
-      const pB = projectToXY(lat, lon);
+    const i  = Math.floor(pos);
+    const t  = pos - i;
 
-      /* glowing trailing line */
-      ctx.save();
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = accent;
+    const a  = path[i];
+    const b  = path[i + 1];
+    const px = a.x + (b.x - a.x) * t;
+    const py = a.y + (b.y - a.y) * t;
+
+    // Determine travel angle
+    const angle = Math.atan2(b.y - a.y, b.x - a.x);
+
+    // Draw magical golden trail *behind Santa*
+    ctx.save();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = accent;
+    ctx.lineCap = "round";
+
+    if (shadowOn) {
       ctx.shadowColor = accent;
-      ctx.shadowBlur  = 22;
-      ctx.beginPath();
-
-      for (let j = 0; j <= i; j++){
-        const p = projectToXY(gpx[j].lat, gpx[j].lon);
-        if (j === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
-      }
-      ctx.lineTo(pB.x, pB.y);
-      ctx.stroke();
-      ctx.restore();
-
-      /* determine rotation */
-      const dx = pB.x - pA.x;
-      const dy = pB.y - pA.y;
-      const angle = Math.atan2(dy, dx);
-
-      /* sprite frame update */
-      frameTimer += 1/60;
-      if (frameTimer >= 1/fps){
-        frameIdx = (frameIdx + 1) % frames;
-        frameTimer = 0;
-      }
-
-      /* draw rotated sprite aligned to GPX point */
-      const fw = sprite.width / frames;
-      const fh = sprite.height;
-
-      /* PERFECT ANCHORING (sleigh rails on line) */
-      const anchorX = size * 0.50;  // horizontal centre
-      const anchorY = size * 0.62;  // calibrated anchor
-
-      ctx.save();
-      ctx.translate(pB.x, pB.y);
-      ctx.rotate(angle);
-
-      ctx.drawImage(
-        sprite,
-        fw * frameIdx, 0, fw, fh,   // frame source
-        -anchorX, -anchorY,         // corrected anchor
-        size, (fh/fw)*size          // draw size
-      );
-
-      ctx.restore();
-
-      requestAnimationFrame(animate);
+      ctx.shadowBlur = 20;
     }
 
-    animate();
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let j = 1; j <= i; j++)
+      ctx.lineTo(path[j].x, path[j].y);
+    ctx.lineTo(px, py);
+    ctx.stroke();
+    ctx.restore();
+
+    // Frame animation
+    frameTimer += 1 / 60;
+    if (frameTimer >= 1 / fps) {
+      frameTimer = 0;
+      frameIdx = (frameIdx + 1) % frames;
+    }
+
+    // Sprite render WITH rotation + perfect anchor
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(angle);
+
+    ctx.drawImage(
+      sprite,
+      fw * frameIdx, 0, fw, fh,   // source frame
+      -anchorX, -anchorY,         // calibrated anchor
+      size, (fh / fw) * size      // scale
+    );
+    ctx.restore();
+
+    requestAnimationFrame(loop);
   }
 
-})();
+  loop();
+}
 </script>
 
 </body>
