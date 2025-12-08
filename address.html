@@ -39,7 +39,6 @@
       color: #fff;
       font-size: 1rem;
       box-sizing: border-box;
-      /* logo is injected via JS */
       background-repeat: no-repeat;
       background-position: 12px center;
       background-size: 22px;
@@ -145,6 +144,21 @@
       s.src = "https://brt-23f.pages.dev/address.js?v=" + Date.now();
       document.body.appendChild(s);
     })();
+  </script>
+
+  <!-- AUTO-RESIZE SCRIPT (must be outside <style>) -->
+  <script>
+    function sendHeight() {
+      const height = document.documentElement.scrollHeight;
+      parent.postMessage({ addressLookupHeight: height }, "*");
+    }
+
+    window.onload = sendHeight;
+
+    const observer = new MutationObserver(sendHeight);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    window.addEventListener("resize", sendHeight);
   </script>
 </body>
 </html>
