@@ -144,7 +144,7 @@ function normaliseGpxUrl(url){
 }
 
 /* ------------------------------------------------------------
-   ⭐ NEW — Determine active route for analytics
+   ⭐ NEW — detect active route for analytics
 ------------------------------------------------------------ */
 function detectActiveRoute(routes) {
   const today = new Date().toISOString().slice(0,10);
@@ -170,7 +170,7 @@ async function init(){
   const routes   = data.routes   || [];
   const tracker  = data.tracker  || {};
 
-  // ⭐ Store for analytics
+  // ⭐ store active route for analytics
   window.ACTIVE_ROUTE = detectActiveRoute(routes);
 
   const today = new Date().toISOString().slice(0,10);
@@ -394,7 +394,7 @@ async function init(){
 init();
 
 /* ------------------------------------------------------------
-   ⭐ ANALYTICS — Log view INCLUDING ROUTE NAME
+   ⭐ ANALYTICS — Send UA + route
 ------------------------------------------------------------ */
 (function(){
   const api = apiUrl;
@@ -411,7 +411,7 @@ init();
     "?function=logView" +
     "&source=tracker" +
     "&ua=" + ua +
-    "&route=" + route        // ⭐ SEND ROUTE HERE
+    "&route=" + route
   ).catch(err => console.warn("Analytics error:", err));
 })();
 </script>
