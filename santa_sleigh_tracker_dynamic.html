@@ -394,11 +394,13 @@ async function init(){
 init();
 
 /* ------------------------------------------------------------
-   ⭐ ANALYTICS — Send UA + route
+   ⭐ ANALYTICS — Send UA + route AFTER init completes
 ------------------------------------------------------------ */
-(function(){
+async function sendAnalytics() {
   const api = apiUrl;
   if (!api) return;
+
+  await new Promise(res => setTimeout(res, 500)); // allow ACTIVE_ROUTE to populate
 
   const ua = /Mobi|Android/i.test(navigator.userAgent)
     ? "mobile"
@@ -413,7 +415,10 @@ init();
     "&ua=" + ua +
     "&route=" + route
   ).catch(err => console.warn("Analytics error:", err));
-})();
+}
+
+// ⭐ Only run analytics AFTER init finishes
+init().then(sendAnalytics);
 </script>
 
 </body>
