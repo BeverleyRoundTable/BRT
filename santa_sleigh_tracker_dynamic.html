@@ -373,6 +373,21 @@ async function init(){
 }
 
 init();
+
+/* ------------------------------------------------------------
+   ANALYTICS — LOG VIEW
+------------------------------------------------------------ */
+(function(){
+  const api = apiUrl; // already extracted at top
+  if (!api) return;
+
+  const ua = /Mobi|Android/i.test(navigator.userAgent)
+    ? "mobile"
+    : "desktop";
+
+  fetch(api + "?function=logView&source=tracker&ua=" + ua)
+    .catch(err => console.warn("Analytics error:", err));
+})();
 </script>
 
 </body>
