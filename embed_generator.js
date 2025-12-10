@@ -140,11 +140,11 @@ async function loadRoutes() {
             return;
         }
 
-        const output = json.routes
-            .map(r =>
-                `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r.routeName)}`
-            )
-            .join("\\r\\n");
+       const output = json.routes
+    .map(r =>
+        `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r.routeName)}`
+    )
+    .join("\r\n");   // ← REAL NEWLINE
 
         document.getElementById("gpxList").value = output;
 
