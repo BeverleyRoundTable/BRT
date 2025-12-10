@@ -10,12 +10,13 @@
 <style>
   html, body {
     margin: 0; padding: 0; height: 100%;
-    background: #0d1117; overflow: hidden; font-family: sans-serif;
+    /* Changed background to light grey for standard map feel */
+    background: #e0e0e0; overflow: hidden; font-family: sans-serif;
   }
-  #map { position: absolute; inset: 0; z-index: 1; background: #0d1117; }
+  #map { position: absolute; inset: 0; z-index: 1; background: #e0e0e0; }
   #anim { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
   
-  /* Stylish Label */
+  /* UI Layer */
   #ui-layer {
     position: absolute; bottom: 30px; left: 50%;
     transform: translateX(-50%);
@@ -23,13 +24,13 @@
     pointer-events: none;
   }
   .pill {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(255, 255, 255, 0.9); /* Lighter pill for normal map */
     backdrop-filter: blur(4px);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white; 
+    border: 1px solid rgba(0,0,0,0.1);
+    color: #333; /* Dark text */
     padding: 10px 20px;
     border-radius: 50px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     display: inline-block;
   }
   h1 { margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; }
@@ -43,7 +44,7 @@
 
 <div id="ui-layer">
   <div class="pill">
-    <h1 id="route-name">Loading Sleigh...</h1>
+    <h1 id="route-name">Loading Santa...</h1>
     <p id="route-date"></p>
   </div>
 </div>
@@ -57,8 +58,6 @@
 const P = new URLSearchParams(location.search);
 const API = P.get("api");
 const ROUTE_PARAM = P.get("route");
-
-// Enable this to make the camera follow Santa
 const CAM_FOLLOW = true; 
 
 if (!API) {
@@ -72,7 +71,6 @@ if (!API) {
 const canvas = document.getElementById("anim");
 const ctx = canvas.getContext("2d");
 
-// High DPI Canvas Handling
 function resizeCanvas() {
   canvas.width  = window.innerWidth * devicePixelRatio;
   canvas.height = window.innerHeight * devicePixelRatio;
@@ -83,16 +81,17 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// Initialize Leaflet with a dark theme (Travel Boast style)
+// Initialize Leaflet
 const map = L.map("map", { 
   zoomControl: false, 
   attributionControl: false,
   zoomAnimation: true
 });
 
-// CartoDB Dark Matter tiles look great with glowing trails
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 20
+// ★ CHANGED: Standard OpenStreetMap Tiles (Normal Colour)
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
 /* ------------------------------------------------------------
@@ -114,35 +113,29 @@ async function loadGPX(url) {
 
   return trkpts.map(pt => ({
     lat: parseFloat(pt.getAttribute("lat")),
-    lng: parseFloat(pt.getAttribute("lon")) // GPX uses 'lon', Leaflet uses 'lng'
+    lng: parseFloat(pt.getAttribute("lon"))
   }));
 }
 
 /* ------------------------------------------------------------
-   GEOMETRY HELPERS (The "Smoothness" Secret)
+   GEOMETRY HELPERS
 ------------------------------------------------------------ */
-// Chaikin's Algorithm to smooth jagged GPX lines
 function smoothPath(points, iterations = 2) {
   if (iterations === 0) return points;
   let smoothed = [];
-  // Keep first point
   smoothed.push(points[0]);
   for (let i = 0; i < points.length - 1; i++) {
     const p0 = points[i];
     const p1 = points[i+1];
-    
-    // Q: 75% of p0, 25% of p1
     smoothed.push({
       lat: 0.75 * p0.lat + 0.25 * p1.lat,
       lng: 0.75 * p0.lng + 0.25 * p1.lng
     });
-    // R: 25% of p0, 75% of p1
     smoothed.push({
       lat: 0.25 * p0.lat + 0.75 * p1.lat,
       lng: 0.25 * p0.lng + 0.75 * p1.lng
     });
   }
-  // Keep last point
   smoothed.push(points[points.length - 1]);
   return smoothPath(smoothed, iterations - 1);
 }
@@ -153,7 +146,7 @@ function getAngle(p1, p2) {
 
 function lerpAngle(a, b, t) {
   const diff = b - a;
-  const da = (diff + Math.PI) % (2 * Math.PI) - Math.PI; // Shortest path
+  const da = (diff + Math.PI) % (2 * Math.PI) - Math.PI;
   return a + da * t;
 }
 
@@ -166,34 +159,26 @@ function lerpAngle(a, b, t) {
     const settings = master.settings;
     const routes = master.routes;
     
-    // Case-insensitive route finding
     const routeData = routes.find(r => 
       (r.routeName || "").toLowerCase() === (ROUTE_PARAM || "").toLowerCase()
     );
 
     if (!routeData) throw new Error("Route not found: " + ROUTE_PARAM);
 
-    // UI Update
     document.getElementById("route-name").textContent = routeData.routeName;
     document.getElementById("route-date").textContent = routeData.date || "";
 
-    // Load & Smooth GPX
     let rawPoints = await loadGPX(routeData.gpxUrl);
-    
-    // Smooth the points twice to remove jagged GPS noise
     const pathPoints = smoothPath(rawPoints, 2); 
 
-    // Fit Map
     const bounds = L.latLngBounds(pathPoints.map(p => [p.lat, p.lng]));
     map.fitBounds(bounds, { padding: [50, 50], animate: false });
 
-    // Load Sprite
     const sprite = new Image();
     sprite.crossOrigin = "anonymous";
     sprite.src = settings.travelboost_sprite;
     await new Promise(r => sprite.onload = r);
 
-    // Start Animation
     requestAnimationFrame((ts) => 
       animate(ts, pathPoints, sprite, settings)
     );
@@ -215,34 +200,27 @@ let currentAngle = 0;
 function animate(timestamp, latLngs, sprite, settings) {
   if (!startTime) startTime = timestamp;
   
-  // Settings Parsing
   const fps      = Number(settings.travelboost_sprite_fps)   || 14;
-  const frames   = Number(settings.travelboost_sprite_frames)|| 1; // Default to 1 if not sprite sheet
+  const frames   = Number(settings.travelboost_sprite_frames)|| 1; 
   const baseSize = Number(settings.travelboost_sprite_size)  || 64;
-  const speed    = (Number(settings.travelboost_speed)       || 1.5) * 0.0001; // Scale speed down
-  const accent   = settings.travelboost_accent_color || "#ffd700";
+  const speed    = (Number(settings.travelboost_speed)       || 1.5) * 0.0001; 
+  // ★ CHANGED: Default accent is now RED for visibility on white map
+  const accent   = settings.travelboost_accent_color || "#d31c1c";
   const shadowOn = String(settings.travelboost_shadow).toLowerCase() === "true";
 
-  // 1. Clear Canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height); // Note: using actual canvas dims
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 2. Advance Position (0.0 to 1.0 logic)
-  // We advance index by float
-  currentDist += speed * (60 / 1000 * 16); // Normalizing speed roughly
-  
-  // End of route check
+  // Advance Position
+  currentDist += speed * (60 / 1000 * 16); 
   if (currentDist >= latLngs.length - 1) {
     currentDist = latLngs.length - 1;
   }
 
-  // 3. Interpolate Position
   const idx = Math.floor(currentDist);
   const t = currentDist - idx;
   const p1_ll = latLngs[idx];
   const p2_ll = latLngs[Math.min(idx + 1, latLngs.length - 1)];
 
-  // Convert current LatLng to Pixel Point
-  // IMPORTANT: We do this EVERY FRAME so zoom/pan works
   const p1_px = map.latLngToContainerPoint(p1_ll);
   const p2_px = map.latLngToContainerPoint(p2_ll);
 
@@ -251,101 +229,71 @@ function animate(timestamp, latLngs, sprite, settings) {
     y: p1_px.y + (p2_px.y - p1_px.y) * t
   };
 
-  // 4. Handle Camera (Soft Follow)
+  // Camera Follow
   if (CAM_FOLLOW && currentDist < latLngs.length - 1) {
-    // Only pan if the point is getting close to edge, or keep centered
-    // Simple center approach:
-    // map.panTo([
-    //   p1_ll.lat + (p2_ll.lat - p1_ll.lat)*t,
-    //   p1_ll.lng + (p2_ll.lng - p1_ll.lng)*t
-    // ], { animate: false }); 
-    // ^ Note: Constant panning can be jittery in Leaflet. 
-    // Better to let user pan or fitBounds initially. 
+    // Optional: map.panTo(...)
   }
 
-  // 5. Draw Trail
-  // We need to project all previous points to redraw the line correctly on the current map view
+  // Draw Trail
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   
-  // Draw Background Track (faint)
-  /* Optional: heavy performance cost for long routes
-  ctx.beginPath();
-  ctx.strokeStyle = "rgba(255,255,255,0.1)";
-  ctx.lineWidth = 4;
-  latLngs.forEach((ll, i) => {
-    const px = map.latLngToContainerPoint(ll);
-    if(i===0) ctx.moveTo(px.x, px.y); else ctx.lineTo(px.x, px.y);
-  });
-  ctx.stroke();
-  */
-
-  // Draw Active Trail (Glowing)
   if (shadowOn) {
-    ctx.shadowBlur = 15;
+    ctx.shadowBlur = 10;
     ctx.shadowColor = accent;
   }
+  
   ctx.strokeStyle = accent;
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 6; // ★ CHANGED: Thicker line for better visibility
   ctx.beginPath();
   
-  // Optimization: Only draw the last 200 points or visible points to save FPS?
-  // For now, draw from start to current
-  const startDrawIdx = Math.max(0, idx - 500); // Draw last 500 pts for performance? Or 0 for full
-  
-  // Get start pixel
-  const startPix = map.latLngToContainerPoint(latLngs[startDrawIdx]);
+  // ★ CHANGED: Draw full path from index 0 (No fading tail)
+  // This ensures the line "populates" and stays on the map
+  const startPix = map.latLngToContainerPoint(latLngs[0]);
   ctx.moveTo(startPix.x, startPix.y);
 
-  for (let i = startDrawIdx + 1; i <= idx; i++) {
+  for (let i = 1; i <= idx; i++) {
     const px = map.latLngToContainerPoint(latLngs[i]);
     ctx.lineTo(px.x, px.y);
   }
   ctx.lineTo(currentPx.x, currentPx.y);
   ctx.stroke();
   
-  // Reset Shadow
   ctx.shadowBlur = 0;
 
-  // 6. Draw Sprite
+  // Draw Sprite
   const targetAngle = getAngle(p1_px, p2_px);
   
-  // Smooth rotation (Lerp) so Santa doesn't snap
-  // If distance is very small, keep old angle to prevent jitter
   const distSq = (p2_px.x-p1_px.x)**2 + (p2_px.y-p1_px.y)**2;
   if (distSq > 1) {
      currentAngle = lerpAngle(currentAngle, targetAngle, 0.1);
   }
 
-  // Sprite Animation Frame
   const totalSpriteWidth = sprite.width;
   const frameWidth = totalSpriteWidth / frames;
   const frameHeight = sprite.height;
-  
-  // Calculate which frame based on time
   const currentFrameIdx = Math.floor((timestamp / 1000) * fps) % frames;
 
   ctx.save();
   ctx.translate(currentPx.x, currentPx.y);
-  ctx.rotate(currentAngle);
   
-  // Draw Centered
+  // ★ CHANGED: Add 90 degrees (Math.PI/2) to rotation
+  // Because your new sprite faces UP/North, but code expects RIGHT/East
+  ctx.rotate(currentAngle + Math.PI / 2);
+  
   const drawW = baseSize;
   const drawH = drawW * (frameHeight / frameWidth);
   
   ctx.drawImage(
     sprite, 
     currentFrameIdx * frameWidth, 0, frameWidth, frameHeight,
-    -drawW/2, -drawH/2, drawW, drawH // Center pivot
+    -drawW/2, -drawH/2, drawW, drawH 
   );
   
   ctx.restore();
 
-  // Loop
   if (currentDist < latLngs.length - 1) {
     requestAnimationFrame((ts) => animate(ts, latLngs, sprite, settings));
-  } else {
-    console.log("Arrived!");
   }
 }
 </script>
