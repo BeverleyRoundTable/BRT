@@ -84,17 +84,6 @@
     pointer-events:none;
   }
 
-  /* Santa marker rotation */
-  .santa-marker{
-    width:64px;height:64px;
-    transform:translate(-32px,-32px); /* align anchor */
-  }
-  .santa-marker-img{
-    width:64px;height:64px;
-    transform-origin:50% 50%;
-    transition:transform 0.18s linear;
-    image-rendering:auto;
-  }
 </style>
 </head>
 
@@ -151,22 +140,8 @@ function normaliseGpxUrl(url){
   return url;
 }
 
-/* Bearing between two lat/lng points in degrees */
-function computeBearing(lat1,lng1,lat2,lng2){
-  const toRad = x => x * Math.PI/180;
-  const toDeg = x => x * 180/Math.PI;
-  const φ1 = toRad(lat1), φ2 = toRad(lat2);
-  const Δλ = toRad(lng2 - lng1);
-  const y = Math.sin(Δλ)*Math.cos(φ2);
-  const x = Math.cos(φ1)*Math.sin(φ2) -
-            Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
-  let θ = toDeg(Math.atan2(y,x));
-  if (θ < 0) θ += 360;
-  return θ;
-}
-
 /* ------------------------------------------------------------
-   ⭐ Detect active route for analytics & status
+   ⭐ Detect active route
 ------------------------------------------------------------ */
 function detectActiveRoute(routes){
   if (!routes || !routes.length) return "";
@@ -207,7 +182,7 @@ async function init(){
     tracker.donate_url || settings.donate_url || "#";
 
   /* ------------------------------------------------------------
-     SPONSOR LOGIC
+     STATUS: Active / Lapland
   ------------------------------------------------------------ */
   function getSponsor(r){
     return r.sponsorurl || r.sponsorUrl || "";
@@ -248,7 +223,6 @@ async function init(){
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  /* Bounds for GPX + live marker */
   let globalBounds = null;
   const extendBounds = (lat,lng)=>{
     const p = L.latLng(lat,lng);
@@ -280,7 +254,7 @@ async function init(){
   }
 
   /* ------------------------------------------------------------
-     GPX OVERLAY
+     GPX ROUTE
   ------------------------------------------------------------ */
   if (tracker.enable_gpx_overlay === "true" || tracker.enable_gpx_overlay === true){
     const gpxMode = tracker.gpx_mode || settings.gpx_mode || "next";
@@ -331,26 +305,20 @@ async function init(){
   }
 
   /* ------------------------------------------------------------
-     LIVE TRACKING MARKER (ROTATION)
+     LIVE MARKER — NO ROTATION VERSION
   ------------------------------------------------------------ */
   const liveIconUrl =
     settings.sleigh_icon_live ||
     settings.map_icon ||
     "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
 
-  const santaIcon = L.divIcon({
-    className:"santa-marker",
-    html:`<img src="${liveIconUrl}" class="santa-marker-img" alt="Santa" />`,
-    iconSize:[64,64],
-    iconAnchor:[32,32]
+  const santaIcon = L.icon({
+    iconUrl: liveIconUrl,
+    iconSize: [64,64],
+    iconAnchor: [32,32]  // keeps Santa centered
   });
 
   const marker = L.marker([fallback.lat,fallback.lng],{icon:santaIcon}).addTo(map);
-  let santaImg = null;
-  setTimeout(()=>{
-    const el = marker.getElement();
-    if (el) santaImg = el.querySelector(".santa-marker-img");
-  },0);
 
   let follow = true;
   let lastLat = null, lastLng = null;
@@ -373,7 +341,7 @@ async function init(){
   };
 
   /* ------------------------------------------------------------
-     FIREBASE POLLING via API PROXY
+     FIREBASE POLLING
   ------------------------------------------------------------ */
   const firebaseURL = apiUrl + "?function=proxyFirebase";
   const REFRESH = 8000;
@@ -407,18 +375,9 @@ async function init(){
 
         const lat = p.lat, lng = p.lng;
 
-        // Update global bounds with live point
         extendBounds(lat,lng);
         marker.setLatLng([lat,lng]);
 
-        // Bearing + rotation
-        if (lastLat !== null && lastLng !== null && santaImg){
-          const bearing = computeBearing(lastLat,lastLng,lat,lng);
-          santaImg.style.transform = "rotate(" + bearing + "deg)";
-        }
-        lastLat = lat; lastLng = lng;
-
-        // Initial zoom-to-fit including GPX + live marker
         if (firstLiveFix && globalBounds){
           firstLiveFix = false;
           map.fitBounds(globalBounds,{padding:[50,50]});
@@ -446,13 +405,13 @@ async function init(){
 }
 
 /* ------------------------------------------------------------
-   ⭐ ANALYTICS — Always logs (route, lapland, or no-route)
+   ANALYTICS
 ------------------------------------------------------------ */
 async function sendAnalytics(){
   const api = apiUrl;
   if (!api) return;
 
-  await new Promise(res => setTimeout(res,600)); // ensure ACTIVE_ROUTE is ready
+  await new Promise(res => setTimeout(res,600));
 
   const ua = /Mobi|Android/i.test(navigator.userAgent)
     ? "mobile"
@@ -475,7 +434,6 @@ async function sendAnalytics(){
   ).catch(err => console.warn("Analytics error:",err));
 }
 
-// ⭐ FINAL: Only run init ONCE, THEN analytics
 init().then(sendAnalytics).catch(err=>{
   console.error("Init error:",err);
 });
