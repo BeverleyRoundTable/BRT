@@ -12,92 +12,96 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
 <style>
-  html, body {
-    margin:0; padding:0;
-    height:100%;
-    background:#001;
-    color:white;
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:#001;color:#fff;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
     overflow:hidden;
   }
+  #map{width:100vw;height:100vh;}
 
-  #map { width:100vw; height:100vh; }
-
-  .status-popup {
-    position:absolute;
-    top:24px;
-    left:50%;
+  .status-popup{
+    position:absolute;top:24px;left:50%;
     transform:translateX(-50%);
     background:rgba(24,24,24,0.93);
     padding:16px 18px 14px;
-    font-size:1.2em;
-    font-weight:700;
+    font-size:1.2em;font-weight:700;
     border-radius:18px;
-    min-width:250px;
-    max-width:90%;
+    min-width:250px;max-width:90%;
     box-shadow:0 4px 32px #0006;
-    z-index:4000;
-    text-align:center;
+    z-index:4000;text-align:center;
     line-height:1.25em;
   }
-
-  .donate-box {
-    position:fixed;
-    bottom:110px;
-    left:50%;
-    transform:translateX(-50%);
-    width:70%;
-    max-width:420px;
-    z-index:2000;
+  .status-popup.searching{
+    animation:glow 1.3s ease-in-out infinite;
+  }
+  @keyframes glow{
+    0%{box-shadow:0 0 0 rgba(255,215,0,0.0);}
+    50%{box-shadow:0 0 20px rgba(255,215,0,0.5);}
+    100%{box-shadow:0 0 0 rgba(255,215,0,0.0);}
   }
 
-  .donate-btn {
+  .donate-box{
+    position:fixed;
+    bottom:110px;left:50%;
+    transform:translateX(-50%);
+    width:70%;max-width:420px;
+    z-index:2000;
+  }
+  .donate-btn{
     background:var(--primaryColor,#d31c1c);
-    color:white;
-    padding:14px 0;
-    width:100%;
-    display:block;
-    text-align:center;
-    border-radius:14px;
-    font-weight:800;
-    text-decoration:none;
+    color:#fff;padding:14px 0;
+    width:100%;display:block;
+    text-align:center;border-radius:14px;
+    font-weight:800;text-decoration:none;
     font-size:1.05em;
     box-shadow:0 4px 16px rgba(0,0,0,0.4);
   }
 
-  .info-popup {
+  .info-popup{
     position:fixed;
-    left:50%; transform:translateX(-50%);
+    left:50%;transform:translateX(-50%);
     bottom:16px;
     background:rgba(20,20,20,0.92);
     padding:10px 12px;
     border-radius:12px;
-    display:flex; gap:12px;
-    font-size:.85em; font-weight:700;
+    display:flex;gap:12px;
+    font-size:.85em;font-weight:700;
     z-index:2000;
   }
+  .muted{display:none;opacity:.9;}
 
-  .muted { display:none; opacity:.9; }
-
-  .btn {
-    background:#0b1220; color:#fff;
+  .btn{
+    background:#0b1220;color:#fff;
     border:1px solid #ffffff26;
-    border-radius:10px; padding:6px 10px;
-    cursor:pointer; font-weight:800;
+    border-radius:10px;padding:6px 10px;
+    cursor:pointer;font-weight:800;
   }
 
-  #logoOverlay {
+  #logoOverlay{
     position:absolute;
     z-index:5000;
     pointer-events:none;
+  }
+
+  /* Santa marker rotation */
+  .santa-marker{
+    width:64px;height:64px;
+    transform:translate(-32px,-32px); /* align anchor */
+  }
+  .santa-marker-img{
+    width:64px;height:64px;
+    transform-origin:50% 50%;
+    transition:transform 0.18s linear;
+    image-rendering:auto;
   }
 </style>
 </head>
 
 <body>
 
-<div class="status-popup" id="statusBox">
-  🎄 Santa is currently in Lapland preparing for Christmas!
+<div class="status-popup searching" id="statusBox">
+  🔍 Searching for Santa…
 </div>
 
 <div class="donate-box">
@@ -126,42 +130,55 @@ window.SANTA_ACTIVE = false;
 ------------------------------------------------------------ */
 const urlParams = new URLSearchParams(window.location.search);
 const apiUrl = urlParams.get("api") || urlParams.get("sleigh_api");
-
 if (!apiUrl) alert("❌ No API provided. Use ?api=YOUR_SCRIPT_URL");
 
 async function loadJSON(url){
-  const r = await fetch(url, { cache:"no-store" });
+  const r = await fetch(url,{cache:"no-store"});
+  if (!r.ok) throw new Error("HTTP "+r.status);
   return r.json();
 }
 
-function normaliseDate(d) {
-  const dt = new Date(d);
-  return isNaN(dt) ? null : dt.toISOString().slice(0,10);
+function normaliseDate(d){
+  const dt=new Date(d);
+  return isNaN(dt)?null:dt.toISOString().slice(0,10);
 }
 
 function normaliseGpxUrl(url){
   if (!url) return url;
-  if (url.includes("github.com") && url.includes("/blob/")) {
+  if (url.includes("github.com") && url.includes("/blob/")){
     return url.replace("github.com","raw.githubusercontent.com").replace("/blob/","/");
   }
   return url;
 }
 
+/* Bearing between two lat/lng points in degrees */
+function computeBearing(lat1,lng1,lat2,lng2){
+  const toRad = x => x * Math.PI/180;
+  const toDeg = x => x * 180/Math.PI;
+  const φ1 = toRad(lat1), φ2 = toRad(lat2);
+  const Δλ = toRad(lng2 - lng1);
+  const y = Math.sin(Δλ)*Math.cos(φ2);
+  const x = Math.cos(φ1)*Math.sin(φ2) -
+            Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+  let θ = toDeg(Math.atan2(y,x));
+  if (θ < 0) θ += 360;
+  return θ;
+}
+
 /* ------------------------------------------------------------
    ⭐ Detect active route for analytics & status
 ------------------------------------------------------------ */
-function detectActiveRoute(routes) {
-  if (!routes || !routes.length) return ""; // no routes sheet used
-
+function detectActiveRoute(routes){
+  if (!routes || !routes.length) return "";
   const today = new Date().toISOString().slice(0,10);
 
-  let todayMatch = routes.find(r => normaliseDate(r.date) === today);
+  const todayMatch = routes.find(r => normaliseDate(r.date) === today);
   if (todayMatch) return todayMatch.routeName || todayMatch.route || "";
 
-  let futureRoutes = routes
+  const futureRoutes = routes
     .map(r => ({ r, d: normaliseDate(r.date) }))
-    .filter(x => x.d >= today)
-    .sort((a,b) => a.d.localeCompare(b.d));
+    .filter(x => x.d && x.d >= today)
+    .sort((a,b)=>a.d.localeCompare(b.d));
 
   return futureRoutes.length ? (futureRoutes[0].r.routeName || "") : "";
 }
@@ -179,9 +196,11 @@ async function init(){
   window.ACTIVE_ROUTE = detectActiveRoute(routes);
 
   const today = new Date().toISOString().slice(0,10);
+  const statusBox = document.getElementById("statusBox");
 
   document.documentElement.style.setProperty(
-    "--primaryColor", settings.primary_color || "#d31c1c"
+    "--primaryColor",
+    settings.primary_color || "#d31c1c"
   );
 
   document.getElementById("donateLink").href =
@@ -190,24 +209,22 @@ async function init(){
   /* ------------------------------------------------------------
      SPONSOR LOGIC
   ------------------------------------------------------------ */
-  function getSponsor(r) {
+  function getSponsor(r){
     return r.sponsorurl || r.sponsorUrl || "";
   }
 
   const todaysRoute = routes.find(r => normaliseDate(r.date) === today);
   const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
 
-  const statusBox = document.getElementById("statusBox");
-
   function setActiveStatus(){
     window.SANTA_ACTIVE = true;
+    statusBox.classList.remove("searching");
 
-    if (sponsor) {
-      statusBox.innerHTML = `
-        🎅 Santa is out on his sleigh spreading joy!<br>
-        <span style="font-size:0.75em;opacity:0.9;">Sponsored by:</span><br>
-        <img src="${sponsor}" style="height:32px;margin-top:4px;border-radius:6px;">
-      `;
+    if (sponsor){
+      statusBox.innerHTML =
+        "🎅 Santa is out on his sleigh spreading joy!<br>" +
+        "<span style='font-size:0.75em;opacity:0.9;'>Sponsored by:</span><br>" +
+        "<img src='"+sponsor+"' style='height:32px;margin-top:4px;border-radius:6px;'>";
     } else {
       statusBox.textContent = "🎅 Santa is out on his sleigh spreading joy!";
     }
@@ -215,6 +232,7 @@ async function init(){
 
   function setLaplandStatus(){
     window.SANTA_ACTIVE = false;
+    statusBox.classList.remove("searching");
     statusBox.textContent = "🎄 Santa is currently in Lapland preparing for Christmas!";
   }
 
@@ -230,10 +248,18 @@ async function init(){
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
+  /* Bounds for GPX + live marker */
+  let globalBounds = null;
+  const extendBounds = (lat,lng)=>{
+    const p = L.latLng(lat,lng);
+    if (!globalBounds) globalBounds = L.latLngBounds(p,p);
+    else globalBounds.extend(p);
+  };
+
   /* ------------------------------------------------------------
      LOGO OVERLAY
   ------------------------------------------------------------ */
-  if (settings.logo_overlay_enabled === "true" || settings.logo_overlay_enabled === true) {
+  if (settings.logo_overlay_enabled === "true" || settings.logo_overlay_enabled === true){
     const logo = document.getElementById("logoOverlay");
     if (settings.logo_overlay_url){
       logo.src = settings.logo_overlay_url;
@@ -242,12 +268,12 @@ async function init(){
 
       switch ((settings.logo_overlay_position || "").trim()){
         case "bottom-right": logo.style.bottom="20px"; logo.style.right="20px"; break;
-        case "top-right": logo.style.top="20px"; logo.style.right="20px"; break;
-        case "bottom-left": logo.style.bottom="20px"; logo.style.left="20px"; break;
-        case "top-left": logo.style.top="20px"; logo.style.left="20px"; break;
+        case "top-right":    logo.style.top="20px";    logo.style.right="20px"; break;
+        case "bottom-left":  logo.style.bottom="20px"; logo.style.left="20px";  break;
+        case "top-left":     logo.style.top="20px";    logo.style.left="20px";  break;
         case "center":
           logo.style.top="50%"; logo.style.left="50%";
-          logo.style.transform="translate(-50%, -50%)";
+          logo.style.transform="translate(-50%,-50%)";
           break;
       }
     }
@@ -256,26 +282,23 @@ async function init(){
   /* ------------------------------------------------------------
      GPX OVERLAY
   ------------------------------------------------------------ */
-  if (tracker.enable_gpx_overlay === "true" || tracker.enable_gpx_overlay === true) {
-
+  if (tracker.enable_gpx_overlay === "true" || tracker.enable_gpx_overlay === true){
     const gpxMode = tracker.gpx_mode || settings.gpx_mode || "next";
     let routeToShow = null;
 
     if (gpxMode === "today") routeToShow = todaysRoute;
     else {
       routeToShow = todaysRoute;
-      if (!routeToShow) {
+      if (!routeToShow){
         const futureRoutes = routes
           .map(r => ({ r, d: normaliseDate(r.date) }))
-          .filter(x => x.d >= today)
-          .sort((a,b) => a.d.localeCompare(b.d));
-
+          .filter(x => x.d && x.d >= today)
+          .sort((a,b)=>a.d.localeCompare(b.d));
         if (futureRoutes.length) routeToShow = futureRoutes[0].r;
       }
     }
 
-    if (routeToShow && routeToShow.gpxUrl) {
-
+    if (routeToShow && routeToShow.gpxUrl){
       const gpxUrl = normaliseGpxUrl(routeToShow.gpxUrl);
 
       const startIcon = L.icon({
@@ -290,91 +313,129 @@ async function init(){
         iconSize:[42,42], iconAnchor:[21,38]
       });
 
-      new L.GPX(gpxUrl, {
-        async: true,
-        marker_options: { startIcon, endIcon, wptIconUrls:{ "":"" } },
-        polyline_options: {
-          color: settings.primary_color || "#d31c1c",
-          weight: 5,
-          opacity: 0.9
+      new L.GPX(gpxUrl,{
+        async:true,
+        marker_options:{ startIcon,endIcon,wptIconUrls:{ "":"" } },
+        polyline_options:{
+          color:settings.primary_color || "#d31c1c",
+          weight:5,opacity:0.9
         }
       })
-      .on("loaded", e => map.fitBounds(e.target.getBounds(), { padding:[50,50] }))
+      .on("loaded", e=>{
+        const b = e.target.getBounds();
+        globalBounds = b.clone();
+        map.fitBounds(b,{padding:[50,50]});
+      })
       .addTo(map);
     }
   }
 
   /* ------------------------------------------------------------
-     LIVE TRACKING MARKER
+     LIVE TRACKING MARKER (ROTATION)
   ------------------------------------------------------------ */
   const liveIconUrl =
     settings.sleigh_icon_live ||
-    settings.map_icon || 
+    settings.map_icon ||
     "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
 
-  const markerIcon = L.icon({
-    iconUrl: liveIconUrl,
-    iconSize:[64,64], iconAnchor:[32,32]
+  const santaIcon = L.divIcon({
+    className:"santa-marker",
+    html:`<img src="${liveIconUrl}" class="santa-marker-img" alt="Santa" />`,
+    iconSize:[64,64],
+    iconAnchor:[32,32]
   });
 
-  const marker = L.marker([fallback.lat,fallback.lng],{icon:markerIcon}).addTo(map);
+  const marker = L.marker([fallback.lat,fallback.lng],{icon:santaIcon}).addTo(map);
+  let santaImg = null;
+  setTimeout(()=>{
+    const el = marker.getElement();
+    if (el) santaImg = el.querySelector(".santa-marker-img");
+  },0);
 
   let follow = true;
+  let lastLat = null, lastLng = null;
+  let firstLiveFix = true;
 
-  document.getElementById("followBtn").onclick = () => {
+  document.getElementById("followBtn").onclick = function(e){
     follow = !follow;
-    event.target.textContent = `Follow Santa: ${follow?"ON":"OFF"}`;
+    e.target.textContent = "Follow Santa: " + (follow ? "ON" : "OFF");
   };
 
   map.on("dragstart zoomstart", ()=>{
     follow = false;
-    document.getElementById("followBtn").textContent="Follow Santa: OFF";
+    document.getElementById("followBtn").textContent = "Follow Santa: OFF";
   });
 
-  document.getElementById("recenterBtn").onclick = () => {
+  document.getElementById("recenterBtn").onclick = ()=>{
     follow = true;
-    document.getElementById("followBtn").textContent="Follow Santa: ON";
+    document.getElementById("followBtn").textContent = "Follow Santa: ON";
     map.panTo(marker.getLatLng());
   };
 
   /* ------------------------------------------------------------
-     FIREBASE POLLING
+     FIREBASE POLLING via API PROXY
   ------------------------------------------------------------ */
   const firebaseURL = apiUrl + "?function=proxyFirebase";
-
   const REFRESH = 8000;
   const STALE_MS = 5 * 60000;
 
+  const lastUpdatedEl = document.getElementById("lastUpdated");
+  const ageEl = document.getElementById("age");
+
   async function tick(){
-    try {
+    try{
       const raw = await loadJSON(firebaseURL);
+      if (!raw || typeof raw !== "object" || Object.keys(raw).length === 0){
+        throw new Error("No GPS data");
+      }
+
       const key = Object.keys(raw)[0];
       const p = raw[key];
-
-      if (!p || !p.lat) throw "No GPS";
+      if (!p || typeof p.lat !== "number" || typeof p.lng !== "number"){
+        throw new Error("Invalid GPS payload");
+      }
 
       const ts = new Date(p.ts).getTime();
       const age = Date.now() - ts;
 
-      if (age < STALE_MS) {
+      if (isNaN(ts)){
+        throw new Error("Invalid timestamp");
+      }
+
+      if (age < STALE_MS){
         setActiveStatus();
 
-        marker.setLatLng([p.lat,p.lng]);
-        if(follow) map.panTo([p.lat,p.lng]);
+        const lat = p.lat, lng = p.lng;
 
-        document.getElementById("lastUpdated").style.display="inline";
-        document.getElementById("age").style.display="inline";
+        // Update global bounds with live point
+        extendBounds(lat,lng);
+        marker.setLatLng([lat,lng]);
 
-        document.getElementById("lastUpdated").textContent =
+        // Bearing + rotation
+        if (lastLat !== null && lastLng !== null && santaImg){
+          const bearing = computeBearing(lastLat,lastLng,lat,lng);
+          santaImg.style.transform = "rotate(" + bearing + "deg)";
+        }
+        lastLat = lat; lastLng = lng;
+
+        // Initial zoom-to-fit including GPX + live marker
+        if (firstLiveFix && globalBounds){
+          firstLiveFix = false;
+          map.fitBounds(globalBounds,{padding:[50,50]});
+        } else if (follow){
+          map.panTo([lat,lng]);
+        }
+
+        lastUpdatedEl.style.display = "inline";
+        ageEl.style.display = "inline";
+
+        lastUpdatedEl.textContent =
           "Last update: " + new Date(p.ts).toLocaleTimeString("en-GB");
-
-        document.getElementById("age").textContent =
-          "Age: " + Math.floor(age/1000)+"s";
+        ageEl.textContent = "Age: " + Math.floor(age/1000) + "s";
       } else {
         setLaplandStatus();
       }
-
-    } catch (e) {
+    } catch(e){
       setLaplandStatus();
     }
 
@@ -387,11 +448,11 @@ async function init(){
 /* ------------------------------------------------------------
    ⭐ ANALYTICS — Always logs (route, lapland, or no-route)
 ------------------------------------------------------------ */
-async function sendAnalytics() {
+async function sendAnalytics(){
   const api = apiUrl;
   if (!api) return;
 
-  await new Promise(res => setTimeout(res, 600)); // ensure ACTIVE_ROUTE is ready
+  await new Promise(res => setTimeout(res,600)); // ensure ACTIVE_ROUTE is ready
 
   const ua = /Mobi|Android/i.test(navigator.userAgent)
     ? "mobile"
@@ -399,7 +460,7 @@ async function sendAnalytics() {
 
   let route = window.ACTIVE_ROUTE;
 
-  if (!route || route.trim() === "") {
+  if (!route || route.trim() === ""){
     route = window.SANTA_ACTIVE ? "lapland" : "no-route";
   }
 
@@ -411,11 +472,13 @@ async function sendAnalytics() {
     "&source=tracker" +
     "&ua=" + ua +
     "&route=" + route
-  ).catch(err => console.warn("Analytics error:", err));
+  ).catch(err => console.warn("Analytics error:",err));
 }
 
 // ⭐ FINAL: Only run init ONCE, THEN analytics
-init().then(sendAnalytics);
+init().then(sendAnalytics).catch(err=>{
+  console.error("Init error:",err);
+});
 </script>
 
 </body>
