@@ -221,13 +221,18 @@ async function init(){
   }
 
   /* ------------------------------------------------------------
-     MAP SETUP
+     MAP SETUP — ★ FIXED ZOOM PARSING ★
   ------------------------------------------------------------ */
+
   const fallback = { lat:66.5436, lng:25.8473 };
+
+  // ⭐ FIX: Always convert zoom to a number safely
+  let zoom = Number(settings.default_map_zoom);
+  if (!zoom || zoom < 1 || zoom > 20) zoom = 13;
 
   const map = L.map("map").setView(
     [fallback.lat, fallback.lng],
-    settings.default_map_zoom || 13
+    zoom
   );
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
@@ -392,11 +397,9 @@ async function init(){
         if (firstLiveFix){
           firstLiveFix = false;
           if (globalBounds && globalBounds.isValid && globalBounds.isValid()){
-            // include this live point in the fitted view
             map.fitBounds(globalBounds,{padding:[50,50]});
           } else {
-            // no GPX / bounds – just centre on Santa
-            map.setView([lat,lng], settings.default_map_zoom || 15);
+            map.setView([lat,lng], zoom);
           }
         } else if (follow){
           map.panTo([lat,lng]);
