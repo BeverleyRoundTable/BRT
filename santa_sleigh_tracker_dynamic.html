@@ -340,10 +340,7 @@ async function init(){
   /* ------------------------------------------------------------
      FIREBASE POLLING
   ------------------------------------------------------------ */
-  const firebaseURL =
-    tracker.firebase_url.replace(/\/$/,"") +
-    tracker.firebase_path +
-    ".json";
+  const firebaseURL = apiUrl + "?function=proxyFirebase";
 
   const REFRESH = 8000;
   const STALE_MS = 5 * 60000;
