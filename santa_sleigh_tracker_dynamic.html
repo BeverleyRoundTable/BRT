@@ -83,7 +83,6 @@
     z-index:5000;
     pointer-events:none;
   }
-
 </style>
 </head>
 
@@ -138,6 +137,16 @@ function normaliseGpxUrl(url){
     return url.replace("github.com","raw.githubusercontent.com").replace("/blob/","/");
   }
   return url;
+}
+
+function isValidLatLng(lat,lng){
+  return (
+    typeof lat === "number" &&
+    typeof lng === "number" &&
+    !isNaN(lat) && !isNaN(lng) &&
+    lat >= -90 && lat <= 90 &&
+    lng >= -180 && lng <= 180
+  );
 }
 
 /* ------------------------------------------------------------
@@ -225,6 +234,7 @@ async function init(){
 
   let globalBounds = null;
   const extendBounds = (lat,lng)=>{
+    if (!isValidLatLng(lat,lng)) return;
     const p = L.latLng(lat,lng);
     if (!globalBounds) globalBounds = L.latLngBounds(p,p);
     else globalBounds.extend(p);
@@ -297,15 +307,17 @@ async function init(){
       })
       .on("loaded", e=>{
         const b = e.target.getBounds();
-        globalBounds = b.clone();
-        map.fitBounds(b,{padding:[50,50]});
+        if (b && b.isValid && b.isValid()){
+          globalBounds = b.clone();
+          map.fitBounds(globalBounds,{padding:[50,50]});
+        }
       })
       .addTo(map);
     }
   }
 
   /* ------------------------------------------------------------
-     LIVE MARKER — NO ROTATION VERSION
+     LIVE MARKER (no rotation)
   ------------------------------------------------------------ */
   const liveIconUrl =
     settings.sleigh_icon_live ||
@@ -315,13 +327,12 @@ async function init(){
   const santaIcon = L.icon({
     iconUrl: liveIconUrl,
     iconSize: [64,64],
-    iconAnchor: [32,32]  // keeps Santa centered
+    iconAnchor: [32,32]
   });
 
   const marker = L.marker([fallback.lat,fallback.lng],{icon:santaIcon}).addTo(map);
 
   let follow = true;
-  let lastLat = null, lastLng = null;
   let firstLiveFix = true;
 
   document.getElementById("followBtn").onclick = function(e){
@@ -359,7 +370,7 @@ async function init(){
 
       const key = Object.keys(raw)[0];
       const p = raw[key];
-      if (!p || typeof p.lat !== "number" || typeof p.lng !== "number"){
+      if (!p || !isValidLatLng(p.lat,p.lng)){
         throw new Error("Invalid GPS payload");
       }
 
@@ -378,9 +389,15 @@ async function init(){
         extendBounds(lat,lng);
         marker.setLatLng([lat,lng]);
 
-        if (firstLiveFix && globalBounds){
+        if (firstLiveFix){
           firstLiveFix = false;
-          map.fitBounds(globalBounds,{padding:[50,50]});
+          if (globalBounds && globalBounds.isValid && globalBounds.isValid()){
+            // include this live point in the fitted view
+            map.fitBounds(globalBounds,{padding:[50,50]});
+          } else {
+            // no GPX / bounds – just centre on Santa
+            map.setView([lat,lng], settings.default_map_zoom || 15);
+          }
         } else if (follow){
           map.panTo([lat,lng]);
         }
