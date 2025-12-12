@@ -558,117 +558,104 @@ if (donateUrl) {
   /* ------------------------------------------------------------
      FIREBASE POLLING
   ------------------------------------------------------------ */
-  const firebaseURL = apiUrl + "?function=proxyFirebase";
-  const REFRESH = 8000;
-  const STALE_MS = 5 * 60000;
+const firebaseURL = apiUrl + "?function=proxyFirebase";
+const REFRESH = 8000;
+const STALE_MS = 5 * 60000;
 
-  const lastUpdatedEl = document.getElementById("lastUpdated");
-  const ageEl = document.getElementById("age");
-  const speedEl = document.getElementById("speed");
+const lastUpdatedEl = document.getElementById("lastUpdated");
+const ageEl = document.getElementById("age");
+const speedEl = document.getElementById("speed");
 
-  let loadingHidden = false;
-  function hideLoadingOnce(){
-    if (loadingHidden) return;
-    loadingHidden = true;
-    const el = document.getElementById("loadingCover");
-    if (el) el.classList.add("hidden");
-  }
-
-  async function tick(){
-    try{
-      const raw = await loadJSON(firebaseURL);
-      if (!raw || typeof raw !== "object" || Object.keys(raw).length === 0){
-        throw new Error("No GPS data");
-      }
-
-      const key = Object.keys(raw)[0];
-      const p = raw[key];
-      if (!p || !isValidLatLng(p.lat,p.lng)){
-        throw new Error("Invalid GPS payload");
-      }
-
-      const ts = new Date(p.ts).getTime();
-      const age = Date.now() - ts;
-
-      if (isNaN(ts)){
-        throw new Error("Invalid timestamp");
-      }
-
-      if (age < STALE_MS){
-        setActiveStatus();
-
-        const lat = p.lat, lng = p.lng;
-        const newLatLng = L.latLng(lat,lng);
-
-        extendBounds(lat,lng);
-
-        // ---------- Speed calculation ----------
-      let speedText = "Speed: —";
-let speedMph = null;
-
-if (lastFix && ts > lastFix.ts){
-  const prevLatLng = L.latLng(lastFix.lat,lastFix.lng);
-  const distMeters = prevLatLng.distanceTo(newLatLng);
-  const deltaSeconds = (ts - lastFix.ts) / 1000;
-
-  if (deltaSeconds > 0){
-    const speedKmh = (distMeters/1000) / (deltaSeconds/3600);
-    speedMph = speedKmh * 0.621371;   // ← Convert to MPH
-
-    if (speedMph < 150){              // sensible upper limit for Santa 😉
-      speedText = "Speed: " + speedMph.toFixed(1) + " mph";
-    }
-  }
+let loadingHidden = false;
+function hideLoadingOnce(){
+  if (loadingHidden) return;
+  loadingHidden = true;
+  const el = document.getElementById("loadingCover");
+  if (el) el.classList.add("hidden");
 }
 
-        lastFix = { lat, lng, ts };
+async function tick(){
+  try{
+    const p = await loadJSON(firebaseURL);
 
-        speedEl.style.display = "inline";
-        speedEl.textContent = speedText;
+    // proxyFirebase already returns { lat, lng, ts }
+    if (!p || typeof p !== "object" || !isValidLatLng(p.lat, p.lng)) {
+      throw new Error("Invalid GPS payload");
+    }
 
-        // ---------- Smooth marker animation ----------
-        animateMarker(currentLatLng, newLatLng, 900);
+    const ts = new Date(p.ts).getTime();
+    const age = Date.now() - ts;
 
-        // ---------- Dynamic zoom + follow behaviour ----------
-        const dynZoom = getZoomForSpeed(speedKmh, zoom);
+    if (isNaN(ts)) throw new Error("Invalid timestamp");
 
-        if (firstLiveFix){
-          firstLiveFix = false;
-          if (globalBounds && globalBounds.isValid && globalBounds.isValid()){
-            globalBounds.extend(newLatLng);
-            map.fitBounds(globalBounds,{padding:[50,50]});
-          } else {
-            map.setView(newLatLng, dynZoom);
-          }
-        } else if (follow){
-          const distToCenter = map.getCenter().distanceTo(newLatLng);
-          if (distToCenter > 800){
-            map.flyTo(newLatLng, dynZoom, {duration:0.9});
-          } else {
-            map.panTo(newLatLng);
-          }
+    if (age < STALE_MS){
+      setActiveStatus();
+
+      const lat = p.lat;
+      const lng = p.lng;
+      const newLatLng = L.latLng(lat, lng);
+
+      extendBounds(lat, lng);
+
+      // ---------- Speed ----------
+      let speedText = "Speed: —";
+      let speedKmh = null;
+
+      if (lastFix && ts > lastFix.ts){
+        const prev = L.latLng(lastFix.lat, lastFix.lng);
+        const distM = prev.distanceTo(newLatLng);
+        const dt = (ts - lastFix.ts) / 1000;
+
+        if (dt > 0){
+          speedKmh = (distM / 1000) / (dt / 3600);
+          const mph = speedKmh * 0.621371;
+          if (mph < 150) speedText = `Speed: ${mph.toFixed(1)} mph`;
         }
-
-        // ---------- Info labels ----------
-        lastUpdatedEl.style.display = "inline";
-        ageEl.style.display = "inline";
-
-        lastUpdatedEl.textContent =
-          "Last update: " + new Date(p.ts).toLocaleTimeString("en-GB");
-        ageEl.textContent = "Age: " + Math.floor(age/1000) + "s";
-      } else {
-        setLaplandStatus();
       }
-    } catch(e){
+
+      lastFix = { lat, lng, ts };
+
+      speedEl.style.display = "inline";
+      speedEl.textContent = speedText;
+
+      // ---------- Animate ----------
+      animateMarker(currentLatLng, newLatLng, 900);
+
+      const dynZoom = getZoomForSpeed(speedKmh, zoom);
+
+      if (firstLiveFix){
+        firstLiveFix = false;
+        if (globalBounds && globalBounds.isValid()){
+          globalBounds.extend(newLatLng);
+          map.fitBounds(globalBounds,{ padding:[50,50] });
+        } else {
+          map.setView(newLatLng, dynZoom);
+        }
+      } else if (follow){
+        const d = map.getCenter().distanceTo(newLatLng);
+        if (d > 800) map.flyTo(newLatLng, dynZoom, { duration:0.9 });
+        else map.panTo(newLatLng);
+      }
+
+      lastUpdatedEl.style.display = "inline";
+      ageEl.style.display = "inline";
+      lastUpdatedEl.textContent =
+        "Last update: " + new Date(p.ts).toLocaleTimeString("en-GB");
+      ageEl.textContent = "Age: " + Math.floor(age/1000) + "s";
+
+    } else {
       setLaplandStatus();
     }
 
-    hideLoadingOnce();
-    setTimeout(tick, REFRESH);
+  } catch (err){
+    setLaplandStatus();
   }
 
-  tick();
+  hideLoadingOnce();
+  setTimeout(tick, REFRESH);
 }
+
+tick();
 
 /* ------------------------------------------------------------
    ANALYTICS
