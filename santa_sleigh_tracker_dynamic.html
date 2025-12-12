@@ -116,6 +116,14 @@ if(!apiUrl) alert("Missing ?api=YOUR_SCRIPT_URL");
 const REFRESH = 8000;
 const STALE_MS = 5*60000;
 
+/* ---------- ICON FALLBACKS ---------- */
+const FALLBACK_ICONS = {
+  live: "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
+  start: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+  end: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png"
+};
+const safeIcon = (v,f)=> (v && String(v).trim()) ? v : f;
+
 let map, marker;
 let follow = true;
 let firstFix = true;
@@ -146,17 +154,13 @@ function normaliseGpxUrl(url){
 }
 function pickRouteForGpx(routes, mode){
   const today = new Date().toISOString().slice(0,10);
-
   const todays = routes.find(r => normaliseDate(r.date)===today && r.gpxUrl);
   if(mode==="today") return todays || null;
-
   if(todays) return todays;
-
   const future = routes
     .map(r => ({r, d: normaliseDate(r.date)}))
     .filter(x => x.d && x.d>=today && x.r.gpxUrl)
     .sort((a,b)=>a.d.localeCompare(b.d));
-
   return future.length ? future[0].r : null;
 }
 
@@ -191,11 +195,11 @@ async function init(){
         },
         marker_options:{
           startIcon:L.icon({
-            iconUrl:s.sleigh_icon_start,
+            iconUrl:safeIcon(s.sleigh_icon_start,FALLBACK_ICONS.start),
             iconSize:[42,42],iconAnchor:[21,38]
           }),
           endIcon:L.icon({
-            iconUrl:s.sleigh_icon_end,
+            iconUrl:safeIcon(s.sleigh_icon_end,FALLBACK_ICONS.end),
             iconSize:[42,42],iconAnchor:[21,38]
           }),
           wptIconUrls:{ "":"" }
@@ -204,9 +208,10 @@ async function init(){
     }
   }
 
+  /* ---------- LIVE MARKER ---------- */
   marker=L.marker([fallback.lat,fallback.lng],{
     icon:L.icon({
-      iconUrl:s.sleigh_icon_live,
+      iconUrl:safeIcon(s.sleigh_icon_live,FALLBACK_ICONS.live),
       iconSize:[64,64],iconAnchor:[32,32]
     })
   }).addTo(map);
