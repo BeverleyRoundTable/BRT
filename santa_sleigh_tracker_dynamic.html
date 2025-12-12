@@ -7,238 +7,36 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- GPX library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
 <style>
-  html,body{
-    margin:0;padding:0;height:100%;
-    background:#001;color:#fff;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
-    overflow:hidden;
-  }
-
-  /* Use dynamic viewport height for mobile */
-  #map{
-    width:100vw;
-    height:100dvh;        /* better on mobile */
-    min-height:100vh;     /* fallback */
-  }
-
-  .status-popup{
-    position:absolute;top:24px;left:50%;
-    transform:translateX(-50%);
-    background:rgba(24,24,24,0.93);
-    padding:16px 18px 14px;
-    font-size:1.2em;font-weight:700;
-    border-radius:18px;
-    min-width:250px;max-width:90%;
-    box-shadow:0 4px 32px #0006;
-    z-index:4000;text-align:center;
-    line-height:1.25em;
-  }
-  .status-popup.searching{
-    animation:glow 1.3s ease-in-out infinite;
-  }
-  @keyframes glow{
-    0%{box-shadow:0 0 0 rgba(255,215,0,0.0);}
-    50%{box-shadow:0 0 20px rgba(255,215,0,0.5);}
-    100%{box-shadow:0 0 0 rgba(255,215,0,0.0);}
-  }
-
-  .donate-box{
-    position:fixed;
-    bottom:110px;left:50%;
-    transform:translateX(-50%);
-    width:70%;max-width:420px;
-    z-index:2000;
-  }
-  .donate-btn{
-    background:var(--primaryColor,#d31c1c);
-    color:#fff;padding:14px 0;
-    width:100%;display:block;
-    text-align:center;border-radius:14px;
-    font-weight:800;text-decoration:none;
-    font-size:1.05em;
-    box-shadow:0 4px 16px rgba(0,0,0,0.4);
-  }
-
-  .info-popup{
-    position:fixed;
-    left:50%;transform:translateX(-50%);
-    bottom:16px;
-    background:rgba(20,20,20,0.92);
-    padding:10px 12px;
-    border-radius:12px;
-    display:flex;gap:12px;
-    font-size:.78em;font-weight:700;
-    z-index:2000;
-    flex-wrap:wrap;
-    justify-content:center;
-  }
-  .muted{display:none;opacity:.9;}
-
-  .btn{
-    background:#0b1220;color:#fff;
-    border:1px solid #ffffff26;
-    border-radius:10px;padding:6px 10px;
-    cursor:pointer;font-weight:800;
-  }
-
-  #logoOverlay{
-    position:absolute;
-    z-index:5000;
-    pointer-events:none;
-  }
-
-  /* ---------- Loading overlay ---------- */
-  #loadingCover{
-    position:fixed;
-    inset:0;
-    background:#000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:6000;
-    transition:opacity .6s ease;
-  }
-  #loadingCover.hidden{
-    opacity:0;
-    pointer-events:none;
-  }
-  #loadingSpinner{
-    width:56px;height:56px;
-    border-radius:50%;
-    border:4px solid rgba(255,255,255,0.25);
-    border-top-color:#ffd700;
-    animation:spin .9s linear infinite;
-  }
-  @keyframes spin{to{transform:rotate(360deg);}}
-
-  /* ---------- Night mode + snow ---------- */
-  body.night-mode{
-    background:#000;
-  }
-
-  #snowOverlay{
-    position:fixed;
-    inset:0;
-    pointer-events:none;
-    overflow:hidden;
-    z-index:3000;
-    opacity:0;
-    transition:opacity .8s ease;
-  }
-  body.night-mode #snowOverlay{
-    opacity:0.6;
-  }
-
-  .snowflake{
-    position:absolute;
-    top:-10px;
-    color:#fff;
-    font-size:10px;
-    opacity:0.9;
-    text-shadow:0 0 4px #000;
-    animation:fall linear infinite;
-  }
-  @keyframes fall{
-    to{transform:translateY(110vh);}
-  }
-
-/* ---------------------------------------------------------
-   MOBILE FULL-SCREEN OPTIMISATION
-   Makes UI elements larger so the tracker feels "full size"
---------------------------------------------------------- */
-@media (max-width: 600px) {
-
-  /* Make Santa marker bigger */
-  .leaflet-marker-icon {
-    transform: scale(1.35);
-    transform-origin: center;
-  }
-
-  /* Status popup bigger and more readable */
-  .status-popup {
-    font-size: 1.4em;
-    padding: 20px 22px;
-    border-radius: 20px;
-  }
-
-  /* Donate button bigger */
-  .donate-btn {
-    font-size: 1.2em;
-    padding: 16px 0;
-    border-radius: 16px;
-  }
-
-  /* Increase button sizes */
-  .info-popup .btn {
-    font-size: 1em;
-    padding: 10px 14px;
-  }
-
-  /* Increase spacing between footer buttons */
-  .info-popup {
-    gap: 16px;
-  }
-
-  /* Slightly larger info text */
-  #speed, #age, #lastUpdated {
-    font-size: 1.05em;
-  }
+html,body{
+  margin:0;padding:0;height:100%;
+  background:#001;color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
+  overflow:hidden;
 }
-  
+#map{width:100vw;height:100dvh;min-height:100vh;}
 </style>
 </head>
 
 <body>
 
-<!-- Loading overlay -->
-<div id="loadingCover">
-  <div id="loadingSpinner"></div>
-</div>
-
-<div class="status-popup searching" id="statusBox">
-  🔍 Searching for Santa…
-</div>
-
-<div class="donate-box">
-  <a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a>
-</div>
-
-<div class="info-popup">
-  <span id="lastUpdated" class="muted">Last update: —</span>
-  <span id="age" class="muted">Age: —</span>
-  <span id="speed" class="muted">Speed: —</span>
-  <button class="btn" id="followBtn">Follow Santa: ON</button>
-  <button class="btn" id="recenterBtn">Re-centre</button>
-</div>
-
 <div id="map"></div>
-<div id="snowOverlay"></div>
-<img id="logoOverlay" style="display:none;" />
+<div class="status-popup searching" id="statusBox">🔍 Searching for Santa…</div>
 
 <script>
 /* ------------------------------------------------------------
-   GLOBAL FLAGS
+   GLOBALS
 ------------------------------------------------------------ */
-window.ACTIVE_ROUTE = "";
-window.SANTA_ACTIVE = false;
+let firebaseURL = null;
+let map, marker;
+let lastFix = null;
+let follow = true;
+let firstLiveFix = true;
 
 /* ------------------------------------------------------------
-   THEME: Night mode + snow
------------------------------------------------------------- */
-(function setTheme(){
-  const hour = new Date().getHours();
-  if (hour >= 17 || hour < 7) {
-    document.body.classList.add("night-mode");
-  }
-})();
-
-/* ------------------------------------------------------------
-   UTILS
+   API
 ------------------------------------------------------------ */
 const urlParams = new URLSearchParams(window.location.search);
 const apiUrl = urlParams.get("api") || urlParams.get("sleigh_api");
@@ -250,464 +48,91 @@ async function loadJSON(url){
   return r.json();
 }
 
-function normaliseDate(d){
-  const dt=new Date(d);
-  return isNaN(dt)?null:dt.toISOString().slice(0,10);
-}
-
-function normaliseGpxUrl(url){
-  if (!url) return url;
-  if (url.includes("github.com") && url.includes("/blob/")){
-    return url.replace("github.com","raw.githubusercontent.com").replace("/blob/","/");
-  }
-  return url;
-}
-
 function isValidLatLng(lat,lng){
-  return (
-    typeof lat === "number" &&
-    typeof lng === "number" &&
-    !isNaN(lat) && !isNaN(lng) &&
-    lat >= -90 && lat <= 90 &&
-    lng >= -180 && lng <= 180
-  );
-}
-
-/* Simple zoom chooser based on speed (km/h) */
-function getZoomForSpeed(speed, baseZoom){
-  if (!speed || !isFinite(speed)) return baseZoom;
-  if (speed < 5)  return Math.max(baseZoom, 17); // almost stopped
-  if (speed < 15) return Math.max(baseZoom, 16);
-  if (speed < 30) return Math.max(baseZoom, 15);
-  if (speed < 60) return Math.max(baseZoom, 14);
-  return Math.max(baseZoom, 13);
+  return typeof lat==="number" && typeof lng==="number" &&
+         !isNaN(lat)&&!isNaN(lng) &&
+         lat>=-90&&lat<=90 && lng>=-180&&lng<=180;
 }
 
 /* ------------------------------------------------------------
-   ⭐ Detect active route
------------------------------------------------------------- */
-function detectActiveRoute(routes){
-  if (!routes || !routes.length) return "";
-  const today = new Date().toISOString().slice(0,10);
-
-  const todayMatch = routes.find(r => normaliseDate(r.date) === today);
-  if (todayMatch) return todayMatch.routeName || todayMatch.route || "";
-
-  const futureRoutes = routes
-    .map(r => ({ r, d: normaliseDate(r.date) }))
-    .filter(x => x.d && x.d >= today)
-    .sort((a,b)=>a.d.localeCompare(b.d));
-
-  return futureRoutes.length ? (futureRoutes[0].r.routeName || "") : "";
-}
-
-/* ------------------------------------------------------------
-   MAIN INIT
+   INIT
 ------------------------------------------------------------ */
 async function init(){
   const data = await loadJSON(apiUrl);
 
-  const settings = data.settings || {};
-  const routes   = data.routes   || [];
   const tracker  = data.tracker  || {};
+  const settings = data.settings || {};
 
-  window.ACTIVE_ROUTE = detectActiveRoute(routes);
+  /* ✅ BUILD FIREBASE URL HERE (CORRECT SCOPE) */
+  firebaseURL =
+    tracker.firebase_url.replace(/\/$/, "") +
+    "/" +
+    tracker.firebase_path.replace(/^\/?/, "") +
+    ".json?cb=" + Date.now();
 
-  const today = new Date().toISOString().slice(0,10);
-  const statusBox = document.getElementById("statusBox");
-
-  document.documentElement.style.setProperty(
-    "--primaryColor",
-    settings.primary_color || "#d31c1c"
-  );
-
- const donateUrl =
-  tracker.donate_url ||
-  settings.donate_url ||
-  "";
-
-if (donateUrl) {
-  document.getElementById("donateLink").href = donateUrl;
-} else {
-  const donateBox = document.querySelector(".donate-box");
-  if (donateBox) donateBox.style.display = "none";
-}
-
-  /* ------------------------------------------------------------
-     STATUS: Active / Lapland
-  ------------------------------------------------------------ */
-  function getSponsor(r){
-    return r.sponsorurl || r.sponsorUrl || "";
-  }
-
-  const todaysRoute = routes.find(r => normaliseDate(r.date) === today);
-  const sponsor = todaysRoute ? getSponsor(todaysRoute) : null;
-
-  function setActiveStatus(){
-    window.SANTA_ACTIVE = true;
-    statusBox.classList.remove("searching");
-
-    if (sponsor){
-      statusBox.innerHTML =
-        "🎅 Santa is out on his sleigh spreading joy!<br>" +
-        "<span style='font-size:0.75em;opacity:0.9;'>Sponsored by:</span><br>" +
-        "<img src='"+sponsor+"' style='height:32px;margin-top:4px;border-radius:6px;'>";
-    } else {
-      statusBox.textContent = "🎅 Santa is out on his sleigh spreading joy!";
-    }
-  }
-
-  function setLaplandStatus(){
-    window.SANTA_ACTIVE = false;
-    statusBox.classList.remove("searching");
-    statusBox.textContent = "🎄 Santa is currently in Lapland preparing for Christmas!";
-  }
-
-  /* ------------------------------------------------------------
-     MAP SETUP — with safe zoom parsing
-  ------------------------------------------------------------ */
+  /* MAP */
   const fallback = { lat:66.5436, lng:25.8473 };
-
-  let zoom = Number(settings.default_map_zoom);
-  if (!zoom || zoom < 1 || zoom > 20) zoom = 13;
-
-  const map = L.map("map").setView(
-    [fallback.lat, fallback.lng],
-    zoom
-  );
+  map = L.map("map").setView([fallback.lat,fallback.lng], settings.default_map_zoom || 13);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  let globalBounds = null;
-  const extendBounds = (lat,lng)=>{
-    if (!isValidLatLng(lat,lng)) return;
-    const p = L.latLng(lat,lng);
-    if (!globalBounds) globalBounds = L.latLngBounds(p,p);
-    else globalBounds.extend(p);
-  };
+  marker = L.marker([fallback.lat,fallback.lng]).addTo(map);
+}
 
-  /* ------------------------------------------------------------
-     NIGHT MODE SNOW
-  ------------------------------------------------------------ */
-  function createSnow(){
-    const container = document.getElementById("snowOverlay");
-    if (!container) return;
-    for (let i=0;i<40;i++){
-      const s=document.createElement("div");
-      s.className="snowflake";
-      s.textContent="❄";
-      s.style.left = Math.random()*100 + "%";
-      const size = 8 + Math.random()*6;
-      s.style.fontSize = size + "px";
-      const duration = 6 + Math.random()*8;
-      const delay = Math.random()*-duration;
-      s.style.animationDuration = duration + "s";
-      s.style.animationDelay = delay + "s";
-      container.appendChild(s);
-    }
-  }
-  if (document.body.classList.contains("night-mode")){
-    createSnow();
-  }
-
-  /* ------------------------------------------------------------
-     LOGO OVERLAY
-  ------------------------------------------------------------ */
-  if (settings.logo_overlay_enabled === "true" || settings.logo_overlay_enabled === true){
-    const logo = document.getElementById("logoOverlay");
-    if (settings.logo_overlay_url){
-      logo.src = settings.logo_overlay_url;
-      logo.style.display = "block";
-      logo.style.width = (settings.logo_overlay_size || 64) + "px";
-
-      switch ((settings.logo_overlay_position || "").trim()){
-        case "bottom-right": logo.style.bottom="20px"; logo.style.right="20px"; break;
-        case "top-right":    logo.style.top="20px";    logo.style.right="20px"; break;
-        case "bottom-left":  logo.style.bottom="20px"; logo.style.left="20px";  break;
-        case "top-left":     logo.style.top="20px";    logo.style.left="20px";  break;
-        case "center":
-          logo.style.top="50%"; logo.style.left="50%";
-          logo.style.transform="translate(-50%,-50%)";
-          break;
-      }
-    }
-  }
-
-  /* ------------------------------------------------------------
-     GPX ROUTE
-  ------------------------------------------------------------ */
-  if (tracker.enable_gpx_overlay === "true" || tracker.enable_gpx_overlay === true){
-    const gpxMode = tracker.gpx_mode || settings.gpx_mode || "next";
-    let routeToShow = null;
-
-    if (gpxMode === "today") routeToShow = todaysRoute;
-    else {
-      routeToShow = todaysRoute;
-      if (!routeToShow){
-        const futureRoutes = routes
-          .map(r => ({ r, d: normaliseDate(r.date) }))
-          .filter(x => x.d && x.d >= today)
-          .sort((a,b)=>a.d.localeCompare(b.d));
-        if (futureRoutes.length) routeToShow = futureRoutes[0].r;
-      }
-    }
-
-    if (routeToShow && routeToShow.gpxUrl){
-      const gpxUrl = normaliseGpxUrl(routeToShow.gpxUrl);
-
-      const startIcon = L.icon({
-        iconUrl: settings.sleigh_icon_start ||
-                 "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
-        iconSize:[42,42], iconAnchor:[21,38]
-      });
-
-      const endIcon = L.icon({
-        iconUrl: settings.sleigh_icon_end ||
-                 "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
-        iconSize:[42,42], iconAnchor:[21,38]
-      });
-
-      new L.GPX(gpxUrl,{
-        async:true,
-        marker_options:{ startIcon,endIcon,wptIconUrls:{ "":"" } },
-        polyline_options:{
-          color:settings.primary_color || "#d31c1c",
-          weight:5,opacity:0.9
-        }
-      })
-      .on("loaded", e=>{
-        const b = e.target.getBounds();
-        if (b && b.isValid && b.isValid()){
-          globalBounds = b.clone();
-          map.fitBounds(globalBounds,{padding:[50,50]});
-        }
-      })
-      .addTo(map);
-    }
-  }
-
-  /* ------------------------------------------------------------
-     LIVE MARKER + TRAIL + SMOOTH ANIMATION
-  ------------------------------------------------------------ */
-  const liveIconUrl =
-    settings.sleigh_icon_live ||
-    settings.map_icon ||
-    "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
-
-  const santaIcon = L.icon({
-    iconUrl: liveIconUrl,
-    iconSize: [64,64],
-    iconAnchor: [32,32]
-  });
-
-  const marker = L.marker([fallback.lat,fallback.lng],{icon:santaIcon}).addTo(map);
-
-  // Trail polyline
-  const trailColor = settings.primary_color || "#d31c1c";
-  let trailCoords = [];
-  const trail = L.polyline([],{
-    color:trailColor,
-    weight:4,
-    opacity:0.7
-  }).addTo(map);
-
-  let follow = true;
-  let firstLiveFix = true;
-  let currentLatLng = L.latLng(fallback.lat,fallback.lng);
-  let lastFix = null;
-  let animFrame = null;
-
-  function animateMarker(fromLatLng, toLatLng, duration){
-    if (!fromLatLng || !toLatLng) return;
-    if (animFrame) cancelAnimationFrame(animFrame);
-
-    const start = performance.now();
-    const dLat = toLatLng.lat - fromLatLng.lat;
-    const dLng = toLatLng.lng - fromLatLng.lng;
-
-    function step(now){
-      const t = Math.min(1, (now - start) / duration);
-      const lat = fromLatLng.lat + dLat * t;
-      const lng = fromLatLng.lng + dLng * t;
-      marker.setLatLng([lat,lng]);
-      if (t < 1){
-        animFrame = requestAnimationFrame(step);
-      } else {
-        currentLatLng = toLatLng;
-      }
-    }
-    animFrame = requestAnimationFrame(step);
-  }
-
-  document.getElementById("followBtn").onclick = function(e){
-    follow = !follow;
-    e.target.textContent = "Follow Santa: " + (follow ? "ON" : "OFF");
-  };
-
-  map.on("dragstart zoomstart", ()=>{
-    follow = false;
-    document.getElementById("followBtn").textContent = "Follow Santa: OFF";
-  });
-
-  document.getElementById("recenterBtn").onclick = ()=>{
-  follow = true;
-  document.getElementById("followBtn").textContent = "Follow Santa: ON";
-  map.panTo(marker.getLatLng());
-};
-
-} // ✅ CLOSES async function init()
-
-  /* ------------------------------------------------------------
-     FIREBASE POLLING
-  ------------------------------------------------------------ */
-const firebaseURL =
-  data.tracker.firebase_url.replace(/\/$/, "") +
-  "/" +
-  data.tracker.firebase_path.replace(/^\/?/, "") +
-  ".json?cb=" + Date.now();
-
+/* ------------------------------------------------------------
+   FIREBASE POLLING
+------------------------------------------------------------ */
 const REFRESH = 8000;
 const STALE_MS = 5 * 60000;
 
-const lastUpdatedEl = document.getElementById("lastUpdated");
-const ageEl = document.getElementById("age");
-const speedEl = document.getElementById("speed");
-
-let loadingHidden = false;
-function hideLoadingOnce(){
-  if (loadingHidden) return;
-  loadingHidden = true;
-  const el = document.getElementById("loadingCover");
-  if (el) el.classList.add("hidden");
-}
-
 async function tick(){
   try{
+    if (!firebaseURL) throw new Error("Firebase URL not ready");
+
     const p = await loadJSON(firebaseURL);
 
-    // proxyFirebase already returns { lat, lng, ts }
-    if (!p || typeof p !== "object" || !isValidLatLng(p.lat, p.lng)) {
-      throw new Error("Invalid GPS payload");
-    }
+    if (!p || !isValidLatLng(p.lat,p.lng)) throw new Error("Bad GPS");
 
     const ts = new Date(p.ts).getTime();
+    if (isNaN(ts)) throw new Error("Bad timestamp");
+
     const age = Date.now() - ts;
+    if (age > STALE_MS) throw new Error("Stale GPS");
 
-    if (isNaN(ts)) throw new Error("Invalid timestamp");
+    document.getElementById("statusBox").textContent =
+      "🎅 Santa is out spreading joy!";
 
-    if (age < STALE_MS){
-      setActiveStatus();
+    const newLatLng = L.latLng(p.lat,p.lng);
 
-      const lat = p.lat;
-      const lng = p.lng;
-      const newLatLng = L.latLng(lat, lng);
+    marker.setLatLng(newLatLng);
 
-      extendBounds(lat, lng);
-
-      // ---------- Speed ----------
-      let speedText = "Speed: —";
-      let speedKmh = null;
-
-      if (lastFix && ts > lastFix.ts){
-        const prev = L.latLng(lastFix.lat, lastFix.lng);
-        const distM = prev.distanceTo(newLatLng);
-        const dt = (ts - lastFix.ts) / 1000;
-
-        if (dt > 0){
-          speedKmh = (distM / 1000) / (dt / 3600);
-          const mph = speedKmh * 0.621371;
-          if (mph < 150) speedText = `Speed: ${mph.toFixed(1)} mph`;
-        }
-      }
-
-      lastFix = { lat, lng, ts };
-
-      speedEl.style.display = "inline";
-      speedEl.textContent = speedText;
-
-      // ---------- Animate ----------
-      animateMarker(currentLatLng, newLatLng, 900);
-
-      const dynZoom = getZoomForSpeed(speedKmh, zoom);
-
-      if (firstLiveFix){
-        firstLiveFix = false;
-        if (globalBounds && globalBounds.isValid()){
-          globalBounds.extend(newLatLng);
-          map.fitBounds(globalBounds,{ padding:[50,50] });
-        } else {
-          map.setView(newLatLng, dynZoom);
-        }
-      } else if (follow){
-        const d = map.getCenter().distanceTo(newLatLng);
-        if (d > 800) map.flyTo(newLatLng, dynZoom, { duration:0.9 });
-        else map.panTo(newLatLng);
-      }
-
-      lastUpdatedEl.style.display = "inline";
-      ageEl.style.display = "inline";
-      lastUpdatedEl.textContent =
-        "Last update: " + new Date(p.ts).toLocaleTimeString("en-GB");
-      ageEl.textContent = "Age: " + Math.floor(age/1000) + "s";
-
-    } else {
-      setLaplandStatus();
+    if (firstLiveFix){
+      firstLiveFix = false;
+      map.setView(newLatLng, 16);
+    } else if (follow){
+      map.panTo(newLatLng);
     }
 
-  } catch (err){
-    setLaplandStatus();
+    lastFix = { lat:p.lat, lng:p.lng, ts };
+
+  } catch (e){
+    document.getElementById("statusBox").textContent =
+      "🎄 Santa is currently in Lapland preparing for Christmas!";
   }
 
-  hideLoadingOnce();
   setTimeout(tick, REFRESH);
 }
 
 /* ------------------------------------------------------------
-   ANALYTICS
+   BOOTSTRAP
 ------------------------------------------------------------ */
-async function sendAnalytics(){
-  const api = apiUrl;
-  if (!api) return;
-
-  await new Promise(res => setTimeout(res,600));
-
-  const ua = /Mobi|Android/i.test(navigator.userAgent)
-    ? "mobile"
-    : "desktop";
-
-  let route = window.ACTIVE_ROUTE;
-
-  if (!route || route.trim() === ""){
-    route = window.SANTA_ACTIVE ? "lapland" : "no-route";
-  }
-
-  route = encodeURIComponent(route);
-
-  fetch(
-    api +
-    "?function=logView" +
-    "&source=tracker" +
-    "&ua=" + ua +
-    "&route=" + route
-  ).catch(err => console.warn("Analytics error:",err));
-}
-  
-/* ------------------------------------------------------------
-   BOOTSTRAP — SINGLE, SAFE ENTRY POINT
------------------------------------------------------------- */
-(async function startTracker(){
-  try {
-    await init();          // build map, UI, routes, icons
-    sendAnalytics();       // fire-and-forget
-  } catch (err) {
-    console.error("Init error:", err);
-    setLaplandStatus();    // graceful fallback
+(async ()=>{
+  try{
+    await init();
   } finally {
-    hideLoadingOnce();     // ALWAYS hide spinner
-    tick();                // start Firebase polling
+    tick();
   }
 })();
-
 </script>
 
 </body>
