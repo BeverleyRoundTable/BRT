@@ -69,6 +69,13 @@ html,body{
   cursor:pointer;font-weight:800;
 }
 
+#logoOverlay{
+  position:fixed;
+  z-index:5000;
+  pointer-events:none;
+  display:none;
+}
+
 #loadingCover{
   position:fixed;inset:0;
   background:#000;
@@ -108,6 +115,7 @@ html,body{
 </div>
 
 <div id="map"></div>
+<img id="logoOverlay" />
 
 <script>
 const apiUrl = new URLSearchParams(location.search).get("api");
@@ -120,145 +128,112 @@ const STALE_MS = 5*60000;
 const FALLBACK_ICONS = {
   live: "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
   start: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
-  end: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png"
+  end: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
+  logo: "https://i.ibb.co/4Ztkn1Zf/RTGBI-Roundel.png"
 };
 const safeIcon = (v,f)=> (v && String(v).trim()) ? v : f;
 
 let map, marker;
-let follow = true;
-let firstFix = true;
-let lastFix = null;
+let follow=true, firstFix=true, lastFix=null;
 
-/* ------------------------------------------------------------ */
 async function loadJSON(url){
   const r = await fetch(url,{cache:"no-store"});
   if(!r.ok) throw new Error(r.status);
   return r.json();
 }
-function valid(lat,lng){
-  return typeof lat==="number" && typeof lng==="number" &&
-         !isNaN(lat)&&!isNaN(lng);
-}
+const valid=(lat,lng)=>typeof lat==="number"&&typeof lng==="number"&&!isNaN(lat)&&!isNaN(lng);
 
 /* ---------------- GPX HELPERS ---------------- */
 function normaliseDate(d){
-  const dt = new Date(d);
-  return isNaN(dt) ? null : dt.toISOString().slice(0,10);
+  const dt=new Date(d); return isNaN(dt)?null:dt.toISOString().slice(0,10);
 }
 function normaliseGpxUrl(url){
-  if(!url) return "";
-  if(url.includes("github.com") && url.includes("/blob/")){
+  if(url?.includes("github.com")&&url.includes("/blob/"))
     return url.replace("github.com","raw.githubusercontent.com").replace("/blob/","/");
-  }
   return url;
 }
-function pickRouteForGpx(routes, mode){
-  const today = new Date().toISOString().slice(0,10);
-  const todays = routes.find(r => normaliseDate(r.date)===today && r.gpxUrl);
-  if(mode==="today") return todays || null;
+function pickRouteForGpx(routes,mode){
+  const today=new Date().toISOString().slice(0,10);
+  const todays=routes.find(r=>normaliseDate(r.date)===today&&r.gpxUrl);
+  if(mode==="today") return todays||null;
   if(todays) return todays;
-  const future = routes
-    .map(r => ({r, d: normaliseDate(r.date)}))
-    .filter(x => x.d && x.d>=today && x.r.gpxUrl)
+  const future=routes.map(r=>({r,d:normaliseDate(r.date)}))
+    .filter(x=>x.d&&x.d>=today&&x.r.gpxUrl)
     .sort((a,b)=>a.d.localeCompare(b.d));
-  return future.length ? future[0].r : null;
+  return future[0]?.r||null;
 }
 
-/* ------------------------------------------------------------ */
 async function init(){
-  const data = await loadJSON(apiUrl);
-  const s = data.settings || {};
-  const tracker = data.tracker || {};
-  const routes = data.routes || [];
+  const data=await loadJSON(apiUrl);
+  const s=data.settings||{}, tracker=data.tracker||{}, routes=data.routes||[];
 
   document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
-  const donate = tracker.donate_url || s.donate_url;
-  if(donate) donateLink.href=donate;
-  else document.querySelector(".donate-box").style.display="none";
+  const donate=tracker.donate_url||s.donate_url;
+  if(donate) donateLink.href=donate; else document.querySelector(".donate-box").style.display="none";
 
-  const fallback={lat:66.5436,lng:25.8473};
-  map=L.map("map").setView([fallback.lat,fallback.lng],Number(s.default_map_zoom)||13);
+  map=L.map("map").setView([66.5436,25.8473],Number(s.default_map_zoom)||13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  /* ---------- GPX OVERLAY ---------- */
-  if(tracker.enable_gpx_overlay===true || tracker.enable_gpx_overlay==="true"){
-    const mode = tracker.gpx_mode || "next";
-    const route = pickRouteForGpx(routes, mode);
+  /* ---------- LOGO OVERLAY ---------- */
+  if(s.logo_overlay_enabled===true||s.logo_overlay_enabled==="true"){
+    const logo=document.getElementById("logoOverlay");
+    logo.src=safeIcon(s.logo_overlay_url,FALLBACK_ICONS.logo);
+    logo.style.width=(s.logo_overlay_size||64)+"px";
+    logo.style.display="block";
+    switch((s.logo_overlay_position||"").trim()){
+      case "top-left":logo.style.top="20px";logo.style.left="20px";break;
+      case "top-right":logo.style.top="20px";logo.style.right="20px";break;
+      case "bottom-left":logo.style.bottom="20px";logo.style.left="20px";break;
+      case "center":logo.style.top="50%";logo.style.left="50%";logo.style.transform="translate(-50%,-50%)";break;
+      default:logo.style.bottom="20px";logo.style.right="20px";
+    }
+  }
 
-    if(route && route.gpxUrl){
+  /* ---------- GPX ---------- */
+  if(tracker.enable_gpx_overlay===true||tracker.enable_gpx_overlay==="true"){
+    const route=pickRouteForGpx(routes,tracker.gpx_mode||"next");
+    if(route?.gpxUrl){
       new L.GPX(normaliseGpxUrl(route.gpxUrl),{
         async:true,
-        polyline_options:{
-          color:s.primary_color||"#d31c1c",
-          weight:5,opacity:.9
-        },
+        polyline_options:{color:s.primary_color||"#d31c1c",weight:5,opacity:.9},
         marker_options:{
-          startIcon:L.icon({
-            iconUrl:safeIcon(s.sleigh_icon_start,FALLBACK_ICONS.start),
-            iconSize:[42,42],iconAnchor:[21,38]
-          }),
-          endIcon:L.icon({
-            iconUrl:safeIcon(s.sleigh_icon_end,FALLBACK_ICONS.end),
-            iconSize:[42,42],iconAnchor:[21,38]
-          }),
+          startIcon:L.icon({iconUrl:safeIcon(s.sleigh_icon_start,FALLBACK_ICONS.start),iconSize:[42,42],iconAnchor:[21,38]}),
+          endIcon:L.icon({iconUrl:safeIcon(s.sleigh_icon_end,FALLBACK_ICONS.end),iconSize:[42,42],iconAnchor:[21,38]}),
           wptIconUrls:{ "":"" }
         }
       }).addTo(map);
     }
   }
 
-  /* ---------- LIVE MARKER ---------- */
-  marker=L.marker([fallback.lat,fallback.lng],{
-    icon:L.icon({
-      iconUrl:safeIcon(s.sleigh_icon_live,FALLBACK_ICONS.live),
-      iconSize:[64,64],iconAnchor:[32,32]
-    })
+  marker=L.marker([66.5436,25.8473],{
+    icon:L.icon({iconUrl:safeIcon(s.sleigh_icon_live,FALLBACK_ICONS.live),iconSize:[64,64],iconAnchor:[32,32]})
   }).addTo(map);
 
   followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
   recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
 
-  hideLoading();
+  document.getElementById("loadingCover").classList.add("hidden");
   tick();
 }
 
-/* ------------------------------------------------------------ */
-function hideLoading(){
-  document.getElementById("loadingCover").classList.add("hidden");
-}
-
-/* ------------------------------------------------------------ */
 async function tick(){
   try{
-    const p = await loadJSON(apiUrl+"?function=proxyFirebase");
-    if(!p||!valid(p.lat,p.lng)) throw "bad";
+    const p=await loadJSON(apiUrl+"?function=proxyFirebase");
+    if(!p||!valid(p.lat,p.lng)) throw 0;
+    const ts=new Date(p.ts).getTime(); if(Date.now()-ts>STALE_MS) throw 0;
 
-    const ts=new Date(p.ts).getTime();
-    if(Date.now()-ts>STALE_MS) throw "stale";
+    const ll=L.latLng(p.lat,p.lng); marker.setLatLng(ll);
+    if(firstFix){map.setView(ll,16);firstFix=false}else if(follow) map.panTo(ll);
 
-    statusBox.textContent="🎅 Santa is out spreading joy!";
-    const newLatLng=L.latLng(p.lat,p.lng);
-    marker.setLatLng(newLatLng);
-
-    let speedText="—";
-    if(lastFix && ts>lastFix.ts){
-      const d=lastFix.latLng.distanceTo(newLatLng);
-      const dt=(ts-lastFix.ts)/1000;
-      if(dt>0){
-        const mph=(d/dt)*2.23694;
-        if(mph<150) speedText=`${mph.toFixed(1)} mph`;
-      }
-    }
-    lastFix={latLng:newLatLng,ts};
-
-    if(firstFix){map.setView(newLatLng,16);firstFix=false}
-    else if(follow) map.panTo(newLatLng);
+    let sp="—";
+    if(lastFix){const d=lastFix.latLng.distanceTo(ll),dt=(ts-lastFix.ts)/1000;if(dt>0){const mph=(d/dt)*2.23694;if(mph<150) sp=`${mph.toFixed(1)} mph`;}}
+    lastFix={latLng:ll,ts};
 
     lastUpdated.textContent="Updated "+new Date(p.ts).toLocaleTimeString("en-GB");
-    speed.textContent=speedText;
+    speed.textContent=sp;
     lastUpdated.style.display=speed.style.display="inline";
-
+    statusBox.textContent="🎅 Santa is out spreading joy!";
   }catch{
     statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
   }
