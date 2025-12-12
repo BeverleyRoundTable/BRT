@@ -135,7 +135,9 @@ const safeIcon = (v,f)=> (v && String(v).trim()) ? v : f;
 
 let map, marker;
 let follow=true, firstFix=true, lastFix=null;
+let todaysSponsor="";
 
+/* ------------------------------------------------------------ */
 async function loadJSON(url){
   const r = await fetch(url,{cache:"no-store"});
   if(!r.ok) throw new Error(r.status);
@@ -143,9 +145,14 @@ async function loadJSON(url){
 }
 const valid=(lat,lng)=>typeof lat==="number"&&typeof lng==="number"&&!isNaN(lat)&&!isNaN(lng);
 
-/* ---------------- GPX HELPERS ---------------- */
+/* ---------------- DATE / ROUTE HELPERS ---------------- */
 function normaliseDate(d){
   const dt=new Date(d); return isNaN(dt)?null:dt.toISOString().slice(0,10);
+}
+function getTodaysSponsor(routes){
+  const today=new Date().toISOString().slice(0,10);
+  const r=routes.find(x=>normaliseDate(x.date)===today);
+  return r ? (r.sponsorUrl || r.sponsorurl || "") : "";
 }
 function normaliseGpxUrl(url){
   if(url?.includes("github.com")&&url.includes("/blob/"))
@@ -163,14 +170,18 @@ function pickRouteForGpx(routes,mode){
   return future[0]?.r||null;
 }
 
+/* ------------------------------------------------------------ */
 async function init(){
   const data=await loadJSON(apiUrl);
   const s=data.settings||{}, tracker=data.tracker||{}, routes=data.routes||[];
 
+  todaysSponsor=getTodaysSponsor(routes);
+
   document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
   const donate=tracker.donate_url||s.donate_url;
-  if(donate) donateLink.href=donate; else document.querySelector(".donate-box").style.display="none";
+  if(donate) donateLink.href=donate;
+  else document.querySelector(".donate-box").style.display="none";
 
   map=L.map("map").setView([66.5436,25.8473],Number(s.default_map_zoom)||13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
@@ -217,23 +228,42 @@ async function init(){
   tick();
 }
 
+/* ------------------------------------------------------------ */
 async function tick(){
   try{
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!p||!valid(p.lat,p.lng)) throw 0;
-    const ts=new Date(p.ts).getTime(); if(Date.now()-ts>STALE_MS) throw 0;
+    const ts=new Date(p.ts).getTime();
+    if(Date.now()-ts>STALE_MS) throw 0;
 
-    const ll=L.latLng(p.lat,p.lng); marker.setLatLng(ll);
+    const ll=L.latLng(p.lat,p.lng);
+    marker.setLatLng(ll);
     if(firstFix){map.setView(ll,16);firstFix=false}else if(follow) map.panTo(ll);
 
     let sp="—";
-    if(lastFix){const d=lastFix.latLng.distanceTo(ll),dt=(ts-lastFix.ts)/1000;if(dt>0){const mph=(d/dt)*2.23694;if(mph<150) sp=`${mph.toFixed(1)} mph`;}}
+    if(lastFix){
+      const d=lastFix.latLng.distanceTo(ll),dt=(ts-lastFix.ts)/1000;
+      if(dt>0){
+        const mph=(d/dt)*2.23694;
+        if(mph<150) sp=`${mph.toFixed(1)} mph`;
+      }
+    }
     lastFix={latLng:ll,ts};
 
     lastUpdated.textContent="Updated "+new Date(p.ts).toLocaleTimeString("en-GB");
     speed.textContent=sp;
     lastUpdated.style.display=speed.style.display="inline";
-    statusBox.textContent="🎅 Santa is out spreading joy!";
+
+    if(todaysSponsor){
+      statusBox.innerHTML=`
+        🎅 Santa is out spreading joy!<br>
+        <span style="font-size:.75em;opacity:.85;">Sponsored by</span><br>
+        <img src="${todaysSponsor}" style="height:32px;margin-top:6px;border-radius:6px">
+      `;
+    }else{
+      statusBox.textContent="🎅 Santa is out spreading joy!";
+    }
+
   }catch{
     statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
   }
