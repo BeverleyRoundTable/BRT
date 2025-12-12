@@ -277,8 +277,17 @@ async function init(){
     settings.primary_color || "#d31c1c"
   );
 
-  document.getElementById("donateLink").href =
-    tracker.donate_url || settings.donate_url || "#";
+ const donateUrl =
+  tracker.donate_url ||
+  settings.donate_url ||
+  "";
+
+if (donateUrl) {
+  document.getElementById("donateLink").href = donateUrl;
+} else {
+  const donateBox = document.querySelector(".donate-box");
+  if (donateBox) donateBox.style.display = "none";
+}
 
   /* ------------------------------------------------------------
      STATUS: Active / Lapland
