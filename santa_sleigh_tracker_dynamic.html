@@ -69,8 +69,6 @@ html,body{
   cursor:pointer;font-weight:800;
 }
 
-#logoOverlay{position:absolute;z-index:5000;pointer-events:none}
-
 #loadingCover{
   position:fixed;inset:0;
   background:#000;
@@ -123,6 +121,7 @@ let follow = true;
 let firstFix = true;
 let lastFix = null;
 
+/* ------------------------------------------------------------ */
 async function loadJSON(url){
   const r = await fetch(url,{cache:"no-store"});
   if(!r.ok) throw new Error(r.status);
@@ -133,10 +132,40 @@ function valid(lat,lng){
          !isNaN(lat)&&!isNaN(lng);
 }
 
+/* ---------------- GPX HELPERS ---------------- */
+function normaliseDate(d){
+  const dt = new Date(d);
+  return isNaN(dt) ? null : dt.toISOString().slice(0,10);
+}
+function normaliseGpxUrl(url){
+  if(!url) return "";
+  if(url.includes("github.com") && url.includes("/blob/")){
+    return url.replace("github.com","raw.githubusercontent.com").replace("/blob/","/");
+  }
+  return url;
+}
+function pickRouteForGpx(routes, mode){
+  const today = new Date().toISOString().slice(0,10);
+
+  const todays = routes.find(r => normaliseDate(r.date)===today && r.gpxUrl);
+  if(mode==="today") return todays || null;
+
+  if(todays) return todays;
+
+  const future = routes
+    .map(r => ({r, d: normaliseDate(r.date)}))
+    .filter(x => x.d && x.d>=today && x.r.gpxUrl)
+    .sort((a,b)=>a.d.localeCompare(b.d));
+
+  return future.length ? future[0].r : null;
+}
+
+/* ------------------------------------------------------------ */
 async function init(){
   const data = await loadJSON(apiUrl);
   const s = data.settings || {};
   const tracker = data.tracker || {};
+  const routes = data.routes || [];
 
   document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
@@ -148,11 +177,37 @@ async function init(){
   map=L.map("map").setView([fallback.lat,fallback.lng],Number(s.default_map_zoom)||13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
+  /* ---------- GPX OVERLAY ---------- */
+  if(tracker.enable_gpx_overlay===true || tracker.enable_gpx_overlay==="true"){
+    const mode = tracker.gpx_mode || "next";
+    const route = pickRouteForGpx(routes, mode);
+
+    if(route && route.gpxUrl){
+      new L.GPX(normaliseGpxUrl(route.gpxUrl),{
+        async:true,
+        polyline_options:{
+          color:s.primary_color||"#d31c1c",
+          weight:5,opacity:.9
+        },
+        marker_options:{
+          startIcon:L.icon({
+            iconUrl:s.sleigh_icon_start,
+            iconSize:[42,42],iconAnchor:[21,38]
+          }),
+          endIcon:L.icon({
+            iconUrl:s.sleigh_icon_end,
+            iconSize:[42,42],iconAnchor:[21,38]
+          }),
+          wptIconUrls:{ "":"" }
+        }
+      }).addTo(map);
+    }
+  }
+
   marker=L.marker([fallback.lat,fallback.lng],{
     icon:L.icon({
       iconUrl:s.sleigh_icon_live,
-      iconSize:[64,64],
-      iconAnchor:[32,32]
+      iconSize:[64,64],iconAnchor:[32,32]
     })
   }).addTo(map);
 
@@ -163,46 +218,40 @@ async function init(){
   tick();
 }
 
+/* ------------------------------------------------------------ */
 function hideLoading(){
   document.getElementById("loadingCover").classList.add("hidden");
 }
 
+/* ------------------------------------------------------------ */
 async function tick(){
   try{
     const p = await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!p||!valid(p.lat,p.lng)) throw "bad";
 
     const ts=new Date(p.ts).getTime();
-    const ageMs = Date.now()-ts;
-    if(ageMs>STALE_MS) throw "stale";
+    if(Date.now()-ts>STALE_MS) throw "stale";
 
     statusBox.textContent="🎅 Santa is out spreading joy!";
-    const newLatLng = L.latLng(p.lat,p.lng);
+    const newLatLng=L.latLng(p.lat,p.lng);
     marker.setLatLng(newLatLng);
 
-    /* ---------- SPEED ---------- */
     let speedText="—";
     if(lastFix && ts>lastFix.ts){
-      const prev=L.latLng(lastFix.lat,lastFix.lng);
-      const distM=prev.distanceTo(newLatLng);
+      const d=lastFix.latLng.distanceTo(newLatLng);
       const dt=(ts-lastFix.ts)/1000;
       if(dt>0){
-        const mph=(distM/dt)*2.23694;
+        const mph=(d/dt)*2.23694;
         if(mph<150) speedText=`${mph.toFixed(1)} mph`;
       }
     }
-    lastFix={lat:p.lat,lng:p.lng,ts};
+    lastFix={latLng:newLatLng,ts};
 
-    if(firstFix){
-      map.setView(newLatLng,16);
-      firstFix=false;
-    } else if(follow){
-      map.panTo(newLatLng);
-    }
+    if(firstFix){map.setView(newLatLng,16);firstFix=false}
+    else if(follow) map.panTo(newLatLng);
 
     lastUpdated.textContent="Updated "+new Date(p.ts).toLocaleTimeString("en-GB");
     speed.textContent=speedText;
-
     lastUpdated.style.display=speed.style.display="inline";
 
   }catch{
