@@ -7,7 +7,6 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
 <style>
 html,body{
@@ -17,23 +16,43 @@ html,body{
   overflow:hidden;
 }
 #map{width:100vw;height:100dvh;min-height:100vh;}
+
+.status-popup{
+  position:absolute;top:24px;left:50%;
+  transform:translateX(-50%);
+  background:rgba(24,24,24,0.93);
+  padding:16px 18px;
+  font-size:1.2em;font-weight:700;
+  border-radius:18px;
+  min-width:250px;
+  text-align:center;
+  z-index:4000;
+}
+.status-popup.searching{
+  animation:glow 1.3s ease-in-out infinite;
+}
+@keyframes glow{
+  0%{box-shadow:0 0 0 rgba(255,215,0,0);}
+  50%{box-shadow:0 0 20px rgba(255,215,0,0.5);}
+  100%{box-shadow:0 0 0 rgba(255,215,0,0);}
+}
 </style>
 </head>
 
 <body>
 
 <div id="map"></div>
-<div class="status-popup searching" id="statusBox">🔍 Searching for Santa…</div>
+<div class="status-popup searching" id="statusBox">
+  🔍 Searching for Santa…
+</div>
 
 <script>
 /* ------------------------------------------------------------
    GLOBALS
 ------------------------------------------------------------ */
-let firebaseURL = null;
 let map, marker;
-let lastFix = null;
-let follow = true;
 let firstLiveFix = true;
+let follow = true;
 
 /* ------------------------------------------------------------
    API
@@ -41,6 +60,8 @@ let firstLiveFix = true;
 const urlParams = new URLSearchParams(window.location.search);
 const apiUrl = urlParams.get("api") || urlParams.get("sleigh_api");
 if (!apiUrl) alert("❌ No API provided. Use ?api=YOUR_SCRIPT_URL");
+
+const firebaseProxyUrl = apiUrl + "?function=proxyFirebase";
 
 async function loadJSON(url){
   const r = await fetch(url,{cache:"no-store"});
@@ -59,20 +80,14 @@ function isValidLatLng(lat,lng){
 ------------------------------------------------------------ */
 async function init(){
   const data = await loadJSON(apiUrl);
-
-  const tracker  = data.tracker  || {};
   const settings = data.settings || {};
 
-  /* ✅ BUILD FIREBASE URL HERE (CORRECT SCOPE) */
-  firebaseURL =
-    tracker.firebase_url.replace(/\/$/, "") +
-    "/" +
-    tracker.firebase_path.replace(/^\/?/, "") +
-    ".json?cb=" + Date.now();
-
-  /* MAP */
   const fallback = { lat:66.5436, lng:25.8473 };
-  map = L.map("map").setView([fallback.lat,fallback.lng], settings.default_map_zoom || 13);
+
+  let zoom = Number(settings.default_map_zoom);
+  if (!zoom || zoom < 1 || zoom > 20) zoom = 13;
+
+  map = L.map("map").setView([fallback.lat,fallback.lng], zoom);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
@@ -80,18 +95,17 @@ async function init(){
 }
 
 /* ------------------------------------------------------------
-   FIREBASE POLLING
+   FIREBASE POLLING (PROXY MODE)
 ------------------------------------------------------------ */
 const REFRESH = 8000;
 const STALE_MS = 5 * 60000;
 
 async function tick(){
   try{
-    if (!firebaseURL) throw new Error("Firebase URL not ready");
+    const p = await loadJSON(firebaseProxyUrl);
 
-    const p = await loadJSON(firebaseURL);
-
-    if (!p || !isValidLatLng(p.lat,p.lng)) throw new Error("Bad GPS");
+    if (!p || !isValidLatLng(p.lat,p.lng))
+      throw new Error("Invalid GPS payload");
 
     const ts = new Date(p.ts).getTime();
     if (isNaN(ts)) throw new Error("Bad timestamp");
@@ -99,24 +113,24 @@ async function tick(){
     const age = Date.now() - ts;
     if (age > STALE_MS) throw new Error("Stale GPS");
 
-    document.getElementById("statusBox").textContent =
-      "🎅 Santa is out spreading joy!";
+    const status = document.getElementById("statusBox");
+    status.classList.remove("searching");
+    status.textContent = "🎅 Santa is out on his sleigh spreading joy!";
 
-    const newLatLng = L.latLng(p.lat,p.lng);
-
-    marker.setLatLng(newLatLng);
+    const pos = L.latLng(p.lat,p.lng);
+    marker.setLatLng(pos);
 
     if (firstLiveFix){
       firstLiveFix = false;
-      map.setView(newLatLng, 16);
+      map.setView(pos, 16);
     } else if (follow){
-      map.panTo(newLatLng);
+      map.panTo(pos);
     }
 
-    lastFix = { lat:p.lat, lng:p.lng, ts };
-
   } catch (e){
-    document.getElementById("statusBox").textContent =
+    const status = document.getElementById("statusBox");
+    status.classList.remove("searching");
+    status.textContent =
       "🎄 Santa is currently in Lapland preparing for Christmas!";
   }
 
