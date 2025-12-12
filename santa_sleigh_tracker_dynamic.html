@@ -18,7 +18,13 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
     overflow:hidden;
   }
-  #map{width:100vw;height:100vh;}
+
+  /* Use dynamic viewport height for mobile */
+  #map{
+    width:100vw;
+    height:100dvh;        /* better on mobile */
+    min-height:100vh;     /* fallback */
+  }
 
   .status-popup{
     position:absolute;top:24px;left:50%;
@@ -66,8 +72,10 @@
     padding:10px 12px;
     border-radius:12px;
     display:flex;gap:12px;
-    font-size:.85em;font-weight:700;
+    font-size:.78em;font-weight:700;
     z-index:2000;
+    flex-wrap:wrap;
+    justify-content:center;
   }
   .muted{display:none;opacity:.9;}
 
@@ -83,10 +91,70 @@
     z-index:5000;
     pointer-events:none;
   }
+
+  /* ---------- Loading overlay ---------- */
+  #loadingCover{
+    position:fixed;
+    inset:0;
+    background:#000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:6000;
+    transition:opacity .6s ease;
+  }
+  #loadingCover.hidden{
+    opacity:0;
+    pointer-events:none;
+  }
+  #loadingSpinner{
+    width:56px;height:56px;
+    border-radius:50%;
+    border:4px solid rgba(255,255,255,0.25);
+    border-top-color:#ffd700;
+    animation:spin .9s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- Night mode + snow ---------- */
+  body.night-mode{
+    background:#000;
+  }
+
+  #snowOverlay{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:3000;
+    opacity:0;
+    transition:opacity .8s ease;
+  }
+  body.night-mode #snowOverlay{
+    opacity:0.6;
+  }
+
+  .snowflake{
+    position:absolute;
+    top:-10px;
+    color:#fff;
+    font-size:10px;
+    opacity:0.9;
+    text-shadow:0 0 4px #000;
+    animation:fall linear infinite;
+  }
+  @keyframes fall{
+    to{transform:translateY(110vh);}
+  }
 </style>
 </head>
 
 <body>
+
+<!-- Loading overlay -->
+<div id="loadingCover">
+  <div id="loadingSpinner"></div>
+</div>
 
 <div class="status-popup searching" id="statusBox">
   🔍 Searching for Santa…
@@ -99,11 +167,13 @@
 <div class="info-popup">
   <span id="lastUpdated" class="muted">Last update: —</span>
   <span id="age" class="muted">Age: —</span>
+  <span id="speed" class="muted">Speed: —</span>
   <button class="btn" id="followBtn">Follow Santa: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
 
 <div id="map"></div>
+<div id="snowOverlay"></div>
 <img id="logoOverlay" style="display:none;" />
 
 <script>
@@ -112,6 +182,16 @@
 ------------------------------------------------------------ */
 window.ACTIVE_ROUTE = "";
 window.SANTA_ACTIVE = false;
+
+/* ------------------------------------------------------------
+   THEME: Night mode + snow
+------------------------------------------------------------ */
+(function setTheme(){
+  const hour = new Date().getHours();
+  if (hour >= 17 || hour < 7) {
+    document.body.classList.add("night-mode");
+  }
+})();
 
 /* ------------------------------------------------------------
    UTILS
@@ -147,6 +227,16 @@ function isValidLatLng(lat,lng){
     lat >= -90 && lat <= 90 &&
     lng >= -180 && lng <= 180
   );
+}
+
+/* Simple zoom chooser based on speed (km/h) */
+function getZoomForSpeed(speed, baseZoom){
+  if (!speed || !isFinite(speed)) return baseZoom;
+  if (speed < 5)  return Math.max(baseZoom, 17); // almost stopped
+  if (speed < 15) return Math.max(baseZoom, 16);
+  if (speed < 30) return Math.max(baseZoom, 15);
+  if (speed < 60) return Math.max(baseZoom, 14);
+  return Math.max(baseZoom, 13);
 }
 
 /* ------------------------------------------------------------
@@ -221,12 +311,10 @@ async function init(){
   }
 
   /* ------------------------------------------------------------
-     MAP SETUP — ★ FIXED ZOOM PARSING ★
+     MAP SETUP — with safe zoom parsing
   ------------------------------------------------------------ */
-
   const fallback = { lat:66.5436, lng:25.8473 };
 
-  // ⭐ FIX: Always convert zoom to a number safely
   let zoom = Number(settings.default_map_zoom);
   if (!zoom || zoom < 1 || zoom > 20) zoom = 13;
 
@@ -244,6 +332,30 @@ async function init(){
     if (!globalBounds) globalBounds = L.latLngBounds(p,p);
     else globalBounds.extend(p);
   };
+
+  /* ------------------------------------------------------------
+     NIGHT MODE SNOW
+  ------------------------------------------------------------ */
+  function createSnow(){
+    const container = document.getElementById("snowOverlay");
+    if (!container) return;
+    for (let i=0;i<40;i++){
+      const s=document.createElement("div");
+      s.className="snowflake";
+      s.textContent="❄";
+      s.style.left = Math.random()*100 + "%";
+      const size = 8 + Math.random()*6;
+      s.style.fontSize = size + "px";
+      const duration = 6 + Math.random()*8;
+      const delay = Math.random()*-duration;
+      s.style.animationDuration = duration + "s";
+      s.style.animationDelay = delay + "s";
+      container.appendChild(s);
+    }
+  }
+  if (document.body.classList.contains("night-mode")){
+    createSnow();
+  }
 
   /* ------------------------------------------------------------
      LOGO OVERLAY
@@ -322,7 +434,7 @@ async function init(){
   }
 
   /* ------------------------------------------------------------
-     LIVE MARKER (no rotation)
+     LIVE MARKER + TRAIL + SMOOTH ANIMATION
   ------------------------------------------------------------ */
   const liveIconUrl =
     settings.sleigh_icon_live ||
@@ -337,8 +449,42 @@ async function init(){
 
   const marker = L.marker([fallback.lat,fallback.lng],{icon:santaIcon}).addTo(map);
 
+  // Trail polyline
+  const trailColor = settings.primary_color || "#d31c1c";
+  let trailCoords = [];
+  const trail = L.polyline([],{
+    color:trailColor,
+    weight:4,
+    opacity:0.7
+  }).addTo(map);
+
   let follow = true;
   let firstLiveFix = true;
+  let currentLatLng = L.latLng(fallback.lat,fallback.lng);
+  let lastFix = null;
+  let animFrame = null;
+
+  function animateMarker(fromLatLng, toLatLng, duration){
+    if (!fromLatLng || !toLatLng) return;
+    if (animFrame) cancelAnimationFrame(animFrame);
+
+    const start = performance.now();
+    const dLat = toLatLng.lat - fromLatLng.lat;
+    const dLng = toLatLng.lng - fromLatLng.lng;
+
+    function step(now){
+      const t = Math.min(1, (now - start) / duration);
+      const lat = fromLatLng.lat + dLat * t;
+      const lng = fromLatLng.lng + dLng * t;
+      marker.setLatLng([lat,lng]);
+      if (t < 1){
+        animFrame = requestAnimationFrame(step);
+      } else {
+        currentLatLng = toLatLng;
+      }
+    }
+    animFrame = requestAnimationFrame(step);
+  }
 
   document.getElementById("followBtn").onclick = function(e){
     follow = !follow;
@@ -365,6 +511,15 @@ async function init(){
 
   const lastUpdatedEl = document.getElementById("lastUpdated");
   const ageEl = document.getElementById("age");
+  const speedEl = document.getElementById("speed");
+
+  let loadingHidden = false;
+  function hideLoadingOnce(){
+    if (loadingHidden) return;
+    loadingHidden = true;
+    const el = document.getElementById("loadingCover");
+    if (el) el.classList.add("hidden");
+  }
 
   async function tick(){
     try{
@@ -390,21 +545,58 @@ async function init(){
         setActiveStatus();
 
         const lat = p.lat, lng = p.lng;
+        const newLatLng = L.latLng(lat,lng);
 
         extendBounds(lat,lng);
-        marker.setLatLng([lat,lng]);
+
+        // ---------- Speed calculation ----------
+      let speedText = "Speed: —";
+let speedMph = null;
+
+if (lastFix && ts > lastFix.ts){
+  const prevLatLng = L.latLng(lastFix.lat,lastFix.lng);
+  const distMeters = prevLatLng.distanceTo(newLatLng);
+  const deltaSeconds = (ts - lastFix.ts) / 1000;
+
+  if (deltaSeconds > 0){
+    const speedKmh = (distMeters/1000) / (deltaSeconds/3600);
+    speedMph = speedKmh * 0.621371;   // ← Convert to MPH
+
+    if (speedMph < 150){              // sensible upper limit for Santa 😉
+      speedText = "Speed: " + speedMph.toFixed(1) + " mph";
+    }
+  }
+}
+
+        lastFix = { lat, lng, ts };
+
+        speedEl.style.display = "inline";
+        speedEl.textContent = speedText;
+
+        // ---------- Smooth marker animation ----------
+        animateMarker(currentLatLng, newLatLng, 900);
+
+        // ---------- Dynamic zoom + follow behaviour ----------
+        const dynZoom = getZoomForSpeed(speedKmh, zoom);
 
         if (firstLiveFix){
           firstLiveFix = false;
           if (globalBounds && globalBounds.isValid && globalBounds.isValid()){
+            globalBounds.extend(newLatLng);
             map.fitBounds(globalBounds,{padding:[50,50]});
           } else {
-            map.setView([lat,lng], zoom);
+            map.setView(newLatLng, dynZoom);
           }
         } else if (follow){
-          map.panTo([lat,lng]);
+          const distToCenter = map.getCenter().distanceTo(newLatLng);
+          if (distToCenter > 800){
+            map.flyTo(newLatLng, dynZoom, {duration:0.9});
+          } else {
+            map.panTo(newLatLng);
+          }
         }
 
+        // ---------- Info labels ----------
         lastUpdatedEl.style.display = "inline";
         ageEl.style.display = "inline";
 
@@ -418,6 +610,7 @@ async function init(){
       setLaplandStatus();
     }
 
+    hideLoadingOnce();
     setTimeout(tick, REFRESH);
   }
 
@@ -456,6 +649,8 @@ async function sendAnalytics(){
 
 init().then(sendAnalytics).catch(err=>{
   console.error("Init error:",err);
+  const cover = document.getElementById("loadingCover");
+  if (cover) cover.classList.add("hidden");
 });
 </script>
 
