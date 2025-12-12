@@ -560,7 +560,12 @@ if (donateUrl) {
   /* ------------------------------------------------------------
      FIREBASE POLLING
   ------------------------------------------------------------ */
-const firebaseURL = apiUrl + "?function=proxyFirebase";
+const firebaseURL =
+  data.tracker.firebase_url.replace(/\/$/, "") +
+  "/" +
+  data.tracker.firebase_path.replace(/^\/?/, "") +
+  ".json?cb=" + Date.now();
+
 const REFRESH = 8000;
 const STALE_MS = 5 * 60000;
 
