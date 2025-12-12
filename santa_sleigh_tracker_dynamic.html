@@ -655,8 +655,6 @@ async function tick(){
   setTimeout(tick, REFRESH);
 }
 
-tick();
-
 /* ------------------------------------------------------------
    ANALYTICS
 ------------------------------------------------------------ */
@@ -686,12 +684,23 @@ async function sendAnalytics(){
     "&route=" + route
   ).catch(err => console.warn("Analytics error:",err));
 }
+  
+/* ------------------------------------------------------------
+   BOOTSTRAP — SINGLE, SAFE ENTRY POINT
+------------------------------------------------------------ */
+(async function startTracker(){
+  try {
+    await init();          // build map, UI, routes, icons
+    sendAnalytics();       // fire-and-forget
+  } catch (err) {
+    console.error("Init error:", err);
+    setLaplandStatus();    // graceful fallback
+  } finally {
+    hideLoadingOnce();     // ALWAYS hide spinner
+    tick();                // start Firebase polling
+  }
+})();
 
-init().then(sendAnalytics).catch(err=>{
-  console.error("Init error:",err);
-  const cover = document.getElementById("loadingCover");
-  if (cover) cover.classList.add("hidden");
-});
 </script>
 
 </body>
