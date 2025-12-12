@@ -85,23 +85,12 @@ html,body{
   animation:spin .9s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-
-body.night-mode{background:#000}
-#snowOverlay{position:fixed;inset:0;pointer-events:none;z-index:3000;opacity:0}
-body.night-mode #snowOverlay{opacity:.6}
-.snowflake{
-  position:absolute;top:-10px;
-  font-size:10px;opacity:.9;
-  animation:fall linear infinite;
-}
-@keyframes fall{to{transform:translateY(110vh)}}
 </style>
 </head>
 
 <body>
 
 <div id="loadingCover"><div id="loadingSpinner"></div></div>
-<div id="snowOverlay"></div>
 
 <div class="status-popup searching" id="statusBox">
   🔍 Searching for Santa…
@@ -115,24 +104,25 @@ body.night-mode #snowOverlay{opacity:.6}
 
 <div class="info-popup">
   <span id="lastUpdated" class="muted">—</span>
-  <span id="age" class="muted">—</span>
+  <span id="speed" class="muted">—</span>
   <button class="btn" id="followBtn">Follow: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
 
 <div id="map"></div>
-<img id="logoOverlay" style="display:none">
 
 <script>
-/* ------------------------------------------------------------ */
 const apiUrl = new URLSearchParams(location.search).get("api");
 if(!apiUrl) alert("Missing ?api=YOUR_SCRIPT_URL");
 
 const REFRESH = 8000;
 const STALE_MS = 5*60000;
-let map, marker, follow=true, firstFix=true, lastFix=null;
 
-/* ------------------------------------------------------------ */
+let map, marker;
+let follow = true;
+let firstFix = true;
+let lastFix = null;
+
 async function loadJSON(url){
   const r = await fetch(url,{cache:"no-store"});
   if(!r.ok) throw new Error(r.status);
@@ -143,47 +133,28 @@ function valid(lat,lng){
          !isNaN(lat)&&!isNaN(lng);
 }
 
-/* ------------------------------------------------------------ */
-function snow(){
-  const c=document.getElementById("snowOverlay");
-  for(let i=0;i<40;i++){
-    const s=document.createElement("div");
-    s.className="snowflake";
-    s.textContent="❄";
-    s.style.left=Math.random()*100+"%";
-    s.style.fontSize=(8+Math.random()*6)+"px";
-    s.style.animationDuration=(6+Math.random()*8)+"s";
-    s.style.animationDelay=(-Math.random()*8)+"s";
-    c.appendChild(s);
-  }
-}
-
-/* ------------------------------------------------------------ */
 async function init(){
   const data = await loadJSON(apiUrl);
   const s = data.settings || {};
-  const routes = data.routes || [];
   const tracker = data.tracker || {};
 
   document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
   const donate = tracker.donate_url || s.donate_url;
-  if(donate) donateLink.href=donate; else document.querySelector(".donate-box").style.display="none";
-
-  if((new Date().getHours()>=17)||(new Date().getHours()<7)){
-    document.body.classList.add("night-mode");
-    snow();
-  }
+  if(donate) donateLink.href=donate;
+  else document.querySelector(".donate-box").style.display="none";
 
   const fallback={lat:66.5436,lng:25.8473};
   map=L.map("map").setView([fallback.lat,fallback.lng],Number(s.default_map_zoom)||13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  const icon=L.icon({
-    iconUrl:s.sleigh_icon_live,
-    iconSize:[64,64],iconAnchor:[32,32]
-  });
-  marker=L.marker([fallback.lat,fallback.lng],{icon}).addTo(map);
+  marker=L.marker([fallback.lat,fallback.lng],{
+    icon:L.icon({
+      iconUrl:s.sleigh_icon_live,
+      iconSize:[64,64],
+      iconAnchor:[32,32]
+    })
+  }).addTo(map);
 
   followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
   recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
@@ -192,28 +163,47 @@ async function init(){
   tick();
 }
 
-/* ------------------------------------------------------------ */
 function hideLoading(){
   document.getElementById("loadingCover").classList.add("hidden");
 }
 
-/* ------------------------------------------------------------ */
 async function tick(){
   try{
     const p = await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!p||!valid(p.lat,p.lng)) throw "bad";
+
     const ts=new Date(p.ts).getTime();
-    if(Date.now()-ts>STALE_MS) throw "stale";
+    const ageMs = Date.now()-ts;
+    if(ageMs>STALE_MS) throw "stale";
 
     statusBox.textContent="🎅 Santa is out spreading joy!";
-    marker.setLatLng([p.lat,p.lng]);
+    const newLatLng = L.latLng(p.lat,p.lng);
+    marker.setLatLng(newLatLng);
 
-    if(firstFix){map.setView([p.lat,p.lng],16);firstFix=false}
-    else if(follow) map.panTo([p.lat,p.lng]);
+    /* ---------- SPEED ---------- */
+    let speedText="—";
+    if(lastFix && ts>lastFix.ts){
+      const prev=L.latLng(lastFix.lat,lastFix.lng);
+      const distM=prev.distanceTo(newLatLng);
+      const dt=(ts-lastFix.ts)/1000;
+      if(dt>0){
+        const mph=(distM/dt)*2.23694;
+        if(mph<150) speedText=`${mph.toFixed(1)} mph`;
+      }
+    }
+    lastFix={lat:p.lat,lng:p.lng,ts};
+
+    if(firstFix){
+      map.setView(newLatLng,16);
+      firstFix=false;
+    } else if(follow){
+      map.panTo(newLatLng);
+    }
 
     lastUpdated.textContent="Updated "+new Date(p.ts).toLocaleTimeString("en-GB");
-    age.textContent=Math.floor((Date.now()-ts)/1000)+"s";
-    lastUpdated.style.display=age.style.display="inline";
+    speed.textContent=speedText;
+
+    lastUpdated.style.display=speed.style.display="inline";
 
   }catch{
     statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
@@ -221,7 +211,6 @@ async function tick(){
   setTimeout(tick,REFRESH);
 }
 
-/* ------------------------------------------------------------ */
 init();
 </script>
 </body>
