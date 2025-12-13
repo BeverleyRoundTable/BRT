@@ -56,31 +56,43 @@ html,body{
   box-shadow:0 4px 16px rgba(0,0,0,.4);
 }
 
-/* ---------- INFO BAR ---------- */
+/* ---------- INFO BAR (CENTRED + SYMMETRIC) ---------- */
 .info-popup{
   position:fixed;
   bottom:16px;
   left:50%;
   transform:translateX(-50%);
   background:rgba(20,20,20,.92);
-  padding:10px 12px;
+  padding:10px 14px;
   border-radius:14px;
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:12px;
   font-size:.85em;
   font-weight:800;
   z-index:2000;
   max-width:calc(100vw - 32px);
   box-sizing:border-box;
 }
-.info-data{
+
+.info-side{
   display:flex;
   gap:10px;
   white-space:nowrap;
-  margin-right:auto; /* grow LEFT */
 }
+
+.info-side.left{
+  justify-content:flex-end;
+  min-width:110px;
+}
+
+.info-side.right{
+  justify-content:flex-start;
+  min-width:110px;
+}
+
 .muted{display:none}
+
 .btn{
   background:#0b1220;
   color:#fff;
@@ -89,14 +101,6 @@ html,body{
   padding:7px 10px;
   cursor:pointer;
   font-weight:800;
-}
-
-/* ---------- LOGO ---------- */
-#logoOverlay{
-  position:fixed;
-  z-index:2100;
-  pointer-events:none;
-  display:none;
 }
 
 /* ---------- LOADING ---------- */
@@ -134,20 +138,21 @@ html,body{
   </a>
 </div>
 
-<div class="info-popup" id="infoBar">
-  <div class="info-data">
+<div class="info-popup">
+  <div class="info-side left">
     <span id="lastUpdated" class="muted">—</span>
     <span id="speed" class="muted">—</span>
   </div>
-  <button class="btn" id="followBtn">Follow: ON</button>
-  <button class="btn" id="recenterBtn">Re-centre</button>
+
+  <div class="info-side right">
+    <button class="btn" id="followBtn">Follow: ON</button>
+    <button class="btn" id="recenterBtn">Re-centre</button>
+  </div>
 </div>
 
 <div id="map"></div>
-<img id="logoOverlay" />
 
 <script>
-/* ---------- CONFIG ---------- */
 const apiUrl = new URLSearchParams(location.search).get("api");
 if(!apiUrl) alert("Missing ?api=YOUR_SCRIPT_URL");
 
@@ -155,15 +160,11 @@ const REFRESH = 5000;
 const STALE_MS = 5 * 60 * 1000;
 const LAPLAND = [66.5436,25.8473];
 
-const FALLBACK = {
-  live: "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
-  logo: "https://i.ibb.co/4Ztkn1Zf/RTGBI-Roundel.png"
-};
+const FALLBACK_ICON = "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
 
-let map, marker, follow=true, lastFix=null, firstFix=true, settings;
+let map, marker;
+let follow=true, lastFix=null, firstFix=true;
 
-/* ---------- HELPERS ---------- */
-const safe=(v,f)=>v && String(v).trim()?v:f;
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
 async function loadJSON(url){
@@ -172,76 +173,43 @@ async function loadJSON(url){
   return r.json();
 }
 
-/* ---------- LOGO POSITION + AUTO HIDE ---------- */
-function positionLogo(){
-  const logo = logoOverlay;
-  const info = infoBar;
-  const donate = donateBox;
-
-  const enabled = settings.logo_overlay_enabled===true || settings.logo_overlay_enabled==="true";
-  if(!enabled){ logo.style.display="none"; return; }
-
-  const size = Number(settings.logo_overlay_size)||64;
-  logo.src = safe(settings.logo_overlay_url, FALLBACK.logo);
-  logo.style.width = size+"px";
-
-  const infoRect = info.getBoundingClientRect();
-  const donateRect = donate.style.display!=="none" ? donate.getBoundingClientRect() : null;
-
-  const top = infoRect.top + (infoRect.height/2) - (size/2);
-  const left = infoRect.right + 12;
-
-  // Auto-hide conditions
-  if(
-    left + size > window.innerWidth - 8 ||
-    top < 8 ||
-    (donateRect && (top + size > donateRect.top - 8))
-  ){
-    logo.style.display="none";
-    return;
-  }
-
-  logo.style.display="block";
-  logo.style.top = top+"px";
-  logo.style.left = left+"px";
-}
-
-/* ---------- INIT ---------- */
 async function init(){
-  const data = await loadJSON(apiUrl);
-  settings = data.settings || {};
+  const data=await loadJSON(apiUrl);
+  const s=data.settings||{};
 
-  document.documentElement.style.setProperty("--primaryColor",settings.primary_color||"#d31c1c");
+  document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
-  if(settings.donate_url){
-    donateLink.href = settings.donate_url;
+  if(s.donate_url){
+    donateLink.href=s.donate_url;
     donateBox.style.display="block";
   }else{
     donateBox.style.display="none";
   }
 
-  map = L.map("map").setView(LAPLAND,5);
+  map=L.map("map").setView(LAPLAND,5);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  marker = L.marker(LAPLAND,{
+  marker=L.marker(LAPLAND,{
     icon:L.icon({
-      iconUrl:safe(settings.sleigh_icon_live,FALLBACK.live),
+      iconUrl:s.sleigh_icon_live||FALLBACK_ICON,
       iconSize:[64,64],
       iconAnchor:[32,32]
     })
   }).addTo(map);
 
-  followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
-  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
+  followBtn.onclick=()=>{
+    follow=!follow;
+    followBtn.textContent="Follow: "+(follow?"ON":"OFF");
+  };
+  recenterBtn.onclick=()=>{
+    follow=true;
+    map.panTo(marker.getLatLng());
+  };
 
   loadingCover.style.display="none";
-  positionLogo();
-  window.addEventListener("resize", positionLogo);
-
   tick();
 }
 
-/* ---------- POLL ---------- */
 async function tick(){
   try{
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
@@ -253,8 +221,12 @@ async function tick(){
     const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
 
-    if(firstFix){map.setView(ll,16);firstFix=false}
-    else if(follow) map.panTo(ll,{animate:true,duration:1.2});
+    if(firstFix){
+      map.setView(ll,16);
+      firstFix=false;
+    }else if(follow){
+      map.panTo(ll,{animate:true,duration:1.2});
+    }
 
     let mph="—";
     if(lastFix){
@@ -278,8 +250,6 @@ async function tick(){
     statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
     lastUpdated.style.display=speed.style.display="none";
   }
-
-  positionLogo();
   setTimeout(tick,REFRESH);
 }
 
