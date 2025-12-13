@@ -144,18 +144,35 @@ html,body{
 <div id="map"></div>
 
 <script>
-/* ---------- CONFIG ---------- */
-const params = new URLSearchParams(location.search);
-const apiUrl = params.get("api");
+/* ===================================================
+   API HANDLING — CLEAN URL + RELOAD SAFE
+=================================================== */
 
+// 1️⃣ Read API from URL
+const params = new URLSearchParams(location.search);
+let apiUrl = params.get("api");
+
+// 2️⃣ Fallback to sessionStorage (refresh-safe)
+if (!apiUrl) {
+  apiUrl = sessionStorage.getItem("SANTA_API");
+}
+
+// 3️⃣ Still missing → hard stop (by design)
 if (!apiUrl) {
   alert("Missing ?api=YOUR_SCRIPT_URL");
 } else {
-  // 🔒 Hide API from address bar after reading it
+  // 4️⃣ Persist for reloads
+  sessionStorage.setItem("SANTA_API", apiUrl);
+
+  // 5️⃣ Hide ?api= from address bar (UX only)
   if (location.search.includes("api=")) {
     history.replaceState(null, "", location.pathname);
   }
 }
+
+/* ===================================================
+   TRACKER LOGIC (UNCHANGED)
+=================================================== */
 
 const REFRESH = 5000;
 const STALE_MS = 5 * 60 * 1000;
@@ -169,7 +186,6 @@ const FALLBACK = {
 
 let map, marker, follow=true, firstFix=true, lastFix=null;
 
-/* ---------- HELPERS ---------- */
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
 async function loadJSON(url){
@@ -178,12 +194,9 @@ async function loadJSON(url){
   return r.json();
 }
 
-/* ---------- INIT ---------- */
 async function init(){
   const data = await loadJSON(apiUrl);
   const s = data.settings || {};
-  const tracker = data.tracker || {};
-  const routes = data.routes || [];
 
   if(s.donate_url) donateLink.href=s.donate_url;
   else donateBox.style.display="none";
@@ -206,7 +219,6 @@ async function init(){
   tick();
 }
 
-/* ---------- POLL ---------- */
 async function tick(){
   try{
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
