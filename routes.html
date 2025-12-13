@@ -160,24 +160,39 @@
 <div id="all-routes"></div>
 
 <script>
-/* ---------- API HANDLING (MATCHES TRACKER) ---------- */
-const params = new URLSearchParams(location.search);
-const api = params.get("api");
+/* ===================================================
+   API HANDLING — CLEAN URL + RELOAD SAFE
+=================================================== */
 
+// 1️⃣ Read from URL
+const params = new URLSearchParams(location.search);
+let api = params.get("api");
+
+// 2️⃣ Fallback to sessionStorage (refresh-safe)
+if (!api) {
+  api = sessionStorage.getItem("SANTA_API");
+}
+
+// 3️⃣ Still missing → hard stop (by design)
 if (!api) {
   alert("Missing ?api=YOUR_SCRIPT_URL");
 } else {
-  // Hide API from address bar after reading it
+  // 4️⃣ Store for future reloads
+  sessionStorage.setItem("SANTA_API", api);
+
+  // 5️⃣ Hide ?api= from the address bar (UX only)
   if (location.search.includes("api=")) {
     history.replaceState(null, "", location.pathname);
   }
 }
 
-/* ---------- LOAD ROUTES.JS ---------- */
+/* ===================================================
+   LOAD ROUTES.JS (unchanged)
+=================================================== */
 (function () {
-    const s = document.createElement("script");
-    s.src = "https://brt-23f.pages.dev/routes.js?v=" + Date.now();
-    document.body.appendChild(s);
+  const s = document.createElement("script");
+  s.src = "https://brt-23f.pages.dev/routes.js?v=" + Date.now();
+  document.body.appendChild(s);
 })();
 </script>
 
