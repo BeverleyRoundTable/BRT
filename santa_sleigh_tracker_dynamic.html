@@ -17,7 +17,7 @@ html,body{
 }
 #map{width:100vw;height:100dvh;min-height:100vh;}
 
-/* ---------------- STATUS ---------------- */
+/* ================= STATUS ================= */
 .status-popup{
   position:absolute;
   top:24px;
@@ -34,7 +34,7 @@ html,body{
   text-align:center;
 }
 
-/* ---------------- DONATE ---------------- */
+/* ================= DONATE ================= */
 .donate-box{
   position:fixed;
   bottom:110px;
@@ -56,11 +56,12 @@ html,body{
   box-shadow:0 4px 16px rgba(0,0,0,.4);
 }
 
-/* ---------------- INFO BAR ---------------- */
+/* ================= INFO BAR (CENTRED) ================= */
 .info-popup{
   position:fixed;
   bottom:16px;
-  right:16px;
+  left:50%;
+  transform:translateX(-50%);
   background:rgba(20,20,20,.92);
   padding:12px 14px;
   border-radius:14px;
@@ -73,13 +74,16 @@ html,body{
   max-width:calc(100vw - 32px);
   box-sizing:border-box;
 }
+
+/* LEFT-GROWING DATA */
 .info-data{
   display:flex;
   gap:10px;
   white-space:nowrap;
-  margin-right:auto; /* grow LEFT */
+  margin-right:auto; /* expands LEFT only */
 }
 .muted{display:none}
+
 .btn{
   background:#0b1220;
   color:#fff;
@@ -90,14 +94,14 @@ html,body{
   font-weight:800;
 }
 
-/* ---------------- LOGO ---------------- */
+/* ================= LOGO ================= */
 #logoOverlay{
   position:fixed;
   z-index:3000;
   pointer-events:none;
 }
 
-/* ---------------- LOADING ---------------- */
+/* ================= LOADING ================= */
 #loadingCover{
   position:fixed;
   inset:0;
@@ -145,7 +149,7 @@ html,body{
 <img id="logoOverlay" />
 
 <script>
-/* ---------------- CONFIG ---------------- */
+/* ================= CONFIG ================= */
 const apiUrl = new URLSearchParams(location.search).get("api");
 if(!apiUrl) alert("Missing ?api=YOUR_SCRIPT_URL");
 
@@ -153,15 +157,15 @@ const REFRESH = 5000;
 const STALE_MS = 5 * 60 * 1000;
 const LAPLAND = [66.5436,25.8473];
 
-const FALLBACK_ICONS = {
-  live:"https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
+const FALLBACK = {
+  sleigh:"https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
   logo:"https://i.ibb.co/4Ztkn1Zf/RTGBI-Roundel.png"
 };
 
 let map, marker;
 let follow=true, lastFix=null, firstFix=true;
 
-/* ---------------- HELPERS ---------------- */
+/* ================= HELPERS ================= */
 const safe=(v,f)=>v && String(v).trim()?v:f;
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
@@ -171,22 +175,22 @@ async function loadJSON(url){
   return r.json();
 }
 
-/* ---------------- LOGO POSITIONING ---------------- */
-function positionLogoFromSettings(s){
+/* ================= LOGO POSITION ================= */
+function positionLogo(s){
   const logo=document.getElementById("logoOverlay");
-  const enabled=s.logo_overlay_enabled===true||s.logo_overlay_enabled==="true";
-  if(!enabled){logo.style.display="none";return;}
+  if(!(s.logo_overlay_enabled===true||s.logo_overlay_enabled==="true")){
+    logo.style.display="none"; return;
+  }
 
-  logo.src=safe(s.logo_overlay_url,FALLBACK_ICONS.logo);
+  logo.src=safe(s.logo_overlay_url,FALLBACK.logo);
   logo.style.width=(Number(s.logo_overlay_size)||64)+"px";
   logo.style.display="block";
 
-  const info=document.getElementById("infoBar");
-  const donate=document.getElementById("donateBox");
+  const infoH=document.getElementById("infoBar").offsetHeight;
+  const donateH=donateBox.style.display!=="none"?donateBox.offsetHeight:0;
+  const lift=infoH+donateH+24;
 
-  const lift=(info?.offsetHeight||0)+(donate?.style.display!=="none"?donate.offsetHeight:0)+20;
   const pos=(s.logo_overlay_position||"bottom-right").trim();
-
   logo.style.top=logo.style.left=logo.style.right=logo.style.bottom=logo.style.transform="";
 
   if(pos==="top-left"){logo.style.top="16px";logo.style.left="16px";}
@@ -196,42 +200,40 @@ function positionLogoFromSettings(s){
   else{logo.style.bottom=lift+"px";logo.style.right="16px";}
 }
 
-/* ---------------- INIT ---------------- */
+/* ================= INIT ================= */
 async function init(){
   const data=await loadJSON(apiUrl);
   const s=data.settings||{};
 
   document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
-  /* Donate */
   if(s.donate_url){
     donateLink.href=s.donate_url;
     donateBox.style.display="block";
-  }else{
-    donateBox.style.display="none";
-  }
+  }else donateBox.style.display="none";
 
-  /* Map */
   map=L.map("map").setView(LAPLAND,Number(s.default_map_zoom)||5);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
   marker=L.marker(LAPLAND,{
     icon:L.icon({
-      iconUrl:safe(s.sleigh_icon_live,FALLBACK_ICONS.live),
+      iconUrl:safe(s.sleigh_icon_live,FALLBACK.sleigh),
       iconSize:[64,64],
       iconAnchor:[32,32]
     })
   }).addTo(map);
 
   followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
-  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
+  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng(),{animate:true,duration:1})};
 
-  positionLogoFromSettings(s);
+  positionLogo(s);
+  window.addEventListener("resize",()=>positionLogo(s));
+
   loadingCover.style.display="none";
   tick();
 }
 
-/* ---------------- POLL ---------------- */
+/* ================= POLL ================= */
 async function tick(){
   try{
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
@@ -243,7 +245,7 @@ async function tick(){
     const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
 
-    if(firstFix){map.setView(ll,16);firstFix=false}
+    if(firstFix){map.setView(ll,16,{animate:true});firstFix=false}
     else if(follow) map.panTo(ll,{animate:true,duration:1.2});
 
     let mph="—";
