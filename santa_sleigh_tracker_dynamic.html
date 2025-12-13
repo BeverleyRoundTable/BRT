@@ -7,6 +7,7 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
 <style>
 html,body{
@@ -18,14 +19,9 @@ html,body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
   overflow:hidden;
 }
+#map{width:100vw;height:100dvh;min-height:100vh;}
 
-#map{
-  width:100vw;
-  height:100dvh;
-  min-height:100vh;
-}
-
-/* ---------- STATUS BUBBLE ---------- */
+/* ---------- STATUS ---------- */
 .status-popup{
   position:absolute;
   top:20px;
@@ -40,7 +36,6 @@ html,body{
   box-shadow:0 4px 24px #0006;
   z-index:4000;
   text-align:center;
-  color:#fff;
 }
 
 /* ---------- DONATE ---------- */
@@ -82,7 +77,6 @@ html,body{
   z-index:2000;
   max-width:calc(100vw - 32px);
   box-sizing:border-box;
-  color:#fff;
 }
 
 /* ---------- STATUS DOT ---------- */
@@ -93,16 +87,13 @@ html,body{
   flex-shrink:0;
   display:none;
 }
-
 .dot-moving{
   background:#2cff4e;
   animation:pulse 1.4s infinite;
 }
-
 .dot-stopped{
   background:#ff3b3b;
 }
-
 @keyframes pulse{
   0%{ box-shadow:0 0 0 0 rgba(44,255,78,.6); }
   70%{ box-shadow:0 0 0 10px rgba(44,255,78,0); }
@@ -155,7 +146,7 @@ html,body{
   </a>
 </div>
 
-<div class="info-popup" id="infoBar">
+<div class="info-popup">
   <div id="statusDot" class="status-dot"></div>
   <button class="btn" id="followBtn">Follow: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
@@ -172,15 +163,16 @@ const REFRESH = 5000;
 const STALE_MS = 5 * 60 * 1000;
 const LAPLAND = [66.5436,25.8473];
 
-const FALLBACK_ICON = "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
+const FALLBACK = {
+  live: "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
+  start: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+  end: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png"
+};
 
-let map, marker;
-let follow = true;
-let lastFix = null;
-let firstFix = true;
+let map, marker, follow=true, firstFix=true, lastFix=null;
 
 /* ---------- HELPERS ---------- */
-const valid = (lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
+const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
 async function loadJSON(url){
   const r = await fetch(url,{cache:"no-store"});
@@ -188,36 +180,71 @@ async function loadJSON(url){
   return r.json();
 }
 
+const normaliseDate=d=>{
+  const x=new Date(d);
+  return isNaN(x)?null:x.toISOString().slice(0,10);
+};
+const normaliseGpx=url=>{
+  if(url?.includes("github.com") && url.includes("/blob/"))
+    return url.replace("github.com","raw.githubusercontent.com").replace("/blob/","/");
+  return url;
+};
+
+function pickRouteForGpx(routes,mode){
+  const today=new Date().toISOString().slice(0,10);
+  const todays=routes.find(r=>normaliseDate(r.date)===today && r.gpxUrl);
+  if(mode==="today") return todays||null;
+  if(todays) return todays;
+  const future=routes
+    .map(r=>({r,d:normaliseDate(r.date)}))
+    .filter(x=>x.d && x.d>=today && x.r.gpxUrl)
+    .sort((a,b)=>a.d.localeCompare(b.d));
+  return future[0]?.r||null;
+}
+
 /* ---------- INIT ---------- */
 async function init(){
   const data = await loadJSON(apiUrl);
   const s = data.settings || {};
+  const tracker = data.tracker || {};
+  const routes = data.routes || [];
 
-  if(s.donate_url){
-    donateLink.href = s.donate_url;
-  }else{
-    donateBox.style.display="none";
-  }
+  if(s.donate_url) donateLink.href=s.donate_url;
+  else donateBox.style.display="none";
 
   map = L.map("map").setView(LAPLAND,5);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
+  /* ---------- GPX OVERLAY ---------- */
+  if(tracker.enable_gpx_overlay===true || tracker.enable_gpx_overlay==="true"){
+    const route = pickRouteForGpx(routes, tracker.gpx_mode || "next");
+    if(route?.gpxUrl){
+      new L.GPX(normaliseGpx(route.gpxUrl),{
+        async:true,
+        polyline_options:{
+          color:s.primary_color||"#d31c1c",
+          weight:5,
+          opacity:.9
+        },
+        marker_options:{
+          startIcon:L.icon({iconUrl:s.sleigh_icon_start||FALLBACK.start,iconSize:[42,42],iconAnchor:[21,38]}),
+          endIcon:L.icon({iconUrl:s.sleigh_icon_end||FALLBACK.end,iconSize:[42,42],iconAnchor:[21,38]}),
+          wptIconUrls:{ "":"" }
+        }
+      }).addTo(map);
+    }
+  }
+
   marker = L.marker(LAPLAND,{
     icon:L.icon({
-      iconUrl:s.sleigh_icon_live || FALLBACK_ICON,
+      iconUrl:s.sleigh_icon_live||FALLBACK.live,
       iconSize:[64,64],
       iconAnchor:[32,32]
     })
   }).addTo(map);
 
-  followBtn.onclick=()=>{
-    follow=!follow;
-    followBtn.textContent="Follow: "+(follow?"ON":"OFF");
-  };
-  recenterBtn.onclick=()=>{
-    follow=true;
-    map.panTo(marker.getLatLng());
-  };
+  followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
+  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
 
   loadingCover.style.display="none";
   tick();
@@ -225,47 +252,36 @@ async function init(){
 
 /* ---------- POLL ---------- */
 async function tick(){
-  const dot = statusDot;
-
+  const dot=statusDot;
   try{
-    const p = await loadJSON(apiUrl+"?function=proxyFirebase");
+    const p=await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!valid(p.lat,p.lng)) throw 0;
+    const ts=new Date(p.ts).getTime();
+    if(Date.now()-ts>STALE_MS) throw 0;
 
-    const ts = new Date(p.ts).getTime();
-    if(Date.now()-ts > STALE_MS) throw 0;
-
-    const ll = L.latLng(p.lat,p.lng);
+    const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
+    if(firstFix){map.setView(ll,16);firstFix=false}
+    else if(follow) map.panTo(ll,{animate:true,duration:1.2});
 
-    if(firstFix){
-      map.setView(ll,16);
-      firstFix=false;
-    }else if(follow){
-      map.panTo(ll,{animate:true,duration:1.2});
-    }
-
-    let moving = false;
+    let moving=false;
     if(lastFix){
-      const d = lastFix.ll.distanceTo(ll);
-      const dt = (ts-lastFix.ts)/1000;
-      moving = dt>0 && (d/dt)*2.23694 >= 0.5;
+      const d=lastFix.ll.distanceTo(ll);
+      const dt=(ts-lastFix.ts)/1000;
+      moving=dt>0 && (d/dt)*2.23694>=0.5;
     }
-    lastFix = {ll,ts};
+    lastFix={ll,ts};
 
     dot.style.display="block";
-    dot.className = "status-dot " + (moving ? "dot-moving" : "dot-stopped");
-
-    statusBox.textContent = "🎅 Santa is out spreading joy!";
-
+    dot.className="status-dot "+(moving?"dot-moving":"dot-stopped");
+    statusBox.textContent="🎅 Santa is out spreading joy!";
   }catch{
     marker.setLatLng(LAPLAND);
     if(follow) map.setView(LAPLAND,5,{animate:true,duration:2});
-
     dot.style.display="none";
-    statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
-    lastFix = null;
+    statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
+    lastFix=null;
   }
-
   setTimeout(tick,REFRESH);
 }
 
