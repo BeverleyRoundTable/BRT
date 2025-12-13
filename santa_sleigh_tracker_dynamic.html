@@ -21,7 +21,6 @@ html,body{
 }
 #map{width:100vw;height:100dvh;min-height:100vh;}
 
-/* ---------- STATUS ---------- */
 .status-popup{
   position:absolute;
   top:20px;
@@ -38,7 +37,6 @@ html,body{
   text-align:center;
 }
 
-/* ---------- DONATE ---------- */
 .donate-box{
   position:fixed;
   bottom:110px;
@@ -60,7 +58,6 @@ html,body{
   box-shadow:0 4px 16px rgba(0,0,0,.4);
 }
 
-/* ---------- INFO BAR ---------- */
 .info-popup{
   position:fixed;
   bottom:16px;
@@ -79,7 +76,6 @@ html,body{
   box-sizing:border-box;
 }
 
-/* ---------- STATUS DOT ---------- */
 .status-dot{
   width:12px;
   aspect-ratio:1 / 1;
@@ -91,9 +87,7 @@ html,body{
   background:#2cff4e;
   animation:pulse 1.4s infinite;
 }
-.dot-stopped{
-  background:#ff3b3b;
-}
+.dot-stopped{ background:#ff3b3b; }
 @keyframes pulse{
   0%{ box-shadow:0 0 0 0 rgba(44,255,78,.6); }
   70%{ box-shadow:0 0 0 10px rgba(44,255,78,0); }
@@ -110,7 +104,6 @@ html,body{
   font-weight:800;
 }
 
-/* ---------- LOADING ---------- */
 #loadingCover{
   position:fixed;
   inset:0;
@@ -136,14 +129,10 @@ html,body{
 
 <div id="loadingCover"><div id="loadingSpinner"></div></div>
 
-<div class="status-popup" id="statusBox">
-  🔍 Searching for Santa…
-</div>
+<div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
 
 <div class="donate-box" id="donateBox">
-  <a id="donateLink" class="donate-btn" target="_blank">
-    🎁 DONATE & SUPPORT US
-  </a>
+  <a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a>
 </div>
 
 <div class="info-popup">
@@ -156,8 +145,17 @@ html,body{
 
 <script>
 /* ---------- CONFIG ---------- */
-const apiUrl = new URLSearchParams(location.search).get("api");
-if(!apiUrl) alert("Missing ?api=YOUR_SCRIPT_URL");
+const params = new URLSearchParams(location.search);
+const apiUrl = params.get("api");
+
+if (!apiUrl) {
+  alert("Missing ?api=YOUR_SCRIPT_URL");
+} else {
+  // 🔒 Hide API from address bar after reading it
+  if (location.search.includes("api=")) {
+    history.replaceState(null, "", location.pathname);
+  }
+}
 
 const REFRESH = 5000;
 const STALE_MS = 5 * 60 * 1000;
@@ -180,28 +178,6 @@ async function loadJSON(url){
   return r.json();
 }
 
-const normaliseDate=d=>{
-  const x=new Date(d);
-  return isNaN(x)?null:x.toISOString().slice(0,10);
-};
-const normaliseGpx=url=>{
-  if(url?.includes("github.com") && url.includes("/blob/"))
-    return url.replace("github.com","raw.githubusercontent.com").replace("/blob/","/");
-  return url;
-};
-
-function pickRouteForGpx(routes,mode){
-  const today=new Date().toISOString().slice(0,10);
-  const todays=routes.find(r=>normaliseDate(r.date)===today && r.gpxUrl);
-  if(mode==="today") return todays||null;
-  if(todays) return todays;
-  const future=routes
-    .map(r=>({r,d:normaliseDate(r.date)}))
-    .filter(x=>x.d && x.d>=today && x.r.gpxUrl)
-    .sort((a,b)=>a.d.localeCompare(b.d));
-  return future[0]?.r||null;
-}
-
 /* ---------- INIT ---------- */
 async function init(){
   const data = await loadJSON(apiUrl);
@@ -214,26 +190,6 @@ async function init(){
 
   map = L.map("map").setView(LAPLAND,5);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
-  /* ---------- GPX OVERLAY ---------- */
-  if(tracker.enable_gpx_overlay===true || tracker.enable_gpx_overlay==="true"){
-    const route = pickRouteForGpx(routes, tracker.gpx_mode || "next");
-    if(route?.gpxUrl){
-      new L.GPX(normaliseGpx(route.gpxUrl),{
-        async:true,
-        polyline_options:{
-          color:s.primary_color||"#d31c1c",
-          weight:5,
-          opacity:.9
-        },
-        marker_options:{
-          startIcon:L.icon({iconUrl:s.sleigh_icon_start||FALLBACK.start,iconSize:[42,42],iconAnchor:[21,38]}),
-          endIcon:L.icon({iconUrl:s.sleigh_icon_end||FALLBACK.end,iconSize:[42,42],iconAnchor:[21,38]}),
-          wptIconUrls:{ "":"" }
-        }
-      }).addTo(map);
-    }
-  }
 
   marker = L.marker(LAPLAND,{
     icon:L.icon({
@@ -252,35 +208,20 @@ async function init(){
 
 /* ---------- POLL ---------- */
 async function tick(){
-  const dot=statusDot;
   try{
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!valid(p.lat,p.lng)) throw 0;
-    const ts=new Date(p.ts).getTime();
-    if(Date.now()-ts>STALE_MS) throw 0;
 
     const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
     if(firstFix){map.setView(ll,16);firstFix=false}
     else if(follow) map.panTo(ll,{animate:true,duration:1.2});
 
-    let moving=false;
-    if(lastFix){
-      const d=lastFix.ll.distanceTo(ll);
-      const dt=(ts-lastFix.ts)/1000;
-      moving=dt>0 && (d/dt)*2.23694>=0.5;
-    }
-    lastFix={ll,ts};
-
-    dot.style.display="block";
-    dot.className="status-dot "+(moving?"dot-moving":"dot-stopped");
     statusBox.textContent="🎅 Santa is out spreading joy!";
   }catch{
     marker.setLatLng(LAPLAND);
     if(follow) map.setView(LAPLAND,5,{animate:true,duration:2});
-    dot.style.display="none";
     statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
-    lastFix=null;
   }
   setTimeout(tick,REFRESH);
 }
