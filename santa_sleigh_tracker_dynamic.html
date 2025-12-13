@@ -7,6 +7,7 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
 <style>
 html,body{
@@ -17,26 +18,26 @@ html,body{
 }
 #map{width:100vw;height:100dvh;min-height:100vh;}
 
-/* ================= STATUS BOX ================= */
+/* ---------------- STATUS ---------------- */
 .status-popup{
   position:absolute;
   top:24px;
   left:50%;
   transform:translateX(-50%);
   background:rgba(24,24,24,.93);
-  padding:14px 20px;
-  font-size:1.15em;
+  padding:18px 22px;
+  font-size:1.2em;
   font-weight:800;
   border-radius:18px;
-  min-width:260px;
   max-width:90%;
   box-shadow:0 4px 32px #0006;
   z-index:4000;
   text-align:center;
-  transition:opacity .6s ease;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
-/* ================= DONATE ================= */
+/* ---------------- DONATE ---------------- */
 .donate-box{
   position:fixed;
   bottom:110px;
@@ -47,7 +48,7 @@ html,body{
   z-index:2000;
 }
 .donate-btn{
-  background:#d31c1c;
+  background:var(--primaryColor,#d31c1c);
   color:#fff;
   padding:16px 0;
   display:block;
@@ -58,44 +59,37 @@ html,body{
   box-shadow:0 4px 16px rgba(0,0,0,.4);
 }
 
-/* ================= INFO BAR ================= */
+/* ---------------- INFO BAR (FIXED) ---------------- */
 .info-popup{
   position:fixed;
   bottom:16px;
-  left:50%;
-  transform:translateX(-50%);
+  right:16px;                /* 🔒 lock right edge */
   background:rgba(20,20,20,.92);
-  padding:10px 12px;
+  padding:12px 14px;
   border-radius:14px;
+
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:12px;
+
+  font-size:.85em;
+  font-weight:800;
   z-index:2000;
-  transition:all .4s ease;
+
+  max-width:calc(100vw - 32px);
+  box-sizing:border-box;
 }
 
-/* LEFT telemetry — expands LEFT only */
-.info-left{
+/* Left-growing data */
+.info-data{
   display:flex;
-  gap:8px;
+  gap:10px;
   white-space:nowrap;
-  opacity:0;
-  max-width:0;
-  overflow:hidden;
-  transition:all .4s ease;
+  margin-right:auto;        /* 👈 grows LEFT only */
 }
 
-.info-popup.active .info-left{
-  opacity:1;
-  max-width:220px;
-}
+.muted{display:none}
 
-.info-right{
-  display:flex;
-  gap:8px;
-}
-
-/* Buttons */
 .btn{
   background:#0b1220;
   color:#fff;
@@ -106,19 +100,38 @@ html,body{
   font-weight:800;
 }
 
-/* ================= LOGO ================= */
+/* ---------------- LOGO ---------------- */
 #logoOverlay{
   position:fixed;
-  bottom:16px;
-  right:16px;
-  width:64px;
-  z-index:5000;
+  z-index:3000;
   pointer-events:none;
+  display:none;
 }
+
+/* ---------------- LOADING ---------------- */
+#loadingCover{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:6000;
+}
+#loadingSpinner{
+  width:56px;height:56px;
+  border-radius:50%;
+  border:4px solid rgba(255,255,255,.25);
+  border-top-color:#ffd700;
+  animation:spin .9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 
 <body>
+
+<div id="loadingCover"><div id="loadingSpinner"></div></div>
 
 <div class="status-popup" id="statusBox">
   🔍 Searching for Santa…
@@ -131,125 +144,218 @@ html,body{
 </div>
 
 <div class="info-popup" id="infoBar">
-  <div class="info-left" id="telemetry">
-    <span id="lastUpdated">—</span>
-    <span id="speed">—</span>
+  <div class="info-data">
+    <span id="lastUpdated" class="muted">—</span>
+    <span id="speed" class="muted">—</span>
   </div>
-  <div class="info-right">
-    <button class="btn" id="followBtn">Follow: ON</button>
-    <button class="btn" id="recenterBtn">Re-centre</button>
-  </div>
+  <button class="btn" id="followBtn">Follow: ON</button>
+  <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
 
 <div id="map"></div>
 <img id="logoOverlay" />
 
 <script>
+/* -------------------------------------------------- */
 const apiUrl = new URLSearchParams(location.search).get("api");
-if(!apiUrl) alert("Missing ?api=");
+if(!apiUrl) alert("Missing ?api=YOUR_SCRIPT_URL");
 
 const REFRESH = 5000;
-const STALE_MS = 5 * 60000;
+const STALE_MS = 5 * 60 * 1000;
+const LAPLAND = [66.5436,25.8473];
+
+const FALLBACK_ICONS = {
+  live:"https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
+  start:"https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+  end:"https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
+  logo:"https://i.ibb.co/4Ztkn1Zf/RTGBI-Roundel.png"
+};
+
+const safe = (v,f)=> (v && String(v).trim()) ? String(v).trim() : f;
 
 let map, marker;
-let follow = true;
-let lastFix = null;
-let santaActive = false;
+let follow=true, lastFix=null, firstFix=true;
+let santaState = "searching"; // "active" | "lapland" | "searching"
 
+/* -------------------------------------------------- */
 async function loadJSON(url){
-  const r = await fetch(url,{cache:"no-store"});
-  if(!r.ok) throw new Error();
+  const r=await fetch(url,{cache:"no-store"});
+  if(!r.ok) throw 0;
   return r.json();
 }
+const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
-function setLapland(){
-  if(!santaActive) return;
-  santaActive = false;
-
-  statusBox.textContent =
-    "🎄 Santa is in Lapland preparing for Christmas!";
-  infoBar.classList.remove("active");
-
-  marker.setOpacity(0.4);
-  map.flyTo([66.5436,25.8473], 5, {duration:2});
+/* -------------------------------------------------- */
+/* Smooth marker opacity (Leaflet marker element) */
+function setMarkerOpacity(o){
+  const el = marker && marker.getElement && marker.getElement();
+  if(!el) return;
+  el.style.transition = "opacity 700ms ease";
+  el.style.opacity = String(o);
 }
 
-function setActive(){
-  if(santaActive) return;
-  santaActive = true;
+/* Smooth Lapland transition only when state changes */
+function goLaplandSmooth(){
+  if(santaState === "lapland") return;
+  santaState = "lapland";
 
-  statusBox.textContent =
-    "🎅 Santa is out spreading joy!";
-  infoBar.classList.add("active");
-  marker.setOpacity(1);
+  statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
+  lastUpdated.style.display = speed.style.display = "none";
+
+  // fade out, move + flyTo, fade in
+  setMarkerOpacity(0.15);
+  setTimeout(()=>{
+    marker.setLatLng(LAPLAND);
+    map.flyTo(LAPLAND, 5, {duration: 2.2});
+    setTimeout(()=>setMarkerOpacity(1), 350);
+  }, 650);
 }
 
+function goActive(){
+  if(santaState === "active") return;
+  santaState = "active";
+  statusBox.textContent = "🎅 Santa is out spreading joy!";
+  setMarkerOpacity(1);
+}
+
+/* -------------------------------------------------- */
+/* Logo overlay positioning from API + auto-avoid info bar */
+function positionLogoFromSettings(s){
+  const logo = document.getElementById("logoOverlay");
+  const enabled = (s.logo_overlay_enabled === true || s.logo_overlay_enabled === "true");
+  if(!enabled){
+    logo.style.display = "none";
+    return;
+  }
+
+  // reset all anchor styles first
+  logo.style.top = "";
+  logo.style.right = "";
+  logo.style.bottom = "";
+  logo.style.left = "";
+  logo.style.transform = "";
+
+  logo.src = safe(s.logo_overlay_url, FALLBACK_ICONS.logo);
+  logo.style.width = (Number(s.logo_overlay_size) || 64) + "px";
+  logo.style.display = "block";
+
+  const pos = (s.logo_overlay_position || "bottom-right").trim();
+  const margin = 16;
+
+  // If bottom position, lift it above the info bar height so they never overlap
+  const info = document.getElementById("infoBar");
+  const lift = info ? (info.offsetHeight + 10) : 0; // 10px breathing space
+
+  switch(pos){
+    case "top-left":
+      logo.style.top = margin + "px";
+      logo.style.left = margin + "px";
+      break;
+    case "top-right":
+      logo.style.top = margin + "px";
+      logo.style.right = margin + "px";
+      break;
+    case "bottom-left":
+      logo.style.left = margin + "px";
+      logo.style.bottom = (margin + lift) + "px";
+      break;
+    case "center":
+      logo.style.top = "50%";
+      logo.style.left = "50%";
+      logo.style.transform = "translate(-50%,-50%)";
+      break;
+    case "bottom-right":
+    default:
+      logo.style.right = margin + "px";
+      logo.style.bottom = (margin + lift) + "px";
+      break;
+  }
+}
+
+/* Re-apply logo positioning on resize/orientation change */
+function wireLogoReposition(s){
+  const apply = ()=>positionLogoFromSettings(s);
+  window.addEventListener("resize", apply);
+  window.addEventListener("orientationchange", apply);
+  apply();
+}
+
+/* -------------------------------------------------- */
 async function init(){
-  const data = await loadJSON(apiUrl);
-  const s = data.settings || {};
+  const data=await loadJSON(apiUrl);
+  const s=data.settings||{}, routes=data.routes||[];
 
+  document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
+
+  /* Donate logic (settings only) */
   if(s.donate_url){
-    donateLink.href = s.donate_url;
+    donateLink.href=s.donate_url;
   }else{
-    donateBox.style.display = "none";
+    donateBox.style.display="none";
   }
 
-  if(s.logo_overlay_enabled){
-    logoOverlay.src = s.logo_overlay_url;
-  }else{
-    logoOverlay.style.display="none";
-  }
-
-  map = L.map("map").setView([66.5436,25.8473], s.default_map_zoom||13);
+  /* Map */
+  map=L.map("map").setView(LAPLAND,Number(s.default_map_zoom)||13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  marker = L.marker([66.5436,25.8473]).addTo(map);
+  /* Marker */
+  marker=L.marker(LAPLAND,{
+    icon:L.icon({
+      iconUrl:safe(s.sleigh_icon_live, FALLBACK_ICONS.live),
+      iconSize:[64,64],
+      iconAnchor:[32,32]
+    })
+  }).addTo(map);
 
-  followBtn.onclick = ()=>{
-    follow = !follow;
-    followBtn.textContent = "Follow: " + (follow?"ON":"OFF");
-  };
-  recenterBtn.onclick = ()=>{
-    follow = true;
-    map.panTo(marker.getLatLng());
-  };
+  // Ensure marker element exists before opacity transitions
+  setTimeout(()=>setMarkerOpacity(1), 0);
 
+  /* Logo from API (with position options + auto-avoid info bar) */
+  wireLogoReposition(s);
+
+  followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
+  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
+
+  loadingCover.style.display="none";
   tick();
 }
 
+/* -------------------------------------------------- */
 async function tick(){
   try{
-    const p = await loadJSON(apiUrl+"?function=proxyFirebase");
-    if(!p || !p.lat || !p.lng) throw 0;
+    const p=await loadJSON(apiUrl+"?function=proxyFirebase");
+    if(!valid(p.lat,p.lng)) throw 0;
 
-    const ts = new Date(p.ts).getTime();
-    if(Date.now() - ts > STALE_MS) throw 0;
+    const ts=new Date(p.ts).getTime();
+    if(Date.now()-ts>STALE_MS) throw 0;
 
-    setActive();
+    goActive();
 
-    const ll = L.latLng(p.lat,p.lng);
+    const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
-    if(follow) map.panTo(ll);
+    if(firstFix){map.setView(ll,16);firstFix=false}
+    else if(follow) map.panTo(ll);
 
-    let mph = "—";
+    let mph="—";
     if(lastFix){
-      const d = lastFix.latLng.distanceTo(ll);
-      const dt = (ts - lastFix.ts)/1000;
+      const d=lastFix.ll.distanceTo(ll);
+      const dt=(ts-lastFix.ts)/1000;
       if(dt>0){
-        const v = (d/dt)*2.23694;
-        if(v < 150) mph = v.toFixed(1)+" mph";
+        const m=(d/dt)*2.23694;
+        if(m<150) mph=m.toFixed(1)+" mph";
       }
     }
-    lastFix = {latLng:ll, ts};
+    lastFix={ll,ts};
 
-    lastUpdated.textContent =
-      "Updated " + new Date(p.ts).toLocaleTimeString("en-GB");
-    speed.textContent = mph;
+    lastUpdated.textContent="Updated "+new Date(p.ts).toLocaleTimeString("en-GB");
+    speed.textContent=mph;
+    lastUpdated.style.display=speed.style.display="inline";
 
   }catch{
-    setLapland();
+    goLaplandSmooth();
   }
-  setTimeout(tick, REFRESH);
+
+  setTimeout(tick,REFRESH);
 }
 
 init();
