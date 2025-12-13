@@ -10,17 +10,19 @@
 
 <style>
 html,body{
-  margin:0;padding:0;height:100%;
-  background:#001;color:#fff;
+  margin:0;
+  padding:0;
+  height:100%;
+  background:#001;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
   overflow:hidden;
 }
 #map{width:100vw;height:100dvh;min-height:100vh;}
 
-/* ---------- STATUS ---------- */
+/* ---------- STATUS TOP ---------- */
 .status-popup{
   position:absolute;
-  top:20px;
+  top:18px;
   left:50%;
   transform:translateX(-50%);
   background:rgba(24,24,24,.94);
@@ -37,15 +39,15 @@ html,body{
 /* ---------- DONATE ---------- */
 .donate-box{
   position:fixed;
-  bottom:110px;
+  bottom:96px;
   left:50%;
   transform:translateX(-50%);
-  width:70%;
+  width:72%;
   max-width:420px;
   z-index:2000;
 }
 .donate-btn{
-  background:var(--primaryColor,#d31c1c);
+  background:#d31c1c;
   color:#fff;
   padding:14px 0;
   display:block;
@@ -67,73 +69,57 @@ html,body{
   border-radius:14px;
   display:flex;
   align-items:center;
-  gap:12px;
-  font-size:.85em;
-  font-weight:800;
+  gap:10px;
   z-index:2000;
   max-width:calc(100vw - 32px);
+  box-sizing:border-box;
 }
 
-/* ---------- STATUS LIGHT ---------- */
+/* ---------- STATUS LIGHT (HARDENED) ---------- */
 .status-light{
   width:12px;
-  height:12px;
+  aspect-ratio:1 / 1;
+  min-width:12px;
+  min-height:12px;
   border-radius:50%;
-  display:none;
+  flex:0 0 auto;
+  transform:translateZ(0);
+  backface-visibility:hidden;
 }
 
+/* moving */
 .status-light.moving{
-  background:#28d728;
-  box-shadow:0 0 6px #28d728;
+  background:#2bd82b;
+  box-shadow:0 0 6px #2bd82b;
   animation:pulse 1.6s ease-in-out infinite;
 }
 
+/* stopped */
 .status-light.stopped{
-  background:#e43;
-  box-shadow:0 0 6px #e43;
+  background:#e33;
+  box-shadow:0 0 6px #e33;
 }
 
+/* pulse animation */
 @keyframes pulse{
-  0%{transform:scale(1);opacity:.6}
-  50%{transform:scale(1.4);opacity:1}
-  100%{transform:scale(1);opacity:.6}
+  0%{transform:scale(1);}
+  50%{transform:scale(1.35);}
+  100%{transform:scale(1);}
 }
 
-/* ---------- BUTTONS ---------- */
 .btn{
   background:#0b1220;
   color:#fff;
   border:1px solid #ffffff26;
   border-radius:10px;
-  padding:7px 12px;
+  padding:8px 12px;
   cursor:pointer;
   font-weight:800;
 }
-
-/* ---------- LOADING ---------- */
-#loadingCover{
-  position:fixed;
-  inset:0;
-  background:#000;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:6000;
-}
-#loadingSpinner{
-  width:52px;height:52px;
-  border-radius:50%;
-  border:4px solid rgba(255,255,255,.25);
-  border-top-color:#ffd700;
-  animation:spin .9s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 
 <body>
-
-<div id="loadingCover"><div id="loadingSpinner"></div></div>
 
 <div class="status-popup" id="statusBox">
   🔍 Searching for Santa…
@@ -145,8 +131,8 @@ html,body{
   </a>
 </div>
 
-<div class="info-popup" id="infoBar">
-  <div id="motionLight" class="status-light"></div>
+<div class="info-popup">
+  <div id="statusLight" class="status-light stopped"></div>
   <button class="btn" id="followBtn">Follow: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
@@ -162,15 +148,16 @@ const REFRESH = 5000;
 const STALE_MS = 5 * 60 * 1000;
 const LAPLAND = [66.5436,25.8473];
 
-const FALLBACK_ICON = "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
-
-let map, marker, follow=true, lastFix=null, firstFix=true;
+let map, marker;
+let follow = true;
+let lastFix = null;
+let firstFix = true;
 
 /* ---------- HELPERS ---------- */
-const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
+const valid = (lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
 async function loadJSON(url){
-  const r=await fetch(url,{cache:"no-store"});
+  const r = await fetch(url,{cache:"no-store"});
   if(!r.ok) throw 0;
   return r.json();
 }
@@ -180,11 +167,8 @@ async function init(){
   const data = await loadJSON(apiUrl);
   const s = data.settings || {};
 
-  document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
-
   if(s.donate_url){
     donateLink.href = s.donate_url;
-    donateBox.style.display="block";
   }else{
     donateBox.style.display="none";
   }
@@ -194,16 +178,21 @@ async function init(){
 
   marker = L.marker(LAPLAND,{
     icon:L.icon({
-      iconUrl:s.sleigh_icon_live||FALLBACK_ICON,
+      iconUrl:s.sleigh_icon_live,
       iconSize:[64,64],
       iconAnchor:[32,32]
     })
   }).addTo(map);
 
-  followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
-  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
+  followBtn.onclick=()=>{
+    follow=!follow;
+    followBtn.textContent="Follow: "+(follow?"ON":"OFF");
+  };
+  recenterBtn.onclick=()=>{
+    follow=true;
+    map.panTo(marker.getLatLng());
+  };
 
-  loadingCover.style.display="none";
   tick();
 }
 
@@ -214,7 +203,7 @@ async function tick(){
     if(!valid(p.lat,p.lng)) throw 0;
 
     const ts = new Date(p.ts).getTime();
-    if(Date.now()-ts > STALE_MS) throw 0;
+    if(Date.now()-ts>STALE_MS) throw 0;
 
     const ll = L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
@@ -226,24 +215,17 @@ async function tick(){
       map.panTo(ll,{animate:true,duration:1.2});
     }
 
-    // Movement detection
-    let moving=false;
-    if(lastFix){
-      const d = lastFix.ll.distanceTo(ll);
-      if(d > 4) moving=true;
-    }
-    lastFix={ll,ts};
-
-    motionLight.className = "status-light " + (moving?"moving":"stopped");
-    motionLight.style.display="block";
-
     statusBox.textContent="🎅 Santa is out spreading joy!";
+    statusLight.className="status-light moving";
+
+    lastFix={ll,ts};
   }catch{
     marker.setLatLng(LAPLAND);
     if(follow) map.setView(LAPLAND,5,{animate:true,duration:2});
 
-    motionLight.style.display="none";
     statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
+    statusLight.className="status-light stopped";
+    lastFix=null;
   }
 
   setTimeout(tick,REFRESH);
