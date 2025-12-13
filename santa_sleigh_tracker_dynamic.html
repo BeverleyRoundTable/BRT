@@ -16,16 +16,16 @@ html,body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
   overflow:hidden;
 }
-#map{width:100vw;height:100dvh;min-height:100vh;}
+#map{width:100vw;height:100dvh;}
 
 .status-popup{
-  position:absolute;top:24px;left:50%;
+  position:absolute;top:20px;left:50%;
   transform:translateX(-50%);
   background:rgba(24,24,24,.93);
-  padding:18px 20px;
-  font-size:1.3em;font-weight:800;
+  padding:16px 18px;
+  font-size:1.2em;font-weight:800;
   border-radius:18px;
-  min-width:260px;max-width:90%;
+  min-width:260px;max-width:92%;
   box-shadow:0 4px 32px #0006;
   z-index:4000;text-align:center;
 }
@@ -36,75 +36,39 @@ html,body{
   100%{box-shadow:0 0 0 rgba(255,215,0,0);}
 }
 
-.donate-box{
-  position:fixed;bottom:110px;left:50%;
-  transform:translateX(-50%);
-  width:70%;max-width:420px;
-  z-index:2000;
-}
-.donate-btn{
-  background:var(--primaryColor,#d31c1c);
-  color:#fff;padding:16px 0;
-  display:block;text-align:center;
-  border-radius:16px;
-  font-weight:900;text-decoration:none;
-  box-shadow:0 4px 16px rgba(0,0,0,.4);
-}
-
 .info-popup{
   position:fixed;left:50%;transform:translateX(-50%);
-  bottom:16px;
+  bottom:14px;
   background:rgba(20,20,20,.92);
-  padding:12px 14px;
+  padding:10px 12px;
   border-radius:12px;
-  display:flex;gap:14px;
+  display:flex;gap:12px;
   font-size:.85em;font-weight:800;
-  z-index:2000;
+  z-index:3000;
 }
 .muted{display:none}
+
 .btn{
   background:#0b1220;color:#fff;
   border:1px solid #ffffff26;
-  border-radius:10px;padding:8px 12px;
+  border-radius:10px;padding:6px 10px;
   cursor:pointer;font-weight:800;
 }
 
 #logoOverlay{
   position:fixed;
-  z-index:5000;
+  z-index:2500;
   pointer-events:none;
   display:none;
 }
 
-#loadingCover{
-  position:fixed;inset:0;
-  background:#000;
-  display:flex;align-items:center;justify-content:center;
-  z-index:6000;transition:opacity .6s ease;
-}
-#loadingCover.hidden{opacity:0;pointer-events:none}
-#loadingSpinner{
-  width:56px;height:56px;border-radius:50%;
-  border:4px solid rgba(255,255,255,.25);
-  border-top-color:#ffd700;
-  animation:spin .9s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 
 <body>
 
-<div id="loadingCover"><div id="loadingSpinner"></div></div>
-
 <div class="status-popup searching" id="statusBox">
   🔍 Searching for Santa…
-</div>
-
-<div class="donate-box">
-  <a id="donateLink" class="donate-btn" target="_blank">
-    🎁 DONATE & SUPPORT US
-  </a>
 </div>
 
 <div class="info-popup">
@@ -118,26 +82,29 @@ html,body{
 <img id="logoOverlay" />
 
 <script>
+/* ================= CONFIG ================= */
+const REFRESH   = 5000;          // 5s GPS updates
+const STALE_MS  = 5 * 60 * 1000; // 5 minutes
+const LAPLAND   = { lat:66.5436, lng:25.8473 };
+
+const FALLBACK_ICONS = {
+  live:  "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
+  start: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+  end:   "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
+  logo:  "https://i.ibb.co/4Ztkn1Zf/RTGBI-Roundel.png"
+};
+const safe = (v,f)=>v&&String(v).trim()?v:f;
+
+/* ================= STATE ================= */
+let map, marker;
+let follow=true, firstFix=true, lastFix=null;
+let lastLiveTs=0;
+let laplandMode=false;
+
+/* ================= UTILS ================= */
 const apiUrl = new URLSearchParams(location.search).get("api");
 if(!apiUrl) alert("Missing ?api=YOUR_SCRIPT_URL");
 
-const REFRESH = 8000;
-const STALE_MS = 5*60000;
-
-/* ---------- ICON FALLBACKS ---------- */
-const FALLBACK_ICONS = {
-  live: "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
-  start: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
-  end: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
-  logo: "https://i.ibb.co/4Ztkn1Zf/RTGBI-Roundel.png"
-};
-const safeIcon = (v,f)=> (v && String(v).trim()) ? v : f;
-
-let map, marker;
-let follow=true, firstFix=true, lastFix=null;
-let todaysSponsor="";
-
-/* ------------------------------------------------------------ */
 async function loadJSON(url){
   const r = await fetch(url,{cache:"no-store"});
   if(!r.ok) throw new Error(r.status);
@@ -145,127 +112,110 @@ async function loadJSON(url){
 }
 const valid=(lat,lng)=>typeof lat==="number"&&typeof lng==="number"&&!isNaN(lat)&&!isNaN(lng);
 
-/* ---------------- DATE / ROUTE HELPERS ---------------- */
-function normaliseDate(d){
-  const dt=new Date(d); return isNaN(dt)?null:dt.toISOString().slice(0,10);
-}
-function getTodaysSponsor(routes){
-  const today=new Date().toISOString().slice(0,10);
-  const r=routes.find(x=>normaliseDate(x.date)===today);
-  return r ? (r.sponsorUrl || r.sponsorurl || "") : "";
-}
-function normaliseGpxUrl(url){
-  if(url?.includes("github.com")&&url.includes("/blob/"))
-    return url.replace("github.com","raw.githubusercontent.com").replace("/blob/","/");
-  return url;
-}
-function pickRouteForGpx(routes,mode){
-  const today=new Date().toISOString().slice(0,10);
-  const todays=routes.find(r=>normaliseDate(r.date)===today&&r.gpxUrl);
-  if(mode==="today") return todays||null;
-  if(todays) return todays;
-  const future=routes.map(r=>({r,d:normaliseDate(r.date)}))
-    .filter(x=>x.d&&x.d>=today&&x.r.gpxUrl)
-    .sort((a,b)=>a.d.localeCompare(b.d));
-  return future[0]?.r||null;
-}
-
-/* ------------------------------------------------------------ */
+/* ================= INIT ================= */
 async function init(){
-  const data=await loadJSON(apiUrl);
-  const s=data.settings||{}, tracker=data.tracker||{}, routes=data.routes||[];
-
-  todaysSponsor=getTodaysSponsor(routes);
+  const data = await loadJSON(apiUrl);
+  const s = data.settings || {};
+  const tracker = data.tracker || {};
+  const routes = data.routes || [];
 
   document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
-  const donate=tracker.donate_url||s.donate_url;
-  if(donate) donateLink.href=donate;
-  else document.querySelector(".donate-box").style.display="none";
-
-  map=L.map("map").setView([66.5436,25.8473],Number(s.default_map_zoom)||13);
+  map = L.map("map",{zoomControl:false}).setView([LAPLAND.lat,LAPLAND.lng], s.default_map_zoom||13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  /* ---------- LOGO OVERLAY ---------- */
+  /* ---------- LOGO ---------- */
   if(s.logo_overlay_enabled===true||s.logo_overlay_enabled==="true"){
     const logo=document.getElementById("logoOverlay");
-    logo.src=safeIcon(s.logo_overlay_url,FALLBACK_ICONS.logo);
+    logo.src=safe(s.logo_overlay_url,FALLBACK_ICONS.logo);
     logo.style.width=(s.logo_overlay_size||64)+"px";
     logo.style.display="block";
-    switch((s.logo_overlay_position||"").trim()){
-      case "top-left":logo.style.top="20px";logo.style.left="20px";break;
-      case "top-right":logo.style.top="20px";logo.style.right="20px";break;
-      case "bottom-left":logo.style.bottom="20px";logo.style.left="20px";break;
-      case "center":logo.style.top="50%";logo.style.left="50%";logo.style.transform="translate(-50%,-50%)";break;
-      default:logo.style.bottom="20px";logo.style.right="20px";
-    }
+    logo.style.bottom="18px";
+    logo.style.right="18px";
   }
 
   /* ---------- GPX ---------- */
   if(tracker.enable_gpx_overlay===true||tracker.enable_gpx_overlay==="true"){
-    const route=pickRouteForGpx(routes,tracker.gpx_mode||"next");
-    if(route?.gpxUrl){
-      new L.GPX(normaliseGpxUrl(route.gpxUrl),{
+    const today=new Date().toISOString().slice(0,10);
+    const route=routes.find(r=>new Date(r.date).toISOString().slice(0,10)>=today && r.gpxUrl);
+    if(route){
+      new L.GPX(route.gpxUrl,{
         async:true,
         polyline_options:{color:s.primary_color||"#d31c1c",weight:5,opacity:.9},
         marker_options:{
-          startIcon:L.icon({iconUrl:safeIcon(s.sleigh_icon_start,FALLBACK_ICONS.start),iconSize:[42,42],iconAnchor:[21,38]}),
-          endIcon:L.icon({iconUrl:safeIcon(s.sleigh_icon_end,FALLBACK_ICONS.end),iconSize:[42,42],iconAnchor:[21,38]}),
+          startIcon:L.icon({iconUrl:safe(s.sleigh_icon_start,FALLBACK_ICONS.start),iconSize:[42,42],iconAnchor:[21,38]}),
+          endIcon:L.icon({iconUrl:safe(s.sleigh_icon_end,FALLBACK_ICONS.end),iconSize:[42,42],iconAnchor:[21,38]}),
           wptIconUrls:{ "":"" }
         }
       }).addTo(map);
     }
   }
 
-  marker=L.marker([66.5436,25.8473],{
-    icon:L.icon({iconUrl:safeIcon(s.sleigh_icon_live,FALLBACK_ICONS.live),iconSize:[64,64],iconAnchor:[32,32]})
+  marker = L.marker([LAPLAND.lat,LAPLAND.lng],{
+    icon:L.icon({iconUrl:safe(s.sleigh_icon_live,FALLBACK_ICONS.live),iconSize:[64,64],iconAnchor:[32,32]})
   }).addTo(map);
 
   followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
   recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
 
-  document.getElementById("loadingCover").classList.add("hidden");
   tick();
 }
 
-/* ------------------------------------------------------------ */
+/* ================= SMOOTH LAPLAND ================= */
+function smoothReturnToLapland(){
+  if(laplandMode) return;
+  laplandMode=true;
+  follow=false;
+  firstFix=true;
+
+  statusBox.textContent="🎄 Santa is heading back to Lapland…";
+
+  const z1=Math.max(map.getZoom()-3,8);
+  map.flyTo([LAPLAND.lat,LAPLAND.lng],z1,{duration:2.6});
+  marker.setLatLng([LAPLAND.lat,LAPLAND.lng]);
+
+  setTimeout(()=>{
+    map.flyTo([LAPLAND.lat,LAPLAND.lng],13,{duration:1.6});
+    statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
+  },2600);
+}
+
+/* ================= POLLING ================= */
 async function tick(){
   try{
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!p||!valid(p.lat,p.lng)) throw 0;
+
     const ts=new Date(p.ts).getTime();
     if(Date.now()-ts>STALE_MS) throw 0;
 
+    laplandMode=false;
+    lastLiveTs=ts;
+
     const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
-    if(firstFix){map.setView(ll,16);firstFix=false}else if(follow) map.panTo(ll);
+
+    if(firstFix){
+      map.setView(ll,15);
+      firstFix=false;
+    }else if(follow){
+      map.panTo(ll);
+    }
 
     let sp="—";
     if(lastFix){
       const d=lastFix.latLng.distanceTo(ll),dt=(ts-lastFix.ts)/1000;
-      if(dt>0){
-        const mph=(d/dt)*2.23694;
-        if(mph<150) sp=`${mph.toFixed(1)} mph`;
-      }
+      if(dt>0){const mph=(d/dt)*2.23694;if(mph<150) sp=`${mph.toFixed(1)} mph`;}
     }
     lastFix={latLng:ll,ts};
 
-    lastUpdated.textContent="Updated "+new Date(p.ts).toLocaleTimeString("en-GB");
+    lastUpdated.textContent="Updated "+new Date(ts).toLocaleTimeString("en-GB");
     speed.textContent=sp;
     lastUpdated.style.display=speed.style.display="inline";
 
-    if(todaysSponsor){
-      statusBox.innerHTML=`
-        🎅 Santa is out spreading joy!<br>
-        <span style="font-size:.75em;opacity:.85;">Sponsored by</span><br>
-        <img src="${todaysSponsor}" style="height:32px;margin-top:6px;border-radius:6px">
-      `;
-    }else{
-      statusBox.textContent="🎅 Santa is out spreading joy!";
-    }
-
+    statusBox.textContent="🎅 Santa is out spreading joy!";
   }catch{
-    statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
+    smoothReturnToLapland();
   }
   setTimeout(tick,REFRESH);
 }
