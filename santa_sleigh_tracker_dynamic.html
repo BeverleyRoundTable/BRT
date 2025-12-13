@@ -13,110 +13,105 @@
 html,body{
   margin:0;padding:0;height:100%;
   background:#001;color:#fff;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto;
   overflow:hidden;
 }
 #map{width:100vw;height:100dvh;min-height:100vh;}
 
-/* ---------- STATUS ---------- */
 .status-popup{
-  position:absolute;top:24px;left:50%;
+  position:absolute;
+  top:18px;left:50%;
   transform:translateX(-50%);
-  background:rgba(24,24,24,.93);
-  padding:18px 20px;
-  font-size:1.3em;font-weight:800;
+  background:rgba(20,20,20,.92);
+  padding:16px 20px;
+  font-size:1.2em;
+  font-weight:800;
   border-radius:18px;
-  min-width:260px;max-width:90%;
+  max-width:90%;
   box-shadow:0 4px 32px #0006;
-  z-index:4000;text-align:center;
-  backdrop-filter: blur(6px);
-}
-.status-popup.searching{
-  animation:glow 1.3s ease-in-out infinite;
-}
-@keyframes glow{
-  0%{box-shadow:0 0 0 rgba(255,215,0,0);}
-  50%{box-shadow:0 0 20px rgba(255,215,0,.6);}
-  100%{box-shadow:0 0 0 rgba(255,215,0,0);}
+  z-index:4000;
+  text-align:center;
 }
 
-/* ---------- DONATE ---------- */
 .donate-box{
-  position:fixed;bottom:110px;left:50%;
+  position:fixed;
+  bottom:110px;
+  left:50%;
   transform:translateX(-50%);
-  width:70%;max-width:420px;
-  z-index:2000;
+  width:72%;
+  max-width:420px;
+  z-index:2500;
 }
 .donate-btn{
   background:var(--primaryColor,#d31c1c);
-  color:#fff;padding:16px 0;
-  display:block;text-align:center;
-  border-radius:16px;
-  font-weight:900;text-decoration:none;
-  box-shadow:0 4px 16px rgba(0,0,0,.4);
+  color:#fff;
+  padding:16px 0;
+  display:block;
+  text-align:center;
+  border-radius:18px;
+  font-weight:900;
+  text-decoration:none;
+  box-shadow:0 6px 20px rgba(0,0,0,.45);
 }
 
-/* ---------- INFO ---------- */
 .info-popup{
-  position:fixed;left:50%;transform:translateX(-50%);
+  position:fixed;
   bottom:16px;
+  left:50%;
+  transform:translateX(-50%);
   background:rgba(20,20,20,.92);
   padding:12px 14px;
-  border-radius:12px;
-  display:flex;gap:14px;
-  font-size:.85em;font-weight:800;
-  z-index:2000;
+  border-radius:14px;
+  display:flex;
+  gap:12px;
+  font-size:.85em;
+  font-weight:800;
+  z-index:2500;
 }
 .muted{display:none}
 .btn{
-  background:#0b1220;color:#fff;
+  background:#0b1220;
+  color:#fff;
   border:1px solid #ffffff26;
-  border-radius:10px;padding:8px 12px;
-  cursor:pointer;font-weight:800;
+  border-radius:12px;
+  padding:8px 14px;
+  cursor:pointer;
 }
 
-/* ---------- LOGO ---------- */
 #logoOverlay{
   position:fixed;
-  z-index:5000;
+  bottom:18px;
+  right:18px;
+  width:64px;
+  z-index:2000;
   pointer-events:none;
-  display:none;
 }
 
-/* ---------- EMBED / SMALL HEIGHT FIX ---------- */
-@media (max-height: 620px){
-  .status-popup{
-    top:12px;
-    font-size:1.05em;
-    padding:12px 14px;
-  }
-  .donate-box{
-    bottom:72px;
-    width:78%;
-  }
-  .donate-btn{
-    padding:12px 0;
-    font-size:.95em;
-  }
-  .info-popup{
-    bottom:10px;
-    padding:8px 10px;
-    font-size:.78em;
-  }
-  #logoOverlay{
-    bottom:78px !important;
-    right:12px !important;
-    width:48px !important;
-  }
+#loadingCover{
+  position:fixed;inset:0;
+  background:#000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:6000;
 }
+#loadingCover.hidden{opacity:0;pointer-events:none}
+#loadingSpinner{
+  width:56px;height:56px;
+  border-radius:50%;
+  border:4px solid rgba(255,255,255,.25);
+  border-top-color:#ffd700;
+  animation:spin .9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 
 <body>
 
-<div class="status-popup searching" id="statusBox">
-  🔍 Searching for Santa…
-</div>
+<div id="loadingCover"><div id="loadingSpinner"></div></div>
+
+<div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
 
 <div class="donate-box" id="donateBox">
   <a id="donateLink" class="donate-btn" target="_blank">
@@ -136,24 +131,38 @@ html,body{
 
 <script>
 const apiUrl=new URLSearchParams(location.search).get("api");
-if(!apiUrl) alert("Missing ?api=YOUR_SCRIPT_URL");
+if(!apiUrl) alert("Missing ?api=");
 
-const REFRESH=8000;
+const REFRESH=5000;
 const STALE_MS=5*60*1000;
 const LAPLAND={lat:66.5436,lng:25.8473};
 
-let map,marker,follow=true,firstFix=true,lastFix=null,active=true;
+const FALLBACK_ICONS={
+  live:"https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
+  start:"https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+  end:"https://i.ibb.co/39WF0kBd/Santa-Marker-5.png",
+  logo:"https://i.ibb.co/4Ztkn1Zf/RTGBI-Roundel.png"
+};
 
-/* ---------- HELPERS ---------- */
-const safe=(v,f)=>v&&String(v).trim()?v:f;
-const valid=(a,b)=>typeof a==="number"&&typeof b==="number"&&!isNaN(a)&&!isNaN(b);
-const load=async u=>(await fetch(u,{cache:"no-store"})).json();
-const norm=d=>{const x=new Date(d);return isNaN(x)?null:x.toISOString().slice(0,10)};
+let map,marker,follow=true,lastFix=null,laplandMode=false;
 
-/* ---------- INIT ---------- */
-(async()=>{
-  const data=await load(apiUrl);
-  const s=data.settings||{}, routes=data.routes||[];
+const loadJSON=url=>fetch(url,{cache:"no-store"}).then(r=>r.json());
+
+function extractPoint(raw){
+  if(!raw) return null;
+  if("lat" in raw) return raw;
+  const k=Object.keys(raw)[0];
+  return raw[k]||null;
+}
+
+function smoothPan(latlng,zoom=13){
+  map.flyTo(latlng,zoom,{animate:true,duration:2});
+}
+
+async function init(){
+  const data=await loadJSON(apiUrl);
+  const s=data.settings||{};
+  const routes=data.routes||[];
 
   document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
@@ -164,82 +173,73 @@ const norm=d=>{const x=new Date(d);return isNaN(x)?null:x.toISOString().slice(0,
     donateBox.style.display="none";
   }
 
-  /* Map */
-  map=L.map("map",{zoomControl:true}).setView([LAPLAND.lat,LAPLAND.lng],s.default_map_zoom||13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
   /* Logo */
   if(s.logo_overlay_enabled){
-    const logo=document.getElementById("logoOverlay");
-    logo.src=safe(s.logo_overlay_url,"https://i.ibb.co/4Ztkn1Zf/RTGBI-Roundel.png");
-    logo.style.display="block";
-    logo.style.width=(s.logo_overlay_size||64)+"px";
-    logo.style.bottom="20px";
-    logo.style.right="20px";
+    logoOverlay.src=s.logo_overlay_url||FALLBACK_ICONS.logo;
+  }else{
+    logoOverlay.style.display="none";
   }
 
-  /* Live marker */
+  map=L.map("map").setView([LAPLAND.lat,LAPLAND.lng],13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
   marker=L.marker([LAPLAND.lat,LAPLAND.lng],{
     icon:L.icon({
-      iconUrl:safe(s.sleigh_icon_live,"https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png"),
+      iconUrl:s.sleigh_icon_live||FALLBACK_ICONS.live,
       iconSize:[64,64],iconAnchor:[32,32]
     })
   }).addTo(map);
 
-  followBtn.onclick=()=>{follow=!follow;followBtn.textContent=`Follow: ${follow?"ON":"OFF"}`};
-  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
+  followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
+  recenterBtn.onclick=()=>{follow=true;smoothPan(marker.getLatLng(),16)};
 
+  document.getElementById("loadingCover").classList.add("hidden");
   tick();
-})();
+}
 
-/* ---------- LOOP ---------- */
 async function tick(){
   try{
-    const raw=await load(apiUrl+"?function=proxyFirebase");
-    const k=Object.keys(raw||{})[0];
-    const p=raw?.[k];
-    if(!p||!valid(p.lat,p.lng)) throw 0;
+    const raw=await loadJSON(apiUrl+"?function=proxyFirebase");
+    const p=extractPoint(raw);
+    if(!p||!p.lat||!p.lng) throw 0;
 
     const ts=new Date(p.ts).getTime();
-    if(Date.now()-ts>STALE_MS) throw 0;
+    if(Date.now()-ts>STALE_MS) throw "stale";
+
+    laplandMode=false;
 
     const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
-
-    if(firstFix){
-      map.setView(ll,16,{animate:true});
-      firstFix=false;
-    }else if(follow){
-      map.panTo(ll,{animate:true});
-    }
+    if(follow) smoothPan(ll,16);
 
     let mph="—";
     if(lastFix){
-      const d=lastFix.ll.distanceTo(ll),dt=(ts-lastFix.ts)/1000;
+      const d=lastFix.ll.distanceTo(ll);
+      const dt=(ts-lastFix.ts)/1000;
       if(dt>0){
         const m=(d/dt)*2.23694;
-        if(m<150) mph=`${m.toFixed(1)} mph`;
+        if(m<150) mph=m.toFixed(1)+" mph";
       }
     }
     lastFix={ll,ts};
 
-    lastUpdated.textContent="Updated "+new Date(p.ts).toLocaleTimeString("en-GB");
     speed.textContent=mph;
-    lastUpdated.style.display=speed.style.display="inline";
+    lastUpdated.textContent="Updated "+new Date(ts).toLocaleTimeString("en-GB");
+    speed.style.display=lastUpdated.style.display="inline";
 
     statusBox.textContent="🎅 Santa is out spreading joy!";
-    active=true;
-
   }catch{
-    if(active){
-      map.flyTo([LAPLAND.lat,LAPLAND.lng],6,{duration:2});
-      marker.setLatLng([LAPLAND.lat,LAPLAND.lng]);
+    if(!laplandMode){
+      laplandMode=true;
+      statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
+      smoothPan(LAPLAND,10);
+      marker.setLatLng(LAPLAND);
     }
-    active=false;
-    statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
   }
   setTimeout(tick,REFRESH);
 }
+
+init();
 </script>
 </body>
 </html>
