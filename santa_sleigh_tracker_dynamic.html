@@ -10,20 +10,12 @@
 
 <style>
 html,body{
-  margin:0;
-  padding:0;
-  height:100%;
-  background:#001;
-  color:#fff;
+  margin:0;padding:0;height:100%;
+  background:#001;color:#fff;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
   overflow:hidden;
 }
-
-#map{
-  width:100vw;
-  height:100dvh;
-  min-height:100vh;
-}
+#map{width:100vw;height:100dvh;min-height:100vh;}
 
 /* ---------- STATUS ---------- */
 .status-popup{
@@ -52,7 +44,6 @@ html,body{
   max-width:420px;
   z-index:2000;
 }
-
 .donate-btn{
   background:var(--primaryColor,#d31c1c);
   color:#fff;
@@ -65,7 +56,7 @@ html,body{
   box-shadow:0 4px 16px rgba(0,0,0,.4);
 }
 
-/* ---------- INFO BAR (CENTRED + RESPONSIVE) ---------- */
+/* ---------- INFO BAR (CENTRED & SAFE) ---------- */
 .info-popup{
   position:fixed;
   bottom:16px;
@@ -77,6 +68,7 @@ html,body{
 
   display:flex;
   align-items:center;
+  justify-content:center;
   gap:12px;
 
   font-size:.85em;
@@ -90,14 +82,17 @@ html,body{
 /* Left side: time + speed */
 .info-side.left{
   display:flex;
-  gap:10px;
-  flex-wrap:wrap;        /* ✅ allows wrap on embed */
-  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:center;
+  text-align:center;
   min-width:0;
+  max-width:100%;
 }
 
 .info-side.left span{
   white-space:nowrap;
+  max-width:100%;
 }
 
 /* Right side: buttons */
@@ -119,6 +114,14 @@ html,body{
 
 .muted{display:none}
 
+/* Ultra-small embeds */
+@media (max-width:360px){
+  .info-popup{
+    flex-direction:column;
+    gap:8px;
+  }
+}
+
 /* ---------- LOADING ---------- */
 #loadingCover{
   position:fixed;
@@ -129,16 +132,13 @@ html,body{
   justify-content:center;
   z-index:6000;
 }
-
 #loadingSpinner{
-  width:52px;
-  height:52px;
+  width:52px;height:52px;
   border-radius:50%;
   border:4px solid rgba(255,255,255,.25);
   border-top-color:#ffd700;
   animation:spin .9s linear infinite;
 }
-
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -157,7 +157,7 @@ html,body{
   </a>
 </div>
 
-<div class="info-popup" id="infoBar">
+<div class="info-popup">
   <div class="info-side left">
     <span id="lastUpdated" class="muted">—</span>
     <span id="speed" class="muted">—</span>
@@ -183,109 +183,98 @@ const FALLBACK_ICON =
   "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
 
 let map, marker;
-let follow = true;
-let lastFix = null;
-let firstFix = true;
+let follow=true, lastFix=null, firstFix=true;
 
 /* ---------- HELPERS ---------- */
-const valid = (lat,lng) =>
-  typeof lat==="number" && !isNaN(lat) &&
-  typeof lng==="number" && !isNaN(lng);
+const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
 async function loadJSON(url){
-  const r = await fetch(url,{cache:"no-store"});
+  const r=await fetch(url,{cache:"no-store"});
   if(!r.ok) throw 0;
   return r.json();
 }
 
 /* ---------- INIT ---------- */
 async function init(){
-  const data = await loadJSON(apiUrl);
-  const s = data.settings || {};
+  const data=await loadJSON(apiUrl);
+  const s=data.settings||{};
 
-  document.documentElement.style
-    .setProperty("--primaryColor", s.primary_color || "#d31c1c");
+  document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
   if(s.donate_url){
-    donateLink.href = s.donate_url;
-    donateBox.style.display = "block";
+    donateLink.href=s.donate_url;
+    donateBox.style.display="block";
   }else{
-    donateBox.style.display = "none";
+    donateBox.style.display="none";
   }
 
-  map = L.map("map").setView(LAPLAND,5);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
-    .addTo(map);
+  map=L.map("map").setView(LAPLAND,5);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  marker = L.marker(LAPLAND,{
+  marker=L.marker(LAPLAND,{
     icon:L.icon({
-      iconUrl: s.sleigh_icon_live || FALLBACK_ICON,
+      iconUrl:s.sleigh_icon_live||FALLBACK_ICON,
       iconSize:[64,64],
       iconAnchor:[32,32]
     })
   }).addTo(map);
 
-  followBtn.onclick = () => {
-    follow = !follow;
-    followBtn.textContent = "Follow: " + (follow ? "ON" : "OFF");
-  };
+  followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
+  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
 
-  recenterBtn.onclick = () => {
-    follow = true;
-    map.panTo(marker.getLatLng());
-  };
-
-  loadingCover.style.display = "none";
+  loadingCover.style.display="none";
   tick();
 }
 
 /* ---------- POLL ---------- */
 async function tick(){
   try{
-    const p = await loadJSON(apiUrl + "?function=proxyFirebase");
+    const p=await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!valid(p.lat,p.lng)) throw 0;
 
-    const ts = new Date(p.ts).getTime();
-    if(Date.now() - ts > STALE_MS) throw 0;
+    const ts=new Date(p.ts).getTime();
+    if(Date.now()-ts>STALE_MS) throw 0;
 
-    const ll = L.latLng(p.lat,p.lng);
+    const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
 
-    if(firstFix){
-      map.setView(ll,16);
-      firstFix = false;
-    }else if(follow){
-      map.panTo(ll,{animate:true,duration:1});
-    }
+    if(firstFix){map.setView(ll,16);firstFix=false}
+    else if(follow) map.panTo(ll,{animate:true,duration:1.2});
 
-    let mph = "—";
+    let speedText="";
     if(lastFix){
-      const d = lastFix.ll.distanceTo(ll);
-      const dt = (ts - lastFix.ts)/1000;
+      const d=lastFix.ll.distanceTo(ll);
+      const dt=(ts-lastFix.ts)/1000;
       if(dt>0){
-        const m = (d/dt)*2.23694;
-        if(m<150) mph = m.toFixed(1)+" mph";
+        const mph=(d/dt)*2.23694;
+        if(mph >= 0.5){
+          speedText = mph.toFixed(1)+" mph";
+        }else{
+          speedText = "Stopped";
+        }
       }
     }
-    lastFix = {ll,ts};
+    lastFix={ll,ts};
 
-    lastUpdated.textContent =
-      "Updated " + new Date(p.ts).toLocaleTimeString("en-GB");
-    speed.textContent = mph;
-    lastUpdated.style.display = speed.style.display = "inline";
+    lastUpdated.textContent="Updated "+new Date(p.ts).toLocaleTimeString("en-GB");
+    lastUpdated.style.display="inline";
 
-    statusBox.textContent = "🎅 Santa is out spreading joy!";
+    if(speedText){
+      speed.textContent=speedText;
+      speed.style.display="inline";
+    }else{
+      speed.style.display="none";
+    }
+
+    statusBox.textContent="🎅 Santa is out spreading joy!";
   }catch{
     marker.setLatLng(LAPLAND);
-    if(follow){
-      map.setView(LAPLAND,5,{animate:true,duration:2});
-    }
-    statusBox.textContent =
-      "🎄 Santa is in Lapland preparing for Christmas!";
-    lastUpdated.style.display = speed.style.display = "none";
+    if(follow) map.setView(LAPLAND,5,{animate:true,duration:2});
+    statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
+    lastUpdated.style.display=speed.style.display="none";
   }
 
-  setTimeout(tick, REFRESH);
+  setTimeout(tick,REFRESH);
 }
 
 init();
