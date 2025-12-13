@@ -17,10 +17,10 @@ html,body{
 }
 #map{width:100vw;height:100dvh;min-height:100vh;}
 
-/* ---------- TOP STATUS ---------- */
+/* ---------- STATUS ---------- */
 .status-popup{
   position:absolute;
-  top:18px;
+  top:20px;
   left:50%;
   transform:translateX(-50%);
   background:rgba(24,24,24,.94);
@@ -29,9 +29,9 @@ html,body{
   font-weight:800;
   border-radius:16px;
   max-width:90%;
-  text-align:center;
-  z-index:4000;
   box-shadow:0 4px 24px #0006;
+  z-index:4000;
+  text-align:center;
 }
 
 /* ---------- DONATE ---------- */
@@ -63,27 +63,49 @@ html,body{
   left:50%;
   transform:translateX(-50%);
   background:rgba(20,20,20,.92);
-  padding:10px 12px;
+  padding:10px 14px;
   border-radius:14px;
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:12px;
   font-size:.85em;
   font-weight:800;
   z-index:2000;
   max-width:calc(100vw - 32px);
-  box-sizing:border-box;
-  white-space:nowrap;
 }
-.info-status{
+
+/* ---------- STATUS LIGHT ---------- */
+.status-light{
+  width:12px;
+  height:12px;
+  border-radius:50%;
   display:none;
 }
+
+.status-light.moving{
+  background:#28d728;
+  box-shadow:0 0 6px #28d728;
+  animation:pulse 1.6s ease-in-out infinite;
+}
+
+.status-light.stopped{
+  background:#e43;
+  box-shadow:0 0 6px #e43;
+}
+
+@keyframes pulse{
+  0%{transform:scale(1);opacity:.6}
+  50%{transform:scale(1.4);opacity:1}
+  100%{transform:scale(1);opacity:.6}
+}
+
+/* ---------- BUTTONS ---------- */
 .btn{
   background:#0b1220;
   color:#fff;
   border:1px solid #ffffff26;
   border-radius:10px;
-  padding:7px 10px;
+  padding:7px 12px;
   cursor:pointer;
   font-weight:800;
 }
@@ -124,7 +146,7 @@ html,body{
 </div>
 
 <div class="info-popup" id="infoBar">
-  <span class="info-status" id="movementStatus"></span>
+  <div id="motionLight" class="status-light"></div>
   <button class="btn" id="followBtn">Follow: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
@@ -140,11 +162,13 @@ const REFRESH = 5000;
 const STALE_MS = 5 * 60 * 1000;
 const LAPLAND = [66.5436,25.8473];
 
-let map, marker;
-let follow=true, lastFix=null, firstFix=true;
+const FALLBACK_ICON = "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
+
+let map, marker, follow=true, lastFix=null, firstFix=true;
 
 /* ---------- HELPERS ---------- */
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
+
 async function loadJSON(url){
   const r=await fetch(url,{cache:"no-store"});
   if(!r.ok) throw 0;
@@ -153,37 +177,31 @@ async function loadJSON(url){
 
 /* ---------- INIT ---------- */
 async function init(){
-  const data=await loadJSON(apiUrl);
-  const s=data.settings||{};
+  const data = await loadJSON(apiUrl);
+  const s = data.settings || {};
 
   document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
   if(s.donate_url){
-    donateLink.href=s.donate_url;
+    donateLink.href = s.donate_url;
     donateBox.style.display="block";
   }else{
     donateBox.style.display="none";
   }
 
-  map=L.map("map").setView(LAPLAND,5);
+  map = L.map("map").setView(LAPLAND,5);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  marker=L.marker(LAPLAND,{
+  marker = L.marker(LAPLAND,{
     icon:L.icon({
-      iconUrl:s.sleigh_icon_live,
+      iconUrl:s.sleigh_icon_live||FALLBACK_ICON,
       iconSize:[64,64],
       iconAnchor:[32,32]
     })
   }).addTo(map);
 
-  followBtn.onclick=()=>{
-    follow=!follow;
-    followBtn.textContent="Follow: "+(follow?"ON":"OFF");
-  };
-  recenterBtn.onclick=()=>{
-    follow=true;
-    map.panTo(marker.getLatLng(),{animate:true});
-  };
+  followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
+  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
 
   loadingCover.style.display="none";
   tick();
@@ -192,36 +210,39 @@ async function init(){
 /* ---------- POLL ---------- */
 async function tick(){
   try{
-    const p=await loadJSON(apiUrl+"?function=proxyFirebase");
+    const p = await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!valid(p.lat,p.lng)) throw 0;
 
-    const ts=new Date(p.ts).getTime();
-    if(Date.now()-ts>STALE_MS) throw 0;
+    const ts = new Date(p.ts).getTime();
+    if(Date.now()-ts > STALE_MS) throw 0;
 
-    const ll=L.latLng(p.lat,p.lng);
+    const ll = L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
 
-    if(firstFix){map.setView(ll,16);firstFix=false}
-    else if(follow) map.panTo(ll,{animate:true,duration:1.2});
+    if(firstFix){
+      map.setView(ll,16);
+      firstFix=false;
+    }else if(follow){
+      map.panTo(ll,{animate:true,duration:1.2});
+    }
 
+    // Movement detection
     let moving=false;
     if(lastFix){
-      const d=lastFix.distanceTo(ll);
-      if(d>2) moving=true;
+      const d = lastFix.ll.distanceTo(ll);
+      if(d > 4) moving=true;
     }
-    lastFix=ll;
+    lastFix={ll,ts};
 
-    movementStatus.style.display="inline";
-    movementStatus.textContent = moving
-      ? "🟢 Spreading joy"
-      : "🔴 Taking a pause";
+    motionLight.className = "status-light " + (moving?"moving":"stopped");
+    motionLight.style.display="block";
 
     statusBox.textContent="🎅 Santa is out spreading joy!";
   }catch{
     marker.setLatLng(LAPLAND);
     if(follow) map.setView(LAPLAND,5,{animate:true,duration:2});
 
-    movementStatus.style.display="none";
+    motionLight.style.display="none";
     statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
   }
 
