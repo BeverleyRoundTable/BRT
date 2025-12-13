@@ -56,7 +56,7 @@ html,body{
   box-shadow:0 4px 16px rgba(0,0,0,.4);
 }
 
-/* ---------- INFO BAR (CENTRED & SAFE) ---------- */
+/* ---------- INFO BAR ---------- */
 .info-popup{
   position:fixed;
   bottom:16px;
@@ -68,38 +68,25 @@ html,body{
 
   display:flex;
   align-items:center;
-  justify-content:center;
-  gap:12px;
+  justify-content:space-between;
+  gap:14px;
 
   font-size:.85em;
   font-weight:800;
   z-index:2000;
-
   max-width:calc(100vw - 32px);
   box-sizing:border-box;
 }
 
-/* Left side: time + speed */
-.info-side.left{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  justify-content:center;
-  text-align:center;
-  min-width:0;
-  max-width:100%;
-}
-
-.info-side.left span{
+.info-left{
+  min-width:80px;
+  text-align:left;
   white-space:nowrap;
-  max-width:100%;
 }
 
-/* Right side: buttons */
-.info-side.right{
+.info-right{
   display:flex;
   gap:10px;
-  flex-shrink:0;
 }
 
 .btn{
@@ -112,15 +99,7 @@ html,body{
   font-weight:800;
 }
 
-.muted{display:none}
-
-/* Ultra-small embeds */
-@media (max-width:360px){
-  .info-popup{
-    flex-direction:column;
-    gap:8px;
-  }
-}
+.hidden{display:none}
 
 /* ---------- LOADING ---------- */
 #loadingCover{
@@ -158,11 +137,10 @@ html,body{
 </div>
 
 <div class="info-popup">
-  <div class="info-side left">
-    <span id="lastUpdated" class="muted">—</span>
-    <span id="speed" class="muted">—</span>
+  <div class="info-left">
+    <span id="speed" class="hidden"></span>
   </div>
-  <div class="info-side right">
+  <div class="info-right">
     <button class="btn" id="followBtn">Follow: ON</button>
     <button class="btn" id="recenterBtn">Re-centre</button>
   </div>
@@ -179,15 +157,13 @@ const REFRESH = 5000;
 const STALE_MS = 5 * 60 * 1000;
 const LAPLAND = [66.5436,25.8473];
 
-const FALLBACK_ICON =
-  "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
+const FALLBACK_ICON = "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
 
 let map, marker;
 let follow=true, lastFix=null, firstFix=true;
 
 /* ---------- HELPERS ---------- */
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
-
 async function loadJSON(url){
   const r=await fetch(url,{cache:"no-store"});
   if(!r.ok) throw 0;
@@ -196,27 +172,21 @@ async function loadJSON(url){
 
 /* ---------- INIT ---------- */
 async function init(){
-  const data=await loadJSON(apiUrl);
-  const s=data.settings||{};
+  const data = await loadJSON(apiUrl);
+  const s = data.settings || {};
 
   document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
 
   if(s.donate_url){
     donateLink.href=s.donate_url;
     donateBox.style.display="block";
-  }else{
-    donateBox.style.display="none";
-  }
+  }else donateBox.style.display="none";
 
   map=L.map("map").setView(LAPLAND,5);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
   marker=L.marker(LAPLAND,{
-    icon:L.icon({
-      iconUrl:s.sleigh_icon_live||FALLBACK_ICON,
-      iconSize:[64,64],
-      iconAnchor:[32,32]
-    })
+    icon:L.icon({iconUrl:s.sleigh_icon_live||FALLBACK_ICON,iconSize:[64,64],iconAnchor:[32,32]})
   }).addTo(map);
 
   followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
@@ -241,37 +211,28 @@ async function tick(){
     if(firstFix){map.setView(ll,16);firstFix=false}
     else if(follow) map.panTo(ll,{animate:true,duration:1.2});
 
-    let speedText="";
+    let label="";
     if(lastFix){
       const d=lastFix.ll.distanceTo(ll);
       const dt=(ts-lastFix.ts)/1000;
       if(dt>0){
         const mph=(d/dt)*2.23694;
-        if(mph >= 0.5){
-          speedText = mph.toFixed(1)+" mph";
-        }else{
-          speedText = "Stopped";
-        }
+        if(mph>=0.5) label=mph.toFixed(1)+" mph";
+        else label="Stopped";
       }
     }
     lastFix={ll,ts};
 
-    lastUpdated.textContent="Updated "+new Date(p.ts).toLocaleTimeString("en-GB");
-    lastUpdated.style.display="inline";
-
-    if(speedText){
-      speed.textContent=speedText;
-      speed.style.display="inline";
-    }else{
-      speed.style.display="none";
-    }
+    speed.textContent=label;
+    speed.classList.toggle("hidden",!label);
 
     statusBox.textContent="🎅 Santa is out spreading joy!";
   }catch{
     marker.setLatLng(LAPLAND);
     if(follow) map.setView(LAPLAND,5,{animate:true,duration:2});
+
+    speed.classList.add("hidden");
     statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
-    lastUpdated.style.display=speed.style.display="none";
   }
 
   setTimeout(tick,REFRESH);
