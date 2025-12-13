@@ -14,18 +14,24 @@ html,body{
   padding:0;
   height:100%;
   background:#001;
+  color:#fff;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
   overflow:hidden;
 }
-#map{width:100vw;height:100dvh;min-height:100vh;}
 
-/* ---------- STATUS TOP ---------- */
+#map{
+  width:100vw;
+  height:100dvh;
+  min-height:100vh;
+}
+
+/* ---------- STATUS BUBBLE ---------- */
 .status-popup{
   position:absolute;
-  top:18px;
+  top:20px;
   left:50%;
   transform:translateX(-50%);
-  background:rgba(24,24,24,.94);
+  background:rgba(24,24,24,.95);
   padding:14px 20px;
   font-size:1.05em;
   font-weight:800;
@@ -34,15 +40,16 @@ html,body{
   box-shadow:0 4px 24px #0006;
   z-index:4000;
   text-align:center;
+  color:#fff;
 }
 
 /* ---------- DONATE ---------- */
 .donate-box{
   position:fixed;
-  bottom:96px;
+  bottom:110px;
   left:50%;
   transform:translateX(-50%);
-  width:72%;
+  width:70%;
   max-width:420px;
   z-index:2000;
 }
@@ -64,47 +71,42 @@ html,body{
   bottom:16px;
   left:50%;
   transform:translateX(-50%);
-  background:rgba(20,20,20,.92);
+  background:rgba(20,20,20,.94);
   padding:10px 14px;
   border-radius:14px;
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:12px;
+  font-size:.85em;
+  font-weight:800;
   z-index:2000;
   max-width:calc(100vw - 32px);
   box-sizing:border-box;
+  color:#fff;
 }
 
-/* ---------- STATUS LIGHT (HARDENED) ---------- */
-.status-light{
+/* ---------- STATUS DOT ---------- */
+.status-dot{
   width:12px;
   aspect-ratio:1 / 1;
-  min-width:12px;
-  min-height:12px;
   border-radius:50%;
-  flex:0 0 auto;
-  transform:translateZ(0);
-  backface-visibility:hidden;
+  flex-shrink:0;
+  display:none;
 }
 
-/* moving */
-.status-light.moving{
-  background:#2bd82b;
-  box-shadow:0 0 6px #2bd82b;
-  animation:pulse 1.6s ease-in-out infinite;
+.dot-moving{
+  background:#2cff4e;
+  animation:pulse 1.4s infinite;
 }
 
-/* stopped */
-.status-light.stopped{
-  background:#e33;
-  box-shadow:0 0 6px #e33;
+.dot-stopped{
+  background:#ff3b3b;
 }
 
-/* pulse animation */
 @keyframes pulse{
-  0%{transform:scale(1);}
-  50%{transform:scale(1.35);}
-  100%{transform:scale(1);}
+  0%{ box-shadow:0 0 0 0 rgba(44,255,78,.6); }
+  70%{ box-shadow:0 0 0 10px rgba(44,255,78,0); }
+  100%{ box-shadow:0 0 0 0 rgba(44,255,78,0); }
 }
 
 .btn{
@@ -112,14 +114,36 @@ html,body{
   color:#fff;
   border:1px solid #ffffff26;
   border-radius:10px;
-  padding:8px 12px;
+  padding:7px 12px;
   cursor:pointer;
   font-weight:800;
 }
+
+/* ---------- LOADING ---------- */
+#loadingCover{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:6000;
+}
+#loadingSpinner{
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  border:4px solid rgba(255,255,255,.25);
+  border-top-color:#ffd700;
+  animation:spin .9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 
 <body>
+
+<div id="loadingCover"><div id="loadingSpinner"></div></div>
 
 <div class="status-popup" id="statusBox">
   🔍 Searching for Santa…
@@ -131,8 +155,8 @@ html,body{
   </a>
 </div>
 
-<div class="info-popup">
-  <div id="statusLight" class="status-light stopped"></div>
+<div class="info-popup" id="infoBar">
+  <div id="statusDot" class="status-dot"></div>
   <button class="btn" id="followBtn">Follow: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
@@ -147,6 +171,8 @@ if(!apiUrl) alert("Missing ?api=YOUR_SCRIPT_URL");
 const REFRESH = 5000;
 const STALE_MS = 5 * 60 * 1000;
 const LAPLAND = [66.5436,25.8473];
+
+const FALLBACK_ICON = "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png";
 
 let map, marker;
 let follow = true;
@@ -178,7 +204,7 @@ async function init(){
 
   marker = L.marker(LAPLAND,{
     icon:L.icon({
-      iconUrl:s.sleigh_icon_live,
+      iconUrl:s.sleigh_icon_live || FALLBACK_ICON,
       iconSize:[64,64],
       iconAnchor:[32,32]
     })
@@ -193,17 +219,20 @@ async function init(){
     map.panTo(marker.getLatLng());
   };
 
+  loadingCover.style.display="none";
   tick();
 }
 
 /* ---------- POLL ---------- */
 async function tick(){
+  const dot = statusDot;
+
   try{
     const p = await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!valid(p.lat,p.lng)) throw 0;
 
     const ts = new Date(p.ts).getTime();
-    if(Date.now()-ts>STALE_MS) throw 0;
+    if(Date.now()-ts > STALE_MS) throw 0;
 
     const ll = L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
@@ -215,17 +244,26 @@ async function tick(){
       map.panTo(ll,{animate:true,duration:1.2});
     }
 
-    statusBox.textContent="🎅 Santa is out spreading joy!";
-    statusLight.className="status-light moving";
+    let moving = false;
+    if(lastFix){
+      const d = lastFix.ll.distanceTo(ll);
+      const dt = (ts-lastFix.ts)/1000;
+      moving = dt>0 && (d/dt)*2.23694 >= 0.5;
+    }
+    lastFix = {ll,ts};
 
-    lastFix={ll,ts};
+    dot.style.display="block";
+    dot.className = "status-dot " + (moving ? "dot-moving" : "dot-stopped");
+
+    statusBox.textContent = "🎅 Santa is out spreading joy!";
+
   }catch{
     marker.setLatLng(LAPLAND);
     if(follow) map.setView(LAPLAND,5,{animate:true,duration:2});
 
-    statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
-    statusLight.className="status-light stopped";
-    lastFix=null;
+    dot.style.display="none";
+    statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
+    lastFix = null;
   }
 
   setTimeout(tick,REFRESH);
