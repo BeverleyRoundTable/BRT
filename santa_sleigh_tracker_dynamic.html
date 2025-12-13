@@ -7,7 +7,6 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
 <style>
 html,body{
@@ -18,24 +17,62 @@ html,body{
 }
 #map{width:100vw;height:100dvh;min-height:100vh;}
 
-/* ---------------- STATUS ---------------- */
+/* ================= STATUS BOX ================= */
+
 .status-popup{
   position:absolute;
   top:24px;
   left:50%;
   transform:translateX(-50%);
   background:rgba(24,24,24,.93);
-  padding:18px 22px;
-  font-size:1.2em;
-  font-weight:800;
+  padding:16px 22px;
   border-radius:18px;
-  max-width:90%;
   box-shadow:0 4px 32px #0006;
   z-index:4000;
   text-align:center;
+  white-space:nowrap;
 }
 
-/* ---------------- DONATE ---------------- */
+.status-core{
+  font-size:1.2em;
+  font-weight:800;
+}
+
+.status-telemetry{
+  position:absolute;
+  right:100%;
+  top:50%;
+  transform:translateY(-50%);
+  margin-right:14px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  background:rgba(20,20,20,.92);
+  padding:8px 12px;
+  border-radius:12px;
+  font-size:.75em;
+  font-weight:700;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .25s ease;
+}
+
+.status-popup.active .status-telemetry{
+  opacity:1;
+}
+
+.status-popup.searching{
+  animation:glow 1.3s ease-in-out infinite;
+}
+
+@keyframes glow{
+  0%{box-shadow:0 0 0 rgba(255,215,0,0);}
+  50%{box-shadow:0 0 20px rgba(255,215,0,.6);}
+  100%{box-shadow:0 0 0 rgba(255,215,0,0);}
+}
+
+/* ================= DONATE ================= */
+
 .donate-box{
   position:fixed;
   bottom:110px;
@@ -43,95 +80,69 @@ html,body{
   transform:translateX(-50%);
   width:70%;
   max-width:420px;
-  z-index:2000;
+  z-index:3000;
 }
 .donate-btn{
-  background:var(--primaryColor,#d31c1c);
+  background:#d31c1c;
   color:#fff;
-  padding:16px 0;
+  padding:14px 0;
   display:block;
   text-align:center;
-  border-radius:16px;
+  border-radius:14px;
   font-weight:900;
   text-decoration:none;
   box-shadow:0 4px 16px rgba(0,0,0,.4);
 }
 
-/* ---------------- INFO BAR (FIXED) ---------------- */
+/* ================= CONTROLS ================= */
+
 .info-popup{
   position:fixed;
   bottom:16px;
-  right:16px;                /* 🔒 lock right edge */
+  left:50%;
+  transform:translateX(-50%);
   background:rgba(20,20,20,.92);
-  padding:12px 14px;
-  border-radius:14px;
-
+  padding:10px 12px;
+  border-radius:12px;
   display:flex;
-  align-items:center;
   gap:12px;
-
   font-size:.85em;
-  font-weight:800;
-  z-index:2000;
-
-  max-width:calc(100vw - 32px);
-  box-sizing:border-box;
+  font-weight:700;
+  z-index:3000;
 }
-
-/* Left-growing data */
-.info-data{
-  display:flex;
-  gap:10px;
-  white-space:nowrap;
-  margin-right:auto;        /* 👈 grows LEFT only */
-}
-
-.muted{display:none}
-
 .btn{
   background:#0b1220;
   color:#fff;
   border:1px solid #ffffff26;
   border-radius:10px;
-  padding:8px 12px;
-  cursor:pointer;
+  padding:6px 10px;
   font-weight:800;
+  cursor:pointer;
 }
 
-/* ---------------- LOGO ---------------- */
+/* ================= LOGO ================= */
+
 #logoOverlay{
   position:fixed;
-  z-index:3000;
+  bottom:16px;
+  right:16px;
+  width:64px;
+  z-index:3500;
   pointer-events:none;
 }
-
-/* ---------------- LOADING ---------------- */
-#loadingCover{
-  position:fixed;
-  inset:0;
-  background:#000;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:6000;
-}
-#loadingSpinner{
-  width:56px;height:56px;
-  border-radius:50%;
-  border:4px solid rgba(255,255,255,.25);
-  border-top-color:#ffd700;
-  animation:spin .9s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 
 <body>
 
-<div id="loadingCover"><div id="loadingSpinner"></div></div>
-
-<div class="status-popup" id="statusBox">
-  🔍 Searching for Santa…
+<div class="status-popup searching" id="statusBox">
+  <div class="status-telemetry">
+    <span id="telemetryTime">—</span>
+    <span id="telemetrySpeed">—</span>
+  </div>
+  <div class="status-core" id="statusCore">
+    🔍 Searching for Santa…
+  </div>
 </div>
 
 <div class="donate-box" id="donateBox">
@@ -141,10 +152,6 @@ html,body{
 </div>
 
 <div class="info-popup">
-  <div class="info-data">
-    <span id="lastUpdated" class="muted">—</span>
-    <span id="speed" class="muted">—</span>
-  </div>
   <button class="btn" id="followBtn">Follow: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
 </div>
@@ -153,109 +160,91 @@ html,body{
 <img id="logoOverlay" />
 
 <script>
-/* -------------------------------------------------- */
-const apiUrl = new URLSearchParams(location.search).get("api");
-if(!apiUrl) alert("Missing ?api=YOUR_SCRIPT_URL");
+const apiUrl=new URLSearchParams(location.search).get("api");
+if(!apiUrl) alert("Missing ?api=");
 
-const REFRESH = 5000;
-const STALE_MS = 5 * 60 * 1000;
-const LAPLAND = [66.5436,25.8473];
+const REFRESH=5000;
+const STALE_MS=5*60000;
+const LAPLAND={lat:66.5436,lng:25.8473};
 
-const FALLBACK_ICONS = {
-  live:"https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
-  start:"https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
-  end:"https://i.ibb.co/39WF0kBd/Santa-Marker-5.png"
-};
+let map,marker,follow=true,lastFix=null,isLapland=true;
 
-let map, marker;
-let follow=true, lastFix=null, firstFix=true;
+const loadJSON=u=>fetch(u,{cache:"no-store"}).then(r=>r.json());
 
-/* -------------------------------------------------- */
-async function loadJSON(url){
-  const r=await fetch(url,{cache:"no-store"});
-  if(!r.ok) throw 0;
-  return r.json();
+function mph(a,b,dt){
+  return ((a.distanceTo(b)/dt)*2.23694).toFixed(1);
 }
-const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
-/* -------------------------------------------------- */
 async function init(){
   const data=await loadJSON(apiUrl);
-  const s=data.settings||{}, routes=data.routes||[];
+  const s=data.settings||{};
 
-  document.documentElement.style.setProperty("--primaryColor",s.primary_color||"#d31c1c");
-
-  /* Donate logic (settings only) */
   if(s.donate_url){
     donateLink.href=s.donate_url;
   }else{
     donateBox.style.display="none";
   }
 
-  /* Map */
-  map=L.map("map").setView(LAPLAND,Number(s.default_map_zoom)||13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
-  /* Logo */
-  if(s.logo_overlay_enabled==="true"||s.logo_overlay_enabled===true){
-    const logo=document.getElementById("logoOverlay");
-    logo.src=s.logo_overlay_url;
-    logo.style.width=(s.logo_overlay_size||64)+"px";
-    logo.style.bottom="16px";
-    logo.style.right="16px";
+  if(s.logo_overlay_enabled){
+    logoOverlay.src=s.logo_overlay_url;
+    logoOverlay.style.width=(s.logo_overlay_size||64)+"px";
+  }else{
+    logoOverlay.style.display="none";
   }
 
-  /* Marker */
-  marker=L.marker(LAPLAND,{
+  map=L.map("map").setView([LAPLAND.lat,LAPLAND.lng],6);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+  marker=L.marker([LAPLAND.lat,LAPLAND.lng],{
     icon:L.icon({
-      iconUrl:s.sleigh_icon_live||FALLBACK_ICONS.live,
+      iconUrl:s.sleigh_icon_live,
       iconSize:[64,64],
       iconAnchor:[32,32]
     })
   }).addTo(map);
 
-  followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
-  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
+  followBtn.onclick=()=>follow=!follow;
+  recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng());};
 
-  loadingCover.style.display="none";
   tick();
 }
 
-/* -------------------------------------------------- */
 async function tick(){
   try{
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
-    if(!valid(p.lat,p.lng)) throw 0;
-
     const ts=new Date(p.ts).getTime();
-    if(Date.now()-ts>STALE_MS) throw 0;
+    if(Date.now()-ts>STALE_MS) throw "stale";
 
     const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
-    if(firstFix){map.setView(ll,16);firstFix=false}
-    else if(follow) map.panTo(ll);
 
-    let mph="—";
-    if(lastFix){
-      const d=lastFix.ll.distanceTo(ll);
-      const dt=(ts-lastFix.ts)/1000;
-      if(dt>0){
-        const m=(d/dt)*2.23694;
-        if(m<150) mph=m.toFixed(1)+" mph";
-      }
+    if(isLapland){
+      map.flyTo(ll,16,{duration:2});
+      isLapland=false;
+    }else if(follow){
+      map.panTo(ll);
     }
-    lastFix={ll,ts};
 
-    lastUpdated.textContent="Updated "+new Date(p.ts).toLocaleTimeString("en-GB");
-    speed.textContent=mph;
-    lastUpdated.style.display=speed.style.display="inline";
+    let speed="—";
+    if(lastFix){
+      speed=mph(lastFix,ll,(ts-lastFix.ts)/1000);
+    }
+    lastFix={...ll,ts};
 
-    statusBox.textContent="🎅 Santa is out spreading joy!";
+    statusBox.classList.remove("searching");
+    statusBox.classList.add("active");
+    statusCore.textContent="🎅 Santa is out spreading joy!";
+    telemetryTime.textContent=new Date(p.ts).toLocaleTimeString("en-GB");
+    telemetrySpeed.textContent=speed+" mph";
+
   }catch{
-    marker.setLatLng(LAPLAND);
-    if(follow) map.setView(LAPLAND,5);
-    statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
-    lastUpdated.style.display=speed.style.display="none";
+    if(!isLapland){
+      isLapland=true;
+      map.flyTo([LAPLAND.lat,LAPLAND.lng],6,{duration:2.5});
+      marker.setLatLng([LAPLAND.lat,LAPLAND.lng]);
+    }
+    statusBox.classList.remove("active","searching");
+    statusCore.textContent="🎄 Santa is in Lapland preparing for Christmas!";
   }
   setTimeout(tick,REFRESH);
 }
