@@ -28,6 +28,7 @@
         padding: 0 18px;
     }
 
+    /* Modern route card */
     .santa-route-card {
         background: rgba(255,255,255,0.06);
         border: 1px solid rgba(255,255,255,0.12);
@@ -43,11 +44,13 @@
         box-shadow: 0 6px 26px rgba(0,0,0,0.45);
     }
 
+    /* Highlight card for Tonight/Next */
     .santa-route-card--highlight {
         border: 1px solid #ffd700;
         box-shadow: 0 0 22px rgba(255,215,0,0.25);
     }
 
+    /* Card layout */
     .santa-route-main {
         display: flex;
         flex-direction: column;
@@ -71,6 +74,7 @@
         margin-bottom: 8px;
     }
 
+    /* Buttons */
     .santa-route-actions {
         margin: 10px 0 5px;
     }
@@ -100,6 +104,7 @@
         box-shadow: none;
     }
 
+    /* Map preview */
     .santa-route-map img,
     .santa-preview {
         width: 100%;
@@ -110,6 +115,7 @@
         margin: 0 auto;
     }
 
+    /* Sponsor */
     .santa-route-sponsor {
         text-align: center;
         margin-top: 18px;
@@ -124,6 +130,7 @@
         margin: 10px auto;
     }
 
+    /* Section titles */
     .santa-section-title {
         text-align: center;
         font-size: 1.4rem;
@@ -131,6 +138,7 @@
         opacity: 0.95;
     }
 
+    /* Full width section separator */
     .route-divider {
         width: 100%;
         max-width: 260px;
@@ -139,12 +147,17 @@
         border-bottom: 2px solid rgba(255,255,255,0.3);
     }
 
+    /* Desktop layout */
     @media (min-width: 750px) {
         .santa-route-main {
             flex-direction: row;
         }
-        .santa-route-text { flex: 1; }
-        .santa-route-map { flex: 1; }
+        .santa-route-text {
+            flex: 1;
+        }
+        .santa-route-map {
+            flex: 1;
+        }
     }
 </style>
 </head>
@@ -158,39 +171,6 @@
 <hr class="route-divider">
 
 <div id="all-routes"></div>
-
-<!-- ===================================================
-     API BOOTSTRAP — HIDDEN + REFRESH SAFE
-     (NON-INTRUSIVE)
-=================================================== -->
-<script>
-(function () {
-  const params = new URLSearchParams(location.search);
-  let api = params.get("api");
-
-  // Restore API on refresh
-  if (!api) {
-    api = sessionStorage.getItem("SANTA_API");
-  }
-
-  // Stop if missing (same behaviour as before)
-  if (!api) {
-    alert("Missing ?api=YOUR_SCRIPT_URL");
-    return;
-  }
-
-  // Persist for reloads
-  sessionStorage.setItem("SANTA_API", api);
-
-  // Hide from address bar
-  if (location.search.includes("api=")) {
-    history.replaceState(null, "", location.pathname);
-  }
-
-  // Expose for routes.js (no refactor required)
-  window.SANTA_API = api;
-})();
-</script>
 
 <!-- Load your routes.js with cache-busting -->
 <script>
