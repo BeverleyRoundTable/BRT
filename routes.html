@@ -159,40 +159,45 @@
 
 <div id="all-routes"></div>
 
+<!-- ===================================================
+     API BOOTSTRAP — HIDDEN + REFRESH SAFE
+     (NON-INTRUSIVE)
+=================================================== -->
 <script>
-/* ===================================================
-   API HANDLING — CLEAN URL + RELOAD SAFE
-=================================================== */
+(function () {
+  const params = new URLSearchParams(location.search);
+  let api = params.get("api");
 
-// 1️⃣ Read from URL
-const params = new URLSearchParams(location.search);
-let api = params.get("api");
+  // Restore API on refresh
+  if (!api) {
+    api = sessionStorage.getItem("SANTA_API");
+  }
 
-// 2️⃣ Fallback to sessionStorage (refresh-safe)
-if (!api) {
-  api = sessionStorage.getItem("SANTA_API");
-}
+  // Stop if missing (same behaviour as before)
+  if (!api) {
+    alert("Missing ?api=YOUR_SCRIPT_URL");
+    return;
+  }
 
-// 3️⃣ Still missing → hard stop (by design)
-if (!api) {
-  alert("Missing ?api=YOUR_SCRIPT_URL");
-} else {
-  // 4️⃣ Store for future reloads
+  // Persist for reloads
   sessionStorage.setItem("SANTA_API", api);
 
-  // 5️⃣ Hide ?api= from the address bar (UX only)
+  // Hide from address bar
   if (location.search.includes("api=")) {
     history.replaceState(null, "", location.pathname);
   }
-}
 
-/* ===================================================
-   LOAD ROUTES.JS (unchanged)
-=================================================== */
+  // Expose for routes.js (no refactor required)
+  window.SANTA_API = api;
+})();
+</script>
+
+<!-- Load your routes.js with cache-busting -->
+<script>
 (function () {
-  const s = document.createElement("script");
-  s.src = "https://brt-23f.pages.dev/routes.js?v=" + Date.now();
-  document.body.appendChild(s);
+    const s = document.createElement("script");
+    s.src = "https://brt-23f.pages.dev/routes.js?v=" + Date.now();
+    document.body.appendChild(s);
 })();
 </script>
 
