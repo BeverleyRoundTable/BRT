@@ -69,7 +69,7 @@ if (!API) {
 }
 
 /* ------------------------------------------------------------
-   CANVAS (DPR)
+   CANVAS
 ------------------------------------------------------------ */
 const canvas = document.getElementById("anim");
 const ctx = canvas.getContext("2d");
@@ -134,10 +134,8 @@ function lerpAngle(a,b,t){
 /* ------------------------------------------------------------
    PARTICLES
 ------------------------------------------------------------ */
-const SPARKLES_PER_FRAME = 3;
-const sparkles = [];
-
-class Sparkle {
+const sparkles=[], snow=[];
+class Sparkle{
   constructor(x,y){
     this.x=x+(Math.random()-.5)*10;
     this.y=y+(Math.random()-.5)*10;
@@ -148,16 +146,9 @@ class Sparkle {
     this.size=1+Math.random()*3;
   }
   update(){ this.x+=this.vx; this.y+=this.vy; this.life-=this.decay; }
-  draw(ctx){
-    ctx.beginPath();
-    ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
-    ctx.fill();
-  }
+  draw(ctx){ ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill(); }
 }
-
-/* Foreground snow */
-const snow = [];
-class Snow {
+class Snow{
   constructor(){
     this.x=Math.random()*innerWidth;
     this.y=-20;
@@ -166,12 +157,7 @@ class Snow {
     this.drift=(Math.random()-.5)*.4;
   }
   update(){ this.y+=this.speed; this.x+=this.drift; }
-  draw(ctx){
-    ctx.beginPath();
-    ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
-    ctx.fillStyle="rgba(255,255,255,.55)";
-    ctx.fill();
-  }
+  draw(ctx){ ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fillStyle="rgba(255,255,255,.55)"; ctx.fill(); }
 }
 
 /* ------------------------------------------------------------
@@ -192,7 +178,7 @@ try{
   routeName.textContent = route.routeName||"";
   routeDate.textContent = route.date||"";
 
-  let pts = smoothPath(await loadGPX(route.gpxUrl),3);
+  const pts = smoothPath(await loadGPX(route.gpxUrl),3);
   const bounds = L.latLngBounds(pts.map(p=>[p.lat,p.lng]));
   map.fitBounds(bounds,{padding:[40,40]});
   setTimeout(()=>map.setZoom((+settings.default_map_zoom||16)),200);
@@ -202,7 +188,7 @@ try{
   sprite.src = settings.travelboost_sprite;
   await new Promise(r=>sprite.onload=r);
 
-  startAnimation(pts,sprite,settings);
+  startAnimation(pts,bounds,sprite,settings);
 
 }catch(e){
   console.error(e);
@@ -212,15 +198,15 @@ try{
 /* ------------------------------------------------------------
    ANIMATION
 ------------------------------------------------------------ */
-function startAnimation(latLngs,sprite,settings){
+function startAnimation(latLngs,bounds,sprite,settings){
 let dist=0,last=0,angle=0;
 let camLat=latLngs[0].lat, camLng=latLngs[0].lng;
+let finished=false, zoomStart=null;
 
 const frames=+settings.travelboost_sprite_frames||5;
 const fps=+settings.travelboost_sprite_fps||14;
 const size=+settings.travelboost_sprite_size||128;
 const speed=(+settings.travelboost_speed||.1)*.0016;
-
 const accent=settings.travelboost_accent_color||"#ffd700";
 const spriteW=sprite.width/frames;
 
@@ -230,27 +216,41 @@ function frame(ts){
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  dist=Math.min(dist+speed*dt,latLngs.length-1);
+  if(!finished){
+    dist=Math.min(dist+speed*dt,latLngs.length-1);
+    if(dist>=latLngs.length-1){
+      finished=true;
+      zoomStart=ts;
+    }
+  }
+
   const i=Math.floor(dist), t=dist-i;
   const a=latLngs[i], b=latLngs[Math.min(i+1,latLngs.length-1)];
   const lat=a.lat+(b.lat-a.lat)*t;
   const lng=a.lng+(b.lng-a.lng)*t;
 
-  /* camera easing + offset confirm */
-  const p=map.latLngToContainerPoint([lat,lng]);
-  const off=map.containerPointToLatLng([p.x,p.y+innerHeight*.18]);
-  camLat+= (off.lat-camLat)*.08;
-  camLng+= (off.lng-camLng)*.08;
-  map.panTo([camLat,camLng],{animate:false});
+  if(!finished){
+    const p=map.latLngToContainerPoint([lat,lng]);
+    const off=map.containerPointToLatLng([p.x,p.y+innerHeight*.18]);
+    camLat+= (off.lat-camLat)*.08;
+    camLng+= (off.lng-camLng)*.08;
+    map.panTo([camLat,camLng],{animate:false});
+  } else {
+    const prog=Math.min((ts-zoomStart)/5000,1);
+    map.fitBounds(bounds,{
+      padding:[40,40],
+      animate:true,
+      duration:5*(1-prog)
+    });
+  }
 
   const cur=map.latLngToContainerPoint([lat,lng]);
   const p1=map.latLngToContainerPoint(a);
   const p2=map.latLngToContainerPoint(b);
 
-  /* fading trail */
-  const start=Math.max(0,i-140);
   ctx.lineCap="round"; ctx.lineWidth=6;
   ctx.shadowColor=accent; ctx.shadowBlur=18;
+  const start=Math.max(0,i-140);
   for(let j=start;j<i;j++){
     ctx.globalAlpha=(j-start)/140;
     const pa=map.latLngToContainerPoint(latLngs[j]);
@@ -260,23 +260,19 @@ function frame(ts){
   }
   ctx.globalAlpha=1;
 
-  /* sparkles */
   ctx.fillStyle=accent;
-  for(let s=0;s<SPARKLES_PER_FRAME;s++) sparkles.push(new Sparkle(cur.x,cur.y));
+  for(let s=0;s<3;s++) sparkles.push(new Sparkle(cur.x,cur.y));
   for(let k=sparkles.length-1;k>=0;k--){
-    sparkles[k].update();
-    sparkles[k].draw(ctx);
+    sparkles[k].update(); sparkles[k].draw(ctx);
     if(sparkles[k].life<=0) sparkles.splice(k,1);
   }
 
-  /* snow foreground */
   if(Math.random()<.12) snow.push(new Snow());
   for(let k=snow.length-1;k>=0;k--){
     snow[k].update(); snow[k].draw(ctx);
     if(snow[k].y>innerHeight+40) snow.splice(k,1);
   }
 
-  /* sprite */
   angle=lerpAngle(angle,getAngle(p1,p2),.18);
   const frameIndex=Math.floor(ts/1000*fps)%frames;
   const bob=Math.sin(ts/140)*2;
@@ -289,7 +285,7 @@ function frame(ts){
     -size/2,-size/2+bob,size,size);
   ctx.restore();
 
-  if(dist<latLngs.length-1) requestAnimationFrame(frame);
+  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 }
