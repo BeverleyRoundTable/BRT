@@ -226,20 +226,36 @@ function fitBounds(){
 }
 
 function draw(ts,pos){
-  if(!needsRedraw)return;
-  needsRedraw=false;
+  if(!needsRedraw) return;
+  needsRedraw = false;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  const p=map.project([pos.lng,pos.lat]);
-  if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))return;
+  // Project true GPX position
+  const p = map.project([pos.lng, pos.lat]);
+  if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return;
 
-  const spriteW=sprite.width/frames;
-  const f=Math.floor(ts/1000*fps)%frames;
+  const spriteW = sprite.width / frames;
+  const frame = Math.floor(ts / 1000 * fps) % frames;
+
+  // 🔑 Feet anchor correction (critical)
+  const FOOT_ANCHOR = size * 0.32;
 
   ctx.save();
-  ctx.translate(p.x,p.y);
-  ctx.drawImage(sprite,f*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
+  ctx.translate(
+    Math.round(p.x),
+    Math.round(p.y - FOOT_ANCHOR)
+  );
+
+  ctx.drawImage(
+    sprite,
+    frame * spriteW, 0,
+    spriteW, sprite.height,
+    -size / 2,
+    -size / 2,
+    size, size
+  );
+
   ctx.restore();
 }
 
