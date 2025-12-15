@@ -239,13 +239,11 @@ function draw(ts,pos){
   const frame = Math.floor(ts / 1000 * fps) % frames;
 
   // 🔑 Feet anchor correction (critical)
-  const FOOT_ANCHOR = size * 0.32;
-
-  ctx.save();
-  ctx.translate(
-    Math.round(p.x),
-    Math.round(p.y - FOOT_ANCHOR)
-  );
+ ctx.save();
+ctx.translate(
+  Math.round(p.x),
+  Math.round(p.y)
+);
 
   ctx.drawImage(
     sprite,
