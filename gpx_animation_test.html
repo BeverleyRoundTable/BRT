@@ -225,25 +225,20 @@ function fitBounds(){
     {padding:60,pitch:0,bearing:0});
 }
 
-function draw(ts,pos){
+function draw(ts){
   if(!needsRedraw) return;
   needsRedraw = false;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Project true GPX position
-  const p = map.project([pos.lng, pos.lat]);
-  if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return;
-
   const spriteW = sprite.width / frames;
   const frame = Math.floor(ts / 1000 * fps) % frames;
 
-  // 🔑 Feet anchor correction (critical)
- ctx.save();
-ctx.translate(
-  Math.round(p.x),
-  Math.round(p.y)
-);
+  const SANTA_X = canvas.width / 2;
+  const SANTA_Y = canvas.height * 0.58;
+
+  ctx.save();
+  ctx.translate(Math.round(SANTA_X), Math.round(SANTA_Y));
 
   ctx.drawImage(
     sprite,
@@ -257,7 +252,7 @@ ctx.translate(
   ctx.restore();
 }
 
-function step(ts){
+ function step(ts){
   if(!last)last=ts;
   const dt=(ts-last)/1000;last=ts;
 
