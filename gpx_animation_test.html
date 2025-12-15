@@ -226,9 +226,6 @@ function fitBounds(){
 }
 
 function draw(ts){
-  if(!needsRedraw) return;
-  needsRedraw = false;
-
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   const spriteW = sprite.width / frames;
@@ -238,7 +235,10 @@ function draw(ts){
   const SANTA_Y = canvas.height * 0.58;
 
   ctx.save();
-  ctx.translate(Math.round(SANTA_X), Math.round(SANTA_Y));
+  ctx.translate(
+    Math.round(SANTA_X),
+    Math.round(SANTA_Y)
+  );
 
   ctx.drawImage(
     sprite,
