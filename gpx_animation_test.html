@@ -471,8 +471,17 @@ function startAnimation(map, pts, sprite, settings, theme) {
   function drawOverlay(ts, pos) {
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    // Santa pixel position
-    const px = map.project([pos.lng, pos.lat]);
+// Project GPX position into screen space (MapLibre returns CSS pixels)
+const p = map.project([pos.lng, pos.lat]);
+
+// Snap to canvas coordinate space (prevents drift with pitch/bearing)
+const dpr = window.devicePixelRatio || 1;
+const sx = Math.round(p.x);
+const sy = Math.round(p.y);
+
+// Optional: feet-on-road offset (highly recommended)
+const FOOT_OFFSET = size * 0.28;
+const fy = sy + FOOT_OFFSET;
 
     // Trail sparkles
     for (let s = 0; s < 3; s++) sparkles.push(new Sparkle(px.x, px.y));
