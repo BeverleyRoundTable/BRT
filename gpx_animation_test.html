@@ -5,63 +5,38 @@
 <title>Turbo Santa GPX Animation</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<!-- MapLibre GL (WebGL map with pitch + bearing) -->
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" />
 
 <style>
-  html, body {
-    margin: 0; padding: 0; height: 100%;
-    background: #0b0d12;
-    overflow: hidden;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: #fff;
-  }
-
-  #map { position: absolute; inset: 0; }
-
-  /* Canvas overlay for Santa + particles */
-  #anim {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  /* Bottom pill */
-  #ui-layer {
-    position: absolute;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 50;
-    pointer-events: none;
-    text-align: center;
-  }
-  .pill {
-    background: rgba(0,0,0,.65);
-    color: #fff;
-    padding: 10px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.2);
-    box-shadow: 0 10px 24px rgba(0,0,0,.45);
-    backdrop-filter: blur(8px);
-    max-width: 92vw;
-    display: inline-block;
-  }
-  #route-name { margin: 0; font-size: 1rem; font-weight: 700; }
-  #route-date { margin: 2px 0 0; font-size: .82rem; opacity: .85; }
-
-  /* Small top-left debug toast for errors */
-  #toast {
-    position: absolute;
-    top: 16px; left: 16px;
-    z-index: 60;
-    background: rgba(0,0,0,.72);
-    border: 1px solid rgba(255,255,255,.18);
-    border-radius: 12px;
-    padding: 10px 12px;
-    max-width: 88vw;
-    display: none;
-  }
+html, body {
+  margin:0; padding:0; height:100%;
+  background:#0b0d12;
+  overflow:hidden;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color:#fff;
+}
+#map{position:absolute;inset:0;}
+#anim{position:absolute;inset:0;pointer-events:none;}
+#ui-layer{
+  position:absolute;bottom:24px;left:50%;
+  transform:translateX(-50%);
+  z-index:50;text-align:center;pointer-events:none;
+}
+.pill{
+  background:rgba(0,0,0,.65);
+  padding:10px 18px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.2);
+  backdrop-filter:blur(8px);
+}
+#route-name{margin:0;font-weight:700}
+#route-date{margin:2px 0 0;font-size:.82rem;opacity:.85}
+#toast{
+  position:absolute;top:16px;left:16px;
+  background:rgba(0,0,0,.72);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;padding:10px 12px;
+  display:none;z-index:60;
+}
 </style>
 </head>
 
@@ -75,522 +50,190 @@
     <p id="route-date"></p>
   </div>
 </div>
-
 <div id="toast"></div>
 
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 
 <script>
 /* ============================================================
-   Turbo Santa GPX Animation (MapLibre GL)
-   URL format:
-   /gpx_animation?api=<MACRO_API_URL>&route=<RouteName>
+   PARAMS + CANVAS
 ============================================================ */
+const P=new URLSearchParams(location.search);
+const API=P.get("api"), ROUTE=P.get("route");
+const routeNameEl=document.getElementById("route-name");
+const routeDateEl=document.getElementById("route-date");
+const toastEl=document.getElementById("toast");
 
-/* ------------------------------------------------------------
-   PARAMS
------------------------------------------------------------- */
-const P = new URLSearchParams(location.search);
-const API   = P.get("api");
-const ROUTE = P.get("route");
+if(!API){toast("Missing api=");throw new Error("Missing api");}
 
-/* UI refs */
-const routeNameEl = document.getElementById("route-name");
-const routeDateEl = document.getElementById("route-date");
-const toastEl = document.getElementById("toast");
-
-/* Fail fast if missing API */
-if (!API) {
-  showToast("❌ Missing api= parameter");
-  routeNameEl.textContent = "Missing api=";
-  throw new Error("Missing api");
+const canvas=document.getElementById("anim");
+const ctx=canvas.getContext("2d");
+function resize(){
+  const dpr=devicePixelRatio||1;
+  canvas.width=innerWidth*dpr;
+  canvas.height=innerHeight*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
+addEventListener("resize",resize);resize();
 
-/* ------------------------------------------------------------
-   CANVAS (DPR aware)
------------------------------------------------------------- */
-const canvas = document.getElementById("anim");
-const ctx = canvas.getContext("2d");
+function toast(m){toastEl.style.display="block";toastEl.textContent=m;}
 
-function resizeCanvas() {
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width  = innerWidth * dpr;
-  canvas.height = innerHeight * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-addEventListener("resize", resizeCanvas);
-resizeCanvas();
-
-/* ------------------------------------------------------------
+/* ============================================================
    HELPERS
------------------------------------------------------------- */
-function showToast(msg) {
-  toastEl.style.display = "block";
-  toastEl.textContent = msg;
-}
+============================================================ */
+const MAP_STYLE="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
-async function fetchJSON(url) {
-  const r = await fetch(url, { cache: "no-store" });
-  if (!r.ok) throw new Error("API fetch failed (" + r.status + ")");
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const hexToRgb=h=>{
+  h=(h||"#ffd700").replace("#","");
+  return {r:parseInt(h.substr(0,2),16),g:parseInt(h.substr(2,2),16),b:parseInt(h.substr(4,2),16)};
+};
+
+async function fetchJSON(u){
+  const r=await fetch(u,{cache:"no-store"});
+  if(!r.ok)throw new Error("API fetch failed");
   return r.json();
 }
-
-async function loadGPX(url) {
-  const r = await fetch(url, { cache: "no-store" });
-  if (!r.ok) throw new Error("GPX fetch failed (" + r.status + ")");
-  const xml = await r.text();
-  const dom = new DOMParser().parseFromString(xml, "text/xml");
-  const pts = [...dom.getElementsByTagName("trkpt")].map(p => ({
-    lat: +p.getAttribute("lat"),
-    lng: +(p.getAttribute("lon") || p.getAttribute("lng"))
-  })).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
-  return pts;
+async function loadGPX(u){
+  const x=await (await fetch(u,{cache:"no-store"})).text();
+  const d=new DOMParser().parseFromString(x,"text/xml");
+  return [...d.getElementsByTagName("trkpt")].map(p=>({
+    lat:+p.getAttribute("lat"),
+    lng:+(p.getAttribute("lon")||p.getAttribute("lng"))
+  }));
 }
-
-// Chaikin-ish smoothing
-function smoothPath(points, it = 2) {
-  if (it <= 0 || points.length < 3) return points;
-  const out = [points[0]];
-  for (let i = 0; i < points.length - 1; i++) {
-    const a = points[i], b = points[i + 1];
-    out.push({ lat: 0.75*a.lat + 0.25*b.lat, lng: 0.75*a.lng + 0.25*b.lng });
-    out.push({ lat: 0.25*a.lat + 0.75*b.lat, lng: 0.25*a.lng + 0.75*b.lng });
+function smoothPath(p,it=2){
+  if(it<=0||p.length<3)return p;
+  const o=[p[0]];
+  for(let i=0;i<p.length-1;i++){
+    const a=p[i],b=p[i+1];
+    o.push({lat:.75*a.lat+.25*b.lat,lng:.75*a.lng+.25*b.lng});
+    o.push({lat:.25*a.lat+.75*b.lat,lng:.25*a.lng+.75*b.lng});
   }
-  out.push(points[points.length - 1]);
-  return smoothPath(out, it - 1);
+  o.push(p.at(-1));
+  return smoothPath(o,it-1);
+}
+function bearing(a,b){
+  const dLng=(b.lng-a.lng)*Math.PI/180;
+  const y=Math.sin(dLng)*Math.cos(b.lat*Math.PI/180);
+  const x=Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180)-
+          Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+function dist(a,b){
+  const R=6371000;
+  const dLat=(b.lat-a.lat)*Math.PI/180;
+  const dLng=(b.lng-a.lng)*Math.PI/180;
+  const s=Math.sin(dLat/2)**2+
+          Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
 }
 
-// Haversine-ish distance (meters) for speed normalization
-function distMeters(a, b) {
-  const R = 6371000;
-  const dLat = (b.lat - a.lat) * Math.PI/180;
-  const dLng = (b.lng - a.lng) * Math.PI/180;
-  const lat1 = a.lat * Math.PI/180;
-  const lat2 = b.lat * Math.PI/180;
-  const s = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
-  return 2 * R * Math.asin(Math.sqrt(s));
-}
-
-// Bearing (degrees, 0=N)
-function bearingDeg(a, b) {
-  const lat1 = a.lat * Math.PI/180, lat2 = b.lat * Math.PI/180;
-  const dLng = (b.lng - a.lng) * Math.PI/180;
-  const y = Math.sin(dLng) * Math.cos(lat2);
-  const x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
-  const brng = Math.atan2(y, x) * 180/Math.PI;
-  return (brng + 360) % 360;
-}
-
-function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
-
-function hexToRgb(hex) {
-  const h = String(hex||"").trim().replace("#","");
-  if (h.length !== 6) return {r:255,g:215,b:0};
-  return { r: parseInt(h.slice(0,2),16), g: parseInt(h.slice(2,4),16), b: parseInt(h.slice(4,6),16) };
-}
-
-/* ------------------------------------------------------------
-   PARTICLES (sparkles + foreground snow)
------------------------------------------------------------- */
-const sparkles = [];
-class Sparkle {
-  constructor(x, y) {
-    this.x = x + (Math.random()-0.5)*10;
-    this.y = y + (Math.random()-0.5)*10;
-    this.vx = (Math.random()-0.5)*0.7;
-    this.vy = (Math.random()-0.5)*0.7;
-    this.life = 1;
-    this.decay = 0.02 + Math.random()*0.03;
-    this.size = 1 + Math.random()*3;
-  }
-  update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
-  draw(ctx, rgb) {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-    ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${this.life})`;
-    ctx.fill();
-  }
-}
-
-const snow = [];
-class Snow {
-  constructor() {
-    this.x = Math.random()*innerWidth;
-    this.y = -30;
-    this.size = 3 + Math.random()*7;
-    this.speed = 0.6 + Math.random()*1.6;
-    this.drift = (Math.random()-0.5)*0.6;
-  }
-  update() { this.y += this.speed; this.x += this.drift; }
-  draw(ctx) {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-    ctx.fillStyle = "rgba(255,255,255,.55)";
-    ctx.fill();
-  }
-}
-
-/* ------------------------------------------------------------
-   MAP STYLE
-   - Using MapLibre demo style to avoid requiring keys.
-   - You can switch to your own later (Cloudflare, Stadia, etc).
------------------------------------------------------------- */
-const MAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
-
-/* ------------------------------------------------------------
+/* ============================================================
    MAIN
------------------------------------------------------------- */
-(async function main() {
-  try {
-    const master   = await fetchJSON(API);
-    const settings = master.settings || {};
-    const routes   = master.routes || [];
+============================================================ */
+(async()=>{
+try{
+  const master=await fetchJSON(API);
+  const settings=master.settings||{};
+  const routes=master.routes||[];
+  const route=routes.find(r=>r.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
+  if(!route||!route.gpxUrl)throw "Route invalid";
 
-    const route =
-      (ROUTE
-        ? routes.find(r => String(r.routeName||"").toLowerCase() === ROUTE.toLowerCase())
-        : routes[0]
-      ) || routes.find(r => r.routeName === ROUTE);
+  routeNameEl.textContent=route.routeName||"";
+  routeDateEl.textContent=route.date||"";
 
-    if (!route) throw new Error("Route not found: " + (ROUTE || "(none)"));
-    if (!route.gpxUrl) throw new Error("Route has no gpxUrl");
+  const pts=smoothPath(await loadGPX(route.gpxUrl),3);
+  const sprite=await loadImg(settings.travelboost_sprite);
 
-    routeNameEl.textContent = route.routeName || "";
-    routeDateEl.textContent = route.date || "";
-
-    // Load + smooth GPX
-    const raw = await loadGPX(route.gpxUrl);
-    if (raw.length < 2) throw new Error("GPX has too few points");
-    const pts = smoothPath(raw, 3);
-
-    // Load sprite (5x1 strip)
-    if (!settings.travelboost_sprite) throw new Error("travelboost_sprite not set");
-    const sprite = await loadImage(settings.travelboost_sprite);
-
-    // Initialise map + layers, then animate
-    initMapAndRun(pts, sprite, settings);
-
-  } catch (e) {
-    console.error(e);
-    showToast("❌ " + (e.message || String(e)));
-    routeNameEl.textContent = "Error";
-    routeDateEl.textContent = e.message || "";
-  }
+  initMapAndRun(pts,sprite,settings);
+}catch(e){toast(e.message||e);}
 })();
 
-/* ------------------------------------------------------------
-   IMAGE LOADER
------------------------------------------------------------- */
-function loadImage(url) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("Failed to load image: " + url));
-    img.src = url;
+function loadImg(u){
+  return new Promise((res,rej)=>{
+    const i=new Image();i.crossOrigin="anonymous";
+    i.onload=()=>res(i);i.onerror=rej;i.src=u;
   });
 }
 
-/* ------------------------------------------------------------
-   INIT MAP + RUN
------------------------------------------------------------- */
-function initMapAndRun(pts, sprite, settings) {
-  const primary = settings.primary_color || "#d31c1c";
-  const accent  = settings.accent_color  || settings.travelboost_accent_color || "#ffd700";
-  const accentRGB = hexToRgb(accent);
+/* ============================================================
+   MAP + ANIMATION
+============================================================ */
+function initMapAndRun(pts,sprite,settings){
+const accentRGB=hexToRgb(settings.travelboost_accent_color);
+const baseZoom=+settings.default_map_zoom||16;
+const map=new maplibregl.Map({
+  container:"map",style:MAP_STYLE,
+  center:[pts[0].lng,pts[0].lat],
+  zoom:baseZoom,pitch:55,bearing:0,antialias:true
+});
+map.dragPan.disable();map.scrollZoom.disable();map.doubleClickZoom.disable();
 
-  const baseZoom = Number(settings.default_map_zoom) || 16;
-
-  // Initial center
-  const start = pts[0];
-
-  const map = new maplibregl.Map({
-    container: "map",
-    style: MAP_STYLE,
-    center: [start.lng, start.lat],
-    zoom: baseZoom,
-    pitch: 55,
-    bearing: 0,
-    antialias: true
-  });
-
-  // Disable interactions (feel like a cinematic player)
-  map.dragPan.disable();
-  map.scrollZoom.disable();
-  map.doubleClickZoom.disable();
-  map.dragRotate.disable();
-  map.touchZoomRotate.disable();
-
-  map.on("load", () => {
-    // Route source
-    map.addSource("route", {
-      type: "geojson",
-      data: {
-        type: "Feature",
-        geometry: {
-          type: "LineString",
-          coordinates: pts.map(p => [p.lng, p.lat])
-        }
-      }
-    });
-
-    // Static route base (primary)
-    map.addLayer({
-      id: "route-base",
-      type: "line",
-      source: "route",
-      paint: {
-        "line-color": primary,
-        "line-width": 4,
-        "line-opacity": 0.55
-      }
-    });
-
-    // Glow overlay (accent)
-    map.addLayer({
-      id: "route-glow",
-      type: "line",
-      source: "route",
-      paint: {
-        "line-color": accent,
-        "line-width": 7,
-        "line-opacity": 0.45,
-        "line-blur": 8
-      }
-    });
-
-    // Start animation loop
-    startAnimation(map, pts, sprite, settings, { baseZoom, primary, accent, accentRGB });
-  });
+map.on("load",()=>{
+  map.addSource("route",{type:"geojson",data:{
+    type:"Feature",geometry:{type:"LineString",coordinates:pts.map(p=>[p.lng,p.lat])}
+  }});
+  map.addLayer({id:"route",type:"line",source:"route",
+    paint:{ "line-color":settings.primary_color||"#d31c1c","line-width":4 }});
+  animate(map,pts,sprite,settings,{baseZoom,accentRGB});
+});
 }
 
-/* ------------------------------------------------------------
-   ANIMATION LOOP (TravelBoast-esque)
-   - Heading-locked camera: bearing follows movement direction.
-   - Santa stays facing "up" on screen (no sprite rotation needed).
-   - Adaptive zoom on turns.
-   - Look-ahead framing (Santa slightly lower on screen).
-   - End-of-route cinematic zoom-out.
------------------------------------------------------------- */
-function startAnimation(map, pts, sprite, settings, theme) {
-  const frames = Number(settings.travelboost_sprite_frames) || 5;
-  const fps    = Number(settings.travelboost_sprite_fps) || 14;
-  const size   = Number(settings.travelboost_sprite_size) || 128;
+function animate(map,pts,sprite,settings,theme){
+const frames=+settings.travelboost_sprite_frames||5;
+const fps=+settings.travelboost_sprite_fps||14;
+const size=+settings.travelboost_sprite_size||128;
+const speed=(+settings.travelboost_speed||.1)*18;
 
-  // Speed: interpret travelboost_speed as a "cinematic multiplier"
-  // We normalize by segment length so slow GPX doesn't jump.
-  const speedCfg = Number(settings.travelboost_speed) || 0.1;
+const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+const total=cum.at(-1);
 
-  // Precompute cumulative distances along route (meters)
-  const cum = new Float64Array(pts.length);
-  cum[0] = 0;
-  for (let i = 1; i < pts.length; i++) {
-    cum[i] = cum[i-1] + distMeters(pts[i-1], pts[i]);
-  }
-  const totalMeters = cum[cum.length - 1];
+let m=0,last=0,camBearing=0,camZoom=theme.baseZoom;
+let finished=false,finishStart=0,boundsShown=false;
+let needsRedraw=false;
+map.on("render",()=>needsRedraw=true);
 
-  // meters per second baseline
-  // speedCfg=0.1 -> gentle; you can tune these numbers later
-  const mps = clamp(speedCfg, 0.02, 5) * 18; // TravelBoast-ish feel
+function getPos(d){
+  let i=cum.findIndex(v=>v>=d);i=Math.max(1,i);
+  const t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);
+  const a=pts[i-1],b=pts[i];
+  return {lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t,i:i-1};
+}
 
-  // Camera tuning
-  const pitch = 55;
-  const followLerp = 0.12;
-  const bearingLerp = 0.14;
-  const zoomLerp = 0.06;
+function fitBounds(){
+  const lats=pts.map(p=>p.lat),lngs=pts.map(p=>p.lng);
+  map.fitBounds([[Math.min(...lngs),Math.min(...lats)],[Math.max(...lngs),Math.max(...lats)]],
+    {padding:60,pitch:0,bearing:0});
+}
 
-  // End zoom-out
-  const FINISH_ZOOM_SECONDS = 6;
+function draw(ts,pos){
+  if(!needsRedraw)return;
+  needsRedraw=false;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // State
-  let last = 0;
-  let meters = 0;
-  let camBearing = 0;
-  let camZoom = theme.baseZoom;
+  const p=map.project([pos.lng,pos.lat]);
+  const spriteW=sprite.width/frames;
+  const f=Math.floor(ts/1000*fps)%frames;
+  ctx.save();
+  ctx.translate(p.x,p.y);
+  ctx.drawImage(sprite,f*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
+  ctx.restore();
+}
 
-  let finished = false;
-  let finishStart = 0;
-
-  // For "look-ahead" we use an offset in screen pixels then unproject
-  function lookAheadCenter(lat, lng) {
-    const p = map.project([lng, lat]); // {x,y}
-    const offset = { x: p.x, y: p.y + innerHeight * 0.18 }; // santa slightly lower
-    const ll = map.unproject([offset.x, offset.y]);          // returns LngLatLike
-    return ll;
-  }
-
-  function getPointAtMeters(m) {
-    m = clamp(m, 0, totalMeters);
-    // binary search cum
-    let lo = 0, hi = cum.length - 1;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (cum[mid] < m) lo = mid + 1; else hi = mid;
-    }
-    const i = clamp(lo, 1, pts.length - 1);
-    const prev = pts[i-1], next = pts[i];
-    const segLen = (cum[i] - cum[i-1]) || 1;
-    const t = (m - cum[i-1]) / segLen;
-    return {
-      lat: prev.lat + (next.lat - prev.lat) * t,
-      lng: prev.lng + (next.lng - prev.lng) * t,
-      i: i-1,
-      t
-    };
-  }
-
-  function turnSharpnessDeg(idx) {
-    const a = pts[clamp(idx - 3, 0, pts.length - 1)];
-    const b = pts[clamp(idx,     0, pts.length - 1)];
-    const c = pts[clamp(idx + 3, 0, pts.length - 1)];
-
-    const b1 = bearingDeg(a, b);
-    const b2 = bearingDeg(b, c);
-    let d = Math.abs(b2 - b1);
-    if (d > 180) d = 360 - d;
-    return d; // 0..180
-  }
-
-  function fitBoundsNow() {
-    // compute bounds
-    let minLat=  90, maxLat= -90, minLng= 180, maxLng= -180;
-    for (const p of pts) {
-      minLat = Math.min(minLat, p.lat);
-      maxLat = Math.max(maxLat, p.lat);
-      minLng = Math.min(minLng, p.lng);
-      maxLng = Math.max(maxLng, p.lng);
-    }
-    map.fitBounds([[minLng, minLat],[maxLng, maxLat]], {
-      padding: 60,
-      duration: 1200,
-      pitch: 0,
-      bearing: 0
-    });
-  }
-
-  function drawOverlay(ts, pos) {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-// Project GPX position into screen space (MapLibre returns CSS pixels)
-const p = map.project([pos.lng, pos.lat]);
-
-// Snap to canvas coordinate space (prevents drift with pitch/bearing)
-const dpr = window.devicePixelRatio || 1;
-const sx = Math.round(p.x);
-const sy = Math.round(p.y);
-
-// Optional: feet-on-road offset (highly recommended)
-const FOOT_OFFSET = size * 0.28;
-const fy = sy + FOOT_OFFSET;
-
-    // Trail sparkles
-    for (let s = 0; s < 3; s++) sparkles.push(new Sparkle(px.x, px.y));
-    for (let k = sparkles.length - 1; k >= 0; k--) {
-      const sp = sparkles[k];
-      sp.update();
-      sp.draw(ctx, theme.accentRGB);
-      if (sp.life <= 0) sparkles.splice(k, 1);
-    }
-
-    // Foreground snow
-    if ((settings.travelboost_particle_effects || "snow").toLowerCase() === "snow") {
-      if (Math.random() < 0.12) snow.push(new Snow());
-      for (let k = snow.length - 1; k >= 0; k--) {
-        const fl = snow[k];
-        fl.update();
-        fl.draw(ctx);
-        if (fl.y > innerHeight + 50) snow.splice(k, 1);
-      }
-    }
-
-    // Sprite anim frame
-    const spriteW = sprite.width / frames;
-    const frameIndex = Math.floor((ts/1000) * fps) % frames;
-    const bob = Math.sin(ts/140) * 2;
-
-    ctx.save();
-    ctx.translate(px.x, px.y);
-
-    // Santa ALWAYS faces up on screen (map rotates under him)
-    ctx.drawImage(
-      sprite,
-      frameIndex * spriteW, 0, spriteW, sprite.height,
-      -size/2, -size/2 + bob,
-      size, size
-    );
-
-    ctx.restore();
-  }
-
-  function step(ts) {
-    if (!last) last = ts;
-    const dt = (ts - last) / 1000;
-    last = ts;
-
-    if (!finished) {
-      meters += mps * dt;
-      if (meters >= totalMeters) {
-        meters = totalMeters;
-        finished = true;
-        finishStart = ts;
-      }
-    }
-
-    const pos = getPointAtMeters(meters);
-
-    // Heading (bearing)
-    const a = pts[pos.i];
-    const b = pts[Math.min(pos.i + 1, pts.length - 1)];
-    const targetBearing = bearingDeg(a, b);
-
-    // Smooth bearing
-    const diff = ((((targetBearing - camBearing) % 360) + 540) % 360) - 180; // shortest path
-    camBearing = (camBearing + diff * bearingLerp + 360) % 360;
-
-    // Adaptive zoom based on turn sharpness
-    const turnDeg = turnSharpnessDeg(pos.i);
-    const zoomOut = clamp(turnDeg / 120, 0, 1); // 0 straight, 1 sharp
-    const targetZoom = theme.baseZoom - (0.0 + 1.6 * zoomOut);
-
-    camZoom += (targetZoom - camZoom) * zoomLerp;
-
-    // Camera center with look-ahead offset (Santa lower on screen)
-    const centerLL = lookAheadCenter(pos.lat, pos.lng);
-
-    if (!finished) {
-      // TravelBoast follow
-      map.jumpTo({
-        center: [centerLL.lng, centerLL.lat],
-        zoom: camZoom,
-        bearing: camBearing,
-        pitch
-      });
-    } else {
-      // Finish sequence: smooth zoom-out + level pitch
-      const prog = clamp((ts - finishStart) / (FINISH_ZOOM_SECONDS * 1000), 0, 1);
-      const eased = 1 - Math.pow(1 - prog, 3); // easeOutCubic
-
-      const finZoom = camZoom + ( (theme.baseZoom - 3.2) - camZoom ) * eased;
-      const finPitch = pitch + (0 - pitch) * eased;
-
-      map.jumpTo({
-        center: [centerLL.lng, centerLL.lat],
-        zoom: finZoom,
-        bearing: camBearing,
-        pitch: finPitch
-      });
-
-      if (prog >= 1) {
-        // optional: show full route bounds at the end
-        fitBoundsNow();
-      }
-    }
-
-    drawOverlay(ts, pos);
-    requestAnimationFrame(step);
-  }
-
+function step(ts){
+  if(!last)last=ts;
+  const dt=(ts-last)/1000;last=ts;
+  if(!finished){m+=speed*dt;if(m>=total){m=total;finished=true;finishStart=ts;}}
+  const pos=getPos(m);
+  const tgt=bearing(pts[pos.i],pts[pos.i+1]||pts[pos.i]);
+  camBearing+=(((tgt-camBearing+540)%360)-180)*.14;
+  map.jumpTo({center:[pos.lng,pos.lat],zoom:camZoom,bearing:camBearing,pitch:55});
+  if(finished&&!boundsShown&&ts-finishStart>4000){boundsShown=true;fitBounds();}
+  draw(ts,pos);
   requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
 }
 </script>
 </body>
