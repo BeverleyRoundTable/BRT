@@ -68,6 +68,7 @@ if(!API){toast("Missing api=");throw new Error("Missing api");}
 
 const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
+
 function resize(){
   const dpr=devicePixelRatio||1;
   canvas.width=innerWidth*dpr;
@@ -82,26 +83,23 @@ function toast(m){toastEl.style.display="block";toastEl.textContent=m;}
    HELPERS
 ============================================================ */
 const MAP_STYLE="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
-
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-const hexToRgb=h=>{
-  h=(h||"#ffd700").replace("#","");
-  return {r:parseInt(h.substr(0,2),16),g:parseInt(h.substr(2,2),16),b:parseInt(h.substr(4,2),16)};
-};
 
 async function fetchJSON(u){
   const r=await fetch(u,{cache:"no-store"});
   if(!r.ok)throw new Error("API fetch failed");
   return r.json();
 }
+
 async function loadGPX(u){
   const x=await (await fetch(u,{cache:"no-store"})).text();
   const d=new DOMParser().parseFromString(x,"text/xml");
   return [...d.getElementsByTagName("trkpt")].map(p=>({
     lat:+p.getAttribute("lat"),
     lng:+(p.getAttribute("lon")||p.getAttribute("lng"))
-  }));
+  })).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
 }
+
 function smoothPath(p,it=2){
   if(it<=0||p.length<3)return p;
   const o=[p[0]];
@@ -113,6 +111,7 @@ function smoothPath(p,it=2){
   o.push(p.at(-1));
   return smoothPath(o,it-1);
 }
+
 function bearing(a,b){
   const dLng=(b.lng-a.lng)*Math.PI/180;
   const y=Math.sin(dLng)*Math.cos(b.lat*Math.PI/180);
@@ -120,6 +119,7 @@ function bearing(a,b){
           Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
+
 function dist(a,b){
   const R=6371000;
   const dLat=(b.lat-a.lat)*Math.PI/180;
@@ -161,22 +161,37 @@ function loadImg(u){
    MAP + ANIMATION
 ============================================================ */
 function initMapAndRun(pts,sprite,settings){
-const accentRGB=hexToRgb(settings.travelboost_accent_color);
 const baseZoom=+settings.default_map_zoom||16;
 const map=new maplibregl.Map({
-  container:"map",style:MAP_STYLE,
+  container:"map",
+  style:MAP_STYLE,
   center:[pts[0].lng,pts[0].lat],
-  zoom:baseZoom,pitch:55,bearing:0,antialias:true
+  zoom:baseZoom,
+  pitch:55,
+  bearing:0,
+  antialias:true
 });
-map.dragPan.disable();map.scrollZoom.disable();map.doubleClickZoom.disable();
+
+map.dragPan.disable();
+map.scrollZoom.disable();
+map.doubleClickZoom.disable();
 
 map.on("load",()=>{
   map.addSource("route",{type:"geojson",data:{
-    type:"Feature",geometry:{type:"LineString",coordinates:pts.map(p=>[p.lng,p.lat])}
+    type:"Feature",
+    geometry:{type:"LineString",coordinates:pts.map(p=>[p.lng,p.lat])}
   }});
-  map.addLayer({id:"route",type:"line",source:"route",
-    paint:{ "line-color":settings.primary_color||"#d31c1c","line-width":4 }});
-  animate(map,pts,sprite,settings,{baseZoom,accentRGB});
+  map.addLayer({
+    id:"route",
+    type:"line",
+    source:"route",
+    paint:{
+      "line-color":settings.primary_color||"#d31c1c",
+      "line-width":4
+    }
+  });
+
+  animate(map,pts,sprite,settings,{baseZoom});
 });
 }
 
@@ -186,12 +201,14 @@ const fps=+settings.travelboost_sprite_fps||14;
 const size=+settings.travelboost_sprite_size||128;
 const speed=(+settings.travelboost_speed||.1)*18;
 
-const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+const cum=[0];
+for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
-let m=0,last=0,camBearing=0,camZoom=theme.baseZoom;
+let m=0,last=0,camBearing=0;
 let finished=false,finishStart=0,boundsShown=false;
-let needsRedraw=false;
+let needsRedraw=true;
+
 map.on("render",()=>needsRedraw=true);
 
 function getPos(d){
@@ -203,18 +220,23 @@ function getPos(d){
 
 function fitBounds(){
   const lats=pts.map(p=>p.lat),lngs=pts.map(p=>p.lng);
-  map.fitBounds([[Math.min(...lngs),Math.min(...lats)],[Math.max(...lngs),Math.max(...lats)]],
+  map.fitBounds([[Math.min(...lngs),Math.min(...lats)],
+                 [Math.max(...lngs),Math.max(...lats)]],
     {padding:60,pitch:0,bearing:0});
 }
 
 function draw(ts,pos){
   if(!needsRedraw)return;
   needsRedraw=false;
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   const p=map.project([pos.lng,pos.lat]);
+  if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))return;
+
   const spriteW=sprite.width/frames;
   const f=Math.floor(ts/1000*fps)%frames;
+
   ctx.save();
   ctx.translate(p.x,p.y);
   ctx.drawImage(sprite,f*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
@@ -224,12 +246,28 @@ function draw(ts,pos){
 function step(ts){
   if(!last)last=ts;
   const dt=(ts-last)/1000;last=ts;
-  if(!finished){m+=speed*dt;if(m>=total){m=total;finished=true;finishStart=ts;}}
+
+  if(!finished){
+    m+=speed*dt;
+    if(m>=total){m=total;finished=true;finishStart=ts;}
+  }
+
   const pos=getPos(m);
   const tgt=bearing(pts[pos.i],pts[pos.i+1]||pts[pos.i]);
   camBearing+=(((tgt-camBearing+540)%360)-180)*.14;
-  map.jumpTo({center:[pos.lng,pos.lat],zoom:camZoom,bearing:camBearing,pitch:55});
-  if(finished&&!boundsShown&&ts-finishStart>4000){boundsShown=true;fitBounds();}
+
+  map.jumpTo({
+    center:[pos.lng,pos.lat],
+    zoom:theme.baseZoom,
+    bearing:camBearing,
+    pitch:55
+  });
+
+  if(finished&&!boundsShown&&ts-finishStart>4000){
+    boundsShown=true;
+    fitBounds();
+  }
+
   draw(ts,pos);
   requestAnimationFrame(step);
 }
