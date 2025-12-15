@@ -8,7 +8,7 @@
   <style>
     body {
       margin: 0;
-      padding: 40px 12px;
+      padding: 14px 12px 10px; /* tight top & bottom */
       background: #0f1115;
       color: #fff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -21,12 +21,12 @@
 
     /* Search box row */
     .address-search {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;              /* tighter vertical spacing */
-  align-items: center;
-  margin-bottom: 18px;   /* slightly tighter, still breathable */
-}
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
 
     .address-search-input {
       width: 100%;
@@ -56,7 +56,7 @@
     }
 
     .address-search button {
-      padding: 9px 22px;
+      padding: 8px 20px;
       border-radius: 999px;
       border: none;
       background: #d31c1c;
@@ -114,9 +114,10 @@
       opacity: 0.9;
     }
 
+    /* Desktop: subtle breathing room, not a gap */
     @media (min-width: 700px) {
       body {
-        padding-top: 60px;
+        padding-top: 18px;
       }
     }
   </style>
@@ -146,7 +147,7 @@
     })();
   </script>
 
-  <!-- AUTO-RESIZE SCRIPT (must be outside <style>) -->
+  <!-- AUTO-RESIZE SCRIPT -->
   <script>
     function sendHeight() {
       const height = document.documentElement.scrollHeight;
