@@ -2,57 +2,49 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa GPX TravelBoast Style</title>
+<title>Santa TravelBoast GL</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet" />
 
 <style>
 html, body {
-  margin: 0; padding: 0; height: 100%;
+  margin: 0;
+  padding: 0;
+  height: 100%;
   background: #0b0d12;
   overflow: hidden;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont,
-               "Segoe UI", Roboto, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
 }
-#map { position:absolute; inset:0; z-index:1; }
-#anim { position:absolute; inset:0; z-index:10; pointer-events:none; }
-
-#ui-layer {
-  position:absolute;
-  bottom:24px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:20;
-  pointer-events:none;
-  text-align:center;
+#map {
+  position: absolute;
+  inset: 0;
 }
-.pill {
-  background:rgba(0,0,0,.65);
-  color:#fff;
-  padding:10px 20px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.2);
-  box-shadow:0 6px 16px rgba(0,0,0,.45);
-  backdrop-filter:blur(6px);
+#anim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
-#route-name { margin:0; font-size:1rem; font-weight:600; }
-#route-date { margin:2px 0 0; font-size:.8rem; opacity:.8; }
+#ui {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
 </style>
 </head>
 
 <body>
 <div id="map"></div>
 <canvas id="anim"></canvas>
+<div id="ui"><strong id="title">Loading route…</strong></div>
 
-<div id="ui-layer">
-  <div class="pill">
-    <h1 id="route-name">Loading route…</h1>
-    <p id="route-date"></p>
-  </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 
 <script>
 /* ------------------------------------------------------------
@@ -61,14 +53,6 @@ html, body {
 const P = new URLSearchParams(location.search);
 const API   = P.get("api");
 const ROUTE = P.get("route");
-const routeName = document.getElementById("route-name");
-const routeDate = document.getElementById("route-date");
-
-if (!API) {
-  document.body.innerHTML =
-    "<h2 style='padding:20px;color:#fff'>❌ Missing api= parameter</h2>";
-  throw new Error("Missing api");
-}
 
 /* ------------------------------------------------------------
    CANVAS
@@ -76,221 +60,129 @@ if (!API) {
 const canvas = document.getElementById("anim");
 const ctx = canvas.getContext("2d");
 
-function resizeCanvas(){
+function resize() {
   const dpr = window.devicePixelRatio || 1;
   canvas.width = innerWidth * dpr;
   canvas.height = innerHeight * dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-addEventListener("resize", resizeCanvas);
-resizeCanvas();
-
-/* ------------------------------------------------------------
-   MAP
------------------------------------------------------------- */
-const map = L.map("map", {
-  zoomControl:false,
-  attributionControl:true
-});
-
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom:20
-}).addTo(map);
+addEventListener("resize", resize);
+resize();
 
 /* ------------------------------------------------------------
    HELPERS
 ------------------------------------------------------------ */
-async function fetchJSON(url){
-  const r = await fetch(url,{cache:"no-store"});
-  if(!r.ok) throw new Error("API fetch failed");
+async function fetchJSON(url) {
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) throw new Error("API error");
   return r.json();
 }
 
-async function loadGPX(url){
-  const xml = await (await fetch(url,{cache:"no-store"})).text();
-  const dom = new DOMParser().parseFromString(xml,"text/xml");
-  return [...dom.getElementsByTagName("trkpt")].map(p=>({
-    lat:+p.getAttribute("lat"),
-    lng:+(p.getAttribute("lon")||p.getAttribute("lng"))
+async function loadGPX(url) {
+  const xml = await (await fetch(url)).text();
+  const dom = new DOMParser().parseFromString(xml, "text/xml");
+  return [...dom.getElementsByTagName("trkpt")].map(p => ({
+    lat: +p.getAttribute("lat"),
+    lng: +p.getAttribute("lon")
   }));
 }
 
-function smoothPath(points, it=2){
-  if(it<=0||points.length<3) return points;
-  let out=[points[0]];
-  for(let i=0;i<points.length-1;i++){
-    const a=points[i], b=points[i+1];
-    out.push({lat:.75*a.lat+.25*b.lat,lng:.75*a.lng+.25*b.lng});
-    out.push({lat:.25*a.lat+.75*b.lat,lng:.25*a.lng+.75*b.lng});
-  }
-  out.push(points.at(-1));
-  return smoothPath(out,it-1);
-}
-
-function getAngle(a,b){ return Math.atan2(b.y-a.y,b.x-a.x); }
-function lerpAngle(a,b,t){
-  const d=(b-a+Math.PI)%(2*Math.PI)-Math.PI;
-  return a+d*t;
-}
-
-/* ------------------------------------------------------------
-   PARTICLES
------------------------------------------------------------- */
-const sparkles=[], snow=[];
-class Sparkle{
-  constructor(x,y){
-    this.x=x+(Math.random()-.5)*10;
-    this.y=y+(Math.random()-.5)*10;
-    this.vx=(Math.random()-.5)*.6;
-    this.vy=(Math.random()-.5)*.6;
-    this.life=1;
-    this.decay=.02+Math.random()*.03;
-    this.size=1+Math.random()*3;
-  }
-  update(){ this.x+=this.vx; this.y+=this.vy; this.life-=this.decay; }
-  draw(ctx){ ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill(); }
-}
-class Snow{
-  constructor(){
-    this.x=Math.random()*innerWidth;
-    this.y=-20;
-    this.size=4+Math.random()*6;
-    this.speed=.6+Math.random()*1.2;
-    this.drift=(Math.random()-.5)*.4;
-  }
-  update(){ this.y+=this.speed; this.x+=this.drift; }
-  draw(ctx){ ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fillStyle="rgba(255,255,255,.55)"; ctx.fill(); }
+function bearing(a, b) {
+  const y = Math.sin((b.lng-a.lng)*Math.PI/180)*Math.cos(b.lat*Math.PI/180);
+  const x =
+    Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180) -
+    Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos((b.lng-a.lng)*Math.PI/180);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
 
 /* ------------------------------------------------------------
    MAIN
 ------------------------------------------------------------ */
 (async()=>{
-try{
-  const master = await fetchJSON(API);
-  const settings = master.settings||{};
-  const routes = master.routes||[];
+const master = await fetchJSON(API);
+const settings = master.settings;
+const route = master.routes.find(r => r.routeName === ROUTE) || master.routes[0];
 
-  const route = ROUTE
-    ? routes.find(r=>r.routeName?.toLowerCase()===ROUTE.toLowerCase())
-    : routes[0];
+document.getElementById("title").textContent = route.routeName;
 
-  if(!route) throw "Route not found";
+const path = await loadGPX(route.gpxUrl);
 
-  if (routeName) routeName.textContent = route.routeName || "";
-if (routeDate) routeDate.textContent = route.date || "";
+const map = new maplibregl.Map({
+  container: "map",
+  style: "https://demotiles.maplibre.org/style.json",
+  center: [path[0].lng, path[0].lat],
+  zoom: settings.default_map_zoom || 16,
+  pitch: 55,
+  bearing: 0,
+  antialias: true
+});
 
-  const pts = smoothPath(await loadGPX(route.gpxUrl),3);
-  const bounds = L.latLngBounds(pts.map(p=>[p.lat,p.lng]));
-  map.fitBounds(bounds,{padding:[40,40]});
-  setTimeout(()=>map.setZoom((+settings.default_map_zoom||16)),200);
+map.on("load", () => {
+  map.addSource("route", {
+    type: "geojson",
+    data: {
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: path.map(p => [p.lng, p.lat])
+      }
+    }
+  });
 
-  const sprite = new Image();
-  sprite.crossOrigin="anonymous";
-  sprite.src = settings.travelboost_sprite;
-  await new Promise(r=>sprite.onload=r);
+  map.addLayer({
+    id: "route-glow",
+    type: "line",
+    source: "route",
+    paint: {
+      "line-color": settings.accent_color || "#ffd700",
+      "line-width": 6,
+      "line-opacity": 0.6,
+      "line-blur": 6
+    }
+  });
 
-  startAnimation(pts,bounds,sprite,settings);
-
-}catch(e){
-  console.error(e);
-  routeName.textContent="Error";
-}})();
+  startAnimation(map, path, settings);
+});
 
 /* ------------------------------------------------------------
    ANIMATION
 ------------------------------------------------------------ */
-function startAnimation(latLngs,bounds,sprite,settings){
-let dist=0,last=0,angle=0;
-let camLat=latLngs[0].lat, camLng=latLngs[0].lng;
-let finished=false, zoomStart=null;
+function startAnimation(map, pts, settings) {
+  let t = 0;
+  const speed = (+settings.travelboost_speed || 0.1) * 0.00025;
 
-const frames=+settings.travelboost_sprite_frames||5;
-const fps=+settings.travelboost_sprite_fps||14;
-const size=+settings.travelboost_sprite_size||128;
-const speed=(+settings.travelboost_speed||.1)*.0016;
-const accent=settings.travelboost_accent_color||"#ffd700";
-const spriteW=sprite.width/frames;
+  function frame(ts) {
+    t = Math.min(t + speed, pts.length - 2);
+    const i = Math.floor(t);
+    const a = pts[i];
+    const b = pts[i+1];
 
-function frame(ts){
-  if(!last) last=ts;
-  const dt=ts-last; last=ts;
+    const lat = a.lat + (b.lat - a.lat) * (t - i);
+    const lng = a.lng + (b.lng - a.lng) * (t - i);
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+    const head = bearing(a, b);
 
-  if(!finished){
-    dist=Math.min(dist+speed*dt,latLngs.length-1);
-    if(dist>=latLngs.length-1){
-      finished=true;
-      zoomStart=ts;
-    }
-  }
-
-  const i=Math.floor(dist), t=dist-i;
-  const a=latLngs[i], b=latLngs[Math.min(i+1,latLngs.length-1)];
-  const lat=a.lat+(b.lat-a.lat)*t;
-  const lng=a.lng+(b.lng-a.lng)*t;
-
-  if(!finished){
-    const p=map.latLngToContainerPoint([lat,lng]);
-    const off=map.containerPointToLatLng([p.x,p.y+innerHeight*.18]);
-    camLat+= (off.lat-camLat)*.08;
-    camLng+= (off.lng-camLng)*.08;
-    map.panTo([camLat,camLng],{animate:false});
-  } else {
-    const prog=Math.min((ts-zoomStart)/5000,1);
-    map.fitBounds(bounds,{
-      padding:[40,40],
-      animate:true,
-      duration:5*(1-prog)
+    map.easeTo({
+      center: [lng, lat],
+      bearing: head,
+      zoom: settings.default_map_zoom || 16,
+      pitch: 55,
+      duration: 0
     });
+
+    // draw Santa sprite
+    const p = map.project([lng, lat]);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 10, 0, Math.PI*2);
+    ctx.fill();
+
+    if (t < pts.length - 2) requestAnimationFrame(frame);
   }
-
-  const cur=map.latLngToContainerPoint([lat,lng]);
-  const p1=map.latLngToContainerPoint(a);
-  const p2=map.latLngToContainerPoint(b);
-
-  ctx.lineCap="round"; ctx.lineWidth=6;
-  ctx.shadowColor=accent; ctx.shadowBlur=18;
-  const start=Math.max(0,i-140);
-  for(let j=start;j<i;j++){
-    ctx.globalAlpha=(j-start)/140;
-    const pa=map.latLngToContainerPoint(latLngs[j]);
-    const pb=map.latLngToContainerPoint(latLngs[j+1]);
-    ctx.strokeStyle=accent;
-    ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke();
-  }
-  ctx.globalAlpha=1;
-
-  ctx.fillStyle=accent;
-  for(let s=0;s<3;s++) sparkles.push(new Sparkle(cur.x,cur.y));
-  for(let k=sparkles.length-1;k>=0;k--){
-    sparkles[k].update(); sparkles[k].draw(ctx);
-    if(sparkles[k].life<=0) sparkles.splice(k,1);
-  }
-
-  if(Math.random()<.12) snow.push(new Snow());
-  for(let k=snow.length-1;k>=0;k--){
-    snow[k].update(); snow[k].draw(ctx);
-    if(snow[k].y>innerHeight+40) snow.splice(k,1);
-  }
-
-  angle=lerpAngle(angle,getAngle(p1,p2),.18);
-  const frameIndex=Math.floor(ts/1000*fps)%frames;
-  const bob=Math.sin(ts/140)*2;
-
-  ctx.save();
-  ctx.translate(cur.x,cur.y);
-  ctx.rotate(angle+Math.PI/2);
-  ctx.drawImage(sprite,
-    frameIndex*spriteW,0,spriteW,sprite.height,
-    -size/2,-size/2+bob,size,size);
-  ctx.restore();
-
   requestAnimationFrame(frame);
 }
-requestAnimationFrame(frame);
-}
+})();
 </script>
 </body>
 </html>
