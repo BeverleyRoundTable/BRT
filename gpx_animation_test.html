@@ -177,8 +177,8 @@ try{
 
   if(!route) throw "Route not found";
 
-  routeName.textContent = route.routeName||"";
-  routeDate.textContent = route.date||"";
+  if (routeName) routeName.textContent = route.routeName || "";
+if (routeDate) routeDate.textContent = route.date || "";
 
   const pts = smoothPath(await loadGPX(route.gpxUrl),3);
   const bounds = L.latLngBounds(pts.map(p=>[p.lat,p.lng]));
