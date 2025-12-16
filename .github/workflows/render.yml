@@ -62,10 +62,10 @@ jobs:
       - name: Render MP4
         working-directory: TurboSanta-MP4-Renderer
         env:
-          RENDER_URL: ${{ github.event.inputs.render_url }}
+          # ⭐ FORCE deterministic render mode
+          RENDER_URL: ${{ github.event.inputs.render_url }}&render=1
           WIDTH: ${{ env.WIDTH }}
           HEIGHT: ${{ env.HEIGHT }}
-          OUTPUT: gpx_animation.mp4
           DURATION: 15000
           FPS: 30
         run: |
@@ -75,4 +75,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gpx-animation-mp4
-          path: TurboSanta-MP4-Renderer/gpx_animation.mp4
+          # ⭐ render.js now auto-names files
+          path: TurboSanta-MP4-Renderer/*.mp4
