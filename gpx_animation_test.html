@@ -264,11 +264,16 @@ const SANTA_Y = canvas.height * (0.58 - LOOKAHEAD_SCREEN_BIAS);
   }
 
   const pos = getPos(m);
+// Camera looks ahead
 const camPos = getPos(Math.min(m + LOOKAHEAD_METERS, total));
+
+// Bearing follows Santa's REAL movement
+const nextPos = getPos(Math.min(m + 1.5, total)); // ~1–2m ahead only
 const tgt = bearing(
-  pts[camPos.i],
-  pts[camPos.i + 1] || pts[camPos.i]
+  { lat: pos.lat, lng: pos.lng },
+  { lat: nextPos.lat, lng: nextPos.lng }
 );
+
   camBearing+=(((tgt-camBearing+540)%360)-180)*.14;
 
   map.jumpTo({
