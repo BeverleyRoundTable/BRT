@@ -62,7 +62,14 @@ const P=new URLSearchParams(location.search);
 const API=P.get("api"), ROUTE=P.get("route");
 
 const routeNameEl=document.getElementById("route-name");
-const routeDateEl=document.getElementById("route-date");
+routeDateEl.textContent = route.date
+  ? new Date(route.date + "T00:00:00").toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    })
+  : "";
+;
 const toastEl=document.getElementById("toast");
 
 function toast(m){
