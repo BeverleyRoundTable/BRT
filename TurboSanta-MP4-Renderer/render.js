@@ -5,7 +5,6 @@ import { execSync } from "child_process";
 
 const url = process.env.RENDER_URL;
 const out = process.env.OUTPUT || "gpx_animation.mp4";
-const duration = Number(process.env.DURATION || 15000);
 const width = Number(process.env.WIDTH || 1080);
 const height = Number(process.env.HEIGHT || 1080);
 const fps = Number(process.env.FPS || 30);
@@ -30,45 +29,51 @@ const browser = await puppeteer.launch({
 });
 
 const page = await browser.newPage();
-await page.setViewport({
-  width,
-  height,
-  deviceScaleFactor: 1
-});
+await page.setViewport({ width, height, deviceScaleFactor: 1 });
 
 await page.goto(url, { waitUntil: "networkidle2" });
 
-// ⏳ Let MapLibre + GPX animation fully initialise
-await sleep(3000);
+// Let MapLibre + GPX initialise
+await sleep(2000);
 
 // 📁 Prepare frames directory
 const framesDir = "frames";
 fs.rmSync(framesDir, { recursive: true, force: true });
 fs.mkdirSync(framesDir, { recursive: true });
 
-const totalFrames = Math.floor((duration / 1000) * fps);
+// Ensure flag exists
+await page.evaluate(() => {
+  window.__GPX_DONE__ = false;
+});
+
+console.log("🎥 Recording frames (real-time)");
+
+let frame = 0;
 const frameDelay = 1000 / fps;
 
-console.log(`🎥 Capturing ${totalFrames} frames`);
-
-for (let i = 0; i < totalFrames; i++) {
+// 🔁 Capture until animation signals completion
+while (true) {
   const framePath = path.join(
     framesDir,
-    `frame_${String(i).padStart(5, "0")}.png`
+    `frame_${String(frame).padStart(5, "0")}.png`
   );
 
-  await page.screenshot({
-    path: framePath,
-    type: "png"
-  });
+  await page.screenshot({ path: framePath, type: "png" });
+  frame++;
+
+  const done = await page.evaluate(() => window.__GPX_DONE__ === true);
+  if (done) break;
 
   await sleep(frameDelay);
 }
 
+// Small buffer for final frame settle
+await sleep(300);
+
 await browser.close();
 
 const frameCount = fs.readdirSync(framesDir).length;
-if (frameCount === 0) {
+if (!frameCount) {
   console.error("❌ No frames captured");
   process.exit(1);
 }
