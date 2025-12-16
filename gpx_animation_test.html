@@ -360,6 +360,12 @@ function draw(ts){
 }
 
 function step(ts){
+  // FINAL CLEANUP: when snow fully faded, clear canvas forever
+if (overviewShown && !snowEnabled) {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  return; // safe to stop now
+}
+
   const dt=last?(ts-last)/1000:0;
   last=ts;
 
@@ -394,6 +400,7 @@ function step(ts){
  if (finished && !overviewShown) {
   overviewShown = true;
   snowFading = true;
+   hideSprite = true;
 
   map.fitBounds(bounds,{
     padding:120,
@@ -402,8 +409,6 @@ function step(ts){
     duration:3000,
     maxZoom: 14   // 👈 optional, see below
   });
-
-  return; // 🛑 STOP camera updates
 }
 
   camBearing=lerpAngle(camBearing,spriteBearing,0.15);
