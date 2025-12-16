@@ -259,11 +259,22 @@ function step(ts){
   const lookAhead=Math.max(0.6,speed*0.03);
   const nextPos=getPos(Math.min(m+lookAhead,total));
 
-  const tgt=bearing(currentPos,nextPos);
-  let delta=((tgt-camBearing+540)%360)-180;
-  const MAX_TURN_RATE=110*dt;
-  delta=clamp(delta,-MAX_TURN_RATE,MAX_TURN_RATE);
-  camBearing+=delta*0.14;
+  const tgt = bearing(currentPos, nextPos);
+let delta = ((tgt - camBearing + 540) % 360) - 180;
+
+// Allow faster rotation on sharper turns
+const turnIntensity = Math.min(1, Math.abs(delta) / 35);
+
+// Dynamic turn rate (deg/sec)
+const MAX_TURN_RATE = (110 + 140 * turnIntensity) * dt;
+
+// Clamp rotation speed
+delta = clamp(delta, -MAX_TURN_RATE, MAX_TURN_RATE);
+
+// Ease factor increases on corners
+const TURN_EASE = 0.12 + 0.18 * turnIntensity;
+
+camBearing += delta * TURN_EASE;
 
   map.jumpTo({
     center:[currentPos.lng,currentPos.lat],
