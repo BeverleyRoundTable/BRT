@@ -137,6 +137,14 @@ function dist(a,b){
   return 2*R*Math.asin(Math.sqrt(s));
 }
 
+// angle smoothing helpers (prevents jitter/sideways flips)
+function angleDelta(a,b){
+  return ((b - a + 540) % 360) - 180;
+}
+function lerpAngle(a,b,t){
+  return (a + angleDelta(a,b)*t + 360) % 360;
+}
+
 /* ============================================================
    MAIN
 ============================================================ */
@@ -233,6 +241,9 @@ function animate(map,pts,sprite,settings,theme){
 const frames=+settings.travelboast_sprite_frames||5;
 const fps=+settings.travelboast_sprite_fps||14;
 const size=+settings.travelboast_sprite_size||128;
+
+// IMPORTANT: your sheet is outputting "10" for travelboast_speed.
+// If you’re treating that as “x speed”, keep this multiplier logic:
 const speed=(+settings.travelboast_speed||.1)*18;
 
 const cum=[0];
@@ -242,13 +253,18 @@ const total=cum.at(-1);
 const bounds=new maplibregl.LngLatBounds();
 pts.forEach(p=>bounds.extend([p.lng,p.lat]));
 
-let m=0,last=null,camBearing=0;
-let finished=false,overviewShown=false;
+let m=0,last=null;
+let camBearing=0;
+let spriteBearing=0;         // ✅ NEW: route direction
+let finished=false;
+let overviewShown=false;
+let hideSprite=false;        // ✅ NEW: hide Santa at end
 let currentPos=null;
 
 function updateProgressLine(distance){
   const coords=[];
   let remaining=distance;
+
   for(let i=1;i<pts.length && remaining>0;i++){
     const seg=dist(pts[i-1],pts[i]);
     if(remaining>=seg){
@@ -264,6 +280,7 @@ function updateProgressLine(distance){
       break;
     }
   }
+
   const data={type:"Feature",geometry:{type:"LineString",coordinates:coords}};
   map.getSource("route-progress")?.setData(data);
   map.getSource("route-progress-glow")?.setData(data);
@@ -277,16 +294,32 @@ function getPos(d){
 }
 
 function draw(ts){
-  if(!currentPos || finished) return;
+  // ✅ stop drawing once hidden/finished
+  if(!currentPos || hideSprite) return;
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
   const frame=Math.floor(ts/1000*fps)%frames;
+  const spriteW = sprite.width/frames;
+
   const p=map.project([currentPos.lng,currentPos.lat]);
+  const FOOT_ANCHOR=size*0.32;
+
+  // ✅ Rotate sprite relative to camera bearing (fixes sideways at 2x)
+  const rel = (spriteBearing - camBearing);
+  const rad = rel * Math.PI/180;
+
+  ctx.save();
+  ctx.translate(Math.round(p.x), Math.round(p.y - FOOT_ANCHOR));
+  ctx.rotate(rad);
   ctx.drawImage(
     sprite,
-    frame*(sprite.width/frames),0,
-    sprite.width/frames,sprite.height,
-    p.x-size/2,p.y-size*0.82,size,size
+    frame*spriteW, 0,
+    spriteW, sprite.height,
+    -size/2, -size/2,
+    size, size
   );
+  ctx.restore();
 }
 
 function step(ts){
@@ -294,28 +327,38 @@ function step(ts){
   last=ts;
 
   if(!finished){
-  m += speed * dt;
-  if(m >= total){
-    m = total;
-    finished = true;
-    finishStart = ts;
-    hideSprite = true; // 👈 stop drawing Santa
+    m += speed * dt;
+    if(m >= total){
+      m = total;
+      finished = true;
+      hideSprite = true;     // ✅ remove Santa at finish
+      ctx.clearRect(0,0,canvas.width,canvas.height); // ✅ wipe last frame
+    }
   }
-}
 
   currentPos=getPos(m);
   updateProgressLine(m);
 
+  // lookahead for route direction + camera direction
+  const lookAhead = Math.max(0.6, speed*0.03);
+  const nextPos=getPos(Math.min(m+lookAhead,total));
+
+  // ✅ sprite direction from route (smoothed)
+  const tgtSprite = bearing(currentPos,nextPos);
+  spriteBearing = lerpAngle(spriteBearing, tgtSprite, 0.25);
+
   if(finished && !overviewShown){
     overviewShown=true;
     map.fitBounds(bounds,{padding:80,pitch:0,bearing:0,duration:2500});
-    return;
+    return; // let map animation run; no more rAF needed
   }
 
-  const nextPos=getPos(Math.min(m+speed*0.03,total));
-  const tgt=bearing(currentPos,nextPos);
-  let delta=((tgt-camBearing+540)%360)-180;
-  camBearing+=clamp(delta,-120*dt,120*dt)*0.2;
+  // ✅ camera bearing (smoothed)
+  let delta = angleDelta(camBearing, tgtSprite);
+  const turnIntensity = Math.min(1, Math.abs(delta) / 35);
+  const MAX_TURN_RATE = (110 + 140*turnIntensity) * dt;
+  delta = clamp(delta, -MAX_TURN_RATE, MAX_TURN_RATE);
+  camBearing = (camBearing + delta * (0.12 + 0.18*turnIntensity) + 360) % 360;
 
   map.jumpTo({
     center:[currentPos.lng,currentPos.lat],
