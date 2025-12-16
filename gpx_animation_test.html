@@ -88,12 +88,12 @@ addEventListener("resize",resize);
 resize();
 
 /* ============================================================
-   GLOBAL SNOWFALL OVERLAY (SCREEN SPACE, CONTINUOUS)
+   GLOBAL SNOWFALL OVERLAY (SCREEN SPACE)
 ============================================================ */
 function createSnowfall(enabled){
   const flakes=[];
-  const MAX=320;          // more flakes = no gaps
-  const SPAWN_PER_FRAME=3; // continuous density
+  const MAX=320;
+  const SPAWN_PER_FRAME=3;
 
   function spawn(){
     if(!enabled) return;
@@ -102,7 +102,7 @@ function createSnowfall(enabled){
         x:Math.random()*canvas.width,
         y:-20,
         r:Math.random()*2.5+1,
-        vy:Math.random()*2.2+1.6,   // ❄ faster fall
+        vy:Math.random()*2.2+1.6,
         vx:Math.random()*0.6-0.3
       });
     }
@@ -120,7 +120,7 @@ function createSnowfall(enabled){
   function draw(){
     if(!enabled) return;
     ctx.save();
-    ctx.fillStyle="#ffffff"; // ❄ always white
+    ctx.fillStyle="#ffffff";
     ctx.globalAlpha=0.9;
     for(const f of flakes){
       ctx.beginPath();
@@ -264,8 +264,7 @@ const size=+settings.travelboast_sprite_size||128;
 const speed=(+settings.travelboast_speed||.1)*18;
 
 const snowfall=createSnowfall(
-  (settings.travelboast_particle_effects||"").toLowerCase()==="snow",
-  settings.travelboast_accent_color||"#ffffff"
+  (settings.travelboast_particle_effects||"").toLowerCase()==="snow"
 );
 
 const cum=[0]; for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
@@ -273,14 +272,22 @@ const total=cum.at(-1);
 
 const bounds=new maplibregl.LngLatBounds(); pts.forEach(p=>bounds.extend([p.lng,p.lat]));
 
-let m=0,last=null,camBearing=0,spriteBearing=0,finished=false,overviewShown=false,hideSprite=false,currentPos=null;
+let m=0,last=null,camBearing=0,spriteBearing=0;
+let finished=false,overviewShown=false,hideSprite=false,currentPos=null;
+let snowEnabled=true;
+let snowWarmup=0;
 
 function updateProgressLine(distance){
   const coords=[]; let remaining=distance;
   for(let i=1;i<pts.length&&remaining>0;i++){
     const seg=dist(pts[i-1],pts[i]);
     if(remaining>=seg){coords.push([pts[i-1].lng,pts[i-1].lat]);remaining-=seg;}
-    else{const t=remaining/seg;coords.push([pts[i-1].lng,pts[i-1].lat]);coords.push([pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t,pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t]);break;}
+    else{
+      const t=remaining/seg;
+      coords.push([pts[i-1].lng,pts[i-1].lat]);
+      coords.push([pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t,pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t]);
+      break;
+    }
   }
   const data={type:"Feature",geometry:{type:"LineString",coordinates:coords}};
   map.getSource("route-progress")?.setData(data);
@@ -318,9 +325,11 @@ function step(ts){
   const dt=last?(ts-last)/1000:0;
   last=ts;
 
-  // ❄ Snow runs ALWAYS when enabled (independent of Santa)
-  snowfall.spawn();
-  snowfall.update();
+  if(snowEnabled){
+    if(snowWarmup<30) snowWarmup++;
+    else snowfall.spawn();
+    snowfall.update();
+  }
 
   if(!finished){
     m+=speed*dt;
@@ -328,7 +337,6 @@ function step(ts){
       m=total;
       finished=true;
       hideSprite=true;
-      ctx.clearRect(0,0,canvas.width,canvas.height); // 🎅 vanish cleanly
     }
   }
 
@@ -340,6 +348,7 @@ function step(ts){
 
   if(finished&&!overviewShown){
     overviewShown=true;
+    snowEnabled=false;
     map.fitBounds(bounds,{padding:80,pitch:0,bearing:0,duration:2500});
     return;
   }
@@ -350,10 +359,9 @@ function step(ts){
   draw(ts);
   requestAnimationFrame(step);
 }
-  
+
 requestAnimationFrame(step);
 }
-  
 </script>
 </body>
 </html>
