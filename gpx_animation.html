@@ -56,25 +56,27 @@ html, body {
 
 <script>
 /* ============================================================
+   RENDER MODE FLAGS (SAFE ADDITION)
+============================================================ */
+const PARAMS = new URLSearchParams(location.search);
+const IS_RENDER = PARAMS.has("render");
+const RENDER_FPS = 30;
+
+/* ============================================================
    PARAMS + CANVAS
 ============================================================ */
-const P=new URLSearchParams(location.search);
-const API=P.get("api"), ROUTE=P.get("route");
+const API = PARAMS.get("api");
+const ROUTE = PARAMS.get("route");
+
+window.__GPX_DONE__ = false;
 
 const routeNameEl = document.getElementById("route-name");
 const routeDateEl = document.getElementById("route-date");
 
 const toastEl=document.getElementById("toast");
+function toast(m){ toastEl.style.display="block"; toastEl.textContent=m; }
 
-function toast(m){
-  toastEl.style.display="block";
-  toastEl.textContent=m;
-}
-
-if(!API){
-  toast("Missing api=");
-  throw new Error("Missing api");
-}
+if(!API){ toast("Missing api="); throw new Error("Missing api"); }
 
 const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
@@ -89,7 +91,7 @@ addEventListener("resize",resize);
 resize();
 
 /* ============================================================
-   GLOBAL SNOWFALL OVERLAY
+   SNOWFALL
 ============================================================ */
 function createSnowfall(enabled){
   const flakes=[];
@@ -169,7 +171,7 @@ function smoothPath(p,it=2){
   for(let i=0;i<p.length-1;i++){
     const a=p[i],b=p[i+1];
     o.push({lat:.75*a.lat+.25*b.lat,lng:.75*a.lng+.25*b.lng});
-    o.push({lat:.25*a.lat+.75*b.lat,lng:.25*a.lng+.75*b.lng});
+    o.push({lat:.25*a.lat+.75*b.lat,lng:.25*b.lng+.75*b.lng});
   }
   o.push(p.at(-1));
   return smoothPath(o,it-1);
@@ -271,7 +273,7 @@ map.on("load",()=>{
 function animate(map,pts,sprite,settings,theme){
 let snowAlpha=1,snowFading=false;
 const frames=+settings.travelboast_sprite_frames||5;
-const fps=+settings.travelboast_sprite_fps||14;
+const spriteFps=+settings.travelboast_sprite_fps||14;
 const size=+settings.travelboast_sprite_size||128;
 const speed=(+settings.travelboast_speed||.1)*18;
 
@@ -287,6 +289,7 @@ const bounds=new maplibregl.LngLatBounds();pts.forEach(p=>bounds.extend([p.lng,p
 let m=0,last=null,camBearing=0,spriteBearing=0;
 let finished=false,overviewShown=false,hideSprite=false,currentPos=null;
 let snowEnabled=true;
+let renderFrame=0;
 
 function updateProgressLine(distance){
   const coords=[];let remaining=distance;
@@ -318,7 +321,11 @@ function draw(ts){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(snowEnabled){ctx.save();ctx.globalAlpha=snowAlpha;snowfall.draw();ctx.restore();}
   if(!currentPos||hideSprite)return;
-  const frame=Math.floor(ts/1000*fps)%frames;
+
+  const frame = IS_RENDER
+    ? renderFrame % frames
+    : Math.floor(ts/1000*spriteFps)%frames;
+
   const spriteW=sprite.width/frames;
   const p=map.project([currentPos.lng,currentPos.lat]);
   let rel=((spriteBearing-camBearing+540)%360)-180;
@@ -331,7 +338,13 @@ function draw(ts){
 }
 
 function step(ts){
-  const dt=last?(ts-last)/1000:0;last=ts;
+  let dt;
+  if (IS_RENDER) {
+    dt = 1 / RENDER_FPS;
+  } else {
+    dt = last ? (ts - last) / 1000 : 0;
+    last = ts;
+  }
 
   if(snowEnabled){
     snowfall.update();
@@ -349,7 +362,6 @@ function step(ts){
       hideSprite=true;
       snowFading=true;
 
-      // ✅ FORCE FINAL ROUTE GEOMETRY
       const finalCoords=pts.map(p=>[p.lng,p.lat]);
       map.getSource("route-progress")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:finalCoords}});
       map.getSource("route-progress-glow")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:finalCoords}});
@@ -370,7 +382,14 @@ function step(ts){
 
   draw(ts);
 
-  if(overviewShown&&!snowEnabled){ctx.clearRect(0,0,canvas.width,canvas.height);return;}
+  if(IS_RENDER) renderFrame++;
+
+  if(overviewShown&&!snowEnabled){
+    window.__GPX_DONE__ = true;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    return;
+  }
+
   requestAnimationFrame(step);
 }
 
