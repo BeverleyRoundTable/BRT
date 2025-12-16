@@ -121,19 +121,19 @@ function smoothPath(p,it=2){
 }
 
 function bearing(a,b){
-  const dLng=(b.lng-a.lng)*/180;
-  const y=Math.sin(dLng)*Math.cos(b.lat*/180);
-  const x=Math.cos(a.lat*/180)*Math.sin(b.lat*/180)-
-          Math.sin(a.lat*/180)*Math.cos(b.lat*/180)*Math.cos(dLng);
-  return (Math.atan2(y,x)*180/+360)%360;
+  const dLng=(b.lng-a.lng)*Math.PI/180;
+  const y=Math.sin(dLng)*Math.cos(b.lat*Math.PI/180);
+  const x=Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180)-
+          Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
 
 function dist(a,b){
   const R=6371000;
-  const dLat=(b.lat-a.lat)*/180;
-  const dLng=(b.lng-a.lng)*/180;
+  const dLat=(b.lat-a.lat)*Math.PI/180;
+  const dLng=(b.lng-a.lng)*Math.PI/180;
   const s=Math.sin(dLat/2)**2+
-          Math.cos(a.lat*/180)*Math.cos(b.lat*/180)*Math.sin(dLng/2)**2;
+          Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(s));
 }
 
@@ -312,7 +312,7 @@ function draw(ts){
   let rel = ((spriteBearing - camBearing + 540) % 360) - 180;
   rel = clamp(rel, -MAX_SPRITE_TILT, MAX_SPRITE_TILT);
 
-  const spriteRotation = rel * 0.25 * Math.PI / 180;
+  const spriteRotation = rel * 0.4 * Math.PI / 180;
 
   // ─────────────────────────────────────────
   // DRAW (ORDER MATTERS)
