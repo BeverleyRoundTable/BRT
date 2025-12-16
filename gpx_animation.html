@@ -58,7 +58,8 @@ html, body {
 /* ============================================================
    PARAMS + CANVAS
 ============================================================ */
-const P=new URLSearchParams(location.search);
+window.__GPX_DONE__ = false;
+  const P=new URLSearchParams(location.search);
 const API=P.get("api"), ROUTE=P.get("route");
 
 const routeNameEl = document.getElementById("route-name");
@@ -370,8 +371,10 @@ function step(ts){
 
   draw(ts);
 
-  if(overviewShown&&!snowEnabled){ctx.clearRect(0,0,canvas.width,canvas.height);return;}
-  requestAnimationFrame(step);
+if (overviewShown && !snowEnabled) {
+  window.__GPX_DONE__ = true;   // ⭐ SIGNAL TO RENDERER
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  return;
 }
 
 requestAnimationFrame(step);
