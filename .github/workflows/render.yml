@@ -25,6 +25,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
+        working-directory: TurboSanta-MP4-Renderer
         run: |
           npm install
           sudo apt-get update
@@ -44,6 +45,7 @@ jobs:
           fi
 
       - name: Render MP4
+        working-directory: TurboSanta-MP4-Renderer
         env:
           RENDER_URL: ${{ github.event.inputs.render_url }}
           WIDTH: ${{ env.WIDTH }}
@@ -58,4 +60,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gpx-animation-mp4
-          path: gpx_animation.mp4
+          path: TurboSanta-MP4-Renderer/gpx_animation.mp4
