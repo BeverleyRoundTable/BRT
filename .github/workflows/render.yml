@@ -33,11 +33,17 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        working-directory: TurboSanta-MP4-Renderer
-        run: |
-          npm install
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+  working-directory: TurboSanta-MP4-Renderer
+  run: |
+    npm install
+
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+      echo "FFmpeg not found, installing..."
+      sudo apt-get update
+      sudo apt-get install -y ffmpeg
+    else
+      echo "FFmpeg already available"
+    fi
 
       - name: Set aspect ratio
         run: |
