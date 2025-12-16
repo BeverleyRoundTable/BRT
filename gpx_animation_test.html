@@ -272,9 +272,9 @@ const tgt = bearing(
   camBearing+=(((tgt-camBearing+540)%360)-180)*.14;
 
   map.jumpTo({
-  center: [camPos.lng, camPos.lat],
+  center: [pos.lng, pos.lat],   // ← Santa's real position
   zoom: theme.baseZoom,
-  bearing: camBearing,
+  bearing: camBearing,          // ← look-ahead still used here
   pitch: 55
 });
 
