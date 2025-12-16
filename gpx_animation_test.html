@@ -28,8 +28,6 @@ html, body {
   border:1px solid rgba(255,255,255,.2);
   backdrop-filter:blur(8px);
 }
-#route-name{margin:0;font-weight:700}
-#route-date{margin:2px 0 0;font-size:.82rem;opacity:.85}
 </style>
 </head>
 
@@ -48,11 +46,8 @@ html, body {
 
 <script>
 /* ============================================================
-   PARAMS + CANVAS
+   CANVAS
 ============================================================ */
-const P=new URLSearchParams(location.search);
-const API=P.get("api"), ROUTE=P.get("route");
-
 const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
 
@@ -73,61 +68,51 @@ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 
 function bearing(a,b){
   const dLng=(b.lng-a.lng)*Math.PI/180;
-  const lat1=a.lat*Math.PI/180;
-  const lat2=b.lat*Math.PI/180;
+  const lat1=a.lat*Math.PI/180, lat2=b.lat*Math.PI/180;
   const y=Math.sin(dLng)*Math.cos(lat2);
   const x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
-
 function dist(a,b){
   const R=6371000;
   const dLat=(b.lat-a.lat)*Math.PI/180;
   const dLng=(b.lng-a.lng)*Math.PI/180;
-  const lat1=a.lat*Math.PI/180;
-  const lat2=b.lat*Math.PI/180;
-  const s=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+  const s=Math.sin(dLat/2)**2+
+    Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(s));
 }
-
-function angleDelta(a,b){ return ((b-a+540)%360)-180; }
-function lerpAngle(a,b,t){ return (a+angleDelta(a,b)*t+360)%360; }
-
-/* ============================================================
-   LOAD DATA
-============================================================ */
-async function fetchJSON(u){ return (await fetch(u,{cache:"no-store"})).json(); }
-async function loadGPX(u){
-  const xml=await (await fetch(u)).text();
-  const d=new DOMParser().parseFromString(xml,"text/xml");
-  return [...d.getElementsByTagName("trkpt")].map(p=>({
-    lat:+p.getAttribute("lat"),
-    lng:+p.getAttribute("lon")
-  }));
-}
+function angleDelta(a,b){return ((b-a+540)%360)-180;}
+function lerpAngle(a,b,t){return (a+angleDelta(a,b)*t+360)%360;}
 
 /* ============================================================
-   PARTICLES
+   PARTICLES (SNOW + MAGIC)
 ============================================================ */
-function makeParticles(mode, accent){
+function makeParticles(mode, color){
   const list=[];
   return {
     spawn(x,y){
-      if(mode==="none")return;
-      list.push({
-        x:x+(Math.random()*8-4),
-        y:y+4,
-        vx:(Math.random()-0.5)*0.3,
-        vy:mode==="snow"?Math.random()*0.6+0.3:-Math.random()*0.4,
-        life:1,
-        size:mode==="snow"?2+Math.random()*2:3,
-        color:mode==="snow"?"#fff":accent
-      });
+      if(mode==="none") return;
+      for(let i=0;i<3;i++){
+        list.push({
+          x:x+(Math.random()*10-5),
+          y:y+6,
+          vx:(Math.random()-0.5)*0.6,
+          vy:-Math.random()*2.5-1.5,   // ⬆ throw UP
+          life:1,
+          size:mode==="snow"
+            ? 2+Math.random()*3
+            : 4+Math.random()*6,
+          color:color
+        });
+      }
     },
     draw(){
       for(let i=list.length-1;i>=0;i--){
         const p=list[i];
-        p.x+=p.vx; p.y+=p.vy; p.life-=0.025;
+        p.x+=p.vx;
+        p.y+=p.vy;
+        p.vy+=0.05;          // gravity back down
+        p.life-=0.02;
         if(p.life<=0){list.splice(i,1);continue;}
         ctx.globalAlpha=p.life;
         ctx.fillStyle=p.color;
@@ -141,21 +126,31 @@ function makeParticles(mode, accent){
 }
 
 /* ============================================================
-   MAIN
+   LOAD
 ============================================================ */
 (async()=>{
-  const master=await fetchJSON(API);
+  const params=new URLSearchParams(location.search);
+  const API=params.get("api");
+  const ROUTE=params.get("route");
+
+  const master=await fetch(API).then(r=>r.json());
   const settings=master.settings||{};
-  const route=master.routes.find(r=>r.routeName===ROUTE);
-  const pts=await loadGPX(route.gpxUrl);
+  const route=master.routes.find(r=>r.routeName.toLowerCase()===ROUTE.toLowerCase());
+
+  const xml=await fetch(route.gpxUrl).then(r=>r.text());
+  const d=new DOMParser().parseFromString(xml,"text/xml");
+  const pts=[...d.getElementsByTagName("trkpt")].map(p=>({
+    lat:+p.getAttribute("lat"),
+    lng:+p.getAttribute("lon")
+  }));
 
   const sprite=new Image();
   sprite.src=settings.travelboast_sprite;
   await sprite.decode();
 
   const particles=makeParticles(
-    (settings.travelboast_particle_effects||"none").toLowerCase(),
-    settings.travelboast_accent_color||"#ffd700"
+    (settings.travelboast_particle_effects||"snow").toLowerCase(),
+    settings.accent_color||"#ffffff"
   );
 
   const map=new maplibregl.Map({
@@ -168,10 +163,37 @@ function makeParticles(mode, accent){
     antialias:true
   });
 
-  let cum=[0]; for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+  map.on("load",()=>{
+    map.addSource("route-base",{type:"geojson",data:{
+      type:"Feature",
+      geometry:{type:"LineString",coordinates:pts.map(p=>[p.lng,p.lat])}
+    }});
+    map.addLayer({
+      id:"route-base",type:"line",source:"route-base",
+      paint:{
+        "line-color":"#666",
+        "line-opacity":0.35,
+        "line-width":3
+      }
+    });
+
+    map.addSource("route-progress",{type:"geojson",data:{
+      type:"Feature",geometry:{type:"LineString",coordinates:[]}
+    }});
+    map.addLayer({
+      id:"route-progress",type:"line",source:"route-progress",
+      paint:{
+        "line-color":settings.primary_color||"#d31c1c",
+        "line-width":5
+      }
+    });
+  });
+
+  const cum=[0];
+  for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
   const total=cum.at(-1);
 
-  let m=0,last=null,camBearing=0,spriteBearing=0,done=false;
+  let m=0,last=null,camBearing=0,spriteBearing=0,finished=false;
 
   function pos(d){
     let i=cum.findIndex(v=>v>=d); i=Math.max(1,i);
@@ -182,24 +204,35 @@ function makeParticles(mode, accent){
 
   function step(ts){
     const dt=last?(ts-last)/1000:0; last=ts;
-    if(!done){ m+= (+settings.travelboast_speed||1)*dt*18; if(m>=total){m=total;done=true;} }
+
+    if(!finished){
+      m+= (+settings.travelboast_speed||1)*dt*18;
+      if(m>=total){m=total;finished=true;}
+    }
 
     const p=pos(m);
-    const next=pos(Math.min(m+5,total));
+    const next=pos(Math.min(m+6,total));
     spriteBearing=lerpAngle(spriteBearing,bearing(p,next),0.25);
 
     const proj=map.project([p.lng,p.lat]);
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    particles.spawn(proj.x,proj.y);
+
+    if(!finished){
+      particles.spawn(proj.x,proj.y+12); // 👣 behind feet
+    }
     particles.draw();
 
-    if(!done){
+    if(!finished){
       ctx.save();
-      ctx.translate(proj.x,proj.y-40);
-      ctx.rotate(clamp(angleDelta(camBearing,spriteBearing),-20,20)*0.25*Math.PI/180);
+      ctx.translate(proj.x,proj.y-42);
       ctx.drawImage(sprite,0,0,sprite.width/5,sprite.height,-32,-32,64,64);
       ctx.restore();
     }
+
+    map.getSource("route-progress")?.setData({
+      type:"Feature",
+      geometry:{type:"LineString",coordinates:pts.slice(0,Math.floor(m/total*pts.length)).map(p=>[p.lng,p.lat])}
+    });
 
     camBearing=lerpAngle(camBearing,spriteBearing,0.15);
     map.jumpTo({center:[p.lng,p.lat],bearing:camBearing,pitch:50});
