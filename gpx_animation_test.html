@@ -359,73 +359,95 @@ function draw(ts){
   ctx.restore();
 }
 
-function step(ts){
-  // 🛑 Once overview is active, NEVER touch the camera again
-  if (overviewShown) {
-    draw(ts);
-    requestAnimationFrame(step);
-    return;
-  }
-  // FINAL CLEANUP: when snow fully faded, clear canvas forever
-if (overviewShown && !snowEnabled) {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  return; // safe to stop now
-}
+function step(ts) {
+  const dt = last ? (ts - last) / 1000 : 0;
+  last = ts;
 
-  const dt=last?(ts-last)/1000:0;
-  last=ts;
+  /* -------------------------
+     SNOW UPDATE / FADE
+  -------------------------- */
+  if (snowEnabled) {
+    snowfall.update();
 
- if (snowEnabled) {
-  snowfall.update();
-
-  if (snowFading) {
-    snowAlpha -= 0.008;
-    if (snowAlpha <= 0) {
-      snowAlpha = 0;
-      snowEnabled = false;
-      snowFading = false;
-    }
-  }
-}
-
-  if(!finished){
-    m+=speed*dt;
-    if(m>=total){
-      m=total;
-      finished=true;
-      hideSprite=true;
+    if (snowFading) {
+      snowAlpha -= 0.008;
+      if (snowAlpha <= 0) {
+        snowAlpha = 0;
+        snowEnabled = false;
+        snowFading = false;
+      }
     }
   }
 
-  currentPos=getPos(m);
-  updateProgressLine(m);
+  /* -------------------------
+     MOVEMENT PHASE
+  -------------------------- */
+  if (!finished) {
+    m += speed * dt;
 
-  const nextPos=getPos(Math.min(m+Math.max(0.6,speed*0.03),total));
-  spriteBearing=lerpAngle(spriteBearing,bearing(currentPos,nextPos),0.25);
+    if (m >= total) {
+      m = total;
+      finished = true;
+      hideSprite = true;
+      snowFading = true;
 
- if (finished && !overviewShown) {
-  overviewShown = true;
-  snowFading = true;
-   hideSprite = true;
+      // 🔥 START OVERVIEW (ONCE)
+      map.fitBounds(bounds, {
+        padding: 120,
+        pitch: 0,
+        bearing: 0,
+        duration: 3000,
+        maxZoom: 14
+      });
 
-  map.fitBounds(bounds,{
-    padding:120,
-    pitch:0,
-    bearing:0,
-    duration:3000,
-    maxZoom: 14   // 👈 optional, see below
-  });
-}
+      overviewShown = true;
+    }
+  }
 
-  camBearing=lerpAngle(camBearing,spriteBearing,0.15);
-  map.jumpTo({center:[currentPos.lng,currentPos.lat],zoom:theme.baseZoom,bearing:camBearing,pitch:50});
+  /* -------------------------
+     TRACKING CAMERA
+     (ONLY BEFORE OVERVIEW)
+  -------------------------- */
+  if (!overviewShown) {
+    currentPos = getPos(m);
+    updateProgressLine(m);
 
+    const nextPos = getPos(
+      Math.min(m + Math.max(0.6, speed * 0.03), total)
+    );
+
+    spriteBearing = lerpAngle(
+      spriteBearing,
+      bearing(currentPos, nextPos),
+      0.25
+    );
+
+    camBearing = lerpAngle(camBearing, spriteBearing, 0.15);
+
+    map.jumpTo({
+      center: [currentPos.lng, currentPos.lat],
+      zoom: theme.baseZoom,
+      bearing: camBearing,
+      pitch: 50
+    });
+  }
+
+  /* -------------------------
+     DRAW
+  -------------------------- */
   draw(ts);
+
+  /* -------------------------
+     FINAL FREEZE
+  -------------------------- */
+  if (overviewShown && !snowEnabled) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return; // clean end frame
+  }
+
   requestAnimationFrame(step);
 }
 
-requestAnimationFrame(step);
-}
 </script>
 </body>
 </html>
