@@ -286,10 +286,11 @@ map.on("load",()=>{
   animate(map,pts,sprite,settings,{baseZoom});
 });
 }
-let snowAlpha = 1;
-let snowFading = false;
 
 function animate(map,pts,sprite,settings,theme){
+  // ❄️ snow lifecycle state (per animation run)
+  let snowAlpha = 1;
+  let snowFading = false;
 const frames=+settings.travelboast_sprite_frames||5;
 const fps=+settings.travelboast_sprite_fps||14;
 const size=+settings.travelboast_sprite_size||128;
