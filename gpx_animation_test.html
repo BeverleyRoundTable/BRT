@@ -306,7 +306,7 @@ const total=cum.at(-1);
 const bounds=new maplibregl.LngLatBounds(); pts.forEach(p=>bounds.extend([p.lng,p.lat]));
 
 let m=0,last=null,camBearing=0,spriteBearing=0;
-let finished=false,overviewShown=false,hideSprite=false,currentPos=null;
+let finished=false,=false,hideSprite=false,currentPos=null;
 let snowEnabled=true;
 let snowWarmup=0;
 
@@ -399,8 +399,11 @@ function step(ts){
     padding:80,
     pitch:0,
     bearing:0,
-    duration:2500
+    duration:2500,
+    maxZoom: 14   // 👈 optional, see below
   });
+
+  return; // 🛑 STOP camera updates
 }
 
   camBearing=lerpAngle(camBearing,spriteBearing,0.15);
