@@ -152,7 +152,7 @@ try{
   routeDateEl.textContent=route.date||"";
 
   const rawPts = await loadGPX(route.gpxUrl);
-  const pts = smoothPath(rawPts, 3);
+  const pts = smoothPath(rawPts, 2);
   const sprite = await loadImg(settings.travelboast_sprite);
 
   initMapAndRun(rawPts, pts, sprite, settings);
@@ -249,9 +249,9 @@ map.addLayer({
   source: "route-progress-glow",
   paint: {
     "line-color": settings.primary_color || "#d31c1c",
-    "line-width": 10,
-    "line-opacity": 0.25,
-    "line-blur": 6
+    "line-width": 12,
+    "line-opacity": 0.3,
+    "line-blur": 8
   }
 }, "route-progress"); // ensure glow sits UNDER the core
 
@@ -261,7 +261,7 @@ map.addLayer({
   source: "route-progress",
   paint: {
     "line-color": settings.primary_color || "#d31c1c",
-    "line-width": 4
+    "line-width": 5
   }
 });
 
