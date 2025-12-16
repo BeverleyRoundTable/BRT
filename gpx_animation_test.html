@@ -234,17 +234,17 @@ function draw(ts){
   const spriteW = sprite.width / frames;
   const frame = Math.floor(ts / 1000 * fps) % frames;
 
-  const FOOT_ANCHOR = size * 0.32;
+  // Project Santa's REAL map position to screen pixels
+  const p = map.project([pos.lng, pos.lat]);
 
-const SANTA_X = canvas.width / 2;
-const LOOKAHEAD_SCREEN_BIAS = 0.035; // tweak 0.03–0.06
-const SANTA_Y = canvas.height * (0.58 - LOOKAHEAD_SCREEN_BIAS);
+  // Foot anchor keeps boots on the road
+  const FOOT_ANCHOR = size * 0.32;
 
   ctx.save();
   ctx.translate(
-  Math.round(SANTA_X),
-  Math.round(SANTA_Y - FOOT_ANCHOR)
-);
+    Math.round(p.x),
+    Math.round(p.y - FOOT_ANCHOR)
+  );
 
   ctx.drawImage(
     sprite,
