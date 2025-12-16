@@ -286,6 +286,8 @@ map.on("load",()=>{
   animate(map,pts,sprite,settings,{baseZoom});
 });
 }
+let snowAlpha = 1;
+let snowFading = false;
 
 function animate(map,pts,sprite,settings,theme){
 const frames=+settings.travelboast_sprite_frames||5;
@@ -333,7 +335,12 @@ function getPos(d){
 
 function draw(ts){
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  if (snowEnabled) {
+  ctx.save();
+  ctx.globalAlpha = snowAlpha;
   snowfall.draw();
+  ctx.restore();
+}
   if(!currentPos||hideSprite) return;
 
   const frame=Math.floor(ts/1000*fps)%frames;
