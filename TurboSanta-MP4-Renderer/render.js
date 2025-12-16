@@ -40,11 +40,34 @@ await sleep(3000);
 const client = await page.createCDPSession();
 const frames = [];
 
-await client.send("Page.startScreencast", {
-  format: "jpeg",
-  quality: 90,
-  everyNthFrame: Math.max(1, Math.round(60 / fps))
-});
+import path from "path";
+import { execSync } from "child_process";
+
+const framesDir = "frames";
+fs.mkdirSync(framesDir, { recursive: true });
+
+const totalFrames = Math.floor((duration / 1000) * fps);
+const frameDelay = 1000 / fps;
+
+console.log(`🎥 Capturing ${totalFrames} frames`);
+
+for (let i = 0; i < totalFrames; i++) {
+  const framePath = path.join(
+    framesDir,
+    `frame_${String(i).padStart(5, "0")}.png`
+  );
+
+  await page.screenshot({
+    path: framePath,
+    type: "png"
+  });
+
+  await new Promise(r => setTimeout(r, frameDelay));
+}
+
+await browser.close();
+
+console.log("🖼️ Frames captured:", totalFrames);
 
 client.on("Page.screencastFrame", async e => {
   frames.push(Buffer.from(e.data, "base64"));
