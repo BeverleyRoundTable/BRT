@@ -2,70 +2,45 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Santa GPX TravelBoast Style</title>
+<title>Turbo Santa GPX Animation</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" />
 
 <style>
-  html, body {
-    margin: 0; padding: 0; height: 100%;
-    background: #f3f3f3; overflow: hidden;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont,
-                 "Segoe UI", Roboto, sans-serif;
-  }
-
-  #map {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-  }
-
-  #anim {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    pointer-events: none;
-  }
-
-  /* Floating pill at bottom */
-  #ui-layer {
-    position: absolute;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 20;
-    pointer-events: none;
-    text-align: center;
-  }
-
-  .pill {
-    background: rgba(0, 0, 0, 0.7);
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.2);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.45);
-    backdrop-filter: blur(6px);
-    display: inline-block;
-    max-width: 90vw;
-  }
-
-  #route-name {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-  }
-  #route-date {
-    margin: 2px 0 0 0;
-    font-size: 0.8rem;
-    opacity: 0.8;
-  }
+html, body {
+  margin:0; padding:0; height:100%;
+  background:#0b0d12;
+  overflow:hidden;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color:#fff;
+}
+#map{position:absolute;inset:0;}
+#anim{position:absolute;inset:0;pointer-events:none;}
+#ui-layer{
+  position:absolute;bottom:24px;left:50%;
+  transform:translateX(-50%);
+  z-index:50;text-align:center;pointer-events:none;
+}
+.pill{
+  background:rgba(0,0,0,.65);
+  padding:10px 18px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.2);
+  backdrop-filter:blur(8px);
+}
+#route-name{margin:0;font-weight:700}
+#route-date{margin:2px 0 0;font-size:.82rem;opacity:.85}
+#toast{
+  position:absolute;top:16px;left:16px;
+  background:rgba(0,0,0,.72);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;padding:10px 12px;
+  display:none;z-index:60;
+}
 </style>
 </head>
-<body>
 
+<body>
 <div id="map"></div>
 <canvas id="anim"></canvas>
 
@@ -75,293 +50,332 @@
     <p id="route-date"></p>
   </div>
 </div>
+<div id="toast"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 
 <script>
-/* ------------------------------------------------------------
-   PARAMS
------------------------------------------------------------- */
-const P = new URLSearchParams(location.search);
-const API   = P.get("api");
-const ROUTE = P.get("route");
+/* ============================================================
+   PARAMS + CANVAS
+============================================================ */
+const P=new URLSearchParams(location.search);
+const API=P.get("api"), ROUTE=P.get("route");
 
-if (!API) {
-  document.body.innerHTML =
-    "<h2 style='padding:20px;font-family:sans-serif'>❌ Missing api= parameter</h2>";
+const routeNameEl = document.getElementById("route-name");
+const routeDateEl = document.getElementById("route-date");
+
+const toastEl=document.getElementById("toast");
+
+function toast(m){
+  toastEl.style.display="block";
+  toastEl.textContent=m;
+}
+
+if(!API){
+  toast("Missing api=");
   throw new Error("Missing api");
 }
 
-/* ------------------------------------------------------------
-   CANVAS SETUP (DPR AWARE)
------------------------------------------------------------- */
-const canvas = document.getElementById("anim");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("anim");
+const ctx=canvas.getContext("2d");
 
-function resizeCanvas() {
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width  = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+function resize(){
+  const dpr=devicePixelRatio||1;
+  canvas.width=innerWidth*dpr;
+  canvas.height=innerHeight*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
+addEventListener("resize",resize);
+resize();
 
-/* ------------------------------------------------------------
-   LEAFLET MAP (LIGHT OSM)
------------------------------------------------------------- */
-const map = L.map("map", {
-  zoomControl: false,
-  attributionControl: true
-});
+/* ============================================================
+   GLOBAL SNOWFALL OVERLAY
+============================================================ */
+function createSnowfall(enabled){
+  const flakes=[];
+  const DENSITY=0.00018;
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 20
-}).addTo(map);
+  function addFlake(randomY=false){
+    flakes.push({
+      x:Math.random()*canvas.width,
+      y:randomY?Math.random()*canvas.height:-20,
+      r:Math.random()*2.2+1,
+      vy:Math.random()*1.6+1.4,
+      vx:Math.random()*0.4-0.2,
+      drift:Math.random()*Math.PI*2
+    });
+  }
 
-/* ------------------------------------------------------------
+  function resizeSnow(){
+    const target=Math.floor(canvas.width*canvas.height*DENSITY);
+    while(flakes.length<target) addFlake(true);
+    while(flakes.length>target) flakes.pop();
+  }
+
+  function update(){
+    if(!enabled) return;
+    for(const f of flakes){
+      f.drift+=0.01;
+      f.x+=f.vx+Math.sin(f.drift)*0.15;
+      f.y+=f.vy;
+      if(f.y>canvas.height+30){f.y=-20;f.x=Math.random()*canvas.width;}
+      if(f.x<-20)f.x=canvas.width+20;
+      if(f.x>canvas.width+20)f.x=-20;
+    }
+  }
+
+  function draw(){
+    if(!enabled) return;
+    ctx.save();
+    ctx.fillStyle="#fff";
+    ctx.globalAlpha=0.9;
+    for(const f of flakes){
+      ctx.beginPath();
+      ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  resizeSnow();
+  addEventListener("resize",resizeSnow);
+  return{update,draw};
+}
+
+/* ============================================================
    HELPERS
------------------------------------------------------------- */
-async function fetchJSON(url) {
-  const r = await fetch(url, { cache: "no-store" });
-  if (!r.ok) throw new Error("API fetch error " + r.status);
+============================================================ */
+const MAP_STYLE="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+
+async function fetchJSON(u){
+  const r=await fetch(u,{cache:"no-store"});
+  if(!r.ok)throw new Error("API fetch failed");
   return r.json();
 }
 
-async function loadGPX(url) {
-  const xml = await (await fetch(url, { cache: "no-store" })).text();
-  const dom = new DOMParser().parseFromString(xml, "text/xml");
-  const pts = [...dom.getElementsByTagName("trkpt")];
-  return pts.map(p => ({
-    lat: parseFloat(p.getAttribute("lat")),
-    lng: parseFloat(p.getAttribute("lon") || p.getAttribute("lng"))
+async function loadGPX(u){
+  const x=await (await fetch(u,{cache:"no-store"})).text();
+  const d=new DOMParser().parseFromString(x,"text/xml");
+  return [...d.getElementsByTagName("trkpt")].map(p=>({
+    lat:+p.getAttribute("lat"),
+    lng:+(p.getAttribute("lon")||p.getAttribute("lng"))
   }));
 }
 
-// Simple Chaikin-style smoothing to make the line nicer
-function smoothPath(points, iterations = 2) {
-  if (iterations <= 0 || points.length < 3) return points;
-  let out = [points[0]];
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i];
-    const p1 = points[i + 1];
-    out.push({
-      lat: 0.75 * p0.lat + 0.25 * p1.lat,
-      lng: 0.75 * p0.lng + 0.25 * p1.lng
-    });
-    out.push({
-      lat: 0.25 * p0.lat + 0.75 * p1.lat,
-      lng: 0.25 * p0.lng + 0.75 * p1.lng
-    });
+function smoothPath(p,it=2){
+  if(it<=0||p.length<3)return p;
+  const o=[p[0]];
+  for(let i=0;i<p.length-1;i++){
+    const a=p[i],b=p[i+1];
+    o.push({lat:.75*a.lat+.25*b.lat,lng:.75*a.lng+.25*b.lng});
+    o.push({lat:.25*a.lat+.75*b.lat,lng:.25*a.lng+.75*b.lng});
   }
-  out.push(points[points.length - 1]);
-  return smoothPath(out, iterations - 1);
+  o.push(p.at(-1));
+  return smoothPath(o,it-1);
 }
 
-function getAngle(p1, p2) {
-  return Math.atan2(p2.y - p1.y, p2.x - p1.x);
-}
-function lerpAngle(a, b, t) {
-  const diff = (b - a + Math.PI) % (2 * Math.PI) - Math.PI;
-  return a + diff * t;
-}
-
-/* ------------------------------------------------------------
-   SPARKLES
------------------------------------------------------------- */
-const SPARKLE_RGB = "255, 215, 0"; // gold
-const SPARKLES_PER_FRAME = 3;
-const particles = [];
-
-class Particle {
-  constructor(x, y) {
-    this.x = x + (Math.random() - 0.5) * 10;
-    this.y = y + (Math.random() - 0.5) * 10;
-    this.vx = (Math.random() - 0.5) * 0.5;
-    this.vy = (Math.random() - 0.5) * 0.5;
-    this.life = 1;
-    this.decay = 0.02 + Math.random() * 0.03;
-    this.size = 1 + Math.random() * 3;
-  }
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.life -= this.decay;
-  }
-  draw(ctx) {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${SPARKLE_RGB}, ${this.life})`;
-    ctx.fill();
-  }
+function bearing(a,b){
+  const dLng=(b.lng-a.lng)*Math.PI/180;
+  const y=Math.sin(dLng)*Math.cos(b.lat*Math.PI/180);
+  const x=Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180)-
+          Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
 
-/* ------------------------------------------------------------
+function dist(a,b){
+  const R=6371000;
+  const dLat=(b.lat-a.lat)*Math.PI/180;
+  const dLng=(b.lng-a.lng)*Math.PI/180;
+  const s=Math.sin(dLat/2)**2+
+          Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+
+function angleDelta(a,b){return((b-a+540)%360)-180;}
+function lerpAngle(a,b,t){return(a+angleDelta(a,b)*t+360)%360;}
+
+/* ============================================================
    MAIN
------------------------------------------------------------- */
-(async function main() {
-  try {
-    const master   = await fetchJSON(API);
-    const settings = master.settings || {};
-    const routes   = master.routes  || [];
+============================================================ */
+(async()=>{
+try{
+  const master=await fetchJSON(API);
+  const settings=master.settings||{};
+  const routes=master.routes||[];
+  const route=routes.find(r=>r.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
+  if(!route||!route.gpxUrl)throw"Route invalid";
 
-    const route = routes.find(r =>
-      (r.routeName || "").toLowerCase() === (ROUTE || "").toLowerCase()
-    ) || routes.find(r => r.routeName === ROUTE);
+  routeNameEl.textContent=route.routeName||"";
+  routeDateEl.textContent=route.date
+    ?new Date(route.date+"T00:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})
+    :"";
 
-    if (!route) {
-      document.querySelector(".pill").innerHTML =
-        "<span style='color:#ffb3b3'>Route not found: " +
-        (ROUTE || "(none)") + "</span>";
-      return;
-    }
+  const rawPts=await loadGPX(route.gpxUrl);
+  const pts=smoothPath(rawPts,2);
+  const sprite=await loadImg(settings.travelboast_sprite);
 
-    document.getElementById("route-name").textContent = route.routeName || "";
-    document.getElementById("route-date").textContent = route.date || "";
-
-    // Load GPX & smooth
-    let rawPoints = await loadGPX(route.gpxUrl);
-    if (rawPoints.length < 2) throw new Error("GPX route has too few points");
-    const pathLatLngs = smoothPath(rawPoints, 3);
-
-    // Fit to route, then zoom in a bit for "close" feel
-    const bounds = L.latLngBounds(pathLatLngs.map(p => [p.lat, p.lng]));
-    map.fitBounds(bounds, { padding: [40, 40] });
-    setTimeout(() => map.setZoom(map.getZoom() + 2), 150);
-
-    // Load sprite
-    const sprite = new Image();
-    sprite.crossOrigin = "anonymous";
-    sprite.src = settings.travelboost_sprite; // your 5x1 strip
-    await new Promise(res => sprite.onload = res);
-
-    startAnimation(pathLatLngs, sprite, settings);
-
-  } catch (err) {
-    console.error(err);
-    document.querySelector(".pill").innerHTML =
-      "<span style='color:#ffb3b3'>" +
-      (err.message || "Animation error") + "</span>";
-  }
+  initMapAndRun(rawPts,pts,sprite,settings);
+}catch(e){
+  console.error(e);
+  toast(e?.message||"Failed to load GPX animation");
+}
 })();
 
-/* ------------------------------------------------------------
-   ANIMATION LOOP
------------------------------------------------------------- */
-function startAnimation(latLngs, sprite, settings) {
-  let lastTime = 0;
-  let dist = 0;
-  let currentAngle = 0;
+function loadImg(u){
+  return new Promise((res,rej)=>{
+    const i=new Image();
+    i.crossOrigin="anonymous";
+    i.onload=()=>res(i);
+    i.onerror=rej;
+    i.src=u;
+  });
+}
 
-  const fps      = Number(settings.travelboost_sprite_fps)    || 12;
-  const frames   = Number(settings.travelboost_sprite_frames) || 5;
-  const renderSz = Number(settings.travelboost_sprite_size)   || 120;
-  const speedCfg = Number(settings.travelboost_speed)         || 1.5;
+/* ============================================================
+   MAP + ANIMATION
+============================================================ */
+function initMapAndRun(rawPts,pts,sprite,settings){
+const baseZoom=+settings.default_map_zoom||16;
 
-  // tweakable: magic acceleration factor
-  const speedFactor = 0.00007;
-  const speed = speedCfg * speedFactor;
+const map=new maplibregl.Map({
+  container:"map",
+  style:MAP_STYLE,
+  center:[pts[0].lng,pts[0].lat],
+  zoom:baseZoom,
+  pitch:50,
+  bearing:0,
+  antialias:true
+});
 
-  const accent = settings.travelboost_accent_color || "#ffd700";
+map.dragPan.disable();
+map.scrollZoom.disable();
+map.doubleClickZoom.disable();
 
-  const spriteW = sprite.width / frames;
-  const spriteH = sprite.height;
+map.on("load",()=>{
+  map.addSource("route-base",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:rawPts.map(p=>[p.lng,p.lat])}}});
+  map.addLayer({id:"route-base",type:"line",source:"route-base",paint:{ "line-color":"#666","line-opacity":0.35,"line-width":3 }});
 
-  function frame(ts) {
-    if (!lastTime) lastTime = ts;
-    const dt = ts - lastTime;
-    lastTime = ts;
+  map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
+  map.addSource("route-progress-glow",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  map.addLayer({id:"route-progress-glow",type:"line",source:"route-progress-glow",paint:{
+    "line-color":settings.primary_color||"#d31c1c","line-width":12,"line-opacity":0.3,"line-blur":8}});
+  map.addLayer({id:"route-progress",type:"line",source:"route-progress",paint:{
+    "line-color":settings.primary_color||"#d31c1c","line-width":5}});
 
-    // Advance along route
-    dist += speed * dt;
-    if (dist >= latLngs.length - 1) dist = latLngs.length - 1;
+  animate(map,pts,sprite,settings,{baseZoom});
+});
+}
 
-    const idx = Math.floor(dist);
-    const t   = dist - idx;
-    const p1  = latLngs[idx];
-    const p2  = latLngs[Math.min(idx + 1, latLngs.length - 1)];
+function animate(map,pts,sprite,settings,theme){
+let snowAlpha=1,snowFading=false;
+const frames=+settings.travelboast_sprite_frames||5;
+const fps=+settings.travelboast_sprite_fps||14;
+const size=+settings.travelboast_sprite_size||128;
+const speed=(+settings.travelboast_speed||.1)*18;
 
-    // Interpolated lat/lng
-    const curLat = p1.lat + (p2.lat - p1.lat) * t;
-    const curLng = p1.lng + (p2.lng - p1.lng) * t;
-    const curLL  = { lat: curLat, lng: curLng };
+const snowfall=createSnowfall(
+  (settings.travelboast_particle_effects||"").toLowerCase()==="snow"
+);
 
-    // Keep camera close to Santa
-    map.panTo([curLat, curLng], { animate: false });
+const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+const total=cum.at(-1);
 
-    // Project to pixels
-    const curPix = map.latLngToContainerPoint(curLL);
-    const p1Pix  = map.latLngToContainerPoint(p1);
-    const p2Pix  = map.latLngToContainerPoint(p2);
+const bounds=new maplibregl.LngLatBounds();pts.forEach(p=>bounds.extend([p.lng,p.lat]));
 
-    // Draw trail only behind Santa (no ahead)
-    ctx.save();
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = 6;
-    ctx.shadowColor = accent;
-    ctx.shadowBlur = 18;
-    ctx.beginPath();
+let m=0,last=null,camBearing=0,spriteBearing=0;
+let finished=false,overviewShown=false,hideSprite=false,currentPos=null;
+let snowEnabled=true;
 
-    // Start at first point
-    const startPix = map.latLngToContainerPoint(latLngs[0]);
-    ctx.moveTo(startPix.x, startPix.y);
-    for (let i = 1; i <= idx; i++) {
-      const lp = map.latLngToContainerPoint(latLngs[i]);
-      ctx.lineTo(lp.x, lp.y);
+function updateProgressLine(distance){
+  const coords=[];let remaining=distance;
+  for(let i=1;i<pts.length&&remaining>0;i++){
+    const seg=dist(pts[i-1],pts[i]);
+    if(remaining>=seg){coords.push([pts[i-1].lng,pts[i-1].lat]);remaining-=seg;}
+    else{
+      const t=remaining/seg;
+      coords.push([pts[i-1].lng,pts[i-1].lat]);
+      coords.push([
+        pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t,
+        pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t
+      ]);
+      break;
     }
-    ctx.lineTo(curPix.x, curPix.y);
-    ctx.stroke();
-    ctx.restore();
+  }
+  map.getSource("route-progress")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:coords}});
+  map.getSource("route-progress-glow")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:coords}});
+}
 
-    // Sparkles at Santa's feet
-    if (dist < latLngs.length - 1) {
-      for (let i = 0; i < SPARKLES_PER_FRAME; i++) {
-        particles.push(new Particle(curPix.x, curPix.y));
-      }
-    }
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.update();
-      p.draw(ctx);
-      if (p.life <= 0) particles.splice(i, 1);
-    }
+function getPos(d){
+  let i=cum.findIndex(v=>v>=d);i=Math.max(1,i);
+  const t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);
+  const a=pts[i-1],b=pts[i];
+  return{lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
+}
 
-    // Sprite orientation
-    const targetAngle = getAngle(p1Pix, p2Pix);
-    const segLenSq = (p2Pix.x - p1Pix.x) ** 2 + (p2Pix.y - p1Pix.y) ** 2;
-    if (segLenSq > 1) {
-      currentAngle = lerpAngle(currentAngle, targetAngle, 0.18);
-    }
+function draw(ts){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(snowEnabled){ctx.save();ctx.globalAlpha=snowAlpha;snowfall.draw();ctx.restore();}
+  if(!currentPos||hideSprite)return;
+  const frame=Math.floor(ts/1000*fps)%frames;
+  const spriteW=sprite.width/frames;
+  const p=map.project([currentPos.lng,currentPos.lat]);
+  let rel=((spriteBearing-camBearing+540)%360)-180;
+  rel=clamp(rel,-25,25);
+  ctx.save();
+  ctx.translate(Math.round(p.x),Math.round(p.y-size*0.32));
+  ctx.rotate(rel*0.4*Math.PI/180);
+  ctx.drawImage(sprite,frame*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
+  ctx.restore();
+}
 
-    // Current animation frame
-    const frameIndex = Math.floor((ts / 1000) * fps) % frames;
+function step(ts){
+  const dt=last?(ts-last)/1000:0;last=ts;
 
-    // Draw Santa (sprite faces NORTH in source → add +90°)
-    ctx.save();
-    ctx.translate(curPix.x, curPix.y);
-    ctx.rotate(currentAngle + Math.PI / 2);
-
-    ctx.drawImage(
-      sprite,
-      frameIndex * spriteW, 0, spriteW, spriteH,   // source frame
-      -renderSz / 2, -renderSz / 2,                // centred
-      renderSz, renderSz                           // on-screen size
-    );
-
-    ctx.restore();
-
-    if (dist < latLngs.length - 1) {
-      requestAnimationFrame(frame);
+  if(snowEnabled){
+    snowfall.update();
+    if(snowFading){
+      snowAlpha-=0.008;
+      if(snowAlpha<=0){snowAlpha=0;snowEnabled=false;snowFading=false;}
     }
   }
 
-  requestAnimationFrame(frame);
+  if(!finished){
+    m+=speed*dt;
+    if(m>=total){
+      m=total;
+      finished=true;
+      hideSprite=true;
+      snowFading=true;
+
+      // ✅ FORCE FINAL ROUTE GEOMETRY
+      const finalCoords=pts.map(p=>[p.lng,p.lat]);
+      map.getSource("route-progress")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:finalCoords}});
+      map.getSource("route-progress-glow")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:finalCoords}});
+
+      map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:3000,maxZoom:14});
+      overviewShown=true;
+    }
+  }
+
+  if(!overviewShown){
+    currentPos=getPos(m);
+    updateProgressLine(m);
+    const nextPos=getPos(Math.min(m+Math.max(0.6,speed*0.03),total));
+    spriteBearing=lerpAngle(spriteBearing,bearing(currentPos,nextPos),0.25);
+    camBearing=lerpAngle(camBearing,spriteBearing,0.15);
+    map.jumpTo({center:[currentPos.lng,currentPos.lat],zoom:theme.baseZoom,bearing:camBearing,pitch:50});
+  }
+
+  draw(ts);
+
+  if(overviewShown&&!snowEnabled){ctx.clearRect(0,0,canvas.width,canvas.height);return;}
+  requestAnimationFrame(step);
+}
+
+requestAnimationFrame(step);
 }
 </script>
-
 </body>
 </html>
