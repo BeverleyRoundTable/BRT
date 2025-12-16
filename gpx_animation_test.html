@@ -143,7 +143,8 @@ try{
   routeNameEl.textContent=route.routeName||"";
   routeDateEl.textContent=route.date||"";
 
-  const pts=smoothPath(await loadGPX(route.gpxUrl),3);
+  const rawPts = await loadGPX(route.gpxUrl);
+const pts = smoothPath(rawPts, 3);
   const sprite=await loadImg(settings.travelboost_sprite);
 
   initMapAndRun(pts,sprite,settings);
@@ -179,7 +180,10 @@ map.doubleClickZoom.disable();
 map.on("load",()=>{
   map.addSource("route",{type:"geojson",data:{
     type:"Feature",
-    geometry:{type:"LineString",coordinates:pts.map(p=>[p.lng,p.lat])}
+    geometry:{
+  type:"LineString",
+  coordinates: rawPts.map(p => [p.lng, p.lat])
+}
   }});
   map.addLayer({
     id:"route",
