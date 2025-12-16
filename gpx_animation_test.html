@@ -193,82 +193,42 @@ map.scrollZoom.disable();
 map.doubleClickZoom.disable();
 
 map.on("load",()=>{
-  // ============================================================
-// ROUTE BASE (FULL, FAINT)
-// ============================================================
-map.addSource("route-base", {
-  type: "geojson",
-  data: {
-    type: "Feature",
-    geometry: {
-      type: "LineString",
-      coordinates: rawPts.map(p => [p.lng, p.lat])
+  map.addSource("route-base",{
+    type:"geojson",
+    data:{type:"Feature",geometry:{type:"LineString",coordinates:rawPts.map(p=>[p.lng,p.lat])}}
+  });
+
+  map.addLayer({
+    id:"route-base",
+    type:"line",
+    source:"route-base",
+    paint:{ "line-color":"#666","line-opacity":0.35,"line-width":3 }
+  });
+
+  map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
+  map.addSource("route-progress-glow",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
+
+  map.addLayer({
+    id:"route-progress-glow",
+    type:"line",
+    source:"route-progress-glow",
+    paint:{
+      "line-color":settings.primary_color||"#d31c1c",
+      "line-width":12,"line-opacity":0.3,"line-blur":8
     }
-  }
-});
+  });
 
-map.addLayer({
-  id: "route-base",
-  type: "line",
-  source: "route-base",
-  paint: {
-    "line-color": "#666",
-    "line-opacity": 0.35,
-    "line-width": 3
-  }
-});
-
-// ============================================================
-// ROUTE PROGRESS (RED, DYNAMIC)
-// ============================================================
-map.addSource("route-progress", {
-  type: "geojson",
-  data: {
-    type: "Feature",
-    geometry: {
-      type: "LineString",
-      coordinates: []
-    }
-  }
-});
-  
-// ============================================================
-// ROUTE PROGRESS GLOW (UNDERLAY)
-// ============================================================
-map.addSource("route-progress-glow", {
-  type: "geojson",
-  data: {
-    type: "Feature",
-    geometry: { type: "LineString", coordinates: [] }
-  }
-});
-
-map.addLayer({
-  id: "route-progress-glow",
-  type: "line",
-  source: "route-progress-glow",
-  paint: {
-    "line-color": settings.primary_color || "#d31c1c",
-    "line-width": 12,
-    "line-opacity": 0.3,
-    "line-blur": 8
-  }
-}, "route-progress"); // ensure glow sits UNDER the core
-
-map.addLayer({
-  id: "route-progress",
-  type: "line",
-  source: "route-progress",
-  paint: {
-    "line-color": settings.primary_color || "#d31c1c",
-    "line-width": 5
-  }
-});
+  map.addLayer({
+    id:"route-progress",
+    type:"line",
+    source:"route-progress",
+    paint:{ "line-color":settings.primary_color||"#d31c1c","line-width":5 }
+  });
 
   animate(map,pts,sprite,settings,{baseZoom});
 });
 }
-  
+
 function animate(map,pts,sprite,settings,theme){
 const frames=+settings.travelboast_sprite_frames||5;
 const fps=+settings.travelboast_sprite_fps||14;
@@ -279,48 +239,36 @@ const cum=[0];
 for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
+const bounds=new maplibregl.LngLatBounds();
+pts.forEach(p=>bounds.extend([p.lng,p.lat]));
+
 let m=0,last=null,camBearing=0;
-let finished=false,finishStart=0;
+let finished=false,overviewShown=false;
 let currentPos=null;
 
-/* ============================================================
-   PROGRESS LINE UPDATER (SCOPED CORRECTLY)
-============================================================ */
 function updateProgressLine(distance){
   const coords=[];
   let remaining=distance;
-
   for(let i=1;i<pts.length && remaining>0;i++){
     const seg=dist(pts[i-1],pts[i]);
-
     if(remaining>=seg){
       coords.push([pts[i-1].lng,pts[i-1].lat]);
       remaining-=seg;
     }else{
       const t=remaining/seg;
-      const lat=pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t;
-      const lng=pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t;
       coords.push([pts[i-1].lng,pts[i-1].lat]);
-      coords.push([lng,lat]);
+      coords.push([
+        pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t,
+        pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t
+      ]);
       break;
     }
   }
-
-  const data={
-    type:"Feature",
-    geometry:{type:"LineString",coordinates:coords}
-  };
-
-  const core=map.getSource("route-progress");
-  const glow=map.getSource("route-progress-glow");
-
-  if(core) core.setData(data);
-  if(glow) glow.setData(data);
+  const data={type:"Feature",geometry:{type:"LineString",coordinates:coords}};
+  map.getSource("route-progress")?.setData(data);
+  map.getSource("route-progress-glow")?.setData(data);
 }
 
-/* ============================================================
-   POSITION + DRAW
-============================================================ */
 function getPos(d){
   let i=cum.findIndex(v=>v>=d); i=Math.max(1,i);
   const t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);
@@ -329,47 +277,40 @@ function getPos(d){
 }
 
 function draw(ts){
-  if(!currentPos) return;
-
+  if(!currentPos || finished) return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  const spriteW=sprite.width/frames;
   const frame=Math.floor(ts/1000*fps)%frames;
   const p=map.project([currentPos.lng,currentPos.lat]);
-  const FOOT_ANCHOR=size*0.32;
-
-  ctx.save();
-  ctx.translate(Math.round(p.x),Math.round(p.y-FOOT_ANCHOR));
-  ctx.drawImage(sprite,frame*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
-  ctx.restore();
+  ctx.drawImage(
+    sprite,
+    frame*(sprite.width/frames),0,
+    sprite.width/frames,sprite.height,
+    p.x-size/2,p.y-size*0.82,size,size
+  );
 }
 
-/* ============================================================
-   ANIMATION LOOP
-============================================================ */
 function step(ts){
   const dt=last?(ts-last)/1000:0;
   last=ts;
 
   if(!finished){
     m+=speed*dt;
-    if(m>=total){m=total;finished=true;finishStart=ts;}
+    if(m>=total){m=total;finished=true;}
   }
 
   currentPos=getPos(m);
   updateProgressLine(m);
 
-  const lookAhead=Math.max(0.6,speed*0.03);
-  const nextPos=getPos(Math.min(m+lookAhead,total));
+  if(finished && !overviewShown){
+    overviewShown=true;
+    map.fitBounds(bounds,{padding:80,pitch:0,bearing:0,duration:2500});
+    return;
+  }
 
+  const nextPos=getPos(Math.min(m+speed*0.03,total));
   const tgt=bearing(currentPos,nextPos);
   let delta=((tgt-camBearing+540)%360)-180;
-
-  const turnIntensity=Math.min(1,Math.abs(delta)/35);
-  const MAX_TURN_RATE=(110+140*turnIntensity)*dt;
-  delta=clamp(delta,-MAX_TURN_RATE,MAX_TURN_RATE);
-
-  const TURN_EASE=0.12+0.18*turnIntensity;
-  camBearing+=delta*TURN_EASE;
+  camBearing+=clamp(delta,-120*dt,120*dt)*0.2;
 
   map.jumpTo({
     center:[currentPos.lng,currentPos.lat],
@@ -387,4 +328,3 @@ requestAnimationFrame(step);
 </script>
 </body>
 </html>
-
