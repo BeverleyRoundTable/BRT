@@ -259,42 +259,71 @@ const SANTA_Y = canvas.height * (0.58 - LOOKAHEAD_SCREEN_BIAS);
 }
 
  function step(ts){
-  if(!last)last=ts;
-  const dt=(ts-last)/1000;last=ts;
+  if(!last) last = ts;
+  const dt = (ts - last) / 1000;
+  last = ts;
 
   if(!finished){
-    m+=speed*dt;
-    if(m>=total){m=total;finished=true;finishStart=ts;}
+    m += speed * dt;
+    if(m >= total){
+      m = total;
+      finished = true;
+      finishStart = ts;
+    }
   }
 
+  // ============================================================
+  // BEARING + CAMERA (PHYSICALLY CORRECT, SPEED-AWARE)
+  // ============================================================
+
+  // Santa's actual position on the route
   const pos = getPos(m);
 
-// Bearing follows Santa's REAL movement
-const nextPos = getPos(Math.min(m + 1.5, total)); // ~1–2m ahead only
-const tgt = bearing(
-  { lat: pos.lat, lng: pos.lng },
-  { lat: nextPos.lat, lng: nextPos.lng }
-);
+  // Look only a SMALL distance ahead for bearing (prevents early turns)
+  const BEARING_LOOKAHEAD_METERS = Math.max(0.6, speed * 0.03);
+  // ~0.8–1.2m at speed 1.5–2.0
 
-  camBearing+=(((tgt-camBearing+540)%360)-180)*.14;
+  const nextPos = getPos(
+    Math.min(m + BEARING_LOOKAHEAD_METERS, total)
+  );
 
+  // Target bearing based on REAL movement direction
+  const tgt = bearing(
+    { lat: pos.lat, lng: pos.lng },
+    { lat: nextPos.lat, lng: nextPos.lng }
+  );
+
+  // Shortest angular difference
+  let delta = ((tgt - camBearing + 540) % 360) - 180;
+
+  // Limit how fast Santa can rotate (degrees per second)
+  const MAX_TURN_RATE = 110 * dt;
+
+  delta = clamp(delta, -MAX_TURN_RATE, MAX_TURN_RATE);
+
+  // Smoothly rotate toward target bearing
+  camBearing += delta * 0.14;
+
+  // Move camera to Santa's REAL position
   map.jumpTo({
-  center: [pos.lng, pos.lat],   // ← Santa's real position
-  zoom: theme.baseZoom,
-  bearing: camBearing,          // ← look-ahead still used here
-  pitch: 55
-});
+    center: [pos.lng, pos.lat],
+    zoom: theme.baseZoom,
+    bearing: camBearing,
+    pitch: 55
+  });
 
-  if(finished&&!boundsShown&&ts-finishStart>4000){
-    boundsShown=true;
+  if(finished && !boundsShown && ts - finishStart > 4000){
+    boundsShown = true;
     fitBounds();
   }
 
   draw(ts);
   requestAnimationFrame(step);
 }
+
 requestAnimationFrame(step);
-}
+
+
 </script>
 </body>
 </html>
