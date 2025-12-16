@@ -294,9 +294,14 @@ function step(ts){
   last=ts;
 
   if(!finished){
-    m+=speed*dt;
-    if(m>=total){m=total;finished=true;}
+  m += speed * dt;
+  if(m >= total){
+    m = total;
+    finished = true;
+    finishStart = ts;
+    hideSprite = true; // 👈 stop drawing Santa
   }
+}
 
   currentPos=getPos(m);
   updateProgressLine(m);
