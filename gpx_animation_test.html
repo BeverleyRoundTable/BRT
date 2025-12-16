@@ -200,6 +200,8 @@ const frames=+settings.travelboost_sprite_frames||5;
 const fps=+settings.travelboost_sprite_fps||14;
 const size=+settings.travelboost_sprite_size||128;
 const speed=(+settings.travelboost_speed||.1)*18;
+const LOOKAHEAD_METERS = 12; // tweak: 8–20 is a good range
+
 
 const cum=[0];
 for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
@@ -228,8 +230,8 @@ function draw(ts){
   const spriteW = sprite.width / frames;
   const frame = Math.floor(ts / 1000 * fps) % frames;
 
-const SANTA_X = window.innerWidth / 2;
-const SANTA_Y = window.innerHeight * 0.58;
+const SANTA_X = canvas.width / 2;
+const SANTA_Y = canvas.height * 0.58;
 
   ctx.save();
   ctx.translate(
@@ -258,16 +260,20 @@ const SANTA_Y = window.innerHeight * 0.58;
     if(m>=total){m=total;finished=true;finishStart=ts;}
   }
 
-  const pos=getPos(m);
-  const tgt=bearing(pts[pos.i],pts[pos.i+1]||pts[pos.i]);
+  const pos = getPos(m);
+const camPos = getPos(Math.min(m + LOOKAHEAD_METERS, total));
+const tgt = bearing(
+  pts[camPos.i],
+  pts[camPos.i + 1] || pts[camPos.i]
+);
   camBearing+=(((tgt-camBearing+540)%360)-180)*.14;
 
   map.jumpTo({
-    center:[pos.lng,pos.lat],
-    zoom:theme.baseZoom,
-    bearing:camBearing,
-    pitch:55
-  });
+  center: [camPos.lng, camPos.lat],
+  zoom: theme.baseZoom,
+  bearing: camBearing,
+  pitch: 55
+});
 
   if(finished&&!boundsShown&&ts-finishStart>4000){
     boundsShown=true;
