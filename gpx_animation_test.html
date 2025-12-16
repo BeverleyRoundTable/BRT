@@ -294,40 +294,46 @@ function getPos(d){
 }
 
 function draw(ts){
-  // ✅ stop drawing once hidden/finished
   if(!currentPos || hideSprite) return;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  const frame=Math.floor(ts/1000*fps)%frames;
-  const spriteW = sprite.width/frames;
+  const frame = Math.floor(ts/1000*fps) % frames;
+  const spriteW = sprite.width / frames;
 
-  const p=map.project([currentPos.lng,currentPos.lat]);
-  const FOOT_ANCHOR=size*0.32;
+  const p = map.project([currentPos.lng, currentPos.lat]);
+  const FOOT_ANCHOR = size * 0.32;
 
-  // ✅ Rotate sprite relative to camera bearing (fixes sideways at 2x)
-  // Limit how much Santa can visually rotate (degrees)
-const MAX_SPRITE_TILT = 25;
+  // ─────────────────────────────────────────
+  // Sprite rotation (SAFE + CLAMPED)
+  // ─────────────────────────────────────────
+  const MAX_SPRITE_TILT = 25;
 
-// Relative bearing between route and camera
-let rel = ((spriteBearing - camBearing + 540) % 360) - 180;
+  let rel = ((spriteBearing - camBearing + 540) % 360) - 180;
+  rel = clamp(rel, -MAX_SPRITE_TILT, MAX_SPRITE_TILT);
 
-// Clamp & dampen
-rel = clamp(rel, -MAX_SPRITE_TILT, MAX_SPRITE_TILT);
+  const spriteRotation = rel * 0.4 * Math.PI / 180;
 
-// Apply only a fraction (natural walk feel)
-ctx.rotate(rel * 0.4 * Math.PI / 180);
-
+  // ─────────────────────────────────────────
+  // DRAW (ORDER MATTERS)
+  // ─────────────────────────────────────────
   ctx.save();
-  ctx.translate(Math.round(p.x), Math.round(p.y - FOOT_ANCHOR));
-  ctx.rotate(rad);
+
+  ctx.translate(
+    Math.round(p.x),
+    Math.round(p.y - FOOT_ANCHOR)
+  );
+
+  ctx.rotate(spriteRotation);
+
   ctx.drawImage(
     sprite,
-    frame*spriteW, 0,
+    frame * spriteW, 0,
     spriteW, sprite.height,
     -size/2, -size/2,
     size, size
   );
+
   ctx.restore();
 }
 
