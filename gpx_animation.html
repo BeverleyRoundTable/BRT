@@ -58,8 +58,7 @@ html, body {
 /* ============================================================
    PARAMS + CANVAS
 ============================================================ */
-window.__GPX_DONE__ = false;
-  const P=new URLSearchParams(location.search);
+const P=new URLSearchParams(location.search);
 const API=P.get("api"), ROUTE=P.get("route");
 
 const routeNameEl = document.getElementById("route-name");
@@ -211,11 +210,7 @@ try{
   routeDateEl.textContent=route.date
     ?new Date(route.date+"T00:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})
     :"";
-  
-window.__GPX_META__ = {
-  name: route.routeName || "route",
-  date: route.date || ""
-};
+
   const rawPts=await loadGPX(route.gpxUrl);
   const pts=smoothPath(rawPts,2);
   const sprite=await loadImg(settings.travelboast_sprite);
@@ -375,10 +370,8 @@ function step(ts){
 
   draw(ts);
 
-if (overviewShown && !snowEnabled) {
-  window.__GPX_DONE__ = true;   // ⭐ SIGNAL TO RENDERER
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  return;
+  if(overviewShown&&!snowEnabled){ctx.clearRect(0,0,canvas.width,canvas.height);return;}
+  requestAnimationFrame(step);
 }
 
 requestAnimationFrame(step);
