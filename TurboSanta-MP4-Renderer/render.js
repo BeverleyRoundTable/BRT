@@ -7,6 +7,7 @@ const url = process.env.RENDER_URL;
 const width = Number(process.env.WIDTH || 1080);
 const height = Number(process.env.HEIGHT || 1080);
 const fps = Number(process.env.FPS || 30);
+const durationMs = Number(process.env.DURATION || 15000);
 
 if (!url) {
   console.error("❌ Missing RENDER_URL");
@@ -16,6 +17,7 @@ if (!url) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 console.log("🎅 Rendering:", url);
+console.log(`📐 ${width}x${height} @ ${fps}fps for max ${durationMs}ms`);
 
 const browser = await puppeteer.launch({
   headless: "new",
@@ -30,10 +32,14 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 await page.setViewport({ width, height, deviceScaleFactor: 1 });
 
-await page.goto(url, { waitUntil: "networkidle2" });
+/**
+ * MapLibre never truly goes "idle"
+ * domcontentloaded + settle time is safer
+ */
+await page.goto(url, { waitUntil: "domcontentloaded" });
 
 // Let MapLibre + GPX initialise
-await sleep(2000);
+await sleep(3000);
 
 // 📁 Prepare frames directory
 const framesDir = "frames";
@@ -47,11 +53,12 @@ await page.evaluate(() => {
 
 console.log("🎥 Recording frames (real-time)");
 
-// 🔁 Capture frames until animation signals completion
+// 🔁 Capture frames with HARD SAFETY CAP
 let frame = 0;
 const frameDelay = 1000 / fps;
+const maxFrames = Math.ceil(durationMs / frameDelay);
 
-while (true) {
+while (frame < maxFrames) {
   const framePath = path.join(
     framesDir,
     `frame_${String(frame).padStart(5, "0")}.png`
@@ -61,9 +68,16 @@ while (true) {
   frame++;
 
   const done = await page.evaluate(() => window.__GPX_DONE__ === true);
-  if (done) break;
+  if (done) {
+    console.log("✅ GPX animation completed early");
+    break;
+  }
 
   await sleep(frameDelay);
+}
+
+if (frame >= maxFrames) {
+  console.warn("⚠️ Max duration reached — forcing render stop");
 }
 
 // Small buffer for final settle
@@ -100,11 +114,11 @@ if (!frameCount) {
 console.log(`🖼️ ${frameCount} frames captured`);
 console.log("📛 Output file:", outputFile);
 
-// 🎬 Encode MP4
+// 🎬 Encode MP4 (FAST + HIGH QUALITY)
 execSync(
   `ffmpeg -y -r ${fps} -i frames/frame_%05d.png \
-   -c:v libx264 -pix_fmt yuv420p \
-   -movflags +faststart ${outputFile}`,
+   -c:v libx264 -preset veryfast -crf 18 \
+   -pix_fmt yuv420p -movflags +faststart ${outputFile}`,
   { stdio: "inherit" }
 );
 
