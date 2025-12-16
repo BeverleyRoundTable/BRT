@@ -88,21 +88,24 @@ addEventListener("resize",resize);
 resize();
 
 /* ============================================================
-   GLOBAL SNOWFALL OVERLAY (SCREEN SPACE)
+   GLOBAL SNOWFALL OVERLAY (SCREEN SPACE, CONTINUOUS)
 ============================================================ */
-function createSnowfall(enabled, color){
+function createSnowfall(enabled){
   const flakes=[];
-  const MAX=140;
+  const MAX=320;          // more flakes = no gaps
+  const SPAWN_PER_FRAME=3; // continuous density
 
   function spawn(){
-    if(!enabled || flakes.length>MAX) return;
-    flakes.push({
-      x:Math.random()*canvas.width,
-      y:-10,
-      r:Math.random()*2+1,
-      vy:Math.random()*0.8+0.4,
-      vx:Math.random()*0.4-0.2
-    });
+    if(!enabled) return;
+    for(let i=0;i<SPAWN_PER_FRAME && flakes.length<MAX;i++){
+      flakes.push({
+        x:Math.random()*canvas.width,
+        y:-20,
+        r:Math.random()*2.5+1,
+        vy:Math.random()*2.2+1.6,   // ❄ faster fall
+        vx:Math.random()*0.6-0.3
+      });
+    }
   }
 
   function update(){
@@ -110,15 +113,15 @@ function createSnowfall(enabled, color){
       const f=flakes[i];
       f.x+=f.vx;
       f.y+=f.vy;
-      if(f.y>canvas.height+10) flakes.splice(i,1);
+      if(f.y>canvas.height+30) flakes.splice(i,1);
     }
   }
 
   function draw(){
     if(!enabled) return;
     ctx.save();
-    ctx.fillStyle="#ffffff";
-    ctx.globalAlpha=0.85;
+    ctx.fillStyle="#ffffff"; // ❄ always white
+    ctx.globalAlpha=0.9;
     for(const f of flakes){
       ctx.beginPath();
       ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
@@ -312,19 +315,45 @@ function draw(ts){
 }
 
 function step(ts){
-  const dt=last?(ts-last)/1000:0; last=ts;
+  const dt=last?(ts-last)/1000:0;
+  last=ts;
 
-  // ❄ snow ALWAYS spawns while enabled
-snowfall.spawn();
-snowfall.update();
+  // ❄ Snow runs ALWAYS when enabled (independent of Santa)
+  snowfall.spawn();
+  snowfall.update();
 
-if(!finished){
-  m+=speed*dt;
-  if(m>=total){
-    m=total;
-    finished=true;
-    hideSprite=true;
+  if(!finished){
+    m+=speed*dt;
+    if(m>=total){
+      m=total;
+      finished=true;
+      hideSprite=true;
+      ctx.clearRect(0,0,canvas.width,canvas.height); // 🎅 vanish cleanly
+    }
   }
+
+  currentPos=getPos(m);
+  updateProgressLine(m);
+
+  const nextPos=getPos(Math.min(m+Math.max(0.6,speed*0.03),total));
+  spriteBearing=lerpAngle(spriteBearing,bearing(currentPos,nextPos),0.25);
+
+  if(finished&&!overviewShown){
+    overviewShown=true;
+    map.fitBounds(bounds,{padding:80,pitch:0,bearing:0,duration:2500});
+    return;
+  }
+
+  camBearing=lerpAngle(camBearing,spriteBearing,0.15);
+  map.jumpTo({
+    center:[currentPos.lng,currentPos.lat],
+    zoom:theme.baseZoom,
+    bearing:camBearing,
+    pitch:50
+  });
+
+  draw(ts);
+  requestAnimationFrame(step);
 }
 
   currentPos=getPos(m);
