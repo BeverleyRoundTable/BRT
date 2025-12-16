@@ -360,6 +360,12 @@ function draw(ts){
 }
 
 function step(ts){
+  // 🛑 Once overview is active, NEVER touch the camera again
+  if (overviewShown) {
+    draw(ts);
+    requestAnimationFrame(step);
+    return;
+  }
   // FINAL CLEANUP: when snow fully faded, clear canvas forever
 if (overviewShown && !snowEnabled) {
   ctx.clearRect(0,0,canvas.width,canvas.height);
