@@ -190,25 +190,86 @@ map.scrollZoom.disable();
 map.doubleClickZoom.disable();
 
 map.on("load",()=>{
-  map.addSource("route",{type:"geojson",data:{
-    type:"Feature",
-    geometry:{type:"LineString",coordinates:rawPts.map(p=>[p.lng,p.lat])}
-  }});
-
-  map.addLayer({
-    id:"route",
-    type:"line",
-    source:"route",
-    paint:{
-      "line-color":settings.primary_color||"#d31c1c",
-      "line-width":4
+  // ============================================================
+// ROUTE BASE (FULL, FAINT)
+// ============================================================
+map.addSource("route-base", {
+  type: "geojson",
+  data: {
+    type: "Feature",
+    geometry: {
+      type: "LineString",
+      coordinates: rawPts.map(p => [p.lng, p.lat])
     }
-  });
+  }
+});
+
+map.addLayer({
+  id: "route-base",
+  type: "line",
+  source: "route-base",
+  paint: {
+    "line-color": "#666",
+    "line-opacity": 0.35,
+    "line-width": 3
+  }
+});
+
+// ============================================================
+// ROUTE PROGRESS (RED, DYNAMIC)
+// ============================================================
+map.addSource("route-progress", {
+  type: "geojson",
+  data: {
+    type: "Feature",
+    geometry: {
+      type: "LineString",
+      coordinates: []
+    }
+  }
+});
+
+map.addLayer({
+  id: "route-progress",
+  type: "line",
+  source: "route-progress",
+  paint: {
+    "line-color": settings.primary_color || "#d31c1c",
+    "line-width": 4
+  }
+});
 
   animate(map,pts,sprite,settings,{baseZoom});
 });
 }
+function updateProgressLine(distance) {
+  const coords = [];
+  let remaining = distance;
 
+  for (let i = 1; i < pts.length && remaining > 0; i++) {
+    const seg = dist(pts[i - 1], pts[i]);
+    if (remaining >= seg) {
+      coords.push([pts[i - 1].lng, pts[i - 1].lat]);
+      remaining -= seg;
+    } else {
+      const t = remaining / seg;
+      const lat = pts[i - 1].lat + (pts[i].lat - pts[i - 1].lat) * t;
+      const lng = pts[i - 1].lng + (pts[i].lng - pts[i - 1].lng) * t;
+      coords.push([pts[i - 1].lng, pts[i - 1].lat]);
+      coords.push([lng, lat]);
+      break;
+    }
+  }
+
+  map.getSource("route-progress").setData({
+    type: "Feature",
+    geometry: {
+      type: "LineString",
+      coordinates: coords
+    }
+  });
+}
+  
 function animate(map,pts,sprite,settings,theme){
 const frames=+settings.travelboast_sprite_frames||5;
 const fps=+settings.travelboast_sprite_fps||14;
@@ -220,9 +281,47 @@ for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
 let m=0,last=null,camBearing=0;
-let finished=false,finishStart=0,boundsShown=false;
+let finished=false,finishStart=0;
 let currentPos=null;
 
+/* ============================================================
+   PROGRESS LINE UPDATER (SCOPED CORRECTLY)
+============================================================ */
+function updateProgressLine(distance){
+  const coords=[];
+  let remaining=distance;
+
+  for(let i=1;i<pts.length && remaining>0;i++){
+    const seg=dist(pts[i-1],pts[i]);
+
+    if(remaining>=seg){
+      coords.push([pts[i-1].lng,pts[i-1].lat]);
+      remaining-=seg;
+    }else{
+      const t=remaining/seg;
+      const lat=pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t;
+      const lng=pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t;
+      coords.push([pts[i-1].lng,pts[i-1].lat]);
+      coords.push([lng,lat]);
+      break;
+    }
+  }
+
+  const data={
+    type:"Feature",
+    geometry:{type:"LineString",coordinates:coords}
+  };
+
+  const core=map.getSource("route-progress");
+  const glow=map.getSource("route-progress-glow");
+
+  if(core) core.setData(data);
+  if(glow) glow.setData(data);
+}
+
+/* ============================================================
+   POSITION + DRAW
+============================================================ */
 function getPos(d){
   let i=cum.findIndex(v=>v>=d); i=Math.max(1,i);
   const t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);
@@ -245,9 +344,12 @@ function draw(ts){
   ctx.restore();
 }
 
+/* ============================================================
+   ANIMATION LOOP
+============================================================ */
 function step(ts){
-  const dt = last ? (ts-last)/1000 : 0;
-  last = ts;
+  const dt=last?(ts-last)/1000:0;
+  last=ts;
 
   if(!finished){
     m+=speed*dt;
@@ -255,26 +357,20 @@ function step(ts){
   }
 
   currentPos=getPos(m);
+  updateProgressLine(m);
 
   const lookAhead=Math.max(0.6,speed*0.03);
   const nextPos=getPos(Math.min(m+lookAhead,total));
 
-  const tgt = bearing(currentPos, nextPos);
-let delta = ((tgt - camBearing + 540) % 360) - 180;
+  const tgt=bearing(currentPos,nextPos);
+  let delta=((tgt-camBearing+540)%360)-180;
 
-// Allow faster rotation on sharper turns
-const turnIntensity = Math.min(1, Math.abs(delta) / 35);
+  const turnIntensity=Math.min(1,Math.abs(delta)/35);
+  const MAX_TURN_RATE=(110+140*turnIntensity)*dt;
+  delta=clamp(delta,-MAX_TURN_RATE,MAX_TURN_RATE);
 
-// Dynamic turn rate (deg/sec)
-const MAX_TURN_RATE = (110 + 140 * turnIntensity) * dt;
-
-// Clamp rotation speed
-delta = clamp(delta, -MAX_TURN_RATE, MAX_TURN_RATE);
-
-// Ease factor increases on corners
-const TURN_EASE = 0.12 + 0.18 * turnIntensity;
-
-camBearing += delta * TURN_EASE;
+  const TURN_EASE=0.12+0.18*turnIntensity;
+  camBearing+=delta*TURN_EASE;
 
   map.jumpTo({
     center:[currentPos.lng,currentPos.lat],
@@ -292,3 +388,4 @@ requestAnimationFrame(step);
 </script>
 </body>
 </html>
+
