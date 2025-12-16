@@ -147,7 +147,7 @@ try{
 const pts = smoothPath(rawPts, 3);
   const sprite=await loadImg(settings.travelboost_sprite);
 
-  initMapAndRun(pts,sprite,settings);
+  initMapAndRun(rawPts, pts, sprite, settings);
 }catch(e){toast(e.message||e);}
 })();
 
@@ -161,7 +161,7 @@ function loadImg(u){
 /* ============================================================
    MAP + ANIMATION
 ============================================================ */
-function initMapAndRun(pts,sprite,settings){
+function initMapAndRun(rawPts, pts, sprite, settings){
 const baseZoom=+settings.default_map_zoom||16;
 const map=new maplibregl.Map({
   container:"map",
@@ -268,10 +268,6 @@ const SANTA_Y = canvas.height * (0.58 - LOOKAHEAD_SCREEN_BIAS);
   }
 
   const pos = getPos(m);
-// Camera looks ahead
-const nextPos = getPos(
-  Math.min(m + Math.max(1.5, speed * 0.2), total)
-);
 
 // Bearing follows Santa's REAL movement
 const nextPos = getPos(Math.min(m + 1.5, total)); // ~1–2m ahead only
