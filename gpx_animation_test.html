@@ -60,11 +60,20 @@ html, body {
 ============================================================ */
 const P=new URLSearchParams(location.search);
 const API=P.get("api"), ROUTE=P.get("route");
+
 const routeNameEl=document.getElementById("route-name");
 const routeDateEl=document.getElementById("route-date");
 const toastEl=document.getElementById("toast");
 
-if(!API){toast("Missing api=");throw new Error("Missing api");}
+function toast(m){
+  toastEl.style.display="block";
+  toastEl.textContent=m;
+}
+
+if(!API){
+  toast("Missing api=");
+  throw new Error("Missing api");
+}
 
 const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
@@ -75,9 +84,8 @@ function resize(){
   canvas.height=innerHeight*dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-addEventListener("resize",resize);resize();
-
-function toast(m){toastEl.style.display="block";toastEl.textContent=m;}
+addEventListener("resize",resize);
+resize();
 
 /* ============================================================
    HELPERS
@@ -97,7 +105,7 @@ async function loadGPX(u){
   return [...d.getElementsByTagName("trkpt")].map(p=>({
     lat:+p.getAttribute("lat"),
     lng:+(p.getAttribute("lon")||p.getAttribute("lng"))
-  })).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
+  }));
 }
 
 function smoothPath(p,it=2){
@@ -144,8 +152,8 @@ try{
   routeDateEl.textContent=route.date||"";
 
   const rawPts = await loadGPX(route.gpxUrl);
-const pts = smoothPath(rawPts, 3);
-  const sprite=await loadImg(settings.travelboost_sprite);
+  const pts = smoothPath(rawPts, 3);
+  const sprite = await loadImg(settings.travelboost_sprite);
 
   initMapAndRun(rawPts, pts, sprite, settings);
 }catch(e){toast(e.message||e);}
@@ -153,8 +161,11 @@ const pts = smoothPath(rawPts, 3);
 
 function loadImg(u){
   return new Promise((res,rej)=>{
-    const i=new Image();i.crossOrigin="anonymous";
-    i.onload=()=>res(i);i.onerror=rej;i.src=u;
+    const i=new Image();
+    i.crossOrigin="anonymous";
+    i.onload=()=>res(i);
+    i.onerror=rej;
+    i.src=u;
   });
 }
 
@@ -163,6 +174,7 @@ function loadImg(u){
 ============================================================ */
 function initMapAndRun(rawPts, pts, sprite, settings){
 const baseZoom=+settings.default_map_zoom||16;
+
 const map=new maplibregl.Map({
   container:"map",
   style:MAP_STYLE,
@@ -180,11 +192,9 @@ map.doubleClickZoom.disable();
 map.on("load",()=>{
   map.addSource("route",{type:"geojson",data:{
     type:"Feature",
-    geometry:{
-  type:"LineString",
-  coordinates: rawPts.map(p => [p.lng, p.lat])
-}
+    geometry:{type:"LineString",coordinates:rawPts.map(p=>[p.lng,p.lat])}
   }});
+
   map.addLayer({
     id:"route",
     type:"line",
@@ -204,118 +214,63 @@ const frames=+settings.travelboost_sprite_frames||5;
 const fps=+settings.travelboost_sprite_fps||14;
 const size=+settings.travelboost_sprite_size||128;
 const speed=(+settings.travelboost_speed||.1)*18;
-const LOOKAHEAD_METERS = 16; // tweak: 8–20 is a good range
-
 
 const cum=[0];
 for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
-let m=0,last=0,camBearing=0;
+let m=0,last=null,camBearing=0;
 let finished=false,finishStart=0,boundsShown=false;
+let currentPos=null;
 
 function getPos(d){
-  let i=cum.findIndex(v=>v>=d);i=Math.max(1,i);
+  let i=cum.findIndex(v=>v>=d); i=Math.max(1,i);
   const t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);
   const a=pts[i-1],b=pts[i];
-  return {lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t,i:i-1};
-}
-
-function fitBounds(){
-  const lats=pts.map(p=>p.lat),lngs=pts.map(p=>p.lng);
-  map.fitBounds([[Math.min(...lngs),Math.min(...lats)],
-                 [Math.max(...lngs),Math.max(...lats)]],
-    {padding:60,pitch:0,bearing:0});
+  return {lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 }
 
 function draw(ts){
+  if(!currentPos) return;
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  const spriteW = sprite.width / frames;
-  const frame = Math.floor(ts / 1000 * fps) % frames;
-
-  // Project Santa's REAL map position to screen pixels
-  const p = map.project([pos.lng, pos.lat]);
-
-  // Foot anchor keeps boots on the road
-  const FOOT_ANCHOR = size * 0.32;
+  const spriteW=sprite.width/frames;
+  const frame=Math.floor(ts/1000*fps)%frames;
+  const p=map.project([currentPos.lng,currentPos.lat]);
+  const FOOT_ANCHOR=size*0.32;
 
   ctx.save();
-  ctx.translate(
-    Math.round(p.x),
-    Math.round(p.y - FOOT_ANCHOR)
-  );
-
-  ctx.drawImage(
-    sprite,
-    frame * spriteW, 0,
-    spriteW, sprite.height,
-    -size / 2,
-    -size / 2,
-    size, size
-  );
-
+  ctx.translate(Math.round(p.x),Math.round(p.y-FOOT_ANCHOR));
+  ctx.drawImage(sprite,frame*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
   ctx.restore();
 }
 
- function step(ts){
-  if(!last) last = ts;
-  const dt = (ts - last) / 1000;
+function step(ts){
+  const dt = last ? (ts-last)/1000 : 0;
   last = ts;
 
   if(!finished){
-    m += speed * dt;
-    if(m >= total){
-      m = total;
-      finished = true;
-      finishStart = ts;
-    }
+    m+=speed*dt;
+    if(m>=total){m=total;finished=true;finishStart=ts;}
   }
 
-  // ============================================================
-  // BEARING + CAMERA (PHYSICALLY CORRECT, SPEED-AWARE)
-  // ============================================================
+  currentPos=getPos(m);
 
-  // Santa's actual position on the route
-  const pos = getPos(m);
+  const lookAhead=Math.max(0.6,speed*0.03);
+  const nextPos=getPos(Math.min(m+lookAhead,total));
 
-  // Look only a SMALL distance ahead for bearing (prevents early turns)
-  const BEARING_LOOKAHEAD_METERS = Math.max(0.6, speed * 0.03);
-  // ~0.8–1.2m at speed 1.5–2.0
+  const tgt=bearing(currentPos,nextPos);
+  let delta=((tgt-camBearing+540)%360)-180;
+  const MAX_TURN_RATE=110*dt;
+  delta=clamp(delta,-MAX_TURN_RATE,MAX_TURN_RATE);
+  camBearing+=delta*0.14;
 
-  const nextPos = getPos(
-    Math.min(m + BEARING_LOOKAHEAD_METERS, total)
-  );
-
-  // Target bearing based on REAL movement direction
-  const tgt = bearing(
-    { lat: pos.lat, lng: pos.lng },
-    { lat: nextPos.lat, lng: nextPos.lng }
-  );
-
-  // Shortest angular difference
-  let delta = ((tgt - camBearing + 540) % 360) - 180;
-
-  // Limit how fast Santa can rotate (degrees per second)
-  const MAX_TURN_RATE = 110 * dt;
-
-  delta = clamp(delta, -MAX_TURN_RATE, MAX_TURN_RATE);
-
-  // Smoothly rotate toward target bearing
-  camBearing += delta * 0.14;
-
-  // Move camera to Santa's REAL position
   map.jumpTo({
-    center: [pos.lng, pos.lat],
-    zoom: theme.baseZoom,
-    bearing: camBearing,
-    pitch: 55
+    center:[currentPos.lng,currentPos.lat],
+    zoom:theme.baseZoom,
+    bearing:camBearing,
+    pitch:55
   });
-
-  if(finished && !boundsShown && ts - finishStart > 4000){
-    boundsShown = true;
-    fitBounds();
-  }
 
   draw(ts);
   requestAnimationFrame(step);
@@ -323,7 +278,6 @@ function draw(ts){
 
 requestAnimationFrame(step);
 }
-
 </script>
 </body>
 </html>
