@@ -200,7 +200,7 @@ const frames=+settings.travelboost_sprite_frames||5;
 const fps=+settings.travelboost_sprite_fps||14;
 const size=+settings.travelboost_sprite_size||128;
 const speed=(+settings.travelboost_speed||.1)*18;
-const LOOKAHEAD_METERS = 12; // tweak: 8–20 is a good range
+const LOOKAHEAD_METERS = 16; // tweak: 8–20 is a good range
 
 
 const cum=[0];
@@ -230,14 +230,17 @@ function draw(ts){
   const spriteW = sprite.width / frames;
   const frame = Math.floor(ts / 1000 * fps) % frames;
 
+  const FOOT_ANCHOR = size * 0.32;
+
 const SANTA_X = canvas.width / 2;
-const SANTA_Y = canvas.height * 0.58;
+const LOOKAHEAD_SCREEN_BIAS = 0.035; // tweak 0.03–0.06
+const SANTA_Y = canvas.height * (0.58 - LOOKAHEAD_SCREEN_BIAS);
 
   ctx.save();
   ctx.translate(
-    Math.round(SANTA_X),
-    Math.round(SANTA_Y)
-  );
+  Math.round(SANTA_X),
+  Math.round(SANTA_Y - FOOT_ANCHOR)
+);
 
   ctx.drawImage(
     sprite,
