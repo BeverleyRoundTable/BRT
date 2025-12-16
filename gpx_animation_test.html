@@ -89,71 +89,57 @@ addEventListener("resize",resize);
 resize();
 
 /* ============================================================
-   GLOBAL SNOWFALL OVERLAY (CONTINUOUS, GAPLESS)
+   GLOBAL SNOWFALL OVERLAY
 ============================================================ */
 function createSnowfall(enabled){
-  const flakes = [];
-  const DENSITY = 0.00018; // flakes per pixel
-  let targetCount = 0;
+  const flakes=[];
+  const DENSITY=0.00018;
 
-  function resizeSnow(){
-    targetCount = Math.floor(canvas.width * canvas.height * DENSITY);
-    while (flakes.length < targetCount) addFlake(true);
-    while (flakes.length > targetCount) flakes.pop();
+  function addFlake(randomY=false){
+    flakes.push({
+      x:Math.random()*canvas.width,
+      y:randomY?Math.random()*canvas.height:-20,
+      r:Math.random()*2.2+1,
+      vy:Math.random()*1.6+1.4,
+      vx:Math.random()*0.4-0.2,
+      drift:Math.random()*Math.PI*2
+    });
   }
 
-  function addFlake(randomY = false){
-    flakes.push({
-      x: Math.random() * canvas.width,
-      y: randomY ? Math.random() * canvas.height : -20,
-      r: Math.random() * 2.2 + 1,
-      vy: Math.random() * 1.6 + 1.4,
-      vx: Math.random() * 0.4 - 0.2,
-      drift: Math.random() * Math.PI * 2
-    });
+  function resizeSnow(){
+    const target=Math.floor(canvas.width*canvas.height*DENSITY);
+    while(flakes.length<target) addFlake(true);
+    while(flakes.length>target) flakes.pop();
   }
 
   function update(){
     if(!enabled) return;
-
     for(const f of flakes){
-      f.drift += 0.01;
-      f.x += f.vx + Math.sin(f.drift) * 0.15;
-      f.y += f.vy;
-
-      // recycle instead of destroy (NO GAPS)
-      if(f.y > canvas.height + 30){
-        f.y = -20;
-        f.x = Math.random() * canvas.width;
-      }
-
-      // horizontal wrap
-      if(f.x < -20) f.x = canvas.width + 20;
-      if(f.x > canvas.width + 20) f.x = -20;
+      f.drift+=0.01;
+      f.x+=f.vx+Math.sin(f.drift)*0.15;
+      f.y+=f.vy;
+      if(f.y>canvas.height+30){f.y=-20;f.x=Math.random()*canvas.width;}
+      if(f.x<-20)f.x=canvas.width+20;
+      if(f.x>canvas.width+20)f.x=-20;
     }
   }
 
   function draw(){
     if(!enabled) return;
-
     ctx.save();
-    ctx.fillStyle = "#ffffff";
-    ctx.globalAlpha = 0.9;
-
+    ctx.fillStyle="#fff";
+    ctx.globalAlpha=0.9;
     for(const f of flakes){
       ctx.beginPath();
-      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+      ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
       ctx.fill();
     }
-
     ctx.restore();
   }
 
-  // initial fill + resize safety
   resizeSnow();
-  addEventListener("resize", resizeSnow);
-
-  return { update, draw };
+  addEventListener("resize",resizeSnow);
+  return{update,draw};
 }
 
 /* ============================================================
@@ -206,8 +192,8 @@ function dist(a,b){
   return 2*R*Math.asin(Math.sqrt(s));
 }
 
-function angleDelta(a,b){ return ((b-a+540)%360)-180; }
-function lerpAngle(a,b,t){ return (a+angleDelta(a,b)*t+360)%360; }
+function angleDelta(a,b){return((b-a+540)%360)-180;}
+function lerpAngle(a,b,t){return(a+angleDelta(a,b)*t+360)%360;}
 
 /* ============================================================
    MAIN
@@ -218,17 +204,12 @@ try{
   const settings=master.settings||{};
   const routes=master.routes||[];
   const route=routes.find(r=>r.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
-  if(!route||!route.gpxUrl)throw "Route invalid";
+  if(!route||!route.gpxUrl)throw"Route invalid";
 
-  routeNameEl.textContent = route.routeName || "";
-
-routeDateEl.textContent = route.date
-  ? new Date(route.date + "T00:00:00").toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    })
-  : "";
+  routeNameEl.textContent=route.routeName||"";
+  routeDateEl.textContent=route.date
+    ?new Date(route.date+"T00:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})
+    :"";
 
   const rawPts=await loadGPX(route.gpxUrl);
   const pts=smoothPath(rawPts,2);
@@ -288,9 +269,7 @@ map.on("load",()=>{
 }
 
 function animate(map,pts,sprite,settings,theme){
-  // ❄️ snow lifecycle state (per animation run)
-  let snowAlpha = 1;
-  let snowFading = false;
+let snowAlpha=1,snowFading=false;
 const frames=+settings.travelboast_sprite_frames||5;
 const fps=+settings.travelboast_sprite_fps||14;
 const size=+settings.travelboast_sprite_size||128;
@@ -300,157 +279,103 @@ const snowfall=createSnowfall(
   (settings.travelboast_particle_effects||"").toLowerCase()==="snow"
 );
 
-const cum=[0]; for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
-const bounds=new maplibregl.LngLatBounds(); pts.forEach(p=>bounds.extend([p.lng,p.lat]));
+const bounds=new maplibregl.LngLatBounds();pts.forEach(p=>bounds.extend([p.lng,p.lat]));
 
 let m=0,last=null,camBearing=0,spriteBearing=0;
-let finished=false, overviewShown=false, hideSprite=false, currentPos=null;
+let finished=false,overviewShown=false,hideSprite=false,currentPos=null;
 let snowEnabled=true;
-let snowWarmup=0;
 
 function updateProgressLine(distance){
-  const coords=[]; let remaining=distance;
+  const coords=[];let remaining=distance;
   for(let i=1;i<pts.length&&remaining>0;i++){
     const seg=dist(pts[i-1],pts[i]);
     if(remaining>=seg){coords.push([pts[i-1].lng,pts[i-1].lat]);remaining-=seg;}
     else{
       const t=remaining/seg;
       coords.push([pts[i-1].lng,pts[i-1].lat]);
-      coords.push([pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t,pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t]);
+      coords.push([
+        pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t,
+        pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t
+      ]);
       break;
     }
   }
-  const data={type:"Feature",geometry:{type:"LineString",coordinates:coords}};
-  map.getSource("route-progress")?.setData(data);
-  map.getSource("route-progress-glow")?.setData(data);
+  map.getSource("route-progress")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:coords}});
+  map.getSource("route-progress-glow")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:coords}});
 }
 
 function getPos(d){
-  let i=cum.findIndex(v=>v>=d); i=Math.max(1,i);
+  let i=cum.findIndex(v=>v>=d);i=Math.max(1,i);
   const t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);
   const a=pts[i-1],b=pts[i];
-  return {lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
+  return{lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 }
 
 function draw(ts){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if (snowEnabled) {
-  ctx.save();
-  ctx.globalAlpha = snowAlpha;
-  snowfall.draw();
-  ctx.restore();
-}
-  if(!currentPos||hideSprite) return;
-
+  if(snowEnabled){ctx.save();ctx.globalAlpha=snowAlpha;snowfall.draw();ctx.restore();}
+  if(!currentPos||hideSprite)return;
   const frame=Math.floor(ts/1000*fps)%frames;
   const spriteW=sprite.width/frames;
   const p=map.project([currentPos.lng,currentPos.lat]);
-  const FOOT_ANCHOR=size*0.32;
-
   let rel=((spriteBearing-camBearing+540)%360)-180;
   rel=clamp(rel,-25,25);
-
   ctx.save();
-  ctx.translate(Math.round(p.x),Math.round(p.y-FOOT_ANCHOR));
+  ctx.translate(Math.round(p.x),Math.round(p.y-size*0.32));
   ctx.rotate(rel*0.4*Math.PI/180);
   ctx.drawImage(sprite,frame*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
   ctx.restore();
 }
 
-function step(ts) {
-  const dt = last ? (ts - last) / 1000 : 0;
-  last = ts;
+function step(ts){
+  const dt=last?(ts-last)/1000:0;last=ts;
 
-  /* -------------------------
-     SNOW UPDATE / FADE
-  -------------------------- */
-  if (snowEnabled) {
+  if(snowEnabled){
     snowfall.update();
-
-    if (snowFading) {
-      snowAlpha -= 0.008;
-      if (snowAlpha <= 0) {
-        snowAlpha = 0;
-        snowEnabled = false;
-        snowFading = false;
-      }
+    if(snowFading){
+      snowAlpha-=0.008;
+      if(snowAlpha<=0){snowAlpha=0;snowEnabled=false;snowFading=false;}
     }
   }
 
-  /* -------------------------
-     MOVEMENT PHASE
-  -------------------------- */
-  if (!finished) {
-    m += speed * dt;
+  if(!finished){
+    m+=speed*dt;
+    if(m>=total){
+      m=total;
+      finished=true;
+      hideSprite=true;
+      snowFading=true;
 
-    if (m >= total) {
-      m = total;
-      finished = true;
-      hideSprite = true;
-      snowFading = true;
+      // ✅ FORCE FINAL ROUTE GEOMETRY
+      const finalCoords=pts.map(p=>[p.lng,p.lat]);
+      map.getSource("route-progress")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:finalCoords}});
+      map.getSource("route-progress-glow")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:finalCoords}});
 
-      // 🔥 START OVERVIEW (ONCE)
-      map.fitBounds(bounds, {
-        padding: 120,
-        pitch: 0,
-        bearing: 0,
-        duration: 3000,
-        maxZoom: 14
-      });
-
-      overviewShown = true;
+      map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:3000,maxZoom:14});
+      overviewShown=true;
     }
   }
 
-  /* -------------------------
-     TRACKING CAMERA
-     (ONLY BEFORE OVERVIEW)
-  -------------------------- */
-  if (!overviewShown) {
-    currentPos = getPos(m);
+  if(!overviewShown){
+    currentPos=getPos(m);
     updateProgressLine(m);
-
-    const nextPos = getPos(
-      Math.min(m + Math.max(0.6, speed * 0.03), total)
-    );
-
-    spriteBearing = lerpAngle(
-      spriteBearing,
-      bearing(currentPos, nextPos),
-      0.25
-    );
-
-    camBearing = lerpAngle(camBearing, spriteBearing, 0.15);
-
-    map.jumpTo({
-      center: [currentPos.lng, currentPos.lat],
-      zoom: theme.baseZoom,
-      bearing: camBearing,
-      pitch: 50
-    });
+    const nextPos=getPos(Math.min(m+Math.max(0.6,speed*0.03),total));
+    spriteBearing=lerpAngle(spriteBearing,bearing(currentPos,nextPos),0.25);
+    camBearing=lerpAngle(camBearing,spriteBearing,0.15);
+    map.jumpTo({center:[currentPos.lng,currentPos.lat],zoom:theme.baseZoom,bearing:camBearing,pitch:50});
   }
 
-  /* -------------------------
-     DRAW
-  -------------------------- */
   draw(ts);
 
-  /* -------------------------
-     FINAL FREEZE
-  -------------------------- */
-  if (overviewShown && !snowEnabled) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    return; // clean end frame
-  }
-
+  if(overviewShown&&!snowEnabled){ctx.clearRect(0,0,canvas.width,canvas.height);return;}
   requestAnimationFrame(step);
 }
-  
+
 requestAnimationFrame(step);
 }
-  
 </script>
 </body>
 </html>
