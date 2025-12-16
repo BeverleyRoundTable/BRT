@@ -314,13 +314,18 @@ function draw(ts){
 function step(ts){
   const dt=last?(ts-last)/1000:0; last=ts;
 
-  if(!finished){
-    m+=speed*dt;
-    snowfall.spawn();
-    if(m>=total){m=total;finished=true;hideSprite=true;}
-  }
+  // ❄ snow ALWAYS spawns while enabled
+snowfall.spawn();
+snowfall.update();
 
-  snowfall.update();
+if(!finished){
+  m+=speed*dt;
+  if(m>=total){
+    m=total;
+    finished=true;
+    hideSprite=true;
+  }
+}
 
   currentPos=getPos(m);
   updateProgressLine(m);
