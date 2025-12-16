@@ -171,7 +171,8 @@ function smoothPath(p,it=2){
   for(let i=0;i<p.length-1;i++){
     const a=p[i],b=p[i+1];
     o.push({lat:.75*a.lat+.25*b.lat,lng:.75*a.lng+.25*b.lng});
-    o.push({lat:.25*a.lat+.75*b.lat,lng:.25*b.lng+.75*b.lng});
+    /* ✅ FIX: was accidentally using b.lng twice (no smoothing) */
+    o.push({lat:.25*a.lat+.75*b.lat,lng:.25*a.lng+.75*b.lng});
   }
   o.push(p.at(-1));
   return smoothPath(o,it-1);
@@ -323,8 +324,8 @@ function draw(ts){
   if(!currentPos||hideSprite)return;
 
   const frame = IS_RENDER
-    ? renderFrame % frames
-    : Math.floor(ts/1000*spriteFps)%frames;
+    ? (renderFrame % frames)
+    : (Math.floor(ts/1000*spriteFps)%frames);
 
   const spriteW=sprite.width/frames;
   const p=map.project([currentPos.lng,currentPos.lat]);
@@ -338,13 +339,9 @@ function draw(ts){
 }
 
 function step(ts){
-  let dt;
-  if (IS_RENDER) {
-    dt = 1 / RENDER_FPS;
-  } else {
-    dt = last ? (ts - last) / 1000 : 0;
-    last = ts;
-  }
+  /* ✅ deterministic time in render mode */
+  const dt = IS_RENDER ? (1 / RENDER_FPS) : (last ? (ts - last) / 1000 : 0);
+  last = ts; /* ✅ always update last */
 
   if(snowEnabled){
     snowfall.update();
