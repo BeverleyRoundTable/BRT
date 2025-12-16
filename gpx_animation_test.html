@@ -95,49 +95,71 @@ addEventListener("resize",resize);
 resize();
 
 /* ============================================================
-   GLOBAL SNOWFALL OVERLAY (SCREEN SPACE)
+   GLOBAL SNOWFALL OVERLAY (CONTINUOUS, GAPLESS)
 ============================================================ */
 function createSnowfall(enabled){
-  const flakes=[];
-  const MAX=320;
-  const SPAWN_PER_FRAME=3;
+  const flakes = [];
+  const DENSITY = 0.00018; // flakes per pixel
+  let targetCount = 0;
 
-  function spawn(){
-    if(!enabled) return;
-    for(let i=0;i<SPAWN_PER_FRAME && flakes.length<MAX;i++){
-      flakes.push({
-        x:Math.random()*canvas.width,
-        y:-20,
-        r:Math.random()*2.5+1,
-        vy:Math.random()*2.2+1.6,
-        vx:Math.random()*0.6-0.3
-      });
-    }
+  function resizeSnow(){
+    targetCount = Math.floor(canvas.width * canvas.height * DENSITY);
+    while (flakes.length < targetCount) addFlake(true);
+    while (flakes.length > targetCount) flakes.pop();
+  }
+
+  function addFlake(randomY = false){
+    flakes.push({
+      x: Math.random() * canvas.width,
+      y: randomY ? Math.random() * canvas.height : -20,
+      r: Math.random() * 2.2 + 1,
+      vy: Math.random() * 1.6 + 1.4,
+      vx: Math.random() * 0.4 - 0.2,
+      drift: Math.random() * Math.PI * 2
+    });
   }
 
   function update(){
-    for(let i=flakes.length-1;i>=0;i--){
-      const f=flakes[i];
-      f.x+=f.vx;
-      f.y+=f.vy;
-      if(f.y>canvas.height+30) flakes.splice(i,1);
+    if(!enabled) return;
+
+    for(const f of flakes){
+      f.drift += 0.01;
+      f.x += f.vx + Math.sin(f.drift) * 0.15;
+      f.y += f.vy;
+
+      // recycle instead of destroy (NO GAPS)
+      if(f.y > canvas.height + 30){
+        f.y = -20;
+        f.x = Math.random() * canvas.width;
+      }
+
+      // horizontal wrap
+      if(f.x < -20) f.x = canvas.width + 20;
+      if(f.x > canvas.width + 20) f.x = -20;
     }
   }
 
   function draw(){
     if(!enabled) return;
+
     ctx.save();
-    ctx.fillStyle="#ffffff";
-    ctx.globalAlpha=0.9;
+    ctx.fillStyle = "#ffffff";
+    ctx.globalAlpha = 0.9;
+
     for(const f of flakes){
       ctx.beginPath();
-      ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
       ctx.fill();
     }
+
     ctx.restore();
   }
 
-  return {spawn,update,draw};
+  // initial fill + resize safety
+  resizeSnow();
+  addEventListener("resize", resizeSnow);
+
+  return { update, draw };
 }
 
 /* ============================================================
