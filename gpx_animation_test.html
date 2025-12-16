@@ -376,12 +376,17 @@ function step(ts){
   const nextPos=getPos(Math.min(m+Math.max(0.6,speed*0.03),total));
   spriteBearing=lerpAngle(spriteBearing,bearing(currentPos,nextPos),0.25);
 
-  if(finished&&!overviewShown){
-    overviewShown=true;
-    snowEnabled=false;
-    map.fitBounds(bounds,{padding:80,pitch:0,bearing:0,duration:2500});
-    return;
-  }
+ if (finished && !overviewShown) {
+  overviewShown = true;
+  snowEnabled = false;
+
+  map.fitBounds(bounds,{
+    padding:80,
+    pitch:0,
+    bearing:0,
+    duration:2500
+  });
+}
 
   camBearing=lerpAngle(camBearing,spriteBearing,0.15);
   map.jumpTo({center:[currentPos.lng,currentPos.lat],zoom:theme.baseZoom,bearing:camBearing,pitch:50});
