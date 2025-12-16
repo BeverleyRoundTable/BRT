@@ -228,6 +228,29 @@ map.addSource("route-progress", {
     }
   }
 });
+  
+// ============================================================
+// ROUTE PROGRESS GLOW (UNDERLAY)
+// ============================================================
+map.addSource("route-progress-glow", {
+  type: "geojson",
+  data: {
+    type: "Feature",
+    geometry: { type: "LineString", coordinates: [] }
+  }
+});
+
+map.addLayer({
+  id: "route-progress-glow",
+  type: "line",
+  source: "route-progress-glow",
+  paint: {
+    "line-color": settings.primary_color || "#d31c1c",
+    "line-width": 10,
+    "line-opacity": 0.25,
+    "line-blur": 6
+  }
+}, "route-progress"); // ensure glow sits UNDER the core
 
 map.addLayer({
   id: "route-progress",
