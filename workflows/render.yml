@@ -1,0 +1,61 @@
+name: Render GPX Animation to MP4
+
+on:
+  workflow_dispatch:
+    inputs:
+      render_url:
+        description: "GPX animation URL"
+        required: true
+      aspect:
+        description: "square | landscape | reel"
+        required: false
+        default: "square"
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          npm install
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Set aspect ratio
+        run: |
+          if [ "${{ github.event.inputs.aspect }}" = "landscape" ]; then
+            echo "WIDTH=1920" >> $GITHUB_ENV
+            echo "HEIGHT=1080" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.aspect }}" = "reel" ]; then
+            echo "WIDTH=1080" >> $GITHUB_ENV
+            echo "HEIGHT=1920" >> $GITHUB_ENV
+          else
+            echo "WIDTH=1080" >> $GITHUB_ENV
+            echo "HEIGHT=1080" >> $GITHUB_ENV
+          fi
+
+      - name: Render MP4
+        env:
+          RENDER_URL: ${{ github.event.inputs.render_url }}
+          WIDTH: ${{ env.WIDTH }}
+          HEIGHT: ${{ env.HEIGHT }}
+          OUTPUT: gpx_animation.mp4
+          DURATION: 15000
+          FPS: 30
+        run: |
+          node render.js
+
+      - name: Upload MP4
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpx-animation-mp4
+          path: gpx_animation.mp4
