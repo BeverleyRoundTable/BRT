@@ -4,7 +4,6 @@ import path from "path";
 import { execSync } from "child_process";
 
 const url = process.env.RENDER_URL;
-const out = process.env.OUTPUT || "gpx_animation.mp4";
 const width = Number(process.env.WIDTH || 1080);
 const height = Number(process.env.HEIGHT || 1080);
 const fps = Number(process.env.FPS || 30);
@@ -41,17 +40,17 @@ const framesDir = "frames";
 fs.rmSync(framesDir, { recursive: true, force: true });
 fs.mkdirSync(framesDir, { recursive: true });
 
-// Ensure flag exists
+// Ensure completion flag exists
 await page.evaluate(() => {
   window.__GPX_DONE__ = false;
 });
 
 console.log("🎥 Recording frames (real-time)");
 
+// 🔁 Capture frames until animation signals completion
 let frame = 0;
 const frameDelay = 1000 / fps;
 
-// 🔁 Capture until animation signals completion
 while (true) {
   const framePath = path.join(
     framesDir,
@@ -67,10 +66,30 @@ while (true) {
   await sleep(frameDelay);
 }
 
-// Small buffer for final frame settle
+// Small buffer for final settle
 await sleep(300);
 
+// 🔎 Read metadata for filename
+const meta = await page.evaluate(() => window.__GPX_META__ || {});
+
 await browser.close();
+
+// 🧼 Build safe filename
+const safe = s =>
+  String(s || "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^\w\-]/g, "");
+
+const datePart = meta.date
+  ? new Date(meta.date).toISOString().slice(0, 10)
+  : "";
+
+const baseName = [safe(meta.name), datePart]
+  .filter(Boolean)
+  .join("_");
+
+const outputFile = `${baseName || "gpx_animation"}.mp4`;
 
 const frameCount = fs.readdirSync(framesDir).length;
 if (!frameCount) {
@@ -79,13 +98,14 @@ if (!frameCount) {
 }
 
 console.log(`🖼️ ${frameCount} frames captured`);
+console.log("📛 Output file:", outputFile);
 
 // 🎬 Encode MP4
 execSync(
   `ffmpeg -y -r ${fps} -i frames/frame_%05d.png \
    -c:v libx264 -pix_fmt yuv420p \
-   -movflags +faststart ${out}`,
+   -movflags +faststart ${outputFile}`,
   { stdio: "inherit" }
 );
 
-console.log("✅ MP4 created:", out);
+console.log("✅ MP4 created:", outputFile);
