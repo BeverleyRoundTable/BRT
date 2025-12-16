@@ -265,24 +265,6 @@ map.addLayer({
   animate(map,pts,sprite,settings,{baseZoom});
 });
 }
-function updateProgressLine(distance) {
-  const coords = [];
-  let remaining = distance;
-
-  for (let i = 1; i < pts.length && remaining > 0; i++) {
-    const seg = dist(pts[i - 1], pts[i]);
-    if (remaining >= seg) {
-      coords.push([pts[i - 1].lng, pts[i - 1].lat]);
-      remaining -= seg;
-    } else {
-      const t = remaining / seg;
-      const lat = pts[i - 1].lat + (pts[i].lat - pts[i - 1].lat) * t;
-      const lng = pts[i - 1].lng + (pts[i].lng - pts[i - 1].lng) * t;
-      coords.push([pts[i - 1].lng, pts[i - 1].lat]);
-      coords.push([lng, lat]);
-      break;
-    }
-  }
 
   map.getSource("route-progress").setData({
     type: "Feature",
