@@ -88,6 +88,49 @@ addEventListener("resize",resize);
 resize();
 
 /* ============================================================
+   GLOBAL SNOWFALL OVERLAY (SCREEN SPACE)
+============================================================ */
+function createSnowfall(enabled, color){
+  const flakes=[];
+  const MAX=140;
+
+  function spawn(){
+    if(!enabled || flakes.length>MAX) return;
+    flakes.push({
+      x:Math.random()*canvas.width,
+      y:-10,
+      r:Math.random()*2+1,
+      vy:Math.random()*0.8+0.4,
+      vx:Math.random()*0.4-0.2
+    });
+  }
+
+  function update(){
+    for(let i=flakes.length-1;i>=0;i--){
+      const f=flakes[i];
+      f.x+=f.vx;
+      f.y+=f.vy;
+      if(f.y>canvas.height+10) flakes.splice(i,1);
+    }
+  }
+
+  function draw(){
+    if(!enabled) return;
+    ctx.save();
+    ctx.fillStyle=color;
+    ctx.globalAlpha=0.85;
+    for(const f of flakes){
+      ctx.beginPath();
+      ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  return {spawn,update,draw};
+}
+
+/* ============================================================
    HELPERS
 ============================================================ */
 const MAP_STYLE="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
@@ -137,13 +180,8 @@ function dist(a,b){
   return 2*R*Math.asin(Math.sqrt(s));
 }
 
-// angle smoothing helpers (prevents jitter/sideways flips)
-function angleDelta(a,b){
-  return ((b - a + 540) % 360) - 180;
-}
-function lerpAngle(a,b,t){
-  return (a + angleDelta(a,b)*t + 360) % 360;
-}
+function angleDelta(a,b){ return ((b-a+540)%360)-180; }
+function lerpAngle(a,b,t){ return (a+angleDelta(a,b)*t+360)%360; }
 
 /* ============================================================
    MAIN
@@ -159,14 +197,14 @@ try{
   routeNameEl.textContent=route.routeName||"";
   routeDateEl.textContent=route.date||"";
 
-  const rawPts = await loadGPX(route.gpxUrl);
-  const pts = smoothPath(rawPts, 2);
-  const sprite = await loadImg(settings.travelboast_sprite);
+  const rawPts=await loadGPX(route.gpxUrl);
+  const pts=smoothPath(rawPts,2);
+  const sprite=await loadImg(settings.travelboast_sprite);
 
-  initMapAndRun(rawPts, pts, sprite, settings);
+  initMapAndRun(rawPts,pts,sprite,settings);
 }catch(e){
   console.error(e);
-  toast(e?.message || "Failed to load GPX animation");
+  toast(e?.message||"Failed to load GPX animation");
 }
 })();
 
@@ -183,7 +221,7 @@ function loadImg(u){
 /* ============================================================
    MAP + ANIMATION
 ============================================================ */
-function initMapAndRun(rawPts, pts, sprite, settings){
+function initMapAndRun(rawPts,pts,sprite,settings){
 const baseZoom=+settings.default_map_zoom||16;
 
 const map=new maplibregl.Map({
@@ -201,37 +239,16 @@ map.scrollZoom.disable();
 map.doubleClickZoom.disable();
 
 map.on("load",()=>{
-  map.addSource("route-base",{
-    type:"geojson",
-    data:{type:"Feature",geometry:{type:"LineString",coordinates:rawPts.map(p=>[p.lng,p.lat])}}
-  });
-
-  map.addLayer({
-    id:"route-base",
-    type:"line",
-    source:"route-base",
-    paint:{ "line-color":"#666","line-opacity":0.35,"line-width":3 }
-  });
+  map.addSource("route-base",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:rawPts.map(p=>[p.lng,p.lat])}}});
+  map.addLayer({id:"route-base",type:"line",source:"route-base",paint:{ "line-color":"#666","line-opacity":0.35,"line-width":3 }});
 
   map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
   map.addSource("route-progress-glow",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
 
-  map.addLayer({
-    id:"route-progress-glow",
-    type:"line",
-    source:"route-progress-glow",
-    paint:{
-      "line-color":settings.primary_color||"#d31c1c",
-      "line-width":12,"line-opacity":0.3,"line-blur":8
-    }
-  });
-
-  map.addLayer({
-    id:"route-progress",
-    type:"line",
-    source:"route-progress",
-    paint:{ "line-color":settings.primary_color||"#d31c1c","line-width":5 }
-  });
+  map.addLayer({id:"route-progress-glow",type:"line",source:"route-progress-glow",paint:{
+    "line-color":settings.primary_color||"#d31c1c","line-width":12,"line-opacity":0.3,"line-blur":8}});
+  map.addLayer({id:"route-progress",type:"line",source:"route-progress",paint:{
+    "line-color":settings.primary_color||"#d31c1c","line-width":5}});
 
   animate(map,pts,sprite,settings,{baseZoom});
 });
@@ -241,46 +258,27 @@ function animate(map,pts,sprite,settings,theme){
 const frames=+settings.travelboast_sprite_frames||5;
 const fps=+settings.travelboast_sprite_fps||14;
 const size=+settings.travelboast_sprite_size||128;
-
-// IMPORTANT: your sheet is outputting "10" for travelboast_speed.
-// If you’re treating that as “x speed”, keep this multiplier logic:
 const speed=(+settings.travelboast_speed||.1)*18;
 
-const cum=[0];
-for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+const snowfall=createSnowfall(
+  (settings.travelboast_particle_effects||"").toLowerCase()==="snow",
+  settings.travelboast_accent_color||"#ffffff"
+);
+
+const cum=[0]; for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
-const bounds=new maplibregl.LngLatBounds();
-pts.forEach(p=>bounds.extend([p.lng,p.lat]));
+const bounds=new maplibregl.LngLatBounds(); pts.forEach(p=>bounds.extend([p.lng,p.lat]));
 
-let m=0,last=null;
-let camBearing=0;
-let spriteBearing=0;         // ✅ NEW: route direction
-let finished=false;
-let overviewShown=false;
-let hideSprite=false;        // ✅ NEW: hide Santa at end
-let currentPos=null;
+let m=0,last=null,camBearing=0,spriteBearing=0,finished=false,overviewShown=false,hideSprite=false,currentPos=null;
 
 function updateProgressLine(distance){
-  const coords=[];
-  let remaining=distance;
-
-  for(let i=1;i<pts.length && remaining>0;i++){
+  const coords=[]; let remaining=distance;
+  for(let i=1;i<pts.length&&remaining>0;i++){
     const seg=dist(pts[i-1],pts[i]);
-    if(remaining>=seg){
-      coords.push([pts[i-1].lng,pts[i-1].lat]);
-      remaining-=seg;
-    }else{
-      const t=remaining/seg;
-      coords.push([pts[i-1].lng,pts[i-1].lat]);
-      coords.push([
-        pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t,
-        pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t
-      ]);
-      break;
-    }
+    if(remaining>=seg){coords.push([pts[i-1].lng,pts[i-1].lat]);remaining-=seg;}
+    else{const t=remaining/seg;coords.push([pts[i-1].lng,pts[i-1].lat]);coords.push([pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t,pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t]);break;}
   }
-
   const data={type:"Feature",geometry:{type:"LineString",coordinates:coords}};
   map.getSource("route-progress")?.setData(data);
   map.getSource("route-progress-glow")?.setData(data);
@@ -294,93 +292,50 @@ function getPos(d){
 }
 
 function draw(ts){
-  if(!currentPos || hideSprite) return;
-
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  snowfall.draw();
+  if(!currentPos||hideSprite) return;
 
-  const frame = Math.floor(ts/1000*fps) % frames;
-  const spriteW = sprite.width / frames;
+  const frame=Math.floor(ts/1000*fps)%frames;
+  const spriteW=sprite.width/frames;
+  const p=map.project([currentPos.lng,currentPos.lat]);
+  const FOOT_ANCHOR=size*0.32;
 
-  const p = map.project([currentPos.lng, currentPos.lat]);
-  const FOOT_ANCHOR = size * 0.32;
+  let rel=((spriteBearing-camBearing+540)%360)-180;
+  rel=clamp(rel,-25,25);
 
-  // ─────────────────────────────────────────
-  // Sprite rotation (SAFE + CLAMPED)
-  // ─────────────────────────────────────────
-  const MAX_SPRITE_TILT = 25;
-
-  let rel = ((spriteBearing - camBearing + 540) % 360) - 180;
-  rel = clamp(rel, -MAX_SPRITE_TILT, MAX_SPRITE_TILT);
-
-  const spriteRotation = rel * 0.4 * Math.PI / 180;
-
-  // ─────────────────────────────────────────
-  // DRAW (ORDER MATTERS)
-  // ─────────────────────────────────────────
   ctx.save();
-
-  ctx.translate(
-    Math.round(p.x),
-    Math.round(p.y - FOOT_ANCHOR)
-  );
-
-  ctx.rotate(spriteRotation);
-
-  ctx.drawImage(
-    sprite,
-    frame * spriteW, 0,
-    spriteW, sprite.height,
-    -size/2, -size/2,
-    size, size
-  );
-
+  ctx.translate(Math.round(p.x),Math.round(p.y-FOOT_ANCHOR));
+  ctx.rotate(rel*0.4*Math.PI/180);
+  ctx.drawImage(sprite,frame*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
   ctx.restore();
 }
 
 function step(ts){
-  const dt=last?(ts-last)/1000:0;
-  last=ts;
+  const dt=last?(ts-last)/1000:0; last=ts;
 
   if(!finished){
-    m += speed * dt;
-    if(m >= total){
-      m = total;
-      finished = true;
-      hideSprite = true;     // ✅ remove Santa at finish
-      ctx.clearRect(0,0,canvas.width,canvas.height); // ✅ wipe last frame
-    }
+    m+=speed*dt;
+    snowfall.spawn();
+    if(m>=total){m=total;finished=true;hideSprite=true;}
   }
+
+  snowfall.update();
 
   currentPos=getPos(m);
   updateProgressLine(m);
 
-  // lookahead for route direction + camera direction
-  const lookAhead = Math.max(0.6, speed*0.03);
-  const nextPos=getPos(Math.min(m+lookAhead,total));
+  const nextPos=getPos(Math.min(m+Math.max(0.6,speed*0.03),total));
+  spriteBearing=lerpAngle(spriteBearing,bearing(currentPos,nextPos),0.25);
 
-  // ✅ sprite direction from route (smoothed)
-  const tgtSprite = bearing(currentPos,nextPos);
-  spriteBearing = lerpAngle(spriteBearing, tgtSprite, 0.25);
-
-  if(finished && !overviewShown){
+  if(finished&&!overviewShown){
     overviewShown=true;
     map.fitBounds(bounds,{padding:80,pitch:0,bearing:0,duration:2500});
-    return; // let map animation run; no more rAF needed
+    return;
   }
 
-  // ✅ camera bearing (smoothed)
-  let delta = angleDelta(camBearing, tgtSprite);
-  const turnIntensity = Math.min(1, Math.abs(delta) / 35);
-  const MAX_TURN_RATE = (110 + 140*turnIntensity) * dt;
-  delta = clamp(delta, -MAX_TURN_RATE, MAX_TURN_RATE);
-  camBearing = (camBearing + delta * (0.12 + 0.18*turnIntensity) + 360) % 360;
-
-  map.jumpTo({
-    center:[currentPos.lng,currentPos.lat],
-    zoom:theme.baseZoom,
-    bearing:camBearing,
-    pitch:50
-  });
+  camBearing=lerpAngle(camBearing,spriteBearing,0.15);
+  map.jumpTo({center:[currentPos.lng,currentPos.lat],zoom:theme.baseZoom,bearing:camBearing,pitch:50});
 
   draw(ts);
   requestAnimationFrame(step);
