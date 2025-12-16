@@ -156,7 +156,10 @@ try{
   const sprite = await loadImg(settings.travelboast_sprite);
 
   initMapAndRun(rawPts, pts, sprite, settings);
-}catch(e){toast(e.message||e);}
+}catch(e){
+  console.error(e);
+  toast(e?.message || "Failed to load GPX animation");
+}
 })();
 
 function loadImg(u){
