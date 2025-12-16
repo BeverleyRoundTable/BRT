@@ -265,7 +265,9 @@ const SANTA_Y = canvas.height * (0.58 - LOOKAHEAD_SCREEN_BIAS);
 
   const pos = getPos(m);
 // Camera looks ahead
-const camPos = getPos(Math.min(m + LOOKAHEAD_METERS, total));
+const nextPos = getPos(
+  Math.min(m + Math.max(1.5, speed * 0.2), total)
+);
 
 // Bearing follows Santa's REAL movement
 const nextPos = getPos(Math.min(m + 1.5, total)); // ~1–2m ahead only
