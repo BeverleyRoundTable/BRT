@@ -362,11 +362,18 @@ function step(ts){
   const dt=last?(ts-last)/1000:0;
   last=ts;
 
-  if(snowEnabled){
-    if(snowWarmup<30) snowWarmup++;
-    else snowfall.spawn();
-    snowfall.update();
+ if (snowEnabled) {
+  snowfall.update();
+
+  if (snowFading) {
+    snowAlpha -= 0.008;
+    if (snowAlpha <= 0) {
+      snowAlpha = 0;
+      snowEnabled = false;
+      snowFading = false;
+    }
   }
+}
 
   if(!finished){
     m+=speed*dt;
