@@ -345,30 +345,6 @@ function step(ts){
   }
 
   camBearing=lerpAngle(camBearing,spriteBearing,0.15);
-  map.jumpTo({
-    center:[currentPos.lng,currentPos.lat],
-    zoom:theme.baseZoom,
-    bearing:camBearing,
-    pitch:50
-  });
-
-  draw(ts);
-  requestAnimationFrame(step);
-}
-
-  currentPos=getPos(m);
-  updateProgressLine(m);
-
-  const nextPos=getPos(Math.min(m+Math.max(0.6,speed*0.03),total));
-  spriteBearing=lerpAngle(spriteBearing,bearing(currentPos,nextPos),0.25);
-
-  if(finished&&!overviewShown){
-    overviewShown=true;
-    map.fitBounds(bounds,{padding:80,pitch:0,bearing:0,duration:2500});
-    return;
-  }
-
-  camBearing=lerpAngle(camBearing,spriteBearing,0.15);
   map.jumpTo({center:[currentPos.lng,currentPos.lat],zoom:theme.baseZoom,bearing:camBearing,pitch:50});
 
   draw(ts);
