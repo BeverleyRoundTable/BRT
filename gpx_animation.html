@@ -273,27 +273,27 @@ const frames=+settings.travelboast_sprite_frames||5;
 const size=+settings.travelboast_sprite_size||128;
 const speed=(+settings.travelboast_speed||.1)*18;
 
-  function updateRouteProgress(pos) {
+function updateRouteProgress(pos, posIndex) {
   const coords = [];
 
-  for (let i = 0; i < pts.length; i++) {
+  // Push all completed points
+  for (let i = 0; i < posIndex; i++) {
     coords.push([pts[i].lng, pts[i].lat]);
-    if (dist(pts[i], pos) < 0.8) break;
   }
 
+  // Add current interpolated position
   coords.push([pos.lng, pos.lat]);
 
-  map.getSource("route-progress")
-    .setData({
-      type: "Feature",
-      geometry: { type: "LineString", coordinates: coords }
-    });
+  const geojson = {
+    type: "Feature",
+    geometry: {
+      type: "LineString",
+      coordinates: coords
+    }
+  };
 
-  map.getSource("route-progress-glow")
-    .setData({
-      type: "Feature",
-      geometry: { type: "LineString", coordinates: coords }
-    });
+  map.getSource("route-progress").setData(geojson);
+  map.getSource("route-progress-glow").setData(geojson);
 }
 
 // ✅ OPTION 2 — movement-driven legs
@@ -306,6 +306,22 @@ const STRIDE_METERS =
 
 const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
+
+function getPosWithIndex(d) {
+  let i = cum.findIndex(v => v >= d);
+  i = Math.max(1, i);
+
+  const t = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
+  const a = pts[i - 1], b = pts[i];
+
+  return {
+    pos: {
+      lat: a.lat + (b.lat - a.lat) * t,
+      lng: a.lng + (b.lng - a.lng) * t
+    },
+    index: i
+  };
+}
 
 let m=0,last=null,camBearing=0,spriteBearing=0;
 let finished=false,overviewShown=false,hideSprite=false,currentPos=null;
@@ -345,9 +361,10 @@ function step(ts){
   }
 
   if(!overviewShown){
-    currentPos=getPos(m);
-    
-      updateRouteProgress(currentPos);   // ⭐ REQUIRED
+    const posData = getPosWithIndex(m);
+    currentPos = posData.pos;
+
+    updateRouteProgress(currentPos, posData.index);   // ⭐ FIXED (no hook / no flash)
 
     if(!lastStepPos){
       lastStepPos=currentPos;
