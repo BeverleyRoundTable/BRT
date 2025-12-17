@@ -213,9 +213,21 @@ try{
 
   const rawPts=await loadGPX(route.gpxUrl);
   const pts=smoothPath(rawPts,2);
+
   const sprite=await loadImg(settings.travelboast_sprite);
 
-  initMapAndRun(rawPts,pts,sprite,settings);
+  // ✅ NEW: optional logo overlay from settings
+  const logoEnabled = settings.logo_overlay_enabled === true || String(settings.logo_overlay_enabled).toUpperCase() === "TRUE";
+  const logoUrl = settings.logo_overlay_url || "";
+  const logoSize = +settings.logo_overlay_size || 64;
+  const logoPosition = settings.logo_overlay_position || "bottom-right";
+  let logoImg = null;
+
+  if (logoEnabled && logoUrl) {
+    try { logoImg = await loadImg(logoUrl); } catch(e){ logoImg = null; }
+  }
+
+  initMapAndRun(rawPts,pts,sprite,settings,{ logoEnabled, logoImg, logoSize, logoPosition });
 }catch(e){
   console.error(e);
   toast(e?.message||"Failed to load GPX animation");
@@ -235,7 +247,7 @@ function loadImg(u){
 /* ============================================================
    MAP + ANIMATION
 ============================================================ */
-function initMapAndRun(rawPts,pts,sprite,settings){
+function initMapAndRun(rawPts,pts,sprite,settings,overlay){
 const baseZoom=+settings.default_map_zoom||16;
 
 const map=new maplibregl.Map({
@@ -264,11 +276,11 @@ map.on("load",()=>{
   map.addLayer({id:"route-progress",type:"line",source:"route-progress",paint:{
     "line-color":settings.primary_color||"#d31c1c","line-width":5}});
 
-  animate(map,pts,sprite,settings,{baseZoom});
+  animate(map,pts,sprite,settings,{baseZoom},overlay);
 });
 }
 
-function animate(map,pts,sprite,settings,theme){
+function animate(map,pts,sprite,settings,theme,overlay){
 let snowAlpha=1,snowFading=false;
 const frames=+settings.travelboast_sprite_frames||5;
 const spriteFps=+settings.travelboast_sprite_fps||14;
@@ -289,6 +301,21 @@ let finished=false,overviewShown=false,hideSprite=false,currentPos=null;
 let snowEnabled=true;
 let renderFrame=0;
 let finishedAt=null;
+
+// ✅ NEW: logo overlay positioning (canvas coordinates, not DPR pixels)
+function getLogoXY(pos, s){
+  const pad = 20;
+  const w = innerWidth;
+  const h = innerHeight;
+
+  switch(String(pos||"").toLowerCase()){
+    case "top-left": return { x: pad, y: pad };
+    case "top-right": return { x: w - s - pad, y: pad };
+    case "bottom-left": return { x: pad, y: h - s - pad };
+    case "bottom-right":
+    default: return { x: w - s - pad, y: h - s - pad };
+  }
+}
 
 function updateProgressLine(distance){
   const coords=[];let remaining=distance;
@@ -318,21 +345,40 @@ function getPos(d){
 
 function draw(ts){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(snowEnabled){ctx.save();ctx.globalAlpha=snowAlpha;snowfall.draw();ctx.restore();}
-  if(!currentPos||hideSprite)return;
 
-  const frame = IS_RENDER ? (renderFrame % frames)
-                          : (Math.floor(ts/1000*spriteFps)%frames);
+  if(snowEnabled){
+    ctx.save();
+    ctx.globalAlpha=snowAlpha;
+    snowfall.draw();
+    ctx.restore();
+  }
 
-  const spriteW=sprite.width/frames;
-  const p=map.project([currentPos.lng,currentPos.lat]);
-  let rel=((spriteBearing-camBearing+540)%360)-180;
-  rel=clamp(rel,-25,25);
-  ctx.save();
-  ctx.translate(Math.round(p.x),Math.round(p.y-size*0.32));
-  ctx.rotate(rel*0.4*Math.PI/180);
-  ctx.drawImage(sprite,frame*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
-  ctx.restore();
+  if(currentPos && !hideSprite){
+    const frame = IS_RENDER ? (renderFrame % frames)
+                            : (Math.floor(ts/1000*spriteFps)%frames);
+
+    const spriteW=sprite.width/frames;
+    const p=map.project([currentPos.lng,currentPos.lat]);
+    let rel=((spriteBearing-camBearing+540)%360)-180;
+    rel=clamp(rel,-25,25);
+
+    ctx.save();
+    ctx.translate(Math.round(p.x),Math.round(p.y-size*0.32));
+    ctx.rotate(rel*0.4*Math.PI/180);
+    ctx.drawImage(sprite,frame*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
+    ctx.restore();
+  }
+
+  // ✅ NEW: logo overlay drawn last so it appears in MP4 render too
+  if (overlay && overlay.logoImg && overlay.logoEnabled) {
+    const s = overlay.logoSize || 64;
+    const { x, y } = getLogoXY(overlay.logoPosition, s);
+
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    ctx.drawImage(overlay.logoImg, x, y, s, s);
+    ctx.restore();
+  }
 }
 
 function step(ts){
