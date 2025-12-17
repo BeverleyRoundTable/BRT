@@ -119,3 +119,27 @@ jobs:
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GH_RELEASE_TOKEN }}
+
+      # ✅ FINAL FIX — notify Google Sheets with MP4 download URL
+      - name: Notify TurboSanta Sheet (final MP4)
+        if: env.SHEET_WEBHOOK_URL != ''
+        env:
+          SLUG: ${{ github.event.inputs.slug }}
+          SHEET_WEBHOOK_URL: ${{ env.SHEET_WEBHOOK_URL }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+
+          MP4_URL="https://github.com/${REPO}/releases/download/${SLUG}/${SLUG}.mp4"
+
+          echo "Notifying TurboSanta webhook"
+          echo "Run ID: ${SLUG}"
+          echo "MP4 URL: ${MP4_URL}"
+
+          curl -X POST "${SHEET_WEBHOOK_URL}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"runId\": \"${SLUG}\",
+              \"status\": \"Completed\",
+              \"mp4Url\": \"${MP4_URL}\"
+            }"
