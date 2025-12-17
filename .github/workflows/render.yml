@@ -10,6 +10,9 @@ on:
         description: "square | landscape | reel"
         required: false
         default: "square"
+      slug:
+        description: "Unique MP4 ID (e.g. sleigh__route__date__aspect)"
+        required: true
 
 jobs:
   render:
@@ -62,7 +65,6 @@ jobs:
       - name: Render MP4
         working-directory: TurboSanta-MP4-Renderer
         env:
-          # ⭐ FORCE deterministic render mode
           RENDER_URL: ${{ github.event.inputs.render_url }}&render=1
           WIDTH: ${{ env.WIDTH }}
           HEIGHT: ${{ env.HEIGHT }}
@@ -71,9 +73,33 @@ jobs:
         run: |
           node render.js
 
-      - name: Upload MP4
+      - name: Normalize MP4 filename
+        working-directory: TurboSanta-MP4-Renderer
+        env:
+          SLUG: ${{ github.event.inputs.slug }}
+        run: |
+          set -e
+          ls -la
+          MP4=$(ls -1 *.mp4 | head -n 1)
+          if [ -z "$MP4" ]; then
+            echo "No MP4 found"
+            exit 1
+          fi
+          mv "$MP4" "${SLUG}.mp4"
+          echo "FINAL_MP4=${SLUG}.mp4" >> $GITHUB_ENV
+
+      - name: Upload MP4 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: gpx-animation-mp4
-          # ⭐ render.js now auto-names files
-          path: TurboSanta-MP4-Renderer/*.mp4
+          name: ${{ github.event.inputs.slug }}
+          path: TurboSanta-MP4-Renderer/${{ env.FINAL_MP4 }}
+
+      - name: Publish Release (overwrite tag)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.slug }}
+          name: ${{ github.event.inputs.slug }}
+          files: TurboSanta-MP4-Renderer/${{ env.FINAL_MP4 }}
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
