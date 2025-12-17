@@ -6,7 +6,7 @@ import { execSync } from "child_process";
 const url = process.env.RENDER_URL;
 const width = Number(process.env.WIDTH || 1080);
 const height = Number(process.env.HEIGHT || 1080);
-const fps = Number(process.env.FPS || 30);
+const fps = Number(process.env.FPS || 24);
 const durationMs = Number(process.env.DURATION || 0);
 
 if (!url) {
@@ -17,7 +17,7 @@ if (!url) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 console.log("🎅 Rendering:", url);
-console.log(`📐 ${width}x${height} @ ${fps}fps for max ${durationMs}ms`);
+console.log(`📐 ${width}x${height} @ ${fps}fps for max ${durationMs || "∞"}ms`);
 
 const browser = await puppeteer.launch({
   headless: "new",
@@ -46,12 +46,14 @@ const framesDir = "frames";
 fs.rmSync(framesDir, { recursive: true, force: true });
 fs.mkdirSync(framesDir, { recursive: true });
 
-// Ensure completion flag exists
+// Initialise render flags + progress (SAFE)
 await page.evaluate(() => {
   window.__GPX_DONE__ = false;
+  window.__GPX_PROGRESS__ = 0;
+  window.__GPX_TOTAL_FRAMES__ = 0;
 });
 
-console.log("🎥 Recording frames (real-time)");
+console.log("🎥 Recording frames");
 
 // 🔁 Capture frames with HARD SAFETY CAP
 let frame = 0;
@@ -59,6 +61,11 @@ const frameDelay = 1000 / fps;
 const maxFrames = durationMs > 0
   ? Math.ceil(durationMs / frameDelay)
   : Infinity;
+
+// Expose total frames to page (for %)
+await page.evaluate(max => {
+  window.__GPX_TOTAL_FRAMES__ = max;
+}, maxFrames);
 
 while (frame < maxFrames) {
   const framePath = path.join(
@@ -68,6 +75,21 @@ while (frame < maxFrames) {
 
   await page.screenshot({ path: framePath, type: "png" });
   frame++;
+
+  // Update progress inside page (readable by Sheets if needed later)
+  await page.evaluate(f => {
+    if (window.__GPX_TOTAL_FRAMES__ > 0) {
+      window.__GPX_PROGRESS__ = Math.round(
+        (f / window.__GPX_TOTAL_FRAMES__) * 100
+      );
+    }
+  }, frame);
+
+  // Log progress roughly once per second
+  if (frame % fps === 0) {
+    const pct = Math.min(100, Math.round((frame / maxFrames) * 100));
+    console.log(`📊 Render progress: ${pct}%`);
+  }
 
   const done = await page.evaluate(() => window.__GPX_DONE__ === true);
   if (done) {
@@ -85,7 +107,7 @@ if (frame >= maxFrames) {
 // Small buffer for final settle
 await sleep(300);
 
-// 🔎 Read metadata for filename
+// 🔎 Read metadata for filename (optional)
 const meta = await page.evaluate(() => window.__GPX_META__ || {});
 
 await browser.close();
