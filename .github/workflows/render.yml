@@ -13,14 +13,14 @@ on:
       slug:
         description: "Unique MP4 ID (e.g. sleigh__route__date__aspect)"
         required: true
+      webhook_url:
+        description: "Apps Script Web App URL for progress callbacks (optional)"
+        required: false
 
 jobs:
   render:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      # 🔁 Progress callback webhook (safe if unset)
-      SHEET_WEBHOOK_URL: ${{ secrets.SHEET_WEBHOOK_URL }}
 
     steps:
       - name: Checkout repo
@@ -65,15 +65,31 @@ jobs:
             echo "HEIGHT=1080" >> $GITHUB_ENV
           fi
 
+      - name: Resolve webhook URL (input first, fallback to repo secret)
+        run: |
+          if [ -n "${{ github.event.inputs.webhook_url }}" ]; then
+            echo "SHEET_WEBHOOK_URL=${{ github.event.inputs.webhook_url }}" >> $GITHUB_ENV
+            echo "Using webhook_url from workflow input"
+          elif [ -n "${{ secrets.SHEET_WEBHOOK_URL }}" ]; then
+            echo "SHEET_WEBHOOK_URL=${{ secrets.SHEET_WEBHOOK_URL }}" >> $GITHUB_ENV
+            echo "Using SHEET_WEBHOOK_URL from repo secret fallback"
+          else
+            echo "No webhook configured (progress callbacks disabled)"
+          fi
+
       - name: Render MP4
         working-directory: TurboSanta-MP4-Renderer
         env:
-          RENDER_URL: ${{ github.event.inputs.render_url }}&render=1
+          # IMPORTANT:
+          # Your Apps Script already adds "&render=1" to render_url,
+          # so do NOT append it again here.
+          RENDER_URL: ${{ github.event.inputs.render_url }}
           WIDTH: ${{ env.WIDTH }}
           HEIGHT: ${{ env.HEIGHT }}
           DURATION: 300000   # 5 minutes failsafe
           FPS: 24
-          RUN_ID: ${{ github.event.inputs.slug }}   # 🔁 Progress correlation ID
+          RUN_ID: ${{ github.event.inputs.slug }}   # Progress correlation ID
+          SHEET_WEBHOOK_URL: ${{ env.SHEET_WEBHOOK_URL }}
         run: |
           node render.js
 
