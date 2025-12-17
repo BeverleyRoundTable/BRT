@@ -7,7 +7,7 @@ const url = process.env.RENDER_URL;
 const width = Number(process.env.WIDTH || 1080);
 const height = Number(process.env.HEIGHT || 1080);
 const fps = Number(process.env.FPS || 30);
-const durationMs = Number(process.env.DURATION || 15000);
+const durationMs = Number(process.env.DURATION || 0);
 
 if (!url) {
   console.error("❌ Missing RENDER_URL");
@@ -56,7 +56,9 @@ console.log("🎥 Recording frames (real-time)");
 // 🔁 Capture frames with HARD SAFETY CAP
 let frame = 0;
 const frameDelay = 1000 / fps;
-const maxFrames = Math.ceil(durationMs / frameDelay);
+const maxFrames = durationMs > 0
+  ? Math.ceil(durationMs / frameDelay)
+  : Infinity;
 
 while (frame < maxFrames) {
   const framePath = path.join(
