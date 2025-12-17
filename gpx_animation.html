@@ -213,21 +213,9 @@ try{
 
   const rawPts=await loadGPX(route.gpxUrl);
   const pts=smoothPath(rawPts,2);
-
   const sprite=await loadImg(settings.travelboast_sprite);
 
-  // ✅ NEW: optional logo overlay from settings
-  const logoEnabled = settings.logo_overlay_enabled === true || String(settings.logo_overlay_enabled).toUpperCase() === "TRUE";
-  const logoUrl = settings.logo_overlay_url || "";
-  const logoSize = +settings.logo_overlay_size || 64;
-  const logoPosition = settings.logo_overlay_position || "bottom-right";
-  let logoImg = null;
-
-  if (logoEnabled && logoUrl) {
-    try { logoImg = await loadImg(logoUrl); } catch(e){ logoImg = null; }
-  }
-
-  initMapAndRun(rawPts,pts,sprite,settings,{ logoEnabled, logoImg, logoSize, logoPosition });
+  initMapAndRun(rawPts,pts,sprite,settings,{});
 }catch(e){
   console.error(e);
   toast(e?.message||"Failed to load GPX animation");
@@ -247,7 +235,7 @@ function loadImg(u){
 /* ============================================================
    MAP + ANIMATION
 ============================================================ */
-function initMapAndRun(rawPts,pts,sprite,settings,overlay){
+function initMapAndRun(rawPts,pts,sprite,settings){
 const baseZoom=+settings.default_map_zoom||16;
 
 const map=new maplibregl.Map({
@@ -276,87 +264,32 @@ map.on("load",()=>{
   map.addLayer({id:"route-progress",type:"line",source:"route-progress",paint:{
     "line-color":settings.primary_color||"#d31c1c","line-width":5}});
 
-  animate(map,pts,sprite,settings,{baseZoom},overlay);
+  animate(map,pts,sprite,settings,{baseZoom});
 });
 }
 
-function animate(map,pts,sprite,settings,theme,overlay){
-let snowAlpha=1,snowFading=false;
+function animate(map,pts,sprite,settings,theme){
 const frames=+settings.travelboast_sprite_frames||5;
-const spriteFps=+settings.travelboast_sprite_fps||14;
 const size=+settings.travelboast_sprite_size||128;
 const speed=(+settings.travelboast_speed||.1)*18;
 
-const snowfall=createSnowfall(
-  (settings.travelboast_particle_effects||"").toLowerCase()==="snow"
-);
+// ✅ OPTION 2 — movement-driven legs
+let spriteFrame=0;
+let strideAcc=0;
+let lastStepPos=null;
+const STRIDE_METERS=+settings.travelboast_stride_meters||1.2;
 
 const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
-const bounds=new maplibregl.LngLatBounds();pts.forEach(p=>bounds.extend([p.lng,p.lat]));
-
 let m=0,last=null,camBearing=0,spriteBearing=0;
 let finished=false,overviewShown=false,hideSprite=false,currentPos=null;
-let snowEnabled=true;
-let renderFrame=0;
 let finishedAt=null;
 
-// ✅ NEW: logo overlay positioning (canvas coordinates, not DPR pixels)
-function getLogoXY(pos, s){
-  const pad = 20;
-  const w = innerWidth;
-  const h = innerHeight;
-
-  switch(String(pos||"").toLowerCase()){
-    case "top-left": return { x: pad, y: pad };
-    case "top-right": return { x: w - s - pad, y: pad };
-    case "bottom-left": return { x: pad, y: h - s - pad };
-    case "bottom-right":
-    default: return { x: w - s - pad, y: h - s - pad };
-  }
-}
-
-function updateProgressLine(distance){
-  const coords=[];let remaining=distance;
-  for(let i=1;i<pts.length&&remaining>0;i++){
-    const seg=dist(pts[i-1],pts[i]);
-    if(remaining>=seg){coords.push([pts[i-1].lng,pts[i-1].lat]);remaining-=seg;}
-    else{
-      const t=remaining/seg;
-      coords.push([pts[i-1].lng,pts[i-1].lat]);
-      coords.push([
-        pts[i-1].lng+(pts[i].lng-pts[i-1].lng)*t,
-        pts[i-1].lat+(pts[i].lat-pts[i-1].lat)*t
-      ]);
-      break;
-    }
-  }
-  map.getSource("route-progress")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:coords}});
-  map.getSource("route-progress-glow")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:coords}});
-}
-
-function getPos(d){
-  let i=cum.findIndex(v=>v>=d);i=Math.max(1,i);
-  const t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);
-  const a=pts[i-1],b=pts[i];
-  return{lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
-}
-
-function draw(ts){
+function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  if(snowEnabled){
-    ctx.save();
-    ctx.globalAlpha=snowAlpha;
-    snowfall.draw();
-    ctx.restore();
-  }
-
   if(currentPos && !hideSprite){
-    const frame = IS_RENDER ? (renderFrame % frames)
-                            : (Math.floor(ts/1000*spriteFps)%frames);
-
     const spriteW=sprite.width/frames;
     const p=map.project([currentPos.lng,currentPos.lat]);
     let rel=((spriteBearing-camBearing+540)%360)-180;
@@ -365,33 +298,14 @@ function draw(ts){
     ctx.save();
     ctx.translate(Math.round(p.x),Math.round(p.y-size*0.32));
     ctx.rotate(rel*0.4*Math.PI/180);
-    ctx.drawImage(sprite,frame*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
-    ctx.restore();
-  }
-
-  // ✅ NEW: logo overlay drawn last so it appears in MP4 render too
-  if (overlay && overlay.logoImg && overlay.logoEnabled) {
-    const s = overlay.logoSize || 64;
-    const { x, y } = getLogoXY(overlay.logoPosition, s);
-
-    ctx.save();
-    ctx.globalAlpha = 0.95;
-    ctx.drawImage(overlay.logoImg, x, y, s, s);
+    ctx.drawImage(sprite,spriteFrame*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
     ctx.restore();
   }
 }
 
 function step(ts){
-  const dt = IS_RENDER ? (1 / RENDER_FPS) : (last ? (ts - last) / 1000 : 0);
-  last = ts;
-
-  if(snowEnabled){
-    snowfall.update();
-    if(snowFading){
-      snowAlpha-=0.008;
-      if(snowAlpha<=0){snowAlpha=0;snowEnabled=false;snowFading=false;}
-    }
-  }
+  const dt=last?(ts-last)/1000:0;
+  last=ts;
 
   if(!finished){
     m+=speed*dt;
@@ -399,30 +313,34 @@ function step(ts){
       m=total;
       finished=true;
       hideSprite=true;
-      snowFading=true;
       finishedAt=performance.now();
-
-      const finalCoords=pts.map(p=>[p.lng,p.lat]);
-      map.getSource("route-progress")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:finalCoords}});
-      map.getSource("route-progress-glow")?.setData({type:"Feature",geometry:{type:"LineString",coordinates:finalCoords}});
-
-      map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:3000,maxZoom:14});
+      map.fitBounds(new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),{padding:120,pitch:0,bearing:0,duration:3000});
       overviewShown=true;
     }
   }
 
   if(!overviewShown){
     currentPos=getPos(m);
-    updateProgressLine(m);
-    const nextPos=getPos(Math.min(m+Math.max(0.6,speed*0.03),total));
+
+    if(!lastStepPos){
+      lastStepPos=currentPos;
+    }else{
+      const moved=dist(lastStepPos,currentPos);
+      strideAcc+=moved;
+      lastStepPos=currentPos;
+      while(strideAcc>=STRIDE_METERS){
+        strideAcc-=STRIDE_METERS;
+        spriteFrame=(spriteFrame+1)%frames;
+      }
+    }
+
+    const nextPos=getPos(Math.min(m+speed*0.03,total));
     spriteBearing=lerpAngle(spriteBearing,bearing(currentPos,nextPos),0.25);
     camBearing=lerpAngle(camBearing,spriteBearing,0.15);
     map.jumpTo({center:[currentPos.lng,currentPos.lat],zoom:theme.baseZoom,bearing:camBearing,pitch:50});
   }
 
-  draw(ts);
-
-  if(IS_RENDER) renderFrame++;
+  draw();
 
   if(overviewShown && finishedAt && performance.now()-finishedAt>3500){
     window.__GPX_DONE__=true;
@@ -434,6 +352,13 @@ function step(ts){
 }
 
 requestAnimationFrame(step);
+
+function getPos(d){
+  let i=cum.findIndex(v=>v>=d);i=Math.max(1,i);
+  const t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);
+  const a=pts[i-1],b=pts[i];
+  return{lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
+}
 }
 </script>
 </body>
