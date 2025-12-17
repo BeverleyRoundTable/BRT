@@ -65,10 +65,10 @@ jobs:
       - name: Render MP4
         working-directory: TurboSanta-MP4-Renderer
         env:
-          RENDER_URL: ${{ github.event.inputs.render_url }}
+          RENDER_URL: ${{ github.event.inputs.render_url }}&render=1
           WIDTH: ${{ env.WIDTH }}
           HEIGHT: ${{ env.HEIGHT }}
-          DURATION: 20000
+          DURATION: 300000   # 5 minutes failsafe
           FPS: 30
         run: |
           node render.js
