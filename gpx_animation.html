@@ -273,6 +273,29 @@ const frames=+settings.travelboast_sprite_frames||5;
 const size=+settings.travelboast_sprite_size||128;
 const speed=(+settings.travelboast_speed||.1)*18;
 
+  function updateRouteProgress(pos) {
+  const coords = [];
+
+  for (let i = 0; i < pts.length; i++) {
+    coords.push([pts[i].lng, pts[i].lat]);
+    if (dist(pts[i], pos) < 0.8) break;
+  }
+
+  coords.push([pos.lng, pos.lat]);
+
+  map.getSource("route-progress")
+    .setData({
+      type: "Feature",
+      geometry: { type: "LineString", coordinates: coords }
+    });
+
+  map.getSource("route-progress-glow")
+    .setData({
+      type: "Feature",
+      geometry: { type: "LineString", coordinates: coords }
+    });
+}
+
 // ✅ OPTION 2 — movement-driven legs
 let spriteFrame=0;
 let strideAcc=0;
@@ -323,6 +346,8 @@ function step(ts){
 
   if(!overviewShown){
     currentPos=getPos(m);
+    
+      updateRouteProgress(currentPos);   // ⭐ REQUIRED
 
     if(!lastStepPos){
       lastStepPos=currentPos;
