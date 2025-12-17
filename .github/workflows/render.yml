@@ -18,6 +18,9 @@ jobs:
   render:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # 🔁 Progress callback webhook (safe if unset)
+      SHEET_WEBHOOK_URL: ${{ secrets.SHEET_WEBHOOK_URL }}
 
     steps:
       - name: Checkout repo
@@ -70,6 +73,7 @@ jobs:
           HEIGHT: ${{ env.HEIGHT }}
           DURATION: 300000   # 5 minutes failsafe
           FPS: 24
+          RUN_ID: ${{ github.event.inputs.slug }}   # 🔁 Progress correlation ID
         run: |
           node render.js
 
