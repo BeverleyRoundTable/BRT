@@ -80,15 +80,12 @@ jobs:
       - name: Render MP4
         working-directory: TurboSanta-MP4-Renderer
         env:
-          # IMPORTANT:
-          # Your Apps Script already adds "&render=1" to render_url,
-          # so do NOT append it again here.
           RENDER_URL: ${{ github.event.inputs.render_url }}
           WIDTH: ${{ env.WIDTH }}
           HEIGHT: ${{ env.HEIGHT }}
-          DURATION: 300000   # 5 minutes failsafe
+          DURATION: 300000
           FPS: 24
-          RUN_ID: ${{ github.event.inputs.slug }}   # Progress correlation ID
+          RUN_ID: ${{ github.event.inputs.slug }}
           SHEET_WEBHOOK_URL: ${{ env.SHEET_WEBHOOK_URL }}
         run: |
           node render.js
@@ -99,7 +96,6 @@ jobs:
           SLUG: ${{ github.event.inputs.slug }}
         run: |
           set -e
-          ls -la
           MP4=$(ls -1 *.mp4 | head -n 1)
           if [ -z "$MP4" ]; then
             echo "No MP4 found"
@@ -108,7 +104,7 @@ jobs:
           mv "$MP4" "${SLUG}.mp4"
           echo "FINAL_MP4=${SLUG}.mp4" >> $GITHUB_ENV
 
-            - name: Upload MP4 artifact
+      - name: Upload MP4 artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.inputs.slug }}
