@@ -239,8 +239,26 @@ async function init(){
   if(s.donate_url) donateLink.href=s.donate_url;
   else donateBox.style.display="none";
 
-  map = L.map("map").setView(LAPLAND,5);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+ map = L.map("map").setView(LAPLAND,5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+/* ---------- LOGO OVERLAY ---------- */
+if (s.logo_overlay_url) {
+  const LogoControl = L.control({ position: "topright" });
+
+  LogoControl.onAdd = function () {
+    const img = L.DomUtil.create("img");
+    img.src = s.logo_overlay_url;
+    img.style.width = "90px";
+    img.style.maxWidth = "30vw";
+    img.style.pointerEvents = "none";
+    img.style.filter = "drop-shadow(0 4px 8px rgba(0,0,0,.6))";
+    img.style.margin = "8px";
+    return img;
+  };
+
+  LogoControl.addTo(map);
+}
 
   /* ---------- GPX OVERLAY ---------- */
   if(tracker.enable_gpx_overlay===true || tracker.enable_gpx_overlay==="true"){
