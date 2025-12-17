@@ -2,6 +2,7 @@ import puppeteer from "puppeteer";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
+import fetch from "node-fetch"; // ✅ REQUIRED for GitHub Actions
 
 // 🔁 Optional progress callback to Google Sheets
 const PROGRESS_WEBHOOK = process.env.SHEET_WEBHOOK_URL;
@@ -104,7 +105,7 @@ while (frame < maxFrames) {
   await page.screenshot({ path: framePath, type: "png" });
   frame++;
 
-  // Update progress inside page (readable by Sheets if needed later)
+  // Update progress inside page
   await page.evaluate(f => {
     if (window.__GPX_TOTAL_FRAMES__ > 0) {
       window.__GPX_PROGRESS__ = Math.round(
@@ -113,10 +114,11 @@ while (frame < maxFrames) {
     }
   }, frame);
 
-  // Log progress roughly once per second
+  // 📊 Log + report progress roughly once per second
   if (frame % fps === 0) {
     const pct = Math.min(100, Math.round((frame / maxFrames) * 100));
     console.log(`📊 Render progress: ${pct}%`);
+    await reportProgress(pct, "Rendering frames");
   }
 
   const done = await page.evaluate(() => window.__GPX_DONE__ === true);
@@ -139,6 +141,9 @@ await sleep(300);
 const meta = await page.evaluate(() => window.__GPX_META__ || {});
 
 await browser.close();
+
+// 🔔 Force progress before encoding
+await reportProgress(100, "Encoding MP4");
 
 // 🧼 Build safe filename
 const safe = s =>
@@ -175,3 +180,6 @@ execSync(
 );
 
 console.log("✅ MP4 created:", outputFile);
+
+// 🔔 Final completion signal
+await reportProgress(100, "Complete");
