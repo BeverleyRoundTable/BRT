@@ -60,7 +60,7 @@ html, body {
 ============================================================ */
 const PARAMS = new URLSearchParams(location.search);
 const IS_RENDER = PARAMS.has("render");
-const RENDER_FPS = 30;
+// Animation is movement-driven, not FPS-driven (intentional)
 
 const API = PARAMS.get("api");
 const ROUTE = PARAMS.get("route");
@@ -243,7 +243,7 @@ const map=new maplibregl.Map({
   style:MAP_STYLE,
   center:[pts[0].lng,pts[0].lat],
   zoom:baseZoom,
-  pitch:50,
+  pitch: IS_RENDER && innerHeight > innerWidth ? 55 : 50,
   bearing:0,
   antialias:true
 });
@@ -277,7 +277,9 @@ const speed=(+settings.travelboast_speed||.1)*18;
 let spriteFrame=0;
 let strideAcc=0;
 let lastStepPos=null;
-const STRIDE_METERS=+settings.travelboast_stride_meters||1.2;
+const STRIDE_METERS =
+  +settings.travelboast_stride_meters ||
+  (innerHeight > innerWidth ? 0.9 : 1.2);
 
 const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
