@@ -3,6 +3,34 @@ import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 
+// 🔁 Optional progress callback to Google Sheets
+const PROGRESS_WEBHOOK = process.env.SHEET_WEBHOOK_URL;
+const RUN_ID = process.env.RUN_ID;
+
+let lastReportedPct = -1;
+
+async function reportProgress(pct, status = "Rendering") {
+  if (!PROGRESS_WEBHOOK || !RUN_ID) return;
+
+  // throttle: only send when % changes
+  if (pct === lastReportedPct) return;
+  lastReportedPct = pct;
+
+  try {
+    await fetch(PROGRESS_WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        runId: RUN_ID,
+        progress: pct,
+        status
+      })
+    });
+  } catch {
+    // 🔕 never fail render because of reporting
+  }
+}
+
 const url = process.env.RENDER_URL;
 const width = Number(process.env.WIDTH || 1080);
 const height = Number(process.env.HEIGHT || 1080);
