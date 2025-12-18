@@ -233,10 +233,10 @@ function step(ts){
 
     /* ===== SPRITE FRAME ADVANCE ===== */
     strideAcc += dist(a, pos);
-    if(strideAcc >= STRIDE_METERS){
-      strideAcc = 0;
-      spriteFrame = (spriteFrame + 1) % FRAMES;
-    }
+    if (strideAcc >= STRIDE_METERS) {
+  strideAcc -= STRIDE_METERS;
+  spriteFrame = (spriteFrame + 1) % FRAMES;
+}
 
     /* ===== CAMERA ===== */
     sprB = lerpA(sprB, bearing(a, b), 0.25);
