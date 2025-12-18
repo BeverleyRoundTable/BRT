@@ -133,7 +133,8 @@ const FRAMES = +s.travelboast_sprite_frames || 5;
 const SPRITE_SIZE = +s.travelboast_sprite_size || 64;
 let spriteFrame = 0;
 let strideAcc = 0;
-const STRIDE_METERS = 1.1;
+const WALK_SPEED = +s.travelboast_speed || 1;
+const STRIDE_METERS = Math.max(0.9, WALK_SPEED * 0.7);
 
 const snow=createSnow(
   String(s.travelboast_particle_effects||"").toLowerCase()==="snow"
