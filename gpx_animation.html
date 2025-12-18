@@ -272,6 +272,8 @@ function animate(map,pts,sprite,settings,theme){
 const frames=+settings.travelboast_sprite_frames||5;
 const size=+settings.travelboast_sprite_size||128;
 const speed=(+settings.travelboast_speed||.1)*18;
+const OVERVIEW_PAN_MS = 3000;   // camera fly-out duration
+const FINAL_HOLD_MS  = 5000;   // how long to linger on the overview
 
 function updateRouteProgress(pos, posIndex) {
   const coords = [];
@@ -355,7 +357,16 @@ function step(ts){
       finished=true;
       hideSprite=true;
       finishedAt=performance.now();
-      map.fitBounds(new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),{padding:120,pitch:0,bearing:0,duration:3000});
+      map.fitBounds(
+  new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
+  {
+    padding: 120,
+    pitch: 0,
+    bearing: 0,
+    duration: OVERVIEW_PAN_MS
+  }
+);
+
       overviewShown=true;
     }
   }
@@ -386,11 +397,16 @@ function step(ts){
 
   draw();
 
-  if(overviewShown && finishedAt && performance.now()-finishedAt>3500){
-    window.__GPX_DONE__=true;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    return;
-  }
+  if (
+  overviewShown &&
+  finishedAt &&
+  performance.now() - finishedAt >
+    (OVERVIEW_PAN_MS + FINAL_HOLD_MS)
+) {
+  window.__GPX_DONE__ = true;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  return;
+}
 
   requestAnimationFrame(step);
 }
