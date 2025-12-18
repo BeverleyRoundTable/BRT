@@ -279,34 +279,6 @@ dt = Math.min(dt, 0.05); // clamp to 50ms max
       }
     });
 
-    /* ===== SPRITE FRAME ADVANCE ===== */
-spriteTimer += dt;
-if (spriteTimer >= 1 / SPRITE_FPS) {
-  spriteTimer -= 1 / SPRITE_FPS;
-  spriteFrame = (spriteFrame + 1) % FRAMES;
-}
-
-    /* ===== CAMERA ===== */
-    sprB = lerpA(sprB, bearing(a, b), 0.25);
-    camB = lerpA(camB, sprB, 0.15);
-    map.jumpTo({ center:[pos.lng, pos.lat], bearing:camB, pitch:50 });
-
-    /* ===== DRAW SPRITE ===== */
-    const p = map.project([pos.lng, pos.lat]);
-    const frameW = sprite.width / FRAMES;
-
-    ctx.save();
-    ctx.translate(p.x, p.y - 40);
-    ctx.drawImage(
-      sprite,
-      spriteFrame * frameW, 0,
-      frameW, sprite.height,
-      -SPRITE_SIZE/2, -SPRITE_SIZE/2,
-      SPRITE_SIZE, SPRITE_SIZE
-    );
-    ctx.restore();
-  }
-
   if(finished && overviewAt && performance.now() - overviewAt > 5000){
     window.__GPX_DONE__ = true;
     return;
