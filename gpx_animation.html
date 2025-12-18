@@ -199,17 +199,30 @@ dt = Math.min(dt, 0.05); // clamp to 50ms max
   snow.update();
   snow.draw();
 
-  if(!finished){
-    m += ((+s.travelboast_speed || .1) * 18) * dt;
-    if(m >= total){
-      finished = true;
-      map.fitBounds(
-        new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
-        { padding:120, pitch:0, bearing:0, duration:3000 }
-      );
-      overviewAt = performance.now() + 3000;
-    }
+ if (!finished) {
+  m += ((+s.travelboast_speed || .1) * 18) * dt;
+
+  if (m >= total) {
+    finished = true;
+
+    // HARD STOP camera follow immediately
+    map.stop();
+
+    // Birds-eye overview
+    map.fitBounds(
+      new maplibregl.LngLatBounds(pts.map(p => [p.lng, p.lat])),
+      {
+        padding: 120,
+        pitch: 0,
+        bearing: 0,
+        duration: 3500
+      }
+    );
+
+    overviewAt = performance.now() + 3500;
+    return; // ⬅️ CRITICAL
   }
+}
 
   if (!finished && !overviewAt) {
 
