@@ -94,51 +94,55 @@ resize();
    SNOWFALL
 ============================================================ */
 function createSnowfall(enabled){
-  const flakes=[];
-  const DENSITY=0.00018;
+  const flakes = [];
+  const DENSITY = 0.00018;
 
   function addFlake(randomY=false){
     flakes.push({
-      x:Math.random()*canvas.width,
-      y:randomY?Math.random()*canvas.height:-20,
-      r:Math.random()*2.2+1,
-      vy:Math.random()*1.6+1.4,
-      vx:Math.random()*0.4-0.2,
-      drift:Math.random()*Math.PI*2
+      x: Math.random() * canvas.width,
+      y: randomY ? Math.random() * canvas.height : -20,
+      r: Math.random() * 2.2 + 1,
+      vy: Math.random() * 1.6 + 1.4,
+      vx: Math.random() * 0.4 - 0.2,
+      drift: Math.random() * Math.PI * 2
     });
   }
 
   function resizeSnow(){
-    const target=Math.floor(canvas.width*canvas.height*DENSITY);
-    while(flakes.length<target) addFlake(true);
-    while(flakes.length>target) flakes.pop();
+    const target = Math.floor(canvas.width * canvas.height * DENSITY);
+    while (flakes.length < target) addFlake(true);
+    while (flakes.length > target) flakes.pop();
   }
 
   function update(){
-    if(!enabled) return;
-    for(const f of flakes){
-      f.drift+=0.01;
-      f.x+=f.vx+Math.sin(f.drift)*0.15;
-      f.y+=f.vy;
-      if(f.y>canvas.height+30){f.y=-20;f.x=Math.random()*canvas.width;}
+    if (!enabled) return;
+    for (const f of flakes){
+      f.drift += 0.01;
+      f.x += f.vx + Math.sin(f.drift) * 0.15;
+      f.y += f.vy;
+      if (f.y > canvas.height + 30){
+        f.y = -20;
+        f.x = Math.random() * canvas.width;
+      }
     }
   }
 
   function draw(){
-    if(!enabled) return;
+    if (!enabled) return;
     ctx.save();
-    ctx.fillStyle="#fff";
-    ctx.globalAlpha=0.9;
-    for(const f of flakes){
+    ctx.fillStyle = "#fff";
+    ctx.globalAlpha = 0.9;
+    for (const f of flakes){
       ctx.beginPath();
-      ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
   }
 
   resizeSnow();
-  addEventListener("resize",resizeSnow);
+  addEventListener("resize", resizeSnow);
+
   return { update, draw };
 }
 
@@ -275,6 +279,15 @@ const speed=(+settings.travelboast_speed||.1)*18;
 const OVERVIEW_PAN_MS = 3000;   // camera fly-out duration
 const FINAL_HOLD_MS  = 5000;   // how long to linger on the overview
 
+  const particleMode = String(
+  settings.travelboast_particle_effects || ""
+).toLowerCase();
+
+// ❄️ CREATE SNOW (disabled only if not "snow")
+const snow = createSnowfall(
+  particleMode === "snow"
+);
+
 function updateRouteProgress(pos, posIndex) {
   const coords = [];
 
@@ -330,24 +343,39 @@ let finished=false,overviewShown=false,hideSprite=false,currentPos=null;
 let finishedAt=null;
 
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
   if(currentPos && !hideSprite){
-    const spriteW=sprite.width/frames;
-    const p=map.project([currentPos.lng,currentPos.lat]);
-    let rel=((spriteBearing-camBearing+540)%360)-180;
-    rel=clamp(rel,-25,25);
+    const spriteW = sprite.width / frames;
+    const p = map.project([currentPos.lng, currentPos.lat]);
+    let rel = ((spriteBearing - camBearing + 540) % 360) - 180;
+    rel = clamp(rel, -25, 25);
 
     ctx.save();
-    ctx.translate(Math.round(p.x),Math.round(p.y-size*0.32));
-    ctx.rotate(rel*0.4*Math.PI/180);
-    ctx.drawImage(sprite,spriteFrame*spriteW,0,spriteW,sprite.height,-size/2,-size/2,size,size);
+    ctx.translate(Math.round(p.x), Math.round(p.y - size * 0.32));
+    ctx.rotate(rel * 0.4 * Math.PI / 180);
+    ctx.drawImage(
+      sprite,
+      spriteFrame * spriteW, 0,
+      spriteW, sprite.height,
+      -size / 2, -size / 2,
+      size, size
+    );
     ctx.restore();
   }
 }
 
 function step(ts){
   const dt=last?(ts-last)/1000:0;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+if (overviewShown) {
+  ctx.globalAlpha = 0.6;
+}
+
+  // ❄️ SNOW
+  snow.update();
+  snow.draw();
+  
   last=ts;
 
   if(!finished){
