@@ -135,13 +135,10 @@ html,body{
 
 /* ---------- LOGO OVERLAY (LOCKED TO INFO BAR HEIGHT) ---------- */
 .logo-overlay{
-  position:fixed;
-  right: calc(12px + env(safe-area-inset-right, 0px));
-  bottom: var(--info-bottom);
+  position:relative; /* was fixed */
   width:64px;
   max-width:22vw;
   pointer-events:none;
-  z-index:2100;
   opacity:.9;
   filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));
 }
@@ -181,13 +178,13 @@ html,body{
     font-size:.8em;
     padding:8px 12px;
   }
-}
 
   .status-popup{
     font-size:.95em;
     padding:12px 16px;
   }
 }
+
 </style>
 </head>
 
