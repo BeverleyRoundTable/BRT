@@ -129,6 +129,8 @@ const map=new maplibregl.Map({
   pitch:IS_RENDER&&innerHeight>innerWidth?55:50
 });
   
+  const SPRITE_FPS = +s.travelboast_sprite_fps || 12;
+let spriteTimer = 0;
 const FRAMES = +s.travelboast_sprite_frames || 5;
 const SPRITE_SIZE = +s.travelboast_sprite_size || 64;
 let spriteFrame = 0;
@@ -208,7 +210,7 @@ function step(ts){
     }
   }
 
-  if(!finished){
+  if (!finished && !overviewAt) {
     let i = cum.findIndex(v => v >= m);
     i = Math.max(1, i);
 
@@ -232,9 +234,9 @@ function step(ts){
     });
 
     /* ===== SPRITE FRAME ADVANCE ===== */
-    strideAcc += dist(a, pos);
-    if (strideAcc >= STRIDE_METERS) {
-  strideAcc -= STRIDE_METERS;
+spriteTimer += dt;
+if (spriteTimer >= 1 / SPRITE_FPS) {
+  spriteTimer -= 1 / SPRITE_FPS;
   spriteFrame = (spriteFrame + 1) % FRAMES;
 }
 
