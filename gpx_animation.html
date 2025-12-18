@@ -11,12 +11,29 @@
 html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
 #map{position:absolute;inset:0}
 #anim{position:absolute;inset:0;pointer-events:none}
+  /* ================= LOGO OVERLAY ================= */
+#logo-overlay {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+#logo-overlay img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.6));
+}
 </style>
 </head>
 
 <body>
 <div id="map"></div>
 <canvas id="anim"></canvas>
+  
+<div id="logo-overlay" hidden>
+  <img id="logo-overlay-img" />
+</div>
 
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 
@@ -100,11 +117,39 @@ const bearing=(a,b)=>{
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 };
 const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
+  
+/* ================= LOGO OVERLAY ================= */
+function applyLogoOverlay(settings) {
+  if (String(settings.logo_overlay_enabled).toLowerCase() !== "true") return;
+  if (!settings.logo_overlay_url) return;
 
+  const wrap = document.getElementById("logo-overlay");
+  const img  = document.getElementById("logo-overlay-img");
+
+  img.src = settings.logo_overlay_url;
+
+  const size = parseInt(settings.logo_overlay_size || 64, 10);
+  img.style.width = size + "px";
+
+  // Reset positions
+  wrap.style.top = wrap.style.right = wrap.style.bottom = wrap.style.left = "auto";
+  wrap.style.margin = "16px";
+
+  const pos = (settings.logo_overlay_position || "bottom-right").toLowerCase();
+
+  if (pos.includes("top")) wrap.style.top = "0";
+  if (pos.includes("bottom")) wrap.style.bottom = "0";
+  if (pos.includes("left")) wrap.style.left = "0";
+  if (pos.includes("right")) wrap.style.right = "0";
+
+  wrap.hidden = false;
+}
+  
 /* ================= LOAD ================= */
 (async()=>{
   const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
   const s=master.settings||{};
+  applyLogoOverlay(s);
   const r=master.routes.find(x=>x.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
   const pts=await fetch(r.gpxUrl).then(r=>r.text()).then(x=>
     [...new DOMParser().parseFromString(x,"text/xml")
