@@ -60,26 +60,14 @@ html, body {
 ============================================================ */
 const PARAMS = new URLSearchParams(location.search);
 const IS_RENDER = PARAMS.has("render");
-// Animation is movement-driven, not FPS-driven (intentional)
 
 const API = PARAMS.get("api");
 const ROUTE = PARAMS.get("route");
 
 window.__GPX_DONE__ = false;
 
-const routeNameEl = document.getElementById("route-name");
-const routeDateEl = document.getElementById("route-date");
-const toastEl = document.getElementById("toast");
-
-function toast(m){
-  toastEl.style.display="block";
-  toastEl.textContent=m;
-}
-
-if(!API){ toast("Missing api="); throw new Error("Missing api"); }
-
-const canvas=document.getElementById("anim");
-const ctx=canvas.getContext("2d");
+const canvas = document.getElementById("anim");
+const ctx = canvas.getContext("2d");
 
 function resize(){
   const dpr=devicePixelRatio||1;
@@ -94,55 +82,51 @@ resize();
    SNOWFALL
 ============================================================ */
 function createSnowfall(enabled){
-  const flakes = [];
-  const DENSITY = 0.00018;
+  const flakes=[];
+  const DENSITY=0.00018;
 
   function addFlake(randomY=false){
     flakes.push({
-      x: Math.random() * canvas.width,
-      y: randomY ? Math.random() * canvas.height : -20,
-      r: Math.random() * 2.2 + 1,
-      vy: Math.random() * 1.6 + 1.4,
-      vx: Math.random() * 0.4 - 0.2,
-      drift: Math.random() * Math.PI * 2
+      x:Math.random()*canvas.width,
+      y:randomY?Math.random()*canvas.height:-20,
+      r:Math.random()*2.2+1,
+      vy:Math.random()*1.6+1.4,
+      vx:Math.random()*0.4-0.2,
+      drift:Math.random()*Math.PI*2
     });
   }
 
   function resizeSnow(){
-    const target = Math.floor(canvas.width * canvas.height * DENSITY);
-    while (flakes.length < target) addFlake(true);
-    while (flakes.length > target) flakes.pop();
+    const target=Math.floor(canvas.width*canvas.height*DENSITY);
+    while(flakes.length<target) addFlake(true);
+    while(flakes.length>target) flakes.pop();
   }
 
   function update(){
-    if (!enabled) return;
-    for (const f of flakes){
-      f.drift += 0.01;
-      f.x += f.vx + Math.sin(f.drift) * 0.15;
-      f.y += f.vy;
-      if (f.y > canvas.height + 30){
-        f.y = -20;
-        f.x = Math.random() * canvas.width;
-      }
+    if(!enabled) return;
+    for(const f of flakes){
+      f.drift+=0.01;
+      f.x+=f.vx+Math.sin(f.drift)*0.15;
+      f.y+=f.vy;
+      if(f.y>canvas.height+30){f.y=-20;f.x=Math.random()*canvas.width;}
     }
   }
 
   function draw(){
-    if (!enabled) return;
+    if(!enabled) return;
     ctx.save();
-    ctx.fillStyle = "#fff";
-    ctx.globalAlpha = 0.9;
-    for (const f of flakes){
+    ctx.fillStyle="#fff";
+    ctx.globalAlpha=0.9;
+    for(const f of flakes){
       ctx.beginPath();
-      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+      ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
       ctx.fill();
     }
     ctx.restore();
   }
 
   resizeSnow();
-  addEventListener("resize", resizeSnow);
-
+  addEventListener("resize",resizeSnow);
   return { update, draw };
 }
 
@@ -167,16 +151,13 @@ async function loadGPX(u){
   }));
 }
 
-function smoothPath(p,it=2){
-  if(it<=0||p.length<3) return p;
-  const o=[p[0]];
-  for(let i=0;i<p.length-1;i++){
-    const a=p[i],b=p[i+1];
-    o.push({lat:.75*a.lat+.25*b.lat,lng:.75*a.lng+.25*b.lng});
-    o.push({lat:.25*a.lat+.75*b.lat,lng:.25*a.lng+.75*b.lng});
-  }
-  o.push(p.at(-1));
-  return smoothPath(o,it-1);
+function dist(a,b){
+  const R=6371000;
+  const dLat=(b.lat-a.lat)*Math.PI/180;
+  const dLng=(b.lng-a.lng)*Math.PI/180;
+  const s=Math.sin(dLat/2)**2+
+          Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
 }
 
 function bearing(a,b){
@@ -187,15 +168,6 @@ function bearing(a,b){
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
 
-function dist(a,b){
-  const R=6371000;
-  const dLat=(b.lat-a.lat)*Math.PI/180;
-  const dLng=(b.lng-a.lng)*Math.PI/180;
-  const s=Math.sin(dLat/2)**2+
-          Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
-  return 2*R*Math.asin(Math.sqrt(s));
-}
-
 function angleDelta(a,b){return((b-a+540)%360)-180;}
 function lerpAngle(a,b,t){return(a+angleDelta(a,b)*t+360)%360;}
 
@@ -203,43 +175,22 @@ function lerpAngle(a,b,t){return(a+angleDelta(a,b)*t+360)%360;}
    MAIN
 ============================================================ */
 (async()=>{
-try{
   const master=await fetchJSON(API);
   const settings=master.settings||{};
   const routes=master.routes||[];
   const route=routes.find(r=>r.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
-  if(!route||!route.gpxUrl) throw "Route invalid";
-
-  routeNameEl.textContent=route.routeName||"";
-  routeDateEl.textContent=route.date
-    ?new Date(route.date+"T00:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})
-    :"";
+  if(!route) throw "Route invalid";
 
   const rawPts=await loadGPX(route.gpxUrl);
-  const pts=smoothPath(rawPts,2);
-  const sprite=await loadImg(settings.travelboast_sprite);
+  const sprite=new Image(); sprite.src=settings.travelboast_sprite;
 
-  initMapAndRun(rawPts,pts,sprite,settings,{});
-}catch(e){
-  console.error(e);
-  toast(e?.message||"Failed to load GPX animation");
-}
+  initMapAndRun(rawPts,rawPts,sprite,settings,{});
 })();
-
-function loadImg(u){
-  return new Promise((res,rej)=>{
-    const i=new Image();
-    i.crossOrigin="anonymous";
-    i.onload=()=>res(i);
-    i.onerror=rej;
-    i.src=u;
-  });
-}
 
 /* ============================================================
    MAP + ANIMATION
 ============================================================ */
-function initMapAndRun(rawPts,pts,sprite,settings){
+function initMapAndRun(rawPts,pts,sprite,settings,theme){
 const baseZoom=+settings.default_map_zoom||16;
 
 const map=new maplibregl.Map({
@@ -252,201 +203,63 @@ const map=new maplibregl.Map({
   antialias:true
 });
 
-map.dragPan.disable();
-map.scrollZoom.disable();
-map.doubleClickZoom.disable();
-
 map.on("load",()=>{
-  map.addSource("route-base",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:rawPts.map(p=>[p.lng,p.lat])}}});
+  map.addSource("route-base",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:pts.map(p=>[p.lng,p.lat])}}});
   map.addLayer({id:"route-base",type:"line",source:"route-base",paint:{ "line-color":"#666","line-opacity":0.35,"line-width":3 }});
-
-  map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
-  map.addSource("route-progress-glow",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
-
-  map.addLayer({id:"route-progress-glow",type:"line",source:"route-progress-glow",paint:{
-    "line-color":settings.primary_color||"#d31c1c","line-width":12,"line-opacity":0.3,"line-blur":8}});
-  map.addLayer({id:"route-progress",type:"line",source:"route-progress",paint:{
-    "line-color":settings.primary_color||"#d31c1c","line-width":5}});
 
   animate(map,pts,sprite,settings,{baseZoom});
 });
 }
 
 function animate(map,pts,sprite,settings,theme){
-const frames=+settings.travelboast_sprite_frames||5;
-const size=+settings.travelboast_sprite_size||128;
 const speed=(+settings.travelboast_speed||.1)*18;
-const OVERVIEW_PAN_MS = 3000;   // camera fly-out duration
-const FINAL_HOLD_MS  = 5000;   // how long to linger on the overview
+const OVERVIEW_PAN_MS=3000;
+const FINAL_HOLD_MS=5000;
 
-  const particleMode = String(
-  settings.travelboast_particle_effects || ""
-).toLowerCase();
-
-// ❄️ CREATE SNOW (disabled only if not "snow")
-const snow = createSnowfall(
-  particleMode === "snow"
+const snow=createSnowfall(
+  String(settings.travelboast_particle_effects||"").toLowerCase()==="snow"
 );
 
-function updateRouteProgress(pos, posIndex) {
-  const coords = [];
-
-  // Push all completed points
-  for (let i = 0; i < posIndex; i++) {
-    coords.push([pts[i].lng, pts[i].lat]);
-  }
-
-  // Add current interpolated position
-  coords.push([pos.lng, pos.lat]);
-
-  const geojson = {
-    type: "Feature",
-    geometry: {
-      type: "LineString",
-      coordinates: coords
-    }
-  };
-
-  map.getSource("route-progress").setData(geojson);
-  map.getSource("route-progress-glow").setData(geojson);
-}
-
-// ✅ OPTION 2 — movement-driven legs
-let spriteFrame=0;
-let strideAcc=0;
-let lastStepPos=null;
-const STRIDE_METERS =
-  +settings.travelboast_stride_meters ||
-  (innerHeight > innerWidth ? 0.9 : 1.2);
-
-const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+const cum=[0];
+for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
-function getPosWithIndex(d) {
-  let i = cum.findIndex(v => v >= d);
-  i = Math.max(1, i);
-
-  const t = (d - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
-  const a = pts[i - 1], b = pts[i];
-
-  return {
-    pos: {
-      lat: a.lat + (b.lat - a.lat) * t,
-      lng: a.lng + (b.lng - a.lng) * t
-    },
-    index: i
-  };
-}
-
-let m=0,last=null,camBearing=0,spriteBearing=0;
-let finished=false,overviewShown=false,hideSprite=false,currentPos=null;
-let finishedAt=null;
-
-function draw(){
-  if(currentPos && !hideSprite){
-    const spriteW = sprite.width / frames;
-    const p = map.project([currentPos.lng, currentPos.lat]);
-    let rel = ((spriteBearing - camBearing + 540) % 360) - 180;
-    rel = clamp(rel, -25, 25);
-
-    ctx.save();
-    ctx.translate(Math.round(p.x), Math.round(p.y - size * 0.32));
-    ctx.rotate(rel * 0.4 * Math.PI / 180);
-    ctx.drawImage(
-      sprite,
-      spriteFrame * spriteW, 0,
-      spriteW, sprite.height,
-      -size / 2, -size / 2,
-      size, size
-    );
-    ctx.restore();
-  }
-}
+let m=0,last=null;
+let finished=false,overviewShown=false;
+let panFinishedAt=null;
 
 function step(ts){
   const dt=last?(ts-last)/1000:0;
+  last=ts;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  
-if (overviewShown) {
-  ctx.globalAlpha = 0.6;
-}
-
-  // ❄️ SNOW
-  snow.update();
-  snow.draw();
-  
-  last=ts;
+  snow.update(); snow.draw();
 
   if(!finished){
     m+=speed*dt;
     if(m>=total){
       m=total;
       finished=true;
-      hideSprite=true;
-      finishedAt=performance.now();
-      map.fitBounds(
-  new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
-  {
-    padding: 120,
-    pitch: 0,
-    bearing: 0,
-    duration: OVERVIEW_PAN_MS
-  }
-);
 
+      map.fitBounds(
+        new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
+        { padding:120, pitch:0, bearing:0, duration:OVERVIEW_PAN_MS }
+      );
+
+      panFinishedAt=performance.now()+OVERVIEW_PAN_MS;
       overviewShown=true;
     }
   }
 
-  if(!overviewShown){
-    const posData = getPosWithIndex(m);
-    currentPos = posData.pos;
-
-    updateRouteProgress(currentPos, posData.index);   // ⭐ FIXED (no hook / no flash)
-
-    if(!lastStepPos){
-      lastStepPos=currentPos;
-    }else{
-      const moved=dist(lastStepPos,currentPos);
-      strideAcc+=moved;
-      lastStepPos=currentPos;
-      while(strideAcc>=STRIDE_METERS){
-        strideAcc-=STRIDE_METERS;
-        spriteFrame=(spriteFrame+1)%frames;
-      }
-    }
-
-    const nextPos=getPos(Math.min(m+speed*0.03,total));
-    spriteBearing=lerpAngle(spriteBearing,bearing(currentPos,nextPos),0.25);
-    camBearing=lerpAngle(camBearing,spriteBearing,0.15);
-    map.jumpTo({center:[currentPos.lng,currentPos.lat],zoom:theme.baseZoom,bearing:camBearing,pitch:50});
+  if(overviewShown && panFinishedAt && performance.now()-panFinishedAt>FINAL_HOLD_MS){
+    window.__GPX_DONE__=true;
+    return;
   }
-
-  draw();
-
-  if (
-  overviewShown &&
-  finishedAt &&
-  performance.now() - finishedAt >
-    (OVERVIEW_PAN_MS + FINAL_HOLD_MS)
-) {
-  window.__GPX_DONE__ = true;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  return;
-}
 
   requestAnimationFrame(step);
 }
 
 requestAnimationFrame(step);
-
-function getPos(d){
-  let i=cum.findIndex(v=>v>=d);i=Math.max(1,i);
-  const t=(d-cum[i-1])/(cum[i]-cum[i-1]||1);
-  const a=pts[i-1],b=pts[i];
-  return{lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
-}
 }
 </script>
 </body>
