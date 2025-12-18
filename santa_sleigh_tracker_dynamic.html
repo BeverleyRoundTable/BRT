@@ -263,15 +263,30 @@ async function init(){
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
   if (s.logo_overlay_url) {
-    const LogoControl = L.control({ position:"bottomright" });
-    LogoControl.onAdd = function(){
-      const img = L.DomUtil.create("img");
-      img.src = s.logo_overlay_url;
-      img.className = "logo-overlay";
-      return img;
-    };
-    LogoControl.addTo(map);
-  }
+
+  // Map Sheet values → Leaflet positions
+  const LOGO_POSITIONS = {
+    "top-left": "topleft",
+    "top-right": "topright",
+    "bottom-left": "bottomleft",
+    "bottom-right": "bottomright",
+    "center": "topright" // fallback (Leaflet has no true center)
+  };
+
+  const logoPosition =
+    LOGO_POSITIONS[s.logo_overlay_position] || "bottomright";
+
+  const LogoControl = L.control({ position: logoPosition });
+
+  LogoControl.onAdd = function(){
+    const img = L.DomUtil.create("img");
+    img.src = s.logo_overlay_url;
+    img.className = "logo-overlay";
+    return img;
+  };
+
+  LogoControl.addTo(map);
+}
 
   marker = L.marker(LAPLAND,{
     icon:L.icon({
