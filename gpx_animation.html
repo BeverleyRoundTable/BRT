@@ -191,7 +191,8 @@ map.on("load",()=>{
 });
 
 function step(ts){
-  const dt = last ? (ts - last) / 1000 : 0;
+  let dt = last ? (ts - last) / 1000 : 0;
+dt = Math.min(dt, 0.05); // clamp to 50ms max
   last = ts;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -211,15 +212,60 @@ function step(ts){
   }
 
   if (!finished && !overviewAt) {
-    let i = cum.findIndex(v => v >= m);
-    i = Math.max(1, i);
 
-    const t = (m - cum[i-1]) / (cum[i] - cum[i-1] || 1);
-    const a = pts[i-1], b = pts[i];
-    const pos = {
-      lat: a.lat + (b.lat - a.lat) * t,
-      lng: a.lng + (b.lng - a.lng) * t
-    };
+  // movement
+  let i = cum.findIndex(v => v >= m);
+  i = Math.max(1, i);
+
+  const t = (m - cum[i-1]) / (cum[i] - cum[i-1] || 1);
+  const a = pts[i-1], b = pts[i];
+  const pos = {
+    lat: a.lat + (b.lat - a.lat) * t,
+    lng: a.lng + (b.lng - a.lng) * t
+  };
+
+  map.getSource("route-progress").setData({
+    type:"Feature",
+    geometry:{
+      type:"LineString",
+      coordinates:[
+        ...pts.slice(0, i).map(p => [p.lng, p.lat]),
+        [pos.lng, pos.lat]
+      ]
+    }
+  });
+
+  // sprite animation (FPS based)
+  spriteTimer += dt;
+  if (spriteTimer >= 1 / SPRITE_FPS) {
+    spriteTimer -= 1 / SPRITE_FPS;
+    spriteFrame = (spriteFrame + 1) % FRAMES;
+  }
+
+  // camera FOLLOW (this must stop after finish)
+  sprB = lerpA(sprB, bearing(a, b), 0.25);
+  camB = lerpA(camB, sprB, 0.15);
+  map.jumpTo({
+    center:[pos.lng, pos.lat],
+    bearing: camB,
+    pitch: 50
+  });
+
+  // draw sprite
+  const p = map.project([pos.lng, pos.lat]);
+  const frameW = sprite.width / FRAMES;
+
+  ctx.save();
+  ctx.translate(p.x, p.y - 40);
+  ctx.drawImage(
+    sprite,
+    spriteFrame * frameW, 0,
+    frameW, sprite.height,
+    -SPRITE_SIZE/2, -SPRITE_SIZE/2,
+    SPRITE_SIZE, SPRITE_SIZE
+  );
+  ctx.restore();
+}
 
     /* ===== ROUTE PROGRESS ===== */
     map.getSource("route-progress").setData({
