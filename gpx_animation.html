@@ -128,6 +128,12 @@ const map=new maplibregl.Map({
   zoom:+s.default_map_zoom||16,
   pitch:IS_RENDER&&innerHeight>innerWidth?55:50
 });
+  
+const FRAMES = +s.travelboast_sprite_frames || 5;
+const SPRITE_SIZE = +s.travelboast_sprite_size || 64;
+let spriteFrame = 0;
+let strideAcc = 0;
+const STRIDE_METERS = 1.1;
 
 const snow=createSnow(
   String(s.travelboast_particle_effects||"").toLowerCase()==="snow"
@@ -182,48 +188,105 @@ map.on("load",()=>{
 });
 
 function step(ts){
-  const dt=last?(ts-last)/1000:0; last=ts;
+  const dt = last ? (ts - last) / 1000 : 0;
+  last = ts;
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  snow.update(); snow.draw();
+  snow.update();
+  snow.draw();
 
   if(!finished){
-    m+=((+s.travelboast_speed||.1)*18)*dt;
-    if(m>=total){
-      finished=true;
+    m += ((+s.travelboast_speed || .1) * 18) * dt;
+    if(m >= total){
+      finished = true;
       map.fitBounds(
         new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
-        {padding:120,pitch:0,bearing:0,duration:3000}
+        { padding:120, pitch:0, bearing:0, duration:3000 }
       );
-      overviewAt=performance.now()+3000;
+      overviewAt = performance.now() + 3000;
     }
   }
 
   if(!finished){
-    let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
-    const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
-    const a=pts[i-1],b=pts[i];
-    const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
+    let i = cum.findIndex(v => v >= m);
+    i = Math.max(1, i);
 
-    sprB=lerpA(sprB,bearing(a,b),0.25);
-    camB=lerpA(camB,sprB,0.15);
+    const t = (m - cum[i-1]) / (cum[i] - cum[i-1] || 1);
+    const a = pts[i-1], b = pts[i];
+    const pos = {
+      lat: a.lat + (b.lat - a.lat) * t,
+      lng: a.lng + (b.lng - a.lng) * t
+    };
 
-    map.jumpTo({center:[pos.lng,pos.lat],bearing:camB,pitch:50});
+    /* ===== ROUTE PROGRESS ===== */
+    map.getSource("route-progress").setData({
+      type:"Feature",
+      geometry:{
+        type:"LineString",
+        coordinates:[
+          ...pts.slice(0, i).map(p => [p.lng, p.lat]),
+          [pos.lng, pos.lat]
+        ]
+      }
+    });
 
-    const p=map.project([pos.lng,pos.lat]);
+    /* ===== SPRITE FRAME ADVANCE ===== */
+    strideAcc += dist(a, pos);
+    if(strideAcc >= STRIDE_METERS){
+      strideAcc = 0;
+      spriteFrame = (spriteFrame + 1) % FRAMES;
+    }
+
+    /* ===== CAMERA ===== */
+    sprB = lerpA(sprB, bearing(a, b), 0.25);
+    camB = lerpA(camB, sprB, 0.15);
+    map.jumpTo({ center:[pos.lng, pos.lat], bearing:camB, pitch:50 });
+
+    /* ===== DRAW SPRITE ===== */
+    const p = map.project([pos.lng, pos.lat]);
+    const frameW = sprite.width / FRAMES;
+
     ctx.save();
-    ctx.translate(p.x,p.y-40);
-    ctx.drawImage(sprite,-32,-32,64,64);
+    ctx.translate(p.x, p.y - 40);
+    ctx.drawImage(
+      sprite,
+      spriteFrame * frameW, 0,
+      frameW, sprite.height,
+      -SPRITE_SIZE/2, -SPRITE_SIZE/2,
+      SPRITE_SIZE, SPRITE_SIZE
+    );
     ctx.restore();
   }
 
-  if(finished && overviewAt && performance.now()-overviewAt>5000){
-    window.__GPX_DONE__=true;
+  if(finished && overviewAt && performance.now() - overviewAt > 5000){
+    window.__GPX_DONE__ = true;
     return;
   }
 
   requestAnimationFrame(step);
 }
+
+  // update animated route line
+map.getSource("route-progress").setData({
+  type:"Feature",
+  geometry:{
+    type:"LineString",
+    coordinates:[
+      ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
+      [pos.lng,pos.lat]
+    ]
+  }
+});
+
+// advance sprite frame by distance
+if(i>1){
+  strideAcc += dist(pts[i-1], pos);
+  if(strideAcc >= STRIDE_METERS){
+    strideAcc = 0;
+    spriteFrame = (spriteFrame + 1) % FRAMES;
+  }
 }
+
 </script>
 </body>
 </html>
