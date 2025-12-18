@@ -139,7 +139,47 @@ const total=cum.at(-1);
 let m=0,last=null,camB=0,sprB=0;
 let finished=false,overviewAt=null;
 
-map.on("load",()=>requestAnimationFrame(step));
+map.on("load",()=>{
+
+  map.addSource("route-base",{
+    type:"geojson",
+    data:{
+      type:"Feature",
+      geometry:{
+        type:"LineString",
+        coordinates:pts.map(p=>[p.lng,p.lat])
+      }
+    }
+  });
+
+  map.addLayer({
+    id:"route-base",
+    type:"line",
+    source:"route-base",
+    paint:{
+      "line-color":"#666",
+      "line-opacity":0.35,
+      "line-width":3
+    }
+  });
+
+  map.addSource("route-progress",{
+    type:"geojson",
+    data:{ type:"Feature", geometry:{ type:"LineString", coordinates:[] } }
+  });
+
+  map.addLayer({
+    id:"route-progress",
+    type:"line",
+    source:"route-progress",
+    paint:{
+      "line-color":s.primary_color || "#d31c1c",
+      "line-width":5
+    }
+  });
+
+  requestAnimationFrame(step);
+});
 
 function step(ts){
   const dt=last?(ts-last)/1000:0; last=ts;
