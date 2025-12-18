@@ -252,24 +252,22 @@ function step(ts) {
   if (!finished) {
     m += ((+s.travelboast_speed || .1) * 18) * dt;
 
-    if (m >= total) {
-      finished = true;
-      overviewShown = true;
+if (m >= total) {
+  finished = true;
+  overviewShown = true;
 
-      map.stop();
+  map.stop();
 
-      map.fitBounds(bounds, {
-  padding: 120,
-  pitch: 0,
-  bearing: 0,
-  duration: 3500,
-  maxZoom: 14 // ✅ prevents "zooming in" at the end
-});
+  map.fitBounds(bounds, {
+    padding: 120,
+    pitch: 0,
+    bearing: 0,
+    duration: 3500,
+    maxZoom: 14
+  });
 
-      overviewAt = performance.now() + 3500;
-      return;
-    }
-  }
+  overviewAt = performance.now() + 3500;
+}
 
   /* ================= MOVEMENT (ONLY IF NOT OVERVIEW) ================= */
   if (!overviewShown) {
