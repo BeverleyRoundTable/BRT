@@ -191,104 +191,94 @@ map.on("load",()=>{
   requestAnimationFrame(step);
 });
 
-function step(ts){
+function step(ts) {
   let dt = last ? (ts - last) / 1000 : 0;
-dt = Math.min(dt, 0.05); // clamp to 50ms max
+  dt = Math.min(dt, 0.05);
   last = ts;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
   snow.update();
   snow.draw();
 
- if (!finished) {
-  m += ((+s.travelboast_speed || .1) * 18) * dt;
+  /* ================= FINISH CHECK ================= */
+  if (!finished) {
+    m += ((+s.travelboast_speed || .1) * 18) * dt;
 
-if (m >= total) {
-  finished = true;
-  overviewShown = true; // ✅ LOCK camera forever
+    if (m >= total) {
+      finished = true;
+      overviewShown = true;
 
-  map.stop();
+      map.stop();
 
-  map.fitBounds(
-    new maplibregl.LngLatBounds(pts.map(p => [p.lng, p.lat])),
-    {
-      padding: 120,
-      pitch: 0,
-      bearing: 0,
-      duration: 3500
+      map.fitBounds(
+        new maplibregl.LngLatBounds(pts.map(p => [p.lng, p.lat])),
+        { padding:120, pitch:0, bearing:0, duration:3500 }
+      );
+
+      overviewAt = performance.now() + 3500;
+      requestAnimationFrame(step);
+      return;
     }
-  );
-
-  overviewAt = performance.now() + 3500;
-  return;
-}
-
-  if (!overviewShown) {
-
-  // movement
-  let i = cum.findIndex(v => v >= m);
-  i = Math.max(1, i);
-
-  const t = (m - cum[i-1]) / (cum[i] - cum[i-1] || 1);
-  const a = pts[i-1], b = pts[i];
-  const pos = {
-    lat: a.lat + (b.lat - a.lat) * t,
-    lng: a.lng + (b.lng - a.lng) * t
-  };
-
-  map.getSource("route-progress").setData({
-    type:"Feature",
-    geometry:{
-      type:"LineString",
-      coordinates:[
-        ...pts.slice(0, i).map(p => [p.lng, p.lat]),
-        [pos.lng, pos.lat]
-      ]
-    }
-  });
-
-  // sprite animation (FPS based)
-  spriteTimer += dt;
-  if (spriteTimer >= 1 / SPRITE_FPS) {
-    spriteTimer -= 1 / SPRITE_FPS;
-    spriteFrame = (spriteFrame + 1) % FRAMES;
   }
 
-  // camera FOLLOW (this must stop after finish)
-  sprB = lerpA(sprB, bearing(a, b), 0.25);
-  camB = lerpA(camB, sprB, 0.15);
-  map.jumpTo({
-    center:[pos.lng, pos.lat],
-    bearing: camB,
-    pitch: 50
-  });
+  /* ================= MOVEMENT (ONLY IF NOT OVERVIEW) ================= */
+  if (!overviewShown) {
 
-  // draw sprite
-  const p = map.project([pos.lng, pos.lat]);
-  const frameW = sprite.width / FRAMES;
+    let i = cum.findIndex(v => v >= m);
+    i = Math.max(1, i);
 
-  ctx.save();
-  ctx.translate(p.x, p.y - 40);
-  ctx.drawImage(
-    sprite,
-    spriteFrame * frameW, 0,
-    frameW, sprite.height,
-    -SPRITE_SIZE/2, -SPRITE_SIZE/2,
-    SPRITE_SIZE, SPRITE_SIZE
-  );
-  ctx.restore();
-}
+    const t = (m - cum[i-1]) / (cum[i] - cum[i-1] || 1);
+    const a = pts[i-1], b = pts[i];
+    const pos = {
+      lat: a.lat + (b.lat - a.lat) * t,
+      lng: a.lng + (b.lng - a.lng) * t
+    };
 
-  if(finished && overviewAt && performance.now() - overviewAt > 5000){
+    map.getSource("route-progress").setData({
+      type:"Feature",
+      geometry:{
+        type:"LineString",
+        coordinates:[
+          ...pts.slice(0, i).map(p => [p.lng, p.lat]),
+          [pos.lng, pos.lat]
+        ]
+      }
+    });
+
+    spriteTimer += dt;
+    if (spriteTimer >= 1 / SPRITE_FPS) {
+      spriteTimer -= 1 / SPRITE_FPS;
+      spriteFrame = (spriteFrame + 1) % FRAMES;
+    }
+
+    sprB = lerpA(sprB, bearing(a, b), 0.25);
+    camB = lerpA(camB, sprB, 0.15);
+    map.jumpTo({ center:[pos.lng,pos.lat], bearing:camB, pitch:50 });
+
+    const p = map.project([pos.lng, pos.lat]);
+    const frameW = sprite.width / FRAMES;
+
+    ctx.save();
+    ctx.translate(p.x, p.y - 40);
+    ctx.drawImage(
+      sprite,
+      spriteFrame * frameW, 0,
+      frameW, sprite.height,
+      -SPRITE_SIZE/2, -SPRITE_SIZE/2,
+      SPRITE_SIZE, SPRITE_SIZE
+    );
+    ctx.restore();
+  }
+
+  /* ================= DONE SIGNAL ================= */
+  if (finished && overviewAt && performance.now() - overviewAt > 5000) {
     window.__GPX_DONE__ = true;
     return;
   }
 
   requestAnimationFrame(step);
 }
-  
-}
-  
+
 </script>
 </body>
 </html>
