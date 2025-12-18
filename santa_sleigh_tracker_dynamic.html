@@ -22,17 +22,20 @@ html,body{
 
 /* ---------- VIEWPORT SAFE ZONE ---------- */
 :root{
-  --ui-bottom-safe: 160px;
+  /* Desktop default */
+  --ui-bottom-safe: 72px;
 
-  /* Shared vertical anchors */
-  --info-bottom: calc(var(--ui-bottom-safe) - 200px);
-  --donate-bottom: calc(var(--ui-bottom-safe) - 120px);
+  --info-bottom: calc(var(--ui-bottom-safe) + 56px);
+  --donate-bottom: var(--ui-bottom-safe);
 }
 
 /* Mobile browsers with notches */
 @supports(padding: env(safe-area-inset-bottom)){
   :root{
-    --ui-bottom-safe: calc(160px + env(safe-area-inset-bottom));
+    --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom));
+
+    --info-bottom: calc(var(--ui-bottom-safe) + 56px);
+    --donate-bottom: var(--ui-bottom-safe);
   }
 }
 
@@ -166,8 +169,7 @@ html,body{
 /* ---------- MOBILE / EMBED TIGHTENING ---------- */
 @media (max-height: 700px){
   :root{
-    --info-bottom: calc(var(--ui-bottom-safe) - 140px);
-    --donate-bottom: calc(var(--ui-bottom-safe) - 240px);
+    --ui-bottom-safe: calc(64px + env(safe-area-inset-bottom));
   }
 
   .donate-box{
@@ -179,6 +181,7 @@ html,body{
     font-size:.8em;
     padding:8px 12px;
   }
+}
 
   .status-popup{
     font-size:.95em;
