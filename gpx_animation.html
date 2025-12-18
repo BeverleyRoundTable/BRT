@@ -8,35 +8,9 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" />
 
 <style>
-html, body {
-  margin:0; padding:0; height:100%;
-  background:#0b0d12;
-  overflow:hidden;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  color:#fff;
-}
-#map{position:absolute;inset:0;}
-#anim{position:absolute;inset:0;pointer-events:none;}
-#ui-layer{
-  position:absolute;bottom:24px;left:50%;
-  transform:translateX(-50%);
-  z-index:50;text-align:center;pointer-events:none;
-}
-.pill{
-  background:rgba(0,0,0,.65);
-  padding:10px 18px;border-radius:999px;
-  border:1px solid rgba(255,255,255,.2);
-  backdrop-filter:blur(8px);
-}
-#route-name{margin:0;font-weight:700}
-#route-date{margin:2px 0 0;font-size:.82rem;opacity:.85}
-#toast{
-  position:absolute;top:16px;left:16px;
-  background:rgba(0,0,0,.72);
-  border:1px solid rgba(255,255,255,.18);
-  border-radius:12px;padding:10px 12px;
-  display:none;z-index:60;
-}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
+#map{position:absolute;inset:0}
+#anim{position:absolute;inset:0;pointer-events:none}
 </style>
 </head>
 
@@ -44,30 +18,19 @@ html, body {
 <div id="map"></div>
 <canvas id="anim"></canvas>
 
-<div id="ui-layer">
-  <div class="pill">
-    <h1 id="route-name">Loading route…</h1>
-    <p id="route-date"></p>
-  </div>
-</div>
-<div id="toast"></div>
-
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 
 <script>
-/* ============================================================
-   RENDER MODE FLAGS
-============================================================ */
-const PARAMS = new URLSearchParams(location.search);
-const IS_RENDER = PARAMS.has("render");
+/* ================= FLAGS ================= */
+const PARAMS=new URLSearchParams(location.search);
+const IS_RENDER=PARAMS.has("render");
+const API=PARAMS.get("api");
+const ROUTE=PARAMS.get("route");
+window.__GPX_DONE__=false;
 
-const API = PARAMS.get("api");
-const ROUTE = PARAMS.get("route");
-
-window.__GPX_DONE__ = false;
-
-const canvas = document.getElementById("anim");
-const ctx = canvas.getContext("2d");
+/* ================= CANVAS ================= */
+const canvas=document.getElementById("anim");
+const ctx=canvas.getContext("2d");
 
 function resize(){
   const dpr=devicePixelRatio||1;
@@ -75,48 +38,38 @@ function resize(){
   canvas.height=innerHeight*dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-addEventListener("resize",resize);
-resize();
+addEventListener("resize",resize); resize();
 
-/* ============================================================
-   SNOWFALL
-============================================================ */
-function createSnowfall(enabled){
-  const flakes=[];
-  const DENSITY=0.00018;
-
-  function addFlake(randomY=false){
+/* ================= SNOW ================= */
+function createSnow(enabled){
+  const flakes=[],D=0.00018;
+  function add(r=false){
     flakes.push({
       x:Math.random()*canvas.width,
-      y:randomY?Math.random()*canvas.height:-20,
-      r:Math.random()*2.2+1,
-      vy:Math.random()*1.6+1.4,
+      y:r?Math.random()*canvas.height:-20,
+      r:Math.random()*2+1,
+      vy:Math.random()*1.5+1,
       vx:Math.random()*0.4-0.2,
-      drift:Math.random()*Math.PI*2
+      d:Math.random()*6.28
     });
   }
-
   function resizeSnow(){
-    const target=Math.floor(canvas.width*canvas.height*DENSITY);
-    while(flakes.length<target) addFlake(true);
-    while(flakes.length>target) flakes.pop();
+    const t=Math.floor(canvas.width*canvas.height*D);
+    while(flakes.length<t) add(true);
+    while(flakes.length>t) flakes.pop();
   }
-
   function update(){
     if(!enabled) return;
     for(const f of flakes){
-      f.drift+=0.01;
-      f.x+=f.vx+Math.sin(f.drift)*0.15;
+      f.d+=0.01;
+      f.x+=f.vx+Math.sin(f.d)*0.15;
       f.y+=f.vy;
       if(f.y>canvas.height+30){f.y=-20;f.x=Math.random()*canvas.width;}
     }
   }
-
   function draw(){
     if(!enabled) return;
-    ctx.save();
-    ctx.fillStyle="#fff";
-    ctx.globalAlpha=0.9;
+    ctx.save(); ctx.fillStyle="#fff"; ctx.globalAlpha=0.9;
     for(const f of flakes){
       ctx.beginPath();
       ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
@@ -124,142 +77,112 @@ function createSnowfall(enabled){
     }
     ctx.restore();
   }
-
-  resizeSnow();
-  addEventListener("resize",resizeSnow);
-  return { update, draw };
+  resizeSnow(); addEventListener("resize",resizeSnow);
+  return{update,draw};
 }
 
-/* ============================================================
-   HELPERS
-============================================================ */
+/* ================= HELPERS ================= */
 const MAP_STYLE="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
-const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-
-async function fetchJSON(u){
-  const r=await fetch(u,{cache:"no-store"});
-  if(!r.ok) throw new Error("API fetch failed");
-  return r.json();
-}
-
-async function loadGPX(u){
-  const x=await (await fetch(u,{cache:"no-store"})).text();
-  const d=new DOMParser().parseFromString(x,"text/xml");
-  return [...d.getElementsByTagName("trkpt")].map(p=>({
-    lat:+p.getAttribute("lat"),
-    lng:+(p.getAttribute("lon")||p.getAttribute("lng"))
-  }));
-}
-
-function dist(a,b){
+const dist=(a,b)=>{
   const R=6371000;
   const dLat=(b.lat-a.lat)*Math.PI/180;
   const dLng=(b.lng-a.lng)*Math.PI/180;
   const s=Math.sin(dLat/2)**2+
-          Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+    Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*
+    Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(s));
-}
-
-function bearing(a,b){
+};
+const bearing=(a,b)=>{
   const dLng=(b.lng-a.lng)*Math.PI/180;
   const y=Math.sin(dLng)*Math.cos(b.lat*Math.PI/180);
   const x=Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180)-
-          Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
+    Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
-}
+};
+const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 
-function angleDelta(a,b){return((b-a+540)%360)-180;}
-function lerpAngle(a,b,t){return(a+angleDelta(a,b)*t+360)%360;}
-
-/* ============================================================
-   MAIN
-============================================================ */
+/* ================= LOAD ================= */
 (async()=>{
-  const master=await fetchJSON(API);
-  const settings=master.settings||{};
-  const routes=master.routes||[];
-  const route=routes.find(r=>r.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
-  if(!route) throw "Route invalid";
+  const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
+  const s=master.settings||{};
+  const r=master.routes.find(x=>x.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
+  const pts=await fetch(r.gpxUrl).then(r=>r.text()).then(x=>
+    [...new DOMParser().parseFromString(x,"text/xml")
+      .getElementsByTagName("trkpt")]
+      .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")}))
+  );
 
-  const rawPts=await loadGPX(route.gpxUrl);
-  const sprite=new Image(); sprite.src=settings.travelboast_sprite;
+  const sprite=await new Promise(res=>{
+    const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
+  });
 
-  initMapAndRun(rawPts,rawPts,sprite,settings,{});
+  run(pts,sprite,s);
 })();
 
-/* ============================================================
-   MAP + ANIMATION
-============================================================ */
-function initMapAndRun(rawPts,pts,sprite,settings,theme){
-const baseZoom=+settings.default_map_zoom||16;
-
+/* ================= ANIMATION ================= */
+function run(pts,sprite,s){
 const map=new maplibregl.Map({
   container:"map",
   style:MAP_STYLE,
   center:[pts[0].lng,pts[0].lat],
-  zoom:baseZoom,
-  pitch: IS_RENDER && innerHeight > innerWidth ? 55 : 50,
-  bearing:0,
-  antialias:true
+  zoom:+s.default_map_zoom||16,
+  pitch:IS_RENDER&&innerHeight>innerWidth?55:50
 });
 
-map.on("load",()=>{
-  map.addSource("route-base",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:pts.map(p=>[p.lng,p.lat])}}});
-  map.addLayer({id:"route-base",type:"line",source:"route-base",paint:{ "line-color":"#666","line-opacity":0.35,"line-width":3 }});
-
-  animate(map,pts,sprite,settings,{baseZoom});
-});
-}
-
-function animate(map,pts,sprite,settings,theme){
-const speed=(+settings.travelboast_speed||.1)*18;
-const OVERVIEW_PAN_MS=3000;
-const FINAL_HOLD_MS=5000;
-
-const snow=createSnowfall(
-  String(settings.travelboast_particle_effects||"").toLowerCase()==="snow"
+const snow=createSnow(
+  String(s.travelboast_particle_effects||"").toLowerCase()==="snow"
 );
 
-const cum=[0];
-for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+const cum=[0]; for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
-let m=0,last=null;
-let finished=false,overviewShown=false;
-let panFinishedAt=null;
+let m=0,last=null,camB=0,sprB=0;
+let finished=false,overviewAt=null;
+
+map.on("load",()=>requestAnimationFrame(step));
 
 function step(ts){
-  const dt=last?(ts-last)/1000:0;
-  last=ts;
-
+  const dt=last?(ts-last)/1000:0; last=ts;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   snow.update(); snow.draw();
 
   if(!finished){
-    m+=speed*dt;
+    m+=((+s.travelboast_speed||.1)*18)*dt;
     if(m>=total){
-      m=total;
       finished=true;
-
       map.fitBounds(
         new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
-        { padding:120, pitch:0, bearing:0, duration:OVERVIEW_PAN_MS }
+        {padding:120,pitch:0,bearing:0,duration:3000}
       );
-
-      panFinishedAt=performance.now()+OVERVIEW_PAN_MS;
-      overviewShown=true;
+      overviewAt=performance.now()+3000;
     }
   }
 
-  if(overviewShown && panFinishedAt && performance.now()-panFinishedAt>FINAL_HOLD_MS){
+  if(!finished){
+    let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
+    const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
+    const a=pts[i-1],b=pts[i];
+    const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
+
+    sprB=lerpA(sprB,bearing(a,b),0.25);
+    camB=lerpA(camB,sprB,0.15);
+
+    map.jumpTo({center:[pos.lng,pos.lat],bearing:camB,pitch:50});
+
+    const p=map.project([pos.lng,pos.lat]);
+    ctx.save();
+    ctx.translate(p.x,p.y-40);
+    ctx.drawImage(sprite,-32,-32,64,64);
+    ctx.restore();
+  }
+
+  if(finished && overviewAt && performance.now()-overviewAt>5000){
     window.__GPX_DONE__=true;
     return;
   }
 
   requestAnimationFrame(step);
 }
-
-requestAnimationFrame(step);
 }
 </script>
 </body>
