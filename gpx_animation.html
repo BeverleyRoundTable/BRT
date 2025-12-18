@@ -267,18 +267,6 @@ dt = Math.min(dt, 0.05); // clamp to 50ms max
   ctx.restore();
 }
 
-    /* ===== ROUTE PROGRESS ===== */
-    map.getSource("route-progress").setData({
-      type:"Feature",
-      geometry:{
-        type:"LineString",
-        coordinates:[
-          ...pts.slice(0, i).map(p => [p.lng, p.lat]),
-          [pos.lng, pos.lat]
-        ]
-      }
-    });
-
   if(finished && overviewAt && performance.now() - overviewAt > 5000){
     window.__GPX_DONE__ = true;
     return;
