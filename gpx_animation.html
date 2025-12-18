@@ -266,27 +266,6 @@ function step(ts){
   requestAnimationFrame(step);
 }
 
-  // update animated route line
-map.getSource("route-progress").setData({
-  type:"Feature",
-  geometry:{
-    type:"LineString",
-    coordinates:[
-      ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
-      [pos.lng,pos.lat]
-    ]
-  }
-});
-
-// advance sprite frame by distance
-if(i>1){
-  strideAcc += dist(pts[i-1], pos);
-  if(strideAcc >= STRIDE_METERS){
-    strideAcc = 0;
-    spriteFrame = (spriteFrame + 1) % FRAMES;
-  }
-}
-
 </script>
 </body>
 </html>
