@@ -61,15 +61,19 @@ function resize(){
   const mapCanvas = map.getCanvas();
   const dpr = devicePixelRatio || 1;
 
+  // CSS pixel size (this is what map.project() uses)
   VIEW_W = mapCanvas.clientWidth;
   VIEW_H = mapCanvas.clientHeight;
 
-  VIEW_W  = VIEW_W * dpr;
-  VIEW_H = VIEW_H * dpr;
+  // Backing store size (device pixels)
+  canvas.width  = VIEW_W * dpr;
+  canvas.height = VIEW_H * dpr;
 
+  // CSS size
   canvas.style.width  = VIEW_W + "px";
   canvas.style.height = VIEW_H + "px";
 
+  // Draw in CSS pixels
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
   
