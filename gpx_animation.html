@@ -196,12 +196,12 @@ function applyLogoOverlay(settings) {
   });
 
   // 4️⃣ Run animation with smoothed points
-  run(pts, sprite, s);
+  run(rawPts, pts, sprite, s);
 })();
 
 
 /* ================= ANIMATION ================= */
-function run(pts,sprite,s){
+function run(rawPts, pts, sprite, s){
 const map=new maplibregl.Map({
   container:"map",
   style:MAP_STYLE,
@@ -241,7 +241,7 @@ map.on("load",()=>{
       type:"Feature",
       geometry:{
         type:"LineString",
-        coordinates:pts.map(p=>[p.lng,p.lat])
+        coordinates: rawPts.map(p=>[p.lng,p.lat])
       }
     }
   });
