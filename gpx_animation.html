@@ -165,24 +165,40 @@ function applyLogoOverlay(settings) {
   
 /* ================= LOAD ================= */
 (async()=>{
-  const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
-  const s=master.settings||{};
+  const master = await fetch(API,{cache:"no-store"}).then(r=>r.json());
+  const s = master.settings || {};
   applyLogoOverlay(s);
-  const r=master.routes.find(x=>x.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
-  const pts=await fetch(r.gpxUrl).then(r=>r.text()).then(x=>
-    [...new DOMParser().parseFromString(x,"text/xml")
-      .getElementsByTagName("trkpt")]
-      .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")}))
+
+  const r = master.routes.find(
+    x => x.routeName?.toLowerCase() === (ROUTE||"").toLowerCase()
   );
-  
-const pts = smoothPath(rawPts, 2);
-  
-  const sprite=await new Promise(res=>{
-    const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
+
+  // 1️⃣ Load raw GPX points
+  const rawPts = await fetch(r.gpxUrl)
+    .then(r=>r.text())
+    .then(x =>
+      [...new DOMParser().parseFromString(x,"text/xml")
+        .getElementsByTagName("trkpt")]
+        .map(p=>({
+          lat:+p.getAttribute("lat"),
+          lng:+p.getAttribute("lon")
+        }))
+    );
+
+  // 2️⃣ Smooth them
+  const pts = smoothPath(rawPts, 2);
+
+  // 3️⃣ Load sprite
+  const sprite = await new Promise(res=>{
+    const i = new Image();
+    i.onload = () => res(i);
+    i.src = s.travelboast_sprite;
   });
 
-  run(pts,sprite,s);
+  // 4️⃣ Run animation with smoothed points
+  run(pts, sprite, s);
 })();
+
 
 /* ================= ANIMATION ================= */
 function run(pts,sprite,s){
