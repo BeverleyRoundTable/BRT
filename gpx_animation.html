@@ -8,9 +8,25 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" />
 
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
-#map{position:absolute;inset:0}
-#anim{position:absolute;inset:0;pointer-events:none}
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0d12; }
+  #map { position: absolute; inset: 0; }
+  
+  /* The tinted overlay for visibility */
+  #map::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.2); 
+    pointer-events: none;
+    z-index: 1; /* Sits just above the map details */
+  }
+
+  #anim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10; /* Sits above everything including the overlay */
+  }
   /* ================= LOGO OVERLAY ================= */
 #logo-overlay {
   position: fixed;
