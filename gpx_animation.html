@@ -316,7 +316,11 @@ function step(ts) {
     const frameW = sprite.width / FRAMES;
 
     ctx.save();
-    ctx.translate(p.x, p.y - 40);
+    ctx.translate(
+  Math.round(p.x),
+  Math.round(p.y - SPRITE_SIZE * 0.32)
+);
+
     ctx.drawImage(
       sprite,
       spriteFrame * frameW, 0,
