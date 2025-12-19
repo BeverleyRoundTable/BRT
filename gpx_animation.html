@@ -250,9 +250,10 @@ let finished=false,overviewAt=null;
 let overviewShown = false;
   
 map.on("load",()=>{
-resize();
-snow.update();
-map.on("resize", resize);
+  resize();
+  if (snow && snow.resize) snow.resize();
+  map.on("resize", resize);
+
 window.addEventListener("resize", () => { map.resize(); resize(); });
 
   map.addSource("route-base",{
@@ -301,7 +302,6 @@ function step(ts) {
   last = ts;
 
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
-  snow.update();
   snow.draw();
 
   if (!finished) {
