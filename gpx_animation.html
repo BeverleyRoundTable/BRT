@@ -123,6 +123,18 @@ const bearing=(a,b)=>{
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 };
 const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
+
+  function smoothPath(p,it=2){
+  if(it<=0||p.length<3) return p;
+  const o=[p[0]];
+  for(let i=0;i<p.length-1;i++){
+    const a=p[i],b=p[i+1];
+    o.push({lat:.75*a.lat+.25*b.lat,lng:.75*a.lng+.25*b.lng});
+    o.push({lat:.25*a.lat+.75*b.lat,lng:.25*a.lng+.75*b.lng});
+  }
+  o.push(p.at(-1));
+  return smoothPath(o,it-1);
+}
   
 /* ================= LOGO OVERLAY ================= */
 function applyLogoOverlay(settings) {
