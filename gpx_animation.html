@@ -126,7 +126,7 @@ ctx.globalAlpha = 0.95;
 }
 
 /* ================= HELPERS ================= */
-const MAP_STYLE="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
+const MAP_STYLE="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 const dist=(a,b)=>{
   const R=6371000;
   const dLat=(b.lat-a.lat)*Math.PI/180;
@@ -232,6 +232,8 @@ map = new maplibregl.Map({
 
    // 🎥 Lock camera zoom during movement
   const FOLLOW_ZOOM = IS_RENDER ? 18.3 : 16.8;
+  
+  const FOLLOW_PITCH = IS_RENDER ? 35 : 50;
   
   const SPRITE_FPS = +s.travelboast_sprite_fps || 12;
 let spriteTimer = 0;
@@ -368,7 +370,7 @@ function step(ts) {
   center: [pos.lng, pos.lat],
   zoom: FOLLOW_ZOOM,
   bearing: camB,
-  pitch: 50
+  pitch: FOLLOW_PITCH
 });
 
 const p = map.project([pos.lng, pos.lat]);
