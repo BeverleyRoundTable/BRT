@@ -56,28 +56,30 @@ const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
 
 function resize(){
+  snow.resize && snow.resize();
   if(!map) return;
 
   const mapCanvas = map.getCanvas();
   const dpr = devicePixelRatio || 1;
 
-  // CSS pixel size (what map.project uses)
+  // CSS pixel size (this is what map.project() uses)
   VIEW_W = mapCanvas.clientWidth;
   VIEW_H = mapCanvas.clientHeight;
 
-  // Backing store (device pixels)
+  // Backing store size (device pixels)
   canvas.width  = VIEW_W * dpr;
   canvas.height = VIEW_H * dpr;
 
+  // CSS size
   canvas.style.width  = VIEW_W + "px";
   canvas.style.height = VIEW_H + "px";
 
   // Draw in CSS pixels
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  // ✅ NOW snow knows the real size
-  if (snow && snow.resize) snow.resize();
 }
+  
+let map = null;
+let VIEW_W = 0, VIEW_H = 0;
 
 /* ================= SNOW ================= */
 function createSnow(enabled){
