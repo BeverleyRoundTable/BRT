@@ -56,11 +56,18 @@ const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
 
 function resize(){
-  const dpr=devicePixelRatio||1;
-  canvas.width=innerWidth*dpr;
-  canvas.height=innerHeight*dpr;
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const mapCanvas = map.getCanvas();
+  const dpr = devicePixelRatio || 1;
+
+  canvas.width  = mapCanvas.clientWidth  * dpr;
+  canvas.height = mapCanvas.clientHeight * dpr;
+
+  canvas.style.width  = mapCanvas.clientWidth + "px";
+  canvas.style.height = mapCanvas.clientHeight + "px";
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
+
 addEventListener("resize",resize); resize();
 
 /* ================= SNOW ================= */
@@ -207,7 +214,6 @@ const map=new maplibregl.Map({
   style:MAP_STYLE,
   center:[pts[0].lng,pts[0].lat],
   zoom:+s.default_map_zoom||16,
-  pitch:IS_RENDER&&innerHeight>innerWidth?55:50
 });
   
   const SPRITE_FPS = +s.travelboast_sprite_fps || 12;
