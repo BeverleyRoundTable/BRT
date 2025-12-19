@@ -174,7 +174,9 @@ function applyLogoOverlay(settings) {
       .getElementsByTagName("trkpt")]
       .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")}))
   );
-
+  
+const pts = smoothPath(rawPts, 2);
+  
   const sprite=await new Promise(res=>{
     const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
   });
