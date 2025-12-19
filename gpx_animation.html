@@ -342,7 +342,10 @@ function step(ts) {
       pitch:50
     });
 
-    const p = map.project([pos.lng,pos.lat]);
+    const dpr = devicePixelRatio || 1;
+const p = map.project([pos.lng, pos.lat]);
+p.x *= dpr;
+p.y *= dpr;
     const frameW = sprite.width / FRAMES;
 
     ctx.save();
