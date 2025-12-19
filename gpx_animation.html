@@ -109,7 +109,11 @@ function createSnow(enabled){
   }
   function draw(){
     if(!enabled) return;
-    ctx.save(); ctx.fillStyle="#eef3f8"; ctx.globalAlpha=0.8;
+    ctx.save(); 
+    ctx.fillStyle = "#ffffff";
+ctx.shadowColor = "rgba(255,255,255,0.6)";
+ctx.shadowBlur = 4;
+ctx.globalAlpha = 0.95;
     for(const f of flakes){
       ctx.beginPath();
       ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
