@@ -1,49 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Turbo Santa GPX Animation</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8" />
+<title>Turbo Santa GPX Animation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="stylesheet"
-        href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" />
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" />
 
-  <style>
-    html,body{
-      margin:0;
-      height:100%;
-      overflow:hidden;
-      background:#0b0d12
-    }
-    #map{position:absolute;inset:0}
-    #anim{position:absolute;inset:0;pointer-events:none}
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
+#map{position:absolute;inset:0}
+#anim{position:absolute;inset:0;pointer-events:none}
+  /* ================= LOGO OVERLAY ================= */
+#logo-overlay {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+}
 
-    /* ================= LOGO OVERLAY ================= */
-    #logo-overlay{
-      position:fixed;
-      z-index:9999;
-      pointer-events:none;
-    }
-    #logo-overlay img{
-      display:block;
-      max-width:100%;
-      height:auto;
-      filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));
-    }
-  </style>
+#logo-overlay img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.6));
+}
+</style>
 </head>
 
 <body>
-  <div id="map"></div>
-  <canvas id="anim"></canvas>
+<div id="map"></div>
+<canvas id="anim"></canvas>
+  
+<div id="logo-overlay" hidden>
+  <img id="logo-overlay-img" />
+</div>
 
-  <div id="logo-overlay" hidden>
-    <img id="logo-overlay-img" />
-  </div>
+<script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 
-  <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
-
-  <script>
+<script>
 /* ================= FLAGS ================= */
 const PARAMS=new URLSearchParams(location.search);
 const IS_RENDER=PARAMS.has("render");
@@ -51,41 +45,44 @@ const API=PARAMS.get("api");
 const ROUTE=PARAMS.get("route");
 window.__GPX_DONE__=false;
 
-// ===== GLOBAL FAIL-SAFE =====
-window.addEventListener("error", e=>{
-  console.error("GPX fatal error",e);
-  window.__GPX_DONE__=true;
+  // ===== GLOBAL FAIL-SAFE (prevents blank MP4 renders) =====
+window.addEventListener("error", e => {
+  console.error("GPX fatal error", e);
+  window.__GPX_DONE__ = true;
 });
 
 /* ================= CANVAS ================= */
 const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
 
-let map=null;
-let VIEW_W=0,VIEW_H=0;
-
 function resize(){
   if(!map) return;
 
-  const mapCanvas=map.getCanvas();
-  const dpr=devicePixelRatio||1;
+  const mapCanvas = map.getCanvas();
+  const dpr = devicePixelRatio || 1;
 
-  VIEW_W=mapCanvas.clientWidth;
-  VIEW_H=mapCanvas.clientHeight;
+  // CSS pixel size (this is what map.project() uses)
+  VIEW_W = mapCanvas.clientWidth;
+  VIEW_H = mapCanvas.clientHeight;
 
-  canvas.width=VIEW_W*dpr;
-  canvas.height=VIEW_H*dpr;
+  // Backing store size (device pixels)
+  canvas.width  = VIEW_W * dpr;
+  canvas.height = VIEW_H * dpr;
 
-  canvas.style.width=VIEW_W+"px";
-  canvas.style.height=VIEW_H+"px";
+  // CSS size
+  canvas.style.width  = VIEW_W + "px";
+  canvas.style.height = VIEW_H + "px";
 
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+  // Draw in CSS pixels
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
+  
+let map = null;
+let VIEW_W = 0, VIEW_H = 0;
 
 /* ================= SNOW ================= */
 function createSnow(enabled){
   const flakes=[],D=0.00018;
-
   function add(r=false){
     flakes.push({
       x:Math.random()*VIEW_W,
@@ -96,31 +93,23 @@ function createSnow(enabled){
       d:Math.random()*6.28
     });
   }
-
   function resizeSnow(){
     const t=Math.floor(VIEW_W*VIEW_H*D);
     while(flakes.length<t) add(true);
     while(flakes.length>t) flakes.pop();
   }
-
   function update(){
     if(!enabled) return;
     for(const f of flakes){
       f.d+=0.01;
       f.x+=f.vx+Math.sin(f.d)*0.15;
       f.y+=f.vy;
-      if(f.y>VIEW_H+30){
-        f.y=-20;
-        f.x=Math.random()*VIEW_W;
-      }
+      if(f.y>VIEW_H+30){f.y=-20;f.x=Math.random()*VIEW_W;}
     }
   }
-
   function draw(){
     if(!enabled) return;
-    ctx.save();
-    ctx.fillStyle="#fff";
-    ctx.globalAlpha=0.9;
+    ctx.save(); ctx.fillStyle="#fff"; ctx.globalAlpha=0.9;
     for(const f of flakes){
       ctx.beginPath();
       ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
@@ -128,15 +117,12 @@ function createSnow(enabled){
     }
     ctx.restore();
   }
-
-  resizeSnow();
-  addEventListener("resize",resizeSnow);
+  resizeSnow(); addEventListener("resize",resizeSnow);
   return{update,draw};
 }
 
 /* ================= HELPERS ================= */
 const MAP_STYLE="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
-
 const dist=(a,b)=>{
   const R=6371000;
   const dLat=(b.lat-a.lat)*Math.PI/180;
@@ -146,7 +132,6 @@ const dist=(a,b)=>{
     Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(s));
 };
-
 const bearing=(a,b)=>{
   const dLng=(b.lng-a.lng)*Math.PI/180;
   const y=Math.sin(dLng)*Math.cos(b.lat*Math.PI/180);
@@ -154,10 +139,9 @@ const bearing=(a,b)=>{
     Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 };
-
 const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 
-function smoothPath(p,it=2){
+  function smoothPath(p,it=2){
   if(it<=0||p.length<3) return p;
   const o=[p[0]];
   for(let i=0;i<p.length-1;i++){
@@ -168,43 +152,48 @@ function smoothPath(p,it=2){
   o.push(p.at(-1));
   return smoothPath(o,it-1);
 }
-
+  
 /* ================= LOGO OVERLAY ================= */
-function applyLogoOverlay(settings){
-  if(String(settings.logo_overlay_enabled).toLowerCase()!=="true") return;
-  if(!settings.logo_overlay_url) return;
+function applyLogoOverlay(settings) {
+  if (String(settings.logo_overlay_enabled).toLowerCase() !== "true") return;
+  if (!settings.logo_overlay_url) return;
 
-  const wrap=document.getElementById("logo-overlay");
-  const img=document.getElementById("logo-overlay-img");
+  const wrap = document.getElementById("logo-overlay");
+  const img  = document.getElementById("logo-overlay-img");
 
-  img.src=settings.logo_overlay_url;
-  img.style.width=(parseInt(settings.logo_overlay_size||64,10))+"px";
+  img.src = settings.logo_overlay_url;
 
-  wrap.style.top=wrap.style.right=wrap.style.bottom=wrap.style.left="auto";
-  wrap.style.margin="16px";
+  const size = parseInt(settings.logo_overlay_size || 64, 10);
+  img.style.width = size + "px";
 
-  const pos=(settings.logo_overlay_position||"bottom-right").toLowerCase();
-  if(pos.includes("top")) wrap.style.top="0";
-  if(pos.includes("bottom")) wrap.style.bottom="0";
-  if(pos.includes("left")) wrap.style.left="0";
-  if(pos.includes("right")) wrap.style.right="0";
+  // Reset positions
+  wrap.style.top = wrap.style.right = wrap.style.bottom = wrap.style.left = "auto";
+  wrap.style.margin = "16px";
 
-  wrap.hidden=false;
+  const pos = (settings.logo_overlay_position || "bottom-right").toLowerCase();
+
+  if (pos.includes("top")) wrap.style.top = "0";
+  if (pos.includes("bottom")) wrap.style.bottom = "0";
+  if (pos.includes("left")) wrap.style.left = "0";
+  if (pos.includes("right")) wrap.style.right = "0";
+
+  wrap.hidden = false;
 }
-
+  
 /* ================= LOAD ================= */
 (async()=>{
-  const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
-  const s=master.settings||{};
+  const master = await fetch(API,{cache:"no-store"}).then(r=>r.json());
+  const s = master.settings || {};
   applyLogoOverlay(s);
 
-  const r=master.routes.find(
-    x=>x.routeName?.toLowerCase()===(ROUTE||"").toLowerCase()
+  const r = master.routes.find(
+    x => x.routeName?.toLowerCase() === (ROUTE||"").toLowerCase()
   );
 
-  const rawPts=await fetch(r.gpxUrl)
+  // 1️⃣ Load raw GPX points
+  const rawPts = await fetch(r.gpxUrl)
     .then(r=>r.text())
-    .then(x=>
+    .then(x =>
       [...new DOMParser().parseFromString(x,"text/xml")
         .getElementsByTagName("trkpt")]
         .map(p=>({
@@ -213,119 +202,197 @@ function applyLogoOverlay(settings){
         }))
     );
 
-  const pts=smoothPath(rawPts,2);
+  // 2️⃣ Smooth them
+  const pts = smoothPath(rawPts, 2);
 
-  const sprite=await new Promise(res=>{
-    const i=new Image();
-    i.onload=()=>res(i);
-    i.src=s.travelboast_sprite;
+  // 3️⃣ Load sprite
+  const sprite = await new Promise(res=>{
+    const i = new Image();
+    i.onload = () => res(i);
+    i.src = s.travelboast_sprite;
   });
 
-  run(rawPts,pts,sprite,s);
+  // 4️⃣ Run animation with smoothed points
+  run(rawPts, pts, sprite, s);
 })();
 
+
 /* ================= ANIMATION ================= */
-function run(rawPts,pts,sprite,s){
-  map=new maplibregl.Map({
-    container:"map",
-    style:MAP_STYLE,
-    center:[pts[0].lng,pts[0].lat],
-    zoom:+s.default_map_zoom||16
-  });
+function run(rawPts, pts, sprite, s){
+map = new maplibregl.Map({
+  container:"map",
+  style:MAP_STYLE,
+  center:[pts[0].lng,pts[0].lat],
+  zoom:+s.default_map_zoom||16,
+});
+  
+  const SPRITE_FPS = +s.travelboast_sprite_fps || 12;
+let spriteTimer = 0;
+const FRAMES = +s.travelboast_sprite_frames || 5;
+const SPRITE_SIZE = +s.travelboast_sprite_size || 64;
+let spriteFrame = 0;
+let strideAcc = 0;
+const WALK_SPEED = +s.travelboast_speed || 1;
+const STRIDE_METERS = Math.max(0.9, WALK_SPEED * 0.7);
 
-  const snow=createSnow(
-    String(s.travelboast_particle_effects||"").toLowerCase()==="snow"
-  );
+const snow=createSnow(
+  String(s.travelboast_particle_effects||"").toLowerCase()==="snow"
+);
 
-  const cum=[0];
-  for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
-  const total=cum.at(-1);
+const cum=[0]; for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+const total=cum.at(-1);
+// ✅ build proper bounds once (prevents weird pan to start)
+const bounds = new maplibregl.LngLatBounds();
+for (const p of pts) bounds.extend([p.lng, p.lat]);
+  
+let m=0,last=null,camB=0,sprB=0;
+let finished=false,overviewAt=null;
+let overviewShown = false;
+  
+map.on("load",()=>{
+resize();
+map.on("resize", resize);
+window.addEventListener("resize", () => { map.resize(); resize(); });
 
-  const bounds=new maplibregl.LngLatBounds();
-  for(const p of pts) bounds.extend([p.lng,p.lat]);
-
-  let m=0,last=null,camB=0,sprB=0;
-  let finished=false,overviewAt=null,overviewShown=false;
-
-  map.on("load",()=>{
-    resize();
-    map.on("resize",resize);
-    window.addEventListener("resize",()=>{map.resize();resize();});
-
-    map.addSource("route-base",{
-      type:"geojson",
-      data:{
-        type:"Feature",
-        geometry:{
-          type:"LineString",
-          coordinates:rawPts.map(p=>[p.lng,p.lat])
-        }
-      }
-    });
-
-    map.addLayer({
-      id:"route-base",
-      type:"line",
-      source:"route-base",
-      paint:{
-        "line-color":"#666",
-        "line-opacity":0.35,
-        "line-width":3
-      }
-    });
-
-    map.addSource("route-progress",{
-      type:"geojson",
-      data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}
-    });
-
-    map.addLayer({
-      id:"route-progress",
-      type:"line",
-      source:"route-progress",
-      paint:{
-        "line-color":s.primary_color||"#d31c1c",
-        "line-width":5
-      }
-    });
-
-    requestAnimationFrame(step);
-  });
-
-  function step(ts){
-    let dt=last?(ts-last)/1000:0;
-    dt=Math.min(dt,0.05);
-    last=ts;
-
-    ctx.clearRect(0,0,VIEW_W,VIEW_H);
-    snow.update();
-    snow.draw();
-
-    if(!finished){
-      m+=((+s.travelboast_speed||.1)*18)*dt;
-      if(m>=total){
-        finished=true;
-        overviewShown=true;
-        map.stop();
-        map.fitBounds(bounds,{
-          padding:120,
-          pitch:0,
-          bearing:0,
-          duration:3500,
-          maxZoom:14
-        });
-        overviewAt=performance.now()+3500;
+  map.addSource("route-base",{
+    type:"geojson",
+    data:{
+      type:"Feature",
+      geometry:{
+        type:"LineString",
+        coordinates: rawPts.map(p=>[p.lng,p.lat])
       }
     }
+  });
 
-    if(finished && overviewAt && performance.now()-overviewAt>5000){
-      window.__GPX_DONE__=true;
-      return;
+  map.addLayer({
+    id:"route-base",
+    type:"line",
+    source:"route-base",
+    paint:{
+      "line-color":"#666",
+      "line-opacity":0.35,
+      "line-width":3
     }
+  });
 
-    requestAnimationFrame(step);
+  map.addSource("route-progress",{
+    type:"geojson",
+    data:{ type:"Feature", geometry:{ type:"LineString", coordinates:[] } }
+  });
+
+  map.addLayer({
+    id:"route-progress",
+    type:"line",
+    source:"route-progress",
+    paint:{
+      "line-color":s.primary_color || "#d31c1c",
+      "line-width":5
+    }
+  });
+
+  requestAnimationFrame(step);
+});
+
+function step(ts) {
+  let dt = last ? (ts - last) / 1000 : 0;
+  dt = Math.min(dt, 0.05);
+  last = ts;
+
+  ctx.clearRect(0,0,VIEW_W,VIEW_H);
+  snow.update();
+  snow.draw();
+
+  if (!finished) {
+    m += ((+s.travelboast_speed || .1) * 18) * dt;
+
+    if (m >= total) {
+      finished = true;
+      overviewShown = true;
+
+      map.stop();
+      map.fitBounds(bounds,{
+        padding:120,
+        pitch:0,
+        bearing:0,
+        duration:3500,
+        maxZoom:14
+      });
+
+      overviewAt = performance.now() + 3500;
+    }
   }
+
+  if (!overviewShown) {
+    let i = cum.findIndex(v => v >= m);
+    i = Math.max(1, i);
+
+    const t = (m - cum[i-1]) / (cum[i] - cum[i-1] || 1);
+    const a = pts[i-1], b = pts[i];
+
+    const pos = {
+      lat: a.lat + (b.lat - a.lat) * t,
+      lng: a.lng + (b.lng - a.lng) * t
+    };
+
+    map.getSource("route-progress").setData({
+      type:"Feature",
+      geometry:{
+        type:"LineString",
+        coordinates:[
+          ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
+          [pos.lng,pos.lat]
+        ]
+      }
+    });
+
+    spriteTimer += dt;
+    if (spriteTimer >= 1 / SPRITE_FPS) {
+      spriteTimer -= 1 / SPRITE_FPS;
+      spriteFrame = (spriteFrame + 1) % FRAMES;
+    }
+
+    sprB = lerpA(sprB, bearing(a,b), 0.25);
+    camB = lerpA(camB, sprB, 0.15);
+
+    map.jumpTo({
+      center:[pos.lng,pos.lat],
+      bearing:camB,
+      pitch:50
+    });
+
+const p = map.project([pos.lng, pos.lat]);
+
+    const frameW = sprite.width / FRAMES;
+
+    ctx.save();
+    ctx.translate(
+  Math.round(p.x),
+  Math.round(p.y - SPRITE_SIZE * 0.32)
+);
+    
+let rel = ((sprB - camB + 540) % 360) - 180;
+ctx.rotate(rel * 0.4 * Math.PI / 180);
+    
+    ctx.drawImage(
+      sprite,
+      spriteFrame * frameW, 0,
+      frameW, sprite.height,
+      -SPRITE_SIZE/2, -SPRITE_SIZE/2,
+      SPRITE_SIZE, SPRITE_SIZE
+    );
+    ctx.restore();
+  }
+
+  if (finished && overviewAt && performance.now() - overviewAt > 5000) {
+    window.__GPX_DONE__ = true;
+    return;
+  }
+
+  requestAnimationFrame(step);
 }
-  </script>
+  
+}
+</script>
 </body>
 </html>
