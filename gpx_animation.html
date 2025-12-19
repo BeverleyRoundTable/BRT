@@ -248,35 +248,33 @@ function step(ts) {
   snow.update();
   snow.draw();
 
-  /* ================= FINISH CHECK ================= */
   if (!finished) {
     m += ((+s.travelboast_speed || .1) * 18) * dt;
 
-if (m >= total) {
-  finished = true;
-  overviewShown = true;
+    if (m >= total) {
+      finished = true;
+      overviewShown = true;
 
-  map.stop();
+      map.stop();
+      map.fitBounds(bounds,{
+        padding:120,
+        pitch:0,
+        bearing:0,
+        duration:3500,
+        maxZoom:14
+      });
 
-  map.fitBounds(bounds, {
-    padding: 120,
-    pitch: 0,
-    bearing: 0,
-    duration: 3500,
-    maxZoom: 14
-  });
+      overviewAt = performance.now() + 3500;
+    }
+  }
 
-  overviewAt = performance.now() + 3500;
-}
-
-  /* ================= MOVEMENT (ONLY IF NOT OVERVIEW) ================= */
   if (!overviewShown) {
-
     let i = cum.findIndex(v => v >= m);
     i = Math.max(1, i);
 
     const t = (m - cum[i-1]) / (cum[i] - cum[i-1] || 1);
     const a = pts[i-1], b = pts[i];
+
     const pos = {
       lat: a.lat + (b.lat - a.lat) * t,
       lng: a.lng + (b.lng - a.lng) * t
@@ -287,8 +285,8 @@ if (m >= total) {
       geometry:{
         type:"LineString",
         coordinates:[
-          ...pts.slice(0, i).map(p => [p.lng, p.lat]),
-          [pos.lng, pos.lat]
+          ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
+          [pos.lng,pos.lat]
         ]
       }
     });
@@ -299,11 +297,16 @@ if (m >= total) {
       spriteFrame = (spriteFrame + 1) % FRAMES;
     }
 
-    sprB = lerpA(sprB, bearing(a, b), 0.25);
+    sprB = lerpA(sprB, bearing(a,b), 0.25);
     camB = lerpA(camB, sprB, 0.15);
-    map.jumpTo({ center:[pos.lng,pos.lat], bearing:camB, pitch:50 });
 
-    const p = map.project([pos.lng, pos.lat]);
+    map.jumpTo({
+      center:[pos.lng,pos.lat],
+      bearing:camB,
+      pitch:50
+    });
+
+    const p = map.project([pos.lng,pos.lat]);
     const frameW = sprite.width / FRAMES;
 
     ctx.save();
@@ -318,7 +321,6 @@ if (m >= total) {
     ctx.restore();
   }
 
-  /* ================= DONE SIGNAL ================= */
   if (finished && overviewAt && performance.now() - overviewAt > 5000) {
     window.__GPX_DONE__ = true;
     return;
@@ -326,9 +328,7 @@ if (m >= total) {
 
   requestAnimationFrame(step);
 }
-  
-}
-  
+
 </script>
 </body>
 </html>
