@@ -45,6 +45,12 @@ const API=PARAMS.get("api");
 const ROUTE=PARAMS.get("route");
 window.__GPX_DONE__=false;
 
+  // ===== GLOBAL FAIL-SAFE (prevents blank MP4 renders) =====
+window.addEventListener("error", e => {
+  console.error("GPX fatal error", e);
+  window.__GPX_DONE__ = true;
+});
+
 /* ================= CANVAS ================= */
 const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
