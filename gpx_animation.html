@@ -56,27 +56,33 @@ const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
 
 function resize(){
+  if(!map) return;
+
   const mapCanvas = map.getCanvas();
   const dpr = devicePixelRatio || 1;
 
-  canvas.width  = mapCanvas.clientWidth  * dpr;
-  canvas.height = mapCanvas.clientHeight * dpr;
+  VIEW_W = mapCanvas.clientWidth;
+  VIEW_H = mapCanvas.clientHeight;
 
-  canvas.style.width  = mapCanvas.clientWidth + "px";
-  canvas.style.height = mapCanvas.clientHeight + "px";
+  VIEW_W  = VIEW_W * dpr;
+  VIEW_H = VIEW_H * dpr;
+
+  canvas.style.width  = VIEW_W + "px";
+  canvas.style.height = VIEW_H + "px";
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
-
-addEventListener("resize",resize); resize();
+  
+let map = null;
+let VIEW_W = 0, VIEW_H = 0;
 
 /* ================= SNOW ================= */
 function createSnow(enabled){
   const flakes=[],D=0.00018;
   function add(r=false){
     flakes.push({
-      x:Math.random()*canvas.width,
-      y:r?Math.random()*canvas.height:-20,
+      x:Math.random()*VIEW_W,
+      y:r?Math.random()*VIEW_H:-20,
       r:Math.random()*2+1,
       vy:Math.random()*1.5+1,
       vx:Math.random()*0.4-0.2,
@@ -84,7 +90,7 @@ function createSnow(enabled){
     });
   }
   function resizeSnow(){
-    const t=Math.floor(canvas.width*canvas.height*D);
+    const t=Math.floor(VIEW_W*VIEW_H*D);
     while(flakes.length<t) add(true);
     while(flakes.length>t) flakes.pop();
   }
@@ -94,7 +100,7 @@ function createSnow(enabled){
       f.d+=0.01;
       f.x+=f.vx+Math.sin(f.d)*0.15;
       f.y+=f.vy;
-      if(f.y>canvas.height+30){f.y=-20;f.x=Math.random()*canvas.width;}
+      if(f.y>VIEW_H+30){f.y=-20;f.x=Math.random()*VIEW_W;}
     }
   }
   function draw(){
@@ -209,7 +215,7 @@ function applyLogoOverlay(settings) {
 
 /* ================= ANIMATION ================= */
 function run(rawPts, pts, sprite, s){
-const map=new maplibregl.Map({
+map = new maplibregl.Map({
   container:"map",
   style:MAP_STYLE,
   center:[pts[0].lng,pts[0].lat],
@@ -240,6 +246,9 @@ let finished=false,overviewAt=null;
 let overviewShown = false;
   
 map.on("load",()=>{
+resize();
+map.on("resize", resize);
+window.addEventListener("resize", () => { map.resize(); resize(); });
 
   map.addSource("route-base",{
     type:"geojson",
@@ -286,7 +295,7 @@ function step(ts) {
   dt = Math.min(dt, 0.05);
   last = ts;
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0,0,VIEW_W,VIEW_H);
   snow.update();
   snow.draw();
 
