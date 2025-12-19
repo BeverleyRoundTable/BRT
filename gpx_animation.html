@@ -56,6 +56,7 @@ const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
 
 function resize(){
+  snow.resize && snow.resize();
   if(!map) return;
 
   const mapCanvas = map.getCanvas();
@@ -118,7 +119,7 @@ function createSnow(enabled){
     ctx.restore();
   }
   resizeSnow(); addEventListener("resize",resizeSnow);
-  return{update,draw};
+  return { update, draw, resize: resizeSnow };
 }
 
 /* ================= HELPERS ================= */
@@ -251,6 +252,7 @@ let overviewShown = false;
   
 map.on("load",()=>{
 resize();
+  snow.resize();
 map.on("resize", resize);
 window.addEventListener("resize", () => { map.resize(); resize(); });
 
