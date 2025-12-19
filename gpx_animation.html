@@ -320,7 +320,10 @@ function step(ts) {
   Math.round(p.x),
   Math.round(p.y - SPRITE_SIZE * 0.32)
 );
-
+    
+let rel = ((sprB - camB + 540) % 360) - 180;
+ctx.rotate(rel * 0.4 * Math.PI / 180);
+    
     ctx.drawImage(
       sprite,
       spriteFrame * frameW, 0,
