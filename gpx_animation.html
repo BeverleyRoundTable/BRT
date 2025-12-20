@@ -229,6 +229,13 @@ const cum=[0];
 for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
+// ✅ END OVERVIEW SUPPORT
+const bounds=new maplibregl.LngLatBounds();
+for(const p of pts) bounds.extend([p.lng,p.lat]);
+
+let finished=false;
+let overviewAt=null;
+
 let m=0,last=null,camB=0,sprB=0;
 
 map.on("load",()=>{
@@ -253,7 +260,30 @@ function step(ts){
   snow.update(); snow.draw();
 
   m+=((+s.travelboast_speed||.1)*18)*dt;
-  if(m>=total){window.__GPX_DONE__=true;return;}
+
+  if(!finished && m>=total){
+    finished=true;
+
+    map.stop();
+    map.fitBounds(bounds,{
+      padding:120,
+      pitch:0,
+      bearing:0,
+      duration:3500,
+      maxZoom:14
+    });
+
+    overviewAt=performance.now();
+  }
+
+  if(finished){
+    if(overviewAt && performance.now()-overviewAt>8500){
+      window.__GPX_DONE__=true;
+      return;
+    }
+    requestAnimationFrame(step);
+    return;
+  }
 
   let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
   const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
