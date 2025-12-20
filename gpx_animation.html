@@ -13,16 +13,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
 #anim{position:absolute;inset:0;pointer-events:none}
 
 /* ================= LOGO OVERLAY ================= */
-#logo-overlay {
-  position: fixed;
-  z-index: 9999;
-  pointer-events: none;
+#logo-overlay{
+  position:fixed;
+  z-index:9999;
+  pointer-events:none;
 }
-#logo-overlay img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  filter: drop-shadow(0 4px 10px rgba(0,0,0,.6));
+#logo-overlay img{
+  display:block;
+  max-width:100%;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));
 }
 </style>
 </head>
@@ -45,47 +44,29 @@ const API=PARAMS.get("api");
 const ROUTE=PARAMS.get("route");
 window.__GPX_DONE__=false;
 
-// ===== GLOBAL FAIL-SAFE =====
-window.addEventListener("error", e => {
-  console.error("GPX fatal error", e);
-  window.__GPX_DONE__ = true;
-});
-
 /* ================= CANVAS ================= */
 const canvas=document.getElementById("anim");
 const ctx=canvas.getContext("2d");
+let map=null, VIEW_W=0, VIEW_H=0;
 
 function resize(){
   if(!map) return;
-  const mapCanvas = map.getCanvas();
-  const dpr = devicePixelRatio || 1;
-
-  VIEW_W = mapCanvas.clientWidth;
-  VIEW_H = mapCanvas.clientHeight;
-
-  canvas.width  = VIEW_W * dpr;
-  canvas.height = VIEW_H * dpr;
-  canvas.style.width  = VIEW_W + "px";
-  canvas.style.height = VIEW_H + "px";
-
+  const c=map.getCanvas();
+  const dpr=devicePixelRatio||1;
+  VIEW_W=c.clientWidth;
+  VIEW_H=c.clientHeight;
+  canvas.width=VIEW_W*dpr;
+  canvas.height=VIEW_H*dpr;
+  canvas.style.width=VIEW_W+"px";
+  canvas.style.height=VIEW_H+"px";
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-
-let map=null;
-let VIEW_W=0, VIEW_H=0;
 
 /* ================= SNOW ================= */
 function createSnow(enabled){
   const flakes=[],D=0.00018;
   function add(r=false){
-    flakes.push({
-      x:Math.random()*VIEW_W,
-      y:r?Math.random()*VIEW_H:-20,
-      r:Math.random()*2+1,
-      vy:Math.random()*1.5+1,
-      vx:Math.random()*0.4-0.2,
-      d:Math.random()*6.28
-    });
+    flakes.push({x:Math.random()*VIEW_W,y:r?Math.random()*VIEW_H:-20,r:Math.random()*2+1,vy:Math.random()*1.4+0.8,vx:Math.random()*0.4-0.2,d:Math.random()*6.28});
   }
   function resizeSnow(){
     const t=Math.floor(VIEW_W*VIEW_H*D);
@@ -107,7 +88,7 @@ function createSnow(enabled){
     ctx.fillStyle="#fff";
     ctx.shadowColor="rgba(255,255,255,.6)";
     ctx.shadowBlur=4;
-    ctx.globalAlpha=.95;
+    ctx.globalAlpha=.9;
     for(const f of flakes){
       ctx.beginPath();
       ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
@@ -117,14 +98,14 @@ function createSnow(enabled){
   }
   resizeSnow();
   addEventListener("resize",resizeSnow);
-  return {update,draw,resize:resizeSnow};
+  return{update,draw,resize:resizeSnow};
 }
 
-/* ================= HELPERS ================= */
+/* ================= MAP STYLE (Raster – fast render) ================= */
 const MAP_STYLE={
   version:8,
   sources:{
-    "raster":{
+    raster:{
       type:"raster",
       tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],
       tileSize:256
@@ -133,6 +114,7 @@ const MAP_STYLE={
   layers:[{id:"base",type:"raster",source:"raster"}]
 };
 
+/* ================= MATH ================= */
 const dist=(a,b)=>{
   const R=6371000;
   const dLat=(b.lat-a.lat)*Math.PI/180;
@@ -163,17 +145,13 @@ function smoothPath(p,it=2){
   return smoothPath(o,it-1);
 }
 
-/* ================= LOGO OVERLAY ================= */
+/* ================= LOGO ================= */
 function applyLogoOverlay(s){
   if(String(s.logo_overlay_enabled).toLowerCase()!=="true") return;
-  if(!s.logo_overlay_url) return;
-
   const w=document.getElementById("logo-overlay");
   const i=document.getElementById("logo-overlay-img");
   i.src=s.logo_overlay_url;
   i.style.width=(+s.logo_overlay_size||64)+"px";
-
-  w.style.top=w.style.right=w.style.bottom=w.style.left="auto";
   w.style.margin="16px";
   const p=(s.logo_overlay_position||"bottom-right").toLowerCase();
   if(p.includes("top")) w.style.top="0";
@@ -190,14 +168,12 @@ function applyLogoOverlay(s){
   applyLogoOverlay(s);
 
   const r=master.routes.find(x=>x.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
-
   const rawPts=await fetch(r.gpxUrl).then(r=>r.text()).then(x=>
     [...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
       .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")}))
   );
 
   const pts=smoothPath(rawPts,2);
-
   const sprite=await new Promise(res=>{
     const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
   });
@@ -214,41 +190,51 @@ map=new maplibregl.Map({
   zoom:+s.default_map_zoom||16
 });
 
-const FOLLOW_ZOOM = IS_RENDER ? 18.8 : 17;
-const FOLLOW_PITCH = IS_RENDER ? 22 : 40;
-
+const FOLLOW_ZOOM=IS_RENDER?18.8:17;
+const FOLLOW_PITCH=IS_RENDER?22:40;
 const SPRITE_FPS=+s.travelboast_sprite_fps||12;
 const FRAMES=+s.travelboast_sprite_frames||5;
-const SPRITE_SIZE=+s.travelboast_sprite_size||64;
-
-let spriteTimer=0,spriteFrame=0;
+const BASE_SIZE=+s.travelboast_sprite_size||64;
 
 const snow=createSnow(String(s.travelboast_particle_effects).toLowerCase()==="snow");
 
-const cum=[0];
-for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+const cum=[0]; for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
-// ✅ END OVERVIEW SUPPORT
 const bounds=new maplibregl.LngLatBounds();
 for(const p of pts) bounds.extend([p.lng,p.lat]);
 
-let finished=false;
-let overviewAt=null;
-
-let m=0,last=null,camB=0,sprB=0;
+let m=0,last=null,camB=0,sprB=0,finished=false,overviewAt=null;
+let spriteTimer=0,spriteFrame=0;
+const startTime=performance.now();
 
 map.on("load",()=>{
-  resize();
-  snow.resize();
-  map.on("resize",resize);
+  resize(); snow.resize(); map.on("resize",resize);
 
   map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
+
+  /* === ROUTE GLOW === */
   map.addLayer({
-    id:"route-progress",
+    id:"route-glow",
     type:"line",
     source:"route-progress",
-    paint:{ "line-color":s.primary_color||"#d31c1c","line-width":6 }
+    paint:{
+      "line-color":s.primary_color||"#d31c1c",
+      "line-width":10,
+      "line-opacity":0.25,
+      "line-blur":6
+    }
+  });
+
+  /* === MAIN ROUTE === */
+  map.addLayer({
+    id:"route-main",
+    type:"line",
+    source:"route-progress",
+    paint:{
+      "line-color":s.primary_color||"#d31c1c",
+      "line-width":6
+    }
   });
 
   requestAnimationFrame(step);
@@ -259,20 +245,17 @@ function step(ts){
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
   snow.update(); snow.draw();
 
-  m+=((+s.travelboast_speed||.1)*18)*dt;
+  const elapsed=(performance.now()-startTime)/1000;
+  const ramp=Math.min(1,elapsed/2.5);            // ease-in
+  const remaining=total-m;
+  const easeOut=Math.min(1,remaining/80);        // ease-out
+
+  m+=ramp*easeOut*((+s.travelboast_speed||.1)*18)*dt;
 
   if(!finished && m>=total){
     finished=true;
-
     map.stop();
-    map.fitBounds(bounds,{
-      padding:120,
-      pitch:0,
-      bearing:0,
-      duration:3500,
-      maxZoom:14
-    });
-
+    map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14});
     overviewAt=performance.now();
   }
 
@@ -305,12 +288,21 @@ function step(ts){
 
   const p=map.project([pos.lng,pos.lat]);
   const fw=sprite.width/FRAMES;
+  const scale=Math.min(1.2,Math.max(0.9,FOLLOW_ZOOM/17.5));
+  const SIZE=BASE_SIZE*scale;
 
   ctx.save();
-  ctx.translate(p.x,p.y-SPRITE_SIZE*.32);
+  ctx.translate(p.x,p.y-SIZE*.32);
   ctx.rotate((((sprB-camB+540)%360)-180)*.4*Math.PI/180);
-  ctx.drawImage(sprite,spriteFrame*fw,0,fw,sprite.height,-SPRITE_SIZE/2,-SPRITE_SIZE/2,SPRITE_SIZE,SPRITE_SIZE);
+  ctx.drawImage(sprite,spriteFrame*fw,0,fw,sprite.height,-SIZE/2,-SIZE/2,SIZE,SIZE);
   ctx.restore();
+
+  /* === VIGNETTE === */
+  const g=ctx.createRadialGradient(VIEW_W/2,VIEW_H/2,VIEW_W*0.3,VIEW_W/2,VIEW_H/2,VIEW_W*0.7);
+  g.addColorStop(0,"rgba(0,0,0,0)");
+  g.addColorStop(1,"rgba(0,0,0,.18)");
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,VIEW_W,VIEW_H);
 
   requestAnimationFrame(step);
 }
