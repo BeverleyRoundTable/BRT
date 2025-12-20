@@ -121,25 +121,16 @@ function createSnow(enabled){
 }
 
 /* ================= HELPERS ================= */
-const MAP_STYLE = {
-  version: 8,
-  sources: {
-    "raster-tiles": {
-      type: "raster",
-      tiles: [
-        "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"
-      ],
-      tileSize: 256,
-      attribution: "© OpenStreetMap, © CARTO"
+const MAP_STYLE={
+  version:8,
+  sources:{
+    "raster":{
+      type:"raster",
+      tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],
+      tileSize:256
     }
   },
-  layers: [
-    {
-      id: "base",
-      type: "raster",
-      source: "raster-tiles"
-    }
-  ]
+  layers:[{id:"base",type:"raster",source:"raster"}]
 };
 
 const dist=(a,b)=>{
@@ -172,19 +163,41 @@ function smoothPath(p,it=2){
   return smoothPath(o,it-1);
 }
 
+/* ================= LOGO OVERLAY ================= */
+function applyLogoOverlay(s){
+  if(String(s.logo_overlay_enabled).toLowerCase()!=="true") return;
+  if(!s.logo_overlay_url) return;
+
+  const w=document.getElementById("logo-overlay");
+  const i=document.getElementById("logo-overlay-img");
+  i.src=s.logo_overlay_url;
+  i.style.width=(+s.logo_overlay_size||64)+"px";
+
+  w.style.top=w.style.right=w.style.bottom=w.style.left="auto";
+  w.style.margin="16px";
+  const p=(s.logo_overlay_position||"bottom-right").toLowerCase();
+  if(p.includes("top")) w.style.top="0";
+  if(p.includes("bottom")) w.style.bottom="0";
+  if(p.includes("left")) w.style.left="0";
+  if(p.includes("right")) w.style.right="0";
+  w.hidden=false;
+}
+
 /* ================= LOAD ================= */
 (async()=>{
   const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
   const s=master.settings||{};
+  applyLogoOverlay(s);
+
   const r=master.routes.find(x=>x.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
 
   const rawPts=await fetch(r.gpxUrl).then(r=>r.text()).then(x=>
-    [...new DOMParser().parseFromString(x,"text/xml")
-      .getElementsByTagName("trkpt")]
+    [...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
       .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")}))
   );
 
   const pts=smoothPath(rawPts,2);
+
   const sprite=await new Promise(res=>{
     const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
   });
@@ -204,9 +217,13 @@ map=new maplibregl.Map({
 const FOLLOW_ZOOM = IS_RENDER ? 18.8 : 17;
 const FOLLOW_PITCH = IS_RENDER ? 22 : 40;
 
-const snow=createSnow(
-  String(s.travelboast_particle_effects||"").toLowerCase()==="snow"
-);
+const SPRITE_FPS=+s.travelboast_sprite_fps||12;
+const FRAMES=+s.travelboast_sprite_frames||5;
+const SPRITE_SIZE=+s.travelboast_sprite_size||64;
+
+let spriteTimer=0,spriteFrame=0;
+
+const snow=createSnow(String(s.travelboast_particle_effects).toLowerCase()==="snow");
 
 const cum=[0];
 for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
@@ -224,10 +241,7 @@ map.on("load",()=>{
     id:"route-progress",
     type:"line",
     source:"route-progress",
-    paint:{
-      "line-color":s.primary_color||"#d31c1c",
-      "line-width":6
-    }
+    paint:{ "line-color":s.primary_color||"#d31c1c","line-width":6 }
   });
 
   requestAnimationFrame(step);
@@ -239,7 +253,7 @@ function step(ts){
   snow.update(); snow.draw();
 
   m+=((+s.travelboast_speed||.1)*18)*dt;
-  if(m>total){window.__GPX_DONE__=true;return;}
+  if(m>=total){window.__GPX_DONE__=true;return;}
 
   let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
   const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
@@ -251,10 +265,23 @@ function step(ts){
     geometry:{type:"LineString",coordinates:[...pts.slice(0,i).map(p=>[p.lng,p.lat]),[pos.lng,pos.lat]]}
   });
 
+  spriteTimer+=dt;
+  if(spriteTimer>=1/SPRITE_FPS){spriteTimer-=1/SPRITE_FPS;spriteFrame=(spriteFrame+1)%FRAMES;}
+
   sprB=lerpA(sprB,bearing(a,b),.25);
   camB=lerpA(camB,sprB,.15);
 
   map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,bearing:camB,pitch:FOLLOW_PITCH});
+
+  const p=map.project([pos.lng,pos.lat]);
+  const fw=sprite.width/FRAMES;
+
+  ctx.save();
+  ctx.translate(p.x,p.y-SPRITE_SIZE*.32);
+  ctx.rotate((((sprB-camB+540)%360)-180)*.4*Math.PI/180);
+  ctx.drawImage(sprite,spriteFrame*fw,0,fw,sprite.height,-SPRITE_SIZE/2,-SPRITE_SIZE/2,SPRITE_SIZE,SPRITE_SIZE);
+  ctx.restore();
+
   requestAnimationFrame(step);
 }
 }
