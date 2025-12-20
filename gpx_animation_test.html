@@ -136,11 +136,13 @@ map=new maplibregl.Map({
   pitch:IS_RENDER?55:60
 });
 
-const FOLLOW_ZOOM=IS_RENDER?17.2:16.8;
+const FOLLOW_ZOOM=IS_RENDER?17.3:16.8;
 const FOLLOW_PITCH=IS_RENDER?55:60;
+
 const SPRITE_FPS=+s.travelboast_sprite_fps||12;
 const FRAMES=+s.travelboast_sprite_frames||5;
-const BASE_SIZE=+s.travelboast_sprite_size||64;
+const BASE_SIZE=+s.travelboast_sprite_size||72;
+const MAX_YAW=55; // sleigh freedom
 
 const cum=[0]; for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
@@ -157,7 +159,7 @@ function step(ts){
   let dt=last?(ts-last)/1000:0; last=ts;
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
 
-  m+=((+s.travelboast_speed||.1)*18)*dt;
+  m+=((+s.travelboast_speed||.12)*18)*dt;
   if(m>=total){window.__GPX_DONE__=true;return;}
 
   let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
@@ -179,26 +181,26 @@ function step(ts){
 
   const p=map.project([pos.lng,pos.lat]);
   const fw=sprite.width/FRAMES;
-  const SIZE=BASE_SIZE*(0.85+Math.min(0.45,(FOLLOW_ZOOM-15)*0.22));
+  const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
   const turn=((sprB+540)%360)-180;
-  const lean=Math.max(-22,Math.min(22,turn));
-  const heightLift=SIZE*(0.3+FOLLOW_PITCH/180)+18;
+  const yaw=Math.max(-MAX_YAW,Math.min(MAX_YAW,turn));
+  const heightLift=SIZE*0.35+22;
 
   /* === SHADOW === */
   ctx.save();
-  ctx.globalAlpha=0.25;
-  ctx.scale(1.1,0.35);
+  ctx.globalAlpha=0.3;
+  ctx.scale(1.25,0.4);
   ctx.beginPath();
-  ctx.arc(p.x,p.y-6,SIZE*0.35,0,Math.PI*2);
+  ctx.arc(p.x,p.y-4,SIZE*0.38,0,Math.PI*2);
   ctx.fillStyle="#000";
   ctx.fill();
   ctx.restore();
 
-  /* === SPRITE === */
+  /* === SLEIGH SPRITE === */
   ctx.save();
   ctx.translate(p.x,p.y-heightLift);
-  ctx.rotate(lean*0.35*Math.PI/180);
+  ctx.rotate(yaw*Math.PI/180);
   ctx.drawImage(sprite,spriteFrame*fw,0,fw,sprite.height,-SIZE/2,-SIZE/2,SIZE,SIZE);
   ctx.restore();
 
