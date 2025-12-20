@@ -55,11 +55,11 @@ jobs:
       - name: Set aspect ratio
         run: |
           if [ "${{ github.event.inputs.aspect }}" = "landscape" ]; then
-            echo "WIDTH=1600" >> $GITHUB_ENV
-            echo "HEIGHT=900" >> $GITHUB_ENV
+            echo "WIDTH=1900" >> $GITHUB_ENV
+            echo "HEIGHT=1080" >> $GITHUB_ENV
           elif [ "${{ github.event.inputs.aspect }}" = "reel" ]; then
-            echo "WIDTH=900" >> $GITHUB_ENV
-            echo "HEIGHT=1600" >> $GITHUB_ENV
+            echo "WIDTH=1080" >> $GITHUB_ENV
+            echo "HEIGHT=1900" >> $GITHUB_ENV
           else
             echo "WIDTH=1080" >> $GITHUB_ENV
             echo "HEIGHT=1080" >> $GITHUB_ENV
@@ -84,7 +84,7 @@ jobs:
           WIDTH: ${{ env.WIDTH }}
           HEIGHT: ${{ env.HEIGHT }}
           DURATION: 300000
-          FPS: 20
+          FPS: 24
           RUN_ID: ${{ github.event.inputs.slug }}
           SHEET_WEBHOOK_URL: ${{ env.SHEET_WEBHOOK_URL }}
         run: |
