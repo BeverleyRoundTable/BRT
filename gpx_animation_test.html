@@ -62,6 +62,45 @@ function resize(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 
+/* ================= SNOW ================= */
+function createSnow(enabled){
+  const flakes=[],D=0.00018;
+  function add(r=false){
+    flakes.push({x:Math.random()*VIEW_W,y:r?Math.random()*VIEW_H:-20,r:Math.random()*2+1,vy:Math.random()*1.4+0.8,vx:Math.random()*0.4-0.2,d:Math.random()*6.28});
+  }
+  function resizeSnow(){
+    const t=Math.floor(VIEW_W*VIEW_H*D);
+    while(flakes.length<t) add(true);
+    while(flakes.length>t) flakes.pop();
+  }
+  function update(){
+    if(!enabled) return;
+    for(const f of flakes){
+      f.d+=0.01;
+      f.x+=f.vx+Math.sin(f.d)*0.15;
+      f.y+=f.vy;
+      if(f.y>VIEW_H+30){f.y=-20;f.x=Math.random()*VIEW_W;}
+    }
+  }
+  function draw(){
+    if(!enabled) return;
+    ctx.save();
+    ctx.fillStyle="#fff";
+    ctx.shadowColor="rgba(255,255,255,.6)";
+    ctx.shadowBlur=4;
+    ctx.globalAlpha=.9;
+    for(const f of flakes){
+      ctx.beginPath();
+      ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  resizeSnow();
+  addEventListener("resize",resizeSnow);
+  return{update,draw,resize:resizeSnow};
+}
+
 /* ================= MAP STYLE ================= */
 const MAP_STYLE={
   version:8,
@@ -142,7 +181,9 @@ const FOLLOW_PITCH=IS_RENDER?55:60;
 const SPRITE_FPS=+s.travelboast_sprite_fps||12;
 const FRAMES=+s.travelboast_sprite_frames||5;
 const BASE_SIZE=+s.travelboast_sprite_size||72;
-const MAX_YAW=55; // sleigh freedom
+const MAX_YAW=55;
+
+const snow=createSnow(String(s.travelboast_particle_effects).toLowerCase()==="snow");
 
 const cum=[0]; for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
@@ -151,13 +192,41 @@ let m=0,last=null,sprB=0;
 let spriteTimer=0,spriteFrame=0;
 
 map.on("load",()=>{
-  resize(); map.on("resize",resize);
+  resize(); snow.resize(); map.on("resize",resize);
+
+  map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
+
+  map.addLayer({
+    id:"route-glow",
+    type:"line",
+    source:"route-progress",
+    paint:{
+      "line-color":s.primary_color||"#d31c1c",
+      "line-width":10,
+      "line-opacity":0.25,
+      "line-blur":6
+    }
+  });
+
+  map.addLayer({
+    id:"route-main",
+    type:"line",
+    source:"route-progress",
+    paint:{
+      "line-color":s.primary_color||"#d31c1c",
+      "line-width":6
+    }
+  });
+
   requestAnimationFrame(step);
 });
 
 function step(ts){
   let dt=last?(ts-last)/1000:0; last=ts;
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
+
+  snow.update();
+  snow.draw();
 
   m+=((+s.travelboast_speed||.12)*18)*dt;
   if(m>=total){window.__GPX_DONE__=true;return;}
@@ -167,17 +236,20 @@ function step(ts){
   const a=pts[i-1],b=pts[i];
   const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 
+  map.getSource("route-progress").setData({
+    type:"Feature",
+    geometry:{type:"LineString",coordinates:[
+      ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
+      [pos.lng,pos.lat]
+    ]}
+  });
+
   spriteTimer+=dt;
   if(spriteTimer>=1/SPRITE_FPS){spriteTimer-=1/SPRITE_FPS;spriteFrame=(spriteFrame+1)%FRAMES;}
 
   sprB=lerpA(sprB,bearing(a,b),.25);
 
-  map.jumpTo({
-    center:[pos.lng,pos.lat],
-    zoom:FOLLOW_ZOOM,
-    bearing:0,
-    pitch:FOLLOW_PITCH
-  });
+  map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,bearing:0,pitch:FOLLOW_PITCH});
 
   const p=map.project([pos.lng,pos.lat]);
   const fw=sprite.width/FRAMES;
@@ -187,7 +259,6 @@ function step(ts){
   const yaw=Math.max(-MAX_YAW,Math.min(MAX_YAW,turn));
   const heightLift=SIZE*0.35+22;
 
-  /* === SHADOW === */
   ctx.save();
   ctx.globalAlpha=0.3;
   ctx.scale(1.25,0.4);
@@ -197,7 +268,6 @@ function step(ts){
   ctx.fill();
   ctx.restore();
 
-  /* === SLEIGH SPRITE === */
   ctx.save();
   ctx.translate(p.x,p.y-heightLift);
   ctx.rotate(yaw*Math.PI/180);
