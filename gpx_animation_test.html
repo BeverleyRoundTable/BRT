@@ -50,7 +50,14 @@ function resize(){
 function createSnow(enabled){
   const flakes=[],D=0.00018;
   function add(r=false){
-    flakes.push({x:Math.random()*VIEW_W,y:r?Math.random()*VIEW_H:-20,r:Math.random()*2+1,vy:Math.random()*1.4+0.8,vx:Math.random()*0.4-0.2,d:Math.random()*6.28});
+    flakes.push({
+      x:Math.random()*VIEW_W,
+      y:r?Math.random()*VIEW_H:-20,
+      r:Math.random()*2+1,
+      vy:Math.random()*1.4+0.8,
+      vx:Math.random()*0.4-0.2,
+      d:Math.random()*6.28
+    });
   }
   function resizeSnow(){
     const t=Math.floor(VIEW_W*VIEW_H*D);
@@ -63,7 +70,10 @@ function createSnow(enabled){
       f.d+=0.01;
       f.x+=f.vx+Math.sin(f.d)*0.15;
       f.y+=f.vy;
-      if(f.y>VIEW_H+30){f.y=-20;f.x=Math.random()*VIEW_W;}
+      if(f.y>VIEW_H+30){
+        f.y=-20;
+        f.x=Math.random()*VIEW_W;
+      }
     }
   }
   function draw(){
@@ -88,7 +98,13 @@ function createSnow(enabled){
 /* ================= MAP STYLE ================= */
 const MAP_STYLE={
   version:8,
-  sources:{raster:{type:"raster",tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],tileSize:256}},
+  sources:{
+    raster:{
+      type:"raster",
+      tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],
+      tileSize:256
+    }
+  },
   layers:[{id:"base",type:"raster",source:"raster"}]
 };
 
@@ -102,6 +118,7 @@ const dist=(a,b)=>{
     Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(s));
 };
+
 const bearing=(a,b)=>{
   const dLng=(b.lng-a.lng)*Math.PI/180;
   const y=Math.sin(dLng)*Math.cos(b.lat*Math.PI/180);
@@ -109,6 +126,7 @@ const bearing=(a,b)=>{
     Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 };
+
 const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 
 /* ================= LOAD ================= */
@@ -123,7 +141,9 @@ const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
   );
 
   const sprite=await new Promise(res=>{
-    const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
+    const i=new Image();
+    i.onload=()=>res(i);
+    i.src=s.travelboast_sprite;
   });
 
   run(rawPts,sprite,s);
@@ -157,9 +177,13 @@ const OVERVIEW_HOLD_MS=5000;
 
 const snow=createSnow(String(s.travelboast_particle_effects).toLowerCase()==="snow");
 
-const cum=[0]; for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+const cum=[0];
+for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
-const bounds=new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat]));
+
+/* SAFE bounds construction */
+const bounds=new maplibregl.LngLatBounds();
+for(const p of pts) bounds.extend([p.lng,p.lat]);
 
 let m=0,last=null;
 let sprB=0,targetB=0;
@@ -170,15 +194,32 @@ let finished=false,overviewAt=null;
 map.on("load",()=>{
   resize(); snow.resize(); map.on("resize",resize);
 
-  map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
-
-  map.addLayer({id:"route-glow",type:"line",source:"route-progress",paint:{
-    "line-color":s.primary_color||"#d31c1c","line-width":10,"line-opacity":0.25,"line-blur":6
+  map.addSource("route-progress",{type:"geojson",data:{
+    type:"Feature",
+    geometry:{type:"LineString",coordinates:[]}
   }});
 
-  map.addLayer({id:"route-main",type:"line",source:"route-progress",paint:{
-    "line-color":s.primary_color||"#d31c1c","line-width":6
-  }});
+  map.addLayer({
+    id:"route-glow",
+    type:"line",
+    source:"route-progress",
+    paint:{
+      "line-color":s.primary_color||"#d31c1c",
+      "line-width":10,
+      "line-opacity":0.25,
+      "line-blur":6
+    }
+  });
+
+  map.addLayer({
+    id:"route-main",
+    type:"line",
+    source:"route-progress",
+    paint:{
+      "line-color":s.primary_color||"#d31c1c",
+      "line-width":6
+    }
+  });
 
   requestAnimationFrame(step);
 });
@@ -193,16 +234,24 @@ function step(ts){
     if(m>=total){
       finished=true;
       map.stop();
-      map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:OVERVIEW_PAN_MS,maxZoom:14});
+      map.fitBounds(bounds,{
+        padding:120,
+        pitch:0,
+        bearing:0,
+        duration:OVERVIEW_PAN_MS,
+        maxZoom:14
+      });
       overviewAt=performance.now();
     }
   }
 
   if(finished){
     if(performance.now()-overviewAt>OVERVIEW_PAN_MS+OVERVIEW_HOLD_MS){
-      window.__GPX_DONE__=true; return;
+      window.__GPX_DONE__=true;
+      return;
     }
-    requestAnimationFrame(step); return;
+    requestAnimationFrame(step);
+    return;
   }
 
   let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
@@ -211,18 +260,28 @@ function step(ts){
   const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 
   map.getSource("route-progress").setData({
-    type:"Feature",geometry:{type:"LineString",coordinates:[
-      ...pts.slice(0,i).map(p=>[p.lng,p.lat]),[pos.lng,pos.lat]
+    type:"Feature",
+    geometry:{type:"LineString",coordinates:[
+      ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
+      [pos.lng,pos.lat]
     ]}
   });
 
   spriteTimer+=dt;
-  if(spriteTimer>=1/SPRITE_FPS){spriteTimer-=1/SPRITE_FPS;spriteFrame=(spriteFrame+1)%FRAMES;}
+  if(spriteTimer>=1/SPRITE_FPS){
+    spriteTimer-=1/SPRITE_FPS;
+    spriteFrame=(spriteFrame+1)%FRAMES;
+  }
 
   targetB=bearing(a,b);
   sprB=lerpA(sprB,targetB,YAW_DAMPING);
 
-  map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,bearing:0,pitch:FOLLOW_PITCH});
+  map.jumpTo({
+    center:[pos.lng,pos.lat],
+    zoom:FOLLOW_ZOOM,
+    bearing:0,
+    pitch:FOLLOW_PITCH
+  });
 
   const p=map.project([pos.lng,pos.lat]);
   const fw=sprite.width/FRAMES;
@@ -230,12 +289,14 @@ function step(ts){
 
   bobT+=dt*BOB_SPEED;
   const bob=Math.sin(bobT)*BOB_AMPLITUDE;
-  const yaw=Math.max(-MAX_YAW,Math.min(MAX_YAW,((sprB+540)%360)-180));
+
+  const rawYaw=((sprB+540)%360)-180;
+  const yaw=Math.max(-MAX_YAW,Math.min(MAX_YAW,rawYaw)) * 0.85;
   const heightLift=SIZE*0.35+22+bob;
 
-  /* Shadow */
+  /* SHADOW (anchored under runners) */
   ctx.save();
-  ctx.translate(p.x,p.y);
+  ctx.translate(p.x,p.y + SIZE*0.12);
   ctx.scale(1.2,0.35);
   ctx.globalAlpha=0.25;
   ctx.beginPath();
@@ -244,11 +305,15 @@ function step(ts){
   ctx.fill();
   ctx.restore();
 
-  /* Sleigh */
+  /* SLEIGH */
   ctx.save();
   ctx.translate(p.x,p.y-heightLift);
   ctx.rotate(yaw*Math.PI/180);
-  ctx.drawImage(sprite,spriteFrame*fw,0,fw,sprite.height,-SIZE/2,-SIZE/2,SIZE,SIZE);
+  ctx.drawImage(
+    sprite,
+    spriteFrame*fw,0,fw,sprite.height,
+    -SIZE/2,-SIZE/2,SIZE,SIZE
+  );
   ctx.restore();
 
   requestAnimationFrame(step);
