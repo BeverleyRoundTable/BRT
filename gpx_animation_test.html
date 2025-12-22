@@ -30,10 +30,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
 <div id="map"></div>
 <canvas id="anim"></canvas>
 
-<div id="logo-overlay" hidden>
-  <img id="logo-overlay-img" />
-</div>
-
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 
 <script>
@@ -133,18 +129,6 @@ const bearing=(a,b)=>{
 };
 const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 
-function smoothPath(p,it=2){
-  if(it<=0||p.length<3) return p;
-  const o=[p[0]];
-  for(let i=0;i<p.length-1;i++){
-    const a=p[i],b=p[i+1];
-    o.push({lat:.75*a.lat+.25*b.lat,lng:.75*a.lng+.25*b.lng});
-    o.push({lat:.25*a.lat+.75*b.lat,lng:.25*a.lng+.75*b.lng});
-  }
-  o.push(p.at(-1));
-  return smoothPath(o,it-1);
-}
-
 /* ================= LOAD ================= */
 (async()=>{
   const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
@@ -156,12 +140,11 @@ function smoothPath(p,it=2){
       .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")}))
   );
 
-  const pts=smoothPath(rawPts,2);
   const sprite=await new Promise(res=>{
     const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
   });
 
-  run(pts,sprite,s);
+  run(rawPts,sprite,s);
 })();
 
 /* ================= ANIMATION ================= */
@@ -172,24 +155,30 @@ map=new maplibregl.Map({
   center:[pts[0].lng,pts[0].lat],
   zoom:+s.default_map_zoom||16,
   bearing:0,
-  pitch:IS_RENDER?55:60
+  pitch:IS_RENDER?50:55
 });
 
-const FOLLOW_ZOOM=IS_RENDER?17.3:16.8;
-const FOLLOW_PITCH=IS_RENDER?55:60;
+const FOLLOW_ZOOM=IS_RENDER?18.2:17.8;
+const FOLLOW_PITCH=IS_RENDER?50:55;
 
 const SPRITE_FPS=+s.travelboast_sprite_fps||12;
 const FRAMES=+s.travelboast_sprite_frames||5;
 const BASE_SIZE=+s.travelboast_sprite_size||72;
+
 const MAX_YAW=55;
+const YAW_DAMPING=0.12;        // heavier turns
+const BOB_AMPLITUDE=6;        // px
+const BOB_SPEED=6;            // frequency
 
 const snow=createSnow(String(s.travelboast_particle_effects).toLowerCase()==="snow");
 
 const cum=[0]; for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
-let m=0,last=null,sprB=0;
+let m=0,last=null;
+let sprB=0,targetB=0;
 let spriteTimer=0,spriteFrame=0;
+let bobT=0;
 
 map.on("load",()=>{
   resize(); snow.resize(); map.on("resize",resize);
@@ -247,7 +236,8 @@ function step(ts){
   spriteTimer+=dt;
   if(spriteTimer>=1/SPRITE_FPS){spriteTimer-=1/SPRITE_FPS;spriteFrame=(spriteFrame+1)%FRAMES;}
 
-  sprB=lerpA(sprB,bearing(a,b),.25);
+  targetB=bearing(a,b);
+  sprB=lerpA(sprB,targetB,YAW_DAMPING);
 
   map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,bearing:0,pitch:FOLLOW_PITCH});
 
@@ -255,19 +245,25 @@ function step(ts){
   const fw=sprite.width/FRAMES;
   const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
-  const turn=((sprB+540)%360)-180;
-  const yaw=Math.max(-MAX_YAW,Math.min(MAX_YAW,turn));
-  const heightLift=SIZE*0.35+22;
+  const yaw=Math.max(-MAX_YAW,Math.min(MAX_YAW,((sprB+540)%360)-180));
 
+  bobT+=dt*BOB_SPEED;
+  const bob=Math.sin(bobT)*BOB_AMPLITUDE;
+
+  const heightLift=SIZE*0.35+22+bob;
+
+  /* === SHADOW === */
   ctx.save();
-  ctx.globalAlpha=0.3;
+  ctx.translate(p.x,p.y-4);
   ctx.scale(1.25,0.4);
+  ctx.globalAlpha=0.28;
   ctx.beginPath();
-  ctx.arc(p.x,p.y-4,SIZE*0.38,0,Math.PI*2);
+  ctx.arc(0,0,SIZE*0.38,0,Math.PI*2);
   ctx.fillStyle="#000";
   ctx.fill();
   ctx.restore();
 
+  /* === SLEIGH === */
   ctx.save();
   ctx.translate(p.x,p.y-heightLift);
   ctx.rotate(yaw*Math.PI/180);
