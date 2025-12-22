@@ -11,18 +11,6 @@
 html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
 #map{position:absolute;inset:0}
 #anim{position:absolute;inset:0;pointer-events:none}
-
-/* ================= LOGO OVERLAY ================= */
-#logo-overlay{
-  position:fixed;
-  z-index:9999;
-  pointer-events:none;
-}
-#logo-overlay img{
-  display:block;
-  max-width:100%;
-  filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));
-}
 </style>
 </head>
 
@@ -100,13 +88,7 @@ function createSnow(enabled){
 /* ================= MAP STYLE ================= */
 const MAP_STYLE={
   version:8,
-  sources:{
-    raster:{
-      type:"raster",
-      tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],
-      tileSize:256
-    }
-  },
+  sources:{raster:{type:"raster",tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],tileSize:256}},
   layers:[{id:"base",type:"raster",source:"raster"}]
 };
 
@@ -133,8 +115,8 @@ const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 (async()=>{
   const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
   const s=master.settings||{};
-
   const r=master.routes.find(x=>x.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
+
   const rawPts=await fetch(r.gpxUrl).then(r=>r.text()).then(x=>
     [...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
       .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")}))
@@ -155,7 +137,7 @@ map=new maplibregl.Map({
   center:[pts[0].lng,pts[0].lat],
   zoom:+s.default_map_zoom||16,
   bearing:0,
-  pitch:IS_RENDER?50:55
+  pitch:IS_RENDER?48:52
 });
 
 const FOLLOW_ZOOM=IS_RENDER?18.9:18.4;
@@ -166,46 +148,37 @@ const FRAMES=+s.travelboast_sprite_frames||5;
 const BASE_SIZE=+s.travelboast_sprite_size||72;
 
 const MAX_YAW=55;
-const YAW_DAMPING=0.12;        // heavier turns
-const BOB_AMPLITUDE=6;        // px
-const BOB_SPEED=6;            // frequency
+const YAW_DAMPING=0.12;
+const BOB_AMPLITUDE=6;
+const BOB_SPEED=6;
+
+const OVERVIEW_PAN_MS=3500;
+const OVERVIEW_HOLD_MS=5000;
 
 const snow=createSnow(String(s.travelboast_particle_effects).toLowerCase()==="snow");
 
 const cum=[0]; for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
+const bounds=new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat]));
 
 let m=0,last=null;
 let sprB=0,targetB=0;
 let spriteTimer=0,spriteFrame=0;
 let bobT=0;
+let finished=false,overviewAt=null;
 
 map.on("load",()=>{
   resize(); snow.resize(); map.on("resize",resize);
 
   map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
 
-  map.addLayer({
-    id:"route-glow",
-    type:"line",
-    source:"route-progress",
-    paint:{
-      "line-color":s.primary_color||"#d31c1c",
-      "line-width":10,
-      "line-opacity":0.25,
-      "line-blur":6
-    }
-  });
+  map.addLayer({id:"route-glow",type:"line",source:"route-progress",paint:{
+    "line-color":s.primary_color||"#d31c1c","line-width":10,"line-opacity":0.25,"line-blur":6
+  }});
 
-  map.addLayer({
-    id:"route-main",
-    type:"line",
-    source:"route-progress",
-    paint:{
-      "line-color":s.primary_color||"#d31c1c",
-      "line-width":6
-    }
-  });
+  map.addLayer({id:"route-main",type:"line",source:"route-progress",paint:{
+    "line-color":s.primary_color||"#d31c1c","line-width":6
+  }});
 
   requestAnimationFrame(step);
 });
@@ -213,12 +186,24 @@ map.on("load",()=>{
 function step(ts){
   let dt=last?(ts-last)/1000:0; last=ts;
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
+  snow.update(); snow.draw();
 
-  snow.update();
-  snow.draw();
+  if(!finished){
+    m+=((+s.travelboast_speed||.12)*18)*dt;
+    if(m>=total){
+      finished=true;
+      map.stop();
+      map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:OVERVIEW_PAN_MS,maxZoom:14});
+      overviewAt=performance.now();
+    }
+  }
 
-  m+=((+s.travelboast_speed||.12)*18)*dt;
-  if(m>=total){window.__GPX_DONE__=true;return;}
+  if(finished){
+    if(performance.now()-overviewAt>OVERVIEW_PAN_MS+OVERVIEW_HOLD_MS){
+      window.__GPX_DONE__=true; return;
+    }
+    requestAnimationFrame(step); return;
+  }
 
   let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
   const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
@@ -226,10 +211,8 @@ function step(ts){
   const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 
   map.getSource("route-progress").setData({
-    type:"Feature",
-    geometry:{type:"LineString",coordinates:[
-      ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
-      [pos.lng,pos.lat]
+    type:"Feature",geometry:{type:"LineString",coordinates:[
+      ...pts.slice(0,i).map(p=>[p.lng,p.lat]),[pos.lng,pos.lat]
     ]}
   });
 
@@ -245,25 +228,23 @@ function step(ts){
   const fw=sprite.width/FRAMES;
   const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
-  const yaw=Math.max(-MAX_YAW,Math.min(MAX_YAW,((sprB+540)%360)-180));
-
   bobT+=dt*BOB_SPEED;
   const bob=Math.sin(bobT)*BOB_AMPLITUDE;
-
+  const yaw=Math.max(-MAX_YAW,Math.min(MAX_YAW,((sprB+540)%360)-180));
   const heightLift=SIZE*0.35+22+bob;
 
-  /* === SHADOW === */
+  /* Shadow */
   ctx.save();
-  ctx.translate(p.x,p.y-4);
-  ctx.scale(1.25,0.4);
-  ctx.globalAlpha=0.28;
+  ctx.translate(p.x,p.y);
+  ctx.scale(1.2,0.35);
+  ctx.globalAlpha=0.25;
   ctx.beginPath();
   ctx.arc(0,0,SIZE*0.38,0,Math.PI*2);
   ctx.fillStyle="#000";
   ctx.fill();
   ctx.restore();
 
-  /* === SLEIGH === */
+  /* Sleigh */
   ctx.save();
   ctx.translate(p.x,p.y-heightLift);
   ctx.rotate(yaw*Math.PI/180);
