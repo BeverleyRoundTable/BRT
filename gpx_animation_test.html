@@ -11,12 +11,29 @@
 html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
 #map{position:absolute;inset:0}
 #anim{position:absolute;inset:0;pointer-events:none}
+
+/* ================= LOGO OVERLAY ================= */
+#logo-overlay{
+  position:fixed;
+  z-index:9999;
+  pointer-events:none;
+}
+#logo-overlay img{
+  display:block;
+  max-width:100%;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));
+}
 </style>
 </head>
 
 <body>
 <div id="map"></div>
 <canvas id="anim"></canvas>
+
+<!-- LOGO OVERLAY -->
+<div id="logo-overlay" hidden>
+  <img id="logo-overlay-img" />
+</div>
 
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 
@@ -44,6 +61,35 @@ function resize(){
   canvas.style.width=VIEW_W+"px";
   canvas.style.height=VIEW_H+"px";
   ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+/* ================= LOGO OVERLAY ================= */
+function applyLogoOverlay(s){
+  if(String(s.logo_overlay_enabled).toLowerCase()!=="true") return;
+
+  const w=document.getElementById("logo-overlay");
+  const i=document.getElementById("logo-overlay-img");
+  if(!w || !i) return;
+
+  if(!s.logo_overlay_url) return;
+
+  i.src=s.logo_overlay_url;
+  i.style.width=(+s.logo_overlay_size||64)+"px";
+  w.style.margin="16px";
+
+  /* reset */
+  w.style.top="";
+  w.style.bottom="";
+  w.style.left="";
+  w.style.right="";
+
+  const p=(s.logo_overlay_position||"bottom-right").toLowerCase();
+  if(p.includes("top")) w.style.top="0";
+  if(p.includes("bottom")) w.style.bottom="0";
+  if(p.includes("left")) w.style.left="0";
+  if(p.includes("right")) w.style.right="0";
+
+  w.hidden=false;
 }
 
 /* ================= SNOW ================= */
@@ -133,6 +179,8 @@ const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 (async()=>{
   const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
   const s=master.settings||{};
+  applyLogoOverlay(s);
+
   const r=master.routes.find(x=>x.routeName?.toLowerCase()===(ROUTE||"").toLowerCase());
 
   const rawPts=await fetch(r.gpxUrl).then(r=>r.text()).then(x=>
