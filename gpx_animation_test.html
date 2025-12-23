@@ -30,7 +30,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
 <div id="map"></div>
 <canvas id="anim"></canvas>
 
-<!-- LOGO OVERLAY -->
 <div id="logo-overlay" hidden>
   <img id="logo-overlay-img" />
 </div>
@@ -66,7 +65,6 @@ function resize(){
 /* ================= LOGO OVERLAY ================= */
 function applyLogoOverlay(s){
   if(String(s.logo_overlay_enabled).toLowerCase()!=="true") return;
-
   const w=document.getElementById("logo-overlay");
   const i=document.getElementById("logo-overlay-img");
   if(!w||!i) return;
@@ -85,49 +83,16 @@ function applyLogoOverlay(s){
   w.hidden=false;
 }
 
-/* ================= SNOW ================= */
-function createSnow(enabled){
-  const flakes=[],D=0.00018;
-  function add(r=false){
-    flakes.push({x:Math.random()*VIEW_W,y:r?Math.random()*VIEW_H:-20,r:Math.random()*2+1,vy:Math.random()*1.4+0.8,vx:Math.random()*0.4-0.2,d:Math.random()*6.28});
-  }
-  function resizeSnow(){
-    const t=Math.floor(VIEW_W*VIEW_H*D);
-    while(flakes.length<t) add(true);
-    while(flakes.length>t) flakes.pop();
-  }
-  function update(){
-    if(!enabled) return;
-    for(const f of flakes){
-      f.d+=0.01;
-      f.x+=f.vx+Math.sin(f.d)*0.15;
-      f.y+=f.vy;
-      if(f.y>VIEW_H+30){f.y=-20;f.x=Math.random()*VIEW_W;}
-    }
-  }
-  function draw(){
-    if(!enabled) return;
-    ctx.save();
-    ctx.fillStyle="#fff";
-    ctx.shadowColor="rgba(255,255,255,.6)";
-    ctx.shadowBlur=4;
-    ctx.globalAlpha=.9;
-    for(const f of flakes){
-      ctx.beginPath();
-      ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-  resizeSnow();
-  addEventListener("resize",resizeSnow);
-  return{update,draw,resize:resizeSnow};
-}
-
 /* ================= MAP STYLE ================= */
 const MAP_STYLE={
   version:8,
-  sources:{raster:{type:"raster",tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],tileSize:256}},
+  sources:{
+    raster:{
+      type:"raster",
+      tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],
+      tileSize:256
+    }
+  },
   layers:[{id:"base",type:"raster",source:"raster"}]
 };
 
@@ -136,13 +101,16 @@ const dist=(a,b)=>{
   const R=6371000;
   const dLat=(b.lat-a.lat)*Math.PI/180;
   const dLng=(b.lng-a.lng)*Math.PI/180;
-  const s=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  const s=Math.sin(dLat/2)**2+
+    Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*
+    Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(s));
 };
 const bearing=(a,b)=>{
   const dLng=(b.lng-a.lng)*Math.PI/180;
   const y=Math.sin(dLng)*Math.cos(b.lat*Math.PI/180);
-  const x=Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180)-Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
+  const x=Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180)-
+    Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 };
 const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
@@ -165,6 +133,32 @@ const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 
   run(rawPts,sprite,s);
 })();
+
+/* ================= ANIMATION ================= */
+function run(pts,sprite,s){
+  map=new maplibregl.Map({
+    container:"map",
+    style:MAP_STYLE,
+    center:[pts[0].lng,pts[0].lat],
+    zoom:+s.default_map_zoom||16,
+    bearing:0,
+    pitch:52
+  });
+
+  map.on("load",()=>{
+    resize();
+    map.on("resize",resize);
+    requestAnimationFrame(step);
+  });
+
+  let last=null, frame=0;
+
+  function step(ts){
+    ctx.clearRect(0,0,VIEW_W,VIEW_H);
+    frame=(frame+1)%5;
+    requestAnimationFrame(step);
+  }
+}
 </script>
 </body>
 </html>
