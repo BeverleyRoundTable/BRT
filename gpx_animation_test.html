@@ -338,20 +338,26 @@ function step(ts){
   const bob=Math.sin(bobT)*BOB_AMPLITUDE;
 
   // ============================================
-  // RIGHT-FACING SPRITE FIX START
+  // RIGHT-FACING SPRITE FIX (FINAL STABLE VERSION)
   // ============================================
 
   // 1. Normalize bearing to 0-360
   const normB = (sprB % 360 + 360) % 360;
 
-  // 2. Determine if moving West (Left)
-  // Since map is North-Up (0°), West is 180° to 360°
-  const isWest = normB > 180 && normB < 360;
+  // 2. Determine Direction (East vs West)
+  // We use 180.5 instead of 180 to add a tiny buffer.
+  // This prevents Santa from rapidly flipping left/right when going straight South.
+  const isWest = normB > 180.5 && normB < 359.5;
 
   // 3. Calculate Tilt
-  // If moving East (90°), tilt is 0.
-  // If moving West (270°), tilt is 0 (relative to flipped axis).
-  let tilt = isWest ? (270 - normB) : (normB - 90);
+  let tilt = 0;
+  if (isWest) {
+    // West (Left)
+    tilt = 270 - normB;
+  } else {
+    // East (Right)
+    tilt = normB - 90;
+  }
 
   // 4. Clamp Tilt to prevent nose-diving
   tilt = Math.max(-35, Math.min(35, tilt));
