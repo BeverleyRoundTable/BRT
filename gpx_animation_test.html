@@ -174,12 +174,6 @@ const bearing=(a,b)=>{
 
 const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 
-/* ================= ANGLE DIFFERENCE ================= */
-const angleDiff=(a,b)=>{
-  let diff=((b-a+540)%360)-180;
-  return Math.abs(diff);
-};
-
 /* ================= LOAD ================= */
 (async()=>{
   const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
@@ -220,7 +214,6 @@ const SPRITE_FPS=+s.travelboast_sprite_fps||12;
 const FRAMES=+s.travelboast_sprite_frames||5;
 const BASE_SIZE=+s.travelboast_sprite_size||72;
 
-const MAX_YAW=55;
 const YAW_DAMPING=0.12;
 const BOB_AMPLITUDE=6;
 const BOB_SPEED=6;
@@ -228,8 +221,9 @@ const BOB_SPEED=6;
 const OVERVIEW_PAN_MS=3500;
 const OVERVIEW_HOLD_MS=5000;
 
-// Flip threshold - only flip when bearing changes significantly
-const FLIP_THRESHOLD=100;
+// Maximum tilt (up/down slope look) in degrees.
+// Keeps the sprite from looking "vertical" when going North/South.
+const MAX_TILT=30; 
 
 const snow=createSnow(String(s.travelboast_particle_effects).toLowerCase()==="snow");
 
@@ -247,9 +241,8 @@ let spriteTimer=0,spriteFrame=0;
 let bobT=0;
 let finished=false,overviewAt=null;
 
-// Track flip state persistently
+// Track facing direction (true=West/Left, false=East/Right)
 let facingWest=false;
-let lastFlipBearing=0;
 
 map.on("load",()=>{
   resize(); snow.resize(); map.on("resize",resize);
@@ -281,11 +274,11 @@ map.on("load",()=>{
     }
   });
 
-  // Initialize flip state based on initial bearing
+  // Initialize flip state
   targetB=bearing(pts[0],pts[1]);
   const normB=(targetB%360+360)%360;
-  facingWest=normB>90&&normB<270;
-  lastFlipBearing=targetB;
+  // If starting roughly West (180-360), face West
+  if(normB>180) facingWest=true;
   sprB=targetB;
 
   requestAnimationFrame(step);
@@ -340,35 +333,44 @@ function step(ts){
     spriteFrame=(spriteFrame+1)%FRAMES;
   }
 
+  /* ----------------------------------------------------- */
+  /* FIXED SPRITE ROTATION LOGIC START                   */
+  /* ----------------------------------------------------- */
+
   targetB=bearing(a,b);
   sprB=lerpA(sprB,targetB,YAW_DAMPING);
-
-  // ============================================
-  // IMPROVED FLIP LOGIC - OPTION 2
-  // ============================================
-  
   const normB=(sprB%360+360)%360;
-  
-  // Calculate how much the bearing has changed since last flip
-  const bearingChange=angleDiff(lastFlipBearing,normB);
-  
-  // Only consider flipping if bearing has changed significantly
-  if(bearingChange>FLIP_THRESHOLD){
-    // Determine which direction we should be facing based on current bearing
-    const shouldFaceWest=normB>90&&normB<270;
-    
-    // Only flip if the new direction is different from current
-    if(shouldFaceWest!==facingWest){
-      facingWest=shouldFaceWest;
-      lastFlipBearing=normB;
-    }
+
+  // Hysteresis Flip Logic (Dead Zone)
+  // Only flip if definitely moving East (Right) or West (Left).
+  // If moving roughly North/South, keep existing direction.
+  if(normB>20 && normB<160){
+     facingWest=false; // Face Right
+  }else if(normB>200 && normB<340){
+     facingWest=true;  // Face Left
   }
   
-  const isWest=facingWest;
+  // Calculate Tilt
+  // 90deg (East) = 0 tilt.
+  // 270deg (West) = 0 tilt.
+  let tilt=0;
+  if(facingWest){
+    tilt=270-normB;
+  }else{
+    tilt=normB-90;
+  }
+  
+  // Wrap angles so the math doesn't break at N/S crossing
+  if(tilt>180) tilt-=360;
+  if(tilt<-180) tilt+=360;
 
-  // ============================================
-  // FLIP LOGIC END
-  // ============================================
+  // CLAMP TILT
+  // Ensures the sprite never looks "Vertical" on the screen
+  tilt=Math.max(-MAX_TILT, Math.min(MAX_TILT, tilt));
+
+  /* ----------------------------------------------------- */
+  /* FIXED SPRITE ROTATION LOGIC END                     */
+  /* ----------------------------------------------------- */
 
   map.jumpTo({
     center:[pos.lng,pos.lat],
@@ -383,20 +385,6 @@ function step(ts){
 
   bobT+=dt*BOB_SPEED;
   const bob=Math.sin(bobT)*BOB_AMPLITUDE;
-
-  // Calculate Tilt based on current facing direction
-  let tilt=0;
-  if(isWest){
-    // Facing West/Left
-    tilt=270-normB;
-  }else{
-    // Facing East/Right
-    tilt=normB-90;
-  }
-
-  // Clamp tilt to prevent extreme angles
-  tilt=Math.max(-35,Math.min(35,tilt));
-
   const heightLift=SIZE*0.35+22+bob;
 
   /* SHADOW */
@@ -410,16 +398,14 @@ function step(ts){
   ctx.fill();
   ctx.restore();
 
-  /* SLEIGH */
+  /* SPRITE DRAW */
   ctx.save();
   ctx.translate(p.x,p.y-heightLift);
 
-  // Flip horizontally if facing west
-  if(isWest){
-    ctx.scale(-1,1);
-  }
-
-  // Apply tilt
+  // Apply Flip
+  if(facingWest) ctx.scale(-1,1);
+  
+  // Apply Clamped Tilt
   ctx.rotate(tilt*Math.PI/180);
 
   ctx.drawImage(
