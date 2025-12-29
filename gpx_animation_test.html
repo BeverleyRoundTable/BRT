@@ -179,7 +179,6 @@ const BASE_SIZE=+s.travelboast_sprite_size||72;
 const YAW_DAMPING=0.12;
 const BOB_AMPLITUDE=6;
 const BOB_SPEED=6;
-const MAX_TILT=25;
 const OVERVIEW_PAN_MS=3500;
 const OVERVIEW_HOLD_MS=5000;
 
@@ -195,10 +194,15 @@ const METERS_PER_SEC=total/DURATION_SEC;
 const bounds=new maplibregl.LngLatBounds();
 for(const p of pts) bounds.extend([p.lng,p.lat]);
 
+// IMPORTANT: your sprite art base headings
+// north sheet = facing NE (2 o'clock) => 45°
+// south sheet = facing SW (8 o'clock) => 225°
+const SPRITE_NORTH_HEADING=45;
+const SPRITE_SOUTH_HEADING=225;
+
 let m=0,last=null,sprB=0,targetB=0;
 let spriteTimer=0,spriteFrame=0,bobT=0;
 let finished=false,overviewAt=null;
-  let facingWest=false;
 
 map.on("load",()=>{
   resize(); snow.resize(); map.on("resize",resize);
@@ -250,48 +254,26 @@ function step(ts){
     spriteFrame=(spriteFrame+1)%FRAMES;
   }
 
-  targetB = bearing(a, b);
-sprB = lerpA(sprB, targetB, YAW_DAMPING);
-const normB = (sprB % 360 + 360) % 360;
+  targetB=bearing(a,b);
+  sprB=lerpA(sprB,targetB,YAW_DAMPING);
+  const normB=(sprB%360+360)%360;
 
-/* ================= SPRITE SELECTION ================= */
+  /* ================= SPRITE + ROTATION ================= */
 
-// North-ish → away from camera
-const isNorthish = (normB >= 315 || normB <= 45);
+  // Use SOUTH sheet for the "south half" of compass so it shows Santa's face more often
+  const useSouth=(normB>=135 && normB<=315);
+  const activeSprite=useSouth ? spriteSouth : spriteNorth;
 
-// South-ish → toward camera
-const isSouthish = (normB >= 135 && normB <= 225);
+  const baseHeading=useSouth ? SPRITE_SOUTH_HEADING : SPRITE_NORTH_HEADING;
 
-let activeSprite = isSouthish ? spriteSouth : spriteNorth;
+  // Rotate sprite to match movement direction (bearing) accounting for baked sprite heading
+  let rotation=normB-baseHeading;
 
-/* ================= FLIP (E/W ONLY) ================= */
+  // Normalize to [-180,180]
+  if(rotation>180) rotation-=360;
+  if(rotation<-180) rotation+=360;
 
-if (normB > 20 && normB < 160) {
-  facingWest = false;
-} else if (normB > 200 && normB < 340) {
-  facingWest = true;
-}
-
-/* ================= TILT ================= */
-/* IMPORTANT:
-   - NO tilt when North or South
-   - Only tilt when travelling East / West
-*/
-
-let tilt = 0;
-
-if (!isNorthish && !isSouthish) {
-  if (facingWest) {
-    tilt = 270 - normB;
-  } else {
-    tilt = normB - 90;
-  }
-
-  if (tilt > 180) tilt -= 360;
-  if (tilt < -180) tilt += 360;
-  tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, tilt));
-}
-  /* ======================== */
+  /* ===================================================== */
 
   map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,bearing:0,pitch:FOLLOW_PITCH});
 
@@ -314,8 +296,7 @@ if (!isNorthish && !isSouthish) {
 
   ctx.save();
   ctx.translate(p.x,p.y-heightLift);
-  if(facingWest) ctx.scale(-1,1);
-  ctx.rotate(tilt*Math.PI/180);
+  ctx.rotate(rotation*Math.PI/180);
   ctx.drawImage(activeSprite,spriteFrame*fw,0,fw,activeSprite.height,-SIZE/2,-SIZE/2,SIZE,SIZE);
   ctx.restore();
 
