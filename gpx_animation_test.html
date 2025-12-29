@@ -301,24 +301,39 @@ function run(pts, spriteNorth, spriteSouth, s) {
       spriteFrame = (spriteFrame + 1) % FRAMES;
     }
 
-    /* ======= CORE FIX ======= */
+   /* ======= CORE FIX (FINAL) ======= */
 
-    targetB = bearing(a, b);
-    sprB = lerpA(sprB, targetB, YAW_DAMPING);
-    const normB = (sprB % 360 + 360) % 360;
+targetB = bearing(a, b);
+sprB = lerpA(sprB, targetB, YAW_DAMPING);
+const normB = (sprB % 360 + 360) % 360;
 
-    // Use SOUTH sprite for bottom half of compass
-    const useSouth = normB >= 135 && normB <= 315;
-    const activeSprite = useSouth ? spriteSouth : spriteNorth;
+// Compass zones
+const isNorthish = (normB >= 315 || normB <= 45);
+const isSouthish = (normB >= 135 && normB <= 225);
 
-    const baseHeading = useSouth
-      ? SPRITE_SOUTH_HEADING
-      : SPRITE_NORTH_HEADING;
+// Sprite selection
+const activeSprite = isSouthish ? spriteSouth : spriteNorth;
 
-    let rotation = normB - baseHeading;
+// Sprite baked headings
+const baseHeading = isSouthish
+  ? SPRITE_SOUTH_HEADING   // 225°
+  : SPRITE_NORTH_HEADING;  // 45°
 
-    if (rotation > 180) rotation -= 360;
-    if (rotation < -180) rotation += 360;
+let rotation = 0;
+
+// 🔒 CRITICAL RULE:
+// Only rotate when NOT north/south
+if (!isNorthish && !isSouthish) {
+  rotation = normB - baseHeading;
+
+  // Normalize to [-180, 180]
+  if (rotation > 180) rotation -= 360;
+  if (rotation < -180) rotation += 360;
+
+  // Clamp to prevent tipping
+  rotation = Math.max(-25, Math.min(25, rotation));
+}
+
 
     /* ====================== */
 
