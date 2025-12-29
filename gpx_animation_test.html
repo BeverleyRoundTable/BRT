@@ -198,6 +198,7 @@ for(const p of pts) bounds.extend([p.lng,p.lat]);
 let m=0,last=null,sprB=0,targetB=0;
 let spriteTimer=0,spriteFrame=0,bobT=0;
 let finished=false,overviewAt=null;
+  let facingWest=false;
 
 map.on("load",()=>{
   resize(); snow.resize(); map.on("resize",resize);
@@ -313,7 +314,7 @@ if (!isNorthish && !isSouthish) {
 
   ctx.save();
   ctx.translate(p.x,p.y-heightLift);
-  if(flip) ctx.scale(-1,1);
+  if(facingWest) ctx.scale(-1,1);
   ctx.rotate(tilt*Math.PI/180);
   ctx.drawImage(activeSprite,spriteFrame*fw,0,fw,activeSprite.height,-SIZE/2,-SIZE/2,SIZE,SIZE);
   ctx.restore();
