@@ -179,6 +179,7 @@ const BASE_SIZE=+s.travelboast_sprite_size||72;
 const YAW_DAMPING=0.12;
 const BOB_AMPLITUDE=6;
 const BOB_SPEED=6;
+const MAX_TILT=25;
 const OVERVIEW_PAN_MS=3500;
 const OVERVIEW_HOLD_MS=5000;
 
@@ -188,54 +189,26 @@ const cum=[0];
 for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
 
-// Desired render duration in seconds
 const DURATION_SEC=Math.max(1,+s.travelboast_speed||60);
 const METERS_PER_SEC=total/DURATION_SEC;
 
 const bounds=new maplibregl.LngLatBounds();
 for(const p of pts) bounds.extend([p.lng,p.lat]);
 
-let m=0,last=null,sprB=0,targetB=0,spriteTimer=0,spriteFrame=0,bobT=0,finished=false,overviewAt=null;
-
-// Sprite “baked” facing directions (your art angles)
-const BASE_ANGLE_NORTH = 45;   // North sprite looks NE (2 o'clock)
-const BASE_ANGLE_SOUTH = 225;  // South sprite looks SW (8 o'clock)
-
-function normDeg180(d){
-  d=((d%360)+360)%360;
-  if(d>180) d-=360;
-  return d;
-}
+let m=0,last=null,sprB=0,targetB=0;
+let spriteTimer=0,spriteFrame=0,bobT=0;
+let finished=false,overviewAt=null;
 
 map.on("load",()=>{
   resize(); snow.resize(); map.on("resize",resize);
 
-  map.addSource("route-progress",{type:"geojson",data:{
-    type:"Feature",
-    geometry:{type:"LineString",coordinates:[]}
-  }});
+  map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
 
-  map.addLayer({
-    id:"route-glow",
-    type:"line",
-    source:"route-progress",
-    paint:{
-      "line-color":s.primary_color||"#d31c1c",
-      "line-width":10,
-      "line-opacity":0.25,
-      "line-blur":6
-    }
-  });
+  map.addLayer({id:"route-glow",type:"line",source:"route-progress",
+    paint:{"line-color":s.primary_color||"#d31c1c","line-width":10,"line-opacity":0.25,"line-blur":6}});
 
-  map.addLayer({
-    id:"route-main",
-    type:"line",
-    source:"route-progress",
-    paint:{
-      "line-color":s.primary_color||"#d31c1c",
-      "line-width":6
-    }
-  });
+  map.addLayer({id:"route-main",type:"line",source:"route-progress",
+    paint:{"line-color":s.primary_color||"#d31c1c","line-width":6}});
 
   sprB=bearing(pts[0],pts[1]);
   requestAnimationFrame(step);
@@ -250,22 +223,14 @@ function step(ts){
     m+=METERS_PER_SEC*dt;
     if(m>=total){
       finished=true;
-      map.fitBounds(bounds,{
-        padding:120,
-        pitch:0,
-        bearing:0,
-        duration:OVERVIEW_PAN_MS,
-        maxZoom:14
-      });
+      map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:OVERVIEW_PAN_MS,maxZoom:14});
       overviewAt=performance.now();
     }
   }else{
     if(performance.now()-overviewAt>OVERVIEW_PAN_MS+OVERVIEW_HOLD_MS){
-      window.__GPX_DONE__=true;
-      return;
+      window.__GPX_DONE__=true; return;
     }
-    requestAnimationFrame(step);
-    return;
+    requestAnimationFrame(step); return;
   }
 
   let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
@@ -275,10 +240,7 @@ function step(ts){
 
   map.getSource("route-progress").setData({
     type:"Feature",
-    geometry:{type:"LineString",coordinates:[
-      ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
-      [pos.lng,pos.lat]
-    ]}
+    geometry:{type:"LineString",coordinates:[...pts.slice(0,i).map(p=>[p.lng,p.lat]),[pos.lng,pos.lat]]}
   });
 
   spriteTimer+=dt;
@@ -287,30 +249,25 @@ function step(ts){
     spriteFrame=(spriteFrame+1)%FRAMES;
   }
 
-  // Smooth bearing
   targetB=bearing(a,b);
   sprB=lerpA(sprB,targetB,YAW_DAMPING);
-  const normB=((sprB%360)+360)%360;
+  const normB=(sprB%360+360)%360;
 
-  // Pick sprite by “away vs toward camera”
-  // North-ish (315..360..45) => spriteNorth, South-ish (135..225) => spriteSouth
-  // (This matches your away-facing vs toward-facing artwork)
-  let activeSprite=spriteNorth;
-  let baseAngle=BASE_ANGLE_NORTH;
-  if(normB>90 && normB<270){
-    activeSprite=spriteSouth;
-    baseAngle=BASE_ANGLE_SOUTH;
-  }
+  /* ===== CARDINAL LOCK ===== */
+  const isNorth = normB >= 315 || normB <= 45;
+  const isSouth = normB >= 135 && normB <= 225;
+  const isEast  = normB > 45 && normB < 135;
+  const isWest  = normB > 225 && normB < 315;
 
-  // Rotate sprite to match road bearing, relative to its baked-in facing direction
-  const rotDeg=normDeg180(normB-baseAngle);
+  let activeSprite = isSouth ? spriteSouth : spriteNorth;
+  let flip = isWest;
+  let tilt = 0;
 
-  map.jumpTo({
-    center:[pos.lng,pos.lat],
-    zoom:FOLLOW_ZOOM,
-    bearing:0,
-    pitch:FOLLOW_PITCH
-  });
+  if(isEast) tilt = Math.min(MAX_TILT, normB - 90);
+  if(isWest) tilt = Math.max(-MAX_TILT, 270 - normB);
+  /* ======================== */
+
+  map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,bearing:0,pitch:FOLLOW_PITCH});
 
   const p=map.project([pos.lng,pos.lat]);
   const fw=activeSprite.width/FRAMES;
@@ -319,7 +276,6 @@ function step(ts){
   bobT+=dt*BOB_SPEED;
   const heightLift=SIZE*0.35+22+Math.sin(bobT)*BOB_AMPLITUDE;
 
-  // SHADOW
   ctx.save();
   ctx.translate(p.x,p.y+SIZE*0.12);
   ctx.scale(1.2,0.35);
@@ -330,16 +286,11 @@ function step(ts){
   ctx.fill();
   ctx.restore();
 
-  // SPRITE
   ctx.save();
   ctx.translate(p.x,p.y-heightLift);
-  ctx.rotate(rotDeg*Math.PI/180);
-
-  ctx.drawImage(
-    activeSprite,
-    spriteFrame*fw,0,fw,activeSprite.height,
-    -SIZE/2,-SIZE/2,SIZE,SIZE
-  );
+  if(flip) ctx.scale(-1,1);
+  ctx.rotate(tilt*Math.PI/180);
+  ctx.drawImage(activeSprite,spriteFrame*fw,0,fw,activeSprite.height,-SIZE/2,-SIZE/2,SIZE,SIZE);
   ctx.restore();
 
   requestAnimationFrame(step);
