@@ -249,22 +249,47 @@ function step(ts){
     spriteFrame=(spriteFrame+1)%FRAMES;
   }
 
-  targetB=bearing(a,b);
-  sprB=lerpA(sprB,targetB,YAW_DAMPING);
-  const normB=(sprB%360+360)%360;
+  targetB = bearing(a, b);
+sprB = lerpA(sprB, targetB, YAW_DAMPING);
+const normB = (sprB % 360 + 360) % 360;
 
-  /* ===== CARDINAL LOCK ===== */
-  const isNorth = normB >= 315 || normB <= 45;
-  const isSouth = normB >= 135 && normB <= 225;
-  const isEast  = normB > 45 && normB < 135;
-  const isWest  = normB > 225 && normB < 315;
+/* ================= SPRITE SELECTION ================= */
 
-  let activeSprite = isSouth ? spriteSouth : spriteNorth;
-  let flip = isWest;
-  let tilt = 0;
+// North-ish → away from camera
+const isNorthish = (normB >= 315 || normB <= 45);
 
-  if(isEast) tilt = Math.min(MAX_TILT, normB - 90);
-  if(isWest) tilt = Math.max(-MAX_TILT, 270 - normB);
+// South-ish → toward camera
+const isSouthish = (normB >= 135 && normB <= 225);
+
+let activeSprite = isSouthish ? spriteSouth : spriteNorth;
+
+/* ================= FLIP (E/W ONLY) ================= */
+
+if (normB > 20 && normB < 160) {
+  facingWest = false;
+} else if (normB > 200 && normB < 340) {
+  facingWest = true;
+}
+
+/* ================= TILT ================= */
+/* IMPORTANT:
+   - NO tilt when North or South
+   - Only tilt when travelling East / West
+*/
+
+let tilt = 0;
+
+if (!isNorthish && !isSouthish) {
+  if (facingWest) {
+    tilt = 270 - normB;
+  } else {
+    tilt = normB - 90;
+  }
+
+  if (tilt > 180) tilt -= 360;
+  if (tilt < -180) tilt += 360;
+  tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, tilt));
+}
   /* ======================== */
 
   map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,bearing:0,pitch:FOLLOW_PITCH});
