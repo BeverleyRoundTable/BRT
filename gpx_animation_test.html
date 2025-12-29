@@ -188,12 +188,10 @@ const snow=createSnow(String(s.travelboast_particle_effects).toLowerCase()==="sn
 const cum=[0];
 for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
-  
-// Desired render duration in seconds (e.g. 30, 60, 90)
-const DURATION_SEC = Math.max(1, +s.travelboast_speed || 60);
 
-// Distance to advance per second
-const METERS_PER_SEC = total / DURATION_SEC;
+// Desired render duration in seconds
+const DURATION_SEC=Math.max(1,+s.travelboast_speed||60);
+const METERS_PER_SEC=total/DURATION_SEC;
 
 const bounds=new maplibregl.LngLatBounds();
 for(const p of pts) bounds.extend([p.lng,p.lat]);
@@ -203,9 +201,34 @@ let facingWest=false;
 
 map.on("load",()=>{
   resize(); snow.resize(); map.on("resize",resize);
-  map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
-  map.addLayer({id:"route-glow",type:"line",source:"route-progress",paint:{"line-color":s.primary_color||"#d31c1c","line-width":10,"line-opacity":0.25,"line-blur":6}});
-  map.addLayer({id:"route-main",type:"line",source:"route-progress",paint:{"line-color":s.primary_color||"#d31c1c","line-width":6}});
+
+  map.addSource("route-progress",{type:"geojson",data:{
+    type:"Feature",
+    geometry:{type:"LineString",coordinates:[]}
+  }});
+
+  map.addLayer({
+    id:"route-glow",
+    type:"line",
+    source:"route-progress",
+    paint:{
+      "line-color":s.primary_color||"#d31c1c",
+      "line-width":10,
+      "line-opacity":0.25,
+      "line-blur":6
+    }
+  });
+
+  map.addLayer({
+    id:"route-main",
+    type:"line",
+    source:"route-progress",
+    paint:{
+      "line-color":s.primary_color||"#d31c1c",
+      "line-width":6
+    }
+  });
+
   sprB=bearing(pts[0],pts[1]);
   requestAnimationFrame(step);
 });
@@ -216,15 +239,25 @@ function step(ts){
   snow.update(); snow.draw();
 
   if(!finished){
-    m += METERS_PER_SEC * dt;
+    m+=METERS_PER_SEC*dt;
     if(m>=total){
       finished=true;
-      map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:OVERVIEW_PAN_MS,maxZoom:14});
+      map.fitBounds(bounds,{
+        padding:120,
+        pitch:0,
+        bearing:0,
+        duration:OVERVIEW_PAN_MS,
+        maxZoom:14
+      });
       overviewAt=performance.now();
     }
   }else{
-    if(performance.now()-overviewAt>OVERVIEW_PAN_MS+OVERVIEW_HOLD_MS){window.__GPX_DONE__=true;return;}
-    requestAnimationFrame(step);return;
+    if(performance.now()-overviewAt>OVERVIEW_PAN_MS+OVERVIEW_HOLD_MS){
+      window.__GPX_DONE__=true;
+      return;
+    }
+    requestAnimationFrame(step);
+    return;
   }
 
   let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
@@ -232,10 +265,19 @@ function step(ts){
   const a=pts[i-1],b=pts[i];
   const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 
-  map.getSource("route-progress").setData({type:"Feature",geometry:{type:"LineString",coordinates:[...pts.slice(0,i).map(p=>[p.lng,p.lat]),[pos.lng,pos.lat]]}});
+  map.getSource("route-progress").setData({
+    type:"Feature",
+    geometry:{type:"LineString",coordinates:[
+      ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
+      [pos.lng,pos.lat]
+    ]}
+  });
 
   spriteTimer+=dt;
-  if(spriteTimer>=1/SPRITE_FPS){spriteTimer-=1/SPRITE_FPS;spriteFrame=(spriteFrame+1)%FRAMES;}
+  if(spriteTimer>=1/SPRITE_FPS){
+    spriteTimer-=1/SPRITE_FPS;
+    spriteFrame=(spriteFrame+1)%FRAMES;
+  }
 
   targetB=bearing(a,b);
   sprB=lerpA(sprB,targetB,YAW_DAMPING);
@@ -247,12 +289,26 @@ function step(ts){
   let activeSprite=spriteNorth;
   if(normB>135&&normB<225) activeSprite=spriteSouth;
 
-  let tilt=facingWest?270-normB:normB-90;
+  /* -------- FIXED TILT LOGIC (NO SOUTH/WEST LEAN) -------- */
+  let tilt=0;
+
+  if(normB>30&&normB<150){
+    tilt=normB-90;            // East-ish
+  }else if(normB>210&&normB<330){
+    tilt=270-normB;           // West-ish
+  }
+
   if(tilt>180) tilt-=360;
   if(tilt<-180) tilt+=360;
   tilt=Math.max(-MAX_TILT,Math.min(MAX_TILT,tilt));
+  /* ------------------------------------------------------- */
 
-  map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,bearing:0,pitch:FOLLOW_PITCH});
+  map.jumpTo({
+    center:[pos.lng,pos.lat],
+    zoom:FOLLOW_ZOOM,
+    bearing:0,
+    pitch:FOLLOW_PITCH
+  });
 
   const p=map.project([pos.lng,pos.lat]);
   const fw=activeSprite.width/FRAMES;
@@ -275,7 +331,11 @@ function step(ts){
   ctx.translate(p.x,p.y-heightLift);
   if(facingWest) ctx.scale(-1,1);
   ctx.rotate(tilt*Math.PI/180);
-  ctx.drawImage(activeSprite,spriteFrame*fw,0,fw,activeSprite.height,-SIZE/2,-SIZE/2,SIZE,SIZE);
+  ctx.drawImage(
+    activeSprite,
+    spriteFrame*fw,0,fw,activeSprite.height,
+    -SIZE/2,-SIZE/2,SIZE,SIZE
+  );
   ctx.restore();
 
   requestAnimationFrame(step);
