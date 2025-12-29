@@ -179,7 +179,6 @@ const BASE_SIZE=+s.travelboast_sprite_size||72;
 const YAW_DAMPING=0.12;
 const BOB_AMPLITUDE=6;
 const BOB_SPEED=6;
-const MAX_TILT=30;
 const OVERVIEW_PAN_MS=3500;
 const OVERVIEW_HOLD_MS=5000;
 
@@ -197,7 +196,16 @@ const bounds=new maplibregl.LngLatBounds();
 for(const p of pts) bounds.extend([p.lng,p.lat]);
 
 let m=0,last=null,sprB=0,targetB=0,spriteTimer=0,spriteFrame=0,bobT=0,finished=false,overviewAt=null;
-let facingWest=false;
+
+// Sprite “baked” facing directions (your art angles)
+const BASE_ANGLE_NORTH = 45;   // North sprite looks NE (2 o'clock)
+const BASE_ANGLE_SOUTH = 225;  // South sprite looks SW (8 o'clock)
+
+function normDeg180(d){
+  d=((d%360)+360)%360;
+  if(d>180) d-=360;
+  return d;
+}
 
 map.on("load",()=>{
   resize(); snow.resize(); map.on("resize",resize);
@@ -279,29 +287,23 @@ function step(ts){
     spriteFrame=(spriteFrame+1)%FRAMES;
   }
 
+  // Smooth bearing
   targetB=bearing(a,b);
   sprB=lerpA(sprB,targetB,YAW_DAMPING);
-  const normB=(sprB%360+360)%360;
+  const normB=((sprB%360)+360)%360;
 
-  if(normB>20&&normB<160) facingWest=false;
-  else if(normB>200&&normB<340) facingWest=true;
-
+  // Pick sprite by “away vs toward camera”
+  // North-ish (315..360..45) => spriteNorth, South-ish (135..225) => spriteSouth
+  // (This matches your away-facing vs toward-facing artwork)
   let activeSprite=spriteNorth;
-  if(normB>135&&normB<225) activeSprite=spriteSouth;
-
-  /* -------- FIXED TILT LOGIC (NO SOUTH/WEST LEAN) -------- */
-  let tilt=0;
-
-  if(normB>30&&normB<150){
-    tilt=normB-90;            // East-ish
-  }else if(normB>210&&normB<330){
-    tilt=270-normB;           // West-ish
+  let baseAngle=BASE_ANGLE_NORTH;
+  if(normB>90 && normB<270){
+    activeSprite=spriteSouth;
+    baseAngle=BASE_ANGLE_SOUTH;
   }
 
-  if(tilt>180) tilt-=360;
-  if(tilt<-180) tilt+=360;
-  tilt=Math.max(-MAX_TILT,Math.min(MAX_TILT,tilt));
-  /* ------------------------------------------------------- */
+  // Rotate sprite to match road bearing, relative to its baked-in facing direction
+  const rotDeg=normDeg180(normB-baseAngle);
 
   map.jumpTo({
     center:[pos.lng,pos.lat],
@@ -317,6 +319,7 @@ function step(ts){
   bobT+=dt*BOB_SPEED;
   const heightLift=SIZE*0.35+22+Math.sin(bobT)*BOB_AMPLITUDE;
 
+  // SHADOW
   ctx.save();
   ctx.translate(p.x,p.y+SIZE*0.12);
   ctx.scale(1.2,0.35);
@@ -327,10 +330,11 @@ function step(ts){
   ctx.fill();
   ctx.restore();
 
+  // SPRITE
   ctx.save();
   ctx.translate(p.x,p.y-heightLift);
-  if(facingWest) ctx.scale(-1,1);
-  ctx.rotate(tilt*Math.PI/180);
+  ctx.rotate(rotDeg*Math.PI/180);
+
   ctx.drawImage(
     activeSprite,
     spriteFrame*fw,0,fw,activeSprite.height,
@@ -341,6 +345,7 @@ function step(ts){
   requestAnimationFrame(step);
 }
 }
+
 </script>
 </body>
 </html>
