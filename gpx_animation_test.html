@@ -161,8 +161,7 @@ const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 })();
 
 /* ================= ANIMATION ================= */
-function run(pts, sprite, s) {
-
+function run(pts, spriteNorth, spriteSouth, s) {
   map = new maplibregl.Map({
     container: "map",
     style: MAP_STYLE,
@@ -199,8 +198,9 @@ function run(pts, sprite, s) {
   const bounds = new maplibregl.LngLatBounds();
   for (const p of pts) bounds.extend([p.lng, p.lat]);
 
-  // ✅ TRUE NORTH sprite → baked heading = 0°
-  const SPRITE_BASE_HEADING = 0;
+  /* === IMPORTANT: baked sprite headings === */
+  const SPRITE_NORTH_HEADING = 45;   // NE (2 o'clock)
+  const SPRITE_SOUTH_HEADING = 225;  // SW (8 o'clock)
 
   let m = 0, last = null;
   let sprB = 0, targetB = 0;
@@ -301,19 +301,41 @@ function run(pts, sprite, s) {
       spriteFrame = (spriteFrame + 1) % FRAMES;
     }
 
-    /* ======= CORE ROTATION (CORRECT) ======= */
+   /* ======= CORE FIX (FINAL) ======= */
 
-    targetB = bearing(a, b);
-    sprB = lerpA(sprB, targetB, YAW_DAMPING);
-    const normB = (sprB % 360 + 360) % 360;
+targetB = bearing(a, b);
+sprB = lerpA(sprB, targetB, YAW_DAMPING);
+const normB = (sprB % 360 + 360) % 360;
 
-    let rotation = normB - SPRITE_BASE_HEADING;
+// Compass zones
+const isNorthish = (normB >= 315 || normB <= 45);
+const isSouthish = (normB >= 135 && normB <= 225);
 
-    // Normalize to [-180, 180]
-    if (rotation > 180) rotation -= 360;
-    if (rotation < -180) rotation += 360;
+// Sprite selection
+const activeSprite = isSouthish ? spriteSouth : spriteNorth;
 
-    /* ===================================== */
+// Sprite baked headings
+const baseHeading = isSouthish
+  ? SPRITE_SOUTH_HEADING   // 225°
+  : SPRITE_NORTH_HEADING;  // 45°
+
+let rotation = 0;
+
+// 🔒 CRITICAL RULE:
+// Only rotate when NOT north/south
+if (!isNorthish && !isSouthish) {
+  rotation = normB - baseHeading;
+
+  // Normalize to [-180, 180]
+  if (rotation > 180) rotation -= 360;
+  if (rotation < -180) rotation += 360;
+
+  // Clamp to prevent tipping
+  rotation = Math.max(-25, Math.min(25, rotation));
+}
+
+
+    /* ====================== */
 
     map.jumpTo({
       center: [pos.lng, pos.lat],
@@ -323,13 +345,13 @@ function run(pts, sprite, s) {
     });
 
     const p = map.project([pos.lng, pos.lat]);
-    const fw = sprite.width / FRAMES;
+    const fw = activeSprite.width / FRAMES;
     const SIZE = BASE_SIZE * (0.9 + Math.min(0.4, (FOLLOW_ZOOM - 15) * 0.25));
 
     bobT += dt * BOB_SPEED;
     const heightLift = SIZE * 0.35 + 22 + Math.sin(bobT) * BOB_AMPLITUDE;
 
-    // Shadow
+    /* Shadow */
     ctx.save();
     ctx.translate(p.x, p.y + SIZE * 0.12);
     ctx.scale(1.2, 0.35);
@@ -340,14 +362,14 @@ function run(pts, sprite, s) {
     ctx.fill();
     ctx.restore();
 
-    // Sprite
+    /* Sprite */
     ctx.save();
     ctx.translate(p.x, p.y - heightLift);
     ctx.rotate(rotation * Math.PI / 180);
     ctx.drawImage(
-      sprite,
+      activeSprite,
       spriteFrame * fw, 0,
-      fw, sprite.height,
+      fw, activeSprite.height,
       -SIZE / 2, -SIZE / 2,
       SIZE, SIZE
     );
