@@ -188,6 +188,12 @@ const snow=createSnow(String(s.travelboast_particle_effects).toLowerCase()==="sn
 const cum=[0];
 for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
 const total=cum.at(-1);
+  
+// Desired render duration in seconds (e.g. 30, 60, 90)
+const DURATION_SEC = Math.max(1, +s.travelboast_speed || 60);
+
+// Distance to advance per second
+const METERS_PER_SEC = total / DURATION_SEC;
 
 const bounds=new maplibregl.LngLatBounds();
 for(const p of pts) bounds.extend([p.lng,p.lat]);
@@ -210,7 +216,7 @@ function step(ts){
   snow.update(); snow.draw();
 
   if(!finished){
-    m+=((+s.travelboast_speed||.12)*18)*dt;
+    m += METERS_PER_SEC * dt;
     if(m>=total){
       finished=true;
       map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:OVERVIEW_PAN_MS,maxZoom:14});
