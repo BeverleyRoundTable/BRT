@@ -89,6 +89,7 @@ const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
   const r = master.routes.find(x =>
     x.routeName?.toLowerCase() === ROUTE.toLowerCase()
   );
+  if (!r) throw new Error("Route not found: " + ROUTE);
 
   const rawPts = await fetch(r.gpxUrl)
     .then(r=>r.text())
@@ -101,6 +102,8 @@ const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
         lng:+p.getAttribute("lon")
       }))
     );
+
+  if (!rawPts.length) throw new Error("GPX has no track points");
 
   const sprite = await new Promise(res=>{
     const i = new Image();
@@ -129,6 +132,10 @@ function run(pts, sprite, s){
   const BASE_SIZE = +s.travelboast_sprite_size || 72;
   const YAW_DAMPING = 0.12;
 
+  // Overview end-pan timings (restored)
+  const OVERVIEW_PAN_MS = 3500;
+  const OVERVIEW_HOLD_MS = 5000;
+
   // 5x2 sheet: width = 5 frames, height = 2 rows
   const FRAME_W = sprite.width / FRAMES;
   const FRAME_H = sprite.height / 2;
@@ -136,24 +143,45 @@ function run(pts, sprite, s){
   const cum=[0];
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
   const total=cum.at(-1);
+
   const DURATION_SEC = Math.max(1, +s.travelboast_speed || 60);
 
+  // Bounds for overview
+  const bounds = new maplibregl.LngLatBounds();
+  for (const p of pts) bounds.extend([p.lng, p.lat]);
+
   let simTime=0;
-  let sprB=bearing(pts[0],pts[1]), targetB=sprB;
+  let sprB=bearing(pts[0],pts[1] || pts[0]), targetB=sprB;
   let spriteFrame=0, spriteTimer=0;
+
+  let finished = false;
+  let overviewAt = null;
 
   map.on("load",()=>{
     resize(); map.on("resize",resize);
+
     map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
     map.addLayer({id:"route",type:"line",source:"route",paint:{
       "line-color":s.primary_color||"#d31c1c",
       "line-width":6
     }});
+
     requestAnimationFrame(step);
   });
 
   function step(){
     const dtSim = 1/60;
+
+    // If we're in overview mode, just wait it out
+    if (finished) {
+      if (performance.now() - overviewAt > OVERVIEW_PAN_MS + OVERVIEW_HOLD_MS) {
+        window.__GPX_DONE__ = true;
+        return;
+      }
+      requestAnimationFrame(step);
+      return;
+    }
+
     simTime += dtSim;
     const m = Math.min(total, (simTime/DURATION_SEC)*total);
 
@@ -170,16 +198,10 @@ function run(pts, sprite, s){
     const normB=(sprB%360+360)%360;
 
     // --- YAW ROTATION (walking lean) ---
-let yaw = normB;
-
-// convert 0–360 → -180–180
-if (yaw > 180) yaw -= 360;
-
-// clamp so Santa never flips or breaks
-yaw = Math.max(-25, Math.min(25, yaw));
-
-// radians for canvas
-const rotationRad = yaw * Math.PI / 180;
+    let yaw = normB;
+    if (yaw > 180) yaw -= 360;               // 0–360 -> -180..180
+    yaw = Math.max(-25, Math.min(25, yaw));  // clamp
+    const rotationRad = yaw * Math.PI / 180;
 
     // TOP ROW (0) = north-ish (rear), BOTTOM ROW (1) = south-ish (front)
     const ROW = (normB>=90 && normB<=270) ? 1 : 0;
@@ -216,20 +238,32 @@ const rotationRad = yaw * Math.PI / 180;
     const sy = ROW * FRAME_H;
 
     ctx.save();
-ctx.translate(Math.round(p.x), Math.round(p.y));
-ctx.rotate(rotationRad);
-ctx.drawImage(
-  sprite,
-  sx, sy, FRAME_W, FRAME_H,
-  -SIZE / 2,
-  -SIZE / 2,
-  SIZE,
-  SIZE
-);
-ctx.restore();
+    ctx.translate(Math.round(p.x), Math.round(p.y));
+    ctx.rotate(rotationRad);
+    ctx.drawImage(
+      sprite,
+      sx, sy, FRAME_W, FRAME_H,
+      -SIZE / 2,
+      -SIZE / 2,
+      SIZE,
+      SIZE
+    );
+    ctx.restore();
 
-    if(m < total) requestAnimationFrame(step);
-    else window.__GPX_DONE__ = true;
+    // Route finished -> trigger overview pan/hold
+    if (m >= total) {
+      finished = true;
+      map.fitBounds(bounds, {
+        padding: 120,
+        pitch: 0,
+        bearing: 0,
+        duration: OVERVIEW_PAN_MS,
+        maxZoom: 14
+      });
+      overviewAt = performance.now();
+    }
+
+    requestAnimationFrame(step);
   }
 }
 </script>
