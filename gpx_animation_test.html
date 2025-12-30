@@ -43,6 +43,14 @@ const IS_RENDER=PARAMS.has("render");
 const API=PARAMS.get("api");
 const ROUTE=PARAMS.get("route");
 window.__GPX_DONE__=false;
+  
+if (!API) {
+  throw new Error("Missing ?api= parameter in URL");
+}
+
+if (!ROUTE) {
+  throw new Error("Missing ?route= parameter in URL");
+}
 
 /* ================= CANVAS ================= */
 const canvas=document.getElementById("anim");
