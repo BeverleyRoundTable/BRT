@@ -122,18 +122,16 @@ function run(pts, sprite, s){
     pitch:IS_RENDER?48:52
   });
 
-  // % of frame height where feet touch ground (tweak once, then done)
-const FOOT_ANCHOR_Y = 0.78;
   const FOLLOW_ZOOM = IS_RENDER ? 18.9 : 18.4;
   const FOLLOW_PITCH = IS_RENDER ? 48 : 52;
   const FRAMES = +s.travelboast_sprite_frames || 5;
   const SPRITE_FPS = +s.travelboast_sprite_fps || 12;
   const BASE_SIZE = +s.travelboast_sprite_size || 72;
   const YAW_DAMPING = 0.12;
-const SIZE = +s.travelboast_sprite_size || FRAME_W; // default = native frame size
 
-  const FRAME_W = sprite.width / FRAMES; // 300
-  const FRAME_H = sprite.height / 2;     // 300
+  // 5x2 sheet: width = 5 frames, height = 2 rows
+  const FRAME_W = sprite.width / FRAMES;
+  const FRAME_H = sprite.height / 2;
 
   const cum=[0];
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
@@ -171,7 +169,7 @@ const SIZE = +s.travelboast_sprite_size || FRAME_W; // default = native frame si
     sprB=lerpA(sprB,targetB,YAW_DAMPING);
     const normB=(sprB%360+360)%360;
 
-    // ✅ TOP ROW = north-ish, BOTTOM ROW = south-ish
+    // TOP ROW (0) = north-ish (rear), BOTTOM ROW (1) = south-ish (front)
     const ROW = (normB>=90 && normB<=270) ? 1 : 0;
 
     spriteTimer+=dtSim;
@@ -199,26 +197,23 @@ const SIZE = +s.travelboast_sprite_size || FRAME_W; // default = native frame si
 
     const p = map.project([pos.lng,pos.lat]);
 
-// ✅ sprite scale (DO NOT remove)
-const SIZE = BASE_SIZE * (0.9 + Math.min(0.4, (FOLLOW_ZOOM - 15) * 0.25));
+    // sprite scale
+    const SIZE = BASE_SIZE * (0.9 + Math.min(0.4, (FOLLOW_ZOOM - 15) * 0.25));
 
-const sx = spriteFrame * FRAME_W;
-const sy = ROW * FRAME_H;
+    const sx = spriteFrame * FRAME_W;
+    const sy = ROW * FRAME_H;
 
-// feet anchor
-const anchorY = SIZE * FOOT_ANCHOR_Y;
-
-ctx.save();
-ctx.translate(p.x, p.y);
-ctx.drawImage(
-  sprite,
-  sx, sy, FRAME_W, FRAME_H,
-  -SIZE / 2,
-  -anchorY,
-  SIZE,
-  SIZE
-);
-ctx.restore();
+    ctx.save();
+    ctx.translate(Math.round(p.x), Math.round(p.y));
+    ctx.drawImage(
+      sprite,
+      sx, sy, FRAME_W, FRAME_H,
+      -SIZE / 2,
+      -SIZE / 2,
+      SIZE,
+      SIZE
+    );
+    ctx.restore();
 
     if(m < total) requestAnimationFrame(step);
     else window.__GPX_DONE__ = true;
