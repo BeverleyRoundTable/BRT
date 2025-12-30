@@ -154,20 +154,24 @@ const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
       .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")}))
   );
 
-  const spriteNorth=await new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.src=s.travelboast_sprite_north;});
-  const spriteSouth=await new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.src=s.travelboast_sprite_south;});
+  // ✅ True-north sprite sheet only
+  const sprite=await new Promise(res=>{
+    const i=new Image();
+    i.onload=()=>res(i);
+    i.src=s.travelboast_sprite_north; // your true-north sheet
+  });
 
-  run(rawPts,spriteNorth,spriteSouth,s);
+  run(rawPts,sprite,s);
 })();
 
 /* ================= ANIMATION ================= */
-function run(pts, spriteNorth, spriteSouth, s) {
+function run(pts, sprite, s) {
   map = new maplibregl.Map({
     container: "map",
     style: MAP_STYLE,
     center: [pts[0].lng, pts[0].lat],
     zoom: +s.default_map_zoom || 16,
-    bearing: 0,
+    bearing: 0,                 // ✅ always north-up
     pitch: IS_RENDER ? 48 : 52
   });
 
@@ -182,203 +186,115 @@ function run(pts, spriteNorth, spriteSouth, s) {
   const OVERVIEW_PAN_MS = 3500;
   const OVERVIEW_HOLD_MS = 5000;
 
-  const snow = createSnow(
-    String(s.travelboast_particle_effects).toLowerCase() === "snow"
-  );
+  const snow = createSnow(String(s.travelboast_particle_effects).toLowerCase() === "snow");
 
-  const cum = [0];
-  for (let i = 1; i < pts.length; i++) {
-    cum[i] = cum[i - 1] + dist(pts[i - 1], pts[i]);
-  }
-  const total = cum.at(-1);
+  const cum=[0];
+  for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
+  const total=cum.at(-1);
 
+  // ✅ travelboast_speed is total duration in seconds
   const DURATION_SEC = Math.max(1, +s.travelboast_speed || 60);
-  const METERS_PER_SEC = total / DURATION_SEC;
 
-  const bounds = new maplibregl.LngLatBounds();
-  for (const p of pts) bounds.extend([p.lng, p.lat]);
+  const bounds=new maplibregl.LngLatBounds();
+  for(const p of pts) bounds.extend([p.lng,p.lat]);
 
-  /* === IMPORTANT: baked sprite headings === */
-  const SPRITE_NORTH_HEADING = 45;   // NE (2 o'clock)
-  const SPRITE_SOUTH_HEADING = 225;  // SW (8 o'clock)
+  let m=0;
+  let last=null;
+  let simTime=0;               // ✅ render-safe time
+  let sprB=bearing(pts[0],pts[1]);
+  let targetB=sprB;
 
-  let m = 0, last = null;
-  let sprB = 0, targetB = 0;
-  let spriteTimer = 0, spriteFrame = 0;
-  let bobT = 0;
-  let finished = false, overviewAt = null;
+  let spriteTimer=0, spriteFrame=0, bobT=0;
+  let finished=false, overviewAt=null;
 
-  map.on("load", () => {
-    resize();
-    snow.resize();
-    map.on("resize", resize);
+  map.on("load",()=>{
+    resize(); snow.resize(); map.on("resize",resize);
 
-    map.addSource("route-progress", {
-      type: "geojson",
-      data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } }
-    });
+    map.addSource("route-progress",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
+    map.addLayer({id:"route-glow",type:"line",source:"route-progress",
+      paint:{"line-color":s.primary_color||"#d31c1c","line-width":10,"line-opacity":0.25,"line-blur":6}});
+    map.addLayer({id:"route-main",type:"line",source:"route-progress",
+      paint:{"line-color":s.primary_color||"#d31c1c","line-width":6}});
 
-    map.addLayer({
-      id: "route-glow",
-      type: "line",
-      source: "route-progress",
-      paint: {
-        "line-color": s.primary_color || "#d31c1c",
-        "line-width": 10,
-        "line-opacity": 0.25,
-        "line-blur": 6
-      }
-    });
-
-    map.addLayer({
-      id: "route-main",
-      type: "line",
-      source: "route-progress",
-      paint: {
-        "line-color": s.primary_color || "#d31c1c",
-        "line-width": 6
-      }
-    });
-
-    sprB = bearing(pts[0], pts[1]);
     requestAnimationFrame(step);
   });
 
-  function step(ts) {
-    let dt = last ? (ts - last) / 1000 : 0;
+  function step(ts){
+    const dtReal = last ? (ts-last)/1000 : 0;
     last = ts;
 
-    ctx.clearRect(0, 0, VIEW_W, VIEW_H);
-    snow.update();
-    snow.draw();
+    // ✅ fixed-step simulation so "30" means 30 seconds even in fast renders
+    const dtSim = 1/60;
+    simTime += dtSim;
+    m = Math.min(total, (simTime / DURATION_SEC) * total);
 
-    if (!finished) {
-      m += METERS_PER_SEC * dt;
-      if (m >= total) {
-        finished = true;
-        map.fitBounds(bounds, {
-          padding: 120,
-          pitch: 0,
-          bearing: 0,
-          duration: OVERVIEW_PAN_MS,
-          maxZoom: 14
-        });
-        overviewAt = performance.now();
+    ctx.clearRect(0,0,VIEW_W,VIEW_H);
+    snow.update(); snow.draw();
+
+    if(!finished){
+      if(m>=total){
+        finished=true;
+        map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:OVERVIEW_PAN_MS,maxZoom:14});
+        overviewAt=performance.now();
       }
-    } else {
-      if (performance.now() - overviewAt > OVERVIEW_PAN_MS + OVERVIEW_HOLD_MS) {
-        window.__GPX_DONE__ = true;
-        return;
-      }
-      requestAnimationFrame(step);
-      return;
+    }else{
+      if(performance.now()-overviewAt>OVERVIEW_PAN_MS+OVERVIEW_HOLD_MS){window.__GPX_DONE__=true;return;}
+      requestAnimationFrame(step); return;
     }
 
-    let i = cum.findIndex(v => v >= m);
-    i = Math.max(1, i);
-
-    const t = (m - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
-    const a = pts[i - 1], b = pts[i];
-    const pos = {
-      lat: a.lat + (b.lat - a.lat) * t,
-      lng: a.lng + (b.lng - a.lng) * t
-    };
+    let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
+    const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
+    const a=pts[i-1], b=pts[i];
+    const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 
     map.getSource("route-progress").setData({
-      type: "Feature",
-      geometry: {
-        type: "LineString",
-        coordinates: [
-          ...pts.slice(0, i).map(p => [p.lng, p.lat]),
-          [pos.lng, pos.lat]
-        ]
-      }
+      type:"Feature",
+      geometry:{type:"LineString",coordinates:[...pts.slice(0,i).map(p=>[p.lng,p.lat]),[pos.lng,pos.lat]]}
     });
 
-    spriteTimer += dt;
-    if (spriteTimer >= 1 / SPRITE_FPS) {
-      spriteTimer -= 1 / SPRITE_FPS;
-      spriteFrame = (spriteFrame + 1) % FRAMES;
-    }
+    // ✅ sprite animation can use sim time too (keeps render consistent)
+    spriteTimer += dtSim;
+    if(spriteTimer>=1/SPRITE_FPS){spriteTimer-=1/SPRITE_FPS; spriteFrame=(spriteFrame+1)%FRAMES;}
 
-   /* ======= CORE FIX (FINAL) ======= */
+    // ✅ bearing + smoothing
+    targetB = bearing(a,b);
+    sprB = lerpA(sprB, targetB, YAW_DAMPING);
+    const normB = (sprB%360+360)%360;
 
-targetB = bearing(a, b);
-sprB = lerpA(sprB, targetB, YAW_DAMPING);
-const normB = (sprB % 360 + 360) % 360;
+    // ✅ True-north sprite => rotate by bearing
+    const rotationRad = normB * Math.PI/180;
 
-// Compass zones
-const isNorthish = (normB >= 315 || normB <= 45);
-const isSouthish = (normB >= 135 && normB <= 225);
+    // ✅ map stays north-up
+    map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,bearing:0,pitch:FOLLOW_PITCH});
 
-// Sprite selection
-const activeSprite = isSouthish ? spriteSouth : spriteNorth;
+    const p=map.project([pos.lng,pos.lat]);
+    const fw=sprite.width/FRAMES;
+    const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
-// Sprite baked headings
-const baseHeading = isSouthish
-  ? SPRITE_SOUTH_HEADING   // 225°
-  : SPRITE_NORTH_HEADING;  // 45°
+    bobT += dtSim*BOB_SPEED;
+    const heightLift=SIZE*0.35+22+Math.sin(bobT)*BOB_AMPLITUDE;
 
-let rotation = 0;
-
-// 🔒 CRITICAL RULE:
-// Only rotate when NOT north/south
-if (!isNorthish && !isSouthish) {
-  rotation = normB - baseHeading;
-
-  // Normalize to [-180, 180]
-  if (rotation > 180) rotation -= 360;
-  if (rotation < -180) rotation += 360;
-
-  // Clamp to prevent tipping
-  rotation = Math.max(-25, Math.min(25, rotation));
-}
-
-
-    /* ====================== */
-
-    map.jumpTo({
-      center: [pos.lng, pos.lat],
-      zoom: FOLLOW_ZOOM,
-      bearing: 0,
-      pitch: FOLLOW_PITCH
-    });
-
-    const p = map.project([pos.lng, pos.lat]);
-    const fw = activeSprite.width / FRAMES;
-    const SIZE = BASE_SIZE * (0.9 + Math.min(0.4, (FOLLOW_ZOOM - 15) * 0.25));
-
-    bobT += dt * BOB_SPEED;
-    const heightLift = SIZE * 0.35 + 22 + Math.sin(bobT) * BOB_AMPLITUDE;
-
-    /* Shadow */
+    // shadow
     ctx.save();
-    ctx.translate(p.x, p.y + SIZE * 0.12);
-    ctx.scale(1.2, 0.35);
-    ctx.globalAlpha = 0.25;
+    ctx.translate(p.x,p.y+SIZE*0.12);
+    ctx.scale(1.2,0.35);
+    ctx.globalAlpha=0.25;
     ctx.beginPath();
-    ctx.arc(0, 0, SIZE * 0.38, 0, Math.PI * 2);
-    ctx.fillStyle = "#000";
+    ctx.arc(0,0,SIZE*0.38,0,Math.PI*2);
+    ctx.fillStyle="#000";
     ctx.fill();
     ctx.restore();
 
-    /* Sprite */
+    // sprite
     ctx.save();
-    ctx.translate(p.x, p.y - heightLift);
-    ctx.rotate(rotation * Math.PI / 180);
-    ctx.drawImage(
-      activeSprite,
-      spriteFrame * fw, 0,
-      fw, activeSprite.height,
-      -SIZE / 2, -SIZE / 2,
-      SIZE, SIZE
-    );
+    ctx.translate(p.x,p.y-heightLift);
+    ctx.rotate(rotationRad);
+    ctx.drawImage(sprite, spriteFrame*fw,0,fw,sprite.height, -SIZE/2,-SIZE/2,SIZE,SIZE);
     ctx.restore();
 
     requestAnimationFrame(step);
   }
 }
-
 </script>
 </body>
 </html>
