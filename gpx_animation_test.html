@@ -228,11 +228,18 @@ function run(pts, sprite, s){
     ));
     if(delta>35) facingRow=desiredRow;
 
-    let yaw=signedAngleDelta(normB,rowFacingAngles[facingRow]);
-    if(Math.abs(yaw)<6) yaw=0;
-    yaw*=0.6;
-    yaw=Math.max(-15,Math.min(15,yaw));
-    const rotationRad=yaw*Math.PI/180;
+    let yaw = signedAngleDelta(normB, rowFacingAngles[facingRow]);
+
+// 🚫 No yaw for pure side-on sprites (prevents left/right flicker)
+if (facingRow === 3 || facingRow === 1) {
+  yaw = 0;
+} else {
+  if (Math.abs(yaw) < 6) yaw = 0;
+  yaw *= 0.6;
+  yaw = Math.max(-15, Math.min(15, yaw));
+}
+
+const rotationRad = yaw * Math.PI / 180;
 
     spriteTimer+=dtSim;
     if(spriteTimer>=1/SPRITE_FPS){
