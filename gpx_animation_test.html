@@ -96,6 +96,42 @@ function bearingToRow(b){
 function signedAngleDelta(a, b) {
   return ((a - b + 540) % 360) - 180; // -> [-180, 180]
 }
+  
+function normalizeBearing(b){
+  return (b % 360 + 360) % 360;
+}
+
+function bearingToDirection(b){
+  b = normalizeBearing(b);
+
+  if (b >= 337.5 || b < 22.5)   return "N";
+  if (b >= 22.5  && b < 67.5)   return "NE";
+  if (b >= 67.5  && b < 112.5)  return "E";
+  if (b >= 112.5 && b < 157.5)  return "SE";
+  if (b >= 157.5 && b < 202.5)  return "S";
+  if (b >= 202.5 && b < 247.5)  return "SW";
+  if (b >= 247.5 && b < 292.5)  return "W";
+  return "NW";
+}
+
+function directionToRow(dir){
+  switch(dir){
+    case "N": case "NE": case "NW": return 0;
+    case "E":                     return 1;
+    case "S":                     return 2;
+    case "W":                     return 3;
+  }
+}
+
+function directionToYaw(dir){
+  switch(dir){
+    case "NE": return  15;
+    case "SE": return  15;
+    case "SW": return -15;
+    case "NW": return -15;
+    default:   return   0;
+  }
+}
 
 /* ================= LOAD ================= */
 (async()=>{
@@ -208,11 +244,7 @@ function run(pts, sprite, s){
     // Smoothed bearing
     targetB=bearing(a,b);
     sprB=lerpA(sprB,targetB,YAW_DAMPING);
-    const normB=(sprB+360)%360;
-
-    // Pick row from bearing (N,E,S,W)
-    const ROW=bearingToRow(normB);
-
+ 
     // ✅ Relative diagonal tilt (prevents SW/W flipping)
     const ROW_FACING = [0, 90, 180, 270][ROW];
     let yaw = signedAngleDelta(normB, ROW_FACING);     // how far off the row's facing direction
