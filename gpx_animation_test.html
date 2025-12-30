@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <title>Turbo Santa GPX Animation</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" />
-
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
 #map{position:absolute;inset:0}
@@ -19,7 +17,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
 <canvas id="anim"></canvas>
 
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
-
 <script>
 /* ================= FLAGS ================= */
 const PARAMS = new URLSearchParams(location.search);
@@ -72,6 +69,7 @@ const dist = (a,b)=>{
           Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(s));
 };
+
 const bearing=(a,b)=>{
   const dLng=(b.lng-a.lng)*Math.PI/180;
   const y=Math.sin(dLng)*Math.cos(b.lat*Math.PI/180);
@@ -79,58 +77,25 @@ const bearing=(a,b)=>{
           Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLng);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 };
+
 const lerpA=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 
-/* =============== HELPERS: ROW + RELATIVE YAW =============== */
-
-// Bearing -> sprite row (your 5x4 sheet: N,E,S,W)
-function bearingToRow(b){
-  b = (b + 360) % 360;
-  if (b >= 315 || b < 45)   return 0; // North row
-  if (b >= 45  && b < 135)  return 1; // East row
-  if (b >= 135 && b < 225)  return 2; // South row
-  return 3;                           // West row
+function normalizeBearing(b){
+  return (b % 360 + 360) % 360;
 }
 
 // Signed smallest angle difference (deg) between a and b
 function signedAngleDelta(a, b) {
   return ((a - b + 540) % 360) - 180; // -> [-180, 180]
 }
-  
-function normalizeBearing(b){
-  return (b % 360 + 360) % 360;
-}
 
-function bearingToDirection(b){
+// Bearing -> sprite row (your 5x4 sheet: N,E,S,W)
+function bearingToRow(b){
   b = normalizeBearing(b);
-
-  if (b >= 337.5 || b < 22.5)   return "N";
-  if (b >= 22.5  && b < 67.5)   return "NE";
-  if (b >= 67.5  && b < 112.5)  return "E";
-  if (b >= 112.5 && b < 157.5)  return "SE";
-  if (b >= 157.5 && b < 202.5)  return "S";
-  if (b >= 202.5 && b < 247.5)  return "SW";
-  if (b >= 247.5 && b < 292.5)  return "W";
-  return "NW";
-}
-
-function directionToRow(dir){
-  switch(dir){
-    case "N": case "NE": case "NW": return 0;
-    case "E":                     return 1;
-    case "S":                     return 2;
-    case "W":                     return 3;
-  }
-}
-
-function directionToYaw(dir){
-  switch(dir){
-    case "NE": return  15;
-    case "SE": return  15;
-    case "SW": return -15;
-    case "NW": return -15;
-    default:   return   0;
-  }
+  if (b >= 315 || b < 45)   return 0; // North
+  if (b >= 45  && b < 135)  return 1; // East
+  if (b >= 135 && b < 225)  return 2; // South
+  return 3;                           // West
 }
 
 /* ================= LOAD ================= */
@@ -177,22 +142,23 @@ function run(pts, sprite, s){
     pitch:IS_RENDER?48:52
   });
 
-  const FOLLOW_ZOOM = IS_RENDER ? 18.9 : 18.4;
+  const FOLLOW_ZOOM  = IS_RENDER ? 18.9 : 18.4;
   const FOLLOW_PITCH = IS_RENDER ? 48 : 52;
 
-  const FRAMES = +s.travelboast_sprite_frames || 5; // columns
+  const FRAMES     = +s.travelboast_sprite_frames || 5; // columns
   const SPRITE_FPS = +s.travelboast_sprite_fps || 12;
-  const BASE_SIZE = +s.travelboast_sprite_size || 72;
+  const BASE_SIZE  = +s.travelboast_sprite_size || 72;
   const YAW_DAMPING = 0.12;
 
   // Overview end-pan timings
-  const OVERVIEW_PAN_MS = 3500;
+  const OVERVIEW_PAN_MS  = 3500;
   const OVERVIEW_HOLD_MS = 5000;
 
-  // 5x4 sheet: width = 5 frames, height = 4 rows
+  // 5x4 sheet
   const FRAME_W = sprite.width / FRAMES;
   const FRAME_H = sprite.height / 4;
 
+  // cumulative distance
   const cum=[0];
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
   const total=cum.at(-1);
@@ -244,11 +210,13 @@ function run(pts, sprite, s){
     // Smoothed bearing
     targetB=bearing(a,b);
     sprB=lerpA(sprB,targetB,YAW_DAMPING);
- 
-    // ✅ Relative diagonal tilt (prevents SW/W flipping)
+    const normB = normalizeBearing(sprB);
+
+    // Row snap + RELATIVE tilt (stable)
+    const ROW = bearingToRow(normB);
     const ROW_FACING = [0, 90, 180, 270][ROW];
-    let yaw = signedAngleDelta(normB, ROW_FACING);     // how far off the row's facing direction
-    yaw = Math.max(-18, Math.min(18, yaw));            // subtle tilt only
+    let yaw = signedAngleDelta(normB, ROW_FACING); // relative to row
+    yaw = Math.max(-18, Math.min(18, yaw));        // subtle only
     const rotationRad = yaw * Math.PI / 180;
 
     // Advance animation frame
