@@ -122,6 +122,8 @@ function run(pts, sprite, s){
     pitch:IS_RENDER?48:52
   });
 
+  // % of frame height where feet touch ground (tweak once, then done)
+const FOOT_ANCHOR_Y = 0.78;
   const FOLLOW_ZOOM = IS_RENDER ? 18.9 : 18.4;
   const FOLLOW_PITCH = IS_RENDER ? 48 : 52;
   const FRAMES = +s.travelboast_sprite_frames || 5;
@@ -196,17 +198,23 @@ function run(pts, sprite, s){
 
     const p = map.project([pos.lng,pos.lat]);
 
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.drawImage(
-      sprite,
-      spriteFrame*FRAME_W,   // sx
-      ROW*FRAME_H,           // sy
-      FRAME_W, FRAME_H,      // sw, sh
-      -BASE_SIZE/2, -BASE_SIZE/2,
-      BASE_SIZE, BASE_SIZE
-    );
-    ctx.restore();
+    const sx = spriteFrame * FRAME_W;
+const sy = ROW * FRAME_H;
+
+// where feet should land on canvas
+const anchorY = SIZE * FOOT_ANCHOR_Y;
+
+ctx.save();
+ctx.translate(p.x, p.y);
+ctx.drawImage(
+  sprite,
+  sx, sy, FRAME_W, FRAME_H,
+  -SIZE / 2,
+  -anchorY,
+  SIZE,
+  SIZE
+);
+ctx.restore();
 
     if(m < total) requestAnimationFrame(step);
     else window.__GPX_DONE__ = true;
