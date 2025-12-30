@@ -270,7 +270,7 @@ function run(pts, sprite, s) {
     const normB = (sprB%360+360)%360;
 
     // ✅ True-north sprite => rotate by bearing
-    const rotationRad = normB * Math.PI/180;
+    const rotationRad = (90 - normB) * Math.PI / 180;
 
     // ✅ map stays north-up
     map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,bearing:0,pitch:FOLLOW_PITCH});
