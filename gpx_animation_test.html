@@ -204,16 +204,17 @@ function run(pts, sprite, s){
     const sy = ROW * FRAME_H;
 
     ctx.save();
-    ctx.translate(Math.round(p.x), Math.round(p.y));
-    ctx.drawImage(
-      sprite,
-      sx, sy, FRAME_W, FRAME_H,
-      -SIZE / 2,
-      -SIZE / 2,
-      SIZE,
-      SIZE
-    );
-    ctx.restore();
+ctx.translate(Math.round(p.x), Math.round(p.y));
+ctx.rotate(rotationRad);
+ctx.drawImage(
+  sprite,
+  sx, sy, FRAME_W, FRAME_H,
+  -SIZE / 2,
+  -SIZE / 2,
+  SIZE,
+  SIZE
+);
+ctx.restore();
 
     if(m < total) requestAnimationFrame(step);
     else window.__GPX_DONE__ = true;
