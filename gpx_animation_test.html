@@ -198,10 +198,13 @@ const FOOT_ANCHOR_Y = 0.78;
 
     const p = map.project([pos.lng,pos.lat]);
 
-    const sx = spriteFrame * FRAME_W;
+// ✅ sprite scale (DO NOT remove)
+const SIZE = BASE_SIZE * (0.9 + Math.min(0.4, (FOLLOW_ZOOM - 15) * 0.25));
+
+const sx = spriteFrame * FRAME_W;
 const sy = ROW * FRAME_H;
 
-// where feet should land on canvas
+// feet anchor
 const anchorY = SIZE * FOOT_ANCHOR_Y;
 
 ctx.save();
