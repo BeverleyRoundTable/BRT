@@ -171,6 +171,10 @@ function run(pts, sprite, s){
 
   let facingRow = bearingToRow(sprB); // 🔒 row lock
 
+  // --- PATCH: hard-lock window around West to prevent occasional escapes ---
+  const WEST_LOCK_MIN = 255;
+  const WEST_LOCK_MAX = 285;
+
   map.on("load",()=>{
     resize(); map.on("resize",resize);
 
@@ -207,7 +211,16 @@ function run(pts, sprite, s){
     sprB=lerpA(sprB,targetB,YAW_DAMPING);
     const normB = normalizeBearing(sprB);
 
-    const desiredRow = bearingToRow(normB);
+    // --- PATCH: diagonal bias + hard west lock + hysteresis ---
+    let desiredRow = bearingToRow(normB);
+
+    // Diagonal bias: prefer N for NE/NW; prefer S for SE/SW
+    if (normB > 300 || normB < 60) desiredRow = 0;
+    else if (normB > 120 && normB < 240) desiredRow = 2;
+
+    // Hard West lock near 270°
+    if (normB >= WEST_LOCK_MIN && normB <= WEST_LOCK_MAX) desiredRow = 3;
+
     const rowFacingAngles=[0,90,180,270];
     const delta=Math.abs(signedAngleDelta(
       rowFacingAngles[desiredRow],
