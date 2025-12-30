@@ -169,6 +169,18 @@ function run(pts, sprite, s){
     sprB=lerpA(sprB,targetB,YAW_DAMPING);
     const normB=(sprB%360+360)%360;
 
+    // --- YAW ROTATION (walking lean) ---
+let yaw = normB;
+
+// convert 0–360 → -180–180
+if (yaw > 180) yaw -= 360;
+
+// clamp so Santa never flips or breaks
+yaw = Math.max(-25, Math.min(25, yaw));
+
+// radians for canvas
+const rotationRad = yaw * Math.PI / 180;
+
     // TOP ROW (0) = north-ish (rear), BOTTOM ROW (1) = south-ish (front)
     const ROW = (normB>=90 && normB<=270) ? 1 : 0;
 
