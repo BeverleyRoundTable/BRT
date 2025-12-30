@@ -212,12 +212,23 @@ function run(pts, sprite, s){
     sprB=lerpA(sprB,targetB,YAW_DAMPING);
     const normB = normalizeBearing(sprB);
 
-    // Row snap + RELATIVE tilt (stable)
     const ROW = bearingToRow(normB);
-    const ROW_FACING = [0, 90, 180, 270][ROW];
-    let yaw = signedAngleDelta(normB, ROW_FACING); // relative to row
-    yaw = Math.max(-18, Math.min(18, yaw));        // subtle only
-    const rotationRad = yaw * Math.PI / 180;
+const ROW_FACING = [0, 90, 180, 270][ROW];
+
+// how far off the main facing direction
+let yaw = signedAngleDelta(normB, ROW_FACING);
+
+// DEAD ZONE — kill jitter
+const DEAD_ZONE = 6; // degrees
+if (Math.abs(yaw) < DEAD_ZONE) yaw = 0;
+
+// soften diagonals only
+yaw *= 0.6;
+
+// clamp final rotation
+yaw = Math.max(-15, Math.min(15, yaw));
+
+const rotationRad = yaw * Math.PI / 180;
 
     // Advance animation frame
     spriteTimer+=dtSim;
