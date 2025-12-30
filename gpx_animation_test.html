@@ -261,7 +261,14 @@ const rotationRad = yaw * Math.PI / 180;
     const p=map.project([pos.lng,pos.lat]);
 
     const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
-    const sx=spriteFrame*FRAME_W;
+    
+    const drawFrame =
+  (facingRow === 3) // West
+    ? (FRAMES - 1 - spriteFrame)
+    : spriteFrame;
+
+const sx = drawFrame * FRAME_W;
+
     const sy=facingRow*FRAME_H;
 
     ctx.save();
