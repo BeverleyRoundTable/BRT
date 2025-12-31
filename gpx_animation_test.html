@@ -168,7 +168,15 @@ function run(pts,sprite,s){
 });
 
     ctx.clearRect(0,0,VIEW_W,VIEW_H);
-    const p=map.project([pos.lng,pos.lat]);
+
+// ❌ Do NOT draw Santa once overview has started
+if (finished) {
+  requestAnimationFrame(step);
+  return;
+}
+
+const p = map.project([pos.lng,pos.lat]);
+const SIZE = BASE_SIZE;
 
     ctx.save();
     ctx.translate(Math.round(p.x),Math.round(p.y));
