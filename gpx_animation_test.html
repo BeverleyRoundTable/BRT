@@ -190,6 +190,18 @@ function run(pts, sprite, s){
     spriteTimer+=1/60;
     if(spriteTimer>=1/cadenceFps){spriteTimer-=1/cadenceFps;spriteFrame=(spriteFrame+1)%FRAMES;}
 
+    // Update route line (this was missing)
+map.getSource("route").setData({
+  type: "Feature",
+  geometry: {
+    type: "LineString",
+    coordinates: [
+      ...pts.slice(0, i).map(p => [p.lng, p.lat]),
+      [pos.lng, pos.lat]
+    ]
+  }
+});
+
     map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,pitch:FOLLOW_PITCH,bearing:0});
 
     ctx.clearRect(0,0,VIEW_W,VIEW_H);
