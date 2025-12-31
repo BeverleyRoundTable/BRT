@@ -101,23 +101,42 @@ function bearingToRowRaw(b){
   return 4;
 }
 
-const HYST = 12;
-function stableRow(prevRow, b){
-  b = normalizeBearing(b);
-  if (prevRow === 1){
-    if (b >= (315 + HYST) || b < (45 - HYST)) return 0;
-    if (b >= (135 + HYST) && b < (225 - HYST)) return 2;
-    return 1;
+const ROW_CENTERS = [
+  0,    // Row 0: North
+  45,   // Row 1: NE (mirrors to NW)
+  90,   // Row 2: East (mirrors to West)
+  225,  // Row 3: SW (mirrors to SE)
+  180   // Row 4: South
+];
+
+const ROW_HYST = 18; // degrees – tune 14–22 if needed
+
+function angularDistance(a, b) {
+  return Math.abs(((a - b + 540) % 360) - 180);
+}
+
+function stableRow(prevRow, bearingDeg) {
+  bearingDeg = normalizeBearing(bearingDeg);
+
+  const prevCenter = ROW_CENTERS[prevRow];
+  const prevDist   = angularDistance(bearingDeg, prevCenter);
+
+  // If still comfortably within this row → stay locked
+  if (prevDist < ROW_HYST) return prevRow;
+
+  // Otherwise find the closest row center
+  let bestRow = prevRow;
+  let bestDist = prevDist;
+
+  for (let r = 0; r < ROW_CENTERS.length; r++) {
+    const d = angularDistance(bearingDeg, ROW_CENTERS[r]);
+    if (d < bestDist) {
+      bestDist = d;
+      bestRow = r;
+    }
   }
-  if (prevRow === 0){
-    if (b >= (45 + HYST) && b < (315 - HYST)) return bearingToRowRaw(b);
-    return 0;
-  }
-  if (prevRow === 2){
-    if (b < (135 - HYST) || b >= (225 + HYST)) return bearingToRowRaw(b);
-    return 2;
-  }
-  return bearingToRowRaw(b);
+
+  return bestRow;
 }
 
 (async()=>{
