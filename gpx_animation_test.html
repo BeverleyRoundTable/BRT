@@ -85,34 +85,30 @@ const lerpAngle = (a,b,t)=> a + (((b-a+540)%360)-180)*t;
 */
 function bearingToRowRaw(b){
   b = normalizeBearing(b);
-  if (b >= 315 || b < 45) return 0; // North
-  if (b >= 45 && b < 135) return 1; // East
-  if (b >= 225 && b < 315) return 1; // West (mirror)
-  return 2; // South
+  if (b >= 315 || b < 45) return 0;      // North
+  if (b >= 45 && b < 135) return 1;      // East
+  if (b >= 225 && b < 315) return 1;     // West (mirror)
+  return 2;                              // South
 }
 
-/* Hysteresis to stop N<->E/W or S<->E/W boundary flicker */
+/* Hysteresis to stop boundary flicker */
 const HYST = 12; // degrees
 function stableRow(prevRow, b){
   b = normalizeBearing(b);
 
-  // If we are currently E/W, only switch to N or S when "deep" into that sector
   if (prevRow === 1){
-    if (b >= (315 + HYST) || b < (45 - HYST)) return 0;            // North
-    if (b >= (135 + HYST) && b < (225 - HYST)) return 2;           // South
-    return 1;                                                       // stay E/W
+    if (b >= (315 + HYST) || b < (45 - HYST)) return 0;
+    if (b >= (135 + HYST) && b < (225 - HYST)) return 2;
+    return 1;
   }
 
-  // If we are currently North, don't drop into E/W until past 45+HYST or before 315-HYST
   if (prevRow === 0){
     if (b >= (45 + HYST) && b < (315 - HYST)){
-      // between 45+HYST and 315-HYST could be E/W or S; pick by raw mapping
       return bearingToRowRaw(b);
     }
     return 0;
   }
 
-  // If we are currently South, don't rise into E/W until outside 135-HYST..225+HYST band
   if (prevRow === 2){
     if (b < (135 - HYST) || b >= (225 + HYST)){
       return bearingToRowRaw(b);
@@ -160,8 +156,13 @@ function run(pts, sprite, s){
 
   const FRAMES     = +s.travelboast_sprite_frames || 5;
   const BASE_SIZE  = +s.travelboast_sprite_size || 72;
-  const STRIDE_METERS = 1.6;          // "one cycle" distance feel
-  const BEARING_DAMP = 0.18;          // smoothing for direction
+
+  // cadence knobs
+  const STRIDE_METERS = 1.6;     // distance per full cycle "feel"
+  const MIN_FPS = 8;             // avoid ghosting
+  const MAX_FPS = 12;            // avoid jitter
+
+  const BEARING_DAMP = 0.18;
   const OVERVIEW_PAN_MS  = 3500;
   const OVERVIEW_HOLD_MS = 5000;
 
@@ -178,7 +179,11 @@ function run(pts, sprite, s){
   let simTime=0;
   let finished=false, overviewAt=null;
 
-  // Smoothed bearing + stable row state
+  // ✅ these were missing (your code was throwing, so Santa never drew)
+  let spriteTimer = 0;
+  let spriteFrame = 0;
+
+  // bearing + row state
   let smoothedB = bearing(pts[0], pts[1] || pts[0]);
   let facingRow = bearingToRowRaw(smoothedB);
 
@@ -204,7 +209,7 @@ function run(pts, sprite, s){
   });
 
   function step(){
-    // During overview: ALWAYS clear so Santa disappears while map pans
+    // During overview: clear every frame so Santa stays gone
     if (finished){
       ctx.clearRect(0,0,VIEW_W,VIEW_H);
       if (performance.now() - overviewAt > OVERVIEW_PAN_MS + OVERVIEW_HOLD_MS){
@@ -229,34 +234,25 @@ function run(pts, sprite, s){
       lng: a.lng + (b.lng - a.lng) * t
     };
 
-    // Smoothed bearing + hysteresis row locking
+    // Smooth bearing + row hysteresis
     const targetB = bearing(a,b);
     smoothedB = lerpAngle(smoothedB, targetB, BEARING_DAMP);
-
     facingRow = stableRow(facingRow, smoothedB);
 
-    // West mirror only when in the West sector (225..315)
+    // mirror only for west sector
     const brg = normalizeBearing(smoothedB);
     const isWest = (brg >= 225 && brg < 315);
 
-    // Distance-based sprite stepping (removes fps mismatch feel)
-    // --- Cadence-controlled stride animation ---
-const STRIDE_METERS = 1.6;        // one full run cycle
-const MIN_FPS = 8;                // below this = ghosting
-const MAX_FPS = 12;               // above this = jitter
+    // cadence based on route speed, clamped
+    const routeSpeedMps = total / DURATION_SEC;                 // meters/sec
+    let cadenceFps = (routeSpeedMps / STRIDE_METERS) * FRAMES;  // frames/sec
+    cadenceFps = Math.max(MIN_FPS, Math.min(MAX_FPS, cadenceFps));
 
-const routeSpeedMps = total / DURATION_SEC; // meters per second
-let cadenceFps = routeSpeedMps / STRIDE_METERS * FRAMES;
-
-// Clamp cadence to sprite limits
-cadenceFps = Math.max(MIN_FPS, Math.min(MAX_FPS, cadenceFps));
-
-// Advance frame by time, not distance
-spriteTimer += 1/60;
-if (spriteTimer >= 1 / cadenceFps) {
-  spriteTimer = 0;
-  spriteFrame = (spriteFrame + 1) % FRAMES;
-}
+    spriteTimer += 1/60;
+    if (spriteTimer >= 1 / cadenceFps) {
+      spriteTimer -= 1 / cadenceFps; // keep remainder (smoother than =0)
+      spriteFrame = (spriteFrame + 1) % FRAMES;
+    }
 
     // Route line
     map.getSource("route").setData({
@@ -267,7 +263,7 @@ if (spriteTimer >= 1 / cadenceFps) {
       ]}
     });
 
-    // Follow camera (keep your previous feel)
+    // Follow camera
     map.jumpTo({
       center: [pos.lng, pos.lat],
       zoom: FOLLOW_ZOOM,
@@ -284,7 +280,7 @@ if (spriteTimer >= 1 / cadenceFps) {
     ctx.translate(Math.round(p.x), Math.round(p.y));
 
     if (facingRow === 1 && isWest){
-      ctx.scale(-1, 1); // mirror east row for west
+      ctx.scale(-1, 1);
     }
 
     ctx.drawImage(
@@ -301,10 +297,10 @@ if (spriteTimer >= 1 / cadenceFps) {
 
     ctx.restore();
 
-    // Finish -> kick off overview AND remove Santa immediately
+    // Finish -> overview + kill Santa immediately
     if (m >= total){
       finished = true;
-      ctx.clearRect(0,0,VIEW_W,VIEW_H); // <- this is the “Santa disappears” fix
+      ctx.clearRect(0,0,VIEW_W,VIEW_H);
       map.fitBounds(bounds, {
         padding: 120,
         pitch: 0,
