@@ -160,7 +160,12 @@ function run(pts,sprite,s){
       ]}
     });
 
-    map.jumpTo({center:[pos.lng,pos.lat]});
+    map.jumpTo({
+  center: [pos.lng, pos.lat],
+  zoom: +s.default_map_zoom || 16,
+  pitch: IS_RENDER ? 48 : 52,
+  bearing: 0
+});
 
     ctx.clearRect(0,0,VIEW_W,VIEW_H);
     const p=map.project([pos.lng,pos.lat]);
