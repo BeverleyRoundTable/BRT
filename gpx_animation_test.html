@@ -240,8 +240,23 @@ function run(pts, sprite, s){
     const isWest = (brg >= 225 && brg < 315);
 
     // Distance-based sprite stepping (removes fps mismatch feel)
-    const metersPerFrame = STRIDE_METERS / FRAMES;
-    const spriteFrame = Math.floor(m / metersPerFrame) % FRAMES;
+    // --- Cadence-controlled stride animation ---
+const STRIDE_METERS = 1.6;        // one full run cycle
+const MIN_FPS = 8;                // below this = ghosting
+const MAX_FPS = 12;               // above this = jitter
+
+const routeSpeedMps = total / DURATION_SEC; // meters per second
+let cadenceFps = routeSpeedMps / STRIDE_METERS * FRAMES;
+
+// Clamp cadence to sprite limits
+cadenceFps = Math.max(MIN_FPS, Math.min(MAX_FPS, cadenceFps));
+
+// Advance frame by time, not distance
+spriteTimer += 1/60;
+if (spriteTimer >= 1 / cadenceFps) {
+  spriteTimer = 0;
+  spriteFrame = (spriteFrame + 1) % FRAMES;
+}
 
     // Route line
     map.getSource("route").setData({
