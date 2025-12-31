@@ -81,10 +81,24 @@ const lerpAngle = (a,b,t)=> a + (((b-a+540)%360)-180)*t;
 /* ================= SPRITE ROWS ================= */
 function bearingToRowRaw(b){
   b = normalizeBearing(b);
-  if (b >= 315 || b < 45) return 0;
-  if (b >= 45 && b < 135) return 1;
-  if (b >= 225 && b < 315) return 1;
-  return 2;
+
+  // N
+  if (b >= 337.5 || b < 22.5) return 0;
+
+  // NE / NW
+  if (b >= 22.5 && b < 67.5) return 1;   // NE
+  if (b >= 292.5 && b < 337.5) return 1; // NW (mirror)
+
+  // E / W
+  if (b >= 67.5 && b < 112.5) return 2;  // E
+  if (b >= 247.5 && b < 292.5) return 2; // W (mirror)
+
+  // SE / SW
+  if (b >= 112.5 && b < 157.5) return 3; // SE (mirror)
+  if (b >= 202.5 && b < 247.5) return 3; // SW
+
+  // S
+  return 4;
 }
 
 const HYST = 12;
@@ -144,7 +158,9 @@ function run(pts, sprite, s){
   const BEARING_DAMP=0.18;
 
   const FRAME_W=sprite.width/FRAMES;
-  const FRAME_H=sprite.height/3;
+  const ROWS = 5;
+const FRAME_H = sprite.height / ROWS;
+
 
   const cum=[0];
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
