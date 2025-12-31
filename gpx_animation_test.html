@@ -82,7 +82,7 @@ function bearingToRow(b){
   const r=master.routes.find(x=>x.routeName?.toLowerCase()===ROUTE.toLowerCase());
   if(!r) throw new Error("Route not found");
 
-  ts=await fetch(r.gpxUrl)
+  const pts = await fetch(r.gpxUrl)
     .then(r=>r.text())
     .then(x=>[...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
       .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")})));
@@ -143,7 +143,10 @@ function run(pts,sprite,s){
     let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
     const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
     const a=pts[i-1],b=pts[i];
-    os={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
+    const pos = {
+  lat: a.lat + (b.lat - a.lat) * t,
+  lng: a.lng + (b.lng - a.lng) * t
+};
 
     const brg=normalizeBearing(bearing(a,b));
     const facingRow=bearingToRow(brg);
