@@ -197,11 +197,32 @@ const FRAME_H = sprite.height / ROWS;
 
     smoothedB=lerpAngle(smoothedB,bearing(a,b),BEARING_DAMP);
     facingRow=stableRow(facingRow,smoothedB);
-    const isWest=normalizeBearing(smoothedB)>=225&&normalizeBearing(smoothedB)<315;
+    const brg = normalizeBearing(smoothedB);
+let mirror = false;
 
-    let cadenceFps=((total/DURATION)/STRIDE_METERS)*FRAMES;
-    cadenceFps=Math.max(MIN_FPS,Math.min(MAX_FPS,cadenceFps));
-    if(facingRow===1) cadenceFps*=0.85;
+// Row 1: NE base → mirror for NW
+if (facingRow === 1) {
+  mirror = (brg >= 292.5 && brg < 337.5);
+}
+
+// Row 2: E base → mirror for W
+if (facingRow === 2) {
+  mirror = (brg >= 247.5 && brg < 292.5);
+}
+
+// Row 3: SW base → mirror for SE
+if (facingRow === 3) {
+  mirror = (brg >= 112.5 && brg < 157.5);
+}
+
+// Rows 0 and 4 never mirror
+
+    // cadence based on route speed, clamped
+    let cadenceFps = ((total / DURATION) / STRIDE_METERS) * FRAMES;
+    cadenceFps = Math.max(MIN_FPS, Math.min(MAX_FPS, cadenceFps));
+
+    // Optional: slow side-on slightly if you still see ankle jitter
+    if (facingRow === 2) cadenceFps *= 0.85;
 
     spriteTimer+=1/60;
     if(spriteTimer>=1/cadenceFps){spriteTimer-=1/cadenceFps;spriteFrame=(spriteFrame+1)%FRAMES;}
@@ -226,21 +247,22 @@ map.getSource("route").setData({
     const FOOT_ANCHOR_Y=0.85;
 
     ctx.save();
-    ctx.translate(Math.round(p.x),Math.round(p.y));
-    if(facingRow===1&&isWest) ctx.scale(-1,1);
+ctx.translate(Math.round(p.x), Math.round(p.y));
+if (mirror) ctx.scale(-1, 1);
 
-    ctx.drawImage(
-      sprite,
-      spriteFrame*FRAME_W,
-      facingRow*FRAME_H,
-      FRAME_W,
-      FRAME_H,
-      -SIZE/2,
-      -SIZE*FOOT_ANCHOR_Y,
-      SIZE,
-      SIZE
-    );
-    ctx.restore();
+ctx.drawImage(
+  sprite,
+  spriteFrame * FRAME_W,
+  facingRow * FRAME_H,
+  FRAME_W,
+  FRAME_H,
+  -SIZE / 2,
+  -SIZE * FOOT_ANCHOR_Y,
+  SIZE,
+  SIZE
+);
+
+ctx.restore();
 
     if(m>=total){
       finished=true;
