@@ -6,9 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" />
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
-#map{position:absolute;inset:0}
-#anim{position:absolute;inset:0;pointer-events:none}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
+  #map{position:absolute;inset:0}
+  #anim{position:absolute;inset:0;pointer-events:none}
 </style>
 </head>
 
@@ -18,42 +18,52 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
 
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 <script>
-const PARAMS=new URLSearchParams(location.search);
-const IS_RENDER=PARAMS.has("render");
-const API=PARAMS.get("api");
-const ROUTE=PARAMS.get("route");
-window.__GPX_DONE__=false;
+const PARAMS = new URLSearchParams(location.search);
+const IS_RENDER = PARAMS.has("render");
+const API = PARAMS.get("api");
+const ROUTE = PARAMS.get("route");
+window.__GPX_DONE__ = false;
 
-if(!API) throw new Error("Missing ?api=");
-if(!ROUTE) throw new Error("Missing ?route=");
+if (!API) throw new Error("Missing ?api=");
+if (!ROUTE) throw new Error("Missing ?route=");
 
-const canvas=document.getElementById("anim");
-const ctx=canvas.getContext("2d");
-let map=null,VIEW_W=0,VIEW_H=0;
+const canvas = document.getElementById("anim");
+const ctx = canvas.getContext("2d");
+let map = null, VIEW_W = 0, VIEW_H = 0;
 
 function resize(){
   if(!map) return;
-  const c=map.getCanvas();
-  const dpr=devicePixelRatio||1;
-  VIEW_W=c.clientWidth; VIEW_H=c.clientHeight;
-  canvas.width=VIEW_W*dpr; canvas.height=VIEW_H*dpr;
-  canvas.style.width=VIEW_W+"px"; canvas.style.height=VIEW_H+"px";
+  const c = map.getCanvas();
+  const dpr = devicePixelRatio || 1;
+  VIEW_W = c.clientWidth;
+  VIEW_H = c.clientHeight;
+  canvas.width  = VIEW_W * dpr;
+  canvas.height = VIEW_H * dpr;
+  canvas.style.width  = VIEW_W + "px";
+  canvas.style.height = VIEW_H + "px";
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 
-const MAP_STYLE={
-  version:8,
-  sources:{raster:{type:"raster",tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],tileSize:256}},
-  layers:[{id:"base",type:"raster",source:"raster"}]
+const MAP_STYLE = {
+  version: 8,
+  sources: {
+    raster: {
+      type: "raster",
+      tiles: ["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],
+      tileSize: 256
+    }
+  },
+  layers: [{ id: "base", type: "raster", source: "raster" }]
 };
 
-const dist=(a,b)=>{
+/* ================= MATH ================= */
+const dist = (a,b)=>{
   const R=6371000;
   const dLat=(b.lat-a.lat)*Math.PI/180;
   const dLng=(b.lng-a.lng)*Math.PI/180;
   const s=Math.sin(dLat/2)**2+
-    Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*
-    Math.sin(dLng/2)**2;
+          Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*
+          Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(s));
 };
 
@@ -65,50 +75,98 @@ const bearing=(a,b)=>{
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 };
 
-const normalizeBearing=b=>(b%360+360)%360;
+const normalizeBearing = b => (b%360+360)%360;
+const lerpAngle = (a,b,t)=> a + (((b-a+540)%360)-180)*t;
 
-/* 0=N, 1=E/W(mirror), 2=S */
-function bearingToRow(b){
-  b=normalizeBearing(b);
-  if(b>=315||b<45) return 0;
-  if(b>=45&&b<135) return 1;
-  if(b>=225&&b<315) return 1;
-  return 2;
+/* ================= SPRITE ROWS (3 rows) =================
+   0 = North
+   1 = East (mirrored for West)
+   2 = South
+*/
+function bearingToRowRaw(b){
+  b = normalizeBearing(b);
+  if (b >= 315 || b < 45) return 0; // North
+  if (b >= 45 && b < 135) return 1; // East
+  if (b >= 225 && b < 315) return 1; // West (mirror)
+  return 2; // South
+}
+
+/* Hysteresis to stop N<->E/W or S<->E/W boundary flicker */
+const HYST = 12; // degrees
+function stableRow(prevRow, b){
+  b = normalizeBearing(b);
+
+  // If we are currently E/W, only switch to N or S when "deep" into that sector
+  if (prevRow === 1){
+    if (b >= (315 + HYST) || b < (45 - HYST)) return 0;            // North
+    if (b >= (135 + HYST) && b < (225 - HYST)) return 2;           // South
+    return 1;                                                       // stay E/W
+  }
+
+  // If we are currently North, don't drop into E/W until past 45+HYST or before 315-HYST
+  if (prevRow === 0){
+    if (b >= (45 + HYST) && b < (315 - HYST)){
+      // between 45+HYST and 315-HYST could be E/W or S; pick by raw mapping
+      return bearingToRowRaw(b);
+    }
+    return 0;
+  }
+
+  // If we are currently South, don't rise into E/W until outside 135-HYST..225+HYST band
+  if (prevRow === 2){
+    if (b < (135 - HYST) || b >= (225 + HYST)){
+      return bearingToRowRaw(b);
+    }
+    return 2;
+  }
+
+  return bearingToRowRaw(b);
 }
 
 (async()=>{
-  const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
-  const s=master.settings||{};
-  const r=master.routes.find(x=>x.routeName?.toLowerCase()===ROUTE.toLowerCase());
-  if(!r) throw new Error("Route not found");
+  const master = await fetch(API,{cache:"no-store"}).then(r=>r.json());
+  const s = master.settings || {};
+  const r = master.routes.find(x => x.routeName?.toLowerCase() === ROUTE.toLowerCase());
+  if(!r) throw new Error("Route not found: " + ROUTE);
 
   const pts = await fetch(r.gpxUrl)
     .then(r=>r.text())
-    .then(x=>[...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
-      .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")})));
+    .then(x => [...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
+      .map(p => ({ lat:+p.getAttribute("lat"), lng:+p.getAttribute("lon") })));
 
-  const sprite=await new Promise(res=>{
-    const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
+  if (!pts.length) throw new Error("GPX has no track points");
+
+  const sprite = await new Promise(res=>{
+    const i=new Image();
+    i.onload=()=>res(i);
+    i.src = s.travelboast_sprite;
   });
 
-  run(pts,sprite,s);
+  run(pts, sprite, s);
 })();
 
-function run(pts,sprite,s){
-  map=new maplibregl.Map({
+function run(pts, sprite, s){
+  map = new maplibregl.Map({
     container:"map",
-    style:MAP_STYLE,
-    center:[pts[0].lng,pts[0].lat],
-    zoom:+s.default_map_zoom||16,
-    pitch:IS_RENDER?48:52
+    style: MAP_STYLE,
+    center:[pts[0].lng, pts[0].lat],
+    zoom:+s.default_map_zoom || 16,
+    bearing:0,
+    pitch: IS_RENDER ? 48 : 52
   });
 
-  const FRAMES=+s.travelboast_sprite_frames||5;
-  const BASE_SIZE=+s.travelboast_sprite_size||72;
-  const STRIDE_METERS=1.6;
+  const FOLLOW_ZOOM  = IS_RENDER ? 18.9 : 18.4;
+  const FOLLOW_PITCH = IS_RENDER ? 48 : 52;
 
-  const FRAME_W=sprite.width/FRAMES;
-  const FRAME_H=sprite.height/3;
+  const FRAMES     = +s.travelboast_sprite_frames || 5;
+  const BASE_SIZE  = +s.travelboast_sprite_size || 72;
+  const STRIDE_METERS = 1.6;          // "one cycle" distance feel
+  const BEARING_DAMP = 0.18;          // smoothing for direction
+  const OVERVIEW_PAN_MS  = 3500;
+  const OVERVIEW_HOLD_MS = 5000;
+
+  const FRAME_W = sprite.width / FRAMES;
+  const FRAME_H = sprite.height / 3;
 
   const cum=[0];
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
@@ -117,95 +175,129 @@ function run(pts,sprite,s){
   const bounds=new maplibregl.LngLatBounds();
   pts.forEach(p=>bounds.extend([p.lng,p.lat]));
 
-  let simTime=0,finished=false,overviewAt=null;
+  let simTime=0;
+  let finished=false, overviewAt=null;
+
+  // Smoothed bearing + stable row state
+  let smoothedB = bearing(pts[0], pts[1] || pts[0]);
+  let facingRow = bearingToRowRaw(smoothedB);
 
   map.on("load",()=>{
-    resize(); map.on("resize",resize);
+    resize(); map.on("resize", resize);
 
-    map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
-    map.addLayer({id:"route",type:"line",source:"route",paint:{
-      "line-color":s.primary_color||"#d31c1c",
-      "line-width":6
-    }});
+    map.addSource("route",{
+      type:"geojson",
+      data:{ type:"Feature", geometry:{ type:"LineString", coordinates:[] } }
+    });
+
+    map.addLayer({
+      id:"route",
+      type:"line",
+      source:"route",
+      paint:{
+        "line-color": s.primary_color || "#d31c1c",
+        "line-width": 6
+      }
+    });
 
     requestAnimationFrame(step);
   });
 
   function step(){
-    if(finished){
-      if(performance.now()-overviewAt>5000){window.__GPX_DONE__=true;return;}
-      requestAnimationFrame(step); return;
+    // During overview: ALWAYS clear so Santa disappears while map pans
+    if (finished){
+      ctx.clearRect(0,0,VIEW_W,VIEW_H);
+      if (performance.now() - overviewAt > OVERVIEW_PAN_MS + OVERVIEW_HOLD_MS){
+        window.__GPX_DONE__ = true;
+        return;
+      }
+      requestAnimationFrame(step);
+      return;
     }
 
-    simTime+=1/60;
-    const m=Math.min(total,(simTime/(+s.travelboast_speed||60))*total);
+    simTime += 1/60;
+    const DURATION_SEC = Math.max(1, +s.travelboast_speed || 60);
+    const m = Math.min(total, (simTime / DURATION_SEC) * total);
 
-    let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
-    const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
-    const a=pts[i-1],b=pts[i];
+    let i = cum.findIndex(v=>v>=m); i=Math.max(1,i);
+    const segLen = (cum[i]-cum[i-1] || 1);
+    const t = (m-cum[i-1]) / segLen;
+    const a=pts[i-1], b=pts[i];
+
     const pos = {
-  lat: a.lat + (b.lat - a.lat) * t,
-  lng: a.lng + (b.lng - a.lng) * t
-};
+      lat: a.lat + (b.lat - a.lat) * t,
+      lng: a.lng + (b.lng - a.lng) * t
+    };
 
-    const brg=normalizeBearing(bearing(a,b));
-    const facingRow=bearingToRow(brg);
-    const isWest=brg>=225&&brg<315;
+    // Smoothed bearing + hysteresis row locking
+    const targetB = bearing(a,b);
+    smoothedB = lerpAngle(smoothedB, targetB, BEARING_DAMP);
 
-    const metersPerFrame=STRIDE_METERS/FRAMES;
-    const spriteFrame=Math.floor(m/metersPerFrame)%FRAMES;
+    facingRow = stableRow(facingRow, smoothedB);
 
+    // West mirror only when in the West sector (225..315)
+    const brg = normalizeBearing(smoothedB);
+    const isWest = (brg >= 225 && brg < 315);
+
+    // Distance-based sprite stepping (removes fps mismatch feel)
+    const metersPerFrame = STRIDE_METERS / FRAMES;
+    const spriteFrame = Math.floor(m / metersPerFrame) % FRAMES;
+
+    // Route line
     map.getSource("route").setData({
       type:"Feature",
-      geometry:{type:"LineString",coordinates:[
+      geometry:{ type:"LineString", coordinates:[
         ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
         [pos.lng,pos.lat]
       ]}
     });
 
+    // Follow camera (keep your previous feel)
     map.jumpTo({
-  center: [pos.lng, pos.lat],
-  zoom: +s.default_map_zoom || 16,
-  pitch: IS_RENDER ? 48 : 52,
-  bearing: 0
-});
+      center: [pos.lng, pos.lat],
+      zoom: FOLLOW_ZOOM,
+      pitch: FOLLOW_PITCH,
+      bearing: 0
+    });
 
+    // Draw sprite
     ctx.clearRect(0,0,VIEW_W,VIEW_H);
+    const p = map.project([pos.lng,pos.lat]);
+    const SIZE = BASE_SIZE * (0.9 + Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
-// ❌ Do NOT draw Santa once overview has started
-if (finished) {
-  requestAnimationFrame(step);
-  return;
-}
+    ctx.save();
+    ctx.translate(Math.round(p.x), Math.round(p.y));
 
-const p = map.project([pos.lng,pos.lat]);
-const SIZE = BASE_SIZE;
+    if (facingRow === 1 && isWest){
+      ctx.scale(-1, 1); // mirror east row for west
+    }
 
-ctx.save();
-ctx.translate(Math.round(p.x), Math.round(p.y));
+    ctx.drawImage(
+      sprite,
+      spriteFrame * FRAME_W,
+      facingRow * FRAME_H,
+      FRAME_W,
+      FRAME_H,
+      -SIZE/2,
+      -SIZE/2,
+      SIZE,
+      SIZE
+    );
 
-if (facingRow === 1 && isWest) {
-  ctx.scale(-1, 1);
-}
+    ctx.restore();
 
-ctx.drawImage(
-  sprite,
-  spriteFrame * FRAME_W,
-  facingRow * FRAME_H,
-  FRAME_W,
-  FRAME_H,
-  -SIZE / 2,
-  -SIZE / 2,
-  SIZE,
-  SIZE
-);
-
-ctx.restore();
-
-    if(m>=total){
-      finished=true;
-      map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14});
-      overviewAt=performance.now();
+    // Finish -> kick off overview AND remove Santa immediately
+    if (m >= total){
+      finished = true;
+      ctx.clearRect(0,0,VIEW_W,VIEW_H); // <- this is the “Santa disappears” fix
+      map.fitBounds(bounds, {
+        padding: 120,
+        pitch: 0,
+        bearing: 0,
+        duration: OVERVIEW_PAN_MS,
+        maxZoom: 14
+      });
+      overviewAt = performance.now();
     }
 
     requestAnimationFrame(step);
