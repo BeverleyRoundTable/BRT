@@ -78,44 +78,31 @@ const bearing=(a,b)=>{
 const normalizeBearing = b => (b%360+360)%360;
 const lerpAngle = (a,b,t)=> a + (((b-a+540)%360)-180)*t;
 
-/* ================= SPRITE ROWS (3 rows) =================
-   0 = North
-   1 = East (mirrored for West)
-   2 = South
-*/
+/* ================= SPRITE ROWS ================= */
 function bearingToRowRaw(b){
   b = normalizeBearing(b);
-  if (b >= 315 || b < 45) return 0;      // North
-  if (b >= 45 && b < 135) return 1;      // East
-  if (b >= 225 && b < 315) return 1;     // West (mirror)
-  return 2;                              // South
+  if (b >= 315 || b < 45) return 0;
+  if (b >= 45 && b < 135) return 1;
+  if (b >= 225 && b < 315) return 1;
+  return 2;
 }
 
-/* Hysteresis to stop boundary flicker */
-const HYST = 12; // degrees
+const HYST = 12;
 function stableRow(prevRow, b){
   b = normalizeBearing(b);
-
   if (prevRow === 1){
     if (b >= (315 + HYST) || b < (45 - HYST)) return 0;
     if (b >= (135 + HYST) && b < (225 - HYST)) return 2;
     return 1;
   }
-
   if (prevRow === 0){
-    if (b >= (45 + HYST) && b < (315 - HYST)){
-      return bearingToRowRaw(b);
-    }
+    if (b >= (45 + HYST) && b < (315 - HYST)) return bearingToRowRaw(b);
     return 0;
   }
-
   if (prevRow === 2){
-    if (b < (135 - HYST) || b >= (225 + HYST)){
-      return bearingToRowRaw(b);
-    }
+    if (b < (135 - HYST) || b >= (225 + HYST)) return bearingToRowRaw(b);
     return 2;
   }
-
   return bearingToRowRaw(b);
 }
 
@@ -123,19 +110,15 @@ function stableRow(prevRow, b){
   const master = await fetch(API,{cache:"no-store"}).then(r=>r.json());
   const s = master.settings || {};
   const r = master.routes.find(x => x.routeName?.toLowerCase() === ROUTE.toLowerCase());
-  if(!r) throw new Error("Route not found: " + ROUTE);
+  if(!r) throw new Error("Route not found");
 
   const pts = await fetch(r.gpxUrl)
     .then(r=>r.text())
     .then(x => [...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
       .map(p => ({ lat:+p.getAttribute("lat"), lng:+p.getAttribute("lon") })));
 
-  if (!pts.length) throw new Error("GPX has no track points");
-
   const sprite = await new Promise(res=>{
-    const i=new Image();
-    i.onload=()=>res(i);
-    i.src = s.travelboast_sprite;
+    const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
   });
 
   run(pts, sprite, s);
@@ -146,183 +129,96 @@ function run(pts, sprite, s){
     container:"map",
     style: MAP_STYLE,
     center:[pts[0].lng, pts[0].lat],
-    zoom:+s.default_map_zoom || 16,
-    bearing:0,
-    pitch: IS_RENDER ? 48 : 52
+    zoom:+s.default_map_zoom||16,
+    pitch: IS_RENDER?48:52
   });
 
   const FOLLOW_ZOOM  = IS_RENDER ? 18.3 : 17.9;
   const FOLLOW_PITCH = IS_RENDER ? 48 : 52;
 
-  const FRAMES     = +s.travelboast_sprite_frames || 5;
-  const BASE_SIZE  = +s.travelboast_sprite_size || 72;
+  const FRAMES = +s.travelboast_sprite_frames||5;
+  const BASE_SIZE = +s.travelboast_sprite_size||72;
 
-  // cadence knobs
-  const STRIDE_METERS = 1.6;     // distance per full cycle "feel"
-  const MIN_FPS = 8;             // avoid ghosting
-  const MAX_FPS = 12;            // avoid jitter
+  const STRIDE_METERS=1.6;
+  const MIN_FPS=8, MAX_FPS=12;
+  const BEARING_DAMP=0.18;
 
-  const BEARING_DAMP = 0.18;
-  const OVERVIEW_PAN_MS  = 3500;
-  const OVERVIEW_HOLD_MS = 5000;
-
-  const FRAME_W = sprite.width / FRAMES;
-  const FRAME_H = sprite.height / 3;
+  const FRAME_W=sprite.width/FRAMES;
+  const FRAME_H=sprite.height/3;
 
   const cum=[0];
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
   const total=cum.at(-1);
 
-  const bounds=new maplibregl.LngLatBounds();
-  pts.forEach(p=>bounds.extend([p.lng,p.lat]));
+  let simTime=0, finished=false, overviewAt=null;
+  let spriteTimer=0, spriteFrame=0;
 
-  let simTime=0;
-  let finished=false, overviewAt=null;
-
-  // ✅ these were missing (your code was throwing, so Santa never drew)
-  let spriteTimer = 0;
-  let spriteFrame = 0;
-
-  // bearing + row state
-  let smoothedB = bearing(pts[0], pts[1] || pts[0]);
-  let facingRow = bearingToRowRaw(smoothedB);
+  let smoothedB=bearing(pts[0],pts[1]||pts[0]);
+  let facingRow=bearingToRowRaw(smoothedB);
 
   map.on("load",()=>{
-    resize(); map.on("resize", resize);
-
-    map.addSource("route",{
-      type:"geojson",
-      data:{ type:"Feature", geometry:{ type:"LineString", coordinates:[] } }
-    });
-
-    map.addLayer({
-      id:"route",
-      type:"line",
-      source:"route",
-      paint:{
-        "line-color": s.primary_color || "#d31c1c",
-        "line-width": 6
-      }
-    });
-
+    resize(); map.on("resize",resize);
+    map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
+    map.addLayer({id:"route",type:"line",source:"route",paint:{"line-color":s.primary_color||"#d31c1c","line-width":6}});
     requestAnimationFrame(step);
   });
 
   function step(){
-    // During overview: clear every frame so Santa stays gone
-    if (finished){
+    if(finished){
       ctx.clearRect(0,0,VIEW_W,VIEW_H);
-      if (performance.now() - overviewAt > OVERVIEW_PAN_MS + OVERVIEW_HOLD_MS){
-        window.__GPX_DONE__ = true;
-        return;
-      }
-      requestAnimationFrame(step);
-      return;
+      if(performance.now()-overviewAt>8500){window.__GPX_DONE__=true;return;}
+      requestAnimationFrame(step); return;
     }
 
-    simTime += 1/60;
-    const DURATION_SEC = Math.max(1, +s.travelboast_speed || 60);
-    const m = Math.min(total, (simTime / DURATION_SEC) * total);
+    simTime+=1/60;
+    const DURATION=Math.max(1,+s.travelboast_speed||60);
+    const m=Math.min(total,(simTime/DURATION)*total);
 
-    let i = cum.findIndex(v=>v>=m); i=Math.max(1,i);
-    const segLen = (cum[i]-cum[i-1] || 1);
-    const t = (m-cum[i-1]) / segLen;
-    const a=pts[i-1], b=pts[i];
+    let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
+    const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
+    const a=pts[i-1],b=pts[i];
+    const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 
-    const pos = {
-      lat: a.lat + (b.lat - a.lat) * t,
-      lng: a.lng + (b.lng - a.lng) * t
-    };
+    smoothedB=lerpAngle(smoothedB,bearing(a,b),BEARING_DAMP);
+    facingRow=stableRow(facingRow,smoothedB);
+    const isWest=normalizeBearing(smoothedB)>=225&&normalizeBearing(smoothedB)<315;
 
-    // Smooth bearing + row hysteresis
-    const targetB = bearing(a,b);
-    smoothedB = lerpAngle(smoothedB, targetB, BEARING_DAMP);
-    facingRow = stableRow(facingRow, smoothedB);
+    let cadenceFps=((total/DURATION)/STRIDE_METERS)*FRAMES;
+    cadenceFps=Math.max(MIN_FPS,Math.min(MAX_FPS,cadenceFps));
+    if(facingRow===1) cadenceFps*=0.85;
 
-    // mirror only for west sector
-    const brg = normalizeBearing(smoothedB);
-    const isWest = (brg >= 225 && brg < 315);
+    spriteTimer+=1/60;
+    if(spriteTimer>=1/cadenceFps){spriteTimer-=1/cadenceFps;spriteFrame=(spriteFrame+1)%FRAMES;}
 
-    // cadence based on route speed, clamped
-    const routeSpeedMps = total / DURATION_SEC;                 // meters/sec
-    let cadenceFps = (routeSpeedMps / STRIDE_METERS) * FRAMES;  // frames/sec
-    cadenceFps = Math.max(MIN_FPS, Math.min(MAX_FPS, cadenceFps));
-    
-// Slow horizontal (E/W) runs slightly to avoid ankle jitter
-const rowCadenceBias = (facingRow === 1) ? 0.85 : 1.0;
-cadenceFps *= rowCadenceBias;
+    map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,pitch:FOLLOW_PITCH,bearing:0});
 
-    spriteTimer += 1/60;
-    if (spriteTimer >= 1 / cadenceFps) {
-      spriteTimer -= 1 / cadenceFps; // keep remainder (smoother than =0)
-      spriteFrame = (spriteFrame + 1) % FRAMES;
-    }
-
-    // Route line
-    map.getSource("route").setData({
-      type:"Feature",
-      geometry:{ type:"LineString", coordinates:[
-        ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
-        [pos.lng,pos.lat]
-      ]}
-    });
-
-    // Follow camera
-    map.jumpTo({
-      center: [pos.lng, pos.lat],
-      zoom: FOLLOW_ZOOM,
-      pitch: FOLLOW_PITCH,
-      bearing: 0
-    });
-
-    // Draw sprite
     ctx.clearRect(0,0,VIEW_W,VIEW_H);
-    const p = map.project([pos.lng,pos.lat]);
-    const SIZE = BASE_SIZE * (0.9 + Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
+    const p=map.project([pos.lng,pos.lat]);
+    const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
+    const FOOT_ANCHOR_Y=0.85;
 
     ctx.save();
-    ctx.translate(Math.round(p.x), Math.round(p.y));
+    ctx.translate(Math.round(p.x),Math.round(p.y));
+    if(facingRow===1&&isWest) ctx.scale(-1,1);
 
-    if (facingRow === 1 && isWest){
-      ctx.scale(-1, 1);
-    }
+    ctx.drawImage(
+      sprite,
+      spriteFrame*FRAME_W,
+      facingRow*FRAME_H,
+      FRAME_W,
+      FRAME_H,
+      -SIZE/2,
+      -SIZE*FOOT_ANCHOR_Y,
+      SIZE,
+      SIZE
+    );
+    ctx.restore();
 
-    // Percentage of sprite height where feet sit (tuned for your art)
-const FOOT_ANCHOR_Y = 0.85; // 85% down the sprite
-
-ctx.save();
-ctx.translate(Math.round(p.x), Math.round(p.y));
-
-if (facingRow === 1 && isWest) {
-  ctx.scale(-1, 1);
-}
-
-ctx.drawImage(
-  sprite,
-  spriteFrame * FRAME_W,
-  facingRow * FRAME_H,
-  FRAME_W,
-  FRAME_H,
-  -SIZE / 2,                 // X centred
-  -SIZE * FOOT_ANCHOR_Y,     // Y shifted so feet hit the route
-  SIZE,
-  SIZE
-);
-
-ctx.restore();
-
-    // Finish -> overview + kill Santa immediately
-    if (m >= total){
-      finished = true;
+    if(m>=total){
+      finished=true;
       ctx.clearRect(0,0,VIEW_W,VIEW_H);
-      map.fitBounds(bounds, {
-        padding: 120,
-        pitch: 0,
-        bearing: 0,
-        duration: OVERVIEW_PAN_MS,
-        maxZoom: 14
-      });
-      overviewAt = performance.now();
+      map.fitBounds(new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),{padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14});
+      overviewAt=performance.now();
     }
 
     requestAnimationFrame(step);
