@@ -18,51 +18,42 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
 
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 <script>
-const PARAMS = new URLSearchParams(location.search);
-const IS_RENDER = PARAMS.has("render");
-const API = PARAMS.get("api");
-const ROUTE = PARAMS.get("route");
-window.__GPX_DONE__ = false;
+const PARAMS=new URLSearchParams(location.search);
+const IS_RENDER=PARAMS.has("render");
+const API=PARAMS.get("api");
+const ROUTE=PARAMS.get("route");
+window.__GPX_DONE__=false;
 
-if (!API) throw new Error("Missing ?api=");
-if (!ROUTE) throw new Error("Missing ?route=");
+if(!API) throw new Error("Missing ?api=");
+if(!ROUTE) throw new Error("Missing ?route=");
 
-const canvas = document.getElementById("anim");
-const ctx = canvas.getContext("2d");
-let map = null, VIEW_W = 0, VIEW_H = 0;
+const canvas=document.getElementById("anim");
+const ctx=canvas.getContext("2d");
+let map=null,VIEW_W=0,VIEW_H=0;
 
 function resize(){
   if(!map) return;
-  const c = map.getCanvas();
-  const dpr = devicePixelRatio || 1;
-  VIEW_W = c.clientWidth;
-  VIEW_H = c.clientHeight;
-  canvas.width = VIEW_W * dpr;
-  canvas.height = VIEW_H * dpr;
-  canvas.style.width = VIEW_W + "px";
-  canvas.style.height = VIEW_H + "px";
+  const c=map.getCanvas();
+  const dpr=devicePixelRatio||1;
+  VIEW_W=c.clientWidth; VIEW_H=c.clientHeight;
+  canvas.width=VIEW_W*dpr; canvas.height=VIEW_H*dpr;
+  canvas.style.width=VIEW_W+"px"; canvas.style.height=VIEW_H+"px";
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 
-const MAP_STYLE = {
+const MAP_STYLE={
   version:8,
-  sources:{
-    raster:{
-      type:"raster",
-      tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],
-      tileSize:256
-    }
-  },
+  sources:{raster:{type:"raster",tiles:["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],tileSize:256}},
   layers:[{id:"base",type:"raster",source:"raster"}]
 };
 
-const dist = (a,b)=>{
+const dist=(a,b)=>{
   const R=6371000;
   const dLat=(b.lat-a.lat)*Math.PI/180;
   const dLng=(b.lng-a.lng)*Math.PI/180;
   const s=Math.sin(dLat/2)**2+
-          Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*
-          Math.sin(dLng/2)**2;
+    Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*
+    Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(s));
 };
 
@@ -76,32 +67,27 @@ const bearing=(a,b)=>{
 
 const normalizeBearing=b=>(b%360+360)%360;
 
-/* 0 = North, 1 = East (mirror for West), 2 = South */
+/* 0=N, 1=E/W(mirror), 2=S */
 function bearingToRow(b){
-  b = normalizeBearing(b);
-  if (b >= 315 || b < 45) return 0;
-  if (b >= 45 && b < 135) return 1;
-  if (b >= 225 && b < 315) return 1;
+  b=normalizeBearing(b);
+  if(b>=315||b<45) return 0;
+  if(b>=45&&b<135) return 1;
+  if(b>=225&&b<315) return 1;
   return 2;
 }
 
 (async()=>{
-  const master = await fetch(API,{cache:"no-store"}).then(r=>r.json());
-  const s = master.settings || {};
+  const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
+  const s=master.settings||{};
+  const r=master.routes.find(x=>x.routeName?.toLowerCase()===ROUTE.toLowerCase());
+  if(!r) throw new Error("Route not found");
 
-  const r = master.routes.find(x =>
-    x.routeName?.toLowerCase() === ROUTE.toLowerCase()
-  );
-  if (!r) throw new Error("Route not found");
-
-  const pts = await fetch(r.gpxUrl)
+  const pts=await fetch(r.gpxUrl)
     .then(r=>r.text())
-    .then(x =>
-      [...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
-      .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")}))
-    );
+    .then(x=>[...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
+      .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")})));
 
-  const sprite = await new Promise(res=>{
+  const sprite=await new Promise(res=>{
     const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
   });
 
@@ -128,10 +114,20 @@ function run(pts,sprite,s){
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
   const total=cum.at(-1);
 
+  const bounds=new maplibregl.LngLatBounds();
+  pts.forEach(p=>bounds.extend([p.lng,p.lat]));
+
   let simTime=0,finished=false,overviewAt=null;
 
   map.on("load",()=>{
     resize(); map.on("resize",resize);
+
+    map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
+    map.addLayer({id:"route",type:"line",source:"route",paint:{
+      "line-color":s.primary_color||"#d31c1c",
+      "line-width":6
+    }});
+
     requestAnimationFrame(step);
   });
 
@@ -156,19 +152,31 @@ function run(pts,sprite,s){
     const metersPerFrame=STRIDE_METERS/FRAMES;
     const spriteFrame=Math.floor(m/metersPerFrame)%FRAMES;
 
+    map.getSource("route").setData({
+      type:"Feature",
+      geometry:{type:"LineString",coordinates:[
+        ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
+        [pos.lng,pos.lat]
+      ]}
+    });
+
     map.jumpTo({center:[pos.lng,pos.lat]});
 
     ctx.clearRect(0,0,VIEW_W,VIEW_H);
     const p=map.project([pos.lng,pos.lat]);
-    const SIZE=BASE_SIZE;
 
     ctx.save();
     ctx.translate(Math.round(p.x),Math.round(p.y));
     if(facingRow===1&&isWest) ctx.scale(-1,1);
-    ctx.drawImage(sprite,spriteFrame*FRAME_W,facingRow*FRAME_H,FRAME_W,FRAME_H,-SIZE/2,-SIZE/2,SIZE,SIZE);
+    ctx.drawImage(sprite,spriteFrame*FRAME_W,facingRow*FRAME_H,FRAME_W,FRAME_H,-BASE_SIZE/2,-BASE_SIZE/2,BASE_SIZE,BASE_SIZE);
     ctx.restore();
 
-    if(m>=total){finished=true; overviewAt=performance.now();}
+    if(m>=total){
+      finished=true;
+      map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14});
+      overviewAt=performance.now();
+    }
+
     requestAnimationFrame(step);
   }
 }
