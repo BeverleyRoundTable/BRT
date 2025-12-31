@@ -82,7 +82,7 @@ function bearingToRow(b){
   const r=master.routes.find(x=>x.routeName?.toLowerCase()===ROUTE.toLowerCase());
   if(!r) throw new Error("Route not found");
 
-  const pts=await fetch(r.gpxUrl)
+  ts=await fetch(r.gpxUrl)
     .then(r=>r.text())
     .then(x=>[...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
       .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")})));
@@ -143,7 +143,7 @@ function run(pts,sprite,s){
     let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
     const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
     const a=pts[i-1],b=pts[i];
-    const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
+    os={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 
     const brg=normalizeBearing(bearing(a,b));
     const facingRow=bearingToRow(brg);
@@ -176,22 +176,28 @@ if (finished) {
 }
 
 const p = map.project([pos.lng,pos.lat]);
-    
 const SIZE = BASE_SIZE;
+
+ctx.save();
+ctx.translate(Math.round(p.x), Math.round(p.y));
+
+if (facingRow === 1 && isWest) {
+  ctx.scale(-1, 1);
+}
 
 ctx.drawImage(
   sprite,
-  spriteFrame*FRAME_W,
-  facingRow*FRAME_H,
+  spriteFrame * FRAME_W,
+  facingRow * FRAME_H,
   FRAME_W,
   FRAME_H,
-  -SIZE/2,
-  -SIZE/2,
+  -SIZE / 2,
+  -SIZE / 2,
   SIZE,
   SIZE
 );
 
-    ctx.restore();
+ctx.restore();
 
     if(m>=total){
       finished=true;
