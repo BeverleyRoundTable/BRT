@@ -247,6 +247,10 @@ function run(pts, sprite, s){
     const routeSpeedMps = total / DURATION_SEC;                 // meters/sec
     let cadenceFps = (routeSpeedMps / STRIDE_METERS) * FRAMES;  // frames/sec
     cadenceFps = Math.max(MIN_FPS, Math.min(MAX_FPS, cadenceFps));
+    
+// Slow horizontal (E/W) runs slightly to avoid ankle jitter
+const rowCadenceBias = (facingRow === 1) ? 0.85 : 1.0;
+cadenceFps *= rowCadenceBias;
 
     spriteTimer += 1/60;
     if (spriteTimer >= 1 / cadenceFps) {
