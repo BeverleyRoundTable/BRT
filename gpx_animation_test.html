@@ -199,6 +199,14 @@ const FRAME_H = sprite.height / ROWS;
     resize(); map.on("resize",resize);
     map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
     map.addLayer({id:"route",type:"line",source:"route",paint:{"line-color":s.primary_color||"#d31c1c","line-width":6}});
+    // 🔎 DEBUG: mark ready once map loads (safety latch)
+setTimeout(() => {
+  if (!window.__GPX_READY__) {
+    console.warn("⚠️ Forcing GPX_READY after map load (sprite may be missing)");
+    window.__GPX_READY__ = true;
+  }
+}, 2000);
+
     requestAnimationFrame(step);
   });
 
