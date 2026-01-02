@@ -154,12 +154,16 @@ function stableRow(prevRow, bearingDeg) {
     .then(x => [...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
       .map(p => ({ lat:+p.getAttribute("lat"), lng:+p.getAttribute("lon") })));
 
-  const sprite = await new Promise(res=>{
-    const i=new Image(); i.onload=()=>res(i); i.src=s.travelboast_sprite;
-  });
-
-  run(pts, sprite, s);
-})();
+  const sprite = await new Promise((res, rej) => {
+  const i = new Image();
+  i.crossOrigin = "anonymous";
+  i.onload = () => res(i);
+  i.onerror = () => {
+    console.error("❌ Sprite failed to load:", s.travelboast_sprite);
+    res(null); // allow render to continue
+  };
+  i.src = s.travelboast_sprite;
+});
 
 function run(pts, sprite, s){
   map = new maplibregl.Map({
