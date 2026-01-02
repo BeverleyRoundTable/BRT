@@ -68,7 +68,14 @@ await page.setViewport({ width, height, deviceScaleFactor: 1 });
 await page.goto(url, { waitUntil: "domcontentloaded" });
 
 // Let MapLibre + GPX initialise
-await sleep(3000);
+console.log("⏳ Waiting for GPX to become ready...");
+
+await page.waitForFunction(
+  () => window.__GPX_READY__ === true,
+  { timeout: 30000 }
+);
+
+console.log("✅ GPX ready — starting frame capture");
 
 // 📁 Prepare frames directory
 const framesDir = "frames";
