@@ -16,6 +16,10 @@
 <div id="map"></div>
 <canvas id="anim"></canvas>
 
+<script>
+  window.__GPX_READY__ = false;
+</script>
+
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 <script>
 const PARAMS = new URLSearchParams(location.search);
@@ -282,6 +286,10 @@ ctx.drawImage(
 );
 
 ctx.restore();
+    
+if (!window.__GPX_READY__) {
+  window.__GPX_READY__ = true;
+}
 
     if(m>=total){
       finished=true;
