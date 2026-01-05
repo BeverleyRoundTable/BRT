@@ -61,6 +61,14 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 await page.setViewport({ width, height, deviceScaleFactor: 1 });
 
+page.on("pageerror", err => {
+  console.error("❌ PAGE ERROR:", err.message);
+});
+
+page.on("console", msg => {
+  console.log("📄 PAGE LOG:", msg.text());
+});
+
 /**
  * MapLibre never truly goes "idle"
  * domcontentloaded + settle time is safer
