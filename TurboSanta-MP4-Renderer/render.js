@@ -72,7 +72,7 @@ console.log("⏳ Waiting for GPX to become ready...");
 
 await page.waitForFunction(
   () => window.__GPX_READY__ === true,
-  { timeout: 30000 }
+  { timeout: 15000, polling: 250 }
 );
 
 console.log("✅ GPX ready — starting frame capture");
