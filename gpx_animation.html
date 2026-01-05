@@ -20,6 +20,8 @@
   window.__GPX_READY__ = false;
   window.__GPX_DONE__  = false;
 
+  // Render mode must NEVER hang — allow puppeteer to start immediately.
+  // Real readiness is set once we can draw at least one frame.
   if (new URLSearchParams(location.search).has("render")) {
     setTimeout(() => {
       window.__GPX_READY__ = true;
@@ -30,21 +32,22 @@
 
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 <script>
-const PARAMS = new URLSearchParams(location.search);
+const PARAMS   = new URLSearchParams(location.search);
 const IS_RENDER = PARAMS.has("render");
-const API   = PARAMS.get("api");
-const ROUTE = PARAMS.get("route");
+const API      = PARAMS.get("api");
+const ROUTE    = PARAMS.get("route");
 
-if (!API) throw new Error("Missing ?api=");
+if (!API)   throw new Error("Missing ?api=");
 if (!ROUTE) throw new Error("Missing ?route=");
 
 const canvas = document.getElementById("anim");
-const ctx = canvas.getContext("2d");
+const ctx    = canvas.getContext("2d");
+
 let map = null, VIEW_W = 0, VIEW_H = 0;
 
 function resize(){
   if(!map) return;
-  const c = map.getCanvas();
+  const c   = map.getCanvas();
   const dpr = devicePixelRatio || 1;
   VIEW_W = c.clientWidth;
   VIEW_H = c.clientHeight;
@@ -128,9 +131,9 @@ function stableRow(prevRow, bearingDeg) {
 }
 
 (async()=>{
-  const master = await fetch(API,{cache:"no-store"}).then(r=>r.json());
-  const s = master.settings || {};
-  const routeObj = master.routes.find(x => x.routeName?.toLowerCase() === ROUTE.toLowerCase());
+  const master   = await fetch(API,{cache:"no-store"}).then(r=>r.json());
+  const s        = master.settings || {};
+  const routeObj = (master.routes || []).find(x => String(x.routeName||"").toLowerCase() === ROUTE.toLowerCase());
   if(!routeObj) throw new Error("Route not found");
 
   const pts = await fetch(routeObj.gpxUrl)
@@ -143,45 +146,67 @@ function stableRow(prevRow, bearingDeg) {
     i.crossOrigin="anonymous";
     i.onload=()=>res(i);
     i.onerror=()=>res(null);
-    i.src=s.travelboast_sprite;
+    i.src = s.travelboast_sprite;
   });
 
-  run(pts,sprite,s);
+  run(pts, sprite, s);
 })();
 
 let started=false;
 
-function run(pts,sprite,s){
+function run(pts, sprite, s){
   map = new maplibregl.Map({
     container:"map",
     style: MAP_STYLE,
     center:[pts[0].lng,pts[0].lat],
     zoom:+s.default_map_zoom||16,
-    pitch: IS_RENDER ? 48 : 52
+    pitch: IS_RENDER ? 48 : 52,
+    // Helps headless determinism a bit
+    fadeDuration: 0
   });
 
   const FOLLOW_ZOOM  = IS_RENDER ? 18.3 : 17.9;
   const FOLLOW_PITCH = IS_RENDER ? 48 : 52;
 
-  const FRAMES = +s.travelboast_sprite_frames || 5;
+  const FRAMES    = +s.travelboast_sprite_frames || 5;
+  const ROWS      = 5;
   const BASE_SIZE = +s.travelboast_sprite_size || 72;
+
+  const FRAME_W = sprite ? (sprite.width  / FRAMES) : 0;
+  const FRAME_H = sprite ? (sprite.height / ROWS)   : 0;
 
   const STRIDE_METERS = 1.6;
   const MIN_FPS = 8, MAX_FPS = 12;
   const BEARING_DAMP = 0.18;
 
   const TRAVEL_SECONDS = Math.max(1, Number(s.travelboast_speed || 45));
-  const PAN_SECONDS = 5;
+  const PAN_SECONDS    = 5;
+
+  // Render MUST be deterministic and frame-locked
+  const RENDER_FPS = 24; // must match render.js FPS
 
   const cum=[0];
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
   const total=cum.at(-1);
 
-  let spriteTimer=0,spriteFrame=0;
+  let spriteTimer=0, spriteFrame=0;
   let smoothedB=bearing(pts[0],pts[1]||pts[0]);
   let facingRow=bearingToRowRaw(smoothedB);
 
-  const START_TS = performance.now();
+  // Time state (live uses wall-clock; render uses simTime)
+  let simTime   = 0;
+  let lastTs    = performance.now();
+  let finished  = false;
+  let finishTime = null;   // (render)
+  let overviewAt = null;   // (live)
+  let panStarted = false;
+
+  // One-shot
+  function start(){
+    if(started) return;
+    started = true;
+    requestAnimationFrame(step);
+  }
 
   map.on("load",()=>{
     resize();
@@ -193,38 +218,87 @@ function run(pts,sprite,s){
       "line-width": 6
     }});
 
-    if(!started){started=true;requestAnimationFrame(step);}
+    start();
   });
 
-  if(!started){started=true;requestAnimationFrame(step);}
+  // Headless sometimes never fires load reliably; don't hang
+  start();
 
   function step(){
-    const elapsed = (performance.now()-START_TS)/1000;
+    if(!map){ requestAnimationFrame(step); return; }
 
-    if(elapsed >= TRAVEL_SECONDS + PAN_SECONDS){
-      window.__GPX_DONE__ = true;
+    // ---- Advance time ----
+    if (IS_RENDER) {
+      simTime += 1 / RENDER_FPS;          // 1 screenshot = 1 frame
+      map.triggerRepaint();              // force MapLibre render between captures
+    } else {
+      const now = performance.now();
+      const dt = (now - lastTs) / 1000;
+      lastTs = now;
+      simTime += Math.min(dt, 1/30);
+    }
+
+    // ---- Finished? keep running during pan until done ----
+    if (finished) {
+      ctx.clearRect(0,0,VIEW_W,VIEW_H);
+
+      // End after PAN_SECONDS in both modes
+      if (IS_RENDER) {
+        if (finishTime !== null && (simTime - finishTime) >= PAN_SECONDS) {
+          window.__GPX_DONE__ = true;
+          return;
+        }
+      } else {
+        if (overviewAt !== null && (performance.now() - overviewAt) >= (PAN_SECONDS * 1000)) {
+          window.__GPX_DONE__ = true;
+          return;
+        }
+      }
+
+      requestAnimationFrame(step);
       return;
     }
 
-    const travelT = Math.min(1, elapsed / TRAVEL_SECONDS);
+    // ---- Travel phase ----
+    const travelT = Math.min(1, simTime / TRAVEL_SECONDS);
     const m = travelT * total;
 
-    let i = Math.max(1, cum.findIndex(v=>v>=m));
-    const t = (m-cum[i-1])/(cum[i]-cum[i-1]||1);
+    let i = cum.findIndex(v=>v>=m);
+    i = Math.max(1, i);
+
+    const segDen = (cum[i]-cum[i-1]||1);
+    const t = (m-cum[i-1]) / segDen;
+
     const a=pts[i-1], b=pts[i];
     const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 
-    smoothedB = lerpAngle(smoothedB,bearing(a,b),BEARING_DAMP);
-    facingRow = stableRow(facingRow,smoothedB);
+    smoothedB = lerpAngle(smoothedB, bearing(a,b), BEARING_DAMP);
+    facingRow = stableRow(facingRow, smoothedB);
 
-    const cadence = Math.max(MIN_FPS,Math.min(MAX_FPS,((total/TRAVEL_SECONDS)/STRIDE_METERS)*FRAMES));
-    spriteTimer+=1/60;
-    if(spriteTimer>=1/cadence){spriteTimer-=1/cadence;spriteFrame=(spriteFrame+1)%FRAMES;}
+    const brg = normalizeBearing(smoothedB);
+    let mirror = false;
+    if (facingRow === 1) mirror = (brg >= 292.5 && brg < 337.5);
+    if (facingRow === 2) mirror = (brg >= 247.5 && brg < 292.5);
+    if (facingRow === 3) mirror = (brg >= 112.5 && brg < 157.5);
 
-    const src = map.getSource("route");
+    let cadence = ((total/TRAVEL_SECONDS)/STRIDE_METERS) * FRAMES;
+    cadence = Math.max(MIN_FPS, Math.min(MAX_FPS, cadence));
+    if (facingRow === 2) cadence *= 0.85;
+
+    // Keep cadence stable in render mode (avoid dt jitter)
+    const dtAnim = IS_RENDER ? (1 / RENDER_FPS) : (1/60);
+    spriteTimer += dtAnim;
+    if(spriteTimer >= 1/cadence){
+      spriteTimer -= 1/cadence;
+      spriteFrame = (spriteFrame+1) % FRAMES;
+    }
+
+    // Update route line if ready
+    const src = map.getSource && map.getSource("route");
     if(src){
       src.setData({type:"Feature",geometry:{type:"LineString",coordinates:[
-        ...pts.slice(0,i).map(p=>[p.lng,p.lat]),[pos.lng,pos.lat]
+        ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
+        [pos.lng,pos.lat]
       ]}});
     }
 
@@ -235,19 +309,48 @@ function run(pts,sprite,s){
 
     const p = map.project([pos.lng,pos.lat]);
     const SIZE = BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
+
+    const FOOT_ANCHOR_Y = 0.85;
+
     ctx.save();
-    ctx.translate(p.x,p.y);
+    ctx.translate(Math.round(p.x), Math.round(p.y));
+    if (mirror) ctx.scale(-1, 1);
+
     if(sprite){
-      ctx.drawImage(sprite,spriteFrame*(sprite.width/FRAMES),facingRow*(sprite.height/5),
-        sprite.width/FRAMES,sprite.height/5,-SIZE/2,-SIZE*0.85,SIZE,SIZE);
+      ctx.drawImage(
+        sprite,
+        spriteFrame * FRAME_W,
+        facingRow * FRAME_H,
+        FRAME_W,
+        FRAME_H,
+        -SIZE/2,
+        -SIZE * FOOT_ANCHOR_Y,
+        SIZE,
+        SIZE
+      );
+      if (!window.__GPX_READY__) window.__GPX_READY__ = true;
     }
     ctx.restore();
 
-    if(elapsed>=TRAVEL_SECONDS && elapsed<TRAVEL_SECONDS+PAN_SECONDS){
+    // ---- Transition into pan once, exactly at end of travel ----
+    if(travelT >= 1 && !panStarted){
+      panStarted = true;
+
+      // Mark finish moment for deterministic render end
+      finishTime = simTime;
+      overviewAt = performance.now();
+
+      // Clear sprite immediately for overview
+      ctx.clearRect(0,0,VIEW_W,VIEW_H);
+
       try{
-        map.fitBounds(new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
-          {padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14});
+        map.fitBounds(
+          new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
+          {padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14}
+        );
       }catch(e){}
+
+      finished = true; // now we enter the finished/pan loop
     }
 
     requestAnimationFrame(step);
