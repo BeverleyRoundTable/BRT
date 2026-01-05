@@ -233,10 +233,14 @@ let overviewAt = null;
       return;
     }
 
-    const now = performance.now();
-const dt = (now - lastTs) / 1000;
-lastTs = now;
-simTime += Math.min(dt, 1/30);
+    if (IS_RENDER) {
+  simTime += 1 / 24;   // MUST match render.js FPS
+} else {
+  const now = performance.now();
+  const dt = (now - lastTs) / 1000;
+  lastTs = now;
+  simTime += Math.min(dt, 1/30);
+}
 
     const DURATION = Math.max(1, +s.travelboast_speed || 60);
     const m = Math.min(total, (simTime / DURATION) * total);
