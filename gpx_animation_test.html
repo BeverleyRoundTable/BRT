@@ -20,6 +20,18 @@
   window.__GPX_READY__ = false;
 </script>
 
+  <script>
+  // 🚨 HARD GUARANTEE: never hang renders
+  if (new URLSearchParams(location.search).has("render")) {
+    setTimeout(() => {
+      if (!window.__GPX_READY__) {
+        console.warn("⚠️ GPX_READY forced (pre-bootstrap)");
+        window.__GPX_READY__ = true;
+      }
+    }, 500);
+  }
+</script>
+
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 <script>
 const PARAMS = new URLSearchParams(location.search);
