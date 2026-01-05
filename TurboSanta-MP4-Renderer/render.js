@@ -80,7 +80,7 @@ await page.evaluate(() => {
   window.__RENDER_FRAME__ = 0;
 });
 
-// Hard frame cap (safety only)
+// Safety ceiling only — animation controls completion
 const maxFrames = durationMs > 0
   ? Math.ceil((durationMs / 1000) * fps)
   : Infinity;
