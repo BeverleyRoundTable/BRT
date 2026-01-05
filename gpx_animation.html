@@ -160,6 +160,8 @@ function stableRow(prevRow, bearingDeg) {
 
   run(pts, sprite, s);
 })();
+  
+let started = false;
 
 function run(pts, sprite, s){
   map = new maplibregl.Map({
@@ -199,29 +201,36 @@ let overviewAt = null;
   let facingRow=bearingToRowRaw(smoothedB);
 
   // Keep "load" for best-case browsers, but don't rely on it for READY
-  map.on("load",()=>{
-    resize(); map.on("resize",resize);
+  map.on("load", () => {
+  resize();
+  map.on("resize", resize);
 
-    map.addSource("route",{
-      type:"geojson",
-      data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}
-    });
-
-    map.addLayer({
-      id:"route",
-      type:"line",
-      source:"route",
-      paint:{
-        "line-color": s.primary_color || "#d31c1c",
-        "line-width": 6
-      }
-    });
-
-    requestAnimationFrame(step);
+  map.addSource("route", {
+    type: "geojson",
+    data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } }
   });
 
+  map.addLayer({
+    id: "route",
+    type: "line",
+    source: "route",
+    paint: {
+      "line-color": s.primary_color || "#d31c1c",
+      "line-width": 6
+    }
+  });
+
+  if (!started) {
+    started = true;
+    requestAnimationFrame(step);
+  }
+});
+
   // Also start stepping even if "load" never fires (headless)
+if (!started) {
+  started = true;
   requestAnimationFrame(step);
+}
 
   function step(){
     if(!map) { requestAnimationFrame(step); return; }
@@ -246,6 +255,19 @@ let overviewAt = null;
   const dt = (now - lastTs) / 1000;
   lastTs = now;
   simTime += Math.min(dt, 1/30);
+}
+    
+// 🔎 SANITY CHECK (render only)
+if (IS_RENDER && Math.abs(simTime % 5) < (1 / 24)) {
+  console.log(
+    "🧪 SANITY",
+    {
+      simTime: simTime.toFixed(2),
+      duration: (+s.travelboast_speed || 60),
+      progressPct: ((simTime / (+s.travelboast_speed || 60)) * 100).toFixed(1),
+      finished
+    }
+  );
 }
 
     const DURATION = Math.max(1, +s.travelboast_speed || 60);
