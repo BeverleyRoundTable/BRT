@@ -188,7 +188,11 @@ function run(pts, sprite, s){
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
   const total=cum.at(-1);
 
-  let simTime=0, finished=false, overviewAt=null;
+  let simTime = 0;
+let lastTs = performance.now();
+let finished = false;
+let overviewAt = null;
+
   let spriteTimer=0, spriteFrame=0;
 
   let smoothedB=bearing(pts[0],pts[1]||pts[0]);
@@ -229,7 +233,11 @@ function run(pts, sprite, s){
       return;
     }
 
-    simTime += 1/60;
+    const now = performance.now();
+const dt = (now - lastTs) / 1000;
+lastTs = now;
+simTime += Math.min(dt, 1/30);
+
     const DURATION = Math.max(1, +s.travelboast_speed || 60);
     const m = Math.min(total, (simTime / DURATION) * total);
 
