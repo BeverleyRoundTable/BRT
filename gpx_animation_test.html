@@ -86,34 +86,22 @@ const lerpAngle = (a,b,t)=> a + (((b-a+540)%360)-180)*t;
 function bearingToRowRaw(b){
   b = normalizeBearing(b);
 
-  // N
   if (b >= 337.5 || b < 22.5) return 0;
 
-  // NE / NW
   if (b >= 22.5 && b < 67.5) return 1;   // NE
   if (b >= 292.5 && b < 337.5) return 1; // NW (mirror)
 
-  // E / W
   if (b >= 67.5 && b < 112.5) return 2;  // E
   if (b >= 247.5 && b < 292.5) return 2; // W (mirror)
 
-  // SE / SW
   if (b >= 112.5 && b < 157.5) return 3; // SE (mirror)
   if (b >= 202.5 && b < 247.5) return 3; // SW
 
-  // S
   return 4;
 }
 
-const ROW_CENTERS = [
-  0,    // Row 0: North
-  45,   // Row 1: NE (mirrors to NW)
-  90,   // Row 2: East (mirrors to West)
-  225,  // Row 3: SW (mirrors to SE)
-  180   // Row 4: South
-];
-
-const ROW_HYST = 18; // degrees – tune 14–22 if needed
+const ROW_CENTERS = [0,45,90,225,180];
+const ROW_HYST = 18;
 
 function angularDistance(a, b) {
   return Math.abs(((a - b + 540) % 360) - 180);
@@ -125,10 +113,8 @@ function stableRow(prevRow, bearingDeg) {
   const prevCenter = ROW_CENTERS[prevRow];
   const prevDist   = angularDistance(bearingDeg, prevCenter);
 
-  // If still comfortably within this row → stay locked
   if (prevDist < ROW_HYST) return prevRow;
 
-  // Otherwise find the closest row center
   let bestRow = prevRow;
   let bestDist = prevDist;
 
@@ -139,7 +125,6 @@ function stableRow(prevRow, bearingDeg) {
       bestRow = r;
     }
   }
-
   return bestRow;
 }
 
@@ -160,12 +145,12 @@ function stableRow(prevRow, bearingDeg) {
     i.onload = () => res(i);
     i.onerror = () => {
       console.error("❌ Sprite failed to load:", s.travelboast_sprite);
-      res(null); // allow render to continue (no sprite)
+      res(null);
     };
     i.src = s.travelboast_sprite;
   });
 
-  run(pts, sprite, s); // ✅ IMPORTANT: actually start
+  run(pts, sprite, s);
 })();
 
 function run(pts, sprite, s){
@@ -177,6 +162,14 @@ function run(pts, sprite, s){
     pitch: IS_RENDER ? 48 : 52
   });
 
+  // ✅ HARD SAFETY LATCH — NEVER depend on MapLibre "load" in headless
+  setTimeout(() => {
+    if (!window.__GPX_READY__) {
+      console.warn("⚠️ Forcing GPX_READY (MapLibre load never fired)");
+      window.__GPX_READY__ = true;
+    }
+  }, 1500);
+
   const FOLLOW_ZOOM  = IS_RENDER ? 18.3 : 17.9;
   const FOLLOW_PITCH = IS_RENDER ? 48 : 52;
 
@@ -184,7 +177,6 @@ function run(pts, sprite, s){
   const BASE_SIZE = +s.travelboast_sprite_size || 72;
   const ROWS = 5;
 
-  // ✅ Safe frame sizing (prevents crashes if sprite fails)
   const FRAME_W = sprite ? (sprite.width / FRAMES) : 0;
   const FRAME_H = sprite ? (sprite.height / ROWS) : 0;
 
@@ -202,6 +194,7 @@ function run(pts, sprite, s){
   let smoothedB=bearing(pts[0],pts[1]||pts[0]);
   let facingRow=bearingToRowRaw(smoothedB);
 
+  // Keep "load" for best-case browsers, but don't rely on it for READY
   map.on("load",()=>{
     resize(); map.on("resize",resize);
 
@@ -220,22 +213,19 @@ function run(pts, sprite, s){
       }
     });
 
-    // ✅ Safety latch so render never hangs forever
-    setTimeout(() => {
-      if (!window.__GPX_READY__) {
-        console.warn("⚠️ Forcing GPX_READY after map load (sprite may be missing)");
-        window.__GPX_READY__ = true;
-      }
-    }, 2000);
-
     requestAnimationFrame(step);
   });
 
+  // Also start stepping even if "load" never fires (headless)
+  requestAnimationFrame(step);
+
   function step(){
+    if(!map) { requestAnimationFrame(step); return; }
+
     if(finished){
       ctx.clearRect(0,0,VIEW_W,VIEW_H);
       if(performance.now()-overviewAt>8500){ window.__GPX_DONE__=true; return; }
-      requestAnimationFrame(step); 
+      requestAnimationFrame(step);
       return;
     }
 
@@ -243,7 +233,7 @@ function run(pts, sprite, s){
     const DURATION = Math.max(1, +s.travelboast_speed || 60);
     const m = Math.min(total, (simTime / DURATION) * total);
 
-    let i = cum.findIndex(v=>v>=m); 
+    let i = cum.findIndex(v=>v>=m);
     i = Math.max(1,i);
 
     const t = (m-cum[i-1])/(cum[i]-cum[i-1]||1);
@@ -255,17 +245,10 @@ function run(pts, sprite, s){
 
     const brg = normalizeBearing(smoothedB);
     let mirror = false;
-
-    // Row 1: NE base → mirror for NW
     if (facingRow === 1) mirror = (brg >= 292.5 && brg < 337.5);
-
-    // Row 2: E base → mirror for W
     if (facingRow === 2) mirror = (brg >= 247.5 && brg < 292.5);
-
-    // Row 3: SW base → mirror for SE
     if (facingRow === 3) mirror = (brg >= 112.5 && brg < 157.5);
 
-    // cadence based on route speed, clamped
     let cadenceFps = ((total / DURATION) / STRIDE_METERS) * FRAMES;
     cadenceFps = Math.max(MIN_FPS, Math.min(MAX_FPS, cadenceFps));
     if (facingRow === 2) cadenceFps *= 0.85;
@@ -276,19 +259,25 @@ function run(pts, sprite, s){
       spriteFrame = (spriteFrame+1) % FRAMES;
     }
 
-    // Update route line
-    map.getSource("route").setData({
-      type:"Feature",
-      geometry:{
-        type:"LineString",
-        coordinates:[
-          ...pts.slice(0, i).map(p => [p.lng, p.lat]),
-          [pos.lng, pos.lat]
-        ]
-      }
-    });
+    // Update route line only if source exists (load may not have fired)
+    const src = map.getSource && map.getSource("route");
+    if (src) {
+      src.setData({
+        type:"Feature",
+        geometry:{
+          type:"LineString",
+          coordinates:[
+            ...pts.slice(0, i).map(p => [p.lng, p.lat]),
+            [pos.lng, pos.lat]
+          ]
+        }
+      });
+    }
 
     map.jumpTo({center:[pos.lng,pos.lat], zoom:FOLLOW_ZOOM, pitch:FOLLOW_PITCH, bearing:0});
+
+    // Ensure canvas sized even if load didn’t fire
+    if (!VIEW_W || !VIEW_H) resize();
 
     ctx.clearRect(0,0,VIEW_W,VIEW_H);
     const p = map.project([pos.lng,pos.lat]);
@@ -311,8 +300,6 @@ function run(pts, sprite, s){
         SIZE,
         SIZE
       );
-
-      // ✅ READY only once we've drawn at least one sprite frame
       if (!window.__GPX_READY__) window.__GPX_READY__ = true;
     }
 
@@ -321,10 +308,12 @@ function run(pts, sprite, s){
     if(m >= total){
       finished = true;
       ctx.clearRect(0,0,VIEW_W,VIEW_H);
-      map.fitBounds(
-        new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
-        {padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14}
-      );
+      try{
+        map.fitBounds(
+          new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
+          {padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14}
+        );
+      }catch(e){}
       overviewAt = performance.now();
     }
 
