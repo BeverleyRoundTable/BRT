@@ -83,10 +83,9 @@ await page.evaluate(() => {
   window.__RENDER_FRAME__ = 0;
 });
 
-// Safety ceiling only
-const maxFrames = durationMs > 0
-  ? Math.ceil((durationMs / 1000) * fps)
-  : Infinity;
+// 🚨 SAFETY ONLY — animation controls real duration
+const SAFETY_SECONDS = Number(process.env.DURATION || 300); // default 5 mins
+const maxFrames = Math.ceil(SAFETY_SECONDS * fps);
 
 console.log("🎥 Capturing frames");
 
