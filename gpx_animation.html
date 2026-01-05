@@ -18,8 +18,8 @@
 
 <script>
   window.__GPX_READY__ = false;
+  window.__GPX_DONE__  = false;
 
-  // Render mode must NEVER hang — force ready immediately
   if (new URLSearchParams(location.search).has("render")) {
     setTimeout(() => {
       window.__GPX_READY__ = true;
@@ -32,9 +32,8 @@
 <script>
 const PARAMS = new URLSearchParams(location.search);
 const IS_RENDER = PARAMS.has("render");
-const API = PARAMS.get("api");
+const API   = PARAMS.get("api");
 const ROUTE = PARAMS.get("route");
-window.__GPX_DONE__ = false;
 
 if (!API) throw new Error("Missing ?api=");
 if (!ROUTE) throw new Error("Missing ?route=");
@@ -93,18 +92,13 @@ const lerpAngle = (a,b,t)=> a + (((b-a+540)%360)-180)*t;
 /* ================= SPRITE ROWS ================= */
 function bearingToRowRaw(b){
   b = normalizeBearing(b);
-
   if (b >= 337.5 || b < 22.5) return 0;
-
-  if (b >= 22.5 && b < 67.5) return 1;   // NE
-  if (b >= 292.5 && b < 337.5) return 1; // NW (mirror)
-
-  if (b >= 67.5 && b < 112.5) return 2;  // E
-  if (b >= 247.5 && b < 292.5) return 2; // W (mirror)
-
-  if (b >= 112.5 && b < 157.5) return 3; // SE (mirror)
-  if (b >= 202.5 && b < 247.5) return 3; // SW
-
+  if (b >= 22.5 && b < 67.5) return 1;
+  if (b >= 292.5 && b < 337.5) return 1;
+  if (b >= 67.5 && b < 112.5) return 2;
+  if (b >= 247.5 && b < 292.5) return 2;
+  if (b >= 112.5 && b < 157.5) return 3;
+  if (b >= 202.5 && b < 247.5) return 3;
   return 4;
 }
 
@@ -117,15 +111,12 @@ function angularDistance(a, b) {
 
 function stableRow(prevRow, bearingDeg) {
   bearingDeg = normalizeBearing(bearingDeg);
-
   const prevCenter = ROW_CENTERS[prevRow];
   const prevDist   = angularDistance(bearingDeg, prevCenter);
-
   if (prevDist < ROW_HYST) return prevRow;
 
   let bestRow = prevRow;
   let bestDist = prevDist;
-
   for (let r = 0; r < ROW_CENTERS.length; r++) {
     const d = angularDistance(bearingDeg, ROW_CENTERS[r]);
     if (d < bestDist) {
@@ -147,214 +138,116 @@ function stableRow(prevRow, bearingDeg) {
     .then(x => [...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
       .map(p => ({ lat:+p.getAttribute("lat"), lng:+p.getAttribute("lon") })));
 
-  const sprite = await new Promise((res) => {
+  const sprite = await new Promise(res=>{
     const i = new Image();
-    i.crossOrigin = "anonymous";
-    i.onload = () => res(i);
-    i.onerror = () => {
-      console.error("❌ Sprite failed to load:", s.travelboast_sprite);
-      res(null);
-    };
-    i.src = s.travelboast_sprite;
+    i.crossOrigin="anonymous";
+    i.onload=()=>res(i);
+    i.onerror=()=>res(null);
+    i.src=s.travelboast_sprite;
   });
 
-  run(pts, sprite, s);
+  run(pts,sprite,s);
 })();
-  
-let started = false;
 
-function run(pts, sprite, s){
+let started=false;
+
+function run(pts,sprite,s){
   map = new maplibregl.Map({
     container:"map",
     style: MAP_STYLE,
-    center:[pts[0].lng, pts[0].lat],
+    center:[pts[0].lng,pts[0].lat],
     zoom:+s.default_map_zoom||16,
     pitch: IS_RENDER ? 48 : 52
   });
 
-   const FOLLOW_ZOOM  = IS_RENDER ? 18.3 : 17.9;
+  const FOLLOW_ZOOM  = IS_RENDER ? 18.3 : 17.9;
   const FOLLOW_PITCH = IS_RENDER ? 48 : 52;
 
   const FRAMES = +s.travelboast_sprite_frames || 5;
   const BASE_SIZE = +s.travelboast_sprite_size || 72;
-  const ROWS = 5;
-
-  const FRAME_W = sprite ? (sprite.width / FRAMES) : 0;
-  const FRAME_H = sprite ? (sprite.height / ROWS) : 0;
 
   const STRIDE_METERS = 1.6;
   const MIN_FPS = 8, MAX_FPS = 12;
   const BEARING_DAMP = 0.18;
 
+  const TRAVEL_SECONDS = Math.max(1, Number(s.travelboast_speed || 45));
+  const PAN_SECONDS = 5;
+
   const cum=[0];
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
   const total=cum.at(-1);
 
-  let simTime = 0;
-let lastTs = performance.now();
-let finished = false;
-let overviewAt = null;
-
-  let spriteTimer=0, spriteFrame=0;
-
+  let spriteTimer=0,spriteFrame=0;
   let smoothedB=bearing(pts[0],pts[1]||pts[0]);
   let facingRow=bearingToRowRaw(smoothedB);
 
-  // Keep "load" for best-case browsers, but don't rely on it for READY
-  map.on("load", () => {
-  resize();
-  map.on("resize", resize);
+  const START_TS = performance.now();
 
-  map.addSource("route", {
-    type: "geojson",
-    data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } }
-  });
+  map.on("load",()=>{
+    resize();
+    map.on("resize",resize);
 
-  map.addLayer({
-    id: "route",
-    type: "line",
-    source: "route",
-    paint: {
+    map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
+    map.addLayer({id:"route",type:"line",source:"route",paint:{
       "line-color": s.primary_color || "#d31c1c",
       "line-width": 6
-    }
+    }});
+
+    if(!started){started=true;requestAnimationFrame(step);}
   });
 
-  if (!started) {
-    started = true;
-    requestAnimationFrame(step);
-  }
-});
-
-  // Also start stepping even if "load" never fires (headless)
-if (!started) {
-  started = true;
-  requestAnimationFrame(step);
-}
+  if(!started){started=true;requestAnimationFrame(step);}
 
   function step(){
-    if(!map) { requestAnimationFrame(step); return; }
+    const elapsed = (performance.now()-START_TS)/1000;
 
-    if (finished) {
-  ctx.clearRect(0,0,VIEW_W,VIEW_H);
-
-  // ❗ Only auto-complete in LIVE mode
-  if (!IS_RENDER && performance.now() - overviewAt > 8500) {
-    window.__GPX_DONE__ = true;
-    return;
-  }
-
-  requestAnimationFrame(step);
-  return;
-}
-
-    if (IS_RENDER) {
-  simTime += 1 / 24;   // MUST match render.js FPS
-} else {
-  const now = performance.now();
-  const dt = (now - lastTs) / 1000;
-  lastTs = now;
-  simTime += Math.min(dt, 1/30);
-}
-    
-// 🔎 SANITY CHECK (render only)
-if (IS_RENDER && Math.abs(simTime % 5) < (1 / 24)) {
-  console.log(
-    "🧪 SANITY",
-    {
-      simTime: simTime.toFixed(2),
-      duration: (+s.travelboast_speed || 60),
-      progressPct: ((simTime / (+s.travelboast_speed || 60)) * 100).toFixed(1),
-      finished
+    if(elapsed >= TRAVEL_SECONDS + PAN_SECONDS){
+      window.__GPX_DONE__ = true;
+      return;
     }
-  );
-}
 
-    const DURATION = Math.max(1, +s.travelboast_speed || 60);
-    const m = Math.min(total, (simTime / DURATION) * total);
+    const travelT = Math.min(1, elapsed / TRAVEL_SECONDS);
+    const m = travelT * total;
 
-    let i = cum.findIndex(v=>v>=m);
-    i = Math.max(1,i);
-
+    let i = Math.max(1, cum.findIndex(v=>v>=m));
     const t = (m-cum[i-1])/(cum[i]-cum[i-1]||1);
     const a=pts[i-1], b=pts[i];
     const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 
-    smoothedB = lerpAngle(smoothedB, bearing(a,b), BEARING_DAMP);
-    facingRow = stableRow(facingRow, smoothedB);
+    smoothedB = lerpAngle(smoothedB,bearing(a,b),BEARING_DAMP);
+    facingRow = stableRow(facingRow,smoothedB);
 
-    const brg = normalizeBearing(smoothedB);
-    let mirror = false;
-    if (facingRow === 1) mirror = (brg >= 292.5 && brg < 337.5);
-    if (facingRow === 2) mirror = (brg >= 247.5 && brg < 292.5);
-    if (facingRow === 3) mirror = (brg >= 112.5 && brg < 157.5);
+    const cadence = Math.max(MIN_FPS,Math.min(MAX_FPS,((total/TRAVEL_SECONDS)/STRIDE_METERS)*FRAMES));
+    spriteTimer+=1/60;
+    if(spriteTimer>=1/cadence){spriteTimer-=1/cadence;spriteFrame=(spriteFrame+1)%FRAMES;}
 
-    let cadenceFps = ((total / DURATION) / STRIDE_METERS) * FRAMES;
-    cadenceFps = Math.max(MIN_FPS, Math.min(MAX_FPS, cadenceFps));
-    if (facingRow === 2) cadenceFps *= 0.85;
-
-    spriteTimer += 1/60;
-    if(spriteTimer >= 1/cadenceFps){
-      spriteTimer -= 1/cadenceFps;
-      spriteFrame = (spriteFrame+1) % FRAMES;
+    const src = map.getSource("route");
+    if(src){
+      src.setData({type:"Feature",geometry:{type:"LineString",coordinates:[
+        ...pts.slice(0,i).map(p=>[p.lng,p.lat]),[pos.lng,pos.lat]
+      ]}});
     }
 
-    // Update route line only if source exists (load may not have fired)
-    const src = map.getSource && map.getSource("route");
-    if (src) {
-      src.setData({
-        type:"Feature",
-        geometry:{
-          type:"LineString",
-          coordinates:[
-            ...pts.slice(0, i).map(p => [p.lng, p.lat]),
-            [pos.lng, pos.lat]
-          ]
-        }
-      });
-    }
+    map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,pitch:FOLLOW_PITCH,bearing:0});
 
-    map.jumpTo({center:[pos.lng,pos.lat], zoom:FOLLOW_ZOOM, pitch:FOLLOW_PITCH, bearing:0});
-
-    // Ensure canvas sized even if load didn’t fire
-    if (!VIEW_W || !VIEW_H) resize();
-
+    if(!VIEW_W||!VIEW_H) resize();
     ctx.clearRect(0,0,VIEW_W,VIEW_H);
+
     const p = map.project([pos.lng,pos.lat]);
-    const SIZE = BASE_SIZE * (0.9 + Math.min(0.4, (FOLLOW_ZOOM-15)*0.25));
-    const FOOT_ANCHOR_Y = 0.85;
-
+    const SIZE = BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
     ctx.save();
-    ctx.translate(Math.round(p.x), Math.round(p.y));
-    if (mirror) ctx.scale(-1, 1);
-
-    if (sprite) {
-      ctx.drawImage(
-        sprite,
-        spriteFrame * FRAME_W,
-        facingRow * FRAME_H,
-        FRAME_W,
-        FRAME_H,
-        -SIZE / 2,
-        -SIZE * FOOT_ANCHOR_Y,
-        SIZE,
-        SIZE
-      );
-      if (!window.__GPX_READY__) window.__GPX_READY__ = true;
+    ctx.translate(p.x,p.y);
+    if(sprite){
+      ctx.drawImage(sprite,spriteFrame*(sprite.width/FRAMES),facingRow*(sprite.height/5),
+        sprite.width/FRAMES,sprite.height/5,-SIZE/2,-SIZE*0.85,SIZE,SIZE);
     }
-
     ctx.restore();
 
-    if(m >= total){
-      finished = true;
-      ctx.clearRect(0,0,VIEW_W,VIEW_H);
+    if(elapsed>=TRAVEL_SECONDS && elapsed<TRAVEL_SECONDS+PAN_SECONDS){
       try{
-        map.fitBounds(
-          new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
-          {padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14}
-        );
+        map.fitBounds(new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
+          {padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14});
       }catch(e){}
-      overviewAt = performance.now();
     }
 
     requestAnimationFrame(step);
