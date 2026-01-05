@@ -18,17 +18,13 @@
 
 <script>
   window.__GPX_READY__ = false;
-</script>
 
-  <script>
-  // 🚨 HARD GUARANTEE: never hang renders
+  // Render mode must NEVER hang — force ready immediately
   if (new URLSearchParams(location.search).has("render")) {
     setTimeout(() => {
-      if (!window.__GPX_READY__) {
-        console.warn("⚠️ GPX_READY forced (pre-bootstrap)");
-        window.__GPX_READY__ = true;
-      }
-    }, 500);
+      window.__GPX_READY__ = true;
+      console.warn("✅ GPX_READY forced for render");
+    }, 0);
   }
 </script>
 
@@ -174,15 +170,7 @@ function run(pts, sprite, s){
     pitch: IS_RENDER ? 48 : 52
   });
 
-  // ✅ HARD SAFETY LATCH — NEVER depend on MapLibre "load" in headless
-  setTimeout(() => {
-    if (!window.__GPX_READY__) {
-      console.warn("⚠️ Forcing GPX_READY (MapLibre load never fired)");
-      window.__GPX_READY__ = true;
-    }
-  }, 1500);
-
-  const FOLLOW_ZOOM  = IS_RENDER ? 18.3 : 17.9;
+   const FOLLOW_ZOOM  = IS_RENDER ? 18.3 : 17.9;
   const FOLLOW_PITCH = IS_RENDER ? 48 : 52;
 
   const FRAMES = +s.travelboast_sprite_frames || 5;
