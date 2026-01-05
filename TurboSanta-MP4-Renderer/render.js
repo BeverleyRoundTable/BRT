@@ -67,6 +67,9 @@ await page.waitForFunction(
   { timeout: 20000, polling: 250 }
 );
 
+// 🔒 Let one animation frame fully draw before capture
+await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
+
 console.log("✅ GPX ready — starting render");
 
 // 📁 Frames folder
@@ -80,7 +83,7 @@ await page.evaluate(() => {
   window.__RENDER_FRAME__ = 0;
 });
 
-// Safety ceiling only — animation controls completion
+// Safety ceiling only
 const maxFrames = durationMs > 0
   ? Math.ceil((durationMs / 1000) * fps)
   : Infinity;
@@ -90,7 +93,7 @@ console.log("🎥 Capturing frames");
 let frame = 0;
 
 while (frame < maxFrames) {
-  // 🔑 FRAME IS AUTHORITATIVE
+  // 🔑 Frame index is authoritative
   await page.evaluate(f => {
     window.__RENDER_FRAME__ = f;
   }, frame);
@@ -103,9 +106,14 @@ while (frame < maxFrames) {
   await page.screenshot({ path: framePath, type: "png" });
   frame++;
 
-  // Progress reporting
+  // 🔁 Yield so WebGL has time to flush (prevents snap/freeze)
+  await new Promise(r => setTimeout(r, 0));
+
   if (frame % fps === 0) {
-    const pct = Math.round((frame / maxFrames) * 100);
+    const pct = durationMs
+      ? Math.min(100, Math.round((frame / maxFrames) * 100))
+      : 0;
+
     console.log(`📊 Render progress: ${pct}%`);
     await reportProgress(pct, "Rendering");
   }
@@ -126,7 +134,6 @@ await browser.close();
 // 🔔 Encoding
 await reportProgress(100, "Encoding MP4");
 
-// Output name
 const outputFile = "gpx_animation.mp4";
 
 const frameCount = fs.readdirSync(framesDir).length;
