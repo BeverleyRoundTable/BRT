@@ -267,10 +267,30 @@ function run(pts,sprite,s){
     const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
     if(sprite&&!hideSanta){
-      ctx.save();
-      ctx.translate(p.x,p.y);
-      ctx.drawImage(sprite,spriteFrame*FRAME_W,facingRow*FRAME_H,FRAME_W,FRAME_H,-SIZE/2,-SIZE*0.85,SIZE,SIZE);
-      ctx.restore();
+     // determine if sprite needs horizontal mirroring
+const flip =
+  (facingRow === 1 && smoothedB > 180) || // NW
+  (facingRow === 2 && smoothedB > 180) || // W
+  (facingRow === 3 && smoothedB < 180);   // SE (mirror SW base art)
+
+ctx.save();
+ctx.translate(p.x, p.y);
+if (flip) ctx.scale(-1, 1);
+
+ctx.drawImage(
+  sprite,
+  spriteFrame * FRAME_W,
+  facingRow * FRAME_H,
+  FRAME_W,
+  FRAME_H,
+  -SIZE / 2,
+  -SIZE * 0.85,
+  SIZE,
+  SIZE
+);
+
+ctx.restore();
+
       if(!hasDrawnFirstFrame&&(!IS_RENDER?mapIdle:true)){
         hasDrawnFirstFrame=true;
         window.__GPX_READY__=true;
