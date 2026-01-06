@@ -84,7 +84,8 @@ await page.evaluate(() => {
 });
 
 // 🚨 SAFETY ONLY — animation controls real duration
-const SAFETY_SECONDS = Number(process.env.DURATION || 300); // default 5 mins
+const SAFETY_SECONDS = Number(process.env.SAFETY_SECONDS || 300);
+// default 5 mins
 const maxFrames = Math.ceil(SAFETY_SECONDS * fps);
 
 console.log("🎥 Capturing frames");
@@ -109,9 +110,7 @@ while (frame < maxFrames) {
   await new Promise(r => setTimeout(r, 0));
 
   if (frame % fps === 0) {
-    const pct = durationMs
-      ? Math.min(100, Math.round((frame / maxFrames) * 100))
-      : 0;
+    const pct = Math.min(100, Math.round((frame / maxFrames) * 100));
 
     console.log(`📊 Render progress: ${pct}%`);
     await reportProgress(pct, "Rendering");
