@@ -231,6 +231,29 @@ function run(pts,sprite,s){
     smoothedB=lerpAngle(smoothedB,bearing(a,b),BEARING_DAMP);
     facingRow=stableRow(facingRow,smoothedB);
 
+    // ---------------- SPRITE ANIMATION ----------------
+const cadence = Math.max(
+  MIN_FPS,
+  Math.min(
+    MAX_FPS,
+    ((total / TRAVEL_SECONDS) / STRIDE_METERS) * FRAMES
+  )
+);
+
+if (IS_RENDER) {
+  // Deterministic: advance based on render frame index
+  const framesPerSprite = Math.max(1, Math.round(RENDER_FPS / cadence));
+  spriteFrame = Math.floor(window.__RENDER_FRAME__ / framesPerSprite) % FRAMES;
+} else {
+  // Live mode: time-based
+  spriteTimer += 1 / 60;
+  if (spriteTimer >= 1 / cadence) {
+    spriteTimer -= 1 / cadence;
+    spriteFrame = (spriteFrame + 1) % FRAMES;
+  }
+}
+// -------------------------------------------------
+
     const src=map.getSource("route");
     if(src){
       src.setData({
