@@ -170,7 +170,7 @@ function run(pts,sprite,s){
   const BEARING_DAMP=0.18;
 
   const TRAVEL_SECONDS=Math.max(1,+s.travelboast_speed||45);
-  const PAN_SECONDS=5;
+  const PAN_SECONDS=8;
   const RENDER_FPS=24;
 
   const cum=[0];
@@ -292,7 +292,7 @@ if (IS_RENDER) {
       try{
         map.fitBounds(
           new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
-          {padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14}
+          {padding:120,pitch:0,bearing:0,duration:8000,maxZoom:14}
         );
       }catch{}
       finished=true;
