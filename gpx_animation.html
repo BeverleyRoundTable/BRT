@@ -21,12 +21,6 @@
   window.__GPX_DONE__  = false;
   window.__RENDER_FRAME__ = 0;
 
-  if (new URLSearchParams(location.search).has("render")) {
-    setTimeout(() => {
-      window.__GPX_READY__ = true;
-      console.warn("✅ GPX_READY forced for render");
-    }, 0);
-  }
 </script>
 
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
@@ -272,17 +266,22 @@ if (IS_RENDER) {
     const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
     if(sprite && !hideSanta){
-      ctx.save();
-      ctx.translate(p.x,p.y);
-      ctx.drawImage(
-        sprite,
-        spriteFrame*FRAME_W,
-        facingRow*FRAME_H,
-        FRAME_W,FRAME_H,
-        -SIZE/2,-SIZE*0.85,SIZE,SIZE
-      );
-      ctx.restore();
-    }
+  ctx.save();
+  ctx.translate(p.x,p.y);
+  ctx.drawImage(
+    sprite,
+    spriteFrame*FRAME_W,
+    facingRow*FRAME_H,
+    FRAME_W,FRAME_H,
+    -SIZE/2,-SIZE*0.85,SIZE,SIZE
+  );
+  ctx.restore();
+
+  if (!hasDrawnFirstFrame) {
+    hasDrawnFirstFrame = true;
+    window.__GPX_READY__ = true;
+  }
+}
 
     if(travelT>=1&&!panStarted){
       panStarted=true;
