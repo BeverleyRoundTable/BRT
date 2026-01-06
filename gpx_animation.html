@@ -278,19 +278,33 @@ function run(pts,sprite,s){
     }
 
     if(travelT>=1&&!panStarted){
-      panStarted=true;
-      hideSanta=true;
-      finishTime=simTime;
-      const bounds=new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat]));
-      if(IS_RENDER){
-        panStartFrame=window.__RENDER_FRAME__||0;
-        panFrom=map.getCenter();
-        panTo=bounds.getCenter();
-      }else{
-        map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:PAN_SECONDS*1000,maxZoom:14});
-      }
-      finished=true;
-    }
+  panStarted = true;
+  finishTime = simTime;
+
+  const bounds = new maplibregl.LngLatBounds(
+    pts.map(p => [p.lng, p.lat])
+  );
+
+  if (IS_RENDER) {
+    panStartFrame = window.__RENDER_FRAME__ || 0;
+    panFrom = map.getCenter();
+    panTo = bounds.getCenter();
+
+    hideSanta = true; // ✅ PATCH: hide Santa for render-pan frames
+  } else {
+    hideSanta = true;
+    map.fitBounds(bounds, {
+      padding:120,
+      pitch:0,
+      bearing:0,
+      duration:PAN_SECONDS*1000,
+      maxZoom:14
+    });
+  }
+
+  finished = true;
+}
+
     requestAnimationFrame(step);
   }
 }
