@@ -40,7 +40,7 @@ let map = null, VIEW_W = 0, VIEW_H = 0;
 function resize(){
   if(!map) return;
   const c = map.getCanvas();
-  const dpr = IS_RENDER ? 1 : (devicePixelRatio || 1); // PATCH: lock DPR during render
+  const dpr = IS_RENDER ? 1 : (devicePixelRatio || 1);
   VIEW_W = c.clientWidth;
   VIEW_H = c.clientHeight;
   canvas.width  = VIEW_W * dpr;
@@ -139,7 +139,12 @@ function stableRow(prev,b){
 let started=false;
 
 function run(pts,sprite,s){
-  let mapIdle = false; // PATCH: tile readiness gate
+  let mapIdle = false;
+
+  /* PATCH: render pan state */
+  let panStartFrame = null;
+  let panFrom = null;
+  let panTo = null;
 
   map=new maplibregl.Map({
     container:"map",
@@ -150,15 +155,14 @@ function run(pts,sprite,s){
     fadeDuration:0
   });
 
-  const FOLLOW_ZOOM=IS_RENDER?18.1:17.9; // PATCH: slight overscan reduction helps edge tiles
+  const FOLLOW_ZOOM=IS_RENDER?18.1:17.9;
   const FOLLOW_PITCH=IS_RENDER?48:52;
 
   const FRAMES=+s.travelboast_sprite_frames||5;
-  const ROWS=5;
   const BASE_SIZE=+s.travelboast_sprite_size||72;
 
   const FRAME_W=sprite?sprite.width/FRAMES:0;
-  const FRAME_H=sprite?sprite.height/ROWS:0;
+  const FRAME_H=sprite?sprite.height/5:0;
 
   const STRIDE_METERS=1.6;
   const MIN_FPS=8,MAX_FPS=12;
@@ -178,26 +182,19 @@ function run(pts,sprite,s){
 
   let simTime=0,lastTs=performance.now();
   let finished=false,finishTime=null,panStarted=false;
-  let hideSanta = false;
-  let hasDrawnFirstFrame = false;
+  let hideSanta=false;
+  let hasDrawnFirstFrame=false;
 
   function start(){
     if(started) return;
     started=true;
-    // PATCH: warm-up frame (double rAF) for GPU/map stability before the real loop
-    requestAnimationFrame(() => {
-      requestAnimationFrame(step);
-    });
+    requestAnimationFrame(()=>requestAnimationFrame(step));
   }
 
   map.on("load",()=>{
     resize();
     map.on("resize",resize);
-
-    // PATCH: set mapIdle once the map is fully rendered (tiles/layers done)
-    map.once("idle", () => {
-      mapIdle = true;
-    });
+    map.once("idle",()=>mapIdle=true);
 
     map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
     map.addLayer({id:"route",type:"line",source:"route",paint:{
@@ -207,21 +204,30 @@ function run(pts,sprite,s){
     start();
   });
 
-  // PATCH: removed duplicate start() here (was causing early/blank/skipped start)
-
   function step(){
     if(IS_RENDER){
-      const f=window.__RENDER_FRAME__||0;
-      simTime=f/RENDER_FPS;
+      simTime=(window.__RENDER_FRAME__||0)/RENDER_FPS;
     }else{
       const now=performance.now();
-      const dt=(now-lastTs)/1000;
+      simTime+=Math.min((now-lastTs)/1000,1/30);
       lastTs=now;
-      simTime+=Math.min(dt,1/30);
     }
 
     if(finished){
-      if(IS_RENDER && simTime-finishTime>=PAN_SECONDS){
+      if(IS_RENDER && panStartFrame!==null){
+        const f=window.__RENDER_FRAME__-panStartFrame;
+        const t=Math.min(1,f/(PAN_SECONDS*RENDER_FPS));
+        map.jumpTo({
+          center:[
+            panFrom.lng+(panTo.lng-panFrom.lng)*t,
+            panFrom.lat+(panTo.lat-panFrom.lat)*t
+          ],
+          zoom:FOLLOW_ZOOM*(1-t)+14*t,
+          pitch:FOLLOW_PITCH*(1-t),
+          bearing:0
+        });
+      }
+      if(IS_RENDER&&simTime-finishTime>=PAN_SECONDS){
         window.__GPX_DONE__=true;return;
       }
       requestAnimationFrame(step);return;
@@ -238,39 +244,21 @@ function run(pts,sprite,s){
     smoothedB=lerpAngle(smoothedB,bearing(a,b),BEARING_DAMP);
     facingRow=stableRow(facingRow,smoothedB);
 
-    // ---------------- SPRITE ANIMATION ----------------
-    const cadence = Math.max(
-      MIN_FPS,
-      Math.min(
-        MAX_FPS,
-        ((total / TRAVEL_SECONDS) / STRIDE_METERS) * FRAMES
-      )
-    );
-
-    if (IS_RENDER) {
-      // Deterministic: advance based on render frame index
-      const framesPerSprite = Math.max(1, Math.round(RENDER_FPS / cadence));
-      spriteFrame = Math.floor(window.__RENDER_FRAME__ / framesPerSprite) % FRAMES;
-    } else {
-      // Live mode: time-based
-      spriteTimer += 1 / 60;
-      if (spriteTimer >= 1 / cadence) {
-        spriteTimer -= 1 / cadence;
-        spriteFrame = (spriteFrame + 1) % FRAMES;
-      }
+    const cadence=Math.max(MIN_FPS,Math.min(MAX_FPS,((total/TRAVEL_SECONDS)/STRIDE_METERS)*FRAMES));
+    if(IS_RENDER){
+      spriteFrame=Math.floor((window.__RENDER_FRAME__||0)/Math.max(1,Math.round(RENDER_FPS/cadence)))%FRAMES;
+    }else{
+      spriteTimer+=1/60;
+      if(spriteTimer>=1/cadence){spriteTimer-=1/cadence;spriteFrame=(spriteFrame+1)%FRAMES;}
     }
-    // -------------------------------------------------
 
-    const src=map.getSource("route");
-    if(src){
-      src.setData({
-        type:"Feature",
-        geometry:{type:"LineString",coordinates:[
-          ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
-          [pos.lng,pos.lat]
-        ]}
-      });
-    }
+    map.getSource("route")?.setData({
+      type:"Feature",
+      geometry:{type:"LineString",coordinates:[
+        ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
+        [pos.lng,pos.lat]
+      ]}
+    });
 
     map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,pitch:FOLLOW_PITCH,bearing:0});
 
@@ -278,23 +266,14 @@ function run(pts,sprite,s){
     const p=map.project([pos.lng,pos.lat]);
     const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
-    if(sprite && !hideSanta){
+    if(sprite&&!hideSanta){
       ctx.save();
       ctx.translate(p.x,p.y);
-      ctx.drawImage(
-        sprite,
-        spriteFrame*FRAME_W,
-        facingRow*FRAME_H,
-        FRAME_W,FRAME_H,
-        -SIZE/2,-SIZE*0.85,SIZE,SIZE
-      );
+      ctx.drawImage(sprite,spriteFrame*FRAME_W,facingRow*FRAME_H,FRAME_W,FRAME_H,-SIZE/2,-SIZE*0.85,SIZE,SIZE);
       ctx.restore();
-
-      // PATCH: only signal GPX_READY once sprite has drawn.
-      // Render mode bypasses idle because idle may never fire in headless.
-      if (!hasDrawnFirstFrame && (!IS_RENDER ? mapIdle : true)) {
-        hasDrawnFirstFrame = true;
-        window.__GPX_READY__ = true;
+      if(!hasDrawnFirstFrame&&(!IS_RENDER?mapIdle:true)){
+        hasDrawnFirstFrame=true;
+        window.__GPX_READY__=true;
       }
     }
 
@@ -302,13 +281,14 @@ function run(pts,sprite,s){
       panStarted=true;
       hideSanta=true;
       finishTime=simTime;
-      ctx.clearRect(0,0,VIEW_W,VIEW_H);
-      try{
-        map.fitBounds(
-          new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
-          {padding:120,pitch:0,bearing:0,duration:8000,maxZoom:14}
-        );
-      }catch{}
+      const bounds=new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat]));
+      if(IS_RENDER){
+        panStartFrame=window.__RENDER_FRAME__||0;
+        panFrom=map.getCenter();
+        panTo=bounds.getCenter();
+      }else{
+        map.fitBounds(bounds,{padding:120,pitch:0,bearing:0,duration:PAN_SECONDS*1000,maxZoom:14});
+      }
       finished=true;
     }
     requestAnimationFrame(step);
