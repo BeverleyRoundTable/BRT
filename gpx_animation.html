@@ -206,7 +206,8 @@ function run(pts,sprite,s){
 
     start();
   });
-  start();
+
+  // PATCH: removed duplicate start() here (was causing early/blank/skipped start)
 
   function step(){
     if(IS_RENDER){
@@ -289,11 +290,12 @@ function run(pts,sprite,s){
       );
       ctx.restore();
 
-      // PATCH: only signal GPX_READY once sprite has drawn AND the map has gone idle
+      // PATCH: only signal GPX_READY once sprite has drawn.
+      // Render mode bypasses idle because idle may never fire in headless.
       if (!hasDrawnFirstFrame && (!IS_RENDER ? mapIdle : true)) {
-  hasDrawnFirstFrame = true;
-  window.__GPX_READY__ = true;
-}
+        hasDrawnFirstFrame = true;
+        window.__GPX_READY__ = true;
+      }
     }
 
     if(travelT>=1&&!panStarted){
