@@ -183,6 +183,7 @@ function run(pts,sprite,s){
 
   let simTime=0,lastTs=performance.now();
   let finished=false,finishTime=null,panStarted=false;
+  let hideSanta=false;
 
   function start(){
     if(started) return;
@@ -230,9 +231,16 @@ function run(pts,sprite,s){
     smoothedB=lerpAngle(smoothedB,bearing(a,b),BEARING_DAMP);
     facingRow=stableRow(facingRow,smoothedB);
 
-    const cadence=Math.max(MIN_FPS,Math.min(MAX_FPS,((total/TRAVEL_SECONDS)/STRIDE_METERS)*FRAMES));
-    spriteTimer+=1/RENDER_FPS;
-    if(spriteTimer>=1/cadence){spriteTimer-=1/cadence;spriteFrame=(spriteFrame+1)%FRAMES;}
+    const src=map.getSource("route");
+    if(src){
+      src.setData({
+        type:"Feature",
+        geometry:{type:"LineString",coordinates:[
+          ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
+          [pos.lng,pos.lat]
+        ]}
+      });
+    }
 
     map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,pitch:FOLLOW_PITCH,bearing:0});
 
@@ -240,22 +248,29 @@ function run(pts,sprite,s){
     const p=map.project([pos.lng,pos.lat]);
     const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
-    ctx.save();
-    ctx.translate(p.x,p.y);
-    if(sprite){
-      ctx.drawImage(sprite,
-        spriteFrame*FRAME_W,facingRow*FRAME_H,
+    if(sprite && !hideSanta){
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.drawImage(
+        sprite,
+        spriteFrame*FRAME_W,
+        facingRow*FRAME_H,
         FRAME_W,FRAME_H,
-        -SIZE/2,-SIZE*0.85,SIZE,SIZE);
+        -SIZE/2,-SIZE*0.85,SIZE,SIZE
+      );
+      ctx.restore();
     }
-    ctx.restore();
 
     if(travelT>=1&&!panStarted){
       panStarted=true;
+      hideSanta=true;
       finishTime=simTime;
+      ctx.clearRect(0,0,VIEW_W,VIEW_H);
       try{
-        map.fitBounds(new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
-          {padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14});
+        map.fitBounds(
+          new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])),
+          {padding:120,pitch:0,bearing:0,duration:3500,maxZoom:14}
+        );
       }catch{}
       finished=true;
     }
