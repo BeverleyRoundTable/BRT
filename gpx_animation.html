@@ -20,7 +20,6 @@
   window.__GPX_READY__ = false;
   window.__GPX_DONE__  = false;
   window.__RENDER_FRAME__ = 0;
-
 </script>
 
 <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
@@ -41,7 +40,7 @@ let map = null, VIEW_W = 0, VIEW_H = 0;
 function resize(){
   if(!map) return;
   const c = map.getCanvas();
-  const dpr = devicePixelRatio || 1;
+  const dpr = IS_RENDER ? 1 : (devicePixelRatio || 1); // PATCH: lock DPR during render
   VIEW_W = c.clientWidth;
   VIEW_H = c.clientHeight;
   canvas.width  = VIEW_W * dpr;
@@ -140,6 +139,8 @@ function stableRow(prev,b){
 let started=false;
 
 function run(pts,sprite,s){
+  let mapIdle = false; // PATCH: tile readiness gate
+
   map=new maplibregl.Map({
     container:"map",
     style:MAP_STYLE,
@@ -149,7 +150,7 @@ function run(pts,sprite,s){
     fadeDuration:0
   });
 
-  const FOLLOW_ZOOM=IS_RENDER?18.3:17.9;
+  const FOLLOW_ZOOM=IS_RENDER?18.1:17.9; // PATCH: slight overscan reduction helps edge tiles
   const FOLLOW_PITCH=IS_RENDER?48:52;
 
   const FRAMES=+s.travelboast_sprite_frames||5;
@@ -178,21 +179,31 @@ function run(pts,sprite,s){
   let simTime=0,lastTs=performance.now();
   let finished=false,finishTime=null,panStarted=false;
   let hideSanta = false;
-let hasDrawnFirstFrame = false;
-  
+  let hasDrawnFirstFrame = false;
+
   function start(){
     if(started) return;
     started=true;
-    requestAnimationFrame(step);
+    // PATCH: warm-up frame (double rAF) for GPU/map stability before the real loop
+    requestAnimationFrame(() => {
+      requestAnimationFrame(step);
+    });
   }
 
   map.on("load",()=>{
     resize();
     map.on("resize",resize);
+
+    // PATCH: set mapIdle once the map is fully rendered (tiles/layers done)
+    map.once("idle", () => {
+      mapIdle = true;
+    });
+
     map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
     map.addLayer({id:"route",type:"line",source:"route",paint:{
       "line-color":s.primary_color||"#d31c1c","line-width":6
     }});
+
     start();
   });
   start();
@@ -227,27 +238,27 @@ let hasDrawnFirstFrame = false;
     facingRow=stableRow(facingRow,smoothedB);
 
     // ---------------- SPRITE ANIMATION ----------------
-const cadence = Math.max(
-  MIN_FPS,
-  Math.min(
-    MAX_FPS,
-    ((total / TRAVEL_SECONDS) / STRIDE_METERS) * FRAMES
-  )
-);
+    const cadence = Math.max(
+      MIN_FPS,
+      Math.min(
+        MAX_FPS,
+        ((total / TRAVEL_SECONDS) / STRIDE_METERS) * FRAMES
+      )
+    );
 
-if (IS_RENDER) {
-  // Deterministic: advance based on render frame index
-  const framesPerSprite = Math.max(1, Math.round(RENDER_FPS / cadence));
-  spriteFrame = Math.floor(window.__RENDER_FRAME__ / framesPerSprite) % FRAMES;
-} else {
-  // Live mode: time-based
-  spriteTimer += 1 / 60;
-  if (spriteTimer >= 1 / cadence) {
-    spriteTimer -= 1 / cadence;
-    spriteFrame = (spriteFrame + 1) % FRAMES;
-  }
-}
-// -------------------------------------------------
+    if (IS_RENDER) {
+      // Deterministic: advance based on render frame index
+      const framesPerSprite = Math.max(1, Math.round(RENDER_FPS / cadence));
+      spriteFrame = Math.floor(window.__RENDER_FRAME__ / framesPerSprite) % FRAMES;
+    } else {
+      // Live mode: time-based
+      spriteTimer += 1 / 60;
+      if (spriteTimer >= 1 / cadence) {
+        spriteTimer -= 1 / cadence;
+        spriteFrame = (spriteFrame + 1) % FRAMES;
+      }
+    }
+    // -------------------------------------------------
 
     const src=map.getSource("route");
     if(src){
@@ -267,22 +278,23 @@ if (IS_RENDER) {
     const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
     if(sprite && !hideSanta){
-  ctx.save();
-  ctx.translate(p.x,p.y);
-  ctx.drawImage(
-    sprite,
-    spriteFrame*FRAME_W,
-    facingRow*FRAME_H,
-    FRAME_W,FRAME_H,
-    -SIZE/2,-SIZE*0.85,SIZE,SIZE
-  );
-  ctx.restore();
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.drawImage(
+        sprite,
+        spriteFrame*FRAME_W,
+        facingRow*FRAME_H,
+        FRAME_W,FRAME_H,
+        -SIZE/2,-SIZE*0.85,SIZE,SIZE
+      );
+      ctx.restore();
 
-  if (!hasDrawnFirstFrame) {
-    hasDrawnFirstFrame = true;
-    window.__GPX_READY__ = true;
-  }
-}
+      // PATCH: only signal GPX_READY once sprite has drawn AND the map has gone idle
+      if (!hasDrawnFirstFrame && mapIdle) {
+        hasDrawnFirstFrame = true;
+        window.__GPX_READY__ = true;
+      }
+    }
 
     if(travelT>=1&&!panStarted){
       panStarted=true;
