@@ -28,7 +28,6 @@ const url = process.env.RENDER_URL;
 const width = Number(process.env.WIDTH || 1080);
 const height = Number(process.env.HEIGHT || 1080);
 const fps = Number(process.env.FPS || 24);
-const durationMs = Number(process.env.DURATION || 0);
 
 if (!url) {
   console.error("❌ Missing RENDER_URL");
@@ -67,7 +66,7 @@ await page.waitForFunction(
   { timeout: 20000, polling: 250 }
 );
 
-// 🔒 Let one animation frame fully draw before capture
+// 🔒 Initial settle (unchanged)
 await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
 
 console.log("✅ GPX ready — starting render");
@@ -85,7 +84,6 @@ await page.evaluate(() => {
 
 // 🚨 SAFETY ONLY — animation controls real duration
 const SAFETY_SECONDS = Number(process.env.SAFETY_SECONDS || 300);
-// default 5 mins
 const maxFrames = Math.ceil(SAFETY_SECONDS * fps);
 
 console.log("🎥 Capturing frames");
@@ -93,10 +91,25 @@ console.log("🎥 Capturing frames");
 let frame = 0;
 
 while (frame < maxFrames) {
+
   // 🔑 Frame index is authoritative
   await page.evaluate(f => {
     window.__RENDER_FRAME__ = f;
   }, frame);
+
+  // =====================================================
+  // 🔒 PATCH START: WebGL + tile settle (2× rAF)
+  // =====================================================
+  await page.evaluate(() =>
+    new Promise(r =>
+      requestAnimationFrame(() =>
+        requestAnimationFrame(r)
+      )
+    )
+  );
+  // =====================================================
+  // 🔒 PATCH END
+  // =====================================================
 
   const framePath = path.join(
     framesDir,
@@ -106,19 +119,45 @@ while (frame < maxFrames) {
   await page.screenshot({ path: framePath, type: "png" });
   frame++;
 
-  // 🔁 Yield so WebGL has time to flush (prevents snap/freeze)
+  // 🔁 Yield (unchanged)
   await new Promise(r => setTimeout(r, 0));
 
   if (frame % fps === 0) {
     const pct = Math.min(100, Math.round((frame / maxFrames) * 100));
-
     console.log(`📊 Render progress: ${pct}%`);
     await reportProgress(pct, "Rendering");
   }
 
   const done = await page.evaluate(() => window.__GPX_DONE__ === true);
   if (done) {
-    console.log("✅ Animation completed cleanly");
+    console.log("✅ Animation completed — settling final frames");
+
+    // =====================================================
+    // 🔒 PATCH START: final settle frames (0.5s)
+    // =====================================================
+    const settleFrames = Math.ceil(fps * 0.5);
+
+    for (let i = 0; i < settleFrames; i++) {
+      await page.evaluate(() =>
+        new Promise(r =>
+          requestAnimationFrame(() =>
+            requestAnimationFrame(r)
+          )
+        )
+      );
+
+      const settlePath = path.join(
+        framesDir,
+        `frame_${String(frame).padStart(5, "0")}.png`
+      );
+
+      await page.screenshot({ path: settlePath, type: "png" });
+      frame++;
+    }
+    // =====================================================
+    // 🔒 PATCH END
+    // =====================================================
+
     break;
   }
 }
