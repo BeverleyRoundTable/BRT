@@ -274,10 +274,21 @@ function run(pts,sprite,s){
 
     if(sprite&&!hideSanta){
      // determine if sprite needs horizontal mirroring
-const flip =
-  (facingRow === 1 && smoothedB > 180) || // NW
-  (facingRow === 2 && smoothedB > 180) || // W
-  (facingRow === 3 && smoothedB < 180);   // SE (mirror SW base art)
+let flip = false;
+
+switch (facingRow) {
+  case 1: // NE base → flip for NW
+    flip = smoothedB >= 292.5 && smoothedB < 337.5;
+    break;
+
+  case 2: // E base → flip for W
+    flip = smoothedB >= 247.5 && smoothedB < 292.5;
+    break;
+
+  case 3: // SW base → flip for SE
+    flip = smoothedB >= 112.5 && smoothedB < 157.5;
+    break;
+}
 
 ctx.save();
 ctx.translate(p.x, p.y);
