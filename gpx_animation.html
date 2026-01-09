@@ -10,8 +10,15 @@ const ROUTE     = PARAMS.get("route");
 if (!API)   throw new Error("Missing ?api=");
 if (!ROUTE) throw new Error("Missing ?route=");
 
-const canvas = document.getElementById("anim");
-const ctx    = canvas.getContext("2d");
+let canvas = null;
+let ctx = null;
+
+function initCanvas() {
+  canvas = document.getElementById("anim");
+  if (!canvas) return false;
+  ctx = canvas.getContext("2d");
+  return true;
+}
 
 let map=null, VIEW_W=0, VIEW_H=0;
 
@@ -156,18 +163,36 @@ function run(pts,sprite,logo,sponsor,s){
   });
 
   map.on("load",()=>{
-    resize();
-    map.on("resize",resize);
-    map.once("idle",()=>mapIdle=true);
-    boostLabels(map);
+  if (!initCanvas()) {
+    console.error("Canvas not ready");
+    return;
+  }
 
-    map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
-    map.addLayer({id:"route",type:"line",source:"route",paint:{
-      "line-color":s.primary_color||"#d31c1c","line-width":6
-    }});
+  resize();
+  map.on("resize",resize);
+  map.once("idle",()=>mapIdle=true);
+  boostLabels(map);
 
-    requestAnimationFrame(()=>requestAnimationFrame(step));
+  map.addSource("route",{type:"geojson",data:{
+    type:"Feature",
+    geometry:{type:"LineString",coordinates:[]}
+  }});
+
+  map.addLayer({
+    id:"route",
+    type:"line",
+    source:"route",
+    paint:{
+      "line-color":s.primary_color||"#d31c1c",
+      "line-width":6
+    }
   });
+
+  if(!started){
+    started=true;
+    requestAnimationFrame(()=>requestAnimationFrame(step));
+  }
+});
 
   const FRAMES=+s.travelboast_sprite_frames||5;
   const BASE=+s.travelboast_sprite_size||72;
