@@ -1,7 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Turbo Santa GPX Animation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" />
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12}
+  #map{position:absolute;inset:0}
+  #anim{position:absolute;inset:0;pointer-events:none}
+</style>
+</head>
+
+<body>
+<div id="map"></div>
+<canvas id="anim"></canvas>
+
 <script>
-/* =====================================================
-   PARAMS
-   ===================================================== */
+  window.__GPX_READY__ = false;
+  window.__GPX_DONE__  = false;
+  window.__RENDER_FRAME__ = 0;
+</script>
+
+<script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
+<script>
 const PARAMS    = new URLSearchParams(location.search);
 const IS_RENDER = PARAMS.has("render");
 const API       = PARAMS.get("api");
@@ -10,63 +32,37 @@ const ROUTE     = PARAMS.get("route");
 if (!API)   throw new Error("Missing ?api=");
 if (!ROUTE) throw new Error("Missing ?route=");
 
-let canvas = null;
-let ctx = null;
+const canvas = document.getElementById("anim");
+const ctx    = canvas.getContext("2d");
 
-function initCanvas() {
-  canvas = document.getElementById("anim");
-  if (!canvas) return false;
-  ctx = canvas.getContext("2d");
-  return true;
-}
+let map = null, VIEW_W = 0, VIEW_H = 0;
 
-let map=null, VIEW_W=0, VIEW_H=0;
-
-/* =====================================================
-   RESIZE
-   ===================================================== */
 function resize(){
   if(!map) return;
   const c = map.getCanvas();
-  const dpr = IS_RENDER ? 1 : (devicePixelRatio||1);
+  const dpr = IS_RENDER ? 1 : (devicePixelRatio || 1);
   VIEW_W = c.clientWidth;
   VIEW_H = c.clientHeight;
   canvas.width  = VIEW_W * dpr;
   canvas.height = VIEW_H * dpr;
-  canvas.style.width  = VIEW_W+"px";
-  canvas.style.height = VIEW_H+"px";
+  canvas.style.width  = VIEW_W + "px";
+  canvas.style.height = VIEW_H + "px";
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 
-/* =====================================================
-   MAP STYLE
-   ===================================================== */
-const MAP_STYLE = "https://demotiles.maplibre.org/style.json";
+const MAP_STYLE = {
+  version: 8,
+  sources: {
+    raster: {
+      type: "raster",
+      tiles: ["https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"],
+      tileSize: 256
+    }
+  },
+  layers: [{ id: "base", type: "raster", source: "raster" }]
+};
 
-/* =====================================================
-   LABEL BOOST
-   ===================================================== */
-function boostLabels(map){
-  const style = map.getStyle();
-  if(!style?.layers) return;
-  for(const l of style.layers){
-    if(l.type!=="symbol") continue;
-    if(!l.layout?.["text-field"]) continue;
-
-    const isRoad =
-      (l.id||"").toLowerCase().includes("road") ||
-      (l["source-layer"]||"").toLowerCase().includes("transport");
-
-    map.setLayoutProperty(l.id,"text-size",isRoad?22:18);
-    map.setPaintProperty(l.id,"text-halo-color","rgba(255,255,255,0.92)");
-    map.setPaintProperty(l.id,"text-halo-width",2.5);
-    map.setPaintProperty(l.id,"text-halo-blur",0);
-  }
-}
-
-/* =====================================================
-   GEO MATH
-   ===================================================== */
+/* ================= MATH ================= */
 const dist=(a,b)=>{
   const R=6371000;
   const dLat=(b.lat-a.lat)*Math.PI/180;
@@ -85,49 +81,49 @@ const bearing=(a,b)=>{
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 };
 
-const normalize=b=>(b%360+360)%360;
-const lerpAng=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
+const normalizeBearing=b=>(b%360+360)%360;
+const lerpAngle=(a,b,t)=>a+(((b-a+540)%360)-180)*t;
 
-/* =====================================================
-   SPRITE ROWS
-   ===================================================== */
-function bearingToRow(b){
-  b=normalize(b);
+/* ================= SPRITE ROWS ================= */
+function bearingToRowRaw(b){
+  b=normalizeBearing(b);
   if(b>=337.5||b<22.5) return 0;
-  if(b<67.5||b>=292.5) return 1;
-  if(b<112.5||b>=247.5) return 2;
-  if(b<157.5||b>=202.5) return 3;
+  if(b>=22.5&&b<67.5) return 1;
+  if(b>=292.5&&b<337.5) return 1;
+  if(b>=67.5&&b<112.5) return 2;
+  if(b>=247.5&&b<292.5) return 2;
+  if(b>=112.5&&b<157.5) return 3;
+  if(b>=202.5&&b<247.5) return 3;
   return 4;
 }
 
-const ROW_CENTER=[0,45,90,225,180];
-const HYST=18;
-const angDist=(a,b)=>Math.abs(((a-b+540)%360)-180);
+const ROW_CENTERS=[0,45,90,225,180];
+const ROW_HYST=18;
+const angularDistance=(a,b)=>Math.abs(((a-b+540)%360)-180);
 
 function stableRow(prev,b){
-  b=normalize(b);
-  if(angDist(b,ROW_CENTER[prev])<HYST) return prev;
-  let best=prev,bd=999;
-  for(let i=0;i<ROW_CENTER.length;i++){
-    const d=angDist(b,ROW_CENTER[i]);
-    if(d<bd){bd=d;best=i;}
+  b=normalizeBearing(b);
+  let best=prev;
+  let bestD=angularDistance(b,ROW_CENTERS[prev]);
+  if(bestD<ROW_HYST) return prev;
+  for(let r=0;r<ROW_CENTERS.length;r++){
+    const d=angularDistance(b,ROW_CENTERS[r]);
+    if(d<bestD){bestD=d;best=r;}
   }
   return best;
 }
 
-/* =====================================================
-   LOAD DATA
-   ===================================================== */
+/* ================= LOAD DATA ================= */
 (async()=>{
   const master=await fetch(API,{cache:"no-store"}).then(r=>r.json());
   const s=master.settings||{};
-  const route=(master.routes||[]).find(r=>String(r.routeName||"").toLowerCase()===ROUTE.toLowerCase());
-  if(!route) throw Error("Route not found");
+  const routeObj=(master.routes||[]).find(r=>String(r.routeName||"").toLowerCase()===ROUTE.toLowerCase());
+  if(!routeObj) throw new Error("Route not found");
 
-  const pts=await fetch(route.gpxUrl).then(r=>r.text()).then(x=>
-    [...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
-      .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")}))
-  );
+  const pts=await fetch(routeObj.gpxUrl)
+    .then(r=>r.text())
+    .then(x=>[...new DOMParser().parseFromString(x,"text/xml").getElementsByTagName("trkpt")]
+      .map(p=>({lat:+p.getAttribute("lat"),lng:+p.getAttribute("lon")})));
 
   const loadImg = src => new Promise(res=>{
     if(!src) return res(null);
@@ -138,28 +134,18 @@ function stableRow(prev,b){
     i.src=src;
   });
 
-  const loadImg = src => new Promise(res=>{
-  if(!src) return res(null);
-  const i=new Image();
-  i.crossOrigin="anonymous";
-  i.onload=()=>res(i);
-  i.onerror=()=>res(null);
-  i.src=src;
-});
+  const sprite  = await loadImg(s.travelboast_sprite);
+  const logo    = await loadImg(s.logo_overlay_url);
+  const sponsor = await loadImg(routeObj.sponsorUrl);
 
-const sprite  = await loadImg(s.travelboast_sprite);
-const logo    = await loadImg(s.logo_overlay_url);
-const sponsor = await loadImg(routeObj.sponsorUrl || s.sponsorUrl);
+  run(pts,sprite,logo,sponsor,s);
+})();
 
-run(pts, sprite, logo, sponsor, s);
+let started=false;
 
-/* =====================================================
-   MAIN LOOP
-   ===================================================== */
 function run(pts,sprite,logo,sponsor,s){
   let mapIdle=false;
   let panStartFrame=null,panFrom=null,panTo=null;
-  let hideSanta=false,finished=false,panStarted=false,finishTime=0;
 
   map=new maplibregl.Map({
     container:"map",
@@ -170,63 +156,43 @@ function run(pts,sprite,logo,sponsor,s){
     fadeDuration:0
   });
 
-  map.on("load",()=>{
-  if (!initCanvas()) {
-    console.error("Canvas not ready");
-    return;
-  }
-
-  resize();
-  map.on("resize",resize);
-  map.once("idle",()=>mapIdle=true);
-  boostLabels(map);
-
-  map.addSource("route",{type:"geojson",data:{
-    type:"Feature",
-    geometry:{type:"LineString",coordinates:[]}
-  }});
-
-  map.addLayer({
-    id:"route",
-    type:"line",
-    source:"route",
-    paint:{
-      "line-color":s.primary_color||"#d31c1c",
-      "line-width":6
-    }
-  });
-
-  if(!started){
-    started=true;
-    requestAnimationFrame(()=>requestAnimationFrame(step));
-  }
-});
+  const FOLLOW_ZOOM=IS_RENDER?18.1:17.9;
+  const FOLLOW_PITCH=IS_RENDER?48:52;
 
   const FRAMES=+s.travelboast_sprite_frames||5;
-  const BASE=+s.travelboast_sprite_size||72;
+  const BASE_SIZE=+s.travelboast_sprite_size||72;
   const FRAME_W=sprite?sprite.width/FRAMES:0;
   const FRAME_H=sprite?sprite.height/5:0;
-  const TRAVEL=+s.travelboast_speed||45;
-  const PAN=IS_RENDER?10:8;
-  const FPS=24;
+
+  const STRIDE_METERS=1.6;
+  const MIN_FPS=8,MAX_FPS=12;
+  const BEARING_DAMP=0.18;
+
+  const TRAVEL_SECONDS=Math.max(1,+s.travelboast_speed||45);
+  const PAN_SECONDS=IS_RENDER?10:8;
+  const RENDER_FPS=24;
+
+  const PAN_PADDING=IS_RENDER?{top:150,bottom:150,left:150,right:150}:null;
 
   const cum=[0];
   for(let i=1;i<pts.length;i++) cum[i]=cum[i-1]+dist(pts[i-1],pts[i]);
   const total=cum.at(-1);
 
-  let frame=0,sim=0,last=performance.now();
-  let b=bearing(pts[0],pts[1]||pts[0]);
-  let row=bearingToRow(b);
+  let spriteTimer=0,spriteFrame=0;
+  let smoothedB=bearing(pts[0],pts[1]||pts[0]);
+  let facingRow=bearingToRowRaw(smoothedB);
+
+  let simTime=0,lastTs=performance.now();
+  let finished=false,finishTime=null,panStarted=false;
+  let hideSanta=false;
+  let hasDrawnFirstFrame=false;
 
   function drawOverlay(img,pos){
     if(!img) return;
-    const size=90;
-    const pad=20;
+    const size=64,pad=20;
     let x=pad,y=pad;
-
     if(pos.includes("right")) x=VIEW_W-size-pad;
     if(pos.includes("bottom")) y=VIEW_H-size-pad;
-
     ctx.drawImage(img,x,y,size,size);
   }
 
@@ -236,52 +202,84 @@ function run(pts,sprite,logo,sponsor,s){
       .replace("top","_").replace("bottom","top").replace("_","bottom");
   }
 
-  const LOGO_POS = (s.logo_position||"bottom-right").toLowerCase();
-  const SPONSOR_POS = opposite(LOGO_POS);
+  const LOGO_POS=(s.logo_overlay_position||"bottom-right").toLowerCase();
+  const SPONSOR_POS=opposite(LOGO_POS);
+
+  function start(){
+    if(started) return;
+    started=true;
+    requestAnimationFrame(()=>requestAnimationFrame(step));
+  }
+
+  map.on("load",()=>{
+    resize();
+    map.on("resize",resize);
+    map.once("idle",()=>mapIdle=true);
+
+    map.addSource("route",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
+    map.addLayer({id:"route",type:"line",source:"route",paint:{
+      "line-color":s.primary_color||"#d31c1c","line-width":6
+    }});
+
+    start();
+  });
 
   function step(){
-    if(IS_RENDER) sim=(window.__RENDER_FRAME__||0)/FPS;
-    else{
-      const n=performance.now();
-      sim+=Math.min((n-last)/1000,1/30);
-      last=n;
+    if(IS_RENDER){
+      simTime=(window.__RENDER_FRAME__||0)/RENDER_FPS;
+    }else{
+      const now=performance.now();
+      simTime+=Math.min((now-lastTs)/1000,1/30);
+      lastTs=now;
     }
 
     if(finished){
       if(IS_RENDER && panStartFrame!==null){
         const f=window.__RENDER_FRAME__-panStartFrame;
-        const t=Math.min(1,f/(PAN*FPS));
-        map.jumpTo({
+        const tt=Math.min(1,f/(PAN_SECONDS*RENDER_FPS));
+        const jumpOpts={
           center:[
-            panFrom.lng+(panTo.lng-panFrom.lng)*t,
-            panFrom.lat+(panTo.lat-panFrom.lat)*t
+            panFrom.lng+(panTo.lng-panFrom.lng)*tt,
+            panFrom.lat+(panTo.lat-panFrom.lat)*tt
           ],
-          zoom:(18*(1-t)+14*t),
-          pitch:(48*(1-t)),
-          bearing:0,
-          padding:{top:150,bottom:150,left:150,right:150}
-        });
+          zoom:FOLLOW_ZOOM*(1-tt)+14*tt,
+          pitch:FOLLOW_PITCH*(1-tt),
+          bearing:0
+        };
+        if(PAN_PADDING) jumpOpts.padding=PAN_PADDING;
+        map.jumpTo(jumpOpts);
       }
+
       ctx.clearRect(0,0,VIEW_W,VIEW_H);
       drawOverlay(logo,LOGO_POS);
       drawOverlay(sponsor,SPONSOR_POS);
-      if(IS_RENDER && sim-finishTime>=PAN){
+
+      if(IS_RENDER && simTime-finishTime>=PAN_SECONDS){
         window.__GPX_DONE__=true; return;
       }
       requestAnimationFrame(step); return;
     }
 
-    const t=Math.min(1,sim/TRAVEL);
-    const m=t*total;
+    const travelT=Math.min(1,simTime/TRAVEL_SECONDS);
+    const m=travelT*total;
     let i=cum.findIndex(v=>v>=m); i=Math.max(1,i);
-    const tt=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
-    const a=pts[i-1],c=pts[i];
-    const pos={lat:a.lat+(c.lat-a.lat)*tt,lng:a.lng+(c.lng-a.lng)*tt};
+    const t=(m-cum[i-1])/(cum[i]-cum[i-1]||1);
 
-    b=lerpAng(b,bearing(a,c),0.18);
-    row=stableRow(row,b);
+    const a=pts[i-1],b=pts[i];
+    const pos={lat:a.lat+(b.lat-a.lat)*t,lng:a.lng+(b.lng-a.lng)*t};
 
-    map.getSource("route").setData({
+    smoothedB=lerpAngle(smoothedB,bearing(a,b),BEARING_DAMP);
+    facingRow=stableRow(facingRow,smoothedB);
+
+    const cadence=Math.max(MIN_FPS,Math.min(MAX_FPS,((total/TRAVEL_SECONDS)/STRIDE_METERS)*FRAMES));
+    if(IS_RENDER){
+      spriteFrame=Math.floor((window.__RENDER_FRAME__||0)/Math.max(1,Math.round(RENDER_FPS/cadence)))%FRAMES;
+    }else{
+      spriteTimer+=1/60;
+      if(spriteTimer>=1/cadence){spriteTimer-=1/cadence;spriteFrame=(spriteFrame+1)%FRAMES;}
+    }
+
+    map.getSource("route")?.setData({
       type:"Feature",
       geometry:{type:"LineString",coordinates:[
         ...pts.slice(0,i).map(p=>[p.lng,p.lat]),
@@ -289,40 +287,43 @@ function run(pts,sprite,logo,sponsor,s){
       ]}
     });
 
-    map.jumpTo({center:[pos.lng,pos.lat],zoom:18,pitch:48,bearing:0});
+    map.jumpTo({center:[pos.lng,pos.lat],zoom:FOLLOW_ZOOM,pitch:FOLLOW_PITCH,bearing:0});
 
     ctx.clearRect(0,0,VIEW_W,VIEW_H);
-
     const p=map.project([pos.lng,pos.lat]);
-    const size=BASE;
+    const SIZE=BASE_SIZE*(0.9+Math.min(0.4,(FOLLOW_ZOOM-15)*0.25));
 
     if(sprite && !hideSanta){
       let flip=false;
-      if(row===1 && b>=292.5) flip=true;
-      if(row===2 && b>=247.5) flip=true;
-      if(row===3 && b<157.5) flip=true;
+      if(facingRow===1) flip=smoothedB>=292.5&&smoothedB<337.5;
+      if(facingRow===2) flip=smoothedB>=247.5&&smoothedB<292.5;
+      if(facingRow===3) flip=smoothedB>=112.5&&smoothedB<157.5;
 
       ctx.save();
       ctx.translate(p.x,p.y);
       if(flip) ctx.scale(-1,1);
-      ctx.drawImage(sprite,(frame%FRAMES)*FRAME_W,row*FRAME_H,FRAME_W,FRAME_H,-size/2,-size*0.85,size,size);
+      ctx.drawImage(sprite,
+        spriteFrame*FRAME_W,facingRow*FRAME_H,FRAME_W,FRAME_H,
+        -SIZE/2,-SIZE*0.85,SIZE,SIZE);
       ctx.restore();
 
-      if(!window.__GPX_READY__ && (IS_RENDER||mapIdle)) window.__GPX_READY__=true;
+      if(!hasDrawnFirstFrame && (!IS_RENDER?mapIdle:true)){
+        hasDrawnFirstFrame=true;
+        window.__GPX_READY__=true;
+      }
     }
 
     drawOverlay(logo,LOGO_POS);
     drawOverlay(sponsor,SPONSOR_POS);
 
-    frame++;
-
-    if(t>=1 && !panStarted){
+    if(travelT>=1 && !panStarted){
       hideSanta=true;
       panStarted=true;
-      finishTime=sim;
+      finishTime=simTime;
+      const bounds=new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat]));
       panStartFrame=window.__RENDER_FRAME__||0;
       panFrom=map.getCenter();
-      panTo=new maplibregl.LngLatBounds(pts.map(p=>[p.lng,p.lat])).getCenter();
+      panTo=bounds.getCenter();
       finished=true;
     }
 
