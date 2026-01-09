@@ -138,12 +138,20 @@ function stableRow(prev,b){
     i.src=src;
   });
 
-  const sprite   = await loadImg(s.travelboast_sprite);
-  const logo     = await loadImg(s.logo_overlay_url);
-  const sponsor  = await loadImg(route.sponsorUrl || s.sponsorUrl);
+  const loadImg = src => new Promise(res=>{
+  if(!src) return res(null);
+  const i=new Image();
+  i.crossOrigin="anonymous";
+  i.onload=()=>res(i);
+  i.onerror=()=>res(null);
+  i.src=src;
+});
 
-  run(pts,sprite,logo,sponsor,s);
-})();
+const sprite  = await loadImg(s.travelboast_sprite);
+const logo    = await loadImg(s.logo_overlay_url);
+const sponsor = await loadImg(routeObj.sponsorUrl || s.sponsorUrl);
+
+run(pts, sprite, logo, sponsor, s);
 
 /* =====================================================
    MAIN LOOP
