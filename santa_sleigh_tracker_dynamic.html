@@ -208,6 +208,7 @@ html,body{
   <div id="statusDot" class="status-dot"></div>
   <button class="btn" id="followBtn">Follow: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
+  <button class="btn" id="notifyBtn">🔔 Notify Me</button>
 </div>
 
 <div id="map"></div>
@@ -331,6 +332,42 @@ async function tick(){
 }
 
 init();
+
+/* ===================================================
+   NOTIFICATION SIGN-UP (STEP 1)
+=================================================== */
+
+notifyBtn.onclick = () => {
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      subscribeUser(pos.coords.latitude, pos.coords.longitude);
+    },
+    () => alert("Location permission is required to notify you")
+  );
+};
+
+function subscribeUser(lat, lng) {
+  fetch(
+    "https://santa-sleigh-tracker-4dccd-default-rtdb.europe-west1.firebasedatabase.app/subscribers.json",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        api: apiUrl,                 // ⭐ THIS IS THE KEY LINE
+        lat: lat,
+        lng: lng,
+        threshold_minutes: 5,
+        notified: false,
+        created: new Date().toISOString()
+      })
+    }
+  )
+  .then(() => {
+    alert("🎅 You’ll be notified when Santa is close!");
+  })
+  .catch(() => {
+    alert("Could not subscribe for notifications");
+  });
+}
 </script>
 </body>
 </html>
