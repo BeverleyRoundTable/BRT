@@ -243,7 +243,9 @@ const FALLBACK = {
 
 let map, marker, follow=true, firstFix=true, lastFix=null;
 let awaitingPin = false;
-
+let notifyMarker = null;
+let firebaseBaseUrl = null;
+  
 /* ---------- HELPERS ---------- */
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
@@ -253,10 +255,32 @@ async function loadJSON(url){
   return r.json();
 }
 
+  function showNotifyMarker(lat, lng) {
+  // Remove old marker if it exists
+  if (notifyMarker) {
+    map.removeLayer(notifyMarker);
+  }
+
+  notifyMarker = L.marker([lat, lng], {
+    icon: L.icon({
+      iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34]
+    })
+  })
+  .addTo(map)
+  .bindPopup("🔔 You’ll be notified here")
+  .openPopup();
+}
+
 /* ---------- INIT ---------- */
 async function init(){
   const data = await loadJSON(apiUrl);
   const s = data.settings || {};
+
+  // 🔑 Capture Firebase base URL from API
+  firebaseBaseUrl = data.tracker?.firebase_url || null;
   
   // 🔔 Hide Notify button if no GPX route is available
   const today = new Date().toISOString().slice(0, 10);
@@ -372,12 +396,20 @@ notifyBtn.onclick = () => {
 };
 
 function subscribeUser(lat, lng) {
+  if (!firebaseBaseUrl) {
+    alert("Notifications are not available for this tracker");
+    return;
+  }
+
+  showNotifyMarker(lat, lng);
+
   fetch(
-    "https://santa-sleigh-tracker-4dccd-default-rtdb.europe-west1.firebasedatabase.app/subscribers.json",
+    `${firebaseBaseUrl}/subscribers.json`,
     {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        api: apiUrl,                 // ⭐ THIS IS THE KEY LINE
+        api: apiUrl,           // ties subscriber to THIS tracker
         lat: lat,
         lng: lng,
         threshold_minutes: 5,
