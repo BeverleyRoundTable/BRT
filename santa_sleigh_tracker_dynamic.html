@@ -354,7 +354,15 @@ if (!todayRoute) {
 
   map = L.map("map").setView(LAPLAND,5);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
+  
+/* ✅ RESTORE SAVED NOTIFY PIN */
+const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
+if (savedPin) {
+  try {
+    const p = JSON.parse(savedPin);
+    showNotifyMarker(p.lat, p.lng, true);
+  } catch {}
+}
   map.on("click", e => {
   if (!awaitingPin) return;
 
@@ -376,7 +384,12 @@ if (!todayRoute) {
   awaitingPin = false;
 
   showNotifyMarker(pinPreview.lat, pinPreview.lng, true);
-
+   
+sessionStorage.setItem(
+    "SANTA_NOTIFY_POINT",
+    JSON.stringify({ lat: pinPreview.lat, lng: pinPreview.lng })
+  );
+   
   subscribeUser(pinPreview.lat, pinPreview.lng);
   pinPreview = null;
 
@@ -497,6 +510,10 @@ notifyBtn.onclick = () => {
   browserNotified = false;
   sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
 
+  // ✅ ALLOW RE-SIGNUP INTENTIONALLY
+  sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
+  sessionStorage.removeItem("SANTA_NOTIFY_POINT");
+
   if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
   }
@@ -511,6 +528,13 @@ notifyBtn.onclick = () => {
 };
 
 function subscribeUser(lat, lng) {
+
+  // ✅ DUPLICATE GUARD
+  if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
+    alert("🎅 You’re already signed up for notifications!");
+    return;
+  }
+
   if (!firebaseBaseUrl) {
     alert("Notifications are not available for this tracker");
     return;
@@ -523,33 +547,34 @@ function subscribeUser(lat, lng) {
   showNotifyMarker(lat, lng, true);
 
   fetch(`${firebaseBaseUrl}/subscribers.json`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      api: apiUrl,
-      lat,
-      lng,
-      email: email || null,   // ✅ optional
-      threshold_minutes: 5,
-      notified: false,
-      created: new Date().toISOString()
-    })
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    api: apiUrl,
+    lat,
+    lng,
+    email: email || null,
+    threshold_minutes: 5,
+    notified: false,
+    created: new Date().toISOString()
   })
-  .then(() => {
-    if (email) {
-      alert("🎅 You're signed up! We’ll email you when Santa is close.");
-    } else {
-      alert(
-        "🎅 You're signed up!\n\n" +
-        "⚠️ Keep this page open to receive the notification.\n" +
-        "For guaranteed alerts next time, add your email."
-      );
-    }
-  })
-  .catch(() => {
-    alert("Could not subscribe for notifications");
-  });
-}
+})
+.then(() => {
+  sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+
+  if (email) {
+    alert("🎅 You're signed up! We’ll email you when Santa is close.");
+  } else {
+    alert(
+      "🎅 You're signed up!\n\n" +
+      "⚠️ Keep this page open to receive the notification.\n" +
+      "For guaranteed alerts next time, add your email."
+    );
+  }
+})
+.catch(() => {
+  alert("❌ Could not save notification — please try again.");
+});
 
 </script>
 </body>
