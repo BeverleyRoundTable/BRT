@@ -360,9 +360,15 @@ const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
 if (savedPin) {
   try {
     const p = JSON.parse(savedPin);
+
+    // 🔄 Reset browser notification state on reload
+    browserNotified = false;
+    sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+
     showNotifyMarker(p.lat, p.lng, true);
   } catch {}
 }
+
   map.on("click", e => {
   if (!awaitingPin) return;
 
