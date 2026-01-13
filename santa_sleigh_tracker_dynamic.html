@@ -384,10 +384,9 @@ notifyBtn.onclick = () => {
   // If embedded, open standalone version
   if (window.self !== window.top) {
     const url = `${location.origin}${location.pathname}?api=${encodeURIComponent(apiUrl)}`;
-    window.open(url, "_blank");
-    alert("📍 We’ll open the map so you can enable location");
-    return;
-  }
+    alert("📍 We’ll open the map in a new tab to enable location access.");
+window.open(url, "_blank");
+return;
 
   // Normal behaviour when standalone
   follow = false;
