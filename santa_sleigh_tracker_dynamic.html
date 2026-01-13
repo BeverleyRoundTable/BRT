@@ -245,7 +245,15 @@ let map, marker, follow=true, firstFix=true, lastFix=null;
 let awaitingPin = false;
 let notifyMarker = null;
 let firebaseBaseUrl = null;
-  
+  let pinPreview = null;
+
+  function isSameSpot(a, b, tolerance = 0.00005) {
+  return (
+    Math.abs(a.lat - b.lat) < tolerance &&
+    Math.abs(a.lng - b.lng) < tolerance
+  );
+}
+
 /* ---------- HELPERS ---------- */
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
@@ -254,25 +262,38 @@ async function loadJSON(url){
   if(!r.ok) throw 0;
   return r.json();
 }
-
-  function showNotifyMarker(lat, lng) {
-  // Remove old marker if it exists
+  
+ function showNotifyMarker(lat, lng, confirmed = false) {
   if (notifyMarker) {
     map.removeLayer(notifyMarker);
   }
 
   notifyMarker = L.marker([lat, lng], {
-    icon: L.icon({
-      iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34]
-    })
+    icon: confirmed ? CONFIRMED_ICON : PREVIEW_ICON
   })
-  .addTo(map)
-  .bindPopup("🔔 You’ll be notified here")
-  .openPopup();
+    .addTo(map)
+    .bindPopup(
+      confirmed
+        ? "🔔 Notification set here"
+        : "📍 Preview location — tap again to confirm"
+    );
+
+  notifyMarker.openPopup();
 }
+
+  const PREVIEW_ICON = L.icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-grey.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34]
+});
+
+const CONFIRMED_ICON = L.icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-red.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34]
+});
 
 /* ---------- INIT ---------- */
 async function init(){
@@ -302,10 +323,40 @@ if (!todayRoute) {
   map.on("click", e => {
   if (!awaitingPin) return;
 
-  awaitingPin = false;
-  subscribeUser(e.latlng.lat, e.latlng.lng);
-});
+  const { lat, lng } = e.latlng;
 
+  // No preview yet → place preview
+  if (!pinPreview) {
+    pinPreview = { lat, lng };
+    showNotifyMarker(lat, lng, false);
+
+    statusBox.textContent =
+      "✅ Pin placed — tap again to confirm or tap elsewhere to move it";
+
+    return;
+  }
+
+  // Preview exists → check if same spot
+ if (isSameSpot(pinPreview, { lat, lng })) {
+  awaitingPin = false;
+
+  showNotifyMarker(pinPreview.lat, pinPreview.lng, true);
+
+  subscribeUser(pinPreview.lat, pinPreview.lng);
+  pinPreview = null;
+
+  statusBox.textContent = "🔔 Notification confirmed — we’ll alert you when Santa is close!";
+  return;
+}
+
+  // Different spot → MOVE preview
+  pinPreview = { lat, lng };
+  showNotifyMarker(lat, lng, false);
+
+  statusBox.textContent =
+    "📍 Pin moved — tap again to confirm";
+});
+  
   if (s.logo_overlay_url) {
 
   // Map Sheet values → Leaflet positions
@@ -348,7 +399,7 @@ if (!todayRoute) {
 }
 
 /* ---------- POLL ---------- */
-async function tick(){
+  async function tick(){
   const dot=statusDot;
   try{
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
@@ -381,44 +432,16 @@ init();
 =================================================== */
 
 notifyBtn.onclick = () => {
-  // If embedded, open standalone version
-  if (window.self !== window.top) {
-    const url = `${location.origin}${location.pathname}?api=${encodeURIComponent(apiUrl)}`;
-    statusBox.textContent = "📍 Opening map in a new tab to enable location access…";
-    window.open(url, "_blank");
-    return;
-  }
-
-  // Normal behaviour when standalone
   follow = false;
   followBtn.textContent = "Follow: OFF";
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      subscribeUser(pos.coords.latitude, pos.coords.longitude);
-    },
-    () => {
-      awaitingPin = true;
-      alert("📍 Move the map and tap your home to get notified");
-    },
-    { enableHighAccuracy: true, timeout: 8000 }
-  );
-};
+  awaitingPin = true;
+  pinPreview = null;
 
-  // Normal behaviour when standalone
-  follow = false;
-  followBtn.textContent = "Follow: OFF";
+  statusBox.textContent =
+    "📍 Tap once to place your pin, tap again to confirm";
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      subscribeUser(pos.coords.latitude, pos.coords.longitude);
-    },
-    () => {
-      awaitingPin = true;
-      alert("📍 Move the map and tap your home to get notified");
-    },
-    { enableHighAccuracy: true, timeout: 8000 }
-  );
+  alert("📍 Tap once to place your pin, tap again to confirm");
 };
 
 function subscribeUser(lat, lng) {
@@ -427,7 +450,7 @@ function subscribeUser(lat, lng) {
     return;
   }
 
-  showNotifyMarker(lat, lng);
+  showNotifyMarker(lat, lng, true);
 
   fetch(
     `${firebaseBaseUrl}/subscribers.json`,
