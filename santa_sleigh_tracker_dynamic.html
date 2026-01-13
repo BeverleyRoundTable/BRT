@@ -381,15 +381,17 @@ init();
 =================================================== */
 
 notifyBtn.onclick = () => {
+  // 🛑 Pause follow while choosing location
+  follow = false;
+  followBtn.textContent = "Follow: OFF";
+
   navigator.geolocation.getCurrentPosition(
     pos => {
-      // ✅ Location available (mobile or desktop)
       subscribeUser(pos.coords.latitude, pos.coords.longitude);
     },
     () => {
-      // ❌ Location blocked → fall back to pin
       awaitingPin = true;
-      alert("📍 Click your home on the map to get notified");
+      alert("📍 Move the map and tap your home to get notified");
     },
     { enableHighAccuracy: true, timeout: 8000 }
   );
