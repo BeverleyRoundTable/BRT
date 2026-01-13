@@ -384,9 +384,26 @@ notifyBtn.onclick = () => {
   // If embedded, open standalone version
   if (window.self !== window.top) {
     const url = `${location.origin}${location.pathname}?api=${encodeURIComponent(apiUrl)}`;
-    alert("📍 We’ll open the map in a new tab to enable location access.");
-window.open(url, "_blank");
-return;
+    statusBox.textContent = "📍 Opening map in a new tab to enable location access…";
+    window.open(url, "_blank");
+    return;
+  }
+
+  // Normal behaviour when standalone
+  follow = false;
+  followBtn.textContent = "Follow: OFF";
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      subscribeUser(pos.coords.latitude, pos.coords.longitude);
+    },
+    () => {
+      awaitingPin = true;
+      alert("📍 Move the map and tap your home to get notified");
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+};
 
   // Normal behaviour when standalone
   follow = false;
