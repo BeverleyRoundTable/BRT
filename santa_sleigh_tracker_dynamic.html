@@ -246,7 +246,7 @@ let awaitingPin = false;
 let notifyMarker = null;
 let firebaseBaseUrl = null;
   let pinPreview = null;
-  let browserNotified = false;
+  let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
 
   function isSameSpot(a, b, tolerance = 0.00005) {
   return (
@@ -454,13 +454,13 @@ if (
 
   // ~250m ≈ ~5 minutes at sleigh pace
   if (meters < 250) {
-    browserNotified = true;
+  browserNotified = true;
+  sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
 
-    fireBrowserNotification(
-      "🎅 Santa is nearly here!",
-      "He’s about 5 minutes away — get ready! 🎄"
-    );
-  }
+  fireBrowserNotification(
+    "🎅 Santa is nearly here!",
+    "He’s about 5 minutes away — get ready! 🎄"
+  );
 }
 
     if(firstFix){map.setView(ll,16);firstFix=false}
@@ -489,7 +489,9 @@ notifyBtn.onclick = () => {
   follow = false;
   followBtn.textContent = "Follow: OFF";
 
-  // 🔔 Ask browser permission at the right moment
+  browserNotified = false;
+  sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+
   if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
   }
