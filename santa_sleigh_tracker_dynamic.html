@@ -450,6 +450,15 @@ function subscribeUser(lat, lng) {
     return;
   }
 
+  const email = prompt(
+    "📧 Enter your email to be notified when Santa is close (optional):"
+  );
+
+  if (!email) {
+    alert("No email entered — notification not set");
+    return;
+  }
+
   showNotifyMarker(lat, lng, true);
 
   fetch(
@@ -458,21 +467,22 @@ function subscribeUser(lat, lng) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        api: apiUrl,           // ties subscriber to THIS tracker
-        lat: lat,
-        lng: lng,
+        api: apiUrl,
+        lat,
+        lng,
+        email,                 // ✅ STEP 1 COMPLETE
         threshold_minutes: 5,
         notified: false,
         created: new Date().toISOString()
       })
     }
   )
-  .then(() => {
-    alert("🎅 You’ll be notified when Santa is close!");
-  })
-  .catch(() => {
-    alert("Could not subscribe for notifications");
-  });
+    .then(() => {
+      alert("🎅 You're signed up! We'll email you when Santa is close.");
+    })
+    .catch(() => {
+      alert("Could not subscribe for notifications");
+    });
 }
 
 </script>
