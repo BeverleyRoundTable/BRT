@@ -381,7 +381,15 @@ init();
 =================================================== */
 
 notifyBtn.onclick = () => {
-  // 🛑 Pause follow while choosing location
+  // If embedded, open standalone version
+  if (window.self !== window.top) {
+    const url = `${location.origin}${location.pathname}?api=${encodeURIComponent(apiUrl)}`;
+    window.open(url, "_blank");
+    alert("📍 We’ll open the map so you can enable location");
+    return;
+  }
+
+  // Normal behaviour when standalone
   follow = false;
   followBtn.textContent = "Follow: OFF";
 
