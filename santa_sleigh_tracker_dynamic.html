@@ -399,9 +399,15 @@ sessionStorage.setItem(
   subscribeUser(pinPreview.lat, pinPreview.lng);
   pinPreview = null;
 
-  statusBox.textContent = "🔔 Notification confirmed — we’ll alert you when Santa is close!";
-  return;
-}
+  statusBox.textContent = "🔔 We’ll let you know when Santa is close";
+setTimeout(() => {
+  // Only clear if it hasn't been replaced by a newer status
+  if (statusBox.textContent === "🔔 We’ll let you know when Santa is close") {
+    statusBox.textContent = "";
+  }
+}, 2000);
+
+return;
 
   // Different spot → MOVE preview
   pinPreview = { lat, lng };
