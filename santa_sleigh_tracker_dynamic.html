@@ -257,6 +257,11 @@ async function loadJSON(url){
 async function init(){
   const data = await loadJSON(apiUrl);
   const s = data.settings || {};
+  
+  // 🔔 Hide Notify button if no GPX route is available
+  if (!s.gpxUrl) {
+    notifyBtn.style.display = "none";
+  }
 
   if(s.donate_url) donateLink.href=s.donate_url;
   else donateBox.style.display="none";
