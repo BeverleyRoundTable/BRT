@@ -242,6 +242,7 @@ const FALLBACK = {
 };
 
 let map, marker, follow=true, firstFix=true, lastFix=null;
+let awaitingPin = false;
 
 /* ---------- HELPERS ---------- */
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
@@ -262,6 +263,13 @@ async function init(){
 
   map = L.map("map").setView(LAPLAND,5);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+  map.on("click", e => {
+  if (!awaitingPin) return;
+
+  awaitingPin = false;
+  subscribeUser(e.latlng.lat, e.latlng.lng);
+});
 
   if (s.logo_overlay_url) {
 
@@ -340,9 +348,15 @@ init();
 notifyBtn.onclick = () => {
   navigator.geolocation.getCurrentPosition(
     pos => {
+      // ✅ Location available (mobile or desktop)
       subscribeUser(pos.coords.latitude, pos.coords.longitude);
     },
-    () => alert("Location permission is required to notify you")
+    () => {
+      // ❌ Location blocked → fall back to pin
+      awaitingPin = true;
+      alert("📍 Click your home on the map to get notified");
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
   );
 };
 
@@ -368,6 +382,7 @@ function subscribeUser(lat, lng) {
     alert("Could not subscribe for notifications");
   });
 }
+
 </script>
 </body>
 </html>
