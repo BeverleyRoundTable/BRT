@@ -246,6 +246,7 @@ let awaitingPin = false;
 let notifyMarker = null;
 let firebaseBaseUrl = null;
   let pinPreview = null;
+  let browserNotified = false;
 
   function isSameSpot(a, b, tolerance = 0.00005) {
   return (
@@ -294,6 +295,36 @@ const CONFIRMED_ICON = L.icon({
   iconAnchor: [12, 41],
   popupAnchor: [1, -34]
 });
+  
+function fireBrowserNotification(title, body) {
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+
+  try {
+    new Notification(title, {
+      body,
+      icon: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+      badge: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+      requireInteraction: true
+    });
+  } catch (e) {
+    console.warn("Notification failed", e);
+  }
+}
+  
+function haversineMeters(a, b) {
+  const R = 6371000;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(a.lat * Math.PI / 180) *
+    Math.cos(b.lat * Math.PI / 180) *
+    Math.sin(dLng / 2) ** 2;
+
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
 
 /* ---------- INIT ---------- */
 async function init(){
@@ -395,6 +426,7 @@ if (!todayRoute) {
   recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
 
   loadingCover.style.display="none";
+
   tick();
 }
 
@@ -409,6 +441,28 @@ if (!todayRoute) {
 
     const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
+    
+    // 🔔 Browser notification backup (page-open only)
+if (
+  notifyMarker &&          // user subscribed
+  !browserNotified         // only once
+) {
+  const santa = { lat: p.lat, lng: p.lng };
+  const user = notifyMarker.getLatLng();
+
+  const meters = haversineMeters(santa, user);
+
+  // ~250m ≈ ~5 minutes at sleigh pace
+  if (meters < 250) {
+    browserNotified = true;
+
+    fireBrowserNotification(
+      "🎅 Santa is nearly here!",
+      "He’s about 5 minutes away — get ready! 🎄"
+    );
+  }
+}
+
     if(firstFix){map.setView(ll,16);firstFix=false}
     else if(follow) map.panTo(ll,{animate:true,duration:1.2});
 
@@ -435,6 +489,11 @@ notifyBtn.onclick = () => {
   follow = false;
   followBtn.textContent = "Follow: OFF";
 
+  // 🔔 Ask browser permission at the right moment
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+
   awaitingPin = true;
   pinPreview = null;
 
@@ -451,38 +510,38 @@ function subscribeUser(lat, lng) {
   }
 
   const email = prompt(
-    "📧 Enter your email to be notified when Santa is close (optional):"
+    "📧 Enter your email to be notified when Santa is close (recommended so you don’t miss him):"
   );
-
-  if (!email) {
-    alert("No email entered — notification not set");
-    return;
-  }
 
   showNotifyMarker(lat, lng, true);
 
-  fetch(
-    `${firebaseBaseUrl}/subscribers.json`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        api: apiUrl,
-        lat,
-        lng,
-        email,                 // ✅ STEP 1 COMPLETE
-        threshold_minutes: 5,
-        notified: false,
-        created: new Date().toISOString()
-      })
-    }
-  )
-    .then(() => {
-      alert("🎅 You're signed up! We'll email you when Santa is close.");
+  fetch(`${firebaseBaseUrl}/subscribers.json`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      api: apiUrl,
+      lat,
+      lng,
+      email: email || null,   // ✅ optional
+      threshold_minutes: 5,
+      notified: false,
+      created: new Date().toISOString()
     })
-    .catch(() => {
-      alert("Could not subscribe for notifications");
-    });
+  })
+  .then(() => {
+    if (email) {
+      alert("🎅 You're signed up! We’ll email you when Santa is close.");
+    } else {
+      alert(
+        "🎅 You're signed up!\n\n" +
+        "⚠️ Keep this page open to receive the notification.\n" +
+        "For guaranteed alerts next time, add your email."
+      );
+    }
+  })
+  .catch(() => {
+    alert("Could not subscribe for notifications");
+  });
 }
 
 </script>
