@@ -265,21 +265,18 @@ async function loadJSON(url){
 }
   
  function showNotifyMarker(lat, lng, confirmed = false) {
-  if (notifyMarker) {
-    map.removeLayer(notifyMarker);
-  }
+  if (notifyMarker) map.removeLayer(notifyMarker);
 
   notifyMarker = L.marker([lat, lng], {
     icon: confirmed ? CONFIRMED_ICON : PREVIEW_ICON
-  })
-    .addTo(map)
-    .bindPopup(
-      confirmed
-    ? "🔔 Notification confirmed"
-    : "📍 Tap again to confirm this location"
-);
+  }).addTo(map);
 
-  notifyMarker.openPopup();
+  // 🔍 Only show popup during preview
+  if (!confirmed) {
+    notifyMarker
+      .bindPopup("📍 Tap again to confirm this location")
+      .openPopup();
+  }
 }
 
   const PREVIEW_ICON = L.icon({
