@@ -251,7 +251,13 @@ let firebaseBaseUrl = null;
   let pinPreview = null;
   let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
   let recentFixes = [];
-  
+
+  // ================= GPX ROUTE STATE =================
+let gpxRoute = null;           // [{lat,lng,dist}]
+let gpxTotalDistance = 0;      // meters
+let gpxLoaded = false;
+let lastSnapIndex = 0;
+
 /* ---------- HELPERS ---------- */
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
@@ -296,6 +302,18 @@ async function loadJSON(url){
       }, 2000);
     });
   }
+}
+
+  function calculateSpeedMps_(fixes) {
+  if (fixes.length < 2) return 0;
+
+  const a = fixes[fixes.length - 2];
+  const b = fixes[fixes.length - 1];
+
+  const dist = haversineMeters(a, b);
+  const dt = (b.ts - a.ts) / 1000;
+
+  return dt > 0 ? dist / dt : 0;
 }
 
   const PREVIEW_ICON = L.icon({
@@ -361,6 +379,66 @@ function haversineMeters(a, b) {
   return totalDistance >= MOVE_THRESHOLD_METERS;
 }
 
+  async function loadGpxRoute(url) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("GPX fetch failed");
+
+  const text = await res.text();
+  const xml = new DOMParser().parseFromString(text, "text/xml");
+  const pts = [...xml.getElementsByTagName("trkpt")];
+
+  if (pts.length < 2) throw new Error("GPX too short");
+
+  let dist = 0;
+  let route = [];
+
+  for (let i = 0; i < pts.length; i++) {
+    const lat = parseFloat(pts[i].getAttribute("lat"));
+    const lng = parseFloat(pts[i].getAttribute("lon"));
+
+    if (i > 0) {
+      dist += haversineMeters(
+        route[i - 1],
+        { lat, lng }
+      );
+    }
+
+    route.push({ lat, lng, dist });
+  }
+
+  gpxRoute = route;
+  gpxTotalDistance = dist;
+  gpxLoaded = true;
+  lastSnapIndex = 0;
+}
+
+  function snapToGpxIndex(pos) {
+  if (!gpxRoute) return null;
+
+  let best = lastSnapIndex;
+  let bestDist = Infinity;
+
+  // Search forward only (prevents snapping backwards)
+  for (let i = lastSnapIndex; i < gpxRoute.length; i++) {
+    const d = haversineMeters(pos, gpxRoute[i]);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+    if (d > bestDist + 30) break; // early exit
+  }
+
+  lastSnapIndex = best;
+  return gpxRoute[best];
+}
+
+function calculateGpxEtaMeters(pos) {
+  const snapped = snapToGpxIndex(pos);
+  if (!snapped) return null;
+
+  return gpxTotalDistance - snapped.dist;
+}
+
 /* ---------- INIT ---------- */
 async function init(){
   const data = await loadJSON(apiUrl);
@@ -382,23 +460,37 @@ fetch(
   // 🔑 Capture Firebase base URL from API
   firebaseBaseUrl = data.tracker?.firebase_url || null;
   
-  // 🔔 Hide Notify button if no GPX route is available
-  const today = new Date().toISOString().slice(0, 10);
+  // ---------- TODAY'S ROUTE / GPX ----------
+const today = new Date().toISOString().slice(0, 10);
 
 const todayRoute = (data.routes || []).find(r =>
   r.date === today && r.gpxUrl
 );
 
+// Hide Notify button if no GPX route today
 if (!todayRoute) {
   notifyBtn.style.display = "none";
+} else {
+  try {
+    await loadGpxRoute(todayRoute.gpxUrl);
+    console.log(
+      "GPX loaded:",
+      gpxTotalDistance.toFixed(0),
+      "meters"
+    );
+  } catch (e) {
+    console.warn("GPX disabled:", e.message);
+    notifyBtn.style.display = "none";
+  }
 }
 
-  if(s.donate_url) donateLink.href=s.donate_url;
-  else donateBox.style.display="none";
+  // ---------- MAP ----------
+map = L.map("map").setView(LAPLAND, 5);
+L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  { maxZoom: 19 }
+).addTo(map);
 
-  map = L.map("map").setView(LAPLAND,5);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-  
 /* ✅ RESTORE SAVED NOTIFY PIN */
 const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
 if (savedPin) {
@@ -425,7 +517,7 @@ if (savedPin) {
   statusBox.textContent =
     "📍 Pin moved — tap again to confirm";
 });
-  
+
   if (s.logo_overlay_url) {
 
   // Map Sheet values → Leaflet positions
@@ -489,6 +581,19 @@ recentFixes.push({
   ts: now
 });
 
+    // ---------- GPX ETA ----------
+let etaSeconds = Infinity;
+
+if (gpxLoaded) {
+  const santaPos = { lat: p.lat, lng: p.lng };
+  const remainingMeters = calculateGpxEtaMeters(santaPos);
+
+  if (remainingMeters !== null) {
+    const speed = Math.max(calculateSpeedMps_(recentFixes), 0.3);
+    etaSeconds = remainingMeters / speed;
+  }
+}
+
 // Keep only last 25 seconds
 recentFixes = recentFixes.filter(f => now - f.ts <= MOTION_WINDOW_MS);
 
@@ -524,9 +629,14 @@ dot.className = moving
   ? "status-dot dot-moving"
   : "status-dot dot-stopped";
 
-statusBox.textContent = moving
-  ? "🎅 Santa is out spreading joy!"
-  : "🎄 Santa has stopped to spread cheer!";
+if (isFinite(etaSeconds)) {
+  const mins = Math.max(1, Math.round(etaSeconds / 60));
+  statusBox.textContent = `🎅 Santa is ${mins} min away!`;
+} else {
+  statusBox.textContent = moving
+    ? "🎅 Santa is out spreading joy!"
+    : "🎄 Santa has stopped to spread cheer!";
+}
 
   }catch{
     marker.setLatLng(LAPLAND);
