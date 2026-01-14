@@ -240,6 +240,9 @@ const FALLBACK = {
   start: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
   end: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png"
 };
+  
+const MOTION_WINDOW_MS = 25 * 1000; // 25 seconds
+const MOVE_THRESHOLD_METERS = 8;    // slow sleigh-safe threshold
 
 let map, marker, follow=true, firstFix=true, lastFix=null;
 let awaitingPin = false;
@@ -247,18 +250,8 @@ let notifyMarker = null;
 let firebaseBaseUrl = null;
   let pinPreview = null;
   let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
-  let pinPreviewTs = 0;
-
-  // ---------- MOTION DETECTION ----------
-const MOTION_WINDOW_MS = 25 * 1000; // 25 seconds
-const MOVE_THRESHOLD_METERS = 8;
-
-let recentFixes = [];
-
-  function isNearPin(a, b, meters = 35) {
-  return haversineMeters(a, b) <= meters;
-}
-
+  let recentFixes = [];
+  
 /* ---------- HELPERS ---------- */
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
@@ -272,14 +265,37 @@ async function loadJSON(url){
   if (notifyMarker) map.removeLayer(notifyMarker);
 
   notifyMarker = L.marker([lat, lng], {
-    icon: confirmed ? CONFIRMED_ICON : PREVIEW_ICON
+    icon: confirmed ? CONFIRMED_ICON : PREVIEW_ICON,
+    interactive: true
   }).addTo(map);
 
-  // 🔍 Only show popup during preview
   if (!confirmed) {
     notifyMarker
-      .bindPopup("📍 Tap again to confirm this location")
+      .bindPopup("📍 Tap this pin again to confirm")
       .openPopup();
+
+    // ✅ CONFIRM BY CLICKING THE PIN
+    notifyMarker.once("click", () => {
+      awaitingPin = false;
+      map.dragging.enable();
+      
+      showNotifyMarker(lat, lng, true);
+
+      sessionStorage.setItem(
+        "SANTA_NOTIFY_POINT",
+        JSON.stringify({ lat, lng })
+      );
+
+      subscribeUser(lat, lng);
+      pinPreview = null;
+
+      statusBox.textContent = "🔔 We’ll let you know when Santa is close";
+      setTimeout(() => {
+        if (statusBox.textContent.includes("We’ll let you know")) {
+          statusBox.textContent = "";
+        }
+      }, 2000);
+    });
   }
 }
 
@@ -402,52 +418,9 @@ if (savedPin) {
   if (!awaitingPin) return;
 
   const { lat, lng } = e.latlng;
-
-  // No preview yet → place preview
-  if (!pinPreview) {
-  pinPreview = { lat, lng };
-  pinPreviewTs = Date.now();
-  showNotifyMarker(lat, lng, false);
-
-  statusBox.textContent =
-    "📍 Tap again near the pin to confirm, or tap elsewhere to move it";
-
-  return;
-}
-
-  // Preview exists → check if same spot
- const now = Date.now();
-const nearEnough = isNearPin(pinPreview, { lat, lng }, 35);
-const quickEnough = (now - pinPreviewTs) <= 3000;
-
-if (nearEnough && quickEnough) {
-
-  awaitingPin = false;
-
-  showNotifyMarker(pinPreview.lat, pinPreview.lng, true);
-   
-sessionStorage.setItem(
-    "SANTA_NOTIFY_POINT",
-    JSON.stringify({ lat: pinPreview.lat, lng: pinPreview.lng })
-  );
-   
-  subscribeUser(pinPreview.lat, pinPreview.lng);
-  pinPreview = null;
-
-  statusBox.textContent = "🔔 We’ll let you know when Santa is close";
-setTimeout(() => {
-  // Only clear if it hasn't been replaced by a newer status
-  if (statusBox.textContent === "🔔 We’ll let you know when Santa is close") {
-    statusBox.textContent = "";
-  }
-}, 2000);
-
-return;
- }
   
   // Different spot → MOVE preview
   pinPreview = { lat, lng };
-    pinPreviewTs = Date.now();
   showNotifyMarker(lat, lng, false);
 
   statusBox.textContent =
@@ -576,10 +549,20 @@ notifyBtn.onclick = () => {
   follow = false;
   followBtn.textContent = "Follow: OFF";
 
+  map.dragging.disable();
+
+  document.addEventListener("keydown", function esc(e) {
+  if (e.key === "Escape" && awaitingPin) {
+    awaitingPin = false;
+    map.dragging.enable();
+    if (notifyMarker) map.removeLayer(notifyMarker);
+    statusBox.textContent = "";
+    document.removeEventListener("keydown", esc);
+  }
+});
+
   browserNotified = false;
   sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
-
-  // ✅ ALLOW RE-SIGNUP INTENTIONALLY
   sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
   sessionStorage.removeItem("SANTA_NOTIFY_POINT");
 
@@ -591,9 +574,7 @@ notifyBtn.onclick = () => {
   pinPreview = null;
 
   statusBox.textContent =
-    "📍 Tap once to place your pin, tap again to confirm";
-
-  alert("📍 Tap once to place your pin, tap again to confirm");
+    "📍 Tap the map to place your pin, then tap the pin to confirm";
 };
 
 function subscribeUser(lat, lng) {
