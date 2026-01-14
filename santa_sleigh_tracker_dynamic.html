@@ -247,6 +247,7 @@ let notifyMarker = null;
 let firebaseBaseUrl = null;
   let pinPreview = null;
   let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
+  let pinPreviewTs = 0;
 
   // ---------- MOTION DETECTION ----------
 const MOTION_WINDOW_MS = 25 * 1000; // 25 seconds
@@ -254,11 +255,8 @@ const MOVE_THRESHOLD_METERS = 8;
 
 let recentFixes = [];
 
-  function isSameSpot(a, b, tolerance = 0.0003) {
-  return (
-    Math.abs(a.lat - b.lat) < tolerance &&
-    Math.abs(a.lng - b.lng) < tolerance
-  );
+  function isNearPin(a, b, meters = 35) {
+  return haversineMeters(a, b) <= meters;
 }
 
 /* ---------- HELPERS ---------- */
@@ -394,17 +392,23 @@ if (savedPin) {
 
   // No preview yet → place preview
   if (!pinPreview) {
-    pinPreview = { lat, lng };
-    showNotifyMarker(lat, lng, false);
+  pinPreview = { lat, lng };
+  pinPreviewTs = Date.now();
+  showNotifyMarker(lat, lng, false);
 
-    statusBox.textContent =
-      "📍 Tap the same spot again to confirm, or tap elsewhere to move it";
+  statusBox.textContent =
+    "📍 Tap again near the pin to confirm, or tap elsewhere to move it";
 
-    return;
-  }
+  return;
+}
 
   // Preview exists → check if same spot
- if (isSameSpot(pinPreview, { lat, lng })) {
+ const now = Date.now();
+const nearEnough = isNearPin(pinPreview, { lat, lng }, 35);
+const quickEnough = (now - pinPreviewTs) <= 3000;
+
+if (nearEnough && quickEnough) {
+
   awaitingPin = false;
 
   showNotifyMarker(pinPreview.lat, pinPreview.lng, true);
