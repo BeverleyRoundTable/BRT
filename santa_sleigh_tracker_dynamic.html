@@ -277,7 +277,6 @@ async function loadJSON(url){
     // ✅ CONFIRM BY CLICKING THE PIN
     notifyMarker.once("click", () => {
       awaitingPin = false;
-      map.dragging.enable();
       
       showNotifyMarker(lat, lng, true);
 
@@ -549,12 +548,9 @@ notifyBtn.onclick = () => {
   follow = false;
   followBtn.textContent = "Follow: OFF";
 
-  map.dragging.disable();
-
   document.addEventListener("keydown", function esc(e) {
   if (e.key === "Escape" && awaitingPin) {
     awaitingPin = false;
-    map.dragging.enable();
     if (notifyMarker) map.removeLayer(notifyMarker);
     statusBox.textContent = "";
     document.removeEventListener("keydown", esc);
