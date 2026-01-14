@@ -248,6 +248,12 @@ let firebaseBaseUrl = null;
   let pinPreview = null;
   let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
 
+  // ---------- MOTION DETECTION ----------
+const MOTION_WINDOW_MS = 25 * 1000; // 25 seconds
+const MOVE_THRESHOLD_METERS = 8;
+
+let recentFixes = [];
+
   function isSameSpot(a, b, tolerance = 0.0003) {
   return (
     Math.abs(a.lat - b.lat) < tolerance &&
@@ -325,6 +331,21 @@ function haversineMeters(a, b) {
     Math.sin(dLng / 2) ** 2;
 
   return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+  function isSleighMoving() {
+  if (recentFixes.length < 2) return false;
+
+  let totalDistance = 0;
+
+  for (let i = 1; i < recentFixes.length; i++) {
+    totalDistance += haversineMeters(
+      recentFixes[i - 1],
+      recentFixes[i]
+    );
+  }
+
+  return totalDistance >= MOVE_THRESHOLD_METERS;
 }
 
 /* ---------- INIT ---------- */
@@ -468,7 +489,19 @@ return;
 
     const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
-    
+
+    // ---------- TRACK MOTION HISTORY ----------
+const now = Date.now();
+
+recentFixes.push({
+  lat: p.lat,
+  lng: p.lng,
+  ts: now
+});
+
+// Keep only last 25 seconds
+recentFixes = recentFixes.filter(f => now - f.ts <= MOTION_WINDOW_MS);
+
     // 🔔 Browser notification backup (page-open only)
 if (
   notifyMarker &&          // user subscribed
@@ -494,9 +527,17 @@ if (
     if(firstFix){map.setView(ll,16);firstFix=false}
     else if(follow) map.panTo(ll,{animate:true,duration:1.2});
 
-    dot.style.display="block";
-    dot.className="status-dot dot-moving";
-    statusBox.textContent="🎅 Santa is out spreading joy!";
+    const moving = isSleighMoving();
+
+dot.style.display = "block";
+dot.className = moving
+  ? "status-dot dot-moving"
+  : "status-dot dot-stopped";
+
+statusBox.textContent = moving
+  ? "🎅 Santa is out spreading joy!"
+  : "🎄 Santa has stopped to spread cheer!";
+
   }catch{
     marker.setLatLng(LAPLAND);
     if(follow) map.setView(LAPLAND,5,{animate:true,duration:2});
