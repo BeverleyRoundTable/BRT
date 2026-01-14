@@ -349,6 +349,19 @@ function haversineMeters(a, b) {
 /* ---------- INIT ---------- */
 async function init(){
   const data = await loadJSON(apiUrl);
+
+  // 🔴 LOG ANALYTICS VIEW (ONCE PER PAGE LOAD)
+fetch(
+  apiUrl +
+    "?function=logView" +
+    "&source=tracker" +
+    "&route=" +
+    encodeURIComponent((data.routes || [])[0]?.routeName || "") +
+    "&ua=" +
+    encodeURIComponent(navigator.userAgent),
+  { keepalive: true }
+).catch(() => {});
+  
   const s = data.settings || {};
 
   // 🔑 Capture Firebase base URL from API
