@@ -341,8 +341,8 @@ function fireBrowserNotification(title, body) {
   try {
     new Notification(title, {
       body,
-      icon: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
-      badge: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png",
+      icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
+      badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
       requireInteraction: true
     });
   } catch (e) {
@@ -490,6 +490,33 @@ L.tileLayer(
   "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   { maxZoom: 19 }
 ).addTo(map);
+
+  // ---------- VISUAL GPX OVERLAY (PURELY VISUAL) ----------
+if (todayRoute && gpxLoaded) {
+  const gpxLayer = new L.GPX(todayRoute.gpxUrl, {
+    async: true,
+    polyline_options: {
+      color: s.accent_color || "#ffd700",
+      weight: 4,
+      opacity: 0.85
+    },
+    marker_options: {
+      startIcon: L.icon({
+        iconUrl: s.sleigh_icon_start || FALLBACK.start,
+        iconSize: [48, 48],
+        iconAnchor: [24, 48]
+      }),
+      endIcon: L.icon({
+        iconUrl: s.sleigh_icon_end || FALLBACK.end,
+        iconSize: [48, 48],
+        iconAnchor: [24, 48]
+      }),
+      shadowUrl: null
+    }
+  });
+
+  gpxLayer.addTo(map);
+}
 
 /* ✅ RESTORE SAVED NOTIFY PIN */
 const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
