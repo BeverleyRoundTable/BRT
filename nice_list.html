@@ -21,7 +21,7 @@
   }
 
   .santa-checker{
-    max-width:900px;
+    max-width:720px;
     margin:0 auto;
     text-align:center;
   }
@@ -159,17 +159,6 @@ function generatePDF(name){
   sendHeight(); // update iframe height
 }
 
-/* ---------- AUTO-HEIGHT (parity with address lookup) ---------- */
-function sendHeight(){
-  const h = document.documentElement.scrollHeight;
-  parent.postMessage({ niceListHeight: h }, "*");
-}
-
-window.addEventListener("load", sendHeight);
-window.addEventListener("resize", sendHeight);
-
-const observer = new MutationObserver(sendHeight);
-observer.observe(document.body, { childList:true, subtree:true });
 </script>
 
 </body>
