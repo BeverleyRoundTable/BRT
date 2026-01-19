@@ -697,7 +697,13 @@ dot.className = moving
 
 if (isFinite(etaSeconds)) {
   const mins = Math.max(1, Math.round(etaSeconds / 60));
-  statusBox.textContent = `🎅 Santa is ${mins} min away!`;
+
+  if (mins > 120) {
+    statusBox.textContent = "🎅 Santa is on his way…";
+  } else {
+    statusBox.textContent = `🎅 Santa is ${mins} min away!`;
+  }
+
 } else if (moving) {
   statusBox.textContent = "🎅 Santa is nearby…";
 } else {
