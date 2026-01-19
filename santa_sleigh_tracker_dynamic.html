@@ -458,6 +458,22 @@ function calculateGpxEtaMeters(pos) {
 
   return gpxTotalDistance - snapped.dist;
 }
+function snapSubscriberToGpx(pos) {
+  if (!gpxRoute) return null;
+
+  let best = 0;
+  let bestDist = Infinity;
+
+  for (let i = 0; i < gpxRoute.length; i++) {
+    const d = haversineMeters(pos, gpxRoute[i]);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  }
+
+  return gpxRoute[best];
+}
 
 /* ---------- INIT ---------- */
 async function init(){
@@ -654,18 +670,36 @@ recentFixes.push({
     // ---------- GPX ETA ----------
 let etaSeconds = Infinity;
 let offRoute = false;
+let passedSubscriber = false;
 
 if (gpxLoaded) {
   const santaPos = { lat: p.lat, lng: p.lng };
   const snap = snapToGpxIndex(santaPos);
 
   if (snap && snap.distance <= OFF_ROUTE_THRESHOLD_METERS) {
-    const remainingMeters = gpxTotalDistance - snap.point.dist;
 
-    const speed = calculateStableSpeedMps_(recentFixes);
-    if (speed !== null) {
-      etaSeconds = remainingMeters / speed;
+    // 🔔 If user subscribed, check if Santa already passed them
+    if (notifyMarker) {
+      const userPos = notifyMarker.getLatLng();
+      const userSnap = snapSubscriberToGpx(userPos);
+
+      if (userSnap && snap.point.dist > userSnap.dist + 30) {
+        passedSubscriber = true;
+      }
     }
+
+    if (!passedSubscriber) {
+      const remainingMeters = Math.max(
+        0,
+        gpxTotalDistance - snap.point.dist
+      );
+
+      const speed = calculateStableSpeedMps_(recentFixes);
+      if (speed !== null) {
+        etaSeconds = remainingMeters / speed;
+      }
+    }
+
   } else {
     offRoute = true;
   }
@@ -706,7 +740,10 @@ dot.className = moving
   ? "status-dot dot-moving"
   : "status-dot dot-stopped";
 
-if (isFinite(etaSeconds)) {
+if (passedSubscriber) {
+  statusBox.textContent = "🎄 Santa has just been here!";
+
+} else if (isFinite(etaSeconds)) {
   const mins = Math.round(etaSeconds / 60);
 
   if (mins > 120) {
