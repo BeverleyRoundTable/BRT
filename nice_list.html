@@ -106,14 +106,16 @@ function startCheck(){
 
   download.style.display = "none";
   status.innerText = "Checking Santa’s list… 🤔";
+sendHeight(20);
 
   const phases = ["Naughty…", "Nice…", "Naughty…", "Nice…"];
   let i = 0;
 
   const interval = setInterval(() => {
-    status.innerText = phases[i % phases.length];
-    i++;
-  }, 400);
+  status.innerText = phases[i % phases.length];
+  sendHeight(20);
+  i++;
+}, 400);
 
   setTimeout(() => {
     clearInterval(interval);
