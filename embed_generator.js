@@ -90,6 +90,42 @@ window.addEventListener("message", (e) => {
 </script>
 `;
 
+// ================================
+// Santa Nice List (auto-height iframe)
+// ================================
+const niceListEmbed = `
+<div style="
+width:100%;
+max-width:720px;
+margin:0 auto;
+padding:16px;
+background:rgba(0,0,0,0.45);
+border-radius:18px;
+box-shadow:0 10px 30px rgba(0,0,0,0.35);
+">
+  <iframe
+    id="niceListFrame"
+    src="https://brt-23f.pages.dev/nice_list"
+    style="
+      width:100%;
+      min-height:240px;
+      border:none;
+      border-radius:12px;
+      display:block;
+    "
+    loading="lazy"
+  ></iframe>
+</div>
+
+<script>
+window.addEventListener("message", (e) => {
+  if (e.data.niceListHeight && e.data.niceListHeight > 100) {
+    const frame = document.getElementById("niceListFrame");
+    if (frame) frame.style.height = e.data.niceListHeight + "px";
+  }
+});
+</script>
+`;
 
 // ================================
 // Tracker Embeds
