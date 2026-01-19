@@ -214,6 +214,7 @@ html,body{
 <div id="map"></div>
 
 <script>
+  
 /* ===================================================
    API HANDLING — HIDDEN + REFRESH SAFE
 =================================================== */
@@ -245,6 +246,8 @@ const FALLBACK = {
   
 const MOTION_WINDOW_MS = 25 * 1000; // 25 seconds
 const MOVE_THRESHOLD_METERS = 8;    // slow sleigh-safe threshold
+
+  const OFF_ROUTE_THRESHOLD_METERS = 60;
 
 let map, marker, follow=true, firstFix=true, lastFix=null;
 let awaitingPin = false;
@@ -432,18 +435,21 @@ function haversineMeters(a, b) {
   let best = lastSnapIndex;
   let bestDist = Infinity;
 
-  // Search forward only (prevents snapping backwards)
   for (let i = lastSnapIndex; i < gpxRoute.length; i++) {
     const d = haversineMeters(pos, gpxRoute[i]);
     if (d < bestDist) {
       bestDist = d;
       best = i;
     }
-    if (d > bestDist + 30) break; // early exit
+    if (d > bestDist + 30) break;
   }
 
   lastSnapIndex = best;
-  return gpxRoute[best];
+
+  return {
+    point: gpxRoute[best],
+    distance: bestDist
+  };
 }
 
 function calculateGpxEtaMeters(pos) {
@@ -647,16 +653,21 @@ recentFixes.push({
 
     // ---------- GPX ETA ----------
 let etaSeconds = Infinity;
+let offRoute = false;
 
 if (gpxLoaded) {
   const santaPos = { lat: p.lat, lng: p.lng };
-  const remainingMeters = calculateGpxEtaMeters(santaPos);
+  const snap = snapToGpxIndex(santaPos);
 
-  if (remainingMeters !== null) {
+  if (snap && snap.distance <= OFF_ROUTE_THRESHOLD_METERS) {
+    const remainingMeters = gpxTotalDistance - snap.point.dist;
+
     const speed = calculateStableSpeedMps_(recentFixes);
     if (speed !== null) {
       etaSeconds = remainingMeters / speed;
     }
+  } else {
+    offRoute = true;
   }
 }
 
@@ -696,16 +707,20 @@ dot.className = moving
   : "status-dot dot-stopped";
 
 if (isFinite(etaSeconds)) {
-  const mins = Math.max(1, Math.round(etaSeconds / 60));
+  const mins = Math.round(etaSeconds / 60);
 
   if (mins > 120) {
     statusBox.textContent = "🎅 Santa is on his way…";
   } else {
-    statusBox.textContent = `🎅 Santa is ${mins} min away!`;
+    statusBox.textContent = `🎅 Santa is ${Math.max(1, mins)} min away!`;
   }
 
-} else if (moving) {
+} else if (offRoute && moving) {
   statusBox.textContent = "🎅 Santa is nearby…";
+
+} else if (moving) {
+  statusBox.textContent = "🎅 Santa is out spreading joy!";
+
 } else {
   statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
 }
