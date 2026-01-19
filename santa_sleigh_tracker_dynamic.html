@@ -707,8 +707,9 @@ recentFixes = recentFixes.filter(f => now - f.ts <= MOTION_WINDOW_MS);
 
     // 🔔 Browser notification backup (page-open only)
 if (
-  notifyMarker &&          // user subscribed
-  !browserNotified         // only once
+  notifyMarker &&
+  !browserNotified &&
+  !passedSubscriber
 ) {
   const santa = { lat: p.lat, lng: p.lng };
   const user = notifyMarker.getLatLng();
