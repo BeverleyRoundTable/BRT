@@ -14,7 +14,7 @@
 <style>
   body{
     margin:0;
-    padding:14px 12px 0;
+    padding:10px 12px 6px;
     background:#0f1115;
     color:#fff;
     font-family:Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -90,6 +90,7 @@
 </div>
 
 <script>
+  
 /* ---------- ASSETS ---------- */
 const bgImage = new Image();
 bgImage.crossOrigin = "anonymous";
@@ -156,9 +157,27 @@ function generatePDF(name){
   link.href = URL.createObjectURL(blob);
   link.style.display = "inline-block";
 
-  sendHeight(); // update iframe height
+  sendHeight(20);
 }
 
+/* ---------- AUTO-HEIGHT (parity with address lookup) ---------- */
+function sendHeight(extra = 0){
+  const h = document.documentElement.scrollHeight + extra;
+  parent.postMessage({ niceListHeight: h }, "*");
+}
+
+// Fire multiple times to catch font + layout settling
+window.addEventListener("load", () => {
+  sendHeight(20);
+  setTimeout(() => sendHeight(20), 100);
+  setTimeout(() => sendHeight(20), 300);
+  setTimeout(() => sendHeight(20), 600);
+});
+
+window.addEventListener("resize", () => sendHeight(20));
+
+const observer = new MutationObserver(() => sendHeight(20));
+observer.observe(document.body, { childList:true, subtree:true });
 </script>
 
 </body>
