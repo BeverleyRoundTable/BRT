@@ -79,7 +79,8 @@
 
 <body>
 
-<div class="santa-checker">
+<div class="santa-checker" id="niceRoot">
+
   <h2>🎅 Naughty or Nice?</h2>
 
   <input id="childName" placeholder="Enter name" />
@@ -171,7 +172,8 @@ function generatePDF(name){
 
 /* ---------- AUTO-HEIGHT (parity with address lookup) ---------- */
 function sendHeight(extra = 0){
-  const h = document.documentElement.scrollHeight + extra;
+  const root = document.getElementById("niceRoot");
+const h = root.offsetHeight + extra;
   parent.postMessage({ niceListHeight: h }, "*");
 }
 
