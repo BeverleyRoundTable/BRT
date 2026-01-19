@@ -230,6 +230,8 @@ if (location.search.includes("api=")) history.replaceState(null, "", location.pa
 /* ===================================================
    TRACKER CONFIG (UNCHANGED)
 =================================================== */
+const MIN_FIXES_FOR_ETA = 3;
+const MIN_ETA_WINDOW_MS = 15 * 1000; // 15 seconds
 
 const REFRESH = 3000;
 const STALE_MS = 5 * 60 * 1000;
@@ -248,9 +250,12 @@ let map, marker, follow=true, firstFix=true, lastFix=null;
 let awaitingPin = false;
 let notifyMarker = null;
 let firebaseBaseUrl = null;
-  let pinPreview = null;
-  let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
-  let recentFixes = [];
+let pinPreview = null;
+let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
+let recentFixes = [];
+let lastGoodFix = null;
+let staleSince = null;
+
 
   // ================= GPX ROUTE STATE =================
 let gpxRoute = null;           // [{lat,lng,dist}]
@@ -304,16 +309,25 @@ async function loadJSON(url){
   }
 }
 
-  function calculateSpeedMps_(fixes) {
-  if (fixes.length < 2) return 0;
+  function calculateStableSpeedMps_(fixes) {
+  if (fixes.length < MIN_FIXES_FOR_ETA) return null;
 
-  const a = fixes[fixes.length - 2];
-  const b = fixes[fixes.length - 1];
+  const first = fixes[0];
+  const last = fixes[fixes.length - 1];
 
-  const dist = haversineMeters(a, b);
-  const dt = (b.ts - a.ts) / 1000;
+  const elapsed = last.ts - first.ts;
+  if (elapsed < MIN_ETA_WINDOW_MS) return null;
 
-  return dt > 0 ? dist / dt : 0;
+  let dist = 0;
+
+  for (let i = 1; i < fixes.length; i++) {
+    dist += haversineMeters(fixes[i - 1], fixes[i]);
+  }
+
+  const speed = dist / (elapsed / 1000);
+
+  // Clamp to realistic sleigh bounds
+  return Math.min(Math.max(speed, 0.3), 6);
 }
 
   const PREVIEW_ICON = L.icon({
@@ -593,8 +607,31 @@ if (savedPin) {
   try{
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!valid(p.lat,p.lng)) throw 0;
-    const ts=new Date(p.ts).getTime();
-    if(Date.now()-ts>STALE_MS) throw 0;
+    const ts = new Date(p.ts).getTime();
+const age = Date.now() - ts;
+
+if (age <= STALE_MS) {
+  // ✅ GPS is valid
+  staleSince = null;
+  lastGoodFix = { lat: p.lat, lng: p.lng };
+
+} else {
+  // ⚠️ GPS stale — start grace window
+  if (!staleSince) staleSince = Date.now();
+
+  // ❌ Hard timeout reached → allow Lapland fallback
+  if (Date.now() - staleSince > STALE_MS) {
+    throw 0;
+  }
+
+  // ⏸ Grace period → HOLD last known position
+  if (lastGoodFix) {
+    marker.setLatLng(lastGoodFix);
+    statusBox.textContent = "🎅 Santa is nearby…";
+    setTimeout(tick, REFRESH);
+    return;
+  }
+}
 
     const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
@@ -616,8 +653,10 @@ if (gpxLoaded) {
   const remainingMeters = calculateGpxEtaMeters(santaPos);
 
   if (remainingMeters !== null) {
-    const speed = Math.max(calculateSpeedMps_(recentFixes), 0.3);
-    etaSeconds = remainingMeters / speed;
+    const speed = calculateStableSpeedMps_(recentFixes);
+    if (speed !== null) {
+      etaSeconds = remainingMeters / speed;
+    }
   }
 }
 
@@ -659,18 +698,18 @@ dot.className = moving
 if (isFinite(etaSeconds)) {
   const mins = Math.max(1, Math.round(etaSeconds / 60));
   statusBox.textContent = `🎅 Santa is ${mins} min away!`;
+} else if (moving) {
+  statusBox.textContent = "🎅 Santa is nearby…";
 } else {
-  statusBox.textContent = moving
-    ? "🎅 Santa is out spreading joy!"
-    : "🎄 Santa has stopped to spread cheer!";
+  statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
 }
 
   }catch{
     marker.setLatLng(LAPLAND);
-    if(follow) map.setView(LAPLAND,5,{animate:true,duration:2});
-    dot.style.display="none";
-    statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
-    firstFix=true;
+if (follow) map.setView(LAPLAND,5,{animate:true,duration:2});
+dot.style.display="none";
+statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
+firstFix=true;
   }
   setTimeout(tick,REFRESH);
 }
