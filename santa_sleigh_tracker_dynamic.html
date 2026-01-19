@@ -452,12 +452,6 @@ function haversineMeters(a, b) {
   };
 }
 
-function calculateGpxEtaMeters(pos) {
-  const snapped = snapToGpxIndex(pos);
-  if (!snapped) return null;
-
-  return gpxTotalDistance - snapped.dist;
-}
 function snapSubscriberToGpx(pos) {
   if (!gpxRoute) return null;
 
@@ -472,7 +466,10 @@ function snapSubscriberToGpx(pos) {
     }
   }
 
-  return gpxRoute[best];
+  return {
+    point: gpxRoute[best],
+    distance: bestDist
+  };
 }
 
 /* ---------- INIT ---------- */
@@ -683,7 +680,7 @@ if (gpxLoaded) {
       const userPos = notifyMarker.getLatLng();
       const userSnap = snapSubscriberToGpx(userPos);
 
-      if (userSnap && snap.point.dist > userSnap.dist + 30) {
+      if (userSnap && snap.point.dist > userSnap.point.dist + 30) {
         passedSubscriber = true;
       }
     }
