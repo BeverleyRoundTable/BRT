@@ -16,7 +16,8 @@
 
 <script>
 const bgImage = new Image();
-bgImage.src = "https://i.ibb.co/qYdkBnGG/Nice-List.png"; // path to your PNG
+bgImage.crossOrigin = "anonymous";
+bgImage.src = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/nice_list.png";  // path to your PNG
 
 function startCheck(){
   const name = document.getElementById("childName").value.trim();
@@ -44,8 +45,8 @@ function startCheck(){
 function generateCertificate(name){
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
-
-  canvas.style.display = "block";
+  
+ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Draw background
   ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
@@ -60,7 +61,12 @@ function generateCertificate(name){
 
   // Enable download
   const link = document.getElementById("download");
-  link.href = canvas.toDataURL("image/png");
+  canvas.toBlob(blob => {
+  const url = URL.createObjectURL(blob);
+    if (link.href) URL.revokeObjectURL(link.href);
+  link.href = url;
   link.style.display = "inline-block";
+}, "image/png");
+
 }
 </script>
