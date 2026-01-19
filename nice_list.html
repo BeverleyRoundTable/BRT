@@ -173,7 +173,9 @@ function generatePDF(name){
 /* ---------- AUTO-HEIGHT (parity with address lookup) ---------- */
 function sendHeight(extra = 0){
   const root = document.getElementById("niceRoot");
-const h = root.offsetHeight + extra;
+  if (!root) return;
+
+  const h = root.offsetHeight + extra;
   parent.postMessage({ niceListHeight: h }, "*");
 }
 
