@@ -1,0 +1,66 @@
+<div class="santa-checker">
+  <h2>🎅 Naughty or Nice?</h2>
+
+  <input id="childName" placeholder="Enter name" />
+  <button onclick="startCheck()">Check Santa’s List</button>
+
+  <p id="status"></p>
+
+  <canvas id="canvas" width="1600" height="1131" style="display:none;"></canvas>
+
+  <br>
+  <a id="download" style="display:none;" download="Santa_Nice_List_Certificate.png">
+    🎄 Download Certificate
+  </a>
+</div>
+
+<script>
+const bgImage = new Image();
+bgImage.src = "nice_list_certificate.png"; // path to your PNG
+
+function startCheck(){
+  const name = document.getElementById("childName").value.trim();
+  if(!name) return alert("Please enter a name");
+
+  const status = document.getElementById("status");
+  status.innerText = "Checking Santa’s list… 🤔";
+
+  const phases = ["Naughty…", "Nice…", "Naughty…", "Nice…"];
+  let i = 0;
+
+  const interval = setInterval(() => {
+    status.innerText = phases[i % phases.length];
+    i++;
+  }, 400);
+
+  // Final result after suspense
+  setTimeout(() => {
+    clearInterval(interval);
+    status.innerText = "✅ NICE LIST CONFIRMED! 🎄";
+    generateCertificate(name);
+  }, 2200);
+}
+
+function generateCertificate(name){
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  canvas.style.display = "block";
+
+  // Draw background
+  ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+
+  // Name styling
+  ctx.fillStyle = "#000";
+  ctx.font = "bold 64px serif";
+  ctx.textAlign = "center";
+
+  // 👉 Adjust these coordinates to match your design
+  ctx.fillText(name, canvas.width / 2, 620);
+
+  // Enable download
+  const link = document.getElementById("download");
+  link.href = canvas.toDataURL("image/png");
+  link.style.display = "inline-block";
+}
+</script>
