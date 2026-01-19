@@ -1,29 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Santa’s Nice List</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+
+<!-- jsPDF (UMD) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  body{
+    margin:0;
+    padding:14px 12px 0;
+    background:#0f1115;
+    color:#fff;
+    font-family:Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+
+  .santa-checker{
+    max-width:900px;
+    margin:0 auto;
+    text-align:center;
+  }
+
+  h2{
+    margin:6px 0 12px;
+  }
+
+  input{
+    width:100%;
+    max-width:420px;
+    padding:12px 16px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.35);
+    color:#fff;
+    font-size:1rem;
+  }
+
+  input::placeholder{ color:rgba(255,255,255,.6); }
+
+  button{
+    margin-top:10px;
+    padding:10px 22px;
+    border-radius:999px;
+    border:none;
+    background:#d31c1c;
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 0 12px rgba(211,28,28,.6);
+  }
+
+  #status{
+    margin:14px 0;
+    min-height:1.4em;
+  }
+
+  a#download{
+    display:none;
+    margin-top:10px;
+    color:#fff;
+    text-decoration:none;
+    font-weight:600;
+  }
+</style>
+</head>
+
+<body>
+
 <div class="santa-checker">
   <h2>🎅 Naughty or Nice?</h2>
 
   <input id="childName" placeholder="Enter name" />
+  <br>
   <button onclick="startCheck()">Check Santa’s List</button>
 
   <p id="status"></p>
 
+  <!-- Hidden render surface -->
   <canvas id="canvas" width="1600" height="1131" style="display:none;"></canvas>
 
-  <br>
-  <a id="download" style="display:none;" download="Santa_Nice_List_Certificate.png">
-    🎄 Download Certificate
+  <a id="download" download="Santa_Nice_List_Certificate.pdf">
+    🎄 Download Certificate (PDF)
   </a>
 </div>
 
 <script>
+/* ---------- ASSETS ---------- */
 const bgImage = new Image();
 bgImage.crossOrigin = "anonymous";
-bgImage.src = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/nice_list.png";  // path to your PNG
+bgImage.src = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/nice_list.png";
 
+/* ---------- MAIN FLOW ---------- */
 function startCheck(){
   const name = document.getElementById("childName").value.trim();
   if(!name) return alert("Please enter a name");
 
   const status = document.getElementById("status");
+  const download = document.getElementById("download");
+
+  download.style.display = "none";
   status.innerText = "Checking Santa’s list… 🤔";
 
   const phases = ["Naughty…", "Nice…", "Naughty…", "Nice…"];
@@ -34,39 +114,63 @@ function startCheck(){
     i++;
   }, 400);
 
-  // Final result after suspense
   setTimeout(() => {
     clearInterval(interval);
     status.innerText = "✅ NICE LIST CONFIRMED! 🎄";
-    generateCertificate(name);
+    generatePDF(name);
   }, 2200);
 }
 
-function generateCertificate(name){
+/* ---------- CERTIFICATE RENDER ---------- */
+function generatePDF(name){
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
-  
-ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const link = document.getElementById("download");
 
-  // Draw background
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
-  // Name styling
+  // Script name only
   ctx.fillStyle = "#000";
-  ctx.font = "bold 64px serif";
+  ctx.font = "64px 'Great Vibes'";
   ctx.textAlign = "center";
-
-  // 👉 Adjust these coordinates to match your design
   ctx.fillText(name, canvas.width / 2, 620);
 
-  // Enable download
-  const link = document.getElementById("download");
-  canvas.toBlob(blob => {
-  const url = URL.createObjectURL(blob);
-    if (link.href) URL.revokeObjectURL(link.href);
-  link.href = url;
-  link.style.display = "inline-block";
-}, "image/png");
+  // Canvas → PDF
+  const imgData = canvas.toDataURL("image/png");
 
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({
+    orientation: "landscape",
+    unit: "pt",
+    format: "a4"
+  });
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+
+  const blob = pdf.output("blob");
+  if (link.href) URL.revokeObjectURL(link.href);
+  link.href = URL.createObjectURL(blob);
+  link.style.display = "inline-block";
+
+  sendHeight(); // update iframe height
 }
+
+/* ---------- AUTO-HEIGHT (parity with address lookup) ---------- */
+function sendHeight(){
+  const h = document.documentElement.scrollHeight;
+  parent.postMessage({ niceListHeight: h }, "*");
+}
+
+window.addEventListener("load", sendHeight);
+window.addEventListener("resize", sendHeight);
+
+const observer = new MutationObserver(sendHeight);
+observer.observe(document.body, { childList:true, subtree:true });
 </script>
+
+</body>
+</html>
