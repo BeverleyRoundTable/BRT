@@ -118,6 +118,23 @@ function draw(photo){
   link.href = canvas.toDataURL("image/png");
   link.style.display = "inline-block";
 }
+
+  function sendHeight(extra = 0){
+  const h = document.documentElement.scrollHeight + extra;
+  parent.postMessage({ santasBeenHeight: h }, "*");
+}
+
+window.addEventListener("load", () => {
+  sendHeight(20);
+  setTimeout(() => sendHeight(20), 100);
+  setTimeout(() => sendHeight(20), 300);
+});
+
+window.addEventListener("resize", () => sendHeight(20));
+
+const observer = new MutationObserver(() => sendHeight(20));
+observer.observe(document.body, { childList:true, subtree:true });
+
 </script>
 
 </body>
