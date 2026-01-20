@@ -125,7 +125,7 @@ const santasBeenEmbed = `
     color:#ccc;
     margin:0 0 8px;
   ">
-    Santa been? 📸 Upload a selfie & share it on socials 🎄
+    Santa been? 📸 Upload a selfie and share the festive cheer 🎄✨
   </p>
 
   <iframe
