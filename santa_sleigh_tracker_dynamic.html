@@ -641,12 +641,7 @@ if (age <= STALE_MS) {
 
   // Anchor grace window to GPS timestamp
   if (!staleSince) staleSince = ts;
-
-  // 🧹 HARD CLEANUP (prevents sticky state after refresh)
-  if (staleSince && Date.now() - staleSince > STALE_MS * 2) {
-    lastGoodFix = null;
-  }
-
+  
   // ❌ Hard timeout → Lapland fallback
   if (Date.now() - staleSince > STALE_MS) {
     throw 0;
