@@ -127,28 +127,26 @@ function generate(){
   photo.src = URL.createObjectURL(fileInput.files[0]);
 }
 
+<script>
 function draw(photo){
   ctx.clearRect(0,0,1000,1000);
 
-  // 1️⃣ Draw full Canva design first
-  ctx.drawImage(frameImg, 0, 0, 1000, 1000);
-
-  // 2️⃣ Calculate square crop
+  // 1️⃣ Centre-crop uploaded photo to square
   const srcSize = Math.min(photo.width, photo.height);
   const srcX = (photo.width - srcSize) / 2;
   const srcY = (photo.height - srcSize) / 2;
 
-  // 3️⃣ Draw photo EXACTLY over the white square
+  // 2️⃣ Draw PHOTO first (this sits behind the frame)
   ctx.drawImage(
     photo,
     srcX, srcY, srcSize, srcSize,
     FRAME.x, FRAME.y, FRAME.size, FRAME.size
   );
 
-  // 4️⃣ Redraw frame ONCE MORE to keep borders crisp
+  // 3️⃣ Draw FRAME on top (transparent hole reveals photo)
   ctx.drawImage(frameImg, 0, 0, 1000, 1000);
 
-  // 5️⃣ Export
+  // 4️⃣ Export
   const link = document.getElementById("download");
   link.href = canvas.toDataURL("image/png");
   link.style.display = "inline-block";
@@ -156,6 +154,7 @@ function draw(photo){
   generateBtn.disabled = false;
   generateBtn.textContent = "Create another image";
 }
+</script>
 
   function sendHeight(extra = 0){
   const h = document.documentElement.scrollHeight + extra;
