@@ -154,14 +154,24 @@ https://brt-23f.pages.dev/routes.html?api=${ensureApi()}
 
 const recommendedRoutes = `
 <div style="width:100%;max-width:1000px;margin:0 auto;">
-<iframe
-src="https://brt-23f.pages.dev/routes.html?api=${ensureApi()}"
-style="width:100%;height:1200px;border:none;border-radius:15px;overflow:hidden;"
-loading="lazy"
-></iframe>
+  <iframe
+    id="routesFrame"
+    src="https://brt-23f.pages.dev/routes.html?api=${ensureApi()}"
+    style="width:100%;border:none;border-radius:15px;transition:height .25s ease;"
+    loading="lazy"
+  ></iframe>
 </div>
-`;
 
+<script>
+  // Receive auto-height updates from routes.html
+  window.addEventListener("message", (e) => {
+    if (e.data.routesHeight) {
+      const frame = document.getElementById("routesFrame");
+      if (frame) frame.style.height = e.data.routesHeight + "px";
+    }
+  });
+</script>
+`;
 
 // ================================
 // GPX Animation Routes List
