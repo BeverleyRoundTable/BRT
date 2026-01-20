@@ -114,23 +114,38 @@ const niceListEmbed = `
 `;
 
 // ================================
-// Santa’s Been (Selfie Generator)
+// Santa’s Been (Photo Generator)
 // ================================
 const santasBeenEmbed = `
 <div style="width:100%;max-width:420px;margin:0 auto;">
+
+  <p style="
+    text-align:center;
+    font-size:0.9rem;
+    color:#ccc;
+    margin:0 0 8px;
+  ">
+    Santa been? 📸 Upload a selfie & share it on socials 🎄
+  </p>
+
   <iframe
     id="santasBeenFrame"
     src="https://brt-23f.pages.dev/santa_frame.html"
-    style="width:100%;border:none;border-radius:20px;transition:height .25s ease;"
+    style="width:100%;border:none;border-radius:20px;overflow:hidden;transition:height .25s ease;"
     loading="lazy"
   ></iframe>
+
 </div>
 
 <script>
   window.addEventListener("message", (e) => {
+    if (!e.data || typeof e.data !== "object") return;
     if (e.data.santasBeenHeight) {
       const frame = document.getElementById("santasBeenFrame");
-      if (frame) frame.style.height = e.data.santasBeenHeight + "px";
+      if (frame) {
+        frame.style.height = e.data.santasBeenHeight + "px";
+        frame.style.minHeight = e.data.santasBeenHeight + "px";
+      }
     }
   });
 </script>
