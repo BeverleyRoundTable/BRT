@@ -101,11 +101,7 @@ button:disabled {
 <script>
 const FRAME_SRC = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/santa_frame.png";
 
-const FRAME = {
-  x: 230,
-  y: 230,
-  size: 540
-};
+const FRAME = { x: 230, y: 230, size: 540 };
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -117,6 +113,7 @@ frameImg.src = FRAME_SRC;
 
 const photoInput = document.getElementById("photoInput");
 const generateBtn = document.getElementById("generateBtn");
+const downloadLink = document.getElementById("download");
 
 photoInput.addEventListener("change", () => {
   generateBtn.disabled = !photoInput.files.length;
@@ -133,26 +130,21 @@ function generate(){
   photo.src = URL.createObjectURL(photoInput.files[0]);
 }
 
-<script>
 function draw(photo){
   ctx.clearRect(0, 0, 1000, 1000);
 
   const INSET = 8;
   const NUDGE = 0.08;
 
-  // 1️⃣ Centre-crop uploaded photo
   const srcSize = Math.min(photo.width, photo.height);
   const srcX = (photo.width - srcSize) / 2;
-  const srcY = Math.max(
-    0,
-    (photo.height - srcSize) / 2 - srcSize * NUDGE
-  );
+  const srcY = Math.max(0, (photo.height - srcSize) / 2 - srcSize * NUDGE);
 
   const destX = FRAME.x + INSET;
   const destY = FRAME.y + INSET;
   const destSize = FRAME.size - INSET * 2;
 
-  // 2️⃣ Soft shadow for printed-photo feel
+  // Soft printed-photo shadow
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.18)";
   ctx.shadowBlur = 14;
@@ -166,17 +158,35 @@ function draw(photo){
 
   ctx.restore();
 
-  // 3️⃣ Draw Canva frame on top (transparent hole)
+  // Frame on top
   ctx.drawImage(frameImg, 0, 0, 1000, 1000);
 
-  // 4️⃣ Export
-  const link = document.getElementById("download");
-  link.href = canvas.toDataURL("image/png");
-  link.style.display = "inline-block";
+  // Export
+  downloadLink.href = canvas.toDataURL("image/png");
+  downloadLink.style.display = "inline-block";
 
   generateBtn.disabled = false;
   generateBtn.textContent = "Create another image";
+
+  sendHeight(40); // 🔑 FORCE iframe resize after content change
 }
+
+/* ---------- iframe auto-height ---------- */
+function sendHeight(extra = 0){
+  const h = document.documentElement.scrollHeight + extra;
+  parent.postMessage({ santasBeenHeight: h }, "*");
+}
+
+window.addEventListener("load", () => {
+  sendHeight(30);
+  setTimeout(() => sendHeight(30), 150);
+  setTimeout(() => sendHeight(30), 350);
+});
+
+window.addEventListener("resize", () => sendHeight(30));
+
+const observer = new MutationObserver(() => sendHeight(30));
+observer.observe(document.body, { childList: true, subtree: true });
 </script>
 
 </body>
