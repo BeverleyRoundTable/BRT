@@ -112,38 +112,43 @@ const ctx = canvas.getContext("2d");
 ctx.imageSmoothingQuality = "high";
 
 const frameImg = new Image();
-  frameImg.crossOrigin = "anonymous";
+frameImg.crossOrigin = "anonymous";
 frameImg.src = FRAME_SRC;
 
+const photoInput = document.getElementById("photoInput");
+const generateBtn = document.getElementById("generateBtn");
+
+photoInput.addEventListener("change", () => {
+  generateBtn.disabled = !photoInput.files.length;
+});
+
 function generate(){
-  const fileInput = document.getElementById("photoInput");
-  if (!fileInput.files.length) return;
+  if (!photoInput.files.length) return;
 
   generateBtn.disabled = true;
   generateBtn.textContent = "Creating image…";
 
   const photo = new Image();
   photo.onload = () => draw(photo);
-  photo.src = URL.createObjectURL(fileInput.files[0]);
+  photo.src = URL.createObjectURL(photoInput.files[0]);
 }
 
-<script>
 function draw(photo){
-  ctx.clearRect(0,0,1000,1000);
+  ctx.clearRect(0, 0, 1000, 1000);
 
-  // 1️⃣ Centre-crop uploaded photo to square
+  // 1️⃣ Centre-crop uploaded photo
   const srcSize = Math.min(photo.width, photo.height);
   const srcX = (photo.width - srcSize) / 2;
   const srcY = (photo.height - srcSize) / 2;
 
-  // 2️⃣ Draw PHOTO first (this sits behind the frame)
+  // 2️⃣ Draw photo first
   ctx.drawImage(
     photo,
     srcX, srcY, srcSize, srcSize,
     FRAME.x, FRAME.y, FRAME.size, FRAME.size
   );
 
-  // 3️⃣ Draw FRAME on top (transparent hole reveals photo)
+  // 3️⃣ Draw Canva frame on top (transparent hole)
   ctx.drawImage(frameImg, 0, 0, 1000, 1000);
 
   // 4️⃣ Export
@@ -154,9 +159,9 @@ function draw(photo){
   generateBtn.disabled = false;
   generateBtn.textContent = "Create another image";
 }
-</script>
 
-  function sendHeight(extra = 0){
+// -------- iframe auto-height --------
+function sendHeight(extra = 0){
   const h = document.documentElement.scrollHeight + extra;
   parent.postMessage({ santasBeenHeight: h }, "*");
 }
@@ -171,14 +176,6 @@ window.addEventListener("resize", () => sendHeight(20));
 
 const observer = new MutationObserver(() => sendHeight(20));
 observer.observe(document.body, { childList:true, subtree:true });
-
-  const photoInput = document.getElementById("photoInput");
-const generateBtn = document.getElementById("generateBtn");
-
-photoInput.addEventListener("change", () => {
-  generateBtn.disabled = !photoInput.files.length;
-});
-
 </script>
 
 </body>
