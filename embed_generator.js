@@ -114,6 +114,29 @@ const niceListEmbed = `
 `;
 
 // ================================
+// Santa’s Been (Selfie Generator)
+// ================================
+const santasBeenEmbed = `
+<div style="width:100%;max-width:420px;margin:0 auto;">
+  <iframe
+    id="santasBeenFrame"
+    src="https://brt-23f.pages.dev/santa_frame.html"
+    style="width:100%;border:none;border-radius:20px;transition:height .25s ease;"
+    loading="lazy"
+  ></iframe>
+</div>
+
+<script>
+  window.addEventListener("message", (e) => {
+    if (e.data.santasBeenHeight) {
+      const frame = document.getElementById("santasBeenFrame");
+      if (frame) frame.style.height = e.data.santasBeenHeight + "px";
+    }
+  });
+</script>
+`;
+
+// ================================
 // Tracker Embeds
 // ================================
 const trackerLink = `
