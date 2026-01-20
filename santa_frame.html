@@ -130,7 +130,16 @@ function generate(){
 function draw(photo){
   ctx.clearRect(0,0,1000,1000);
 
-  // --- AUTO CENTRE-CROP TO SQUARE ---
+  // --- DRAW FRAME FIRST (background) ---
+  ctx.drawImage(frameImg, 0, 0, 1000, 1000);
+
+  // --- CLIP TO PHOTO AREA ---
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(FRAME.x, FRAME.y, FRAME.size, FRAME.size);
+  ctx.clip();
+
+  // --- AUTO CENTRE-CROP PHOTO ---
   const srcSize = Math.min(photo.width, photo.height);
   const srcX = (photo.width - srcSize) / 2;
   const srcY = (photo.height - srcSize) / 2;
@@ -141,18 +150,18 @@ function draw(photo){
     FRAME.x, FRAME.y, FRAME.size, FRAME.size
   );
 
-  // --- FRAME OVERLAY ---
+  ctx.restore(); // stop clipping
+
+  // --- DRAW FRAME AGAIN (top layer) ---
   ctx.drawImage(frameImg, 0, 0, 1000, 1000);
 
   // --- EXPORT ---
   const link = document.getElementById("download");
   link.href = canvas.toDataURL("image/png");
   link.style.display = "inline-block";
-link.scrollIntoView({ behavior: "smooth", block: "center" });
-  
-generateBtn.disabled = false;
-generateBtn.textContent = "Create another image";
 
+  generateBtn.disabled = false;
+  generateBtn.textContent = "Create another image";
 }
 
   function sendHeight(extra = 0){
