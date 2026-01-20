@@ -142,7 +142,7 @@ function draw(photo){
   // --- AUTO CENTRE-CROP PHOTO ---
   const srcSize = Math.min(photo.width, photo.height);
   const srcX = (photo.width - srcSize) / 2;
-  const srcY = (photo.height - srcSize) / 2;
+  const srcY = Math.max(0, (photo.height - srcSize) / 2 - srcSize * 0.1);
 
   ctx.drawImage(
     photo,
