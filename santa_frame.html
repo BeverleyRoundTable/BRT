@@ -81,11 +81,15 @@ button:disabled {
   <h2>🎅 Santa’s Been!</h2>
 
   <label class="upload-label">
-    📸 Upload your photo
-    <input id="photoInput" type="file" accept="image/*">
-  </label>
+  📸 Upload your photo
+  <input id="photoInput" type="file" accept="image/*">
+</label>
 
-  <button id="generateBtn" onclick="generate()" disabled>
+<p style="font-size:0.85rem;opacity:0.8;margin-top:6px;">
+  Square photos work best — we’ll crop it for you
+</p>
+
+<button id="generateBtn" onclick="generate()" disabled>
   Create Image
 </button>
 
@@ -113,10 +117,10 @@ frameImg.src = FRAME_SRC;
 
 function generate(){
   const fileInput = document.getElementById("photoInput");
-  if (!fileInput.files.length) {
-    alert("Please upload a photo");
-    return;
-  }
+  if (!fileInput.files.length) return;
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "Creating image…";
 
   const photo = new Image();
   photo.onload = () => draw(photo);
@@ -144,6 +148,8 @@ function draw(photo){
   const link = document.getElementById("download");
   link.href = canvas.toDataURL("image/png");
   link.style.display = "inline-block";
+link.scrollIntoView({ behavior: "smooth", block: "center" });
+
 }
 
   function sendHeight(extra = 0){
