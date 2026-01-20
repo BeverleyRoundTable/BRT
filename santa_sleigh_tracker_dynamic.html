@@ -627,20 +627,32 @@ if (savedPin) {
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!valid(p.lat,p.lng)) throw 0;
     const ts = new Date(p.ts).getTime();
+    
 const age = Date.now() - ts;
 
+/* ---------- STALE HANDLING ---------- */
 if (age <= STALE_MS) {
+  // ✅ Fresh GPS
+  staleSince = null;
+  lastGoodFix = { lat: p.lat, lng: p.lng };
 
 } else {
-  // ⚠️ GPS stale — start grace window
-  if (!staleSince) staleSince = Date.now();
+  // ⚠️ GPS already stale
 
-  // ❌ Hard timeout reached → allow Lapland fallback
+  // Anchor grace window to GPS timestamp
+  if (!staleSince) staleSince = ts;
+
+  // 🧹 HARD CLEANUP (prevents sticky state after refresh)
+  if (staleSince && Date.now() - staleSince > STALE_MS * 2) {
+    lastGoodFix = null;
+  }
+
+  // ❌ Hard timeout → Lapland fallback
   if (Date.now() - staleSince > STALE_MS) {
     throw 0;
   }
 
-  // ⏸ Grace period → HOLD last known position
+  // ⏸ Grace period → hold last good fix (if any)
   if (lastGoodFix) {
     marker.setLatLng(lastGoodFix);
     statusBox.textContent = "🎅 Santa is nearby…";
