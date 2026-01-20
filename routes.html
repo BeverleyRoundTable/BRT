@@ -14,6 +14,14 @@
     padding: 0;
 }
 
+    #routes-root {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 22px 18px 28px;
+    background: rgba(18, 19, 23, 0.92);
+    border-radius: 22px;
+}
+
     h1 {
         text-align: center;
         padding: 26px 0 10px;
@@ -31,7 +39,7 @@
     /* Modern route card */
     .santa-route-card {
         background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.14);
         border-radius: 16px;
         padding: 22px;
         margin: 25px 0;
@@ -164,13 +172,17 @@
 
 <body>
 
-<h1>🎅 Sleigh Routes</h1>
+<div id="routes-root">
 
-<div id="tonights-route"></div>
+  <h1>🎅 Sleigh Routes</h1>
 
-<hr class="route-divider">
+  <div id="tonights-route"></div>
 
-<div id="all-routes"></div>
+  <hr class="route-divider">
+
+  <div id="all-routes"></div>
+
+</div>
 
 <!-- Load your routes.js with cache-busting -->
 <script>
@@ -179,6 +191,20 @@
     s.src = "https://brt-23f.pages.dev/routes.js?v=" + Date.now();
     document.body.appendChild(s);
 })();
+</script>
+
+    <script>
+  function sendHeight() {
+    const height = document.documentElement.scrollHeight;
+    parent.postMessage({ routesHeight: height }, "*");
+  }
+
+  window.onload = sendHeight;
+
+  const observer = new MutationObserver(sendHeight);
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  window.addEventListener("resize", sendHeight);
 </script>
 
 </body>
