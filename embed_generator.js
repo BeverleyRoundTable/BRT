@@ -218,6 +218,7 @@ document.getElementById("fullThermo").value = fullThermo.trim();
 document.getElementById("carouselCode").value = carouselCode.trim();
 document.getElementById("addressLookup").value = addressLookup.trim();
 document.getElementById("niceListEmbed").value = niceListEmbed.trim();
+document.getElementById("santasBeenEmbed").value = santasBeenEmbed.trim();
 document.getElementById("trackerLink").value = trackerLink.trim();
 document.getElementById("recommendedTracker").value = recommendedTracker.trim();
 document.getElementById("routesLink").value = routesLink.trim();
