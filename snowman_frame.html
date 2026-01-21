@@ -123,6 +123,12 @@ let dragging = false;
 let lastX = 0;
 let lastY = 0;
 let currentPhoto = null;
+let snowmanReady = false;
+let frameReady = false;
+
+  const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingQuality = "high";
 
 const FRAME_SRC =
   "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/snowman.png?v=facehole-v6";
@@ -151,14 +157,16 @@ if (!snowmanData) {
 }
 
 const snowmanImg = new Image();
+snowmanImg.onload = () => {
+  snowmanReady = true;
+};
 snowmanImg.src = snowmanData;
-
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-ctx.imageSmoothingQuality = "high";
 
 const frameImg = new Image();
 frameImg.crossOrigin = "anonymous";
+frameImg.onload = () => {
+  frameReady = true;
+};
 frameImg.src = FRAME_SRC;
 
 const photoInput = document.getElementById("photoInput");
@@ -179,22 +187,28 @@ function generate(){
 
   const photo = new Image();
   photo.onload = () => {
-  currentPhoto = photo;
+    currentPhoto = photo;
 
-  faceScale = 1;
-  faceOffsetX = 0;
-  faceOffsetY = 0;
+    faceScale = 1;
+    faceOffsetX = 0;
+    faceOffsetY = 0;
 
-  draw(photo);
-
-  // ✅ REVEAL CONTROLS
-  downloadBtn.style.display = "inline-flex";
-};
+    const wait = setInterval(() => {
+      if (snowmanReady && frameReady) {
+        clearInterval(wait);
+        draw(photo);
+        downloadBtn.style.display = "inline-flex";
+        generateBtn.disabled = false;
+        generateBtn.textContent = "Replace photo";
+      }
+    }, 50);
+  };
 
   photo.src = URL.createObjectURL(photoInput.files[0]);
 }
 
 function draw(photo){
+  if (!snowmanReady || !frameReady) return;
   ctx.clearRect(0, 0, 1000, 1000);
 
   /* ---------- FACE ---------- */
