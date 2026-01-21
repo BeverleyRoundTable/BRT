@@ -174,7 +174,11 @@ function generate(){
   generateBtn.textContent = "Creating image…";
 
   const photo = new Image();
-  photo.onload = () => draw(photo);
+  photo.onload = () => {
+  currentPhoto = photo;
+  draw(photo);
+};
+
   photo.src = URL.createObjectURL(photoInput.files[0]);
 }
 
@@ -197,12 +201,60 @@ function draw(photo){
   );
   ctx.clip();
 
-  ctx.drawImage(
-    photo,
-    srcX, srcY, srcSize, srcSize,
-    FACE.x, FACE.y, FACE.size, FACE.size
-  );
+  const drawSize = FACE.size * faceScale;
+const drawX = FACE.x + FACE.size / 2 - drawSize / 2 + faceOffsetX;
+const drawY = FACE.y + FACE.size / 2 - drawSize / 2 + faceOffsetY;
+
+ctx.drawImage(
+  photo,
+  srcX, srcY, srcSize, srcSize,
+  drawX, drawY, drawSize, drawSize
+);
+
   ctx.restore();
+
+  canvas.addEventListener("mousedown", e => {
+  dragging = true;
+  lastX = e.offsetX;
+  lastY = e.offsetY;
+});
+
+canvas.addEventListener("mousemove", e => {
+  if (!dragging || !currentPhoto) return;
+  faceOffsetX += e.offsetX - lastX;
+  faceOffsetY += e.offsetY - lastY;
+  lastX = e.offsetX;
+  lastY = e.offsetY;
+  draw(currentPhoto);
+});
+
+canvas.addEventListener("mouseup", () => dragging = false);
+canvas.addEventListener("mouseleave", () => dragging = false);
+
+// Touch
+canvas.addEventListener("touchstart", e => {
+  dragging = true;
+  lastX = e.touches[0].clientX;
+  lastY = e.touches[0].clientY;
+});
+
+canvas.addEventListener("touchmove", e => {
+  if (!dragging || !currentPhoto) return;
+  faceOffsetX += e.touches[0].clientX - lastX;
+  faceOffsetY += e.touches[0].clientY - lastY;
+  lastX = e.touches[0].clientX;
+  lastY = e.touches[0].clientY;
+  draw(currentPhoto);
+});
+
+canvas.addEventListener("touchend", () => dragging = false);
+
+  canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  faceScale += e.deltaY * -0.001;
+  faceScale = Math.min(Math.max(faceScale, 0.6), 2.2);
+  if (currentPhoto) draw(currentPhoto);
+}, { passive:false });
 
   /* ---------- SNOWMAN ---------- */
   ctx.drawImage(
