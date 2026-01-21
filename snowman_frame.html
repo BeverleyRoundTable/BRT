@@ -210,7 +210,10 @@ function draw(photo){
   if (!snowmanReady || !frameReady) return;
   ctx.clearRect(0, 0, 1000, 1000);
 
-  /* ---------- FACE ---------- */
+  /* ---------- FRAME FIRST ---------- */
+  ctx.drawImage(frameImg, 0, 0, 1000, 1000);
+
+  /* ---------- FACE (behind hole) ---------- */
   const srcSize = Math.min(photo.width, photo.height);
   const srcX = (photo.width - srcSize) / 2;
   const srcY = (photo.height - srcSize) / 2 - srcSize * 0.08;
@@ -227,18 +230,18 @@ function draw(photo){
   ctx.clip();
 
   const drawSize = FACE.size * faceScale;
-const drawX = FACE.x + FACE.size / 2 - drawSize / 2 + faceOffsetX;
-const drawY = FACE.y + FACE.size / 2 - drawSize / 2 + faceOffsetY;
+  const drawX = FACE.x + FACE.size / 2 - drawSize / 2 + faceOffsetX;
+  const drawY = FACE.y + FACE.size / 2 - drawSize / 2 + faceOffsetY;
 
-ctx.drawImage(
-  photo,
-  srcX, srcY, srcSize, srcSize,
-  drawX, drawY, drawSize, drawSize
-);
+  ctx.drawImage(
+    photo,
+    srcX, srcY, srcSize, srcSize,
+    drawX, drawY, drawSize, drawSize
+  );
 
   ctx.restore();
 
-  /* ---------- SNOWMAN ---------- */
+  /* ---------- CUSTOM SNOWMAN ON TOP ---------- */
   ctx.drawImage(
     snowmanImg,
     SNOWMAN.x,
@@ -247,10 +250,6 @@ ctx.drawImage(
     SNOWMAN.height
   );
 
-  /* ---------- FRAME ---------- */
-  ctx.drawImage(frameImg, 0, 0, 1000, 1000);
-
-  /* ---------- EXPORT ---------- */
   generateBtn.disabled = false;
   generateBtn.textContent = "Replace photo";
 
