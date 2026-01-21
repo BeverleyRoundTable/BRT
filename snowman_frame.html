@@ -99,7 +99,7 @@ canvas {
   </label>
 
   <p class="helper-text">
-    Centre your face — we’ll do the rest ❄️
+    Drag to move • Scroll or pinch to zoom ❄️
   </p>
 
   <div class="actions">
@@ -112,7 +112,7 @@ canvas {
 
 <script>
 /* ================= CONFIG ================= */
-let faceScale = 1;
+let faceScale = 1.3;
 let faceOffsetX = 0;
 let faceOffsetY = 0;
 let dragging = false;
@@ -291,7 +291,7 @@ canvas.addEventListener("touchend", () => dragging = false);
 canvas.addEventListener("wheel", e => {
   e.preventDefault();
   faceScale += e.deltaY * -0.001;
-  faceScale = Math.min(Math.max(faceScale, 0.6), 2.2);
+  faceScale = Math.min(Math.max(faceScale, 0.5), 3.2);
   if (currentPhoto) draw(currentPhoto);
 }, { passive:false });
 
