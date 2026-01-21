@@ -100,10 +100,13 @@ function startAddressLookup() {
   }
 
   // --- Wire events ---
-  btnEl.addEventListener("click", () => renderResults(inputEl.value));
-  inputEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") renderResults(inputEl.value);
-  });
+  btnEl.addEventListener("click", () => {
+  btnEl.classList.remove("pulse");
+  void btnEl.offsetWidth; // force reflow so animation retriggers
+  btnEl.classList.add("pulse");
+
+  renderResults(inputEl.value);
+});
 
   // --- Load address data ---
   fetch(LOOKUP_URL)
