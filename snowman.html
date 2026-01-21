@@ -238,58 +238,44 @@ function bodyAccessory(){
 }
 
   function jumper(){
-  const centerX = 300;
-  const centerY = 360;
-  const ballRadius = 110;
-
-  const y = 330;
-  const height = 70;
-  const radius = 100;
+  const cx = 300;
+  const cy = 360;
+  const r  = 110;
 
   ctx.save();
 
-  // clip to middle snowball
+  // clip strictly to middle snowball
   ctx.beginPath();
-  ctx.arc(centerX, centerY, ballRadius, 0, Math.PI * 2);
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.clip();
 
-  // === base jumper ===
-  ctx.fillStyle = "#2563eb"; // base blue
+  // === base fill ===
+  ctx.fillStyle = "#2563eb";
   ctx.beginPath();
-  ctx.moveTo(centerX - radius, y);
-  ctx.quadraticCurveTo(centerX, y - 22, centerX + radius, y);
-  ctx.lineTo(centerX + radius, y + height);
-  ctx.quadraticCurveTo(centerX, y + height + 22, centerX - radius, y + height);
-  ctx.closePath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fill();
 
-  // === lighter stripe ===
-  ctx.fillStyle = "#3b82f6"; // lighter blue
+  // === lighter horizontal stripe ===
+  ctx.fillStyle = "#3b82f6";
   ctx.beginPath();
-  ctx.moveTo(centerX - radius, y + 22);
-  ctx.quadraticCurveTo(centerX, y + 10, centerX + radius, y + 22);
-  ctx.lineTo(centerX + radius, y + 36);
-  ctx.quadraticCurveTo(centerX, y + 48, centerX - radius, y + 36);
-  ctx.closePath();
+  ctx.ellipse(cx, cy - 5, r, 26, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // === darker bottom edge (depth) ===
-  ctx.fillStyle = "#1e40af"; // darker blue
+  // === darker lower shading ===
+  ctx.fillStyle = "#1e40af";
   ctx.beginPath();
-  ctx.moveTo(centerX - radius, y + height - 10);
-  ctx.quadraticCurveTo(centerX, y + height + 6, centerX + radius, y + height - 10);
-  ctx.lineTo(centerX + radius, y + height);
-  ctx.quadraticCurveTo(centerX, y + height + 12, centerX - radius, y + height);
-  ctx.closePath();
+  ctx.ellipse(cx, cy + 30, r, 30, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // === knit texture (tiny dots) ===
+  // === knit texture ===
   ctx.fillStyle = "rgba(255,255,255,0.15)";
-  for(let i = centerX - radius + 8; i < centerX + radius; i += 14){
-    for(let j = y + 10; j < y + height - 10; j += 14){
-      ctx.beginPath();
-      ctx.arc(i + (j % 10), j, 1.2, 0, Math.PI * 2);
-      ctx.fill();
+  for(let y = cy - r + 14; y < cy + r; y += 14){
+    for(let x = cx - r + 14; x < cx + r; x += 14){
+      if(Math.hypot(x - cx, y - cy) < r - 6){
+        ctx.beginPath();
+        ctx.arc(x + (y % 8), y, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 
