@@ -80,10 +80,14 @@
         }
 
         .santa-thermo-card {
-            background: rgba(0,0,0,0.35);
-            border: 1px solid rgba(255,255,255,0.25);
-            padding: 1rem 1.25rem;
-            border-radius: 16px;
+    background: rgba(18,19,23,0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 16px;
+    box-shadow:
+      0 6px 20px rgba(0,0,0,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+}
         }
         .santa-thermo-title {
             font-size: 1rem;
