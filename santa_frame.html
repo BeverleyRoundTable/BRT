@@ -91,6 +91,22 @@ button:disabled {
   cursor: not-allowed;
 }
 
+  .actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;   
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.actions a {
+  display: inline-flex;  
+  align-items: center;
+  height: 42px;         
+  line-height: 1;
+  opacity: 0.95;
+}
+
   @keyframes santaGlow {
   0% {
     box-shadow:
@@ -143,9 +159,13 @@ button.success {
   Stand in the middle — Santa will do the rest 🎄
 </p>
 
-<button id="generateBtn" onclick="generate()" disabled>
-  Create Image
-</button>
+<div class="actions">
+  <button id="generateBtn" onclick="generate()" disabled>
+    Create Image
+  </button>
+
+  <a id="download" download="santas_been.png">⬇ Download image</a>
+</div>
 
   <a id="download" download="santas_been.png">⬇ Download image</a>
 </div>
