@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Snowman Generator</title>
+
+<style>
+body {
+  margin: 0;
+  padding: 16px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: transparent;
+  text-align: center;
+}
+
+.card {
+  background: rgba(18,19,23,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 20px 18px 22px;
+  box-shadow:
+    0 6px 20px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.card h2 {
+  color: #fff;
+}
+
+.helper-text {
+  font-size: 0.85rem;
+  color: #fff;
+  opacity: 0.85;
+  margin-top: 6px;
+}
+
+.upload-label {
+  display: inline-block;
+  margin: 12px auto;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.1);
+  cursor: pointer;
+  font-weight: 600;
+  color: #fff;
+}
+
+.upload-label input {
+  display: none;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+button {
+  height: 42px;
+  padding: 0 26px;
+  border-radius: 999px;
+  border: none;
+  background: #d31c1c;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+a {
+  display: none;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+canvas {
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>☃️ My Snowman</h2>
+
+  <label class="upload-label">
+    📸 Upload your face
+    <input id="photoInput" type="file" accept="image/*">
+  </label>
+
+  <p class="helper-text">
+    Centre your face — we’ll do the rest ❄️
+  </p>
+
+  <div class="actions">
+    <button id="generateBtn" disabled>Create Image</button>
+    <a id="download" download="my_snowman.png">⬇ Download image</a>
+  </div>
+
+  <canvas id="canvas" width="1000" height="1000"></canvas>
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+
+const FRAME_SRC =
+  "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/Snowman.png";
+
+/* Face cut-out in the frame */
+const FACE = {
+  x: 620,
+  y: 330,
+  size: 260
+};
+
+/* Snowman placement (left side) */
+const SNOWMAN = {
+  x: 160,
+  y: 380,
+  width: 420,
+  height: 560
+};
+
+/* ======================================== */
+
+const snowmanData = sessionStorage.getItem("snowmanPNG");
+
+if (!snowmanData) {
+  alert("No snowman found — please build one first.");
+}
+
+const snowmanImg = new Image();
+snowmanImg.src = snowmanData;
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingQuality = "high";
+
+const frameImg = new Image();
+frameImg.crossOrigin = "anonymous";
+frameImg.src = FRAME_SRC;
+
+const photoInput = document.getElementById("photoInput");
+const generateBtn = document.getElementById("generateBtn");
+const downloadLink = document.getElementById("download");
+
+photoInput.addEventListener("change", () => {
+  generateBtn.disabled = !photoInput.files.length;
+});
+
+generateBtn.onclick = generate;
+
+function generate(){
+  if (!photoInput.files.length) return;
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "Creating image…";
+
+  const photo = new Image();
+  photo.onload = () => draw(photo);
+  photo.src = URL.createObjectURL(photoInput.files[0]);
+}
+
+function draw(photo){
+  ctx.clearRect(0, 0, 1000, 1000);
+
+  /* ---------- FACE ---------- */
+  const srcSize = Math.min(photo.width, photo.height);
+  const srcX = (photo.width - srcSize) / 2;
+  const srcY = (photo.height - srcSize) / 2 - srcSize * 0.08;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(
+    FACE.x + FACE.size / 2,
+    FACE.y + FACE.size / 2,
+    FACE.size / 2,
+    0,
+    Math.PI * 2
+  );
+  ctx.clip();
+
+  ctx.drawImage(
+    photo,
+    srcX, srcY, srcSize, srcSize,
+    FACE.x, FACE.y, FACE.size, FACE.size
+  );
+  ctx.restore();
+
+  /* ---------- SNOWMAN ---------- */
+  ctx.drawImage(
+    snowmanImg,
+    SNOWMAN.x,
+    SNOWMAN.y,
+    SNOWMAN.width,
+    SNOWMAN.height
+  );
+
+  /* ---------- FRAME ---------- */
+  ctx.drawImage(frameImg, 0, 0, 1000, 1000);
+
+  /* ---------- EXPORT ---------- */
+  downloadLink.href = canvas.toDataURL("image/png");
+  downloadLink.style.display = "inline-flex";
+
+  generateBtn.disabled = false;
+  generateBtn.textContent = "Create another image";
+
+  sendHeight(40);
+}
+
+/* ---------- iframe auto-height ---------- */
+function sendHeight(extra = 0){
+  const h = document.documentElement.scrollHeight + extra;
+  parent.postMessage({ snowmanFrameHeight: h }, "*");
+}
+
+window.addEventListener("load", () => sendHeight(30));
+window.addEventListener("resize", () => sendHeight(30));
+</script>
+
+</body>
+</html>
