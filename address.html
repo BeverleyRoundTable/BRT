@@ -58,6 +58,22 @@
 
     }
 
+    /* Kill mobile autofill blue */
+.address-search-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-clip: padding-box;
+}
+
+/* iOS / Chrome autofill override */
+.address-search-input:-webkit-autofill,
+.address-search-input:-webkit-autofill:hover,
+.address-search-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  box-shadow: 0 0 0px 1000px rgba(0,0,0,0.35) inset;
+  transition: background-color 9999s ease-out;
+}
+
     .address-search button {
   height: 42px;
   padding: 0 26px;
