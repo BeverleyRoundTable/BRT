@@ -238,26 +238,60 @@ function bodyAccessory(){
 }
 
   function jumper(){
-  const y = 330;        // vertical position
-  const height = 70;   // jumper thickness
-  const radius = 100;  // matches middle snowball curve
+  const centerX = 300;
+  const centerY = 360;
+  const ballRadius = 110;
+
+  const y = 330;
+  const height = 70;
+  const radius = 100;
 
   ctx.save();
 
   // clip to middle snowball
   ctx.beginPath();
-  ctx.arc(300,360,110,0,Math.PI*2);
+  ctx.arc(centerX, centerY, ballRadius, 0, Math.PI * 2);
   ctx.clip();
 
-  // jumper band (rounded)
-  ctx.fillStyle="#2563eb";
+  // === base jumper ===
+  ctx.fillStyle = "#2563eb"; // base blue
   ctx.beginPath();
-  ctx.moveTo(300 - radius, y);
-  ctx.quadraticCurveTo(300, y - 20, 300 + radius, y);
-  ctx.lineTo(300 + radius, y + height);
-  ctx.quadraticCurveTo(300, y + height + 20, 300 - radius, y + height);
+  ctx.moveTo(centerX - radius, y);
+  ctx.quadraticCurveTo(centerX, y - 22, centerX + radius, y);
+  ctx.lineTo(centerX + radius, y + height);
+  ctx.quadraticCurveTo(centerX, y + height + 22, centerX - radius, y + height);
   ctx.closePath();
   ctx.fill();
+
+  // === lighter stripe ===
+  ctx.fillStyle = "#3b82f6"; // lighter blue
+  ctx.beginPath();
+  ctx.moveTo(centerX - radius, y + 22);
+  ctx.quadraticCurveTo(centerX, y + 10, centerX + radius, y + 22);
+  ctx.lineTo(centerX + radius, y + 36);
+  ctx.quadraticCurveTo(centerX, y + 48, centerX - radius, y + 36);
+  ctx.closePath();
+  ctx.fill();
+
+  // === darker bottom edge (depth) ===
+  ctx.fillStyle = "#1e40af"; // darker blue
+  ctx.beginPath();
+  ctx.moveTo(centerX - radius, y + height - 10);
+  ctx.quadraticCurveTo(centerX, y + height + 6, centerX + radius, y + height - 10);
+  ctx.lineTo(centerX + radius, y + height);
+  ctx.quadraticCurveTo(centerX, y + height + 12, centerX - radius, y + height);
+  ctx.closePath();
+  ctx.fill();
+
+  // === knit texture (tiny dots) ===
+  ctx.fillStyle = "rgba(255,255,255,0.15)";
+  for(let i = centerX - radius + 8; i < centerX + radius; i += 14){
+    for(let j = y + 10; j < y + height - 10; j += 14){
+      ctx.beginPath();
+      ctx.arc(i + (j % 10), j, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 
   ctx.restore();
 }
