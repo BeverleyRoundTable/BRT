@@ -241,7 +241,9 @@ function draw(photo){
 
     // Export
   downloadLink.href = canvas.toDataURL("image/png");
-  downloadLink.style.display = "inline-block";
+  setTimeout(() => {
+  downloadLink.style.display = "inline-flex";
+}, 150);
 
   generateBtn.disabled = false;
   generateBtn.textContent = "Create another image";
