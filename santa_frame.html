@@ -15,14 +15,14 @@
   }
 
   .card {
-    max-width: 420px;
-    margin: 0 auto;
-    padding: 16px;
-    background: rgba(18,19,23,0.92);
-    border-radius: 20px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-    color: #fff;
-  }
+  background: rgba(18,19,23,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 20px;
+  box-shadow:
+    0 6px 20px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
 
   button {
     margin-top: 12px;
@@ -67,6 +67,10 @@
   display: none;
 }
   
+  .upload-label:focus-within {
+  box-shadow: 0 0 0 2px rgba(211,28,28,0.25);
+}
+
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
