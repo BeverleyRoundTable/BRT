@@ -219,9 +219,47 @@ ctx.beginPath(); ctx.moveTo(420,320); ctx.lineTo(480,280); ctx.stroke();
 }
 
 function bodyAccessory(){
-if(snowman.body==="buttons"){ dot(300,300); dot(300,340); dot(300,380); }
-if(snowman.body==="jumper"){ ctx.fillStyle="#2563eb"; ctx.fillRect(200,300,200,50); }
-if(snowman.body==="badge"){ ctx.fillStyle="#facc15"; ctx.beginPath(); ctx.arc(330,320,14,0,Math.PI*2); ctx.fill(); }
+  if(snowman.body==="buttons"){
+    dot(300,300);
+    dot(300,340);
+    dot(300,380);
+  }
+
+  if(snowman.body==="jumper"){
+    jumper();
+  }
+
+  if(snowman.body==="badge"){
+    ctx.fillStyle="#facc15";
+    ctx.beginPath();
+    ctx.arc(330,320,14,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+  function jumper(){
+  const y = 330;        // vertical position
+  const height = 70;   // jumper thickness
+  const radius = 100;  // matches middle snowball curve
+
+  ctx.save();
+
+  // clip to middle snowball
+  ctx.beginPath();
+  ctx.arc(300,360,110,0,Math.PI*2);
+  ctx.clip();
+
+  // jumper band (rounded)
+  ctx.fillStyle="#2563eb";
+  ctx.beginPath();
+  ctx.moveTo(300 - radius, y);
+  ctx.quadraticCurveTo(300, y - 20, 300 + radius, y);
+  ctx.lineTo(300 + radius, y + height);
+  ctx.quadraticCurveTo(300, y + height + 20, 300 - radius, y + height);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
 }
 
 function handAccessory(){
