@@ -181,11 +181,14 @@ function generate(){
   photo.onload = () => {
   currentPhoto = photo;
 
-    faceScale = 1;
-faceOffsetX = 0;
-faceOffsetY = 0;
+  faceScale = 1;
+  faceOffsetX = 0;
+  faceOffsetY = 0;
 
   draw(photo);
+
+  // ✅ REVEAL CONTROLS
+  downloadBtn.style.display = "inline-flex";
 };
 
   photo.src = URL.createObjectURL(photoInput.files[0]);
