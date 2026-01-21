@@ -149,8 +149,11 @@ canvas{
 </div>
 
 <div class="download">
-<button onclick="downloadPNG()">⬇️ Download Snowman PNG</button>
+  <button onclick="downloadPNG()">⬇️ Download Snowman PNG</button>
+  <br><br>
+  <button onclick="goToFrame()">➡️ Add your face</button>
 </div>
+
 </div>
 
 <script>
@@ -300,6 +303,17 @@ const a=document.createElement("a");
 a.download="my-snowman.png";
 a.href=canvas.toDataURL("image/png");
 a.click();
+}
+
+  function goToFrame(){
+  // export the snowman canvas as transparent PNG
+  const png = canvas.toDataURL("image/png");
+
+  // store in sessionStorage for the next page
+  sessionStorage.setItem("snowmanPNG", png);
+
+  // go to the frame page (same tab is IMPORTANT)
+  window.location.href = "snowman_frame.html";
 }
 
 draw();
