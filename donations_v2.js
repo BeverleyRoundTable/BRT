@@ -89,7 +89,7 @@
     box-shadow:
         0 6px 20px rgba(0,0,0,0.35),
         inset 0 1px 0 rgba(255,255,255,0.05);
-    padding: 1rem 1.25rem;
+    padding: 20px 18px 22px;
 }
 
 .santa-thermo-title {
