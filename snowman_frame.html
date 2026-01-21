@@ -213,49 +213,6 @@ ctx.drawImage(
 
   ctx.restore();
 
-  canvas.addEventListener("mousedown", e => {
-  dragging = true;
-  lastX = e.offsetX;
-  lastY = e.offsetY;
-});
-
-canvas.addEventListener("mousemove", e => {
-  if (!dragging || !currentPhoto) return;
-  faceOffsetX += e.offsetX - lastX;
-  faceOffsetY += e.offsetY - lastY;
-  lastX = e.offsetX;
-  lastY = e.offsetY;
-  draw(currentPhoto);
-});
-
-canvas.addEventListener("mouseup", () => dragging = false);
-canvas.addEventListener("mouseleave", () => dragging = false);
-
-// Touch
-canvas.addEventListener("touchstart", e => {
-  dragging = true;
-  lastX = e.touches[0].clientX;
-  lastY = e.touches[0].clientY;
-});
-
-canvas.addEventListener("touchmove", e => {
-  if (!dragging || !currentPhoto) return;
-  faceOffsetX += e.touches[0].clientX - lastX;
-  faceOffsetY += e.touches[0].clientY - lastY;
-  lastX = e.touches[0].clientX;
-  lastY = e.touches[0].clientY;
-  draw(currentPhoto);
-});
-
-canvas.addEventListener("touchend", () => dragging = false);
-
-  canvas.addEventListener("wheel", e => {
-  e.preventDefault();
-  faceScale += e.deltaY * -0.001;
-  faceScale = Math.min(Math.max(faceScale, 0.6), 2.2);
-  if (currentPhoto) draw(currentPhoto);
-}, { passive:false });
-
   /* ---------- SNOWMAN ---------- */
   ctx.drawImage(
     snowmanImg,
@@ -286,6 +243,53 @@ function sendHeight(extra = 0){
 
 window.addEventListener("load", () => sendHeight(30));
 window.addEventListener("resize", () => sendHeight(30));
+
+  // ================= FACE INTERACTION =================
+
+canvas.addEventListener("mousedown", e => {
+  dragging = true;
+  lastX = e.offsetX;
+  lastY = e.offsetY;
+});
+
+canvas.addEventListener("mousemove", e => {
+  if (!dragging || !currentPhoto) return;
+  faceOffsetX += e.offsetX - lastX;
+  faceOffsetY += e.offsetY - lastY;
+  lastX = e.offsetX;
+  lastY = e.offsetY;
+  draw(currentPhoto);
+});
+
+canvas.addEventListener("mouseup", () => dragging = false);
+canvas.addEventListener("mouseleave", () => dragging = false);
+
+// Touch support
+canvas.addEventListener("touchstart", e => {
+  dragging = true;
+  lastX = e.touches[0].clientX;
+  lastY = e.touches[0].clientY;
+});
+
+canvas.addEventListener("touchmove", e => {
+  if (!dragging || !currentPhoto) return;
+  faceOffsetX += e.touches[0].clientX - lastX;
+  faceOffsetY += e.touches[0].clientY - lastY;
+  lastX = e.touches[0].clientX;
+  lastY = e.touches[0].clientY;
+  draw(currentPhoto);
+});
+
+canvas.addEventListener("touchend", () => dragging = false);
+
+// Zoom (mouse / trackpad)
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  faceScale += e.deltaY * -0.001;
+  faceScale = Math.min(Math.max(faceScale, 0.6), 2.2);
+  if (currentPhoto) draw(currentPhoto);
+}, { passive:false });
+
 </script>
 
 </body>
