@@ -74,6 +74,15 @@ function startRoutes() {
                     createRouteCard(next, true);
             }
 
+            // subtle pulse on featured route
+setTimeout(() => {
+    const card = tonightEl.querySelector(".santa-route-card");
+    if (card) {
+        card.classList.add("pulse");
+        setTimeout(() => card.classList.remove("pulse"), 1400);
+    }
+}, 120);
+
             /* Divider */
             allEl.insertAdjacentHTML("beforebegin", `
                 <div style="margin: 35px 0 15px; text-align:center;">
