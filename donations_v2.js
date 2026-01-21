@@ -217,7 +217,7 @@
         if (tl) tl.textContent =
             "Last updated: " + (donations.lastUpdatePretty || "Awaiting first update");
 
-        // ⭐ NEW — dynamic logo support (Settings → logo_overlay_url)
+        // dynamic logo support (Settings → logo_overlay_url)
         if (logo) {
             logo.src = donations.logo || settings.logo_overlay_url || "";
         }
