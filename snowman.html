@@ -146,6 +146,12 @@ const snowman = {
   scarf: "red"
 };
 
+// fixed face constants
+const HEAD_Y = 200;
+const EYE_Y = 175;
+const LEFT_EYE_X = 270;
+const RIGHT_EYE_X = 330;
+
 document.querySelectorAll(".options button").forEach(btn=>{
   btn.onclick = ()=>{
     const key = btn.parentElement.dataset.key;
@@ -165,51 +171,51 @@ function draw(){
   // Body
   ball(300,560,140);
   ball(300,360,110);
-  ball(300,200,90);
+  ball(300,HEAD_Y,90);
+
+  // Arms (always on)
+  arms();
 
   // Eyes
   if(snowman.eyes==="coal"){
-    eye(270,180); eye(330,180);
+    eye(LEFT_EYE_X,EYE_Y);
+    eye(RIGHT_EYE_X,EYE_Y);
   }else if(snowman.eyes==="hearts"){
-    text("❤️",255,190); text("❤️",315,190);
+    text("❤️",LEFT_EYE_X-12,EYE_Y+12);
+    text("❤️",RIGHT_EYE_X-12,EYE_Y+12);
   }else{
-    text("⭐",255,190); text("⭐",315,190);
+    text("⭐",LEFT_EYE_X-12,EYE_Y+12);
+    text("⭐",RIGHT_EYE_X-12,EYE_Y+12);
   }
 
   // Nose
   if(snowman.nose==="carrot"){
-    ctx.fillStyle="#ff7a00";
-    ctx.beginPath();
-    ctx.moveTo(300,200);
-    ctx.lineTo(360,205);
-    ctx.lineTo(300,210);
-    ctx.fill();
+    carrotNose();
   }else{
-    text(snowman.nose==="candy"?"🍬":"🔴",290,210);
+    text(snowman.nose==="candy"?"🍬":"🔴",288,215);
   }
 
   // Scarf
   const scarfColors={
-    red:"#b01d23", blue:"#2563eb",
-    green:"#16a34a", purple:"#7c3aed"
+    red:"#b01d23",
+    blue:"#2563eb",
+    green:"#16a34a",
+    purple:"#7c3aed"
   };
   ctx.fillStyle=scarfColors[snowman.scarf];
   ctx.fillRect(190,260,220,28);
 
   // Hat
   if(snowman.hat==="top"){
-    ctx.fillStyle="#000";
-    ctx.fillRect(240,90,120,70);
-    ctx.fillRect(220,160,160,12);
+    topHat();
   }else if(snowman.hat==="beanie"){
-    ctx.fillStyle="#3b82f6";
-    ctx.beginPath();
-    ctx.arc(300,120,60,Math.PI,0);
-    ctx.fill();
+    beanie();
   }else if(snowman.hat==="santa"){
-    text("🎅",260,130);
+    santaHat();
   }
 }
+
+// ===== drawing helpers =====
 
 function ball(x,y,r){
   ctx.beginPath();
@@ -217,15 +223,74 @@ function ball(x,y,r){
   ctx.fillStyle="#fff";
   ctx.fill();
 }
+
 function eye(x,y){
   ctx.beginPath();
   ctx.arc(x,y,6,0,Math.PI*2);
   ctx.fillStyle="#000";
   ctx.fill();
 }
+
 function text(t,x,y){
   ctx.font="32px system-ui";
   ctx.fillText(t,x,y);
+}
+
+function carrotNose(){
+  ctx.fillStyle="#ff7a00";
+  ctx.beginPath();
+  ctx.moveTo(300,HEAD_Y);
+  ctx.lineTo(340,HEAD_Y+8);
+  ctx.lineTo(300,HEAD_Y+16);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function topHat(){
+  ctx.fillStyle="#000";
+  ctx.fillRect(240,60,120,70);   // hat body (moved UP)
+  ctx.fillRect(220,130,160,12);  // brim
+}
+
+function beanie(){
+  ctx.fillStyle="#3b82f6";
+  ctx.beginPath();
+  ctx.arc(300,110,60,Math.PI,0);
+  ctx.fill();
+}
+
+function santaHat(){
+  // red hat
+  ctx.fillStyle="#b01d23";
+  ctx.beginPath();
+  ctx.moveTo(220,120);
+  ctx.quadraticCurveTo(300,40,380,120);
+  ctx.closePath();
+  ctx.fill();
+
+  // white trim
+  ctx.fillStyle="#fff";
+  ctx.fillRect(220,120,160,16);
+
+  // pom pom
+  ctx.beginPath();
+  ctx.arc(380,120,10,0,Math.PI*2);
+  ctx.fill();
+}
+
+function arms(){
+  ctx.strokeStyle="#5b3a1e";
+  ctx.lineWidth=6;
+
+  ctx.beginPath();
+  ctx.moveTo(180,320);
+  ctx.lineTo(120,280);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(420,320);
+  ctx.lineTo(480,280);
+  ctx.stroke();
 }
 
 function downloadPNG(){
@@ -237,5 +302,6 @@ function downloadPNG(){
 
 draw();
 </script>
+
 </body>
 </html>
