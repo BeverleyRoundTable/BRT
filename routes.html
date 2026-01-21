@@ -107,9 +107,8 @@
     }
 
     .santa-btn--ghost {
-        background: transparent;
-        border: 2px solid #fff;
-        box-shadow: none;
+  background: transparent;
+  border: 2px solid rgba(255,255,255,0.75);
     }
 
     /* Map preview */
@@ -167,6 +166,17 @@
             flex: 1;
         }
     }
+
+    @keyframes routeGlow {
+  0%   { box-shadow: 0 0 0 rgba(255,215,0,0); }
+  50%  { box-shadow: 0 0 18px rgba(255,215,0,0.25); }
+  100% { box-shadow: 0 0 0 rgba(255,215,0,0); }
+}
+
+.santa-route-card.pulse {
+  animation: routeGlow 1.2s ease-out;
+}
+
 </style>
 </head>
 
