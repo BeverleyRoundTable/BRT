@@ -41,112 +41,127 @@
        INSTALL SAFE CSS (Leaflet / Carrd compatible)
     --------------------------------------------------------- */
     function installCSS() {
-        if (document.getElementById("donations-v2-style")) return;
+    if (document.getElementById("donations-v2-style")) return;
 
-        const css = `
-        .santa-mini-wrapper,
-        .santa-thermo-wrapper {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
-            color: white;
-            margin: 1.2rem auto;
-            max-width: 420px;
-            width: 100%;
-            text-align: center;
-        }
+    const css = `
+.santa-mini-wrapper,
+.santa-thermo-wrapper {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
+    color: white;
+    margin: 1.2rem auto;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+}
 
-        .santa-mini-track {
-            width: 100%;
-            height: 14px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .santa-mini-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #d31c1c, #7f0f0f);
-            border-radius: 8px;
-            transition: width 1s ease-out;
-        }
-        .santa-mini-label {
-            margin-bottom: 0.25rem;
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-        .santa-mini-val {
-            margin-top: 0.5rem;
-            font-weight: 600;
-            font-size: 1rem;
-        }
+/* ---------- MINI ---------- */
+.santa-mini-track {
+    width: 100%;
+    height: 14px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.santa-mini-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #d31c1c, #7f0f0f);
+    border-radius: 8px;
+    transition: width 1s ease-out;
+}
+.santa-mini-label {
+    margin-bottom: 0.25rem;
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+.santa-mini-val {
+    margin-top: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+}
 
-        .santa-thermo-card {
+/* ---------- THERMO CARD ---------- */
+.santa-thermo-card {
     background: rgba(18,19,23,0.92);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: 16px;
     box-shadow:
-      0 6px 20px rgba(0,0,0,0.35),
-      inset 0 1px 0 rgba(255,255,255,0.05);
+        0 6px 20px rgba(0,0,0,0.35),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    padding: 1rem 1.25rem;
 }
-        }
-        .santa-thermo-title {
-            font-size: 1rem;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        .santa-thermo-layout {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        .santa-thermo-bar {
-            width: 26px;
-            height: 260px;
-            border-radius: 999px;
-            overflow: hidden;
-            background: #222;
-            border: 3px solid #ffd700;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-        }
-        .santa-thermo-fill {
-            width: 100%;
-            height: 0%;
-            background: linear-gradient(#d31c1c, #7f0f0f);
-            transition: height 1.4s ease-out;
-        }
-        .santa-thermo-info {
-            font-size: 0.85rem;
-            line-height: 1.4;
-            width: 140px;
-            color: white;
-        }
-        .santa-thermo-info strong {
-            font-size: 1rem;
-        }
-        .santa-thermo-logo {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            border: 2px solid white;
-            object-fit: cover;
-            display: block;
-            margin: 1rem auto 0;
-        }
-        @media(max-width: 500px){
-            .santa-thermo-layout{
-                flex-direction: column;
-            }
-        }`;
 
-        const style = document.createElement("style");
-        style.id = "donations-v2-style";
-        style.textContent = css;
-        document.head.appendChild(style);
+.santa-thermo-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.santa-thermo-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* ---------- OPTION B: GOLD TUBE ---------- */
+.santa-thermo-bar {
+    width: 26px;
+    height: 260px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #222;
+
+    border: 2px solid #ffd700;
+    box-shadow: 0 0 6px rgba(255,215,0,0.35);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.santa-thermo-fill {
+    width: 100%;
+    height: 0%;
+    background: linear-gradient(#d31c1c, #7f0f0f);
+    transition: height 1.4s ease-out;
+}
+
+/* ---------- INFO ---------- */
+.santa-thermo-info {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    width: 140px;
+    color: white;
+}
+.santa-thermo-info strong {
+    font-size: 1.05rem;
+}
+
+/* ---------- LOGO ---------- */
+.santa-thermo-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid white;
+    object-fit: cover;
+    display: block;
+    margin: 1rem auto 0;
+}
+
+@media (max-width: 500px) {
+    .santa-thermo-layout {
+        flex-direction: column;
     }
+}
+`;
+
+    const style = document.createElement("style");
+    style.id = "donations-v2-style";
+    style.textContent = css;
+    document.head.appendChild(style);
+}
 
     /* ---------------------------------------------------------
        MINI MARKUP
