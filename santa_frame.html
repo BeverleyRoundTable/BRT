@@ -116,6 +116,16 @@ button:disabled {
   animation: santaGlow 1.4s ease-out;
 }
 
+  @keyframes buttonPulse {
+  0%   { transform: scale(1); box-shadow: 0 0 0 rgba(211,28,28,0.0); }
+  50%  { transform: scale(1.04); box-shadow: 0 0 22px rgba(211,28,28,0.6); }
+  100% { transform: scale(1); box-shadow: 0 0 0 rgba(211,28,28,0.0); }
+}
+
+button.success {
+  animation: buttonPulse 0.9s ease-out;
+}
+
 </style>
 </head>
 
@@ -214,10 +224,17 @@ function draw(photo){
 
     // ✨ Success pulse
   const card = document.querySelector(".card");
-  if (card) {
-    card.classList.add("success");
-    setTimeout(() => card.classList.remove("success"), 1500);
-  }
+const btn  = document.getElementById("generateBtn");
+
+if (card) {
+  card.classList.add("success");
+  setTimeout(() => card.classList.remove("success"), 1500);
+}
+
+if (btn) {
+  btn.classList.add("success");
+  setTimeout(() => btn.classList.remove("success"), 900);
+}
 
   sendHeight(40); // 🔑 FORCE iframe resize after content change
 }
