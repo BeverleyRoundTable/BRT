@@ -128,6 +128,17 @@
     transition: height 1.4s ease-out;
 }
 
+/* ---------- SUBTLE UPDATE PULSE ---------- */
+@keyframes thermoPulse {
+  0%   { box-shadow: 0 0 0 rgba(211,28,28,0); }
+  50%  { box-shadow: 0 0 14px rgba(211,28,28,0.35); }
+  100% { box-shadow: 0 0 0 rgba(211,28,28,0); }
+}
+
+.santa-thermo-fill.pulse {
+  animation: thermoPulse 1.2s ease-out;
+}
+
 /* ---------- INFO ---------- */
 .santa-thermo-info {
     font-size: 0.9rem;
@@ -225,7 +236,15 @@
         const tl = document.getElementById("thermoLast");
         const logo = document.getElementById("thermoLogo");
 
-        if (tf) tf.style.height = pct + "%";
+        if (tf) {
+  tf.style.height = pct + "%";
+
+  // subtle pulse on update
+  tf.classList.remove("pulse");
+  void tf.offsetWidth; // force reflow so animation can retrigger
+  tf.classList.add("pulse");
+}
+
         if (ta) ta.innerHTML =
             `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
 
