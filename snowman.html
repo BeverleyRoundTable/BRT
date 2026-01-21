@@ -73,66 +73,84 @@ canvas{
   cursor:pointer;
 }
 @media(max-width:800px){
-  .builder{
-    grid-template-columns:1fr;
-  }
+  .builder{ grid-template-columns:1fr; }
 }
 </style>
 </head>
 
 <body>
 <div class="wrapper">
-  <h1>☃️ Build Your Snowman</h1>
+<h1>☃️ Build Your Snowman</h1>
 
-  <div class="builder">
+<div class="builder">
+<div>
 
-    <div>
-      <div class="group">
-        <h3>🎩 Hat</h3>
-        <div class="options" data-key="hat">
-          <button class="active" data-value="top">Top Hat</button>
-          <button data-value="beanie">Beanie</button>
-          <button data-value="santa">Santa Hat</button>
-          <button data-value="none">None</button>
-        </div>
-      </div>
+<div class="group">
+<h3>🎩 Hat</h3>
+<div class="options" data-key="hat">
+<button class="active" data-value="top">Top Hat</button>
+<button data-value="beanie">Beanie</button>
+<button data-value="santa">Santa Hat</button>
+<button data-value="none">None</button>
+</div>
+</div>
 
-      <div class="group">
-        <h3>👀 Eyes</h3>
-        <div class="options" data-key="eyes">
-          <button class="active" data-value="coal">Coal</button>
-          <button data-value="hearts">❤️ Hearts</button>
-          <button data-value="stars">⭐ Stars</button>
-        </div>
-      </div>
+<div class="group">
+<h3>👀 Eyes</h3>
+<div class="options" data-key="eyes">
+<button class="active" data-value="coal">Coal</button>
+<button data-value="hearts">❤️ Hearts</button>
+<button data-value="stars">⭐ Stars</button>
+</div>
+</div>
 
-      <div class="group">
-        <h3>🥕 Nose</h3>
-        <div class="options" data-key="nose">
-          <button class="active" data-value="carrot">Carrot</button>
-          <button data-value="candy">🍬 Candy</button>
-          <button data-value="button">🔴 Button</button>
-        </div>
-      </div>
+<div class="group">
+<h3>🥕 Nose</h3>
+<div class="options" data-key="nose">
+<button class="active" data-value="carrot">Carrot</button>
+<button data-value="candy">🍬 Candy</button>
+<button data-value="button">🔴 Button</button>
+</div>
+</div>
 
-      <div class="group">
-        <h3>🧣 Scarf</h3>
-        <div class="options" data-key="scarf">
-          <button class="active" data-value="red">Red</button>
-          <button data-value="blue">Blue</button>
-          <button data-value="green">Green</button>
-          <button data-value="purple">Purple</button>
-        </div>
-      </div>
-    </div>
+<div class="group">
+<h3>🧣 Scarf</h3>
+<div class="options" data-key="scarf">
+<button class="active" data-value="red">Red</button>
+<button data-value="blue">Blue</button>
+<button data-value="green">Green</button>
+<button data-value="purple">Purple</button>
+</div>
+</div>
 
-    <canvas id="canvas" width="600" height="800"></canvas>
+<div class="group">
+<h3>🎽 Body</h3>
+<div class="options" data-key="body">
+<button class="active" data-value="buttons">Buttons</button>
+<button data-value="jumper">Jumper</button>
+<button data-value="badge">Badge</button>
+<button data-value="none">None</button>
+</div>
+</div>
 
-  </div>
+<div class="group">
+<h3>🧤 Hands</h3>
+<div class="options" data-key="hands">
+<button class="active" data-value="none">None</button>
+<button data-value="mittens">Mittens</button>
+<button data-value="present">🎁 Present</button>
+<button data-value="broom">🧹 Broom</button>
+</div>
+</div>
 
-  <div class="download">
-    <button onclick="downloadPNG()">⬇️ Download Snowman PNG</button>
-  </div>
+</div>
+
+<canvas id="canvas" width="600" height="800"></canvas>
+</div>
+
+<div class="download">
+<button onclick="downloadPNG()">⬇️ Download Snowman PNG</button>
+</div>
 </div>
 
 <script>
@@ -140,168 +158,93 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const snowman = {
-  hat: "top",
-  eyes: "coal",
-  nose: "carrot",
-  scarf: "red"
+  hat:"top", eyes:"coal", nose:"carrot", scarf:"red",
+  body:"buttons", hands:"none"
 };
 
-// fixed face constants
-const HEAD_Y = 200;
-const EYE_Y = 175;
-const LEFT_EYE_X = 270;
-const RIGHT_EYE_X = 330;
+const HEAD_Y=200, EYE_Y=175, L=270, R=330;
 
 document.querySelectorAll(".options button").forEach(btn=>{
-  btn.onclick = ()=>{
-    const key = btn.parentElement.dataset.key;
-    snowman[key] = btn.dataset.value;
-
-    btn.parentElement.querySelectorAll("button")
-      .forEach(b=>b.classList.remove("active"));
+  btn.onclick=()=>{
+    const k=btn.parentElement.dataset.key;
+    snowman[k]=btn.dataset.value;
+    btn.parentElement.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
-
     draw();
   };
 });
 
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.clearRect(0,0,600,800);
 
-  // Body
-  ball(300,560,140);
-  ball(300,360,110);
-  ball(300,HEAD_Y,90);
+// body
+ball(300,560,140); ball(300,360,110); ball(300,HEAD_Y,90);
+arms(); bodyAccessory(); handAccessory();
 
-  // Arms (always on)
-  arms();
+// face
+if(snowman.eyes==="coal"){ eye(L,EYE_Y); eye(R,EYE_Y); }
+else{ emoji(snowman.eyes==="hearts"?"❤️":"⭐",L-12,EYE_Y+12); emoji(snowman.eyes==="hearts"?"❤️":"⭐",R-12,EYE_Y+12); }
 
-  // Eyes
-  if(snowman.eyes==="coal"){
-    eye(LEFT_EYE_X,EYE_Y);
-    eye(RIGHT_EYE_X,EYE_Y);
-  }else if(snowman.eyes==="hearts"){
-    text("❤️",LEFT_EYE_X-12,EYE_Y+12);
-    text("❤️",RIGHT_EYE_X-12,EYE_Y+12);
-  }else{
-    text("⭐",LEFT_EYE_X-12,EYE_Y+12);
-    text("⭐",RIGHT_EYE_X-12,EYE_Y+12);
-  }
+snowman.nose==="carrot"?carrot():emoji(snowman.nose==="candy"?"🍬":"🔴",288,215);
 
-  // Nose
-  if(snowman.nose==="carrot"){
-    carrotNose();
-  }else{
-    text(snowman.nose==="candy"?"🍬":"🔴",288,215);
-  }
+// scarf
+ctx.fillStyle={red:"#b01d23",blue:"#2563eb",green:"#16a34a",purple:"#7c3aed"}[snowman.scarf];
+ctx.fillRect(190,260,220,28);
 
-  // Scarf
-  const scarfColors={
-    red:"#b01d23",
-    blue:"#2563eb",
-    green:"#16a34a",
-    purple:"#7c3aed"
-  };
-  ctx.fillStyle=scarfColors[snowman.scarf];
-  ctx.fillRect(190,260,220,28);
-
-  // Hat
-  if(snowman.hat==="top"){
-    topHat();
-  }else if(snowman.hat==="beanie"){
-    beanie();
-  }else if(snowman.hat==="santa"){
-    santaHat();
-  }
+// hat
+if(snowman.hat==="top") topHat();
+if(snowman.hat==="beanie") beanie();
+if(snowman.hat==="santa") santaHat();
 }
 
-// ===== drawing helpers =====
+function ball(x,y,r){ ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill(); }
+function eye(x,y){ ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle="#000"; ctx.fill(); }
+function emoji(t,x,y){ ctx.font="32px system-ui"; ctx.fillText(t,x,y); }
 
-function ball(x,y,r){
-  ctx.beginPath();
-  ctx.arc(x,y,r,0,Math.PI*2);
-  ctx.fillStyle="#fff";
-  ctx.fill();
-}
+function carrot(){ ctx.fillStyle="#ff7a00"; ctx.beginPath(); ctx.moveTo(300,HEAD_Y); ctx.lineTo(340,HEAD_Y+8); ctx.lineTo(300,HEAD_Y+16); ctx.fill(); }
 
-function eye(x,y){
-  ctx.beginPath();
-  ctx.arc(x,y,6,0,Math.PI*2);
-  ctx.fillStyle="#000";
-  ctx.fill();
-}
-
-function text(t,x,y){
-  ctx.font="32px system-ui";
-  ctx.fillText(t,x,y);
-}
-
-function carrotNose(){
-  ctx.fillStyle="#ff7a00";
-  ctx.beginPath();
-  ctx.moveTo(300,HEAD_Y);
-  ctx.lineTo(340,HEAD_Y+8);
-  ctx.lineTo(300,HEAD_Y+16);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function topHat(){
-  ctx.fillStyle="#000";
-  ctx.fillRect(240,60,120,70);   // hat body (moved UP)
-  ctx.fillRect(220,130,160,12);  // brim
-}
-
-function beanie(){
-  ctx.fillStyle="#3b82f6";
-  ctx.beginPath();
-  ctx.arc(300,110,60,Math.PI,0);
-  ctx.fill();
-}
-
+function topHat(){ ctx.fillStyle="#000"; ctx.fillRect(240,60,120,70); ctx.fillRect(220,130,160,12); }
+function beanie(){ ctx.fillStyle="#3b82f6"; ctx.beginPath(); ctx.arc(300,110,60,Math.PI,0); ctx.fill(); }
 function santaHat(){
-  // red hat
-  ctx.fillStyle="#b01d23";
-  ctx.beginPath();
-  ctx.moveTo(220,120);
-  ctx.quadraticCurveTo(300,40,380,120);
-  ctx.closePath();
-  ctx.fill();
-
-  // white trim
-  ctx.fillStyle="#fff";
-  ctx.fillRect(220,120,160,16);
-
-  // pom pom
-  ctx.beginPath();
-  ctx.arc(380,120,10,0,Math.PI*2);
-  ctx.fill();
+ctx.fillStyle="#b01d23";
+ctx.beginPath(); ctx.moveTo(220,120); ctx.quadraticCurveTo(300,40,380,120); ctx.fill();
+ctx.fillStyle="#fff"; ctx.fillRect(220,120,160,16);
+ctx.beginPath(); ctx.arc(380,120,10,0,Math.PI*2); ctx.fill();
 }
 
 function arms(){
-  ctx.strokeStyle="#5b3a1e";
-  ctx.lineWidth=6;
-
-  ctx.beginPath();
-  ctx.moveTo(180,320);
-  ctx.lineTo(120,280);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(420,320);
-  ctx.lineTo(480,280);
-  ctx.stroke();
+ctx.strokeStyle="#5b3a1e"; ctx.lineWidth=6;
+ctx.beginPath(); ctx.moveTo(180,320); ctx.lineTo(120,280); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(420,320); ctx.lineTo(480,280); ctx.stroke();
 }
 
+function bodyAccessory(){
+if(snowman.body==="buttons"){ dot(300,300); dot(300,340); dot(300,380); }
+if(snowman.body==="jumper"){ ctx.fillStyle="#2563eb"; ctx.fillRect(200,300,200,50); }
+if(snowman.body==="badge"){ ctx.fillStyle="#facc15"; ctx.beginPath(); ctx.arc(330,320,14,0,Math.PI*2); ctx.fill(); }
+}
+
+function handAccessory(){
+if(snowman.hands==="mittens"){ mitten(120,280); mitten(480,280); }
+if(snowman.hands==="present"){ ctx.fillStyle="#16a34a"; ctx.fillRect(460,260,30,30); ctx.strokeStyle="#fff"; ctx.strokeRect(460,260,30,30); }
+if(snowman.hands==="broom"){
+ctx.strokeStyle="#8b5a2b"; ctx.lineWidth=6;
+ctx.beginPath(); ctx.moveTo(120,280); ctx.lineTo(120,220); ctx.stroke();
+ctx.fillStyle="#facc15"; ctx.fillRect(110,210,20,12);
+}
+}
+
+function dot(x,y){ ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle="#000"; ctx.fill(); }
+function mitten(x,y){ ctx.beginPath(); ctx.arc(x,y,14,0,Math.PI*2); ctx.fillStyle="#b01d23"; ctx.fill(); }
+
 function downloadPNG(){
-  const a=document.createElement("a");
-  a.download="my-snowman.png";
-  a.href=canvas.toDataURL("image/png");
-  a.click();
+const a=document.createElement("a");
+a.download="my-snowman.png";
+a.href=canvas.toDataURL("image/png");
+a.click();
 }
 
 draw();
 </script>
-
 </body>
 </html>
