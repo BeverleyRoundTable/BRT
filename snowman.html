@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snowman Maker</title>
+
+<style>
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+  background:#0b1d3a;
+  color:#fff;
+}
+.wrapper{
+  max-width:980px;
+  margin:auto;
+  padding:20px;
+}
+h1{
+  text-align:center;
+  margin-bottom:20px;
+}
+.group{
+  background:#ffffff12;
+  border-radius:16px;
+  padding:14px;
+  margin-bottom:14px;
+}
+.group h3{
+  margin:0 0 10px 0;
+  font-size:16px;
+}
+.options{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.options button{
+  background:#e8edff;
+  color:#000;
+  border:none;
+  padding:8px 14px;
+  border-radius:999px;
+  font-weight:600;
+  cursor:pointer;
+}
+.options button.active{
+  background:#3b82f6;
+  color:#fff;
+}
+.builder{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  align-items:center;
+}
+canvas{
+  display:block;
+  margin:auto;
+}
+.download{
+  text-align:center;
+  margin-top:20px;
+}
+.download button{
+  background:#b01d23;
+  color:#fff;
+  border:none;
+  padding:14px 22px;
+  border-radius:999px;
+  font-size:16px;
+  cursor:pointer;
+}
+@media(max-width:800px){
+  .builder{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="wrapper">
+  <h1>☃️ Build Your Snowman</h1>
+
+  <div class="builder">
+
+    <div>
+      <div class="group">
+        <h3>🎩 Hat</h3>
+        <div class="options" data-key="hat">
+          <button class="active" data-value="top">Top Hat</button>
+          <button data-value="beanie">Beanie</button>
+          <button data-value="santa">Santa Hat</button>
+          <button data-value="none">None</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>👀 Eyes</h3>
+        <div class="options" data-key="eyes">
+          <button class="active" data-value="coal">Coal</button>
+          <button data-value="hearts">❤️ Hearts</button>
+          <button data-value="stars">⭐ Stars</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>🥕 Nose</h3>
+        <div class="options" data-key="nose">
+          <button class="active" data-value="carrot">Carrot</button>
+          <button data-value="candy">🍬 Candy</button>
+          <button data-value="button">🔴 Button</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>🧣 Scarf</h3>
+        <div class="options" data-key="scarf">
+          <button class="active" data-value="red">Red</button>
+          <button data-value="blue">Blue</button>
+          <button data-value="green">Green</button>
+          <button data-value="purple">Purple</button>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="canvas" width="600" height="800"></canvas>
+
+  </div>
+
+  <div class="download">
+    <button onclick="downloadPNG()">⬇️ Download Snowman PNG</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const snowman = {
+  hat: "top",
+  eyes: "coal",
+  nose: "carrot",
+  scarf: "red"
+};
+
+document.querySelectorAll(".options button").forEach(btn=>{
+  btn.onclick = ()=>{
+    const key = btn.parentElement.dataset.key;
+    snowman[key] = btn.dataset.value;
+
+    btn.parentElement.querySelectorAll("button")
+      .forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+
+    draw();
+  };
+});
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Body
+  ball(300,560,140);
+  ball(300,360,110);
+  ball(300,200,90);
+
+  // Eyes
+  if(snowman.eyes==="coal"){
+    eye(270,180); eye(330,180);
+  }else if(snowman.eyes==="hearts"){
+    text("❤️",255,190); text("❤️",315,190);
+  }else{
+    text("⭐",255,190); text("⭐",315,190);
+  }
+
+  // Nose
+  if(snowman.nose==="carrot"){
+    ctx.fillStyle="#ff7a00";
+    ctx.beginPath();
+    ctx.moveTo(300,200);
+    ctx.lineTo(360,205);
+    ctx.lineTo(300,210);
+    ctx.fill();
+  }else{
+    text(snowman.nose==="candy"?"🍬":"🔴",290,210);
+  }
+
+  // Scarf
+  const scarfColors={
+    red:"#b01d23", blue:"#2563eb",
+    green:"#16a34a", purple:"#7c3aed"
+  };
+  ctx.fillStyle=scarfColors[snowman.scarf];
+  ctx.fillRect(190,260,220,28);
+
+  // Hat
+  if(snowman.hat==="top"){
+    ctx.fillStyle="#000";
+    ctx.fillRect(240,90,120,70);
+    ctx.fillRect(220,160,160,12);
+  }else if(snowman.hat==="beanie"){
+    ctx.fillStyle="#3b82f6";
+    ctx.beginPath();
+    ctx.arc(300,120,60,Math.PI,0);
+    ctx.fill();
+  }else if(snowman.hat==="santa"){
+    text("🎅",260,130);
+  }
+}
+
+function ball(x,y,r){
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle="#fff";
+  ctx.fill();
+}
+function eye(x,y){
+  ctx.beginPath();
+  ctx.arc(x,y,6,0,Math.PI*2);
+  ctx.fillStyle="#000";
+  ctx.fill();
+}
+function text(t,x,y){
+  ctx.font="32px system-ui";
+  ctx.fillText(t,x,y);
+}
+
+function downloadPNG(){
+  const a=document.createElement("a");
+  a.download="my-snowman.png";
+  a.href=canvas.toDataURL("image/png");
+  a.click();
+}
+
+draw();
+</script>
+</body>
+</html>
