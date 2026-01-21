@@ -66,8 +66,8 @@ function startRoutes() {
             if (next) {
                 const isTonight = next.date === todayIso;
                 const title = isTonight
-                    ? "🎅 Tonight's Sleigh Route"
-                    : "🎅 Next Sleigh Route";
+                    ? "Tonight's Sleigh Route"
+                    : "Next Sleigh Route";
 
                 tonightEl.innerHTML =
                     `<h2 class="santa-section-title">${title}</h2>` +
@@ -96,7 +96,7 @@ function startRoutes() {
     /* --- CARD BUILDER --- */
     function createRouteCard(route, highlight) {
         const name = route.routeName || "";
-        const dateLabel = formatDate(route.date);  // ⭐ FRIENDLY DATE FIX
+        const dateLabel = formatDate(route.date); 
         const notes = route.notes || "";
         const streets = route.streets || "";
         const gpx = route.gpxUrl || "";
