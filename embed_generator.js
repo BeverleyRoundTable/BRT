@@ -158,7 +158,7 @@ const snowmanFrameEmbed = `
 
   <iframe
     id="snowmanFrame"
-    src="https://brt-23f.pages.dev/snowman_frame.html"
+    src="https://brt-23f.pages.dev/snowman.html"
     style="
       width:100%;
       border:none;
