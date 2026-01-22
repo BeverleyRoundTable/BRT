@@ -161,7 +161,6 @@ const snowmanFrameEmbed = `
   padding:0;
   box-sizing:border-box;
 ">
-
   <iframe
     id="snowmanFrame"
     src="https://brt-23f.pages.dev/snowman.html"
@@ -175,20 +174,7 @@ const snowmanFrameEmbed = `
     scrolling="no"
     loading="lazy"
   ></iframe>
-
 </div>
-
-<script>
-window.addEventListener("message", (e) => {
-  if (!e.data || typeof e.data !== "object") return;
-  if (!("snowmanFrameHeight" in e.data)) return;
-
-  const frame = document.getElementById("snowmanFrame");
-  if (frame) {
-    frame.style.height = e.data.snowmanFrameHeight + "px";
-  }
-});
-</script>
 `;
 
 // ================================
