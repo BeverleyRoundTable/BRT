@@ -154,27 +154,28 @@ const santasBeenEmbed = `
 // Snowman Maker (Build + Face Photo)
 // ================================
 const snowmanFrameEmbed = `
-<div style="
-  width:100%;
-  max-width:900px;
-  margin:0 auto;
-  padding:0;
-  box-sizing:border-box;
-">
+<div style="width:100%;max-width:900px;margin:0 auto;">
   <iframe
     id="snowmanFrame"
     src="https://brt-23f.pages.dev/snowman.html"
-    style="
-      width:100%;
-      display:block;
-      border:none;
-      border-radius:20px;
-      overflow:hidden;
-    "
+    style="width:100%;border:none;border-radius:20px;overflow:hidden;"
     scrolling="no"
     loading="lazy"
   ></iframe>
 </div>
+
+<script>
+window.addEventListener("message", (e) => {
+  if (!e.data || typeof e.data !== "object") return;
+  if (!("snowmanFrameHeight" in e.data)) return;
+
+  const frame = document.getElementById("snowmanFrame");
+  if (frame) {
+    frame.style.height = e.data.snowmanFrameHeight + "px";
+    frame.style.minHeight = e.data.snowmanFrameHeight + "px";
+  }
+});
+</script>
 `;
 
 // ================================
