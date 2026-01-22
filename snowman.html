@@ -318,6 +318,24 @@ a.click();
 draw();
   
 </script>
+
+  <script>
+function sendHeight(extra = 40) {
+  const height = document.documentElement.scrollHeight + extra;
+  parent.postMessage({ snowmanFrameHeight: height }, "*");
+}
+
+// initial load
+window.addEventListener("load", () => sendHeight());
+
+// resize (desktop + mobile)
+window.addEventListener("resize", () => sendHeight());
+
+// after interactions (buttons, step changes)
+document.addEventListener("click", () => {
+  setTimeout(() => sendHeight(), 150);
+});
+</script>
   
 </body>
 </html>
