@@ -171,7 +171,8 @@ frameImg.src = FRAME_SRC;
 
 const photoInput = document.getElementById("photoInput");
 const generateBtn = document.getElementById("generateBtn");
-
+const downloadBtn = document.getElementById("downloadBtn");
+  
 photoInput.addEventListener("change", () => {
   generateBtn.disabled = !photoInput.files.length;
 });
@@ -214,9 +215,8 @@ function draw(photo){
   ctx.drawImage(frameImg, 0, 0, 1000, 1000);
 
   /* ---------- FACE (behind hole) ---------- */
-  ctx.save();
+ctx.save();
 
-// face mask
 ctx.beginPath();
 ctx.arc(
   FACE.x + FACE.size / 2,
@@ -236,30 +236,9 @@ const drawX =
 const drawY =
   FACE.y + FACE.size / 2 - drawH / 2 + faceOffsetY;
 
+ctx.drawImage(photo, drawX, drawY, drawW, drawH);
+
 ctx.restore();
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(
-    FACE.x + FACE.size / 2,
-    FACE.y + FACE.size / 2,
-    FACE.size / 2,
-    0,
-    Math.PI * 2
-  );
-  ctx.clip();
-
-  const drawSize = FACE.size * faceScale;
-  const drawX = FACE.x + FACE.size / 2 - drawSize / 2 + faceOffsetX;
-  const drawY = FACE.y + FACE.size / 2 - drawSize / 2 + faceOffsetY;
-
-  ctx.drawImage(
-    photo,
-    srcX, srcY, srcSize, srcSize,
-    drawX, drawY, drawSize, drawSize
-  );
-
-  ctx.restore();
 
   /* ---------- CUSTOM SNOWMAN ON TOP ---------- */
   ctx.drawImage(
@@ -332,8 +311,6 @@ canvas.addEventListener("wheel", e => {
 }, { passive:false });
 
   canvas.addEventListener("touchmove", e => e.preventDefault(), { passive:false });
-
-  const downloadBtn = document.getElementById("downloadBtn");
 
 downloadBtn.onclick = () => {
   const a = document.createElement("a");
