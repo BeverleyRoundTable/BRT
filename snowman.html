@@ -321,8 +321,13 @@ draw();
 </script>
 
   <script>
-function sendHeight(extra = 40) {
-  const height = document.documentElement.scrollHeight + extra;
+function sendHeight(extra = 20) {
+  const wrapper = document.querySelector(".wrapper");
+  if (!wrapper) return;
+
+  const rect = wrapper.getBoundingClientRect();
+  const height = Math.ceil(rect.height) + extra;
+
   parent.postMessage({ snowmanFrameHeight: height }, "*");
 }
 
