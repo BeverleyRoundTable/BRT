@@ -75,6 +75,15 @@ canvas{
 @media(max-width:800px){
   .builder{ grid-template-columns:1fr; }
 }
+
+  body.embed .wrapper {
+  max-width: 420px;
+}
+
+body.embed .builder {
+  grid-template-columns: 1fr;
+}
+
 </style>
 </head>
 
@@ -156,6 +165,11 @@ canvas{
 </div>
 
 <script>
+  const isEmbedded = window.self !== window.top;
+if (isEmbedded) {
+  document.body.classList.add("embed");
+}
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
