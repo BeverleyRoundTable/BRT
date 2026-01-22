@@ -342,22 +342,6 @@ canvas.addEventListener("touchmove", e => {
   }
 }, { passive:false });
 
-canvas.addEventListener("touchend", () => {
-  dragging = false;
-  pinchStartDist = null;
-});
-
-canvas.addEventListener("touchmove", e => {
-  if (!dragging || !currentPhoto) return;
-  faceOffsetX += e.touches[0].clientX - lastX;
-  faceOffsetY += e.touches[0].clientY - lastY;
-  lastX = e.touches[0].clientX;
-  lastY = e.touches[0].clientY;
-  draw(currentPhoto);
-});
-
-canvas.addEventListener("touchend", () => dragging = false);
-
 // Zoom (mouse / trackpad)
 canvas.addEventListener("wheel", e => {
   e.preventDefault();
@@ -365,8 +349,6 @@ canvas.addEventListener("wheel", e => {
   faceScale = Math.min(Math.max(faceScale, 0.5), 3.2);
   if (currentPhoto) draw(currentPhoto);
 }, { passive:false });
-
-  canvas.addEventListener("touchmove", e => e.preventDefault(), { passive:false });
 
 downloadBtn.onclick = () => {
   const a = document.createElement("a");
