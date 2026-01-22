@@ -134,6 +134,12 @@ let snowmanReady = false;
 let frameReady = false;
 let pinchStartDist = null;
 let pinchStartScale = 1;
+let faceScale = 1;
+let faceOffsetX = 0;
+let faceOffsetY = 0;
+let minZoom = 1;
+let maxZoom = 3;
+
 
   const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -198,9 +204,19 @@ function generate(){
   photo.onload = () => {
     currentPhoto = photo;
 
-    faceScale = 1;
-    faceOffsetX = 0;
-    faceOffsetY = 0;
+    // calculate minimum zoom so photo always fills face hole
+minZoom = Math.max(
+  FACE.size / photo.width,
+  FACE.size / photo.height
+);
+
+// allow strong zoom for distant photos, but cap it
+maxZoom = Math.min(minZoom * 4, 4);
+
+// sensible starting point
+faceScale = Math.max(minZoom * 1.2, 1);
+faceOffsetX = 0;
+faceOffsetY = 0;
 
     const wait = setInterval(() => {
       if (snowmanReady && frameReady) {
@@ -331,22 +347,22 @@ canvas.addEventListener("touchmove", e => {
   }
 
   if (e.touches.length === 2) {
-    // pinch zoom
-    const dist = getTouchDistance(e.touches);
-    const scaleChange = dist / pinchStartDist;
+  const dist = getTouchDistance(e.touches);
+  const scaleChange = dist / pinchStartDist;
 
-    faceScale = pinchStartScale * scaleChange;
-    faceScale = Math.min(Math.max(faceScale, 0.5), 3.2);
+  faceScale = pinchStartScale * scaleChange;
+  faceScale = Math.min(Math.max(faceScale, minZoom), maxZoom);
 
-    draw(currentPhoto);
-  }
+  draw(currentPhoto);
+}
+
 }, { passive:false });
 
 // Zoom (mouse / trackpad)
 canvas.addEventListener("wheel", e => {
   e.preventDefault();
   faceScale += e.deltaY * -0.001;
-  faceScale = Math.min(Math.max(faceScale, 0.5), 3.2);
+  faceScale = Math.min(Math.max(faceScale, minZoom), maxZoom);
   if (currentPhoto) draw(currentPhoto);
 }, { passive:false });
 
