@@ -151,7 +151,7 @@ const santasBeenEmbed = `
 `;
 
 // ================================
-// Snowman Frame (Face Photo)
+// Snowman Maker (Build + Face Photo)
 // ================================
 const snowmanFrameEmbed = `
 <div style="width:100%;max-width:420px;margin:0 auto;">
@@ -173,16 +173,16 @@ const snowmanFrameEmbed = `
 
 <script>
   window.addEventListener("message", (e) => {
-    if (!e.data || typeof e.data !== "object") return;
+  if (!e.data || typeof e.data !== "object") return;
+  if (!("snowmanFrameHeight" in e.data)) return;
 
-    if (e.data.snowmanFrameHeight) {
-      const frame = document.getElementById("snowmanFrame");
-      if (frame) {
-        frame.style.height = e.data.snowmanFrameHeight + "px";
-        frame.style.minHeight = e.data.snowmanFrameHeight + "px";
-      }
-    }
-  });
+  const frame = document.getElementById("snowmanFrame");
+  if (!frame) return;
+
+  frame.style.height = e.data.snowmanFrameHeight + "px";
+  frame.style.minHeight = e.data.snowmanFrameHeight + "px";
+});
+
 </script>
 `;
 
