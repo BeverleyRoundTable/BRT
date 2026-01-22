@@ -157,17 +157,17 @@ const snowmanFrameEmbed = `
 <div style="width:100%;max-width:420px;margin:0 auto;">
 
   <iframe
-    id="snowmanFrame"
-    src="https://brt-23f.pages.dev/snowman.html"
-    style="
-      width:100%;
-      border:none;
-      border-radius:20px;
-      overflow:hidden;
-      transition:height .25s ease;
-    "
-    loading="lazy"
-  ></iframe>
+  id="snowmanFrame"
+  src="https://brt-23f.pages.dev/snowman.html"
+  style="
+    width:100%;
+    border:none;
+    border-radius:20px;
+    overflow:hidden;
+    transition:height .25s ease;
+  "
+  loading="lazy"
+></iframe>
 
 </div>
 
