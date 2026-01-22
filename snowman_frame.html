@@ -214,9 +214,31 @@ function draw(photo){
   ctx.drawImage(frameImg, 0, 0, 1000, 1000);
 
   /* ---------- FACE (behind hole) ---------- */
-  const srcSize = Math.min(photo.width, photo.height);
-  const srcX = (photo.width - srcSize) / 2;
-  const srcY = (photo.height - srcSize) / 2 - srcSize * 0.08;
+  ctx.save();
+
+// face mask
+ctx.beginPath();
+ctx.arc(
+  FACE.x + FACE.size / 2,
+  FACE.y + FACE.size / 2,
+  FACE.size / 2,
+  0,
+  Math.PI * 2
+);
+ctx.clip();
+
+// draw full image, scaled + panned
+const drawW = photo.width * faceScale;
+const drawH = photo.height * faceScale;
+
+const drawX =
+  FACE.x + FACE.size / 2 - drawW / 2 + faceOffsetX;
+const drawY =
+  FACE.y + FACE.size / 2 - drawH / 2 + faceOffsetY;
+
+ctx.drawImage(photo, drawX, drawY, drawW, drawH);
+
+ctx.restore();
 
   ctx.save();
   ctx.beginPath();
