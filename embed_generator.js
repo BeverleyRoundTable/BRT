@@ -151,6 +151,42 @@ const santasBeenEmbed = `
 `;
 
 // ================================
+// Snowman Frame (Face Photo)
+// ================================
+const snowmanFrameEmbed = `
+<div style="width:100%;max-width:420px;margin:0 auto;">
+
+  <iframe
+    id="snowmanFrame"
+    src="https://brt-23f.pages.dev/snowman_frame.html"
+    style="
+      width:100%;
+      border:none;
+      border-radius:20px;
+      overflow:hidden;
+      transition:height .25s ease;
+    "
+    loading="lazy"
+  ></iframe>
+
+</div>
+
+<script>
+  window.addEventListener("message", (e) => {
+    if (!e.data || typeof e.data !== "object") return;
+
+    if (e.data.snowmanFrameHeight) {
+      const frame = document.getElementById("snowmanFrame");
+      if (frame) {
+        frame.style.height = e.data.snowmanFrameHeight + "px";
+        frame.style.minHeight = e.data.snowmanFrameHeight + "px";
+      }
+    }
+  });
+</script>
+`;
+
+// ================================
 // Tracker Embeds
 // ================================
 const trackerLink = `
@@ -237,4 +273,6 @@ document.getElementById("trackerLink").value = trackerLink.trim();
 document.getElementById("recommendedTracker").value = recommendedTracker.trim();
 document.getElementById("routesLink").value = routesLink.trim();
 document.getElementById("recommendedRoutes").value = recommendedRoutes.trim();
+document.getElementById("snowmanFrameEmbed").value = snowmanFrameEmbed.trim();
+
 
