@@ -132,6 +132,8 @@ let lastY = 0;
 let currentPhoto = null;
 let snowmanReady = false;
 let frameReady = false;
+let pinchStartDist = null;
+let pinchStartScale = 1;
 
   const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -293,9 +295,56 @@ canvas.addEventListener("mouseleave", () => dragging = false);
 
 // Touch support
 canvas.addEventListener("touchstart", e => {
-  dragging = true;
-  lastX = e.touches[0].clientX;
-  lastY = e.touches[0].clientY;
+  if (!currentPhoto) return;
+
+  if (e.touches.length === 1) {
+    // single finger drag
+    dragging = true;
+    lastX = e.touches[0].clientX;
+    lastY = e.touches[0].clientY;
+  }
+
+  if (e.touches.length === 2) {
+    // pinch start
+    dragging = false;
+    pinchStartDist = getTouchDistance(e.touches);
+    pinchStartScale = faceScale;
+  }
+}, { passive:false });
+
+canvas.addEventListener("touchmove", e => {
+  if (!currentPhoto) return;
+  e.preventDefault();
+
+  if (e.touches.length === 1 && dragging) {
+    // drag
+    const x = e.touches[0].clientX;
+    const y = e.touches[0].clientY;
+
+    faceOffsetX += x - lastX;
+    faceOffsetY += y - lastY;
+
+    lastX = x;
+    lastY = y;
+
+    draw(currentPhoto);
+  }
+
+  if (e.touches.length === 2) {
+    // pinch zoom
+    const dist = getTouchDistance(e.touches);
+    const scaleChange = dist / pinchStartDist;
+
+    faceScale = pinchStartScale * scaleChange;
+    faceScale = Math.min(Math.max(faceScale, 0.5), 3.2);
+
+    draw(currentPhoto);
+  }
+}, { passive:false });
+
+canvas.addEventListener("touchend", () => {
+  dragging = false;
+  pinchStartDist = null;
 });
 
 canvas.addEventListener("touchmove", e => {
@@ -328,6 +377,12 @@ downloadBtn.onclick = () => {
     // 🧹 Clean up so refresh starts fresh
   localStorage.removeItem("snowmanPNG");
 };
+
+  function getTouchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
   
 </script>
 
