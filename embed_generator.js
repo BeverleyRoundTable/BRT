@@ -156,7 +156,7 @@ const santasBeenEmbed = `
 const snowmanFrameEmbed = `
 <div style="
   width:100%;
-  max-width:420px;
+  max-width:900px;
   margin:0 auto;
   padding:0;
   box-sizing:border-box;
@@ -167,7 +167,6 @@ const snowmanFrameEmbed = `
     src="https://brt-23f.pages.dev/snowman.html"
     style="
       width:100%;
-      max-width:100%;
       display:block;
       border:none;
       border-radius:20px;
@@ -185,9 +184,9 @@ window.addEventListener("message", (e) => {
   if (!("snowmanFrameHeight" in e.data)) return;
 
   const frame = document.getElementById("snowmanFrame");
-  if (!frame) return;
-
-  frame.style.height = e.data.snowmanFrameHeight + "px";
+  if (frame) {
+    frame.style.height = e.data.snowmanFrameHeight + "px";
+  }
 });
 </script>
 `;
