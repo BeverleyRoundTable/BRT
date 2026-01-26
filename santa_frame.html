@@ -207,6 +207,31 @@ function generate(){
   photo.onload = () => draw(photo);
   photo.src = URL.createObjectURL(photoInput.files[0]);
 }
+  
+function drawTimestamp() {
+  const date = new Date();
+  const label =
+    "Santa visited • " +
+    date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short"
+    });
+
+  ctx.save();
+
+  ctx.font = "600 22px system-ui";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+
+  // subtle shadow for legibility
+  ctx.shadowColor = "rgba(0,0,0,0.35)";
+  ctx.shadowBlur = 4;
+
+  ctx.fillStyle = "rgba(255,255,255,0.75)";
+  ctx.fillText(label, 960, 960);
+
+  ctx.restore();
+}
 
 function draw(photo){
   ctx.clearRect(0, 0, 1000, 1000);
@@ -238,6 +263,7 @@ function draw(photo){
 
   // Frame on top
   ctx.drawImage(frameImg, 0, 0, 1000, 1000);
+  drawTimestamp();
 
     // Export
   downloadLink.href = canvas.toDataURL("image/png");
