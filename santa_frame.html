@@ -227,7 +227,7 @@ function drawTimestamp() {
   ctx.shadowColor = "rgba(0,0,0,0.35)";
   ctx.shadowBlur = 4;
 
-  ctx.fillStyle = "rgba(255,255,255,0.75)";
+  ctx.fillStyle = "rgba(255,255,255,0.68)";
   ctx.fillText(label, 960, 960);
 
   ctx.restore();
@@ -266,7 +266,14 @@ function draw(photo){
   drawTimestamp();
 
     // Export
-  downloadLink.href = canvas.toDataURL("image/png");
+downloadLink.href = canvas.toDataURL("image/png");
+
+// ⭐ Auto filename with date
+downloadLink.download =
+  "santas_been_" +
+  new Date().toISOString().slice(0, 10) +
+  ".png";
+
   setTimeout(() => {
   downloadLink.style.display = "inline-flex";
 }, 150);
