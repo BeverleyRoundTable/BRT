@@ -696,9 +696,14 @@ if (gpxLoaded) {
       );
 
       const speed = calculateStableSpeedMps_(recentFixes);
-      if (speed !== null) {
-        etaSeconds = remainingMeters / speed;
-      }
+      const moving = isSleighMoving();
+
+if (speed !== null && moving) {
+  etaSeconds = remainingMeters / speed;
+} else {
+  etaSeconds = Infinity;
+}
+
     }
 
   } else {
