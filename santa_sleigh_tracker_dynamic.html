@@ -429,18 +429,7 @@ function setSnow(on, level = 1) {
   }
 }
 
-function setSnow(on) {
-  if (on === snowActive) return;
-
-  snowActive = on;
-  document.body.classList.toggle("snowing", on);
-
-  if (on) {
-    createSnow();
-    drawSnow();
-  }
-}
-
+/* ---------- GENERAL HELPERS ---------- */
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
 async function loadJSON(url){
