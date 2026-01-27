@@ -877,17 +877,6 @@ if (gpxLoaded) {
   const santaPos = { lat: p.lat, lng: p.lng };
   const snap = snapToGpxIndex(santaPos);
 
-  // ---------- SNOW (special moment) ----------
-const night = document.body.classList.contains("night-mode");
-const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
-
-setSnow(
-  gpsFresh &&
-  night &&
-  isSleighMoving() &&
-  etaMinutes < 15
-);
-
   if (snap && snap.distance <= OFF_ROUTE_THRESHOLD_METERS) {
 
     // 🔔 If user subscribed, check if Santa already passed them
@@ -922,6 +911,17 @@ if (speed !== null && moving && gpsFresh) {
 
 // Keep only last 25 seconds
 recentFixes = recentFixes.filter(f => now - f.ts <= MOTION_WINDOW_MS);
+
+    // ---------- SNOW (special moment) ----------
+const night = document.body.classList.contains("night-mode");
+const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
+
+setSnow(
+  gpsFresh &&
+  night &&
+  isSleighMoving() &&
+  etaMinutes < 15
+);
 
     // 🔔 Browser notification backup (page-open only)
 if (
