@@ -10,8 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
   <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
   
-<canvas id="snow"></canvas>
-
 <style>
 html,body{
   margin:0;
@@ -262,6 +260,7 @@ body.snowing #snow {
 </div>
 
 <div id="map"></div>
+<canvas id="snow"></canvas>
 
 <script>
   
@@ -828,17 +827,6 @@ if (gpsFresh && isAfterSunset(p.lat, p.lng)) {
   document.body.classList.remove("night-mode");
 }
     
-/* ---------- SNOW ---------- */
-    const night = document.body.classList.contains("night-mode");
-const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
-
-setSnow(
-  gpsFresh &&
-  night &&
-  isSleighMoving() &&
-  etaMinutes < 15
-);
-
 /* ---------- STALE HANDLING ---------- */
 if (age <= STALE_MS) {
   // ✅ Fresh GPS
@@ -888,6 +876,17 @@ let passedSubscriber = false;
 if (gpxLoaded) {
   const santaPos = { lat: p.lat, lng: p.lng };
   const snap = snapToGpxIndex(santaPos);
+
+  // ---------- SNOW (special moment) ----------
+const night = document.body.classList.contains("night-mode");
+const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
+
+setSnow(
+  gpsFresh &&
+  night &&
+  isSleighMoving() &&
+  etaMinutes < 15
+);
 
   if (snap && snap.distance <= OFF_ROUTE_THRESHOLD_METERS) {
 
