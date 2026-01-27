@@ -9,6 +9,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
   <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+  
+<canvas id="snow"></canvas>
 
 <style>
 html,body{
@@ -222,6 +224,19 @@ body.night-mode .status-popup {
   background: rgba(12,16,28,0.95);
 }
 
+  #snow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1500; /* above map, below UI */
+  opacity: 0;
+  transition: opacity 800ms ease;
+}
+
+body.snowing #snow {
+  opacity: 0.35; /* subtle */
+}
+
 </style>
 </head>
 
@@ -306,6 +321,62 @@ let gpxLoaded = false;
 let lastSnapIndex = 0;
 
 /* ---------- HELPERS ---------- */
+
+  const snowCanvas = document.getElementById("snow");
+const snowCtx = snowCanvas.getContext("2d");
+
+let snowflakes = [];
+let snowActive = false;
+
+function resizeSnow() {
+  snowCanvas.width = window.innerWidth;
+  snowCanvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeSnow);
+resizeSnow();
+
+function createSnow() {
+  snowflakes = Array.from({ length: 12 }, () => ({
+    x: Math.random() * snowCanvas.width,
+    y: Math.random() * snowCanvas.height,
+    r: Math.random() * 1.8 + 0.6,
+    v: Math.random() * 0.3 + 0.2
+  }));
+}
+
+function drawSnow() {
+  if (!snowActive) return;
+
+  snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+  snowCtx.fillStyle = "rgba(255,255,255,0.9)";
+
+  for (const f of snowflakes) {
+    f.y += f.v;
+    if (f.y > snowCanvas.height) {
+      f.y = -5;
+      f.x = Math.random() * snowCanvas.width;
+    }
+
+    snowCtx.beginPath();
+    snowCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+    snowCtx.fill();
+  }
+
+  requestAnimationFrame(drawSnow);
+}
+
+function setSnow(on) {
+  if (on === snowActive) return;
+
+  snowActive = on;
+  document.body.classList.toggle("snowing", on);
+
+  if (on) {
+    createSnow();
+    drawSnow();
+  }
+}
+
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
 async function loadJSON(url){
@@ -756,6 +827,17 @@ if (gpsFresh && isAfterSunset(p.lat, p.lng)) {
 } else {
   document.body.classList.remove("night-mode");
 }
+    
+/* ---------- SNOW ---------- */
+    const night = document.body.classList.contains("night-mode");
+const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
+
+setSnow(
+  gpsFresh &&
+  night &&
+  isSleighMoving() &&
+  etaMinutes < 15
+);
 
 /* ---------- STALE HANDLING ---------- */
 if (age <= STALE_MS) {
