@@ -187,6 +187,22 @@ html,body{
     padding:12px 16px;
   }
 }
+
+  /* ---------- AUTO DIM MODE ---------- */
+body.dim-ui .donate-box,
+body.dim-ui .info-popup,
+body.dim-ui .status-popup{
+  opacity: 0.45;
+  filter: saturate(0.85);
+  transition: opacity 600ms ease, filter 600ms ease;
+}
+
+body.dim-ui .donate-box:hover,
+body.dim-ui .info-popup:hover,
+body.dim-ui .status-popup:hover{
+  opacity: 0.75;
+}
+
 </style>
 </head>
 
@@ -258,7 +274,11 @@ let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
 let recentFixes = [];
 let lastGoodFix = null;
 let staleSince = null;
-
+let animCurrent = null;     // L.LatLng
+let animTarget = null;      // L.LatLng
+let animStart = 0;
+let animDuration = 900;     // ms (tweak: 700–1200 feels good)
+let animRaf = null;
 
   // ================= GPX ROUTE STATE =================
 let gpxRoute = null;           // [{lat,lng,dist}]
@@ -274,7 +294,66 @@ async function loadJSON(url){
   if(!r.ok) throw 0;
   return r.json();
 }
-  
+
+  function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function animateMarkerTo(targetLL) {
+  if (!marker) return;
+
+  // First ever set — no easing
+  if (!animCurrent) {
+    animCurrent = marker.getLatLng();
+  }
+
+  animTarget = targetLL;
+  animStart = performance.now();
+
+  // Cancel any in-flight animation loop
+  if (animRaf) cancelAnimationFrame(animRaf);
+
+  const startLL = marker.getLatLng();
+  const startLat = startLL.lat;
+  const startLng = startLL.lng;
+
+  const endLat = animTarget.lat;
+  const endLng = animTarget.lng;
+
+  function step(now) {
+    const t = Math.min(1, (now - animStart) / animDuration);
+    const e = easeOutCubic(t);
+
+    const lat = lerp(startLat, endLat, e);
+    const lng = lerp(startLng, endLng, e);
+
+    const ll = L.latLng(lat, lng);
+    marker.setLatLng(ll);
+    animCurrent = ll;
+
+    // Keep follow smooth too
+    if (follow && !firstFix) {
+      map.panTo(ll, { animate: true, duration: 0.6 });
+    }
+
+    if (t < 1) {
+      animRaf = requestAnimationFrame(step);
+    } else {
+      animRaf = null;
+    }
+  }
+
+  animRaf = requestAnimationFrame(step);
+}
+
+  function setDimUI(dim) {
+  document.body.classList.toggle("dim-ui", !!dim);
+}
+
  function showNotifyMarker(lat, lng, confirmed = false) {
   if (notifyMarker) map.removeLayer(notifyMarker);
 
@@ -673,7 +752,8 @@ if (age <= STALE_MS) {
 
     const visualPos = getVisualLatLng({ lat: p.lat, lng: p.lng });
 const ll = L.latLng(visualPos.lat, visualPos.lng);
-marker.setLatLng(ll);
+animateMarkerTo(ll);
+
 
  // ---------- TRACK MOTION HISTORY ----------
 const now = Date.now();
@@ -756,8 +836,10 @@ if (
 }
 }
     
-    if(firstFix){map.setView(ll,16);firstFix=false}
-    else if(follow) map.panTo(ll,{animate:true,duration:1.2});
+    if (firstFix) {
+  map.setView(ll, 16);
+  firstFix = false;
+}
 
     const moving = isSleighMoving();
 
@@ -768,9 +850,11 @@ dot.className = moving
 
 if (passedSubscriber) {
   statusBox.textContent = "🎄 Santa has just been here!";
+setDimUI(false);
 
 } else if (isFinite(etaSeconds)) {
   const mins = Math.round(etaSeconds / 60);
+  setDimUI(mins > 45);
 
   if (mins > 45) {
     statusBox.textContent = "🎅 Santa is out delivering this evening…";
@@ -787,10 +871,13 @@ if (passedSubscriber) {
   }
 
 } else if (offRoute && moving) {
+  setDimUI(false);
   statusBox.textContent = "🎅 Santa is nearby…";
 
 } else if (moving) {
+  setDimUI(false);
   statusBox.textContent = "🎅 Santa is out spreading joy!";
+}
 
 } else {
   statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
@@ -800,8 +887,14 @@ if (passedSubscriber) {
     marker.setLatLng(LAPLAND);
 if (follow) map.setView(LAPLAND,5,{animate:true,duration:2});
 dot.style.display="none";
+    setDimUI(false);
 statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
 firstFix=true;
+    if (animRaf) cancelAnimationFrame(animRaf);
+animRaf = null;
+animCurrent = null;
+animTarget = null;
+
   }
   setTimeout(tick,REFRESH);
 }
