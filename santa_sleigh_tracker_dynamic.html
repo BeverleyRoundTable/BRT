@@ -451,6 +451,19 @@ function haversineMeters(a, b) {
     distance: bestDist
   };
 }
+  
+function getVisualLatLng(rawPos) {
+  if (!gpxLoaded) return rawPos;
+
+  const snap = snapToGpxIndex(rawPos);
+
+  // Only visually snap when reasonably close to route
+  if (snap && snap.distance <= OFF_ROUTE_THRESHOLD_METERS) {
+    return snap.point; // {lat, lng}
+  }
+
+  return rawPos;
+}
 
 function snapSubscriberToGpx(pos) {
   if (!gpxRoute) return null;
@@ -658,8 +671,9 @@ if (age <= STALE_MS) {
   }
 }
 
-    const ll=L.latLng(p.lat,p.lng);
-    marker.setLatLng(ll);
+    const visualPos = getVisualLatLng({ lat: p.lat, lng: p.lng });
+const ll = L.latLng(visualPos.lat, visualPos.lng);
+marker.setLatLng(ll);
 
  // ---------- TRACK MOTION HISTORY ----------
 const now = Date.now();
@@ -758,11 +772,20 @@ if (passedSubscriber) {
 } else if (isFinite(etaSeconds)) {
   const mins = Math.round(etaSeconds / 60);
 
-  if (mins > 120) {
-    statusBox.textContent = "🎅 Santa is on his way…";
+  if (mins > 45) {
+    statusBox.textContent = "🎅 Santa is out delivering this evening…";
+
+  } else if (mins > 15) {
+    statusBox.textContent = "🎅 Santa is on the way…";
+
+  } else if (mins > 5) {
+    statusBox.textContent = "🎅 Santa is nearly here!";
+
   } else {
-    statusBox.textContent = `🎅 Santa is ${Math.max(1, mins)} min away!`;
+    statusBox.textContent =
+      `🎅 Santa is ${Math.max(1, mins)} min away!`;
   }
+}
 
 } else if (offRoute && moving) {
   statusBox.textContent = "🎅 Santa is nearby…";
