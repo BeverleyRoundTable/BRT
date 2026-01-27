@@ -977,16 +977,28 @@ if (speed !== null && moving && gpsFresh) {
 // Keep only last 25 seconds
 recentFixes = recentFixes.filter(f => now - f.ts <= MOTION_WINDOW_MS);
 
-    // ---------- SNOW (special moment) ----------
-const night = document.body.classList.contains("night-mode");
-const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
+    // ---------- SNOW (Dynamic Intensity) ----------
+    const night = document.body.classList.contains("night-mode");
+    const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
+    
+    // Default: Off
+    let snowOn = false;
+    let snowLevel = 1;
 
-setSnow(
-  gpsFresh &&
-  night &&
-  isSleighMoving() &&
-  etaMinutes < 15
-);
+    // Only snow if: Fresh Data + Night Time + Moving + Close enough
+    if (gpsFresh && night && isSleighMoving() && etaMinutes < 15) {
+      snowOn = true;
+
+      if (etaMinutes < 2) {
+        snowLevel = 3; // ❄️ BLIZZARD (0-2 mins)
+      } else if (etaMinutes < 7) {
+        snowLevel = 2; // 🌨️ HEAVY (2-7 mins)
+      } else {
+        snowLevel = 1; // 🌧️ LIGHT (7-15 mins)
+      }
+    }
+
+    setSnow(snowOn, snowLevel);
 
     // 🔔 Browser notification backup (page-open only)
 if (
