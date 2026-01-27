@@ -235,6 +235,27 @@ body.snowing #snow {
   opacity: 0.35; /* subtle */
 }
 
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.6) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  z-index: 1400; /* Below snow, above map */
+}
+
+body.snowing::after {
+  opacity: 1;
+}
+
+/* Update your existing #snow rule to be softer */
+body.snowing #snow {
+  opacity: 1; 
+  filter: drop-shadow(0 0 4px white); /* Makes snow 'glow' slightly */
+}
+  
 </style>
 </head>
 
@@ -335,11 +356,18 @@ window.addEventListener("resize", resizeSnow);
 resizeSnow();
 
 function createSnow() {
-  snowflakes = Array.from({ length: 12 }, () => ({
+  const count = window.innerWidth < 600 ? 50 : 100; // Fewer flakes on mobile
+  
+  snowflakes = Array.from({ length: count }, () => ({
     x: Math.random() * snowCanvas.width,
     y: Math.random() * snowCanvas.height,
-    r: Math.random() * 1.8 + 0.6,
-    v: Math.random() * 0.3 + 0.2
+    // Size varies from 1px (far) to 4px (close)
+    radius: Math.random() * 3 + 1, 
+    // Speed depends on size (parallax: big flakes fall faster)
+    speed: (Math.random() * 1 + 0.5) + (Math.random() * 1.5), 
+    // Sway variables
+    swayOffset: Math.random() * Math.PI * 2, // Random starting angle
+    swaySpeed: Math.random() * 0.02 + 0.005  // How fast it swings
   }));
 }
 
@@ -347,20 +375,33 @@ function drawSnow() {
   if (!snowActive) return;
 
   snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
-  snowCtx.fillStyle = "rgba(255,255,255,0.9)";
+  snowCtx.fillStyle = "rgba(255, 255, 255, 0.95)";
+  snowCtx.beginPath();
 
   for (const f of snowflakes) {
-    f.y += f.v;
+    // 1. Move Down
+    f.y += f.speed;
+
+    // 2. Sway Side-to-Side (Sine Wave)
+    f.swayOffset += f.swaySpeed;
+    f.x += Math.sin(f.swayOffset) * 0.5; // Multiplier adjusts wind strength
+
+    // 3. Loop from bottom to top
     if (f.y > snowCanvas.height) {
-      f.y = -5;
+      f.y = -10;
       f.x = Math.random() * snowCanvas.width;
     }
+    
+    // 4. Wrap sides (if wind blows them off screen)
+    if (f.x > snowCanvas.width) f.x = 0;
+    if (f.x < 0) f.x = snowCanvas.width;
 
-    snowCtx.beginPath();
-    snowCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-    snowCtx.fill();
+    // Draw
+    snowCtx.moveTo(f.x, f.y);
+    snowCtx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
   }
 
+  snowCtx.fill();
   requestAnimationFrame(drawSnow);
 }
 
