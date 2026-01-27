@@ -626,4 +626,205 @@ body.snowing::after { opacity: 1; }
       return;
     }
     if (state.snowLevel !== level) {
-      state.snowLevel
+      state.snowLevel = level;
+      createSnow(level);
+    }
+    if (!state.snowActive) {
+      state.snowActive = true;
+      document.body.classList.add("snowing");
+      drawSnow();
+    }
+  }
+
+  /* ================= UI & CONTROLS ================= */
+  function updateUIStatus(text, dim = false) {
+    document.getElementById("statusBox").textContent = text;
+    document.body.classList.toggle("dim-ui", !!dim);
+  }
+
+  function updateUIDisplay(moving, passed, etaSec, offRoute) {
+    const dot = document.getElementById("statusDot");
+    dot.style.display = "block";
+    dot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
+
+    if (passed) {
+      updateUIStatus("🎄 Santa has just been here!", false);
+    } else if (isFinite(etaSec)) {
+      const mins = Math.round(etaSec / 60);
+      updateUIStatus(
+        mins > 45 ? "🎅 Santa is out delivering this evening…" :
+        mins > 15 ? "🎅 Santa is on the way…" :
+        mins > 5  ? "🎅 Santa is nearly here!" :
+        `🎅 Santa is ${Math.max(1, mins)} min away!`,
+        mins > 45 // Dim if far away
+      );
+    } else if (offRoute && moving) {
+      updateUIStatus("🎅 Santa is nearby…", false);
+    } else if (moving) {
+      updateUIStatus("🎅 Santa is out spreading joy!", false);
+    } else {
+      updateUIStatus("🎄 Santa has stopped to spread cheer!", false);
+    }
+  }
+
+  function setupControls(s) {
+    const followBtn = document.getElementById("followBtn");
+    followBtn.onclick = () => {
+      state.follow = !state.follow;
+      followBtn.textContent = "Follow: " + (state.follow ? "ON" : "OFF");
+    };
+    
+    document.getElementById("recenterBtn").onclick = () => {
+      state.follow = true;
+      if(state.marker) state.map.panTo(state.marker.getLatLng());
+    };
+
+    const notifyBtn = document.getElementById("notifyBtn");
+    notifyBtn.onclick = startNotifyFlow;
+
+    if (s.donate_url) document.getElementById("donateLink").href = s.donate_url;
+    else document.getElementById("donateBox").style.display = "none";
+  }
+
+  function setupPerformanceMonitors() {
+    // 1. Visibility (Tab Switching)
+    document.addEventListener("visibilitychange", () => {
+      state.isTabVisible = !document.hidden;
+      if (state.isTabVisible && state.snowActive) drawSnow(); // Restart loop
+    });
+
+    // 2. Battery (Chrome/Edge/Android)
+    if ('getBattery' in navigator) {
+      navigator.getBattery().then(batt => {
+        state.batteryLevel = batt.level;
+        batt.addEventListener('levelchange', () => state.batteryLevel = batt.level);
+      });
+    }
+  }
+
+  /* ================= NOTIFICATIONS ================= */
+  function startNotifyFlow() {
+    state.follow = false;
+    document.getElementById("followBtn").textContent = "Follow: OFF";
+    
+    state.browserNotified = false;
+    sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+    sessionStorage.removeItem("SANTA_NOTIFY_POINT");
+    
+    if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+    
+    state.awaitingPin = true;
+    updateUIStatus("📍 Tap the map to place your pin");
+
+    const clickHandler = (e) => {
+      if (!state.awaitingPin) return;
+      const { lat, lng } = e.latlng;
+      showNotifyMarker(lat, lng, false);
+      updateUIStatus("📍 Pin moved — tap again to confirm");
+    };
+
+    state.map.on("click", clickHandler);
+  }
+
+  function showNotifyMarker(lat, lng, confirmed) {
+    if (state.notifyMarker) state.map.removeLayer(state.notifyMarker);
+    
+    const iconUrl = confirmed ? 
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png" : 
+      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png";
+
+    state.notifyMarker = L.marker([lat, lng], {
+      icon: L.icon({
+        iconUrl, shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+      }),
+      interactive: true
+    }).addTo(state.map);
+
+    if (!confirmed) {
+      state.notifyMarker.bindPopup("📍 Tap to confirm").openPopup();
+      state.notifyMarker.once("click", () => confirmSubscription(lat, lng));
+    }
+  }
+
+  function confirmSubscription(lat, lng) {
+    state.awaitingPin = false;
+    showNotifyMarker(lat, lng, true);
+    sessionStorage.setItem("SANTA_NOTIFY_POINT", JSON.stringify({ lat, lng }));
+
+    // Prompt for Email (optional)
+    if (state.firebaseBaseUrl && sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") !== "1") {
+      const email = prompt("📧 Enter email for updates (optional):");
+      
+      fetch(`${state.firebaseBaseUrl}/subscribers.json`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ api: state.apiUrl, lat, lng, email, created: new Date().toISOString() })
+      }).then(() => {
+        sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+        alert("🎅 Subscribed!");
+      });
+    }
+    updateUIStatus("🔔 We’ll let you know when Santa is close");
+  }
+
+  function checkBrowserNotification(santaLat, santaLng, passed) {
+    if (!state.notifyMarker || state.browserNotified || passed) return;
+    const user = state.notifyMarker.getLatLng();
+    const dist = haversineMeters({lat:santaLat, lng:santaLng}, user);
+    
+    if (dist < 250) {
+      state.browserNotified = true;
+      sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("🎅 Santa is nearly here!", {
+           body: "He’s about 5 minutes away — get ready! 🎄",
+           icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png"
+        });
+      }
+    }
+  }
+
+  function restoreNotifyPin() {
+    const saved = sessionStorage.getItem("SANTA_NOTIFY_POINT");
+    if (saved) {
+      try {
+        const p = JSON.parse(saved);
+        state.browserNotified = false; // Reset on reload
+        sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+        showNotifyMarker(p.lat, p.lng, true);
+      } catch(e){}
+    }
+  }
+
+  /* ================= HELPERS (SETUP) ================= */
+  function setupLogo(s) {
+    const posMap = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" };
+    const LogoControl = L.control({ position: posMap[s.logo_overlay_position] || "bottomright" });
+    LogoControl.onAdd = () => {
+      const img = L.DomUtil.create("img");
+      img.src = s.logo_overlay_url;
+      img.className = "logo-overlay";
+      return img;
+    };
+    LogoControl.addTo(state.map);
+  }
+
+  function setupGpxVisuals(route, s) {
+    new L.GPX(route.gpxUrl, {
+      async: true,
+      polyline_options: { color: s.accent_color || "#ffd700", weight: 4, opacity: 0.85 },
+      marker_options: {
+        startIcon: L.icon({ iconUrl: s.sleigh_icon_start || CONFIG.FALLBACK_ICONS.start, iconSize: [48, 48], iconAnchor: [24, 48] }),
+        endIcon: L.icon({ iconUrl: s.sleigh_icon_end || CONFIG.FALLBACK_ICONS.end, iconSize: [48, 48], iconAnchor: [24, 48] }),
+        shadowUrl: null
+      }
+    }).addTo(state.map);
+  }
+
+  // START
+  init();
+
+})();
+</script>
+</body>
+</html>
