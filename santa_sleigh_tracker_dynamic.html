@@ -747,16 +747,17 @@ if (savedPin) {
     
 const age = Date.now() - ts;
 
-/* ---------- SUNSET ---------- */
-    if (isAfterSunset(p.lat, p.lng)) {
+/* ---------- STALE / FRESH CHECK ---------- */
+const gpsFresh = age <= STALE_MS;
+
+/* ---------- SUNSET / NIGHT MODE ---------- */
+if (gpsFresh && isAfterSunset(p.lat, p.lng)) {
   document.body.classList.add("night-mode");
 } else {
   document.body.classList.remove("night-mode");
 }
 
 /* ---------- STALE HANDLING ---------- */
-const gpsFresh = age <= STALE_MS;
-
 if (age <= STALE_MS) {
   // ✅ Fresh GPS
   staleSince = null;
@@ -764,16 +765,12 @@ if (age <= STALE_MS) {
 
 } else {
   // ⚠️ GPS already stale
-
-  // Anchor grace window to GPS timestamp
   if (!staleSince) staleSince = ts;
-  
-  // ❌ Hard timeout → Lapland fallback
+
   if (Date.now() - staleSince > STALE_MS) {
     throw 0;
   }
 
-  // ⏸ Grace period → hold last good fix (if any)
   if (lastGoodFix) {
     marker.setLatLng(lastGoodFix);
     statusBox.textContent = "🎅 Santa is nearby…";
