@@ -501,9 +501,12 @@ const todayRoute = (data.routes || []).find(r =>
 );
 
 // Hide Notify button if no GPX route today
-if (!todayRoute) {
-  notifyBtn.style.display = "none";
-} else {
+if (notifyBtn) {
+  notifyBtn.onclick = () => {
+    ...
+  };
+}
+ else {
   try {
     await loadGpxRoute(todayRoute.gpxUrl);
     console.log(
@@ -661,7 +664,7 @@ if (age <= STALE_MS) {
     const ll=L.latLng(p.lat,p.lng);
     marker.setLatLng(ll);
 
-    // ---------- TRACK MOTION HISTORY ----------
+ // ---------- TRACK MOTION HISTORY ----------
 const now = Date.now();
 
 recentFixes.push({
@@ -669,6 +672,11 @@ recentFixes.push({
   lng: p.lng,
   ts: now
 });
+
+// HARD CAP (safety – absolute max)
+if (recentFixes.length > 20) {
+  recentFixes.shift();
+}
 
     // ---------- GPX ETA ----------
 let etaSeconds = Infinity;
