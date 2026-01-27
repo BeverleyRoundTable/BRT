@@ -631,6 +631,8 @@ if (savedPin) {
 const age = Date.now() - ts;
 
 /* ---------- STALE HANDLING ---------- */
+const gpsFresh = age <= STALE_MS;
+
 if (age <= STALE_MS) {
   // ✅ Fresh GPS
   staleSince = null;
@@ -698,10 +700,8 @@ if (gpxLoaded) {
       const speed = calculateStableSpeedMps_(recentFixes);
       const moving = isSleighMoving();
 
-if (speed !== null && moving) {
+if (speed !== null && moving && gpsFresh) {
   etaSeconds = remainingMeters / speed;
-} else {
-  etaSeconds = Infinity;
 }
 
     }
