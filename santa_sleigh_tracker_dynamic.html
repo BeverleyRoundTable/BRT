@@ -415,8 +415,6 @@ const CONFIRMED_ICON = L.icon({
 =================================================== */
 
 const REFRESH = CONFIG.REFRESH_MS;
-const STALE_MS = 5 * 60 * 1000;
-const LAPLAND = [66.5436,25.8473];
 
 const FALLBACK = {
   live: "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png",
@@ -1009,6 +1007,20 @@ if (savedPin) {
 
   loadingCover.style.display="none";
 
+  function fireBrowserNotification(title, body) {
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+
+  try {
+    new Notification(title, {
+      body,
+      icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
+      badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
+      requireInteraction: true
+    });
+  } catch {}
+}
+
   tick();
 }
 
@@ -1060,7 +1072,7 @@ if (age <= STALE_MS) {
   }
 
   if (lastGoodFix) {
-    marker.setLatLng(lastGoodFix);
+    animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
     statusBox.textContent = "🎅 Santa is nearby…";
     setTimeout(tick, REFRESH);
     return;
