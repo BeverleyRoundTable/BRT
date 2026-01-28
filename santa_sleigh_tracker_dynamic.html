@@ -284,7 +284,20 @@ body.snowing #snow {
 <canvas id="snow"></canvas>
 
 <script>
-  
+  /* ===================================================
+   BATTERY SAVER - VISIBLE PAGE
+=================================================== */
+  let pageVisible = !document.hidden;
+
+document.addEventListener("visibilitychange", () => {
+  pageVisible = !document.hidden;
+
+  // Hard pause snow when hidden
+  if (!pageVisible) {
+    snowActive = false;
+  }
+});
+
 /* ===================================================
    API HANDLING — HIDDEN + REFRESH SAFE
 =================================================== */
@@ -378,7 +391,8 @@ function createSnow(level) {
 }
 
 function drawSnow() {
-  if (!snowActive) return; // Stop loop if turned off
+  // 🔋 Battery saver: stop immediately if hidden
+  if (!snowActive || !pageVisible) return;
 
   snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
   snowCtx.fillStyle = "rgba(255, 255, 255, 0.95)";
@@ -393,7 +407,7 @@ function drawSnow() {
       f.y = -10;
       f.x = Math.random() * snowCanvas.width;
     }
-    
+
     if (f.x > snowCanvas.width) f.x = 0;
     if (f.x < 0) f.x = snowCanvas.width;
 
@@ -407,7 +421,15 @@ function drawSnow() {
 
 // ✅ NEW: Handles intensity changes intelligently
 function setSnow(on, level = 1) {
-  // 1. If turning OFF
+  // 🔕 Always disable when page hidden
+  if (!pageVisible) {
+    snowActive = false;
+    currentSnowLevel = 0;
+    document.body.classList.remove("snowing");
+    return;
+  }
+
+  // Turning OFF
   if (!on) {
     snowActive = false;
     currentSnowLevel = 0;
@@ -415,13 +437,13 @@ function setSnow(on, level = 1) {
     return;
   }
 
-  // 2. If turning ON (or changing level)
+  // Intensity changed
   if (currentSnowLevel !== level) {
     currentSnowLevel = level;
-    createSnow(level); // Regenerate flakes based on new intensity
+    createSnow(level);
   }
 
-  // 3. Start the loop ONLY if it wasn't running
+  // Start animation loop once
   if (!snowActive) {
     snowActive = true;
     document.body.classList.add("snowing");
