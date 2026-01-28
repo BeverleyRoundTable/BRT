@@ -310,7 +310,8 @@ document.addEventListener("visibilitychange", () => {
   snowActive = false;
   document.body.classList.remove("snowing");
 }
-
+});
+  
   let batteryState = {
   supported: false,
   charging: true,
@@ -327,7 +328,6 @@ if ("getBattery" in navigator) {
     }
 
     updateBattery();
-
     battery.addEventListener("chargingchange", updateBattery);
     battery.addEventListener("levelchange", updateBattery);
   });
