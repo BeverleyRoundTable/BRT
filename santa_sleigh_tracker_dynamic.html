@@ -549,13 +549,11 @@ function animateMarkerTo(targetLL) {
   const elapsed = last.ts - first.ts;
   if (elapsed < MIN_ETA_WINDOW_MS) return null;
 
-  let dist = 0;
+  const dist =
+  fixes[fixes.length - 1].cumulative -
+  fixes[0].cumulative;
 
-  for (let i = 1; i < fixes.length; i++) {
-    dist += haversineMeters(fixes[i - 1], fixes[i]);
-  }
-
-  const speed = dist / (elapsed / 1000);
+const speed = dist / (elapsed / 1000);
 
   // Clamp to realistic sleigh bounds
   return Math.min(Math.max(speed, 0.3), 6);
@@ -612,16 +610,10 @@ function haversineMeters(a, b) {
   function isSleighMoving() {
   if (recentFixes.length < 2) return false;
 
-  let totalDistance = 0;
+  const first = recentFixes[0];
+  const last = recentFixes[recentFixes.length - 1];
 
-  for (let i = 1; i < recentFixes.length; i++) {
-    totalDistance += haversineMeters(
-      recentFixes[i - 1],
-      recentFixes[i]
-    );
-  }
-
-  return totalDistance >= MOVE_THRESHOLD_METERS;
+  return (last.cumulative - first.cumulative) >= MOVE_THRESHOLD_METERS;
 }
 
   async function loadGpxRoute(url) {
@@ -711,6 +703,27 @@ function snapSubscriberToGpx(pos) {
     point: gpxRoute[best],
     distance: bestDist
   };
+}
+  
+  function pushFix(lat, lng, ts) {
+  const last = recentFixes[recentFixes.length - 1];
+
+  const dist = last
+    ? haversineMeters(last, { lat, lng })
+    : 0;
+
+  recentFixes.push({
+    lat,
+    lng,
+    ts,
+    cumulative: (last?.cumulative || 0) + dist
+  });
+
+  // Trim to motion window
+  const cutoff = ts - MOTION_WINDOW_MS;
+  while (recentFixes.length && recentFixes[0].ts < cutoff) {
+    recentFixes.shift();
+  }
 }
 
 /* ---------- INIT ---------- */
@@ -910,17 +923,7 @@ animateMarkerTo(ll);
 
  // ---------- TRACK MOTION HISTORY ----------
 const now = Date.now();
-
-recentFixes.push({
-  lat: p.lat,
-  lng: p.lng,
-  ts: now
-});
-
-// HARD CAP (safety – absolute max)
-if (recentFixes.length > 20) {
-  recentFixes.shift();
-}
+pushFix(p.lat, p.lng, now);
 
     // ---------- GPX ETA ----------
 let etaSeconds = Infinity;
@@ -962,10 +965,7 @@ if (speed !== null && moving && gpsFresh) {
     offRoute = true;
   }
 }
-
-// Keep only last 25 seconds
-recentFixes = recentFixes.filter(f => now - f.ts <= MOTION_WINDOW_MS);
-
+    
     // ---------- SNOW (Dynamic Intensity) ----------
     const night = document.body.classList.contains("night-mode");
     const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
