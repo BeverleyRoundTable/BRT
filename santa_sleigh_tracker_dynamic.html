@@ -891,6 +891,13 @@ fetch(
 ).catch(() => {});
   
   const s = data.settings || {};
+// 🎁 Donate link
+if (s.donate_url) {
+  donateLink.href = s.donate_url;
+  donateBox.style.display = "block";
+} else {
+  donateBox.style.display = "none";
+}
 
   // 🔑 Capture Firebase base URL from API
   firebaseBaseUrl = data.tracker?.firebase_url || null;
