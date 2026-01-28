@@ -297,8 +297,9 @@ body.snowing #snow {
 =================================================== */
 
   /* ===================================================
-   BATTERY SAVER - VISIBLE PAGE
+   PAGE VISIBILITY & BATTERY AWARENESS
 =================================================== */
+
   let pageVisible = !document.hidden;
 
 document.addEventListener("visibilitychange", () => {
@@ -825,6 +826,9 @@ function snapSubscriberToGpx(pos) {
   };
 }
   
+  // NOTE: recentFixes is time-windowed AND cumulative-distance based.
+// Do not reuse this array for raw GPS history.
+
   function pushFix(lat, lng, ts) {
   const last = recentFixes[recentFixes.length - 1];
 
