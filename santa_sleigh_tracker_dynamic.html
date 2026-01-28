@@ -298,6 +298,28 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+  let batteryState = {
+  supported: false,
+  charging: true,
+  level: 1
+};
+
+if ("getBattery" in navigator) {
+  navigator.getBattery().then(battery => {
+    batteryState.supported = true;
+
+    function updateBattery() {
+      batteryState.charging = battery.charging;
+      batteryState.level = battery.level;
+    }
+
+    updateBattery();
+
+    battery.addEventListener("chargingchange", updateBattery);
+    battery.addEventListener("levelchange", updateBattery);
+  });
+}
+
 /* ===================================================
    API HANDLING — HIDDEN + REFRESH SAFE
 =================================================== */
@@ -390,9 +412,19 @@ function createSnow(level) {
   }));
 }
 
+let snowFrame = 0;
+
 function drawSnow() {
-  // 🔋 Battery saver: stop immediately if hidden
   if (!snowActive || !pageVisible) return;
+
+  const { frameSkip } = getSnowThrottle();
+  snowFrame++;
+
+  // ⏱️ Skip frames to save power
+  if (frameSkip && snowFrame % (frameSkip + 1) !== 0) {
+    requestAnimationFrame(drawSnow);
+    return;
+  }
 
   snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
   snowCtx.fillStyle = "rgba(255, 255, 255, 0.95)";
@@ -452,6 +484,27 @@ function setSnow(on, level = 1) {
 }
 
 /* ---------- GENERAL HELPERS ---------- */
+
+  function getSnowThrottle() {
+  // Default: full experience
+  let maxLevel = 3;       // Blizzard allowed
+  let frameSkip = 0;      // Draw every frame
+
+  if (batteryState.supported && !batteryState.charging) {
+    if (batteryState.level <= 0.2) {
+      // 🔴 Critical battery
+      maxLevel = 1;
+      frameSkip = 3;      // 1 frame every 4
+    } else if (batteryState.level <= 0.4) {
+      // 🟠 Low battery
+      maxLevel = 2;
+      frameSkip = 2;
+    }
+  }
+
+  return { maxLevel, frameSkip };
+}
+
 const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
 
 async function loadJSON(url){
@@ -1023,7 +1076,8 @@ if (speed !== null && moving && gpsFresh) {
       }
     }
 
-    setSnow(snowOn, snowLevel);
+    const { maxLevel } = getSnowThrottle();
+setSnow(snowOn, Math.min(snowLevel, maxLevel));
 
     // 🔔 Browser notification backup (page-open only)
 if (
