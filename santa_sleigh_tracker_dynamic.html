@@ -294,7 +294,8 @@ document.addEventListener("visibilitychange", () => {
 
   // Hard pause snow when hidden
   if (pageVisible && currentSnowLevel > 0) {
-  snowActive = false; // force clean restart
+  snowActive = false;
+  document.body.classList.remove("snowing");
 }
 
   let batteryState = {
@@ -669,23 +670,13 @@ function animateMarkerTo(targetLL) {
 }
 
   function calculateStableSpeedMps_(fixes) {
-  if (fixes.length < MIN_FIXES_FOR_ETA) return null;
+  if (fixes.length < CONFIG.MIN_FIXES_FOR_ETA) return null;
 
   const first = fixes[0];
   const last = fixes[fixes.length - 1];
 
   const elapsed = last.ts - first.ts;
-  if (elapsed < MIN_ETA_WINDOW_MS) return null;
-
-  const dist =
-  fixes[fixes.length - 1].cumulative -
-  fixes[0].cumulative;
-
-const speed = dist / (elapsed / 1000);
-
-  // Clamp to realistic sleigh bounds
-  return Math.min(Math.max(speed, 0.3), 6);
-}
+  if (elapsed < CONFIG.MIN_ETA_WINDOW_MS) return null;
 
   const PREVIEW_ICON = L.icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png",
