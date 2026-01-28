@@ -306,8 +306,9 @@ document.addEventListener("visibilitychange", () => {
   pageVisible = !document.hidden;
 
   // Hard pause snow when hidden
-  if (pageVisible && currentSnowLevel > 0) {
+  if (!pageVisible) {
   snowActive = false;
+  currentSnowLevel = 0;
   document.body.classList.remove("snowing");
 }
 });
