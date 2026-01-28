@@ -694,20 +694,14 @@ function animateMarkerTo(targetLL) {
   const elapsed = last.ts - first.ts;
   if (elapsed < CONFIG.MIN_ETA_WINDOW_MS) return null;
 
-function fireBrowserNotification(title, body) {
-  if (!("Notification" in window)) return;
-  if (Notification.permission !== "granted") return;
+  const dist =
+    fixes[fixes.length - 1].cumulative -
+    fixes[0].cumulative;
 
-  try {
-    new Notification(title, {
-      body,
-      icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
-      badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
-      requireInteraction: true
-    });
-  } catch (e) {
-    console.warn("Notification failed", e);
-  }
+  const speed = dist / (elapsed / 1000);
+
+  // Clamp to realistic sleigh bounds
+  return Math.min(Math.max(speed, 0.3), 6);
 }
   
 function haversineMeters(a, b) {
