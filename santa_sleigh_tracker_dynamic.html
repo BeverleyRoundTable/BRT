@@ -293,10 +293,9 @@ document.addEventListener("visibilitychange", () => {
   pageVisible = !document.hidden;
 
   // Hard pause snow when hidden
-  if (!pageVisible) {
-    snowActive = false;
-  }
-});
+  if (pageVisible && currentSnowLevel > 0) {
+  snowActive = false; // force clean restart
+}
 
   let batteryState = {
   supported: false,
