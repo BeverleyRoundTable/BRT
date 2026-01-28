@@ -546,15 +546,13 @@ function setSnow(on, level = 1) {
   let frameSkip = 0;      // Draw every frame
 
   if (batteryState.supported && !batteryState.charging) {
-    if (batteryState.level <= 0.2) {
-      // 🔴 Critical battery
-      maxLevel = 1;
-      frameSkip = 3;      // 1 frame every 4
-    } else if (batteryState.level <= 0.4) {
-      // 🟠 Low battery
-      maxLevel = 2;
-      frameSkip = 2;
-    }
+    if (batteryState.level <= CONFIG.BATTERY.CRITICAL) { // 🔴 Critical battery
+  maxLevel = 1;
+  frameSkip = CONFIG.BATTERY.FRAME_SKIP.CRITICAL;
+} else if (batteryState.level <= CONFIG.BATTERY.LOW) {  // 🟠 Low battery
+  maxLevel = 2;
+  frameSkip = CONFIG.BATTERY.FRAME_SKIP.LOW;
+}
   }
 
   return { maxLevel, frameSkip };
@@ -782,14 +780,12 @@ function haversineMeters(a, b) {
   function snapToGpxIndex(pos) {
   if (!gpxRoute) return null;
 
-  const { AHEAD, BACK, EARLY_EXIT_METERS } = CONFIG.GPX_SEARCH; // ~80 GPX points forward
-  const start = Math.max(0, lastSnapIndex - BACK); // tiny back allowance for jitter
-  const end = Math.min(gpxRoute.length - 1, lastSnapIndex + AHEAD);
+  const { AHEAD, BACK, EARLY_EXIT_METERS } = CONFIG.GPX_SEARCH;
 
-  const start = Math.max(0, lastSnapIndex - SEARCH_BACK);
+  const start = Math.max(0, lastSnapIndex - BACK);
   const end = Math.min(
     gpxRoute.length - 1,
-    lastSnapIndex + SEARCH_AHEAD
+    lastSnapIndex + AHEAD
   );
 
   let best = lastSnapIndex;
@@ -803,8 +799,9 @@ function haversineMeters(a, b) {
       best = i;
     }
 
-    // 🔥 Early exit: distance rising after minimum
-    if (i > lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break;
+    // Early exit once distance starts increasing
+    if (i > lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) {
+      break;
     }
   }
 
