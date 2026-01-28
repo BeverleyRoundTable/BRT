@@ -365,18 +365,31 @@ const CONFIG = {
 
   // 🗺 GPX snapping
   OFF_ROUTE_THRESHOLD_METERS: 60,
-  GPX_SEARCH: { ... },
+  GPX_SEARCH: {
+    AHEAD: 80,
+    BACK: 5,
+    EARLY_EXIT_METERS: 25
+  },
 
   // ❄ Snow behaviour
-  SNOW: { ... },
+  SNOW: {
+    ETA_MINUTES_MAX: 15,
+    LEVELS: { LIGHT: 1, HEAVY: 2, BLIZZARD: 3 },
+    MOBILE_BASE_COUNT: 30,
+    DESKTOP_BASE_COUNT: 60,
+    MULTIPLIERS: [0, 1, 2.5, 5]
+  },
 
   // 🔋 Battery throttling
-  BATTERY: { ... },
+  BATTERY: {
+    LOW: 0.4,
+    CRITICAL: 0.2,
+    FRAME_SKIP: { LOW: 2, CRITICAL: 3 }
+  },
 
   // 🌍 Defaults
   LAPLAND: [66.5436, 25.8473]
 };
-
 
   const PREVIEW_ICON = L.icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png",
