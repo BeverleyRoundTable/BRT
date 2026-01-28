@@ -350,52 +350,32 @@ if (location.search.includes("api=")) history.replaceState(null, "", location.pa
 =================================================== */
 
 const CONFIG = {
-  // Timing
+  // ⏱ Timing
   REFRESH_MS: 3000,
   STALE_MS: 5 * 60 * 1000,
 
-  // Motion detection
+  // 🛷 Motion detection
   MOTION_WINDOW_MS: 25 * 1000,
   MOVE_THRESHOLD_METERS: 8,
 
-  // ETA calculation
+  // 📐 ETA calculation
   MIN_FIXES_FOR_ETA: 3,
   MIN_ETA_WINDOW_MS: 15 * 1000,
 
-  // GPX snapping
+  // 🗺 GPX snapping
   OFF_ROUTE_THRESHOLD_METERS: 60,
-  GPX_SEARCH: {
-    AHEAD: 80,
-    BACK: 5,
-    EARLY_EXIT_METERS: 25
-  },
+  GPX_SEARCH: { ... },
 
-  // Snow behaviour
-  SNOW: {
-    ETA_MINUTES_MAX: 15,
-    LEVELS: {
-      LIGHT: 1,
-      HEAVY: 2,
-      BLIZZARD: 3
-    },
-    MOBILE_BASE_COUNT: 30,
-    DESKTOP_BASE_COUNT: 60,
-    MULTIPLIERS: [0, 1, 2.5, 5]
-  },
+  // ❄ Snow behaviour
+  SNOW: { ... },
 
-  // Battery throttling
-  BATTERY: {
-    LOW: 0.4,
-    CRITICAL: 0.2,
-    FRAME_SKIP: {
-      LOW: 2,
-      CRITICAL: 3
-    }
-  },
+  // 🔋 Battery throttling
+  BATTERY: { ... },
 
-  // Map defaults
+  // 🌍 Defaults
   LAPLAND: [66.5436, 25.8473]
 };
+
 
   const PREVIEW_ICON = L.icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png",
@@ -457,7 +437,9 @@ let gpxTotalDistance = 0;      // meters
 let gpxLoaded = false;
 let lastSnapIndex = 0;
 
-/* ---------- HELPERS ---------- */
+/* ===================================================
+   RENDERING & VISUAL HELPERS
+=================================================== */
 
 const snowCanvas = document.getElementById("snow");
 const snowCtx = snowCanvas.getContext("2d");
@@ -567,7 +549,9 @@ function setSnow(on, level = 1) {
   }
 }
 
-/* ---------- GENERAL HELPERS ---------- */
+/* ===================================================
+   CORE MATH & GEO HELPERS
+=================================================== */
 
   function getSnowThrottle() {
   // Default: full experience
@@ -1010,7 +994,17 @@ if (savedPin) {
   tick();
 }
 
-/* ---------- POLL ---------- */
+/* ===================================================
+   MAIN TRACKER LOOP (POLL + STATE UPDATE)
+=================================================== */
+  
+/* ---------------------------------------------------
+   API CONTRACT
+   proxyFirebase MUST return:
+   { lat: number, lng: number, ts: ISO string }
+   Do not change without backend update.
+--------------------------------------------------- */
+
   async function tick(){
   const dot=statusDot;
   try{
@@ -1021,9 +1015,11 @@ if (savedPin) {
 const age = Date.now() - ts;
 
 /* ---------- STALE / FRESH CHECK ---------- */
+    
 const gpsFresh = age <= STALE_MS;
 
 /* ---------- SUNSET / NIGHT MODE ---------- */
+    
 if (gpsFresh && isAfterSunset(p.lat, p.lng)) {
   document.body.classList.add("night-mode");
 } else {
@@ -1031,6 +1027,7 @@ if (gpsFresh && isAfterSunset(p.lat, p.lng)) {
 }
     
 /* ---------- STALE HANDLING ---------- */
+    
 if (age <= STALE_MS) {
   // ✅ Fresh GPS
   staleSince = null;
@@ -1058,10 +1055,12 @@ animateMarkerTo(ll);
 
 
  // ---------- TRACK MOTION HISTORY ----------
+    
 const now = Date.now();
 pushFix(p.lat, p.lng, now);
 
     // ---------- GPX ETA ----------
+    
 let etaSeconds = Infinity;
 let offRoute = false;
 let passedSubscriber = false;
@@ -1103,6 +1102,7 @@ if (speed !== null && moving && gpsFresh) {
 }
     
     // ---------- SNOW (Dynamic Intensity) ----------
+    
     const night = document.body.classList.contains("night-mode");
     const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
     
