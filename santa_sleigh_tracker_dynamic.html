@@ -332,13 +332,65 @@ if (!apiUrl) { alert("Missing ?api=YOUR_SCRIPT_URL"); throw new Error("API missi
 sessionStorage.setItem("SANTA_API", apiUrl);
 if (location.search.includes("api=")) history.replaceState(null, "", location.pathname);
 
+  /* ===================================================
+   GLOBAL CONFIG
+=================================================== */
+
+const CONFIG = {
+  // Timing
+  REFRESH_MS: 3000,
+  STALE_MS: 5 * 60 * 1000,
+
+  // Motion detection
+  MOTION_WINDOW_MS: 25 * 1000,
+  MOVE_THRESHOLD_METERS: 8,
+
+  // ETA calculation
+  MIN_FIXES_FOR_ETA: 3,
+  MIN_ETA_WINDOW_MS: 15 * 1000,
+
+  // GPX snapping
+  OFF_ROUTE_THRESHOLD_METERS: 60,
+  GPX_SEARCH: {
+    AHEAD: 80,
+    BACK: 5,
+    EARLY_EXIT_METERS: 25
+  },
+
+  // Snow behaviour
+  SNOW: {
+    ETA_MINUTES_MAX: 15,
+    LEVELS: {
+      LIGHT: 1,
+      HEAVY: 2,
+      BLIZZARD: 3
+    },
+    MOBILE_BASE_COUNT: 30,
+    DESKTOP_BASE_COUNT: 60,
+    MULTIPLIERS: [0, 1, 2.5, 5]
+  },
+
+  // Battery throttling
+  BATTERY: {
+    LOW: 0.4,
+    CRITICAL: 0.2,
+    FRAME_SKIP: {
+      LOW: 2,
+      CRITICAL: 3
+    }
+  },
+
+  // Map defaults
+  LAPLAND: [66.5436, 25.8473]
+};
+
 /* ===================================================
    TRACKER CONFIG (UNCHANGED)
 =================================================== */
 const MIN_FIXES_FOR_ETA = 3;
 const MIN_ETA_WINDOW_MS = 15 * 1000; // 15 seconds
 
-const REFRESH = 3000;
+const REFRESH = CONFIG.REFRESH_MS;
 const STALE_MS = 5 * 60 * 1000;
 const LAPLAND = [66.5436,25.8473];
 
@@ -348,10 +400,12 @@ const FALLBACK = {
   end: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png"
 };
   
-const MOTION_WINDOW_MS = 25 * 1000; // 25 seconds
-const MOVE_THRESHOLD_METERS = 8;    // slow sleigh-safe threshold
+const MOTION_WINDOW_MS = CONFIG.MOTION_WINDOW_MS; // 25 seconds
+const MOVE_THRESHOLD_METERS = CONFIG.MOVE_THRESHOLD_METERS; // slow sleigh-safe threshold
 
-  const OFF_ROUTE_THRESHOLD_METERS = 60;
+
+  const OFF_ROUTE_THRESHOLD_METERS =
+  CONFIG.OFF_ROUTE_THRESHOLD_METERS;
 
 let map, marker, follow=true, firstFix=true, lastFix=null;
 let awaitingPin = false;
@@ -394,10 +448,12 @@ resizeSnow();
 function createSnow(level) {
   // Mobile gets fewer flakes to save battery
   const isMobile = window.innerWidth < 600;
-  const baseCount = isMobile ? 30 : 60;
+  const baseCount = isMobile
+  ? CONFIG.SNOW.MOBILE_BASE_COUNT
+  : CONFIG.SNOW.DESKTOP_BASE_COUNT;
   
   // 1=Light (1x), 2=Medium (2.5x), 3=Blizzard (5x)
-  const multipliers = [0, 1, 2.5, 5]; 
+  const multipliers = CONFIG.SNOW.MULTIPLIERS;
   const count = Math.floor(baseCount * multipliers[level]);
 
   snowflakes = Array.from({ length: count }, () => ({
@@ -726,8 +782,9 @@ function haversineMeters(a, b) {
   function snapToGpxIndex(pos) {
   if (!gpxRoute) return null;
 
-  const SEARCH_AHEAD = 80;   // ~80 GPX points forward
-  const SEARCH_BACK = 5;     // tiny back allowance for jitter
+  const { AHEAD, BACK, EARLY_EXIT_METERS } = CONFIG.GPX_SEARCH; // ~80 GPX points forward
+  const start = Math.max(0, lastSnapIndex - BACK); // tiny back allowance for jitter
+  const end = Math.min(gpxRoute.length - 1, lastSnapIndex + AHEAD);
 
   const start = Math.max(0, lastSnapIndex - SEARCH_BACK);
   const end = Math.min(
@@ -747,8 +804,7 @@ function haversineMeters(a, b) {
     }
 
     // 🔥 Early exit: distance rising after minimum
-    if (i > lastSnapIndex && d > bestDist + 25) {
-      break;
+    if (i > lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break;
     }
   }
 
