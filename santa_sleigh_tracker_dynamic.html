@@ -652,16 +652,30 @@ function haversineMeters(a, b) {
   function snapToGpxIndex(pos) {
   if (!gpxRoute) return null;
 
+  const SEARCH_AHEAD = 80;   // ~80 GPX points forward
+  const SEARCH_BACK = 5;     // tiny back allowance for jitter
+
+  const start = Math.max(0, lastSnapIndex - SEARCH_BACK);
+  const end = Math.min(
+    gpxRoute.length - 1,
+    lastSnapIndex + SEARCH_AHEAD
+  );
+
   let best = lastSnapIndex;
   let bestDist = Infinity;
 
-  for (let i = lastSnapIndex; i < gpxRoute.length; i++) {
+  for (let i = start; i <= end; i++) {
     const d = haversineMeters(pos, gpxRoute[i]);
+
     if (d < bestDist) {
       bestDist = d;
       best = i;
     }
-    if (d > bestDist + 30) break;
+
+    // 🔥 Early exit: distance rising after minimum
+    if (i > lastSnapIndex && d > bestDist + 25) {
+      break;
+    }
   }
 
   lastSnapIndex = best;
