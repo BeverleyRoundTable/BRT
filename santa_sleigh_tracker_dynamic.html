@@ -1316,7 +1316,9 @@ function subscribeUser(lat, lng) {
     return;
   }
 
-  if (!firebaseBaseUrl) {
+  // Note: We check apiUrl here instead of firebaseBaseUrl, because 
+  // the subscription goes through the API proxy now.
+  if (!apiUrl) {
     alert("Notifications are not available for this tracker");
     return;
   }
@@ -1327,51 +1329,34 @@ function subscribeUser(lat, lng) {
 
   showNotifyMarker(lat, lng, true);
 
-  // NEW (Secure) - ADD THIS BLOCK
-const subscribeUrl = `${apiUrl}?function=subscribe` +
-  `&lat=${lat}` +
-  `&lng=${lng}` +
-  `&email=${encodeURIComponent(email || "")}`;
+  // ✅ NEW SECURE SUBSCRIPTION CALL
+  const subscribeUrl = `${apiUrl}?function=subscribe` +
+    `&lat=${lat}` +
+    `&lng=${lng}` +
+    `&email=${encodeURIComponent(email || "")}`;
 
-fetch(subscribeUrl, { method: "GET" }) // GET triggers the script's doGet
-.then(r => r.json())
-.then(data => {
-  if (data.ok) {
-    sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+  fetch(subscribeUrl, { method: "GET" }) // GET triggers the script's doGet
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
 
-    if (email) {
-      alert("🎅 You're signed up! We’ll email you when Santa is close.");
-    } else {
-      alert(
-        "🎅 You're signed up!\n\n" +
-        "⚠️ Keep this page open to receive the notification.\n" +
-        "For guaranteed alerts next time, add your email."
-      );
-    }
-  } else {
-    alert("❌ Error: " + (data.error || "Could not subscribe."));
-  }
-})
-.catch(() => {
-  alert("❌ Network error. Please try again.");
-});
-  
-.then(() => {
-  sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-
-  if (email) {
-    alert("🎅 You're signed up! We’ll email you when Santa is close.");
-  } else {
-    alert(
-      "🎅 You're signed up!\n\n" +
-      "⚠️ Keep this page open to receive the notification.\n" +
-      "For guaranteed alerts next time, add your email."
-    );
-  }
-})
-.catch(() => {
-  alert("❌ Could not save notification — please try again.");
-});
+        if (email) {
+          alert("🎅 You're signed up! We’ll email you when Santa is close.");
+        } else {
+          alert(
+            "🎅 You're signed up!\n\n" +
+            "⚠️ Keep this page open to receive the notification.\n" +
+            "For guaranteed alerts next time, add your email."
+          );
+        }
+      } else {
+        alert("❌ Error: " + (data.error || "Could not subscribe."));
+      }
+    })
+    .catch(() => {
+      alert("❌ Network error. Please try again.");
+    });
 }
   
 init();
