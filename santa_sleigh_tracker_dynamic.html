@@ -1059,9 +1059,9 @@ if (savedPin) {
   try{
     const p=await loadJSON(apiUrl+"?function=proxyFirebase");
     if(!valid(p.lat,p.lng)) throw 0;
-    const ts = new Date(p.ts).getTime();
-    
-const age = Date.now() - ts;
+    const ts = new Date(p.ts).getTime();    
+    if (!Number.isFinite(ts)) throw 0;
+    const age = Date.now() - ts;
 
 /* ---------- STALE / FRESH CHECK ---------- */
     
@@ -1270,9 +1270,8 @@ if (passedSubscriber) {
     setDimUI(false);
   }
 }
-
-init();
-
+setTimeout(tick, REFRESH);
+    
 /* ===================================================
    NOTIFICATION SIGN-UP (STEP 1)
 =================================================== */
