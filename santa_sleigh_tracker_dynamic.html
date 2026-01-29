@@ -461,6 +461,7 @@ let gpxRoute = null;           // [{lat,lng,dist}]
 let gpxTotalDistance = 0;      // meters
 let gpxLoaded = false;
 let lastSnapIndex = 0;
+let hardFailSince = null;
 
 /* ===================================================
    RENDERING & VISUAL HELPERS
@@ -1054,215 +1055,85 @@ if (savedPin) {
    Do not change without backend update.
 --------------------------------------------------- */
 
-  async function tick(){
-  const dot=statusDot;
-  try{
-    const p=await loadJSON(apiUrl+"?function=proxyFirebase");
-    if(!valid(p.lat,p.lng)) throw 0;
+ async function tick() {
+  const dot = statusDot;
+
+  try {
+    const p = await loadJSON(apiUrl + "?function=proxyFirebase");
+    hardFailSince = null;
+
+    if (!valid(p.lat, p.lng)) throw 0;
+
     const ts = new Date(p.ts).getTime();
-    
-const age = Date.now() - ts;
+    const age = Date.now() - ts;
+    const gpsFresh = age <= STALE_MS;
 
-/* ---------- STALE / FRESH CHECK ---------- */
-    
-const gpsFresh = age <= STALE_MS;
+    if (gpsFresh && isAfterSunset(p.lat, p.lng)) {
+      document.body.classList.add("night-mode");
+    } else {
+      document.body.classList.remove("night-mode");
+    }
 
-/* ---------- SUNSET / NIGHT MODE ---------- */
-    
-if (gpsFresh && isAfterSunset(p.lat, p.lng)) {
-  document.body.classList.add("night-mode");
-} else {
-  document.body.classList.remove("night-mode");
-}
-    
-/* ---------- STALE HANDLING ---------- */
-    
-if (age <= STALE_MS) {
-  // ✅ Fresh GPS
-  staleSince = null;
-  lastGoodFix = { lat: p.lat, lng: p.lng };
+    if (age <= STALE_MS) {
+      staleSince = null;
+      lastGoodFix = { lat: p.lat, lng: p.lng };
+    } else {
+      if (!staleSince) staleSince = ts;
 
-} else {
-  // ⚠️ GPS already stale
-  if (!staleSince) staleSince = ts;
+      if (Date.now() - staleSince > STALE_MS) {
+        marker.setLatLng(LAPLAND);
+        statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
+        dot.style.display = "none";
+        setDimUI(false);
+        firstFix = true;
+        setTimeout(tick, REFRESH);
+        return;
+      }
 
-  if (Date.now() - staleSince > STALE_MS) {
-    throw 0;
-  }
-
-  if (lastGoodFix) {
-    animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
-    statusBox.textContent = "🎅 Santa is nearby…";
-    setTimeout(tick, REFRESH);
-    return;
-  }
-}
+      if (lastGoodFix) {
+        animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
+        statusBox.textContent = "🎅 Santa is nearby…";
+        setTimeout(tick, REFRESH);
+        return;
+      }
+    }
 
     const visualPos = getVisualLatLng({ lat: p.lat, lng: p.lng });
-const ll = L.latLng(visualPos.lat, visualPos.lng);
-animateMarkerTo(ll);
+    const ll = L.latLng(visualPos.lat, visualPos.lng);
+    animateMarkerTo(ll);
 
+    const now = Date.now();
+    pushFix(p.lat, p.lng, now);
 
- // ---------- TRACK MOTION HISTORY ----------
-    
-const now = Date.now();
-pushFix(p.lat, p.lng, now);
+    // ⬇️ ALL your ETA / snow / notifications / status logic
+    // ⬇️ MUST LIVE HERE (inside try)
 
-    // ---------- GPX ETA ----------
-    
-let etaSeconds = Infinity;
-let offRoute = false;
-let passedSubscriber = false;
+  } catch {
+    if (!hardFailSince) hardFailSince = Date.now();
 
-if (gpxLoaded) {
-  const santaPos = { lat: p.lat, lng: p.lng };
-  const snap = snapToGpxIndex(santaPos);
-
-  if (snap && snap.distance <= OFF_ROUTE_THRESHOLD_METERS) {
-
-    // 🔔 If user subscribed, check if Santa already passed them
-    if (notifyMarker) {
-      const userPos = notifyMarker.getLatLng();
-      const userSnap = snapSubscriberToGpx(userPos);
-
-      if (userSnap && snap.point.dist > userSnap.point.dist + 30) {
-        passedSubscriber = true;
-      }
+    if (lastGoodFix) {
+      animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
+      statusBox.textContent = "🎅 Santa is nearby…";
+      dot.style.display = "none";
+      setDimUI(false);
     }
 
-    if (!passedSubscriber) {
-      const remainingMeters = Math.max(
-        0,
-        gpxTotalDistance - snap.point.dist
-      );
+    if (Date.now() - hardFailSince > STALE_MS) {
+      marker.setLatLng(LAPLAND);
+      if (follow) map.setView(LAPLAND, 5, { animate: true, duration: 2 });
+      statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
+      firstFix = true;
 
-      const speed = calculateStableSpeedMps_(recentFixes);
-      const moving = isSleighMoving();
-
-if (speed !== null && moving && gpsFresh) {
-  etaSeconds = remainingMeters / speed;
-}
-
+      if (animRaf) cancelAnimationFrame(animRaf);
+      animRaf = null;
+      animCurrent = null;
+      animTarget = null;
     }
-
-  } else {
-    offRoute = true;
-  }
-}
-    
-    // ---------- SNOW (Dynamic Intensity) ----------
-    
-    const night = document.body.classList.contains("night-mode");
-    const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
-    
-    // Default: Off
-    let snowOn = false;
-    let snowLevel = 1;
-
-    // Only snow if: Fresh Data + Night Time + Moving + Close enough
-    if (gpsFresh && night && isSleighMoving() && etaMinutes < 15) {
-      snowOn = true;
-
-      if (etaMinutes < 2) {
-        snowLevel = 3; // ❄️ BLIZZARD (0-2 mins)
-      } else if (etaMinutes < 7) {
-        snowLevel = 2; // 🌨️ HEAVY (2-7 mins)
-      } else {
-        snowLevel = 1; // 🌧️ LIGHT (7-15 mins)
-      }
-    }
-
-    const { maxLevel } = getSnowThrottle();
-setSnow(snowOn, Math.min(snowLevel, maxLevel));
-
-    // 🔔 Browser notification backup (page-open only)
-if (
-  notifyMarker &&
-  !browserNotified &&
-  !passedSubscriber
-) {
-  const santa = { lat: p.lat, lng: p.lng };
-  const user = notifyMarker.getLatLng();
-
-  const meters = haversineMeters(santa, user);
-
-  // ~250m ≈ ~5 minutes at sleigh pace
-  if (meters < 250) {
-  browserNotified = true;
-  sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
-
-  fireBrowserNotification(
-    "🎅 Santa is nearly here!",
-    "He’s about 5 minutes away — get ready! 🎄"
-  );
-}
-}
-    
-    if (firstFix) {
-  map.setView(ll, 16);
-  firstFix = false;
-}
-
-    const moving = isSleighMoving();
-
-dot.style.display = "block";
-dot.className = moving
-  ? "status-dot dot-moving"
-  : "status-dot dot-stopped";
-
-if (passedSubscriber) {
-  statusBox.textContent = "🎄 Santa has just been here!";
-  setDimUI(false);
-
-} else if (isFinite(etaSeconds)) {
-  const mins = Math.round(etaSeconds / 60);
-  setDimUI(mins > 45);
-
-  if (mins > 45) {
-    statusBox.textContent = "🎅 Santa is out delivering this evening…";
-
-  } else if (mins > 15) {
-    statusBox.textContent = "🎅 Santa is on the way…";
-
-  } else if (mins > 5) {
-    statusBox.textContent = "🎅 Santa is nearly here!";
-
-  } else {
-    statusBox.textContent =
-      `🎅 Santa is ${Math.max(1, mins)} min away!`;
   }
 
-} else if (offRoute && moving) {
-  setDimUI(false);
-  statusBox.textContent = "🎅 Santa is nearby…";
-
-} else if (moving) {
-  setDimUI(false);
-  statusBox.textContent = "🎅 Santa is out spreading joy!";
-
-} else {
-  setDimUI(false);
-  statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
+  setTimeout(tick, REFRESH);
 }
-
-  }catch{
-    marker.setLatLng(LAPLAND);
-if (follow) map.setView(LAPLAND,5,{animate:true,duration:2});
-dot.style.display="none";
-    setDimUI(false);
-statusBox.textContent="🎄 Santa is in Lapland preparing for Christmas!";
-firstFix=true;
-    if (animRaf) cancelAnimationFrame(animRaf);
-animRaf = null;
-animCurrent = null;
-animTarget = null;
-
-  }
-  setTimeout(tick,REFRESH);
-}
-
-init();
-
+  
 /* ===================================================
    NOTIFICATION SIGN-UP (STEP 1)
 =================================================== */
