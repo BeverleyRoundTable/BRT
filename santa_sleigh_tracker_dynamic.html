@@ -1105,11 +1105,11 @@ if (age <= STALE_MS) {
 }
 
   if (lastGoodFix) {
-    animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
-    statusBox.textContent = "🎅 Santa is nearby…";
-    setTimeout(tick, REFRESH);
-    return;
-  }
+  animateMarkerTo(
+    L.latLng(lastGoodFix.lat, lastGoodFix.lng)
+  );
+  statusBox.textContent = "🎅 Santa is nearby…";
+  return;
 }
 
     const visualPos = getVisualLatLng({ lat: p.lat, lng: p.lng });
