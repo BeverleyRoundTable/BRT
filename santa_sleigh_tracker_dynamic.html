@@ -1099,7 +1099,8 @@ if (age <= STALE_MS) {
   animRaf = null;
   animCurrent = null;
   animTarget = null;
-
+    
+// IMPORTANT: return here so we don't schedule tick twice
   setTimeout(tick, REFRESH);
   return;
 }
