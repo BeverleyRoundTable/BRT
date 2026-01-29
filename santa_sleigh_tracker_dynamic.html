@@ -23,13 +23,11 @@ html,body{
 
 /* ---------- VIEWPORT SAFE ZONE ---------- */
 :root{
-  /* Desktop default */
   --ui-bottom-safe: 72px;
   --donate-bottom: calc(var(--ui-bottom-safe) + 92px);
   --info-bottom: var(--ui-bottom-safe);
 }
 
-/* Mobile browsers with notches */
 @supports(padding: env(safe-area-inset-bottom)){
   :root{
     --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom));
@@ -238,9 +236,9 @@ body.snowing #snow {
   filter: drop-shadow(0 0 4px white);
 }
 
-/* ---------- NEW MODAL STYLES ---------- */
+/* ---------- SUBSCRIPTION MODAL ---------- */
 .modal-overlay {
-  display: none; /* hidden by default */
+  display: none; 
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.85);
@@ -250,7 +248,6 @@ body.snowing #snow {
   backdrop-filter: blur(4px);
   padding: 20px;
 }
-
 .modal-box {
   background: #1a1a1a;
   padding: 24px;
@@ -262,26 +259,22 @@ body.snowing #snow {
   box-shadow: 0 10px 40px rgba(0,0,0,0.6);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
-
 .modal-title {
   font-size: 1.2em;
   font-weight: 800;
   margin: 0 0 8px 0;
   color: #ffd700;
 }
-
 .modal-desc {
   font-size: 0.9em;
   color: #ccc;
   margin-bottom: 20px;
   line-height: 1.4;
 }
-
 .modal-input {
   width: 100%;
   padding: 14px;
@@ -290,22 +283,18 @@ body.snowing #snow {
   border: 2px solid #444;
   border-radius: 12px;
   color: white;
-  font-size: 16px; /* prevent iOS zoom */
+  font-size: 16px;
   box-sizing: border-box;
   text-align: center;
-  transition: border-color 0.2s;
 }
-
 .modal-input:focus {
   outline: none;
   border-color: #ffd700;
 }
-
 .modal-btns {
   display: flex;
   gap: 12px;
 }
-
 .btn-full {
   flex: 1;
   padding: 12px;
@@ -316,14 +305,11 @@ body.snowing #snow {
   border: none;
   transition: transform 0.1s;
 }
-
 .btn-full:active { transform: scale(0.96); }
-
 .btn-cancel {
   background: #333;
   color: #aaa;
 }
-
 .btn-confirm {
   background: #d31c1c;
   color: white;
@@ -360,9 +346,7 @@ body.snowing #snow {
     <div class="modal-desc">
       Want to know when Santa is nearby? Enter your email below (optional).
     </div>
-    
     <input type="email" id="subEmail" class="modal-input" placeholder="santa@example.com">
-    
     <div class="modal-btns">
       <button class="btn-full btn-cancel" onclick="closeSubscribeModal()">Cancel</button>
       <button class="btn-full btn-confirm" onclick="confirmSubscription()">Notify Me</button>
@@ -375,12 +359,7 @@ body.snowing #snow {
 
 <script>
   /* ===================================================
-   SANTA SLEIGH TRACKER
-   ---------------------------------------------------
-   • Live GPS tracking with GPX snapping
-   • ETA estimation with motion smoothing
-   • Battery + visibility aware snow effects
-   • Email + browser proximity notifications
+   SANTA SLEIGH TRACKER - CORE LOGIC
 =================================================== */
 
   let pageVisible = !document.hidden;
@@ -724,15 +703,10 @@ function animateMarkerTo(targetLL) {
 
     notifyMarker.once("click", () => {
       awaitingPin = false;
-      
       showNotifyMarker(lat, lng, true);
+      sessionStorage.setItem("SANTA_NOTIFY_POINT", JSON.stringify({ lat, lng }));
 
-      sessionStorage.setItem(
-        "SANTA_NOTIFY_POINT",
-        JSON.stringify({ lat, lng })
-      );
-
-      // ✅ OPEN MODAL INSTEAD OF PROMPT
+      // ✅ Use Modal instead of Prompt
       openSubscribeModal(lat, lng);
       
       pinPreview = null;
@@ -781,38 +755,49 @@ function haversineMeters(a, b) {
   return (last.cumulative - first.cumulative) >= MOVE_THRESHOLD_METERS;
 }
 
+  /* ✅ ROBUST GPX LOADER (with Timeout) */
   async function loadGpxRoute(url) {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error("GPX fetch failed");
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-  const text = await res.text();
-  const xml = new DOMParser().parseFromString(text, "text/xml");
-  const pts = [...xml.getElementsByTagName("trkpt")];
+      const res = await fetch(url, { cache: "no-store", signal: controller.signal });
+      clearTimeout(id);
 
-  if (pts.length < 2) throw new Error("GPX too short");
+      if (!res.ok) throw new Error(`GPX 404/Error`);
 
-  let dist = 0;
-  let route = [];
+      const text = await res.text();
+      const xml = new DOMParser().parseFromString(text, "text/xml");
+      const pts = [...xml.getElementsByTagName("trkpt")];
 
-  for (let i = 0; i < pts.length; i++) {
-    const lat = parseFloat(pts[i].getAttribute("lat"));
-    const lng = parseFloat(pts[i].getAttribute("lon"));
+      if (pts.length < 2) throw new Error("GPX too short");
 
-    if (i > 0) {
-      dist += haversineMeters(
-        route[i - 1],
-        { lat, lng }
-      );
+      let dist = 0;
+      let route = [];
+
+      for (let i = 0; i < pts.length; i++) {
+        const lat = parseFloat(pts[i].getAttribute("lat"));
+        const lng = parseFloat(pts[i].getAttribute("lon"));
+
+        if (i > 0) {
+          dist += haversineMeters(route[i - 1], { lat, lng });
+        }
+        route.push({ lat, lng, dist });
+      }
+
+      gpxRoute = route;
+      gpxTotalDistance = dist;
+      gpxLoaded = true;
+      lastSnapIndex = 0;
+      console.log("✅ GPX Loaded:", Math.round(dist) + "m");
+
+    } catch (e) {
+      console.warn("⚠️ GPX Fallback active:", e.message);
+      gpxLoaded = false;
+      gpxRoute = null;
+      if (notifyBtn) notifyBtn.style.display = "none";
     }
-
-    route.push({ lat, lng, dist });
   }
-
-  gpxRoute = route;
-  gpxTotalDistance = dist;
-  gpxLoaded = true;
-  lastSnapIndex = 0;
-}
 
   function snapToGpxIndex(pos) {
   if (!gpxRoute) return null;
@@ -936,17 +921,8 @@ const todayRoute = (data.routes || []).find(r =>
 if (!todayRoute) {
   notifyBtn.style.display = "none";
 } else {
-  try {
+    // ✅ ROBUST GPX CALL (No try/catch needed here, handled inside)
     await loadGpxRoute(todayRoute.gpxUrl);
-    console.log(
-      "GPX loaded:",
-      gpxTotalDistance.toFixed(0),
-      "meters"
-    );
-  } catch (e) {
-    console.warn("GPX disabled:", e.message);
-    notifyBtn.style.display = "none";
-  }
 }
 
   // ---------- MAP ----------
