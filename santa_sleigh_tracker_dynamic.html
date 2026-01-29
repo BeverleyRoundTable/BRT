@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
-  <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+<script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
   
 <style>
 html,body{
@@ -25,8 +25,6 @@ html,body{
 :root{
   /* Desktop default */
   --ui-bottom-safe: 72px;
-
-  /* ✅ FIX: Donate ABOVE Follow */
   --donate-bottom: calc(var(--ui-bottom-safe) + 92px);
   --info-bottom: var(--ui-bottom-safe);
 }
@@ -35,8 +33,6 @@ html,body{
 @supports(padding: env(safe-area-inset-bottom)){
   :root{
     --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom));
-
-    /* ✅ FIX mirrored for mobile */
     --donate-bottom: calc(var(--ui-bottom-safe) + 92px);
     --info-bottom: var(--ui-bottom-safe);
   }
@@ -92,7 +88,6 @@ html,body{
   bottom: var(--info-bottom);
   left:50%;
   transform:translateX(-50%);
-
   background:rgba(20,20,20,.94);
   padding:10px 14px;
   border-radius:14px;
@@ -172,24 +167,21 @@ html,body{
   :root{
     --ui-bottom-safe: calc(64px + env(safe-area-inset-bottom));
   }
-
   .donate-box{
     width:85%;
     max-width:360px;
   }
-
   .info-popup{
     font-size:.8em;
     padding:8px 12px;
   }
-
   .status-popup{
     font-size:.95em;
     padding:12px 16px;
   }
 }
 
-  /* ---------- AUTO DIM MODE ---------- */
+/* ---------- AUTO DIM MODE ---------- */
 body.dim-ui .donate-box,
 body.dim-ui .info-popup,
 body.dim-ui .status-popup{
@@ -197,44 +189,37 @@ body.dim-ui .status-popup{
   filter: saturate(0.85);
   transition: opacity 600ms ease, filter 600ms ease;
 }
-
 body.dim-ui .donate-box:hover,
 body.dim-ui .info-popup:hover,
 body.dim-ui .status-popup:hover{
   opacity: 0.75;
 }
-
-  /* ---------- CINEMATIC DIM POLISH ---------- */
 body.dim-ui * {
   transition: opacity 600ms ease, filter 600ms ease;
 }
-
 body.dim-ui #map {
   filter: brightness(0.85);
 }
 
-   /* ---------- SUNSET ---------- */
-  body.night-mode #map {
+/* ---------- SUNSET ---------- */
+body.night-mode #map {
   filter: brightness(0.75) saturate(0.9) hue-rotate(-8deg);
 }
-
 body.night-mode .status-popup {
   background: rgba(12,16,28,0.95);
 }
 
-  #snow {
+#snow {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 1500; /* above map, below UI */
+  z-index: 1500;
   opacity: 0;
   transition: opacity 800ms ease;
 }
-
 body.snowing #snow {
-  opacity: 0.35; /* subtle */
+  opacity: 0.35;
 }
-
 body::after {
   content: '';
   position: fixed;
@@ -243,19 +228,108 @@ body::after {
   pointer-events: none;
   opacity: 0;
   transition: opacity 1.5s ease;
-  z-index: 1400; /* Below snow, above map */
+  z-index: 1400;
 }
-
 body.snowing::after {
   opacity: 1;
 }
-
-/* Update your existing #snow rule to be softer */
 body.snowing #snow {
   opacity: 1; 
-  filter: drop-shadow(0 0 4px white); /* Makes snow 'glow' slightly */
+  filter: drop-shadow(0 0 4px white);
 }
-  
+
+/* ---------- NEW MODAL STYLES ---------- */
+.modal-overlay {
+  display: none; /* hidden by default */
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 5000;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  padding: 20px;
+}
+
+.modal-box {
+  background: #1a1a1a;
+  padding: 24px;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-title {
+  font-size: 1.2em;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  color: #ffd700;
+}
+
+.modal-desc {
+  font-size: 0.9em;
+  color: #ccc;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 20px;
+  background: #2a2a2a;
+  border: 2px solid #444;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px; /* prevent iOS zoom */
+  box-sizing: border-box;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.modal-input:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+
+.modal-btns {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-full {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.95em;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s;
+}
+
+.btn-full:active { transform: scale(0.96); }
+
+.btn-cancel {
+  background: #333;
+  color: #aaa;
+}
+
+.btn-confirm {
+  background: #d31c1c;
+  color: white;
+  box-shadow: 0 4px 12px rgba(211, 28, 28, 0.3);
+}
+
 </style>
 </head>
 
@@ -280,6 +354,22 @@ body.snowing #snow {
   <button class="btn" id="notifyBtn">🔔 Notify Me</button>
 </div>
 
+<div id="emailModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title">🔔 Get Notified</div>
+    <div class="modal-desc">
+      Want to know when Santa is nearby? Enter your email below (optional).
+    </div>
+    
+    <input type="email" id="subEmail" class="modal-input" placeholder="santa@example.com">
+    
+    <div class="modal-btns">
+      <button class="btn-full btn-cancel" onclick="closeSubscribeModal()">Cancel</button>
+      <button class="btn-full btn-confirm" onclick="confirmSubscription()">Notify Me</button>
+    </div>
+  </div>
+</div>
+
 <div id="map"></div>
 <canvas id="snow"></canvas>
 
@@ -291,26 +381,17 @@ body.snowing #snow {
    • ETA estimation with motion smoothing
    • Battery + visibility aware snow effects
    • Email + browser proximity notifications
-
-   ⚠️ This file is intentionally monolithic for
-   deployment simplicity.
-=================================================== */
-
-  /* ===================================================
-   PAGE VISIBILITY & BATTERY AWARENESS
 =================================================== */
 
   let pageVisible = !document.hidden;
 
 document.addEventListener("visibilitychange", () => {
   pageVisible = !document.hidden;
-
-  // Hard pause snow when hidden
   if (!pageVisible) {
-  snowActive = false;
-  currentSnowLevel = 0;
-  document.body.classList.remove("snowing");
-}
+    snowActive = false;
+    currentSnowLevel = 0;
+    document.body.classList.remove("snowing");
+  }
 });
   
   let batteryState = {
@@ -322,12 +403,10 @@ document.addEventListener("visibilitychange", () => {
 if ("getBattery" in navigator) {
   navigator.getBattery().then(battery => {
     batteryState.supported = true;
-
     function updateBattery() {
       batteryState.charging = battery.charging;
       batteryState.level = battery.level;
     }
-
     updateBattery();
     battery.addEventListener("chargingchange", updateBattery);
     battery.addEventListener("levelchange", updateBattery);
@@ -335,7 +414,7 @@ if ("getBattery" in navigator) {
 }
 
 /* ===================================================
-   API HANDLING — HIDDEN + REFRESH SAFE
+   API HANDLING
 =================================================== */
 
 const params = new URLSearchParams(location.search);
@@ -347,32 +426,19 @@ if (!apiUrl) { alert("Missing ?api=YOUR_SCRIPT_URL"); throw new Error("API missi
 sessionStorage.setItem("SANTA_API", apiUrl);
 if (location.search.includes("api=")) history.replaceState(null, "", location.pathname);
 
-  /* ===================================================
+/* ===================================================
    GLOBAL CONFIG
 =================================================== */
 
 const CONFIG = {
-  // ⏱ Timing
   REFRESH_MS: 3000,
   STALE_MS: 5 * 60 * 1000,
-
-  // 🛷 Motion detection
   MOTION_WINDOW_MS: 25 * 1000,
   MOVE_THRESHOLD_METERS: 8,
-
-  // 📐 ETA calculation
   MIN_FIXES_FOR_ETA: 3,
   MIN_ETA_WINDOW_MS: 15 * 1000,
-
-  // 🗺 GPX snapping
   OFF_ROUTE_THRESHOLD_METERS: 60,
-  GPX_SEARCH: {
-    AHEAD: 80,
-    BACK: 5,
-    EARLY_EXIT_METERS: 25
-  },
-
-  // ❄ Snow behaviour
+  GPX_SEARCH: { AHEAD: 80, BACK: 5, EARLY_EXIT_METERS: 25 },
   SNOW: {
     ETA_MINUTES_MAX: 15,
     LEVELS: { LIGHT: 1, HEAVY: 2, BLIZZARD: 3 },
@@ -380,15 +446,11 @@ const CONFIG = {
     DESKTOP_BASE_COUNT: 60,
     MULTIPLIERS: [0, 1, 2.5, 5]
   },
-
-  // 🔋 Battery throttling
   BATTERY: {
     LOW: 0.4,
     CRITICAL: 0.2,
     FRAME_SKIP: { LOW: 2, CRITICAL: 3 }
   },
-
-  // 🌍 Defaults
   LAPLAND: [66.5436, 25.8473]
 };
 
@@ -422,10 +484,6 @@ const donateLink = document.getElementById("donateLink");
 const donateBox = document.getElementById("donateBox");
 const STALE_MS = CONFIG.STALE_MS;
 
-/* ===================================================
-   TRACKER CONFIG (UNCHANGED)
-=================================================== */
-
 const REFRESH = CONFIG.REFRESH_MS;
 
 const FALLBACK = {
@@ -434,12 +492,9 @@ const FALLBACK = {
   end: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png"
 };
   
-const MOTION_WINDOW_MS = CONFIG.MOTION_WINDOW_MS; // 25 seconds
-const MOVE_THRESHOLD_METERS = CONFIG.MOVE_THRESHOLD_METERS; // slow sleigh-safe threshold
-
-
-  const OFF_ROUTE_THRESHOLD_METERS =
-  CONFIG.OFF_ROUTE_THRESHOLD_METERS;
+const MOTION_WINDOW_MS = CONFIG.MOTION_WINDOW_MS;
+const MOVE_THRESHOLD_METERS = CONFIG.MOVE_THRESHOLD_METERS;
+const OFF_ROUTE_THRESHOLD_METERS = CONFIG.OFF_ROUTE_THRESHOLD_METERS;
 
 let map, marker, follow=true, firstFix=true, lastFix=null;
 let awaitingPin = false;
@@ -450,15 +505,14 @@ let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
 let recentFixes = [];
 let lastGoodFix = null;
 let staleSince = null;
-let animCurrent = null;     // L.LatLng
-let animTarget = null;      // L.LatLng
+let animCurrent = null;
+let animTarget = null;
 let animStart = 0;
-let animDuration = 900;     // ms (tweak: 700–1200 feels good)
+let animDuration = 900;
 let animRaf = null;
 
-  // ================= GPX ROUTE STATE =================
-let gpxRoute = null;           // [{lat,lng,dist}]
-let gpxTotalDistance = 0;      // meters
+let gpxRoute = null;
+let gpxTotalDistance = 0;
 let gpxLoaded = false;
 let lastSnapIndex = 0;
 
@@ -471,7 +525,7 @@ const snowCtx = snowCanvas.getContext("2d");
 
 let snowflakes = [];
 let snowActive = false;
-let currentSnowLevel = 0; // 0=Off, 1=Light, 2=Medium, 3=Blizzard
+let currentSnowLevel = 0; 
 
 function resizeSnow() {
   snowCanvas.width = window.innerWidth;
@@ -480,15 +534,12 @@ function resizeSnow() {
 window.addEventListener("resize", resizeSnow);
 resizeSnow();
 
-// ✅ NEW: Accepts 'level' (1, 2, or 3) to determine density
 function createSnow(level) {
-  // Mobile gets fewer flakes to save battery
   const isMobile = window.innerWidth < 600;
   const baseCount = isMobile
   ? CONFIG.SNOW.MOBILE_BASE_COUNT
   : CONFIG.SNOW.DESKTOP_BASE_COUNT;
   
-  // 1=Light (1x), 2=Medium (2.5x), 3=Blizzard (5x)
   const multipliers = CONFIG.SNOW.MULTIPLIERS;
   const count = Math.floor(baseCount * multipliers[level]);
 
@@ -496,7 +547,6 @@ function createSnow(level) {
     x: Math.random() * snowCanvas.width,
     y: Math.random() * snowCanvas.height,
     radius: Math.random() * 3 + 1,
-    // Blizzard level (3) makes snow fall slightly faster
     speed: ((Math.random() * 1 + 0.5) + (Math.random() * 1.5)) * (level === 3 ? 1.3 : 1),
     swayOffset: Math.random() * Math.PI * 2,
     swaySpeed: Math.random() * 0.02 + 0.005
@@ -511,7 +561,6 @@ function drawSnow() {
   const { frameSkip } = getSnowThrottle();
   snowFrame++;
 
-  // ⏱️ Skip frames to save power
   if (frameSkip && snowFrame % (frameSkip + 1) !== 0) {
     requestAnimationFrame(drawSnow);
     return;
@@ -542,9 +591,7 @@ function drawSnow() {
   requestAnimationFrame(drawSnow);
 }
 
-// ✅ NEW: Handles intensity changes intelligently
 function setSnow(on, level = 1) {
-  // 🔕 Always disable when page hidden
   if (!pageVisible) {
     snowActive = false;
     currentSnowLevel = 0;
@@ -552,7 +599,6 @@ function setSnow(on, level = 1) {
     return;
   }
 
-  // Turning OFF
   if (!on) {
     snowActive = false;
     currentSnowLevel = 0;
@@ -560,13 +606,11 @@ function setSnow(on, level = 1) {
     return;
   }
 
-  // Intensity changed
   if (currentSnowLevel !== level) {
     currentSnowLevel = level;
     createSnow(level);
   }
 
-  // Start animation loop once
   if (!snowActive) {
     snowActive = true;
     document.body.classList.add("snowing");
@@ -579,15 +623,14 @@ function setSnow(on, level = 1) {
 =================================================== */
 
   function getSnowThrottle() {
-  // Default: full experience
-  let maxLevel = 3;       // Blizzard allowed
-  let frameSkip = 0;      // Draw every frame
+  let maxLevel = 3;
+  let frameSkip = 0;
 
   if (batteryState.supported && !batteryState.charging) {
-    if (batteryState.level <= CONFIG.BATTERY.CRITICAL) { // 🔴 Critical battery
+    if (batteryState.level <= CONFIG.BATTERY.CRITICAL) { 
   maxLevel = 1;
   frameSkip = CONFIG.BATTERY.FRAME_SKIP.CRITICAL;
-} else if (batteryState.level <= CONFIG.BATTERY.LOW) {  // 🟠 Low battery
+} else if (batteryState.level <= CONFIG.BATTERY.LOW) {
   maxLevel = 2;
   frameSkip = CONFIG.BATTERY.FRAME_SKIP.LOW;
 }
@@ -615,7 +658,6 @@ function easeOutCubic(t) {
 function animateMarkerTo(targetLL) {
   if (!marker) return;
 
-  // First ever set — no easing
   if (!animCurrent) {
     animCurrent = marker.getLatLng();
   }
@@ -623,7 +665,6 @@ function animateMarkerTo(targetLL) {
   animTarget = targetLL;
   animStart = performance.now();
 
-  // Cancel any in-flight animation loop
   if (animRaf) cancelAnimationFrame(animRaf);
 
   const startLL = marker.getLatLng();
@@ -644,7 +685,6 @@ function animateMarkerTo(targetLL) {
     marker.setLatLng(ll);
     animCurrent = ll;
 
-    // Keep follow smooth too
     if (follow && !firstFix) {
       map.panTo(ll, { animate: true, duration: 0.6 });
     }
@@ -682,7 +722,6 @@ function animateMarkerTo(targetLL) {
       .bindPopup("📍 Tap this pin again to confirm")
       .openPopup();
 
-    // ✅ CONFIRM BY CLICKING THE PIN
     notifyMarker.once("click", () => {
       awaitingPin = false;
       
@@ -693,15 +732,10 @@ function animateMarkerTo(targetLL) {
         JSON.stringify({ lat, lng })
       );
 
-      subscribeUser(lat, lng);
+      // ✅ OPEN MODAL INSTEAD OF PROMPT
+      openSubscribeModal(lat, lng);
+      
       pinPreview = null;
-
-      statusBox.textContent = "🔔 We’ll let you know when Santa is close";
-      setTimeout(() => {
-        if (statusBox.textContent.includes("We’ll let you know")) {
-          statusBox.textContent = "";
-        }
-      }, 2000);
     });
   }
 }
@@ -721,7 +755,6 @@ function animateMarkerTo(targetLL) {
 
   const speed = dist / (elapsed / 1000);
 
-  // Clamp to realistic sleigh bounds
   return Math.min(Math.max(speed, 0.3), 6);
 }
   
@@ -803,7 +836,6 @@ function haversineMeters(a, b) {
       best = i;
     }
 
-    // Early exit once distance starts increasing
     if (i > lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) {
       break;
     }
@@ -822,7 +854,6 @@ function getVisualLatLng(rawPos) {
 
   const snap = snapToGpxIndex(rawPos);
 
-  // Only visually snap when reasonably close to route
   if (snap && snap.distance <= OFF_ROUTE_THRESHOLD_METERS) {
     return snap.point; // {lat, lng}
   }
@@ -850,9 +881,6 @@ function snapSubscriberToGpx(pos) {
   };
 }
   
-  // NOTE: recentFixes is time-windowed AND cumulative-distance based.
-// Do not reuse this array for raw GPS history.
-
   function pushFix(lat, lng, ts) {
   const last = recentFixes[recentFixes.length - 1];
 
@@ -867,7 +895,6 @@ function snapSubscriberToGpx(pos) {
     cumulative: (last?.cumulative || 0) + dist
   });
 
-  // Trim to motion window
   const cutoff = ts - MOTION_WINDOW_MS;
   while (recentFixes.length && recentFixes[0].ts < cutoff) {
     recentFixes.shift();
@@ -878,7 +905,6 @@ function snapSubscriberToGpx(pos) {
 async function init(){
   const data = await loadJSON(apiUrl);
 
-  // 🔴 LOG ANALYTICS VIEW (ONCE PER PAGE LOAD)
 fetch(
   apiUrl +
     "?function=logView" +
@@ -891,7 +917,6 @@ fetch(
 ).catch(() => {});
   
   const s = data.settings || {};
-// 🎁 Donate link
 if (s.donate_url) {
   donateLink.href = s.donate_url;
   donateBox.style.display = "block";
@@ -899,7 +924,6 @@ if (s.donate_url) {
   donateBox.style.display = "none";
 }
 
-  // 🔑 Capture Firebase base URL from API
   firebaseBaseUrl = data.tracker?.firebase_url || null;
   
   // ---------- TODAY'S ROUTE / GPX ----------
@@ -909,7 +933,6 @@ const todayRoute = (data.routes || []).find(r =>
   r.date === today && r.gpxUrl
 );
 
-// Hide Notify button if no GPX route today
 if (!todayRoute) {
   notifyBtn.style.display = "none";
 } else {
@@ -966,7 +989,6 @@ if (savedPin) {
   try {
     const p = JSON.parse(savedPin);
 
-    // 🔄 Reset browser notification state on reload
     browserNotified = false;
     sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
 
@@ -979,7 +1001,6 @@ if (savedPin) {
 
   const { lat, lng } = e.latlng;
   
-  // Different spot → MOVE preview
   pinPreview = { lat, lng };
   showNotifyMarker(lat, lng, false);
 
@@ -989,13 +1010,12 @@ if (savedPin) {
 
   if (s.logo_overlay_url) {
 
-  // Map Sheet values → Leaflet positions
   const LOGO_POSITIONS = {
     "top-left": "topleft",
     "top-right": "topright",
     "bottom-left": "bottomleft",
     "bottom-right": "bottomright",
-    "center": "topright" // fallback (Leaflet has no true center)
+    "center": "topright" 
   };
 
   const logoPosition =
@@ -1047,13 +1067,6 @@ if (savedPin) {
    MAIN TRACKER LOOP (POLL + STATE UPDATE)
 =================================================== */
   
-/* ---------------------------------------------------
-   API CONTRACT
-   proxyFirebase MUST return:
-   { lat: number, lng: number, ts: ISO string }
-   Do not change without backend update.
---------------------------------------------------- */
-
   async function tick(){
   const dot=statusDot;
   try{
@@ -1078,12 +1091,10 @@ if (gpsFresh && isAfterSunset(p.lat, p.lng)) {
 /* ---------- STALE HANDLING ---------- */
     
 if (age <= STALE_MS) {
-  // ✅ Fresh GPS
   staleSince = null;
   lastGoodFix = { lat: p.lat, lng: p.lng };
 
 } else {
-  // ⚠️ GPS already stale
   if (!staleSince) staleSince = ts;
 
   if (Date.now() - staleSince > STALE_MS) {
@@ -1100,7 +1111,6 @@ if (age <= STALE_MS) {
   animCurrent = null;
   animTarget = null;
     
-// IMPORTANT: return here so we don't schedule tick twice
   setTimeout(tick, REFRESH);
   return;
 }
@@ -1136,7 +1146,6 @@ if (gpxLoaded) {
 
   if (snap && snap.distance <= OFF_ROUTE_THRESHOLD_METERS) {
 
-    // 🔔 If user subscribed, check if Santa already passed them
     if (notifyMarker) {
       const userPos = notifyMarker.getLatLng();
       const userSnap = snapSubscriberToGpx(userPos);
@@ -1171,20 +1180,18 @@ if (speed !== null && moving && gpsFresh) {
     const night = document.body.classList.contains("night-mode");
     const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
     
-    // Default: Off
     let snowOn = false;
     let snowLevel = 1;
 
-    // Only snow if: Fresh Data + Night Time + Moving + Close enough
     if (gpsFresh && night && isSleighMoving() && etaMinutes < 15) {
       snowOn = true;
 
       if (etaMinutes < 2) {
-        snowLevel = 3; // ❄️ BLIZZARD (0-2 mins)
+        snowLevel = 3; 
       } else if (etaMinutes < 7) {
-        snowLevel = 2; // 🌨️ HEAVY (2-7 mins)
+        snowLevel = 2; 
       } else {
-        snowLevel = 1; // 🌧️ LIGHT (7-15 mins)
+        snowLevel = 1; 
       }
     }
 
@@ -1202,7 +1209,6 @@ if (
 
   const meters = haversineMeters(santa, user);
 
-  // ~250m ≈ ~5 minutes at sleigh pace
   if (meters < 250) {
   browserNotified = true;
   sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
@@ -1262,7 +1268,6 @@ if (passedSubscriber) {
 }
 
   }catch {
-  // Network / transient failure → hold last known position
   if (lastGoodFix) {
     animateMarkerTo(
       L.latLng(lastGoodFix.lat, lastGoodFix.lng)
@@ -1308,39 +1313,61 @@ notifyBtn.onclick = () => {
     "📍 Tap the map to place your pin, then tap the pin to confirm";
 };
 
-function subscribeUser(lat, lng) {
+/* ===================================================
+   ✅ NEW MODAL & SUBSCRIPTION LOGIC
+=================================================== */
 
+let pendingSubscription = null; // Store lat/lng here
+
+function openSubscribeModal(lat, lng) {
+  pendingSubscription = { lat, lng };
+  document.getElementById("emailModal").style.display = "flex";
+  document.getElementById("subEmail").focus();
+}
+
+function closeSubscribeModal() {
+  document.getElementById("emailModal").style.display = "none";
+  // If canceled, user can tap the pin again
+  statusBox.textContent = "Tap the pin to try again";
+}
+
+function confirmSubscription() {
+  if (!pendingSubscription) return;
+
+  const emailInput = document.getElementById("subEmail");
+  const email = emailInput.value.trim();
+  
+  // Close modal immediately
+  closeSubscribeModal();
+
+  // Proceed with submission
+  submitSubscription(pendingSubscription.lat, pendingSubscription.lng, email);
+}
+
+function submitSubscription(lat, lng, email) {
+  
   // ✅ DUPLICATE GUARD
   if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
     alert("🎅 You’re already signed up for notifications!");
     return;
   }
 
-  // Note: We check apiUrl here instead of firebaseBaseUrl, because 
-  // the subscription goes through the API proxy now.
-  if (!apiUrl) {
-    alert("Notifications are not available for this tracker");
-    return;
-  }
+  statusBox.textContent = "🔔 Saving your notification...";
 
-  const email = prompt(
-    "📧 Enter your email to be notified when Santa is close (recommended so you don’t miss him):"
-  );
-
-  showNotifyMarker(lat, lng, true);
-
-  // ✅ NEW SECURE SUBSCRIPTION CALL
+  // ✅ SECURE API CALL (GET request to Google Script)
   const subscribeUrl = `${apiUrl}?function=subscribe` +
     `&lat=${lat}` +
     `&lng=${lng}` +
     `&email=${encodeURIComponent(email || "")}`;
 
-  fetch(subscribeUrl, { method: "GET" }) // GET triggers the script's doGet
+  fetch(subscribeUrl, { method: "GET" })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
         sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-
+        
+        statusBox.textContent = "✅ You’re all set!";
+        
         if (email) {
           alert("🎅 You're signed up! We’ll email you when Santa is close.");
         } else {
@@ -1350,13 +1377,26 @@ function subscribeUser(lat, lng) {
             "For guaranteed alerts next time, add your email."
           );
         }
+        
+        setTimeout(() => {
+           statusBox.textContent = "";
+        }, 3000);
+
       } else {
         alert("❌ Error: " + (data.error || "Could not subscribe."));
+        statusBox.textContent = "❌ Failed to save.";
       }
     })
     .catch(() => {
       alert("❌ Network error. Please try again.");
+      statusBox.textContent = "❌ Connection failed.";
     });
+}
+
+function subscribeUser(lat, lng) {
+   // This function is now just a wrapper if called directly,
+   // but primarily we use openSubscribeModal now.
+   openSubscribeModal(lat, lng);
 }
   
 init();
