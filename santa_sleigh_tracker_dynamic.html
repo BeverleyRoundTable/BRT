@@ -1327,19 +1327,35 @@ function subscribeUser(lat, lng) {
 
   showNotifyMarker(lat, lng, true);
 
-  fetch(`${firebaseBaseUrl}/subscribers.json`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    api: apiUrl,
-    lat,
-    lng,
-    email: email || null,
-    threshold_minutes: 5,
-    notified: false,
-    created: new Date().toISOString()
-  })
+  // NEW (Secure) - ADD THIS BLOCK
+const subscribeUrl = `${apiUrl}?function=subscribe` +
+  `&lat=${lat}` +
+  `&lng=${lng}` +
+  `&email=${encodeURIComponent(email || "")}`;
+
+fetch(subscribeUrl, { method: "GET" }) // GET triggers the script's doGet
+.then(r => r.json())
+.then(data => {
+  if (data.ok) {
+    sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+
+    if (email) {
+      alert("🎅 You're signed up! We’ll email you when Santa is close.");
+    } else {
+      alert(
+        "🎅 You're signed up!\n\n" +
+        "⚠️ Keep this page open to receive the notification.\n" +
+        "For guaranteed alerts next time, add your email."
+      );
+    }
+  } else {
+    alert("❌ Error: " + (data.error || "Could not subscribe."));
+  }
 })
+.catch(() => {
+  alert("❌ Network error. Please try again.");
+});
+  
 .then(() => {
   sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
 
