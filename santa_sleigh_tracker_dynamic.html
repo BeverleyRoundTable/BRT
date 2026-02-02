@@ -537,6 +537,10 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
     firebaseBaseUrl = data.tracker?.firebase_url || null;
 
     sleighName = s.sleigh_display_name || "Santa Sleigh";
+    
+const today = new Date().toISOString().slice(0, 10);
+todayRoute = (data.routes || []).find(r => r.date === today && r.gpxUrl) || null;
+
 kioskBanner = document.getElementById("kioskBanner");
 
 if (isKiosk && kioskBanner && todayRoute) {
@@ -547,9 +551,10 @@ if (isKiosk && kioskBanner && todayRoute) {
     </div>
   `;
 } else if (isKiosk && kioskBanner) {
-  kioskBanner.innerHTML = "";                 // keep it blank
-  kioskBanner.classList.remove("visible");    // and hidden
+  kioskBanner.innerHTML = "";
+  kioskBanner.classList.remove("visible");
 }
+
     
     const today = new Date().toISOString().slice(0, 10);
     todayRoute = (data.routes || []).find(r => r.date === today && r.gpxUrl) || null;
