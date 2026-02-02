@@ -1,1003 +1,1273 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Santa Sleigh Tracker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Santa Sleigh Tracker</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
-<script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
-  
-<style>
-html,body{ margin:0; padding:0; height:100%; background:#001; color:#fff; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial; overflow:hidden; }
-:root{ --ui-bottom-safe: 72px; --donate-bottom: calc(var(--ui-bottom-safe) + 92px); --info-bottom: var(--ui-bottom-safe); }
-@supports(padding: env(safe-area-inset-bottom)){ :root{ --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom)); --donate-bottom: calc(var(--ui-bottom-safe) + 92px); --info-bottom: var(--ui-bottom-safe); } }
-#map{ position:absolute; inset:0; }
-.status-popup{ position:absolute; top:20px; left:50%; transform:translateX(-50%); background:rgba(24,24,24,.95); padding:14px 20px; font-size:1.05em; font-weight:800; border-radius:16px; max-width:90%; box-shadow:0 4px 24px #0006; z-index:4000; text-align:center; }
-.donate-box{ position:fixed; bottom: var(--donate-bottom); left:50%; transform:translateX(-50%); width:70%; max-width:420px; z-index:2000; }
-.donate-btn{ background:#d31c1c; color:#fff; padding:14px 0; display:block; text-align:center; border-radius:16px; font-weight:900; text-decoration:none; box-shadow:0 4px 16px rgba(0,0,0,.4); }
-.info-popup{ position:fixed; bottom: var(--info-bottom); left:50%; transform:translateX(-50%); background:rgba(20,20,20,.94); padding:10px 14px; border-radius:14px; display:flex; align-items:center; gap:12px; font-size:.85em; font-weight:800; z-index:2000; max-width:calc(100vw - 32px); box-sizing:border-box; }
-.status-dot{ width:12px; aspect-ratio:1 / 1; border-radius:50%; flex-shrink:0; display:none; }
-.dot-moving{ background:#2cff4e; animation:pulse 1.4s infinite; }
-.dot-stopped{ background:#ff3b3b; }
-@keyframes pulse{ 0%{ box-shadow:0 0 0 0 rgba(44,255,78,.6); } 70%{ box-shadow:0 0 0 10px rgba(44,255,78,0); } 100%{ box-shadow:0 0 0 0 rgba(44,255,78,0); } }
-.btn{ background:#0b1220; color:#fff; border:1px solid #ffffff26; border-radius:10px; padding:7px 12px; cursor:pointer; font-weight:800; }
-.logo-overlay{ position:relative; width:48px; max-width:18vw; pointer-events:none; opacity:.9; filter:drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
-#loadingCover{ position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center; z-index:6000; }
-#loadingSpinner{ width:52px; height:52px; border-radius:50%; border:4px solid rgba(255,255,255,.25); border-top-color:#ffd700; animation:spin .9s linear infinite; }
-@keyframes spin{to{transform:rotate(360deg)}}
-@media (max-height: 700px){ :root{ --ui-bottom-safe: calc(64px + env(safe-area-inset-bottom)); } .donate-box{ width:85%; max-width:360px; } .info-popup{ font-size:.8em; padding:8px 12px; } .status-popup{ font-size:.95em; padding:12px 16px; } }
-body.dim-ui .donate-box, body.dim-ui .info-popup, body.dim-ui .status-popup{ opacity: 0.45; filter: saturate(0.85); transition: opacity 600ms ease, filter 600ms ease; }
-body.dim-ui .donate-box:hover, body.dim-ui .info-popup:hover, body.dim-ui .status-popup:hover{ opacity: 0.75; }
-body.dim-ui * { transition: opacity 600ms ease, filter 600ms ease; }
-body.dim-ui #map { filter: brightness(0.85); }
-body.night-mode #map { filter: brightness(0.75) saturate(0.9) hue-rotate(-8deg); }
-body.night-mode .status-popup { background: rgba(12,16,28,0.95); }
-#snow { position: fixed; inset: 0; pointer-events: none; z-index: 1500; opacity: 0; transition: opacity 800ms ease; }
-body.snowing #snow { opacity: 0.35; }
-body::after { content: ''; position: fixed; inset: 0; background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.6) 100%); pointer-events: none; opacity: 0; transition: opacity 1.5s ease; z-index: 1400; }
-body.snowing::after { opacity: 1; }
-body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+  <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
 
-/* ---------- SUBSCRIPTION MODAL ---------- */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
-.modal-box { background: #1a1a1a; padding: 24px; border-radius: 20px; width: 100%; max-width: 340px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.6); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.modal-title { font-size: 1.2em; font-weight: 800; margin: 0 0 8px 0; color: #ffd700; }
-.modal-desc { font-size: 0.9em; color: #ccc; margin-bottom: 20px; line-height: 1.4; }
-.modal-input { width: 100%; padding: 14px; margin-bottom: 20px; background: #2a2a2a; border: 2px solid #444; border-radius: 12px; color: white; font-size: 16px; box-sizing: border-box; text-align: center; }
-.modal-input:focus { outline: none; border-color: #ffd700; }
-.modal-btns { display: flex; gap: 12px; }
-.btn-full { flex: 1; padding: 12px; border-radius: 12px; font-weight: 800; font-size: 0.95em; cursor: pointer; border: none; transition: transform 0.1s; }
-.btn-full:active { transform: scale(0.96); }
-.btn-cancel { background: #333; color: #aaa; }
-.btn-confirm { background: #d31c1c; color: white; box-shadow: 0 4px 12px rgba(211, 28, 28, 0.3); }
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #001;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
+      overflow: hidden;
+    }
 
-  /* ===============================
-   KIOSK MODE SPACING FIX
-   - Prevent text autosizing
-   - Decouple kiosk layout from safe-area vars
-================================ */
+    :root {
+      --ui-bottom-safe: 72px;
+      --donate-bottom: calc(var(--ui-bottom-safe) + 92px);
+      --info-bottom: var(--ui-bottom-safe);
+    }
 
-html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
+    @supports(padding: env(safe-area-inset-bottom)) {
+      :root {
+        --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom));
+        --donate-bottom: calc(var(--ui-bottom-safe) + 92px);
+        --info-bottom: var(--ui-bottom-safe);
+      }
+    }
 
-body.kiosk {
-  /* hard baseline for kiosk screens */
-  --kiosk-bottom: 56px;
-}
+    #map {
+      position: absolute;
+      inset: 0;
+    }
 
-/* Use kiosk-specific bottom values instead of --ui-bottom-safe */
-body.kiosk .kiosk-sponsor {
-  bottom: var(--kiosk-bottom);
-}
+    .status-popup {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(24, 24, 24, .95);
+      padding: 14px 20px;
+      font-size: 1.05em;
+      font-weight: 800;
+      border-radius: 16px;
+      max-width: 90%;
+      box-shadow: 0 4px 24px #0006;
+      z-index: 4000;
+      text-align: center;
+    }
 
-body.kiosk .kiosk-banner {
-  bottom: calc(var(--kiosk-bottom) + 64px);
-}
+    .donate-box {
+      position: fixed;
+      bottom: var(--donate-bottom);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      max-width: 420px;
+      z-index: 2000;
+    }
 
-  /* Toast Notification */
-.toast-box {
-  display: none;            
-  position: fixed;
-  left: 50%;
-  bottom: calc(var(--donate-bottom) + 80px);
-  transform: translateX(-50%);
-  background: rgba(44, 255, 78, 0.95);
-  color: #000;
-  padding: 14px 22px;
-  font-weight: 800;
-  border-radius: 999px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-  z-index: 6000;
-  pointer-events: none;
-  max-width: calc(100vw - 32px);
-}
+    .donate-btn {
+      background: #d31c1c;
+      color: #fff;
+      padding: 14px 0;
+      display: block;
+      text-align: center;
+      border-radius: 16px;
+      font-weight: 900;
+      text-decoration: none;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
+    }
 
-.toast-visible {
-  display: block;
-}
-  
-/* Hide toast in kiosk mode */
-body.kiosk .toast-box {
-  display: none !important;
-}
+    .info-popup {
+      position: fixed;
+      bottom: var(--info-bottom);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 20, 20, .94);
+      padding: 10px 14px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: .85em;
+      font-weight: 800;
+      z-index: 2000;
+      max-width: calc(100vw - 32px);
+      box-sizing: border-box;
+    }
 
-  body.kiosk .status-popup {
-  display: none !important;
-}
+    .status-dot {
+      width: 12px;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: none;
+    }
 
-  /* ===============================
-   KIOSK MODE HARD LOCK
-================================ */
+    .dot-moving {
+      background: #2cff4e;
+      animation: pulse 1.4s infinite;
+    }
 
-body.kiosk {
-  cursor: none;
-}
+    .dot-stopped {
+      background: #ff3b3b;
+    }
 
-/* Kill tap highlight + focus outlines (kiosk-safe) */
-.leaflet-container {
-  -webkit-tap-highlight-color: transparent;
-}
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(44, 255, 78, .6); }
+      70% { box-shadow: 0 0 0 10px rgba(44, 255, 78, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(44, 255, 78, 0); }
+    }
 
-.leaflet-container * {
-  outline: none !important;
-}
+    .btn {
+      background: #0b1220;
+      color: #fff;
+      border: 1px solid #ffffff26;
+      border-radius: 10px;
+      padding: 7px 12px;
+      cursor: pointer;
+      font-weight: 800;
+    }
 
-.leaflet-interactive:focus {
-  outline: none !important;
-}
+    .logo-overlay {
+      position: relative;
+      width: 48px;
+      max-width: 18vw;
+      pointer-events: none;
+      opacity: .9;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .5));
+    }
 
-/* Disable all Leaflet interactions in kiosk */
-body.kiosk .leaflet-interactive {
-  pointer-events: none;
-}
+    #loadingCover {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 6000;
+    }
 
-/* Hide movement status dot in kiosk */
-body.kiosk #statusDot {
-  display: none !important;
-}
+    #loadingSpinner {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 4px solid rgba(255, 255, 255, .25);
+      border-top-color: #ffd700;
+      animation: spin .9s linear infinite;
+    }
 
-  /* Hide Leaflet zoom controls in kiosk */
-body.kiosk .leaflet-control-zoom {
-  display: none !important;
-}
+    @keyframes spin {
+      to { transform: rotate(360deg) }
+    }
 
-  /* Hide bottom control bar entirely in kiosk */
-body.kiosk .info-popup {
-  display: none !important;
-}
+    @media (max-height: 700px) {
+      :root { --ui-bottom-safe: calc(64px + env(safe-area-inset-bottom)); }
+      .donate-box { width: 85%; max-width: 360px; }
+      .info-popup { font-size: .8em; padding: 8px 12px; }
+      .status-popup { font-size: .95em; padding: 12px 16px; }
+    }
 
-/* Kiosk LIVE banner */
-.kiosk-banner {
-  position: fixed;
-  bottom: calc(var(--kiosk-bottom) + 64px);
-  left: 50%;
-  transform: translateX(-50%) translateY(-6px);
-  background: rgba(20,20,20,0.96);
-  color: #fff;
-  padding: 16px 36px;
-  border-radius: 999px;
-  font-size: 1.25em;
-  font-weight: 900;
-  letter-spacing: 0.4px;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.55);
-  z-index: 4500;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
+    body.dim-ui .donate-box,
+    body.dim-ui .info-popup,
+    body.dim-ui .status-popup {
+      opacity: 0.45;
+      filter: saturate(0.85);
+      transition: opacity 600ms ease, filter 600ms ease;
+    }
 
-/* Kiosk sponsor badge */
-.kiosk-sponsor {
-  position: fixed;
-  bottom: var(--kiosk-bottom);
-  left: 50%;
-  transform: translateX(-50%) translateY(6px);
-  background: rgba(20,20,20,0.95);
-  padding: 10px 18px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 4400;
-  box-shadow: 0 6px 22px rgba(0,0,0,0.55);
-  opacity: 0;
-  filter: saturate(0.9);
-  pointer-events: none;
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
+    body.dim-ui .donate-box:hover,
+    body.dim-ui .info-popup:hover,
+    body.dim-ui .status-popup:hover {
+      opacity: 0.75;
+    }
 
-/* Only ever allow banner in kiosk */
-body.kiosk .kiosk-banner {
-  display: block;
-}
+    body.dim-ui * {
+      transition: opacity 600ms ease, filter 600ms ease;
+    }
 
-  /* ---------- KIOSK LIVE PULSE ---------- */
-@keyframes kioskPulse {
-  0%,100% {
-    box-shadow: 0 8px 28px rgba(0,0,0,0.55);
-  }
-  50% {
-    box-shadow: 0 8px 34px rgba(255,215,0,0.6);
-  }
-}
+    body.dim-ui #map {
+      filter: brightness(0.85);
+    }
 
-/* Animate only in kiosk mode */
-body.kiosk .kiosk-banner.live {
-  animation: kioskPulse 2.8s ease-in-out infinite;
-}
+    body.night-mode #map {
+      filter: brightness(0.75) saturate(0.9) hue-rotate(-8deg);
+    }
 
-  /* Kiosk sponsor badge */
-.kiosk-sponsor.visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  pointer-events: none;
-}
+    body.night-mode .status-popup {
+      background: rgba(12, 16, 28, 0.95);
+    }
 
-.kiosk-sponsor span {
-  font-size: 0.75em;
-  font-weight: 700;
-  opacity: 0.85;
-  white-space: nowrap;
-}
+    #snow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1500;
+      opacity: 0;
+      transition: opacity 800ms ease;
+    }
 
-.kiosk-sponsor img {
-  max-height: 34px;
-  max-width: 160px;
-  object-fit: contain;
-}
+    body.snowing #snow {
+      opacity: 0.35;
+    }
 
-.kiosk-banner.visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1.5s ease;
+      z-index: 1400;
+    }
 
-  .kiosk-banner {
-  text-align: center;
-}
+    body.snowing::after {
+      opacity: 1;
+    }
 
-.kiosk-subtitle {
-  font-size: 0.75em;
-  opacity: 0.85;
-  margin-top: 4px;
-  text-align: center;
-}
+    body.snowing #snow {
+      opacity: 1;
+      filter: drop-shadow(0 0 4px white);
+    }
 
-</style>
+    /* ---------- SUBSCRIPTION MODAL ---------- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 5000;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: #1a1a1a;
+      padding: 24px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-title {
+      font-size: 1.2em;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+      color: #ffd700;
+    }
+
+    .modal-desc {
+      font-size: 0.9em;
+      color: #ccc;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 20px;
+      background: #2a2a2a;
+      border: 2px solid #444;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .modal-input:focus {
+      outline: none;
+      border-color: #ffd700;
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-full {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.95em;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.1s;
+    }
+
+    .btn-full:active {
+      transform: scale(0.96);
+    }
+
+    .btn-cancel {
+      background: #333;
+      color: #aaa;
+    }
+
+    .btn-confirm {
+      background: #d31c1c;
+      color: white;
+      box-shadow: 0 4px 12px rgba(211, 28, 28, 0.3);
+    }
+
+    /* ===============================
+       KIOSK MODE SPACING FIX
+       - Prevent text autosizing
+       - Decouple kiosk layout from safe-area vars
+    ================================ */
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body.kiosk {
+      /* hard baseline for kiosk screens */
+      --kiosk-bottom: 56px;
+    }
+
+    /* Use kiosk-specific bottom values instead of --ui-bottom-safe */
+    body.kiosk .kiosk-sponsor {
+      bottom: var(--kiosk-bottom);
+    }
+
+    body.kiosk .kiosk-banner {
+      bottom: calc(var(--kiosk-bottom) + 64px);
+    }
+
+    /* Toast Notification */
+    .toast-box {
+      display: none;
+      position: fixed;
+      left: 50%;
+      bottom: calc(var(--donate-bottom) + 80px);
+      transform: translateX(-50%);
+      background: rgba(44, 255, 78, 0.95);
+      color: #000;
+      padding: 14px 22px;
+      font-weight: 800;
+      border-radius: 999px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      z-index: 6000;
+      pointer-events: none;
+      max-width: calc(100vw - 32px);
+    }
+
+    .toast-visible {
+      display: block;
+    }
+
+    /* Hide toast in kiosk mode */
+    body.kiosk .toast-box {
+      display: none !important;
+    }
+
+    body.kiosk .status-popup {
+      display: none !important;
+    }
+
+    /* ===============================
+       KIOSK MODE HARD LOCK
+    ================================ */
+    body.kiosk {
+      cursor: none;
+    }
+
+    /* Kill tap highlight + focus outlines (kiosk-safe) */
+    .leaflet-container {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .leaflet-container * {
+      outline: none !important;
+    }
+
+    .leaflet-interactive:focus {
+      outline: none !important;
+    }
+
+    /* Disable all Leaflet interactions in kiosk */
+    body.kiosk .leaflet-interactive {
+      pointer-events: none;
+    }
+
+    /* Hide movement status dot in kiosk */
+    body.kiosk #statusDot {
+      display: none !important;
+    }
+
+    /* Hide Leaflet zoom controls in kiosk */
+    body.kiosk .leaflet-control-zoom {
+      display: none !important;
+    }
+
+    /* Hide bottom control bar entirely in kiosk */
+    body.kiosk .info-popup {
+      display: none !important;
+    }
+
+    /* Kiosk LIVE banner */
+    .kiosk-banner {
+      position: fixed;
+      bottom: calc(var(--kiosk-bottom) + 64px);
+      left: 50%;
+      transform: translateX(-50%) translateY(-6px);
+      background: rgba(20, 20, 20, 0.96);
+      color: #fff;
+      padding: 16px 36px;
+      border-radius: 999px;
+      font-size: 1.25em;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+      z-index: 4500;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    /* Kiosk sponsor badge */
+    .kiosk-sponsor {
+      position: fixed;
+      bottom: var(--kiosk-bottom);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      background: rgba(20, 20, 20, 0.95);
+      padding: 10px 18px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 4400;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+      opacity: 0;
+      filter: saturate(0.9);
+      pointer-events: none;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    /* Only ever allow banner in kiosk */
+    body.kiosk .kiosk-banner {
+      display: block;
+    }
+
+    /* ---------- KIOSK LIVE PULSE ---------- */
+    @keyframes kioskPulse {
+      0%, 100% {
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+      }
+      50% {
+        box-shadow: 0 8px 34px rgba(255, 215, 0, 0.6);
+      }
+    }
+
+    /* Animate only in kiosk mode */
+    body.kiosk .kiosk-banner.live {
+      animation: kioskPulse 2.8s ease-in-out infinite;
+    }
+
+    /* Kiosk sponsor badge */
+    .kiosk-sponsor.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: none;
+    }
+
+    .kiosk-sponsor span {
+      font-size: 0.75em;
+      font-weight: 700;
+      opacity: 0.85;
+      white-space: nowrap;
+    }
+
+    .kiosk-sponsor img {
+      max-height: 34px;
+      max-width: 160px;
+      object-fit: contain;
+    }
+
+    .kiosk-banner.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .kiosk-banner {
+      text-align: center;
+    }
+
+    .kiosk-subtitle {
+      font-size: 0.75em;
+      opacity: 0.85;
+      margin-top: 4px;
+      text-align: center;
+    }
+  </style>
 </head>
 
 <body>
-<div id="loadingCover"><div id="loadingSpinner"></div></div>
-<div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
-<div class="donate-box" id="donateBox"><a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a></div>
-<div class="info-popup">
-  <div id="statusDot" class="status-dot"></div>
-  <button class="btn" id="followBtn">Follow: ON</button>
-  <button class="btn" id="recenterBtn">Re-centre</button>
-  <button class="btn" id="notifyBtn">🔔 Notify Me</button>
-  <div id="toast" class="toast-box"></div>
-</div>
+  <div id="loadingCover"><div id="loadingSpinner"></div></div>
+  <div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
+  <div class="donate-box" id="donateBox"><a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a></div>
+  <div class="info-popup">
+    <div id="statusDot" class="status-dot"></div>
+    <button class="btn" id="followBtn">Follow: ON</button>
+    <button class="btn" id="recenterBtn">Re-centre</button>
+    <button class="btn" id="notifyBtn">🔔 Notify Me</button>
+    <div id="toast" class="toast-box"></div>
+  </div>
 
-<div id="emailModal" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-title">🔔 Get Notified</div>
-    <div class="modal-desc">Want to know when Santa is nearby? Enter your email below (optional).</div>
-    <input type="email" id="subEmail" class="modal-input" placeholder="santa@example.com">
-    <div class="modal-btns">
-      <button class="btn-full btn-cancel" id="modalCancelBtn">Cancel</button>
-<button class="btn-full btn-confirm" id="modalConfirmBtn">Notify Me</button>
+  <div id="emailModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-title">🔔 Get Notified</div>
+      <div class="modal-desc">Want to know when Santa is nearby? Enter your email below (optional).</div>
+      <input type="email" id="subEmail" class="modal-input" placeholder="santa@example.com">
+      <div class="modal-btns">
+        <button class="btn-full btn-cancel" id="modalCancelBtn">Cancel</button>
+        <button class="btn-full btn-confirm" id="modalConfirmBtn">Notify Me</button>
+      </div>
     </div>
   </div>
-</div>
-  
-<div id="kioskBanner" class="kiosk-banner"></div>
 
-<div id="kioskSponsor" class="kiosk-sponsor"></div>
+  <div id="kioskBanner" class="kiosk-banner"></div>
 
-<div id="map"></div>
-<canvas id="snow"></canvas>
+  <div id="kioskSponsor" class="kiosk-sponsor"></div>
 
-<script>
- let batteryState = { supported: false, charging: true, level: 1 };
-  if ("getBattery" in navigator) {
-    navigator.getBattery().then(battery => {
-      batteryState.supported = true;
-      function updateBattery() { batteryState.charging = battery.charging; batteryState.level = battery.level; }
-      updateBattery();
-      battery.addEventListener("chargingchange", updateBattery);
-      battery.addEventListener("levelchange", updateBattery);
-    });
-  }
+  <div id="map"></div>
+  <canvas id="snow"></canvas>
 
-  // 🕯️ Wake Lock (single source of truth)
-let wakeLock = null;
-
-async function requestWakeLock() {
-  try {
-    if ("wakeLock" in navigator) {
-      wakeLock = await navigator.wakeLock.request("screen");
-      wakeLock.addEventListener("release", () => {
-        setTimeout(requestWakeLock, 2000);
+  <script>
+    let batteryState = { supported: false, charging: true, level: 1 };
+    if ("getBattery" in navigator) {
+      navigator.getBattery().then(battery => {
+        batteryState.supported = true;
+        function updateBattery() { batteryState.charging = battery.charging; batteryState.level = battery.level; }
+        updateBattery();
+        battery.addEventListener("chargingchange", updateBattery);
+        battery.addEventListener("levelchange", updateBattery);
       });
     }
-  } catch {}
-}
 
- // ===============================
-// URL + KIOSK MODE (SINGLE SOURCE)
-// ===============================
+    // 🕯️ Wake Lock (single source of truth)
+    let wakeLock = null;
 
-const params = new URLSearchParams(location.search);
-
-// Detect kiosk mode
-const isKiosk =
-  params.get("kiosk") === "1" ||
-  sessionStorage.getItem("SANTA_KIOSK") === "1";
-
-// Persist kiosk mode across refreshes
-if (params.get("kiosk") === "1") {
-  sessionStorage.setItem("SANTA_KIOSK", "1");
-}
-
-  // AFTER isKiosk is defined
-if (isKiosk && "wakeLock" in navigator) {
-  setInterval(() => {
-    if (document.visibilityState === "visible") {
-      requestWakeLock();
+    async function requestWakeLock() {
+      try {
+        if ("wakeLock" in navigator) {
+          wakeLock = await navigator.wakeLock.request("screen");
+          wakeLock.addEventListener("release", () => {
+            setTimeout(requestWakeLock, 2000);
+          });
+        }
+      } catch {}
     }
-  }, 60_000);
-}
 
-// API handling
-let apiUrl = params.get("api");
-if (!apiUrl) apiUrl = sessionStorage.getItem("SANTA_API");
-if (!apiUrl) {
-  alert("Missing ?api=YOUR_SCRIPT_URL");
-  throw new Error("API missing");
-}
-sessionStorage.setItem("SANTA_API", apiUrl);
+    // ===============================
+    // URL + KIOSK MODE (SINGLE SOURCE)
+    // ===============================
 
-// Clean URL ONLY for non-kiosk users
-if (!isKiosk && location.search.includes("api=")) {
-  history.replaceState(null, "", location.pathname);
-}
+    const params = new URLSearchParams(location.search);
 
-// Zoom choice
-const INITIAL_ZOOM = isKiosk ? 15 : 16;
-  
-  const CONFIG = {
-    REFRESH_MS: 6000, STALE_MS: 5 * 60 * 1000, MOTION_WINDOW_MS: 25 * 1000, MOVE_THRESHOLD_METERS: 8,
-    MIN_FIXES_FOR_ETA: 3, MIN_ETA_WINDOW_MS: 15 * 1000,
-    GPX_SEARCH: { AHEAD: 80, BACK: 5, EARLY_EXIT_METERS: 25 },
-    SNOW: { ETA_MINUTES_MAX: 15, LEVELS: { LIGHT: 1, HEAVY: 2, BLIZZARD: 3 }, MOBILE_BASE_COUNT: 30, DESKTOP_BASE_COUNT: 60, MULTIPLIERS: [0, 1, 2.5, 5] },
-    BATTERY: { LOW: 0.4, CRITICAL: 0.2, FRAME_SKIP: { LOW: 2, CRITICAL: 3 } },
-    LAPLAND: [66.5436, 25.8473]
-  };
+    // Detect kiosk mode
+    const isKiosk =
+      params.get("kiosk") === "1" ||
+      sessionStorage.getItem("SANTA_KIOSK") === "1";
 
-  const LAPLAND = CONFIG.LAPLAND;
-  const PREVIEW_ICON = L.icon({ iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png", shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
-  const CONFIRMED_ICON = L.icon({ iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png", shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
-
-  const loadingCover = document.getElementById("loadingCover");
-  const statusBox = document.getElementById("statusBox");
-  const followBtn = document.getElementById("followBtn");
-  const recenterBtn = document.getElementById("recenterBtn");
-  const notifyBtn = document.getElementById("notifyBtn");
-  const statusDot = document.getElementById("statusDot");
-  const donateLink = document.getElementById("donateLink");
-  const donateBox = document.getElementById("donateBox");
-  const STALE_MS = CONFIG.STALE_MS;
-  const REFRESH = CONFIG.REFRESH_MS;
-  const FALLBACK = { live: "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png", start: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png", end: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png" };
-  const MOTION_WINDOW_MS = CONFIG.MOTION_WINDOW_MS;
-  const MOVE_THRESHOLD_METERS = CONFIG.MOVE_THRESHOLD_METERS;
-  
-  let map, marker, follow=true, firstFix=true, lastFix=null;
-  let awaitingPin = false;
-  let notifyMarker = null;
-  let firebaseBaseUrl = null;
-  let pinPreview = null;
-  let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
-  let recentFixes = [];
-  let lastGoodFix = null;
-  let staleSince = null;
-  let animCurrent = null; let animTarget = null; let animStart = 0; let animDuration = 900; let animRaf = null;
-  let gpxRoute = null; let gpxTotalDistance = 0; let gpxLoaded = false; let lastSnapIndex = 0;
-  var sleighName = "Santa Sleigh";
-  let kioskBanner = null;
-  let sponsorBox = null;
-  let todayRoute = null;
-  let settings = {};
-  let pageVisible = !document.hidden;
-
-
-  const snowCanvas = document.getElementById("snow");
-  const snowCtx = snowCanvas.getContext("2d");
-  let snowflakes = []; let snowActive = false; let currentSnowLevel = 0; 
-
-  function resizeSnow() { snowCanvas.width = window.innerWidth; snowCanvas.height = window.innerHeight; }
-  window.addEventListener("resize", resizeSnow); resizeSnow();
-
-  function createSnow(level) {
-    const isMobile = window.innerWidth < 600;
-    const baseCount = isMobile ? CONFIG.SNOW.MOBILE_BASE_COUNT : CONFIG.SNOW.DESKTOP_BASE_COUNT;
-    const multipliers = CONFIG.SNOW.MULTIPLIERS;
-    const count = Math.floor(baseCount * multipliers[level]);
-    snowflakes = Array.from({ length: count }, () => ({ x: Math.random() * snowCanvas.width, y: Math.random() * snowCanvas.height, radius: Math.random() * 3 + 1, speed: ((Math.random() * 1 + 0.5) + (Math.random() * 1.5)) * (level === 3 ? 1.3 : 1), swayOffset: Math.random() * Math.PI * 2, swaySpeed: Math.random() * 0.02 + 0.005 }));
-  }
-
-  let snowFrame = 0;
-  function drawSnow() {
-    if (!snowActive || !pageVisible) return;
-    const { frameSkip } = getSnowThrottle();
-    snowFrame++;
-    if (frameSkip && snowFrame % (frameSkip + 1) !== 0) { requestAnimationFrame(drawSnow); return; }
-    snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
-    snowCtx.fillStyle = "rgba(255, 255, 255, 0.95)";
-    snowCtx.beginPath();
-    for (const f of snowflakes) {
-      f.y += f.speed; f.swayOffset += f.swaySpeed; f.x += Math.sin(f.swayOffset) * 0.5;
-      if (f.y > snowCanvas.height) { f.y = -10; f.x = Math.random() * snowCanvas.width; }
-      if (f.x > snowCanvas.width) f.x = 0; if (f.x < 0) f.x = snowCanvas.width;
-      snowCtx.moveTo(f.x, f.y); snowCtx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+    // Persist kiosk mode across refreshes
+    if (params.get("kiosk") === "1") {
+      sessionStorage.setItem("SANTA_KIOSK", "1");
     }
-    snowCtx.fill();
-    requestAnimationFrame(drawSnow);
-  }
 
-  function setSnow(on, level = 1) {
-  if (!on) return; // ❌ do NOT auto-clear
-
-  if (currentSnowLevel !== level) {
-    currentSnowLevel = level;
-    createSnow(level);
-  }
-  if (!snowActive) {
-    snowActive = true;
-    document.body.classList.add("snowing");
-    drawSnow();
-  }
-}
-
-  function getSnowThrottle() {
-    let maxLevel = 3; let frameSkip = 0;
-    if (batteryState.supported && !batteryState.charging) {
-      if (batteryState.level <= CONFIG.BATTERY.CRITICAL) { maxLevel = 1; frameSkip = CONFIG.BATTERY.FRAME_SKIP.CRITICAL; }
-      else if (batteryState.level <= CONFIG.BATTERY.LOW) { maxLevel = 2; frameSkip = CONFIG.BATTERY.FRAME_SKIP.LOW; }
+    // AFTER isKiosk is defined
+    if (isKiosk && "wakeLock" in navigator) {
+      setInterval(() => {
+        if (document.visibilityState === "visible") {
+          requestWakeLock();
+        }
+      }, 60_000);
     }
-    return { maxLevel, frameSkip };
-  }
 
-  const valid=(lat,lng)=>typeof lat==="number"&&!isNaN(lat)&&typeof lng==="number"&&!isNaN(lng);
-
-  async function loadJSON(url){ const r = await fetch(url,{cache:"no-store"}); if(!r.ok) throw 0; return r.json(); }
-  function lerp(a, b, t) { return a + (b - a) * t; }
-  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-
-  function animateMarkerTo(targetLL) {
-    if (!marker) return;
-    if (!animCurrent) animCurrent = marker.getLatLng();
-    animTarget = targetLL; animStart = performance.now();
-    if (animRaf) cancelAnimationFrame(animRaf);
-    const startLL = marker.getLatLng(); const startLat = startLL.lat; const startLng = startLL.lng;
-    const endLat = animTarget.lat; const endLng = animTarget.lng;
-    function step(now) {
-      const t = Math.min(1, (now - animStart) / animDuration); const e = easeOutCubic(t);
-      const lat = lerp(startLat, endLat, e); const lng = lerp(startLng, endLng, e);
-      const ll = L.latLng(lat, lng); marker.setLatLng(ll); animCurrent = ll;
-      if ((follow || isKiosk) && !firstFix) {
-  map.panTo(ll, { animate: true, duration: 0.6 });
-}
-      if (t < 1) { animRaf = requestAnimationFrame(step); } else { animRaf = null; }
+    // API handling
+    let apiUrl = params.get("api");
+    if (!apiUrl) apiUrl = sessionStorage.getItem("SANTA_API");
+    if (!apiUrl) {
+      alert("Missing ?api=YOUR_SCRIPT_URL");
+      throw new Error("API missing");
     }
-    animRaf = requestAnimationFrame(step);
-  }
+    sessionStorage.setItem("SANTA_API", apiUrl);
 
-  function setDimUI(dim) { document.body.classList.toggle("dim-ui", !!dim); }
-  function isAfterSunset(lat, lng) { const now = new Date(); const sunset = SunCalc.getTimes(now, lat, lng).sunset; return now > sunset; }
-
-  function showNotifyMarker(lat, lng, confirmed = false) {
-    if (notifyMarker) map.removeLayer(notifyMarker);
-    notifyMarker = L.marker([lat, lng], { icon: confirmed ? CONFIRMED_ICON : PREVIEW_ICON, interactive: true }).addTo(map);
-    if (!confirmed) {
-      notifyMarker.bindPopup("📍 Tap this pin again to confirm").openPopup();
-      notifyMarker.once("click", () => {
-        awaitingPin = false; showNotifyMarker(lat, lng, true);
-        sessionStorage.setItem("SANTA_NOTIFY_POINT", JSON.stringify({ lat, lng }));
-        openSubscribeModal(lat, lng); pinPreview = null;
-      });
+    // Clean URL ONLY for non-kiosk users
+    if (!isKiosk && location.search.includes("api=")) {
+      history.replaceState(null, "", location.pathname);
     }
-  }
 
-  function calculateStableSpeedMps_(fixes) {
-    if (fixes.length < CONFIG.MIN_FIXES_FOR_ETA) return null;
-    const first = fixes[0]; const last = fixes[fixes.length - 1];
-    const elapsed = last.ts - first.ts; if (elapsed < CONFIG.MIN_ETA_WINDOW_MS) return null;
-    const dist = fixes[fixes.length - 1].cumulative - fixes[0].cumulative;
-    const speed = dist / (elapsed / 1000);
-    return Math.min(Math.max(speed, 0.3), 6);
-  }
-  
-  function haversineMeters(a, b) {
-    const R = 6371000; const dLat = (b.lat - a.lat) * Math.PI / 180; const dLng = (b.lng - a.lng) * Math.PI / 180;
-    const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-    return 2 * R * Math.asin(Math.sqrt(s));
-  }
+    // Zoom choice
+    const INITIAL_ZOOM = isKiosk ? 15 : 16;
 
-  function isSleighMoving() {
-    if (recentFixes.length < 2) return false;
-    const first = recentFixes[0]; const last = recentFixes[recentFixes.length - 1];
-    return (last.cumulative - first.cumulative) >= MOVE_THRESHOLD_METERS;
-  }
+    const CONFIG = {
+      REFRESH_MS: 6000,
+      STALE_MS: 5 * 60 * 1000,
+      MOTION_WINDOW_MS: 25 * 1000,
+      MOVE_THRESHOLD_METERS: 8,
+      MIN_FIXES_FOR_ETA: 3,
+      MIN_ETA_WINDOW_MS: 15 * 1000,
+      GPX_SEARCH: { AHEAD: 80, BACK: 5, EARLY_EXIT_METERS: 25 },
+      SNOW: { ETA_MINUTES_MAX: 15, LEVELS: { LIGHT: 1, HEAVY: 2, BLIZZARD: 3 }, MOBILE_BASE_COUNT: 30, DESKTOP_BASE_COUNT: 60, MULTIPLIERS: [0, 1, 2.5, 5] },
+      BATTERY: { LOW: 0.4, CRITICAL: 0.2, FRAME_SKIP: { LOW: 2, CRITICAL: 3 } },
+      LAPLAND: [66.5436, 25.8473]
+    };
 
-  // ✅ CRASH PROOF GPX LOADER
-  async function loadGpxRoute(url) {
-    try {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), 5000); // 5s timeout
-      const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-      clearTimeout(id);
-      if (!res.ok) throw new Error("GPX fetch failed");
-      const text = await res.text();
-      const xml = new DOMParser().parseFromString(text, "text/xml");
-      const pts = [...xml.getElementsByTagName("trkpt")];
-      if (pts.length < 2) throw new Error("GPX too short");
+    const LAPLAND = CONFIG.LAPLAND;
+    const PREVIEW_ICON = L.icon({ iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png", shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+    const CONFIRMED_ICON = L.icon({ iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png", shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
 
-      let dist = 0; let route = [];
-      for (let i = 0; i < pts.length; i++) {
-        const lat = parseFloat(pts[i].getAttribute("lat"));
-        const lng = parseFloat(pts[i].getAttribute("lon"));
-        if (i > 0) dist += haversineMeters(route[i - 1], { lat, lng });
-        route.push({ lat, lng, dist });
+    const loadingCover = document.getElementById("loadingCover");
+    const statusBox = document.getElementById("statusBox");
+    const followBtn = document.getElementById("followBtn");
+    const recenterBtn = document.getElementById("recenterBtn");
+    const notifyBtn = document.getElementById("notifyBtn");
+    const statusDot = document.getElementById("statusDot");
+    const donateLink = document.getElementById("donateLink");
+    const donateBox = document.getElementById("donateBox");
+    const STALE_MS = CONFIG.STALE_MS;
+    const REFRESH = CONFIG.REFRESH_MS;
+    const FALLBACK = { live: "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png", start: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png", end: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png" };
+    const MOTION_WINDOW_MS = CONFIG.MOTION_WINDOW_MS;
+    const MOVE_THRESHOLD_METERS = CONFIG.MOVE_THRESHOLD_METERS;
+
+    let map, marker, follow = true, firstFix = true, lastFix = null;
+    let awaitingPin = false;
+    let notifyMarker = null;
+    let firebaseBaseUrl = null;
+    let pinPreview = null;
+    let browserNotified = sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1";
+    let recentFixes = [];
+    let lastGoodFix = null;
+    let staleSince = null;
+    let animCurrent = null;
+    let animTarget = null;
+    let animStart = 0;
+    let animDuration = 900;
+    let animRaf = null;
+    let gpxRoute = null;
+    let gpxTotalDistance = 0;
+    let gpxLoaded = false;
+    let lastSnapIndex = 0;
+    var sleighName = "Santa Sleigh";
+    let kioskBanner = null;
+    let sponsorBox = null;
+    let todayRoute = null;
+    let settings = {};
+    let pageVisible = !document.hidden;
+
+    const snowCanvas = document.getElementById("snow");
+    const snowCtx = snowCanvas.getContext("2d");
+    let snowflakes = [];
+    let snowActive = false;
+    let currentSnowLevel = 0;
+
+    function resizeSnow() { snowCanvas.width = window.innerWidth; snowCanvas.height = window.innerHeight; }
+    window.addEventListener("resize", resizeSnow);
+    resizeSnow();
+
+    function createSnow(level) {
+      const isMobile = window.innerWidth < 600;
+      const baseCount = isMobile ? CONFIG.SNOW.MOBILE_BASE_COUNT : CONFIG.SNOW.DESKTOP_BASE_COUNT;
+      const multipliers = CONFIG.SNOW.MULTIPLIERS;
+      const count = Math.floor(baseCount * multipliers[level]);
+      snowflakes = Array.from({ length: count }, () => ({ x: Math.random() * snowCanvas.width, y: Math.random() * snowCanvas.height, radius: Math.random() * 3 + 1, speed: ((Math.random() * 1 + 0.5) + (Math.random() * 1.5)) * (level === 3 ? 1.3 : 1), swayOffset: Math.random() * Math.PI * 2, swaySpeed: Math.random() * 0.02 + 0.005 }));
+    }
+
+    let snowFrame = 0;
+    function drawSnow() {
+      if (!snowActive || !pageVisible) return;
+      const { frameSkip } = getSnowThrottle();
+      snowFrame++;
+      if (frameSkip && snowFrame % (frameSkip + 1) !== 0) { requestAnimationFrame(drawSnow); return; }
+      snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+      snowCtx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      snowCtx.beginPath();
+      for (const f of snowflakes) {
+        f.y += f.speed; f.swayOffset += f.swaySpeed; f.x += Math.sin(f.swayOffset) * 0.5;
+        if (f.y > snowCanvas.height) { f.y = -10; f.x = Math.random() * snowCanvas.width; }
+        if (f.x > snowCanvas.width) f.x = 0; if (f.x < 0) f.x = snowCanvas.width;
+        snowCtx.moveTo(f.x, f.y); snowCtx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
       }
-      gpxRoute = route; gpxTotalDistance = dist; gpxLoaded = true; lastSnapIndex = 0;
-      console.log("✅ GPX Loaded:", Math.round(dist) + "m");
-    } catch (e) {
-      console.warn("⚠️ GPX Fallback:", e.message);
-      gpxLoaded = false; gpxRoute = null;
-      if (notifyBtn) notifyBtn.style.display = "none";
+      snowCtx.fill();
+      requestAnimationFrame(drawSnow);
     }
-  }
 
-  function snapToGpxIndex(pos) {
-    if (!gpxRoute) return null;
-    const { AHEAD, BACK, EARLY_EXIT_METERS } = CONFIG.GPX_SEARCH;
-    const start = Math.max(0, lastSnapIndex - BACK);
-    const end = Math.min(gpxRoute.length - 1, lastSnapIndex + AHEAD);
-    let best = lastSnapIndex; let bestDist = Infinity;
-    for (let i = start; i <= end; i++) {
-      const d = haversineMeters(pos, gpxRoute[i]);
-      if (d < bestDist) { bestDist = d; best = i; }
-      if (i > lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break;
+    function setSnow(on, level = 1) {
+      if (!on) return; // ❌ do NOT auto-clear
+
+      if (currentSnowLevel !== level) {
+        currentSnowLevel = level;
+        createSnow(level);
+      }
+      if (!snowActive) {
+        snowActive = true;
+        document.body.classList.add("snowing");
+        drawSnow();
+      }
     }
-    lastSnapIndex = best;
-    return { point: gpxRoute[best], distance: bestDist };
-  }
-  
-  function getVisualLatLng(rawPos) {
-  if (!gpxLoaded) return rawPos;
-  const snap = snapToGpxIndex(rawPos);
-  return snap ? snap.point : rawPos;
-}
 
-  function snapSubscriberToGpx(pos) {
-    if (!gpxRoute) return null;
-    let best = 0; let bestDist = Infinity;
-    for (let i = 0; i < gpxRoute.length; i++) {
-      const d = haversineMeters(pos, gpxRoute[i]);
-      if (d < bestDist) { bestDist = d; best = i; }
+    function getSnowThrottle() {
+      let maxLevel = 3; let frameSkip = 0;
+      if (batteryState.supported && !batteryState.charging) {
+        if (batteryState.level <= CONFIG.BATTERY.CRITICAL) { maxLevel = 1; frameSkip = CONFIG.BATTERY.FRAME_SKIP.CRITICAL; }
+        else if (batteryState.level <= CONFIG.BATTERY.LOW) { maxLevel = 2; frameSkip = CONFIG.BATTERY.FRAME_SKIP.LOW; }
+      }
+      return { maxLevel, frameSkip };
     }
-    return { point: gpxRoute[best], distance: bestDist };
-  }
-  
-  function pushFix(lat, lng, ts) {
-    const last = recentFixes[recentFixes.length - 1];
-    const dist = last ? haversineMeters(last, { lat, lng }) : 0;
-    recentFixes.push({ lat, lng, ts, cumulative: (last?.cumulative || 0) + dist });
-    const cutoff = ts - MOTION_WINDOW_MS;
-    while (recentFixes.length && recentFixes[0].ts < cutoff) recentFixes.shift();
-  }
 
-  let pendingSubscription = null;
+    const valid = (lat, lng) => typeof lat === "number" && !isNaN(lat) && typeof lng === "number" && !isNaN(lng);
 
-function openSubscribeModal(lat, lng) {
-  if (isKiosk) return;
-  pendingSubscription = { lat, lng };
-  document.getElementById("emailModal").style.display = "flex";
-  document.getElementById("subEmail").focus();
-}
+    async function loadJSON(url) { const r = await fetch(url, { cache: "no-store" }); if (!r.ok) throw 0; return r.json(); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
-function closeSubscribeModal() {
-  document.getElementById("emailModal").style.display = "none";
-  statusBox.textContent = "Tap the pin to try again";
-}
+    function animateMarkerTo(targetLL) {
+      if (!marker) return;
+      if (!animCurrent) animCurrent = marker.getLatLng();
+      animTarget = targetLL; animStart = performance.now();
+      if (animRaf) cancelAnimationFrame(animRaf);
+      const startLL = marker.getLatLng(); const startLat = startLL.lat; const startLng = startLL.lng;
+      const endLat = animTarget.lat; const endLng = animTarget.lng;
+      function step(now) {
+        const t = Math.min(1, (now - animStart) / animDuration); const e = easeOutCubic(t);
+        const lat = lerp(startLat, endLat, e); const lng = lerp(startLng, endLng, e);
+        const ll = L.latLng(lat, lng); marker.setLatLng(ll); animCurrent = ll;
+        if ((follow || isKiosk) && !firstFix) {
+          map.panTo(ll, { animate: true, duration: 0.6 });
+        }
+        if (t < 1) { animRaf = requestAnimationFrame(step); } else { animRaf = null; }
+      }
+      animRaf = requestAnimationFrame(step);
+    }
 
-function confirmSubscription() {
-  if (!pendingSubscription) return;
-  const email = document.getElementById("subEmail").value.trim();
-  closeSubscribeModal();
-  submitSubscription(pendingSubscription.lat, pendingSubscription.lng, email);
-}
+    function setDimUI(dim) { document.body.classList.toggle("dim-ui", !!dim); }
+    function isAfterSunset(lat, lng) { const now = new Date(); const sunset = SunCalc.getTimes(now, lat, lng).sunset; return now > sunset; }
 
-  function submitSubscription(lat, lng, email) {
-    if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
-  showToast("🎅 You’re already signed up!");
-  return;
-}
-    statusBox.textContent = "🔔 Saving your notification...";
+    function showNotifyMarker(lat, lng, confirmed = false) {
+      if (notifyMarker) map.removeLayer(notifyMarker);
+      notifyMarker = L.marker([lat, lng], { icon: confirmed ? CONFIRMED_ICON : PREVIEW_ICON, interactive: true }).addTo(map);
+      if (!confirmed) {
+        notifyMarker.bindPopup("📍 Tap this pin again to confirm").openPopup();
+        notifyMarker.once("click", () => {
+          awaitingPin = false; showNotifyMarker(lat, lng, true);
+          sessionStorage.setItem("SANTA_NOTIFY_POINT", JSON.stringify({ lat, lng }));
+          openSubscribeModal(lat, lng); pinPreview = null;
+        });
+      }
+    }
 
-    const subscribeUrl = `${apiUrl}?function=subscribe` +
-      `&lat=${lat}` +
-      `&lng=${lng}` +
-      `&email=${encodeURIComponent(email || "")}`;
+    function calculateStableSpeedMps_(fixes) {
+      if (fixes.length < CONFIG.MIN_FIXES_FOR_ETA) return null;
+      const first = fixes[0]; const last = fixes[fixes.length - 1];
+      const elapsed = last.ts - first.ts; if (elapsed < CONFIG.MIN_ETA_WINDOW_MS) return null;
+      const dist = fixes[fixes.length - 1].cumulative - fixes[0].cumulative;
+      const speed = dist / (elapsed / 1000);
+      return Math.min(Math.max(speed, 0.3), 6);
+    }
 
-    fetch(subscribeUrl, { method: "GET" })
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok) {
-  sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+    function haversineMeters(a, b) {
+      const R = 6371000; const dLat = (b.lat - a.lat) * Math.PI / 180; const dLng = (b.lng - a.lng) * Math.PI / 180;
+      const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(s));
+    }
 
-if (email) {
-  showToast("✅ Signed up! We’ll email you when Santa is close 🎄");
-} else {
-  showToast("✅ Signed up! Keep this page open for alerts 🎅");
-}
+    function isSleighMoving() {
+      if (recentFixes.length < 2) return false;
+      const first = recentFixes[0]; const last = recentFixes[recentFixes.length - 1];
+      return (last.cumulative - first.cumulative) >= MOVE_THRESHOLD_METERS;
+    }
 
-statusBox.textContent = "";
+    // ✅ CRASH PROOF GPX LOADER
+    async function loadGpxRoute(url) {
+      try {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), 5000); // 5s timeout
+        const res = await fetch(url, { cache: "no-store", signal: controller.signal });
+        clearTimeout(id);
+        if (!res.ok) throw new Error("GPX fetch failed");
+        const text = await res.text();
+        const xml = new DOMParser().parseFromString(text, "text/xml");
+        const pts = [...xml.getElementsByTagName("trkpt")];
+        if (pts.length < 2) throw new Error("GPX too short");
+
+        let dist = 0; let route = [];
+        for (let i = 0; i < pts.length; i++) {
+          const lat = parseFloat(pts[i].getAttribute("lat"));
+          const lng = parseFloat(pts[i].getAttribute("lon"));
+          if (i > 0) dist += haversineMeters(route[i - 1], { lat, lng });
+          route.push({ lat, lng, dist });
+        }
+        gpxRoute = route; gpxTotalDistance = dist; gpxLoaded = true; lastSnapIndex = 0;
+        console.log("✅ GPX Loaded:", Math.round(dist) + "m");
+      } catch (e) {
+        console.warn("⚠️ GPX Fallback:", e.message);
+        gpxLoaded = false; gpxRoute = null;
+        if (notifyBtn) notifyBtn.style.display = "none";
+      }
+    }
+
+    function snapToGpxIndex(pos) {
+      if (!gpxRoute) return null;
+      const { AHEAD, BACK, EARLY_EXIT_METERS } = CONFIG.GPX_SEARCH;
+      const start = Math.max(0, lastSnapIndex - BACK);
+      const end = Math.min(gpxRoute.length - 1, lastSnapIndex + AHEAD);
+      let best = lastSnapIndex; let bestDist = Infinity;
+      for (let i = start; i <= end; i++) {
+        const d = haversineMeters(pos, gpxRoute[i]);
+        if (d < bestDist) { bestDist = d; best = i; }
+        if (i > lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break;
+      }
+      lastSnapIndex = best;
+      return { point: gpxRoute[best], distance: bestDist };
+    }
+
+    function getVisualLatLng(rawPos) {
+      if (!gpxLoaded) return rawPos;
+      const snap = snapToGpxIndex(rawPos);
+      return snap ? snap.point : rawPos;
+    }
+
+    function snapSubscriberToGpx(pos) {
+      if (!gpxRoute) return null;
+      let best = 0; let bestDist = Infinity;
+      for (let i = 0; i < gpxRoute.length; i++) {
+        const d = haversineMeters(pos, gpxRoute[i]);
+        if (d < bestDist) { bestDist = d; best = i; }
+      }
+      return { point: gpxRoute[best], distance: bestDist };
+    }
+
+    function pushFix(lat, lng, ts) {
+      const last = recentFixes[recentFixes.length - 1];
+      const dist = last ? haversineMeters(last, { lat, lng }) : 0;
+      recentFixes.push({ lat, lng, ts, cumulative: (last?.cumulative || 0) + dist });
+      const cutoff = ts - MOTION_WINDOW_MS;
+      while (recentFixes.length && recentFixes[0].ts < cutoff) recentFixes.shift();
+    }
+
+    let pendingSubscription = null;
+
+    function openSubscribeModal(lat, lng) {
+      if (isKiosk) return;
+      pendingSubscription = { lat, lng };
+      document.getElementById("emailModal").style.display = "flex";
+      document.getElementById("subEmail").focus();
+    }
+
+    function closeSubscribeModal() {
+      document.getElementById("emailModal").style.display = "none";
+      statusBox.textContent = "Tap the pin to try again";
+    }
+
+    function confirmSubscription() {
+      if (!pendingSubscription) return;
+      const email = document.getElementById("subEmail").value.trim();
+      closeSubscribeModal();
+      submitSubscription(pendingSubscription.lat, pendingSubscription.lng, email);
+    }
+
+    function submitSubscription(lat, lng, email) {
+      if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
+        showToast("🎅 You’re already signed up!");
+        return;
+      }
+      statusBox.textContent = "🔔 Saving your notification...";
+
+      const subscribeUrl = `${apiUrl}?function=subscribe` +
+        `&lat=${lat}` +
+        `&lng=${lng}` +
+        `&email=${encodeURIComponent(email || "")}`;
+
+      fetch(subscribeUrl, { method: "GET" })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+
+            if (email) {
+              showToast("✅ Signed up! We’ll email you when Santa is close 🎄");
+            } else {
+              showToast("✅ Signed up! Keep this page open for alerts 🎅");
+            }
+
+            statusBox.textContent = "";
+
+          } else {
+            showToast("❌ Could not save notification. Please try again.");
+            statusBox.textContent = "";
+          }
+        })
+        .catch(() => {
+          showToast("❌ Network error. Please try again.");
+          statusBox.textContent = "";
+        });
+    }
+
+    function showToast(message) {
+      if (isKiosk) return; // never show in kiosk
+
+      const t = document.getElementById("toast");
+      if (!message) return;
+
+      t.textContent = message;
+      t.classList.add("toast-visible");
+
+      setTimeout(() => {
+        t.classList.remove("toast-visible");
+        t.textContent = "";
+      }, 4000);
+    }
+
+    document.getElementById("modalCancelBtn").addEventListener("click", closeSubscribeModal);
+    document.getElementById("modalConfirmBtn").addEventListener("click", confirmSubscription);
+
+    // Optional UX: press Enter in email field
+    document.getElementById("subEmail").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") confirmSubscription();
+    });
+
+    function fireBrowserNotification(title, body) {
+      if (!("Notification" in window)) return;
+      if (Notification.permission !== "granted") return;
+      try {
+        new Notification(title, {
+          body,
+          icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
+          badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
+          requireInteraction: true
+        });
+      } catch (e) {}
+    }
+
+    /* ---------- INIT ---------- */
+    async function init() {
+      const data = await loadJSON(apiUrl);
+      fetch(apiUrl + "?function=logView&source=tracker&route=" + encodeURIComponent((data.routes || [])[0]?.routeName || "") + "&ua=" + encodeURIComponent(navigator.userAgent), { keepalive: true }).catch(() => {});
+
+      settings = data.settings || {};
+      const s = settings; // optional convenience
+      if (s.donate_url) { donateLink.href = s.donate_url; donateBox.style.display = "block"; } else { donateBox.style.display = "none"; }
+      firebaseBaseUrl = data.tracker?.firebase_url || null;
+
+      sleighName = s.sleigh_display_name || "Santa Sleigh";
+
+      const today = new Date().toISOString().slice(0, 10);
+      todayRoute = (data.routes || []).find(r => r.date === today && r.gpxUrl) || null;
+
+      kioskBanner = document.getElementById("kioskBanner");
+
+      if (isKiosk) requestWakeLock();
+
+      if (isKiosk && kioskBanner) {
+        kioskBanner.innerHTML = `<div id="kioskStatus">🎄 PREPARING IN LAPLAND</div><div class="kiosk-subtitle">${sleighName}</div>`;
+        kioskBanner.classList.add("visible");
+      }
+
+      if (!todayRoute) {
+        notifyBtn.style.display = "none";
+      } else {
+        await loadGpxRoute(todayRoute.gpxUrl); // ✅ Updated logic handles error internally
+      }
+
+      map = L.map("map", {
+        zoomControl: !isKiosk
+      }).setView(LAPLAND, isKiosk ? 6 : 5);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+
+      if (isKiosk) {
+        map.dragging.disable();
+        map.scrollWheelZoom.disable();
+        map.doubleClickZoom.disable();
+        map.boxZoom.disable();
+        map.keyboard.disable();
+        map.touchZoom.disable();
+      }
+
+      if (todayRoute && gpxLoaded) {
+        const gpxLayer = new L.GPX(todayRoute.gpxUrl, {
+          async: true,
+          polyline_options: { color: s.accent_color || "#ffd700", weight: 4, opacity: 0.85 },
+          marker_options: {
+            startIcon: L.icon({ iconUrl: s.sleigh_icon_start || FALLBACK.start, iconSize: [48, 48], iconAnchor: [24, 48] }),
+            endIcon: L.icon({ iconUrl: s.sleigh_icon_end || FALLBACK.end, iconSize: [48, 48], iconAnchor: [24, 48] }),
+            shadowUrl: null
+          }
+        });
+        gpxLayer.addTo(map);
+      }
+
+      sponsorBox = document.getElementById("kioskSponsor");
+
+      if (isKiosk && todayRoute?.sponsorUrl) {
+        sponsorBox.innerHTML = `<span>Proudly sponsored by</span><img src="${todayRoute.sponsorUrl}" alt="Sponsor">`;
+      }
+
+      if (!isKiosk) {
+        const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
+        if (savedPin) {
+          try {
+            const p = JSON.parse(savedPin);
+            browserNotified = false;
+            sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+            showNotifyMarker(p.lat, p.lng, true);
+          } catch (e) {}
+        }
+      }
+
+      map.on("click", e => {
+        if (!awaitingPin) return;
+        const { lat, lng } = e.latlng;
+        pinPreview = { lat, lng };
+        showNotifyMarker(lat, lng, false);
+        statusBox.textContent = "📍 Pin moved — tap again to confirm";
+      });
+
+      if (s.logo_overlay_url) {
+        const LOGO_POSITIONS = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" };
+        const logoPosition = LOGO_POSITIONS[s.logo_overlay_position] || "bottomright";
+        const LogoControl = L.control({ position: logoPosition });
+        LogoControl.onAdd = function() { const img = L.DomUtil.create("img"); img.src = s.logo_overlay_url; img.className = "logo-overlay"; return img; };
+        LogoControl.addTo(map);
+      }
+
+      marker = L.marker(LAPLAND, { icon: L.icon({ iconUrl: s.sleigh_icon_live || FALLBACK.live, iconSize: [64, 64], iconAnchor: [32, 60] }) }).addTo(map);
+      followBtn.onclick = () => {
+        if (isKiosk) return;
+        follow = !follow;
+        followBtn.textContent = "Follow: " + (follow ? "ON" : "OFF");
+      };
+
+      recenterBtn.onclick = () => {
+        if (isKiosk) return;
+        follow = true;
+        map.panTo(marker.getLatLng());
+      };
+
+      if (isKiosk) {
+        follow = true;
+        followBtn.style.display = "none";
+        recenterBtn.style.display = "none";
+        notifyBtn.style.display = "none";
+        donateBox.style.display = "none"; // optional — keep if you want donations hidden
+      }
+
+      if (isKiosk) {
+        document.body.classList.add("kiosk");
+      }
+
+      loadingCover.style.display = "none";
+
+      tick();
+    }
+
+    async function tick() {
+      const dot = statusDot;
+      try {
+        const p = await loadJSON(apiUrl + "?function=proxyFirebase");
+        if (!valid(p.lat, p.lng)) throw 0;
+        const ts = new Date(p.ts).getTime();
+        if (!Number.isFinite(ts)) throw 0;
+        const age = Date.now() - ts;
+
+        const gpsFresh = age <= STALE_MS;
+
+        if (isKiosk && kioskBanner) {
+          kioskBanner.classList.toggle("live", gpsFresh);
+        }
+        const kioskStatusEl = document.getElementById("kioskStatus");
+
+        if (isKiosk && kioskStatusEl) {
+          kioskStatusEl.textContent = gpsFresh ?
+            "🎅 LIVE TRACKING" :
+            "🎄 PREPARING IN LAPLAND";
+        }
+
+        const kioskLive = isKiosk && gpsFresh;
+
+        // Sponsor: GPS + sponsor present
+        if (sponsorBox) {
+          sponsorBox.classList.toggle(
+            "visible",
+            kioskLive && !!todayRoute?.sponsorUrl
+          );
+        }
+
+        if (gpsFresh && isAfterSunset(p.lat, p.lng)) { document.body.classList.add("night-mode"); } else { document.body.classList.remove("night-mode"); }
+
+        if (age <= STALE_MS) {
+          staleSince = null;
+          lastGoodFix = { lat: p.lat, lng: p.lng };
 
         } else {
-          showToast("❌ Could not save notification. Please try again.");
-statusBox.textContent = "";
+          if (!staleSince) staleSince = ts;
+
+          if (Date.now() - staleSince > STALE_MS) {
+
+            marker.setLatLng(LAPLAND);
+            if (follow) map.setView(LAPLAND, 5, { animate: true, duration: 2 });
+
+            statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
+            dot.style.display = "none";
+            setDimUI(false);
+            firstFix = true;
+
+            if (animRaf) cancelAnimationFrame(animRaf);
+            animRaf = null;
+
+            setTimeout(tick, REFRESH);
+            return;
+          }
+
+          if (lastGoodFix) {
+            animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
+            statusBox.textContent = "🎅 Santa is nearby…";
+            return;
+          }
         }
-      })
-      .catch(() => {
-        showToast("❌ Network error. Please try again.");
-statusBox.textContent = "";
-      });
-  }
 
-  function showToast(message) {
-  if (isKiosk) return; // never show in kiosk
+        const visualPos = getVisualLatLng({ lat: p.lat, lng: p.lng });
+        const ll = L.latLng(visualPos.lat, visualPos.lng);
+        animateMarkerTo(ll);
 
-  const t = document.getElementById("toast");
-  if (!message) return;
+        const now = Date.now();
+        pushFix(p.lat, p.lng, now);
 
-  t.textContent = message;
-  t.classList.add("toast-visible");
+        let etaSeconds = null;
+        let passedSubscriber = false;
 
-  setTimeout(() => {
-    t.classList.remove("toast-visible");
-    t.textContent = "";
-  }, 4000);
-}
-   
-  document.getElementById("modalCancelBtn").addEventListener("click", closeSubscribeModal);
-document.getElementById("modalConfirmBtn").addEventListener("click", confirmSubscription);
+        if (
+          notifyMarker &&
+          gpxLoaded &&
+          gpsFresh
+        ) {
+          const santaPos = { lat: p.lat, lng: p.lng };
+          const santaSnap = snapToGpxIndex(santaPos);
 
-// Optional UX: press Enter in email field
-document.getElementById("subEmail").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") confirmSubscription();
-});
+          if (santaSnap) {
+            const userPos = notifyMarker.getLatLng();
+            const userSnap = snapSubscriberToGpx(userPos);
 
-  function fireBrowserNotification(title, body) {
-  if (!("Notification" in window)) return;
-  if (Notification.permission !== "granted") return;
-  try {
-    new Notification(title, {
-      body,
-      icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
-      badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
-      requireInteraction: true
+            if (userSnap) {
+
+              // Has Santa already passed the pin?
+              if (santaSnap.point.dist > userSnap.point.dist + 30) {
+                passedSubscriber = true;
+
+              } else {
+                const remainingMeters =
+                  Math.max(0, userSnap.point.dist - santaSnap.point.dist);
+
+                const speed = calculateStableSpeedMps_(recentFixes);
+
+                if (speed && isSleighMoving()) {
+                  etaSeconds = remainingMeters / speed;
+                }
+              }
+            }
+          }
+        }
+
+        const night = document.body.classList.contains("night-mode");
+        const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
+
+        let snowOn = false; let snowLevel = 1;
+        if (
+          notifyMarker &&
+          etaSeconds !== null &&
+          gpsFresh &&
+          night &&
+          isSleighMoving()
+        ) {
+          snowOn = true;
+          if (etaMinutes < 2) { snowLevel = 3; } else if (etaMinutes < 7) { snowLevel = 2; } else { snowLevel = 1; }
+        }
+        const { maxLevel } = getSnowThrottle();
+        setSnow(snowOn, Math.min(snowLevel, maxLevel));
+
+        if (notifyMarker && !browserNotified && !passedSubscriber) {
+          const santa = { lat: p.lat, lng: p.lng };
+          const user = notifyMarker.getLatLng();
+          const meters = haversineMeters(santa, user);
+          if (meters < 250) {
+            browserNotified = true;
+            sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
+            fireBrowserNotification("🎅 Santa is nearly here!", "He’s about 5 minutes away — get ready! 🎄");
+          }
+        }
+
+        if (firstFix) {
+          map.setView(ll, INITIAL_ZOOM);
+          firstFix = false;
+        }
+
+        const moving = isSleighMoving();
+        dot.style.display = "block";
+        dot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
+
+        if (passedSubscriber) {
+          statusBox.textContent = "🎄 Santa has just been here!"; setDimUI(false);
+        } else if (etaSeconds !== null) {
+          const mins = Math.max(1, Math.round(etaSeconds / 60));
+          const unit = mins === 1 ? "min" : "mins";
+          statusBox.textContent = `🎅 Santa is ${mins} ${unit} away!`;;
+          setDimUI(mins > 45);
+          if (mins > 45) statusBox.textContent = "🎅 Santa is out delivering this evening…";
+          else if (mins > 15) statusBox.textContent = "🎅 Santa is on the way…";
+          else if (mins > 5) statusBox.textContent = "🎅 Santa is nearly here!";
+          else statusBox.textContent = `🎅 Santa is ${Math.max(1, mins)} min away!`;
+        } else if (moving) {
+          setDimUI(false); statusBox.textContent = "🎅 Santa is out spreading joy!";
+        } else {
+          setDimUI(false); statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
+        }
+
+      } catch (e) {
+        if (lastGoodFix) {
+          animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
+          statusBox.textContent = "🎅 Santa is nearby…";
+          dot.style.display = "none"; setDimUI(false);
+        }
+      }
+      setTimeout(tick, REFRESH);
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      pageVisible = !document.hidden;
+
+      if (pageVisible) {
+        requestWakeLock();
+        if (snowActive) drawSnow();
+      }
     });
-  } catch (e) {}
-}
-  
-  /* ---------- INIT ---------- */
-  async function init(){
-    const data = await loadJSON(apiUrl);
-    fetch(apiUrl + "?function=logView&source=tracker&route=" + encodeURIComponent((data.routes || [])[0]?.routeName || "") + "&ua=" + encodeURIComponent(navigator.userAgent), { keepalive: true }).catch(() => {});
-    
-    settings = data.settings || {};
-const s = settings; // optional convenience
-    if (s.donate_url) { donateLink.href = s.donate_url; donateBox.style.display = "block"; } else { donateBox.style.display = "none"; }
-    firebaseBaseUrl = data.tracker?.firebase_url || null;
 
-    sleighName = s.sleigh_display_name || "Santa Sleigh";
-    
-const today = new Date().toISOString().slice(0, 10);
-todayRoute = (data.routes || []).find(r => r.date === today && r.gpxUrl) || null;
-
-kioskBanner = document.getElementById("kioskBanner");
-
-    if (isKiosk) requestWakeLock();
-
-if (isKiosk && kioskBanner) {
-  kioskBanner.innerHTML = `
-    <div id="kioskStatus">🎄 PREPARING IN LAPLAND</div>
-    <div class="kiosk-subtitle">
-      ${sleighName}
-    </div>
-  `;
-  kioskBanner.classList.add("visible");
-}
-
-    if (!todayRoute) {
-      notifyBtn.style.display = "none";
-    } else {
-      await loadGpxRoute(todayRoute.gpxUrl); // ✅ Updated logic handles error internally
-    }
-
-    map = L.map("map", {
-  zoomControl: !isKiosk
-}).setView(LAPLAND, isKiosk ? 6 : 5);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
-
-    if (isKiosk) {
-  map.dragging.disable();
-  map.scrollWheelZoom.disable();
-  map.doubleClickZoom.disable();
-  map.boxZoom.disable();
-  map.keyboard.disable();
-  map.touchZoom.disable();
-}
-
-    if (todayRoute && gpxLoaded) {
-      const gpxLayer = new L.GPX(todayRoute.gpxUrl, {
-        async: true,
-        polyline_options: { color: s.accent_color || "#ffd700", weight: 4, opacity: 0.85 },
-        marker_options: {
-          startIcon: L.icon({ iconUrl: s.sleigh_icon_start || FALLBACK.start, iconSize: [48, 48], iconAnchor: [24, 48] }),
-          endIcon: L.icon({ iconUrl: s.sleigh_icon_end || FALLBACK.end, iconSize: [48, 48], iconAnchor: [24, 48] }),
-          shadowUrl: null
-        }
-      });
-      gpxLayer.addTo(map);
-    }
-
-    sponsorBox = document.getElementById("kioskSponsor");
-
-if (isKiosk && todayRoute?.sponsorUrl) {
-  sponsorBox.innerHTML = `
-    <span>Proudly sponsored by</span>
-    <img src="${todayRoute.sponsorUrl}" alt="Sponsor">
-  `;
-}
-
-    if (!isKiosk) {
-  const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
-  if (savedPin) {
-    try {
-      const p = JSON.parse(savedPin);
-      browserNotified = false;
-      sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
-      showNotifyMarker(p.lat, p.lng, true);
-    } catch (e) {}
-  }
-}
-
-    map.on("click", e => {
-      if (!awaitingPin) return;
-      const { lat, lng } = e.latlng;
-      pinPreview = { lat, lng };
-      showNotifyMarker(lat, lng, false);
-      statusBox.textContent = "📍 Pin moved — tap again to confirm";
+    // Re-request wake lock when window regains focus (Android TV, HDMI wake, etc.)
+    window.addEventListener("focus", () => {
+      if (isKiosk) {
+        requestWakeLock();
+        if (snowActive) drawSnow();
+      }
     });
 
-    if (s.logo_overlay_url) {
-      const LOGO_POSITIONS = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" };
-      const logoPosition = LOGO_POSITIONS[s.logo_overlay_position] || "bottomright";
-      const LogoControl = L.control({ position: logoPosition });
-      LogoControl.onAdd = function(){ const img = L.DomUtil.create("img"); img.src = s.logo_overlay_url; img.className = "logo-overlay"; return img; };
-      LogoControl.addTo(map);
-    }
+    init();
 
-    marker = L.marker(LAPLAND,{ icon:L.icon({ iconUrl:s.sleigh_icon_live||FALLBACK.live, iconSize:[64,64], iconAnchor:[32,60] }) }).addTo(map);
-    followBtn.onclick = () => {
-  if (isKiosk) return;
-  follow = !follow;
-  followBtn.textContent = "Follow: " + (follow ? "ON" : "OFF");
-};
-
-recenterBtn.onclick = () => {
-  if (isKiosk) return;
-  follow = true;
-  map.panTo(marker.getLatLng());
-};
-
-if (isKiosk) {
-  follow = true;
-  followBtn.style.display = "none";
-  recenterBtn.style.display = "none";
-  notifyBtn.style.display = "none";
-  donateBox.style.display = "none"; // optional — keep if you want donations hidden
-}
-
-    if (isKiosk) {
-  document.body.classList.add("kiosk");
-}
-
-    loadingCover.style.display="none";
-
-    tick();
-  }
-
-  async function tick(){
-    const dot=statusDot;
-    try{
-      const p=await loadJSON(apiUrl+"?function=proxyFirebase");
-      if(!valid(p.lat,p.lng)) throw 0;
-      const ts = new Date(p.ts).getTime();    
-      if (!Number.isFinite(ts)) throw 0;
-      const age = Date.now() - ts;
-      
-      const gpsFresh = age <= STALE_MS;
-      
-      if (isKiosk && kioskBanner) {
-  kioskBanner.classList.toggle("live", gpsFresh);
-}
-      const kioskStatusEl = document.getElementById("kioskStatus");
-
-if (isKiosk && kioskStatusEl) {
-  kioskStatusEl.textContent = gpsFresh
-    ? "🎅 LIVE TRACKING"
-    : "🎄 PREPARING IN LAPLAND";
-}
-
-      const kioskLive = isKiosk && gpsFresh;
-
-// Sponsor: GPS + sponsor present
-if (sponsorBox) {
-  sponsorBox.classList.toggle(
-    "visible",
-    kioskLive && !!todayRoute?.sponsorUrl
-  );
-}
-
-      if (gpsFresh && isAfterSunset(p.lat, p.lng)) { document.body.classList.add("night-mode"); } else { document.body.classList.remove("night-mode"); }
-      
-      if (age <= STALE_MS) {
-  staleSince = null;
-  lastGoodFix = { lat: p.lat, lng: p.lng };
-
-} else {
-  if (!staleSince) staleSince = ts;
-
-  if (Date.now() - staleSince > STALE_MS) {
-
-    marker.setLatLng(LAPLAND);
-    if (follow) map.setView(LAPLAND, 5, { animate: true, duration: 2 });
-
-    statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
-    dot.style.display = "none";
-    setDimUI(false);
-    firstFix = true;
-
-    if (animRaf) cancelAnimationFrame(animRaf);
-    animRaf = null;
-
-    setTimeout(tick, REFRESH);
-    return;
-  }
-
-  if (lastGoodFix) {
-    animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
-    statusBox.textContent = "🎅 Santa is nearby…";
-    return;
-  }
-}
-    
-      const visualPos = getVisualLatLng({ lat: p.lat, lng: p.lng });
-      const ll = L.latLng(visualPos.lat, visualPos.lng);
-      animateMarkerTo(ll);
-      
-      const now = Date.now();
-      pushFix(p.lat, p.lng, now);
-
-      let etaSeconds = null;
-let passedSubscriber = false;
-
-if (
-  notifyMarker &&
-  gpxLoaded &&
-  gpsFresh
-) {
-  const santaPos = { lat: p.lat, lng: p.lng };
-  const santaSnap = snapToGpxIndex(santaPos);
-
-  if (santaSnap) {
-    const userPos = notifyMarker.getLatLng();
-    const userSnap = snapSubscriberToGpx(userPos);
-
-    if (userSnap) {
-
-      // Has Santa already passed the pin?
-      if (santaSnap.point.dist > userSnap.point.dist + 30) {
-        passedSubscriber = true;
-
-      } else {
-        const remainingMeters =
-          Math.max(0, userSnap.point.dist - santaSnap.point.dist);
-
-        const speed = calculateStableSpeedMps_(recentFixes);
-
-        if (speed && isSleighMoving()) {
-          etaSeconds = remainingMeters / speed;
-        }
-      }
-    }
-  }
-}
-      
-      const night = document.body.classList.contains("night-mode");
-      const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
-      
-      let snowOn = false; let snowLevel = 1;
-      if (
-  notifyMarker &&
-  etaSeconds !== null &&
-  gpsFresh &&
-  night &&
-  isSleighMoving()
-)
- {
-        snowOn = true;
-        if (etaMinutes < 2) { snowLevel = 3; } else if (etaMinutes < 7) { snowLevel = 2; } else { snowLevel = 1; }
-      }
-      const { maxLevel } = getSnowThrottle();
-      setSnow(snowOn, Math.min(snowLevel, maxLevel));
-
-      if (notifyMarker && !browserNotified && !passedSubscriber) {
-        const santa = { lat: p.lat, lng: p.lng };
-        const user = notifyMarker.getLatLng();
-        const meters = haversineMeters(santa, user);
-        if (meters < 250) {
-          browserNotified = true;
-          sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
-          fireBrowserNotification("🎅 Santa is nearly here!", "He’s about 5 minutes away — get ready! 🎄");
-        }
-      }
-      
-      if (firstFix) {
-  map.setView(ll, INITIAL_ZOOM);
-  firstFix = false;
-}
-
-      const moving = isSleighMoving();
-      dot.style.display = "block";
-      dot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
-
-      if (passedSubscriber) {
-        statusBox.textContent = "🎄 Santa has just been here!"; setDimUI(false);
-      } else if (etaSeconds !== null) {
-        const mins = Math.max(1, Math.round(etaSeconds / 60));
-        const unit = mins === 1 ? "min" : "mins";
-        statusBox.textContent = `🎅 Santa is ${mins} ${unit} away!`;
-      ; setDimUI(mins > 45);
-        if (mins > 45) statusBox.textContent = "🎅 Santa is out delivering this evening…";
-        else if (mins > 15) statusBox.textContent = "🎅 Santa is on the way…";
-        else if (mins > 5) statusBox.textContent = "🎅 Santa is nearly here!";
-        else statusBox.textContent = `🎅 Santa is ${Math.max(1, mins)} min away!`;
-      } else if (moving) {
-        setDimUI(false); statusBox.textContent = "🎅 Santa is out spreading joy!";
-      } else {
-        setDimUI(false); statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
-      }
-
-    }catch (e) {
-      if (lastGoodFix) {
-        animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
-        statusBox.textContent = "🎅 Santa is nearby…";
-        dot.style.display = "none"; setDimUI(false);
-      }
-    }
-    setTimeout(tick, REFRESH);
-  }
-  
-  document.addEventListener("visibilitychange", () => {
-  pageVisible = !document.hidden;
-
-  if (pageVisible) {
-    requestWakeLock();
-    if (snowActive) drawSnow();
-  }
-});
-
-  // Re-request wake lock when window regains focus (Android TV, HDMI wake, etc.)
-window.addEventListener("focus", () => {
-  if (isKiosk) {
-    requestWakeLock();
-    if (snowActive) drawSnow();
-  }
-});
-  
-  init();
-  
-</script>
+  </script>
 </body>
 </html>
