@@ -208,7 +208,7 @@ body.kiosk .kiosk-banner {
 }
 
 /* Animate only in kiosk mode */
-body.kiosk .kiosk-banner {
+body.kiosk .kiosk-banner.live {
   animation: kioskPulse 2.8s ease-in-out infinite;
 }
 
@@ -816,8 +816,6 @@ if (sponsorBox) {
       } else {
         if (!staleSince) staleSince = ts;
         if (Date.now() - staleSince > STALE_MS) {
-  if (isKiosk && kioskBanner) {
-    kioskBanner.classList.remove("visible");
   }
 
   marker.setLatLng(LAPLAND);
