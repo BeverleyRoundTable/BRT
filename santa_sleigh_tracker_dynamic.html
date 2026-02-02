@@ -24,7 +24,6 @@
       overflow: hidden;
     }
 
-    /* Prevent font scaling in landscape on mobile */
     html {
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
@@ -36,7 +35,6 @@
       --info-bottom: var(--ui-bottom-safe);
     }
 
-    /* iPhone X/11/12+ Safe Area Handling */
     @supports(padding: env(safe-area-inset-bottom)) {
       :root {
         --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom));
@@ -54,7 +52,6 @@
       z-index: 100;
     }
 
-    /* Map Filtering for Night Mode / UI Dimming */
     body.dim-ui #map {
       filter: brightness(0.85);
       transition: filter 600ms ease;
@@ -64,7 +61,6 @@
       filter: brightness(0.75) saturate(0.9) hue-rotate(-8deg);
     }
 
-    /* Snow Overlay */
     #snow {
       position: fixed;
       inset: 0;
@@ -79,7 +75,6 @@
       filter: drop-shadow(0 0 4px white);
     }
 
-    /* Vignette Overlay (Dark edges) */
     body::after {
       content: '';
       position: fixed;
@@ -94,10 +89,8 @@
     body.snowing::after { opacity: 1; }
 
     /* =========================================
-       3. UI COMPONENTS (Popups, Buttons)
+       3. UI COMPONENTS
        ========================================= */
-    
-    /* Top Status Box */
     .status-popup {
       position: absolute;
       top: 20px;
@@ -119,7 +112,6 @@
       background: rgba(12, 16, 28, 0.95);
     }
 
-    /* Bottom Control Bar */
     .info-popup {
       position: fixed;
       bottom: var(--info-bottom);
@@ -148,6 +140,14 @@
       padding: 7px 12px;
       cursor: pointer;
       font-weight: 800;
+      transition: opacity 0.3s;
+    }
+
+    /* Disabled state for Follow button */
+    .btn.locked {
+      opacity: 0.4;
+      pointer-events: none;
+      filter: grayscale(1);
     }
 
     .donate-box {
@@ -173,7 +173,6 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
     }
 
-    /* UI Dimming Effect (When idle/distant) */
     body.dim-ui .donate-box,
     body.dim-ui .info-popup,
     body.dim-ui .status-popup {
@@ -187,7 +186,6 @@
       opacity: 0.75;
     }
 
-    /* Status Dot (Green/Red indicator) */
     .status-dot {
       width: 12px;
       aspect-ratio: 1 / 1;
@@ -204,7 +202,6 @@
       100% { box-shadow: 0 0 0 0 rgba(44, 255, 78, 0); }
     }
 
-    /* Logo Overlay */
     .logo-overlay {
       position: relative;
       width: 48px;
@@ -214,7 +211,6 @@
       filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .5));
     }
 
-    /* Loading Spinner */
     #loadingCover {
       position: fixed;
       inset: 0;
@@ -282,7 +278,6 @@
     .btn-cancel { background: #333; color: #aaa; }
     .btn-confirm { background: #d31c1c; color: white; box-shadow: 0 4px 12px rgba(211, 28, 28, 0.3); }
 
-    /* Toast Notification */
     .toast-box {
       display: none;
       position: fixed; left: 50%; bottom: calc(var(--donate-bottom) + 80px);
@@ -301,20 +296,17 @@
     body.kiosk .kiosk-sponsor { bottom: var(--kiosk-bottom); }
     body.kiosk .kiosk-banner { bottom: calc(var(--kiosk-bottom) + 64px); }
     
-    /* Hide interactive elements in Kiosk Mode */
     body.kiosk .toast-box, 
     body.kiosk .status-popup, 
     body.kiosk #statusDot,
     body.kiosk .leaflet-control-zoom,
     body.kiosk .info-popup { display: none !important; }
 
-    /* Disable Leaflet interactions */
     body.kiosk .leaflet-container { -webkit-tap-highlight-color: transparent; }
     body.kiosk .leaflet-container *,
     body.kiosk .leaflet-interactive:focus,
     body.kiosk .leaflet-interactive { outline: none !important; pointer-events: none; }
 
-    /* Kiosk Banner */
     .kiosk-banner {
       position: fixed;
       bottom: calc(var(--kiosk-bottom) + 64px);
@@ -326,7 +318,7 @@
       z-index: 4500; pointer-events: none;
       opacity: 0; transition: opacity 0.6s ease, transform 0.6s ease;
       text-align: center;
-      display: none; /* Hidden by default unless kiosk class present */
+      display: none;
     }
     body.kiosk .kiosk-banner { display: block; }
     
@@ -339,7 +331,6 @@
       50% { box-shadow: 0 8px 34px rgba(255, 215, 0, 0.6); }
     }
 
-    /* Kiosk Sponsor Badge */
     .kiosk-sponsor {
       position: fixed; bottom: var(--kiosk-bottom); left: 50%;
       transform: translateX(-50%) translateY(6px);
@@ -354,7 +345,6 @@
     .kiosk-sponsor span { font-size: 0.75em; font-weight: 700; opacity: 0.85; white-space: nowrap; }
     .kiosk-sponsor img { max-height: 34px; max-width: 160px; object-fit: contain; }
 
-    /* Media Queries */
     @media (max-height: 700px) {
       :root { --ui-bottom-safe: calc(64px + env(safe-area-inset-bottom)); }
       .donate-box { width: 85%; max-width: 360px; }
@@ -366,7 +356,6 @@
 
 <body>
   <div id="loadingCover"><div id="loadingSpinner"></div></div>
-
   <div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
   <div class="donate-box" id="donateBox"><a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a></div>
   
@@ -397,10 +386,6 @@
   <canvas id="snow"></canvas>
 
   <script>
-    /**
-     * SANTA TRACKER CLIENT
-     * Wrapped in EventListener to prevent global namespace pollution.
-     */
     document.addEventListener("DOMContentLoaded", () => {
       
       // =========================================
@@ -449,7 +434,6 @@
         }
       };
 
-      // Mutable State
       const AppState = {
         map: null,
         marker: null,
@@ -500,13 +484,11 @@
         validPos: (lat, lng) => typeof lat === "number" && !isNaN(lat) && typeof lng === "number" && !isNaN(lng),
         lerp: (a, b, t) => a + (b - a) * t,
         easeOutCubic: (t) => 1 - Math.pow(1 - t, 3),
-        
         async loadJSON(url) {
           const r = await fetch(url, { cache: "no-store" });
           if (!r.ok) throw new Error(`Fetch failed: ${r.status}`);
           return r.json();
         },
-
         haversineMeters(a, b) {
           const R = 6371000; 
           const dLat = (b.lat - a.lat) * Math.PI / 180; 
@@ -514,24 +496,30 @@
           const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
           return 2 * R * Math.asin(Math.sqrt(s));
         },
-
         isAfterSunset(lat, lng) {
           const now = new Date();
           const sunset = SunCalc.getTimes(now, lat, lng).sunset;
           return now > sunset;
         },
-
         calculateSpeed(fixes) {
           if (fixes.length < AppConfig.API.MIN_FIXES_FOR_ETA) return null;
           const first = fixes[0]; 
           const last = fixes[fixes.length - 1];
           const elapsed = last.ts - first.ts; 
-          
           if (elapsed < AppConfig.API.MIN_ETA_WINDOW_MS) return null;
-          
           const dist = last.cumulative - first.cumulative;
-          const speed = dist / (elapsed / 1000); // m/s
-          return Math.min(Math.max(speed, 0.3), 6); // Clamp reasonable sleigh speeds
+          const speed = dist / (elapsed / 1000); 
+          return Math.min(Math.max(speed, 0.3), 6); 
+        },
+        toggleFollowControls(enable) {
+          const { followBtn, recenterBtn } = AppState.dom;
+          if (enable) {
+            followBtn.classList.remove("locked");
+            recenterBtn.classList.remove("locked");
+          } else {
+            followBtn.classList.add("locked");
+            recenterBtn.classList.add("locked");
+          }
         }
       };
 
@@ -557,7 +545,7 @@
             wakeLock = await navigator.wakeLock.request("screen");
             wakeLock.addEventListener("release", () => setTimeout(requestWakeLock, 2000));
           }
-        } catch(e) { console.log("WakeLock failed:", e); }
+        } catch(e) {}
       }
 
       // =========================================
@@ -603,10 +591,7 @@
         const fixes = AppState.recentFixes;
         const last = fixes[fixes.length - 1];
         const dist = last ? Utils.haversineMeters(last, { lat, lng }) : 0;
-        
         fixes.push({ lat, lng, ts, cumulative: (last?.cumulative || 0) + dist });
-        
-        // Remove old fixes outside motion window
         const cutoff = ts - AppConfig.API.MOTION_WINDOW_MS;
         while (fixes.length && fixes[0].ts < cutoff) fixes.shift();
       }
@@ -626,34 +611,25 @@
         try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000);
-          
           const res = await fetch(url, { cache: "no-store", signal: controller.signal });
           clearTimeout(timeoutId);
           if (!res.ok) throw new Error("GPX fetch failed");
-          
           const text = await res.text();
           const xml = new DOMParser().parseFromString(text, "text/xml");
           const pts = [...xml.getElementsByTagName("trkpt")];
-          
           if (pts.length < 2) throw new Error("GPX too short");
 
-          let dist = 0; 
-          let route = [];
-          
+          let dist = 0; let route = [];
           for (let i = 0; i < pts.length; i++) {
             const lat = parseFloat(pts[i].getAttribute("lat"));
             const lng = parseFloat(pts[i].getAttribute("lon"));
             if (i > 0) dist += Utils.haversineMeters(route[i - 1], { lat, lng });
             route.push({ lat, lng, dist });
           }
-          
           AppState.gpxRoute = route;
           AppState.flags.gpxLoaded = true;
           AppState.vars.lastSnapIndex = 0;
-          console.log(`✅ GPX Loaded: ${Math.round(dist)}m`);
-
         } catch (e) {
-          console.warn("GPX Load Error:", e.message);
           AppState.flags.gpxLoaded = false;
           AppState.dom.notifyBtn.style.display = "none";
         }
@@ -661,13 +637,8 @@
 
       function snapToGpxIndex(pos, searchOpts) {
         if (!AppState.gpxRoute) return null;
-        
-        // Search user logic vs Santa logic
         const { AHEAD, BACK, EARLY_EXIT_METERS } = searchOpts || AppConfig.GPX;
-        
-        // If specific search range not provided, search whole route (for user pin)
         const isGlobalSearch = !searchOpts; 
-        
         const start = isGlobalSearch ? 0 : Math.max(0, AppState.vars.lastSnapIndex - BACK);
         const end = isGlobalSearch ? AppState.gpxRoute.length - 1 : Math.min(AppState.gpxRoute.length - 1, AppState.vars.lastSnapIndex + AHEAD);
 
@@ -676,11 +647,7 @@
 
         for (let i = start; i <= end; i++) {
           const d = Utils.haversineMeters(pos, AppState.gpxRoute[i]);
-          if (d < bestDist) { 
-            bestDist = d; 
-            bestIndex = i; 
-          }
-          // Optimization: If distance starts growing significantly, stop searching (local min)
+          if (d < bestDist) { bestDist = d; bestIndex = i; }
           if (!isGlobalSearch && i > AppState.vars.lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break;
         }
 
@@ -714,7 +681,6 @@
           const isMobile = window.innerWidth < 600;
           const baseCount = isMobile ? AppConfig.SNOW.MOBILE_BASE_COUNT : AppConfig.SNOW.DESKTOP_BASE_COUNT;
           const count = Math.floor(baseCount * AppConfig.SNOW.MULTIPLIERS[level]);
-          
           AppState.vars.snowflakes = Array.from({ length: count }, () => ({
             x: Math.random() * AppState.dom.snowCanvas.width,
             y: Math.random() * AppState.dom.snowCanvas.height,
@@ -726,20 +692,13 @@
         },
         draw() {
           if (!AppState.flags.snowActive || !AppState.flags.pageVisible) return;
-          
-          // Throttling for battery saving
           let frameSkip = 0;
           if (batteryState.supported && !batteryState.charging) {
             if (batteryState.level <= AppConfig.BATTERY.CRITICAL) frameSkip = AppConfig.BATTERY.FRAME_SKIP.CRITICAL;
             else if (batteryState.level <= AppConfig.BATTERY.LOW) frameSkip = AppConfig.BATTERY.FRAME_SKIP.LOW;
           }
-
-          // Very basic frame skipper
-          if (frameSkip && Date.now() % (frameSkip + 1) !== 0) { 
-             requestAnimationFrame(SnowSystem.draw); 
-             return; 
-          }
-
+          if (frameSkip && Date.now() % (frameSkip + 1) !== 0) { requestAnimationFrame(SnowSystem.draw); return; }
+          
           const ctx = AppState.dom.snowCanvas.getContext("2d");
           ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height);
           ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
@@ -749,11 +708,9 @@
             f.y += f.speed;
             f.swayOffset += f.swaySpeed;
             f.x += Math.sin(f.swayOffset) * 0.5;
-            
             if (f.y > AppState.dom.snowCanvas.height) { f.y = -10; f.x = Math.random() * AppState.dom.snowCanvas.width; }
             if (f.x > AppState.dom.snowCanvas.width) f.x = 0;
             if (f.x < 0) f.x = AppState.dom.snowCanvas.width;
-            
             ctx.moveTo(f.x, f.y);
             ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
           }
@@ -761,7 +718,7 @@
           requestAnimationFrame(SnowSystem.draw);
         },
         setLevel(on, level) {
-          if (!on) return; // Don't turn off automatically
+          if (!on) return;
           if (AppState.currentSnowLevel !== level) {
             AppState.currentSnowLevel = level;
             SnowSystem.create(level);
@@ -780,9 +737,7 @@
 
       function showNotifyMarker(lat, lng, confirmed) {
         if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
-        
         const iconUrl = confirmed ? AppConfig.ICONS.CONFIRMED : AppConfig.ICONS.PREVIEW;
-        
         AppState.notifyMarker = L.marker([lat, lng], { 
           icon: L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", shadowSize: [41, 41] }), 
           interactive: true 
@@ -794,8 +749,6 @@
             AppState.flags.awaitingPin = false;
             showNotifyMarker(lat, lng, true);
             sessionStorage.setItem("SANTA_NOTIFY_POINT", JSON.stringify({ lat, lng }));
-            
-            // Open Modal
             AppState.vars.pendingSubscription = { lat, lng };
             document.getElementById("emailModal").style.display = "flex";
             document.getElementById("subEmail").focus();
@@ -821,51 +774,37 @@
 
       async function updateTracker() {
         try {
-          // 1. Fetch Data
           const data = await Utils.loadJSON(AppState.vars.apiUrl + "?function=proxyFirebase");
-          
           if (!Utils.validPos(data.lat, data.lng)) throw new Error("Invalid Coords");
-          
           const ts = new Date(data.ts).getTime();
           if (!Number.isFinite(ts)) throw new Error("Invalid TS");
-          
           const age = Date.now() - ts;
           const isFresh = age <= AppConfig.API.STALE_MS;
           
-          // 2. Kiosk UI Updates
           if (AppState.flags.isKiosk) {
             AppState.dom.kioskBanner.classList.toggle("live", isFresh);
             const statusEl = document.getElementById("kioskStatus");
             if (statusEl) statusEl.textContent = isFresh ? "🎅 LIVE TRACKING" : "🎄 PREPARING IN LAPLAND";
-            
             if (AppState.dom.sponsorBox) {
               AppState.dom.sponsorBox.classList.toggle("visible", isFresh && !!AppState.vars.todayRoute?.sponsorUrl);
             }
           }
 
-          // 3. Environmental Updates (Night/Day)
           const isNight = isFresh && Utils.isAfterSunset(data.lat, data.lng);
           document.body.classList.toggle("night-mode", isNight);
 
-          // 4. Stale Data Handling (Santa in Lapland)
           if (!isFresh) {
             if (!AppState.vars.staleSince) AppState.vars.staleSince = ts;
-            
-            // If stale for too long, reset to Lapland
             if (Date.now() - AppState.vars.staleSince > AppConfig.API.STALE_MS) {
               AppState.marker.setLatLng(AppConfig.LOCATIONS.LAPLAND);
               if (AppState.flags.follow) AppState.map.setView(AppConfig.LOCATIONS.LAPLAND, 5, { animate: true, duration: 2 });
-              
               AppState.dom.statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
               AppState.dom.statusDot.style.display = "none";
               setDimUI(false);
               AppState.flags.firstFix = true;
-              
               setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
               return;
             }
-
-            // Short-term stale (just keep animating to last known)
             if (AppState.lastFix) {
               animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
               AppState.dom.statusBox.textContent = "🎅 Santa is nearby…";
@@ -876,28 +815,23 @@
             AppState.lastFix = { lat: data.lat, lng: data.lng };
           }
 
-          // 5. Position & Animation
-          // Snap to GPX for visual clean-up if available
           let visualPos = { lat: data.lat, lng: data.lng };
           if (AppState.flags.gpxLoaded) {
-             const snap = snapToGpxIndex(visualPos, AppConfig.GPX); // Uses stateful index tracking
+             const snap = snapToGpxIndex(visualPos, AppConfig.GPX);
              if (snap) visualPos = snap.point;
           }
           
           animateMarkerTo(visualPos.lat, visualPos.lng);
           pushFix(data.lat, data.lng, Date.now());
 
-          // 6. ETA & Notification Logic
           let etaSeconds = null;
           let passedSubscriber = false;
 
           if (AppState.notifyMarker && AppState.flags.gpxLoaded && isFresh) {
             const santaSnap = snapToGpxIndex({ lat: data.lat, lng: data.lng }, AppConfig.GPX);
-            
             if (santaSnap) {
               const userPos = AppState.notifyMarker.getLatLng();
-              const userSnap = snapToGpxIndex(userPos, null); // Global search for user
-              
+              const userSnap = snapToGpxIndex(userPos, null);
               if (userSnap) {
                 if (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) {
                   passedSubscriber = true;
@@ -912,19 +846,14 @@
             }
           }
 
-          // 7. Weather (Snow) Logic
-          // Show snow if night time, moving, and within 15 mins of user pin
           const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
           let snowLevel = 1;
           let triggerSnow = false;
-          
           if (AppState.notifyMarker && etaSeconds !== null && isFresh && isNight && isSleighMoving()) {
             triggerSnow = true;
             if (etaMinutes < 2) snowLevel = 3;
             else if (etaMinutes < 7) snowLevel = 2;
           }
-          
-          // Throttle snow based on battery
           const { maxLevel } = function(){
              if (batteryState.supported && !batteryState.charging) {
                if(batteryState.level <= AppConfig.BATTERY.CRITICAL) return { maxLevel: 1 };
@@ -934,7 +863,6 @@
           }();
           SnowSystem.setLevel(triggerSnow, Math.min(snowLevel, maxLevel));
 
-          // 8. Browser Notification
           if (AppState.notifyMarker && !AppState.flags.browserNotified && !passedSubscriber) {
             const dist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.notifyMarker.getLatLng());
             if (dist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS) {
@@ -944,14 +872,12 @@
             }
           }
 
-          // 9. Initial Zoom
           if (AppState.flags.firstFix) {
              const zoom = AppState.flags.isKiosk ? 15 : 16;
              AppState.map.setView(visualPos, zoom);
              AppState.flags.firstFix = false;
           }
 
-          // 10. Update Status Text & Dot
           const moving = isSleighMoving();
           AppState.dom.statusDot.style.display = "block";
           AppState.dom.statusDot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
@@ -963,9 +889,7 @@
              const mins = Math.max(1, Math.round(etaSeconds / 60));
              const unit = mins === 1 ? "min" : "mins";
              AppState.dom.statusBox.textContent = `🎅 Santa is ${mins} ${unit} away!`;
-             setDimUI(mins > 45); // Dim UI if far away
-             
-             // Dynamic messaging based on ETA
+             setDimUI(mins > 45);
              if (mins > 45) AppState.dom.statusBox.textContent = "🎅 Santa is out delivering this evening…";
              else if (mins > 15) AppState.dom.statusBox.textContent = "🎅 Santa is on the way…";
              else if (mins > 5) AppState.dom.statusBox.textContent = "🎅 Santa is nearly here!";
@@ -976,9 +900,7 @@
             setDimUI(false);
             AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
           }
-
         } catch (e) {
-          // Fallback animation if fetch fails
           if (AppState.lastFix) {
             animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
             AppState.dom.statusBox.textContent = "🎅 Santa is nearby…";
@@ -986,8 +908,6 @@
             setDimUI(false);
           }
         }
-        
-        // Loop
         setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
       }
 
@@ -996,10 +916,8 @@
       // =========================================
 
       async function init() {
-        // A. Parse URL & Kiosk Mode
         const params = new URLSearchParams(location.search);
         AppState.flags.isKiosk = params.get("kiosk") === "1" || sessionStorage.getItem("SANTA_KIOSK") === "1";
-        
         if (params.get("kiosk") === "1") sessionStorage.setItem("SANTA_KIOSK", "1");
         
         AppState.vars.apiUrl = params.get("api") || sessionStorage.getItem("SANTA_API");
@@ -1013,19 +931,13 @@
         if (AppState.flags.isKiosk) {
            document.body.classList.add("kiosk");
            requestWakeLock();
-           
-           // Heartbeat for wake lock
-           setInterval(() => {
-             if (document.visibilityState === "visible") requestWakeLock();
-           }, 60000);
+           setInterval(() => { if (document.visibilityState === "visible") requestWakeLock(); }, 60000);
         }
 
-        // B. Load Config from API
         const apiData = await Utils.loadJSON(AppState.vars.apiUrl);
         const settings = apiData.settings || {};
         AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
         
-        // C. Setup Routes
         const today = new Date().toISOString().slice(0, 10);
         const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
         AppState.vars.todayRoute = route;
@@ -1041,7 +953,6 @@
           await loadGpxRoute(route.gpxUrl);
         }
 
-        // D. Setup Map
         AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk })
           .setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
         
@@ -1051,14 +962,12 @@
            const m = AppState.map;
            m.dragging.disable(); m.scrollWheelZoom.disable(); m.doubleClickZoom.disable();
            m.boxZoom.disable(); m.keyboard.disable(); m.touchZoom.disable();
-           
            AppState.dom.followBtn.style.display = "none";
            AppState.dom.recenterBtn.style.display = "none";
            AppState.dom.notifyBtn.style.display = "none";
            AppState.dom.donateBox.style.display = "none";
         }
 
-        // E. Map Layers (Route & Icons)
         if (route && AppState.flags.gpxLoaded) {
            new L.GPX(route.gpxUrl, {
               async: true,
@@ -1071,12 +980,10 @@
            }).addTo(AppState.map);
         }
 
-        // Sponsor Badge
         if (AppState.flags.isKiosk && route?.sponsorUrl) {
           AppState.dom.sponsorBox.innerHTML = `<span>Proudly sponsored by</span><img src="${route.sponsorUrl}" alt="Sponsor">`;
         }
 
-        // Restore User Pin (Non-Kiosk)
         if (!AppState.flags.isKiosk) {
            const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
            if (savedPin) {
@@ -1089,7 +996,6 @@
            }
         }
 
-        // Map Interactions
         AppState.map.on("click", e => {
            if (!AppState.flags.awaitingPin) return;
            const { lat, lng } = e.latlng;
@@ -1097,7 +1003,6 @@
            AppState.dom.statusBox.textContent = "📍 Pin moved — tap again to confirm";
         });
 
-        // Logo Overlay
         if (settings.logo_overlay_url) {
            const posMap = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" };
            const LogoControl = L.control({ position: posMap[settings.logo_overlay_position] || "bottomright" });
@@ -1110,52 +1015,95 @@
            LogoControl.addTo(AppState.map);
         }
 
-        // Santa Marker
         AppState.marker = L.marker(AppConfig.LOCATIONS.LAPLAND, {
           icon: L.icon({ iconUrl: settings.sleigh_icon_live || AppConfig.ICONS.FALLBACK_LIVE, iconSize: [64, 64], iconAnchor: [32, 60] })
         }).addTo(AppState.map);
 
-        // UI Bindings
         AppState.dom.followBtn.onclick = () => {
            AppState.flags.follow = !AppState.flags.follow;
            AppState.dom.followBtn.textContent = "Follow: " + (AppState.flags.follow ? "ON" : "OFF");
         };
+        
         AppState.dom.recenterBtn.onclick = () => {
            AppState.flags.follow = true;
+           AppState.dom.followBtn.textContent = "Follow: ON";
            AppState.map.panTo(AppState.marker.getLatLng());
         };
+        
+        // --- FIXED NOTIFY LOGIC ---
         AppState.dom.notifyBtn.onclick = () => {
+           // 1. Force Follow OFF immediately
+           AppState.flags.follow = false; 
+           AppState.dom.followBtn.textContent = "Follow: OFF";
+           
+           // 2. Visually disable Follow/Recenter so user can't accidentally enable them
+           Utils.toggleFollowControls(false);
+
+           // 3. Reset Session Data
+           AppState.flags.browserNotified = false;
+           sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+           sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
+           sessionStorage.removeItem("SANTA_NOTIFY_POINT");
+           
+           // 4. Request Permission
+           if ("Notification" in window && Notification.permission === "default") {
+              Notification.requestPermission();
+           }
+
            AppState.flags.awaitingPin = true;
-           AppState.dom.statusBox.textContent = "👇 Tap the map where you live!";
+           AppState.notifyMarker = null;
+           AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin, then tap the pin to confirm";
+
+           // 5. Escape Key Listener to cancel
+           const onEsc = (e) => {
+             if (e.key === "Escape" && AppState.flags.awaitingPin) {
+                AppState.flags.awaitingPin = false;
+                if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
+                AppState.dom.statusBox.textContent = "";
+                Utils.toggleFollowControls(true); // Re-enable buttons
+                document.removeEventListener("keydown", onEsc);
+             }
+           };
+           document.addEventListener("keydown", onEsc);
         };
         
-        // Modal Bindings
-        document.getElementById("modalCancelBtn").onclick = () => {
+        // --- MODAL HANDLERS ---
+        document.getElementById("modalCancelBtn").addEventListener("click", () => {
            document.getElementById("emailModal").style.display = "none";
            AppState.dom.statusBox.textContent = "Tap the pin to try again";
-        };
+           // Note: We do NOT unlock controls here yet, user can still move pin
+        });
         
-        document.getElementById("modalConfirmBtn").onclick = () => {
+        document.getElementById("modalConfirmBtn").addEventListener("click", () => {
            const email = document.getElementById("subEmail").value.trim();
            document.getElementById("emailModal").style.display = "none";
+           
+           // Unlock controls now that we are done
+           Utils.toggleFollowControls(true);
            
            if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
               showToast("🎅 You’re already signed up!");
               return;
            }
 
+           AppState.dom.statusBox.textContent = "🔔 Saving your notification...";
            const url = `${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`;
            
            fetch(url).then(r=>r.json()).then(d => {
               if (d.ok) {
                  sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-                 showToast(email ? "✅ Signed up! We’ll email you! 🎄" : "✅ Signed up! Keep this page open! 🎅");
+                 const msg = email ? "🎅 You're signed up! We’ll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
+                 showToast(msg);
                  AppState.dom.statusBox.textContent = "";
               } else {
                  showToast("❌ Error saving notification.");
+                 AppState.dom.statusBox.textContent = "❌ Failed to save.";
               }
-           }).catch(() => showToast("❌ Network error."));
-        };
+           }).catch(() => {
+              showToast("❌ Network error.");
+              AppState.dom.statusBox.textContent = "❌ Connection failed.";
+           });
+        });
 
         if (settings.donate_url) {
            AppState.dom.donateLink.href = settings.donate_url;
@@ -1165,14 +1113,11 @@
         }
 
         AppState.dom.loading.style.display = "none";
-        
-        // Start Loops
         SnowSystem.resize();
         window.addEventListener("resize", SnowSystem.resize);
         updateTracker();
       }
 
-      // Visibility Handler
       document.addEventListener("visibilitychange", () => {
         AppState.flags.pageVisible = !document.hidden;
         if (AppState.flags.pageVisible) {
@@ -1181,9 +1126,7 @@
         }
       });
 
-      // Start the App
       init();
-
     });
   </script>
 </body>
