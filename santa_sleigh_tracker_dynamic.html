@@ -631,7 +631,7 @@ document.getElementById("subEmail").addEventListener("keydown", (e) => {
   function fireBrowserNotification(title, body) {
       if (!("Notification" in window)) return;
       if (Notification.permission !== "granted") return;
-      try { new Notification(title, { body, icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png", badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png", requireInteraction: true }); } catch {}
+      try { new Notification(title, { body, icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png", badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png", requireInteraction: true }); } catch (e) {}}
     }
   
   /* ---------- INIT ---------- */
@@ -714,7 +714,7 @@ if (isKiosk && todayRoute?.sponsorUrl) {
       browserNotified = false;
       sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
       showNotifyMarker(p.lat, p.lng, true);
-    } catch {}
+    } catch (e) {}
   }
 }
 
@@ -930,7 +930,7 @@ if ("wakeLock" in navigator) {
         await wakeLock.release();
         wakeLock = null;
       }
-    } catch {}
+    } catch (e) {}
   };
 
   // Initial request
