@@ -195,6 +195,23 @@ loading="lazy"
 </div>
 `;
 
+// ================================
+// Tracker – Kiosk / TV Mode
+// ================================
+const trackerKioskLink = `
+https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic.html?api=${ensureApi()}&kiosk=1
+`;
+
+const recommendedTrackerKiosk = `
+<div style="width:100vw;max-width:1200px;margin:0 auto;">
+<iframe
+  src="https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic.html?api=${ensureApi()}&kiosk=1"
+  style="width:100%;height:85vh;min-height:600px;border:none;border-radius:15px;overflow:hidden;"
+  loading="lazy"
+  referrerpolicy="no-referrer"
+></iframe>
+</div>
+`;
 
 // ================================
 // Routes Embed
