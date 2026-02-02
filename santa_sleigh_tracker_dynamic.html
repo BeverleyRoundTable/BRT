@@ -76,29 +76,15 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
   transform: translateX(-50%) translateY(0);
 }
 
-  body.kiosk {
+  /* ===============================
+   KIOSK MODE HARD LOCK
+================================ */
+
+body.kiosk {
   cursor: none;
 }
 
-  /* Kill Leaflet tap / focus artifacts (kiosk-safe) */
-.leaflet-container {
-  -webkit-tap-highlight-color: transparent;
-}
-
-.leaflet-container * {
-  outline: none !important;
-}
-
-/* Hide Leaflet's internal focus & tap layers */
-.leaflet-interactive:focus {
-  outline: none !important;
-}
-
-body.kiosk .leaflet-interactive {
-  pointer-events: none;
-}
-
-  /* Kill Leaflet tap / focus artifacts (kiosk-safe) */
+/* Kill tap highlight + focus outlines (kiosk-safe) */
 .leaflet-container {
   -webkit-tap-highlight-color: transparent;
 }
@@ -111,18 +97,20 @@ body.kiosk .leaflet-interactive {
   outline: none !important;
 }
 
+/* Disable all Leaflet interactions in kiosk */
 body.kiosk .leaflet-interactive {
   pointer-events: none;
 }
 
-/* Kiosk hard-lock: prevent all map layers from receiving pointer events */
+/* Hard-lock all map layers (markers, shadows, GPX, overlays) */
 body.kiosk .leaflet-marker-pane,
 body.kiosk .leaflet-shadow-pane,
 body.kiosk .leaflet-overlay-pane {
   pointer-events: none;
 }
 
-  body.kiosk #statusDot {
+/* Hide movement status dot in kiosk */
+body.kiosk #statusDot {
   display: none !important;
 }
 
