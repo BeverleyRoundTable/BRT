@@ -583,8 +583,9 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
 
   function submitSubscription(lat, lng, email) {
     if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
-      alert("🎅 You’re already signed up for notifications!"); return;
-    }
+  showToast("🎅 You’re already signed up!");
+  return;
+}
     statusBox.textContent = "🔔 Saving your notification...";
 
     const subscribeUrl = `${apiUrl}?function=subscribe` +
@@ -608,13 +609,13 @@ if (email) {
 statusBox.textContent = "";
 
         } else {
-          alert("❌ Error: " + (data.error || "Could not subscribe."));
-          statusBox.textContent = "❌ Failed to save.";
+          showToast("❌ Could not save notification. Please try again.");
+statusBox.textContent = "";
         }
       })
       .catch(() => {
-        alert("❌ Network error. Please try again.");
-        statusBox.textContent = "❌ Connection failed.";
+        showToast("❌ Network error. Please try again.");
+statusBox.textContent = "";
       });
   }
 
