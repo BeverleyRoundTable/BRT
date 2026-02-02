@@ -237,6 +237,17 @@ body.kiosk .kiosk-banner {
   transform: translateX(-50%) translateY(0);
 }
 
+  .kiosk-banner {
+  text-align: center;
+}
+
+.kiosk-subtitle {
+  font-size: 0.75em;
+  opacity: 0.85;
+  margin-top: 4px;
+  text-align: center;
+}
+
 </style>
 </head>
 
@@ -658,16 +669,13 @@ todayRoute = (data.routes || []).find(r => r.date === today && r.gpxUrl) || null
 
 kioskBanner = document.getElementById("kioskBanner");
 
-if (isKiosk && kioskBanner && todayRoute) {
+if (isKiosk && kioskBanner) {
   kioskBanner.innerHTML = `
     🎅 LIVE TRACKING
-    <div style="font-size:0.75em; opacity:0.85; margin-top:4px;">
+    <div class="kiosk-subtitle">
       ${sleighName}
     </div>
   `;
-} else if (isKiosk && kioskBanner) {
-  kioskBanner.innerHTML = "";
-  kioskBanner.classList.remove("visible");
 }
 
     if (!todayRoute) {
@@ -782,12 +790,14 @@ if (isKiosk) {
       
       const gpsFresh = age <= STALE_MS;
 
-      const kioskLive = isKiosk && gpsFresh && todayRoute;
+      const kioskLive = isKiosk && gpsFresh;
 
+// LIVE banner: GPS only
 if (kioskBanner) {
   kioskBanner.classList.toggle("visible", kioskLive);
 }
 
+// Sponsor: GPS + sponsor present
 if (sponsorBox) {
   sponsorBox.classList.toggle(
     "visible",
