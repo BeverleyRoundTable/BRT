@@ -109,7 +109,7 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
   if (location.search.includes("api=")) history.replaceState(null, "", location.pathname);
 
   const CONFIG = {
-    REFRESH_MS: 3000, STALE_MS: 5 * 60 * 1000, MOTION_WINDOW_MS: 25 * 1000, MOVE_THRESHOLD_METERS: 8,
+    REFRESH_MS: 6000, STALE_MS: 5 * 60 * 1000, MOTION_WINDOW_MS: 25 * 1000, MOVE_THRESHOLD_METERS: 8,
     MIN_FIXES_FOR_ETA: 3, MIN_ETA_WINDOW_MS: 15 * 1000, OFF_ROUTE_THRESHOLD_METERS: 60,
     GPX_SEARCH: { AHEAD: 80, BACK: 5, EARLY_EXIT_METERS: 25 },
     SNOW: { ETA_MINUTES_MAX: 15, LEVELS: { LIGHT: 1, HEAVY: 2, BLIZZARD: 3 }, MOBILE_BASE_COUNT: 30, DESKTOP_BASE_COUNT: 60, MULTIPLIERS: [0, 1, 2.5, 5] },
@@ -595,6 +595,26 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
   function subscribeUser(lat, lng) {
      openSubscribeModal(lat, lng);
   }
+
+  // 🕯️ Keep Screen Awake
+if ('wakeLock' in navigator) {
+  let wakeLock = null;
+  const requestWakeLock = async () => {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+    } catch (err) {}
+  };
+  
+  // Request on load
+  requestWakeLock();
+
+  // Re-request if they switch tabs and come back
+  document.addEventListener('visibilitychange', async () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+      requestWakeLock();
+    }
+  });
+}
   
   init();
   
