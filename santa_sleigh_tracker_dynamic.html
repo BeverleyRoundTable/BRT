@@ -710,6 +710,7 @@ statusBox.textContent = "";
   }
 
   function showToast(message) {
+  if (isKiosk) return;   // ⛔ no toast in kiosk
   const t = document.getElementById("toast");
   t.textContent = message;
   t.classList.add("toast-visible");
