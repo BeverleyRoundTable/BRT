@@ -283,13 +283,7 @@ body.kiosk .kiosk-banner.live {
 <canvas id="snow"></canvas>
 
 <script>
-  let pageVisible = !document.hidden;
-  document.addEventListener("visibilitychange", () => {
-    pageVisible = !document.hidden;
-    if (!pageVisible) { snowActive = false; currentSnowLevel = 0; document.body.classList.remove("snowing"); }
-  });
-  
-  let batteryState = { supported: false, charging: true, level: 1 };
+ let batteryState = { supported: false, charging: true, level: 1 };
   if ("getBattery" in navigator) {
     navigator.getBattery().then(battery => {
       batteryState.supported = true;
@@ -300,7 +294,8 @@ body.kiosk .kiosk-banner.live {
     });
   }
 
-  let wakeLock = null;
+  // 🕯️ Wake Lock (single source of truth)
+let wakeLock = null;
 
 async function requestWakeLock() {
   try {
@@ -313,6 +308,7 @@ async function requestWakeLock() {
   } catch {}
 }
 
+// Re-request on visibility regain
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) requestWakeLock();
 });
@@ -331,6 +327,15 @@ const isKiosk =
 // Persist kiosk mode across refreshes
 if (params.get("kiosk") === "1") {
   sessionStorage.setItem("SANTA_KIOSK", "1");
+}
+
+  // AFTER isKiosk is defined
+if (isKiosk && "wakeLock" in navigator) {
+  setInterval(() => {
+    if (document.visibilityState === "visible") {
+      requestWakeLock();
+    }
+  }, 60_000);
 }
 
 // API handling
@@ -975,35 +980,6 @@ if (
     setTimeout(tick, REFRESH);
   }
   
-  // 🕯️ Keep Screen Awake (Screen Wake Lock API)
-if ("wakeLock" in navigator) {
-  let wakeLock = null;
-
-  const requestWakeLock = async () => {
-    try {
-      if (!wakeLock) {
-        wakeLock = await navigator.wakeLock.request("screen");
-        wakeLock.addEventListener("release", () => {
-          wakeLock = null;
-        });
-      }
-    } catch (err) {
-      wakeLock = null;
-    }
-  };
-
-  const releaseWakeLock = async () => {
-    try {
-      if (wakeLock) {
-        await wakeLock.release();
-        wakeLock = null;
-      }
-    } catch (e) {}
-  };
-
-  // Initial request
-  requestWakeLock();
-
   document.addEventListener("visibilitychange", () => {
   pageVisible = !document.hidden;
   if (pageVisible && snowActive) {
