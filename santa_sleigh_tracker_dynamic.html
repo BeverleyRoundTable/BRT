@@ -300,6 +300,23 @@ body.kiosk .kiosk-banner.live {
     });
   }
 
+  let wakeLock = null;
+
+async function requestWakeLock() {
+  try {
+    if ("wakeLock" in navigator) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => {
+        setTimeout(requestWakeLock, 2000);
+      });
+    }
+  } catch {}
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) requestWakeLock();
+});
+
  // ===============================
 // URL + KIOSK MODE (SINGLE SOURCE)
 // ===============================
@@ -413,10 +430,18 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   }
 
   function setSnow(on, level = 1) {
-    if (!pageVisible || !on) { snowActive = false; currentSnowLevel = 0; document.body.classList.remove("snowing"); return; }
-    if (currentSnowLevel !== level) { currentSnowLevel = level; createSnow(level); }
-    if (!snowActive) { snowActive = true; document.body.classList.add("snowing"); drawSnow(); }
+  if (!on) return; // ❌ do NOT auto-clear
+
+  if (currentSnowLevel !== level) {
+    currentSnowLevel = level;
+    createSnow(level);
   }
+  if (!snowActive) {
+    snowActive = true;
+    document.body.classList.add("snowing");
+    drawSnow();
+  }
+}
 
   function getSnowThrottle() {
     let maxLevel = 3; let frameSkip = 0;
@@ -852,34 +877,53 @@ if (sponsorBox) {
       const now = Date.now();
       pushFix(p.lat, p.lng, now);
 
-      let etaSeconds = Infinity; let offRoute = false; let passedSubscriber = false;
+      let etaSeconds = null;
+let passedSubscriber = false;
 
-      if (gpxLoaded) {
-        const santaPos = { lat: p.lat, lng: p.lng };
-        const snap = snapToGpxIndex(santaPos);
+if (
+  notifyMarker &&
+  gpxLoaded &&
+  gpsFresh
+) {
+  const santaPos = { lat: p.lat, lng: p.lng };
+  const santaSnap = snapToGpxIndex(santaPos);
 
-        if (snap && snap.distance <= OFF_ROUTE_THRESHOLD_METERS) {
-          if (notifyMarker) {
-            const userPos = notifyMarker.getLatLng();
-            const userSnap = snapSubscriberToGpx(userPos);
-            if (userSnap && snap.point.dist > userSnap.point.dist + 30) passedSubscriber = true;
-          }
-          if (!passedSubscriber) {
-            const remainingMeters = Math.max(0, gpxTotalDistance - snap.point.dist);
-            const speed = calculateStableSpeedMps_(recentFixes);
-            const moving = isSleighMoving();
-            if (speed !== null && moving && gpsFresh) etaSeconds = remainingMeters / speed;
-          }
-        } else {
-          offRoute = true;
+  if (santaSnap && santaSnap.distance <= OFF_ROUTE_THRESHOLD_METERS) {
+    const userPos = notifyMarker.getLatLng();
+    const userSnap = snapSubscriberToGpx(userPos);
+
+    if (userSnap) {
+
+      // Has Santa already passed the pin?
+      if (santaSnap.point.dist > userSnap.point.dist + 30) {
+        passedSubscriber = true;
+
+      } else {
+        const remainingMeters =
+          Math.max(0, userSnap.point.dist - santaSnap.point.dist);
+
+        const speed = calculateStableSpeedMps_(recentFixes);
+
+        if (speed && isSleighMoving()) {
+          etaSeconds = remainingMeters / speed;
         }
       }
+    }
+  }
+}
       
       const night = document.body.classList.contains("night-mode");
       const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
       
       let snowOn = false; let snowLevel = 1;
-      if (gpsFresh && night && isSleighMoving() && etaMinutes < 15) {
+      if (
+  notifyMarker &&
+  etaSeconds !== null &&
+  gpsFresh &&
+  night &&
+  isSleighMoving()
+)
+ {
         snowOn = true;
         if (etaMinutes < 2) { snowLevel = 3; } else if (etaMinutes < 7) { snowLevel = 2; } else { snowLevel = 1; }
       }
@@ -908,8 +952,11 @@ if (sponsorBox) {
 
       if (passedSubscriber) {
         statusBox.textContent = "🎄 Santa has just been here!"; setDimUI(false);
-      } else if (isFinite(etaSeconds)) {
-        const mins = Math.round(etaSeconds / 60); setDimUI(mins > 45);
+      } else if (etaSeconds !== null) {
+        const mins = Math.max(1, Math.round(etaSeconds / 60));
+        const unit = mins === 1 ? "min" : "mins";
+        statusBox.textContent = `🎅 Santa is ${mins} ${unit} away!`;
+      ; setDimUI(mins > 45);
         if (mins > 45) statusBox.textContent = "🎅 Santa is out delivering this evening…";
         else if (mins > 15) statusBox.textContent = "🎅 Santa is on the way…";
         else if (mins > 5) statusBox.textContent = "🎅 Santa is nearly here!";
@@ -961,14 +1008,13 @@ if ("wakeLock" in navigator) {
   // Initial request
   requestWakeLock();
 
-  // Re-request when tab becomes visible
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      requestWakeLock();
-    } else {
-      releaseWakeLock();
-    }
-  });
+  pageVisible = !document.hidden;
+  if (pageVisible && snowActive) {
+    drawSnow(); // resume without resetting
+  }
+});
+
 }
   
   init();
