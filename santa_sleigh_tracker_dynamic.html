@@ -175,7 +175,7 @@ body.kiosk .kiosk-banner {
 </div>
 
   <div id="kioskBanner" class="kiosk-banner">
-  🎄 Santa Sleigh Live!
+  🎅 LIVE TRACKING
 </div>
 
 <div id="map"></div>
@@ -565,13 +565,22 @@ if (isKiosk && kioskBanner) {
       } else {
         if (!staleSince) staleSince = ts;
         if (Date.now() - staleSince > STALE_MS) {
-          marker.setLatLng(LAPLAND);
-          if (follow) map.setView(LAPLAND, 5, { animate: true, duration: 2 });
-          statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
-          dot.style.display = "none"; setDimUI(false); firstFix = true;
-          if (animRaf) cancelAnimationFrame(animRaf); animRaf = null; animCurrent = null; animTarget = null;
-          setTimeout(tick, REFRESH); return;
-        }
+  if (isKiosk) kioskBanner.style.display = "none";
+
+  marker.setLatLng(LAPLAND);
+  if (follow) map.setView(LAPLAND, 5, { animate: true, duration: 2 });
+  statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
+  dot.style.display = "none";
+  setDimUI(false);
+  firstFix = true;
+
+  if (animRaf) cancelAnimationFrame(animRaf);
+  animRaf = null;
+
+  setTimeout(tick, REFRESH);
+  return;
+}
+
         if (lastGoodFix) {
           animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
           statusBox.textContent = "🎅 Santa is nearby…";
