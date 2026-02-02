@@ -694,6 +694,8 @@ todayRoute = (data.routes || []).find(r => r.date === today && r.gpxUrl) || null
 
 kioskBanner = document.getElementById("kioskBanner");
 
+    if (isKiosk) requestWakeLock();
+
 if (isKiosk && kioskBanner) {
   kioskBanner.innerHTML = `
     <div id="kioskStatus">🎄 PREPARING IN LAPLAND</div>
