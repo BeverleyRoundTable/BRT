@@ -280,8 +280,8 @@ document.getElementById("niceListEmbed").value = niceListEmbed.trim();
 document.getElementById("santasBeenEmbed").value = santasBeenEmbed.trim();
 document.getElementById("trackerLink").value = trackerLink.trim();
 document.getElementById("recommendedTracker").value = recommendedTracker.trim();
+document.getElementById("trackerKioskLink").value = trackerKioskLink.trim();
+document.getElementById("recommendedTrackerKiosk").value = recommendedTrackerKiosk.trim();
 document.getElementById("routesLink").value = routesLink.trim();
 document.getElementById("recommendedRoutes").value = recommendedRoutes.trim();
 document.getElementById("snowmanFrameEmbed").value = snowmanFrameEmbed.trim();
-
-
