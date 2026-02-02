@@ -123,6 +123,30 @@ body.kiosk .info-popup {
   display: none !important;
 }
 
+  /* Kiosk bottom banner */
+.kiosk-banner {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,20,20,0.95);
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-size: 1.05em;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+  z-index: 2500;
+  display: none;
+  pointer-events: none;
+}
+
+/* Only ever allow banner in kiosk */
+body.kiosk .kiosk-banner {
+  display: block;
+}
+
 </style>
 </head>
 
@@ -148,6 +172,10 @@ body.kiosk .info-popup {
       <button class="btn-full btn-confirm" onclick="confirmSubscription()">Notify Me</button>
     </div>
   </div>
+</div>
+
+  <div id="kioskBanner" class="kiosk-banner">
+  🎄 Santa Sleigh Live!
 </div>
 
 <div id="map"></div>
@@ -523,6 +551,12 @@ if (isKiosk) {
       const age = Date.now() - ts;
       
       const gpsFresh = age <= STALE_MS;
+
+      const kioskBanner = document.getElementById("kioskBanner");
+
+if (isKiosk && kioskBanner) {
+  kioskBanner.style.display = gpsFresh ? "block" : "none";
+}
 
       if (gpsFresh && isAfterSunset(p.lat, p.lng)) { document.body.classList.add("night-mode"); } else { document.body.classList.remove("night-mode"); }
       
