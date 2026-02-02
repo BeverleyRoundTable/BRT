@@ -365,6 +365,7 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   let kioskBanner = null;
   let sponsorBox = null;
   let todayRoute = null;
+  let settings = {};
 
   const snowCanvas = document.getElementById("snow");
   const snowCtx = snowCanvas.getContext("2d");
@@ -551,7 +552,8 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
     const data = await loadJSON(apiUrl);
     fetch(apiUrl + "?function=logView&source=tracker&route=" + encodeURIComponent((data.routes || [])[0]?.routeName || "") + "&ua=" + encodeURIComponent(navigator.userAgent), { keepalive: true }).catch(() => {});
     
-    const s = data.settings || {};
+    settings = data.settings || {};
+const s = settings; // optional convenience
     if (s.donate_url) { donateLink.href = s.donate_url; donateBox.style.display = "block"; } else { donateBox.style.display = "none"; }
     firebaseBaseUrl = data.tracker?.firebase_url || null;
 
