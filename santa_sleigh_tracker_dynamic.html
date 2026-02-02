@@ -187,7 +187,7 @@ body.kiosk .info-popup {
   gap: 12px;
   z-index: 4400;
   box-shadow: 0 6px 22px rgba(0,0,0,0.55);
-  opacity: 0.9;
+  opacity: 0;
   filter: saturate(0.9);
   pointer-events: none;
   transition: opacity 0.6s ease, transform 0.6s ease;
@@ -345,6 +345,7 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   var sleighName = "Santa Sleigh";
   let kioskBanner = null;
   let sponsorBox = null;
+  let todayRoute = null;
 
   const snowCanvas = document.getElementById("snow");
   const snowCtx = snowCanvas.getContext("2d");
@@ -538,17 +539,20 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
     sleighName = s.sleigh_display_name || "Santa Sleigh";
 kioskBanner = document.getElementById("kioskBanner");
 
-if (isKiosk && kioskBanner) {
+if (isKiosk && kioskBanner && todayRoute) {
   kioskBanner.innerHTML = `
     🎅 LIVE TRACKING
     <div style="font-size:0.75em; opacity:0.85; margin-top:4px;">
       ${sleighName}
     </div>
   `;
+} else if (isKiosk && kioskBanner) {
+  kioskBanner.innerHTML = "";                 // keep it blank
+  kioskBanner.classList.remove("visible");    // and hidden
 }
     
     const today = new Date().toISOString().slice(0, 10);
-    const todayRoute = (data.routes || []).find(r => r.date === today && r.gpxUrl);
+    todayRoute = (data.routes || []).find(r => r.date === today && r.gpxUrl) || null;
 
     if (!todayRoute) {
       notifyBtn.style.display = "none";
