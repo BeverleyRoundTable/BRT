@@ -791,6 +791,9 @@ if (isKiosk) {
       
       const gpsFresh = age <= STALE_MS;
       
+      if (isKiosk && kioskBanner) {
+  kioskBanner.classList.toggle("live", gpsFresh);
+}
       const kioskStatusEl = document.getElementById("kioskStatus");
 
 if (isKiosk && kioskStatusEl) {
@@ -815,8 +818,7 @@ if (sponsorBox) {
         staleSince = null; lastGoodFix = { lat: p.lat, lng: p.lng };
       } else {
         if (!staleSince) staleSince = ts;
-        if (Date.now() - staleSince > STALE_MS) {
-  }
+       if (Date.now() - staleSince > STALE_MS) {
 
   marker.setLatLng(LAPLAND);
   if (follow) map.setView(LAPLAND, 5, { animate: true, duration: 2 });
