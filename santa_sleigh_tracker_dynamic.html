@@ -668,12 +668,17 @@ if (isKiosk) {
       
       const gpsFresh = age <= STALE_MS;
 
-      if (isKiosk && kioskBanner) {
-  kioskBanner.classList.toggle("visible", gpsFresh);
+      const kioskLive = isKiosk && gpsFresh && todayRoute;
+
+if (kioskBanner) {
+  kioskBanner.classList.toggle("visible", kioskLive);
 }
 
-      if (isKiosk && sponsorBox) {
-  sponsorBox.classList.toggle("visible", gpsFresh);
+if (sponsorBox) {
+  sponsorBox.classList.toggle(
+    "visible",
+    kioskLive && !!todayRoute?.sponsorUrl
+  );
 }
 
       if (gpsFresh && isAfterSunset(p.lat, p.lng)) { document.body.classList.add("night-mode"); } else { document.body.classList.remove("night-mode"); }
