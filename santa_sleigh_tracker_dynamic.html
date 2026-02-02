@@ -148,6 +148,21 @@ body.kiosk .kiosk-banner {
   display: block;
 }
 
+  /* ---------- KIOSK LIVE PULSE ---------- */
+@keyframes kioskPulse {
+  0%,100% {
+    box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+  }
+  50% {
+    box-shadow: 0 8px 34px rgba(255,215,0,0.6);
+  }
+}
+
+/* Animate only in kiosk mode */
+body.kiosk .kiosk-banner {
+  animation: kioskPulse 2.8s ease-in-out infinite;
+}
+  
 </style>
 </head>
 
