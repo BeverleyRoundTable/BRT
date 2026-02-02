@@ -152,7 +152,6 @@ body.kiosk .info-popup {
   display: none !important;
 }
 
-/* Kiosk LIVE banner (top-centre hero) */
 /* Kiosk LIVE banner */
 .kiosk-banner {
   position: fixed;
@@ -290,17 +289,37 @@ body.kiosk .kiosk-banner {
     });
   }
 
-  const params = new URLSearchParams(location.search);
+ // ===============================
+// URL + KIOSK MODE (SINGLE SOURCE)
+// ===============================
 
+const params = new URLSearchParams(location.search);
+
+// Detect kiosk mode
+const isKiosk =
+  params.get("kiosk") === "1" ||
+  sessionStorage.getItem("SANTA_KIOSK") === "1";
+
+// Persist kiosk mode across refreshes
+if (params.get("kiosk") === "1") {
+  sessionStorage.setItem("SANTA_KIOSK", "1");
+}
+
+// API handling
 let apiUrl = params.get("api");
 if (!apiUrl) apiUrl = sessionStorage.getItem("SANTA_API");
-if (!apiUrl) { alert("Missing ?api=YOUR_SCRIPT_URL"); throw new Error("API missing"); }
-
+if (!apiUrl) {
+  alert("Missing ?api=YOUR_SCRIPT_URL");
+  throw new Error("API missing");
+}
 sessionStorage.setItem("SANTA_API", apiUrl);
-if (location.search.includes("api=")) history.replaceState(null, "", location.pathname);
 
-// ✅ kiosk flag (no redeclare)
-const isKiosk = params.get("kiosk") === "1";
+// Clean URL ONLY for non-kiosk users
+if (!isKiosk && location.search.includes("api=")) {
+  history.replaceState(null, "", location.pathname);
+}
+
+// Zoom choice
 const INITIAL_ZOOM = isKiosk ? 15 : 16;
   
   const CONFIG = {
