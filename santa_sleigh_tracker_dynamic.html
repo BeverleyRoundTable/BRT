@@ -98,6 +98,30 @@ body.kiosk .leaflet-interactive {
   pointer-events: none;
 }
 
+  /* Kill Leaflet tap / focus artifacts (kiosk-safe) */
+.leaflet-container {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.leaflet-container * {
+  outline: none !important;
+}
+
+.leaflet-interactive:focus {
+  outline: none !important;
+}
+
+body.kiosk .leaflet-interactive {
+  pointer-events: none;
+}
+
+/* Kiosk hard-lock: prevent all map layers from receiving pointer events */
+body.kiosk .leaflet-marker-pane,
+body.kiosk .leaflet-shadow-pane,
+body.kiosk .leaflet-overlay-pane {
+  pointer-events: none;
+}
+
 </style>
 </head>
 
