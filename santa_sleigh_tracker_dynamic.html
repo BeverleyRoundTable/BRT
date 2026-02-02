@@ -162,6 +162,35 @@ body.kiosk .kiosk-banner {
 body.kiosk .kiosk-banner {
   animation: kioskPulse 2.8s ease-in-out infinite;
 }
+
+  /* Kiosk sponsor badge */
+.kiosk-sponsor {
+  position: fixed;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,20,20,0.95);
+  padding: 10px 18px;
+  border-radius: 14px;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  z-index: 4400;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.55);
+}
+
+.kiosk-sponsor span {
+  font-size: 0.75em;
+  font-weight: 700;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.kiosk-sponsor img {
+  max-height: 34px;
+  max-width: 160px;
+  object-fit: contain;
+}
   
 </style>
 </head>
@@ -191,6 +220,8 @@ body.kiosk .kiosk-banner {
 </div>
   
 <div id="kioskBanner" class="kiosk-banner"></div>
+
+<div id="kioskSponsor" class="kiosk-sponsor"></div>
 
 <div id="map"></div>
 <canvas id="snow"></canvas>
@@ -507,6 +538,15 @@ if (isKiosk && kioskBanner) {
       gpxLayer.addTo(map);
     }
 
+    const sponsorBox = document.getElementById("kioskSponsor");
+
+if (isKiosk && todayRoute?.sponsorUrl) {
+  sponsorBox.innerHTML = `
+    <span>Proudly sponsored by</span>
+    <img src="${todayRoute.sponsorUrl}" alt="Sponsor">
+  `;
+}
+
     if (!isKiosk) {
   const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
   if (savedPin) {
@@ -584,6 +624,10 @@ if (isKiosk) {
 
       if (isKiosk && kioskBanner) {
   kioskBanner.style.display = gpsFresh ? "block" : "none";
+}
+
+      if (isKiosk && sponsorBox) {
+  sponsorBox.style.display = gpsFresh ? "flex" : "none";
 }
 
       if (gpsFresh && isAfterSunset(p.lat, p.lng)) { document.body.classList.add("night-mode"); } else { document.body.classList.remove("night-mode"); }
