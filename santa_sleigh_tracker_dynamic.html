@@ -249,7 +249,7 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   let staleSince = null;
   let animCurrent = null; let animTarget = null; let animStart = 0; let animDuration = 900; let animRaf = null;
   let gpxRoute = null; let gpxTotalDistance = 0; let gpxLoaded = false; let lastSnapIndex = 0;
-  let sleighName = "Santa Sleigh";
+  var sleighName = "Santa Sleigh";
   let kioskBanner = null;
 
 
@@ -567,10 +567,6 @@ if (isKiosk) {
       const gpsFresh = age <= STALE_MS;
 
       if (isKiosk && kioskBanner) {
-  kioskBanner.style.display = gpsFresh ? "block" : "none";
-}
-
-if (isKiosk && kioskBanner) {
   kioskBanner.style.display = gpsFresh ? "block" : "none";
 }
 
