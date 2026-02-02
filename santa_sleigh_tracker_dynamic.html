@@ -403,7 +403,10 @@ const isKiosk = params.get("kiosk") === "1";
       gpxLayer.addTo(map);
     }
 
-    const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
+    if (!isKiosk) {
+  const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
+}
+
     if (savedPin) {
       try {
         const p = JSON.parse(savedPin);
