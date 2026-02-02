@@ -237,7 +237,6 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   const MOTION_WINDOW_MS = CONFIG.MOTION_WINDOW_MS;
   const MOVE_THRESHOLD_METERS = CONFIG.MOVE_THRESHOLD_METERS;
   const OFF_ROUTE_THRESHOLD_METERS = CONFIG.OFF_ROUTE_THRESHOLD_METERS;
-  const sleighName = s.sleigh_display_name || "Santa Sleigh";
 
   let map, marker, follow=true, firstFix=true, lastFix=null;
   let awaitingPin = false;
@@ -464,7 +463,7 @@ if (isKiosk && kioskBanner) {
       await loadGpxRoute(todayRoute.gpxUrl); // ✅ Updated logic handles error internally
     }
 
-    .map("map", {
+    map = L.map("map", {
   zoomControl: !isKiosk
 }).setView(LAPLAND, isKiosk ? 6 : 5);
 
@@ -567,7 +566,9 @@ if (isKiosk) {
       
       const gpsFresh = age <= STALE_MS;
 
-      const kioskBanner = document.getElementById("kioskBanner");
+      if (isKiosk && kioskBanner) {
+  kioskBanner.style.display = gpsFresh ? "block" : "none";
+}
 
 if (isKiosk && kioskBanner) {
   kioskBanner.style.display = gpsFresh ? "block" : "none";
