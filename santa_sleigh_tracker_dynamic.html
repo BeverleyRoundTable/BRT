@@ -814,7 +814,7 @@ if (sponsorBox) {
 
       if (gpsFresh && isAfterSunset(p.lat, p.lng)) { document.body.classList.add("night-mode"); } else { document.body.classList.remove("night-mode"); }
       
-      iif (age <= STALE_MS) {
+      if (age <= STALE_MS) {
   staleSince = null;
   lastGoodFix = { lat: p.lat, lng: p.lng };
 
@@ -844,14 +844,7 @@ if (sponsorBox) {
     return;
   }
 }
-
-        if (lastGoodFix) {
-          animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
-          statusBox.textContent = "🎅 Santa is nearby…";
-          return;
-        }
-      }
-      
+    
       const visualPos = getVisualLatLng({ lat: p.lat, lng: p.lng });
       const ll = L.latLng(visualPos.lat, visualPos.lng);
       animateMarkerTo(ll);
