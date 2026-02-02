@@ -168,15 +168,27 @@ body.kiosk .kiosk-banner {
   position: fixed;
   top: 90px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(6px);
   background: rgba(20,20,20,0.95);
   padding: 10px 18px;
   border-radius: 14px;
-  display: none;
+  display: flex;                 /* always mounted */
   align-items: center;
   gap: 12px;
   z-index: 4400;
   box-shadow: 0 6px 22px rgba(0,0,0,0.55);
+
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+
+.kiosk-sponsor.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: none;
 }
 
 .kiosk-sponsor span {
@@ -191,7 +203,18 @@ body.kiosk .kiosk-banner {
   max-width: 160px;
   object-fit: contain;
 }
-  
+
+  .kiosk-banner {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-6px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.kiosk-banner.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 </style>
 </head>
 
@@ -297,7 +320,6 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   let animCurrent = null; let animTarget = null; let animStart = 0; let animDuration = 900; let animRaf = null;
   let gpxRoute = null; let gpxTotalDistance = 0; let gpxLoaded = false; let lastSnapIndex = 0;
   var sleighName = "Santa Sleigh";
-  let kioskBanner = null;
   let kioskBanner = null;
   let sponsorBox = null;
 
@@ -624,11 +646,11 @@ if (isKiosk) {
       const gpsFresh = age <= STALE_MS;
 
       if (isKiosk && kioskBanner) {
-  kioskBanner.style.display = gpsFresh ? "block" : "none";
+  kioskBanner.classList.toggle("visible", gpsFresh);
 }
 
       if (isKiosk && sponsorBox) {
-  sponsorBox.style.display = gpsFresh ? "flex" : "none";
+  sponsorBox.classList.toggle("visible", gpsFresh);
 }
 
       if (gpsFresh && isAfterSunset(p.lat, p.lng)) { document.body.classList.add("night-mode"); } else { document.body.classList.remove("night-mode"); }
