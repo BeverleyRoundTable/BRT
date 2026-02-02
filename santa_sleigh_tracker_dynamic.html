@@ -55,6 +55,31 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
 .btn-cancel { background: #333; color: #aaa; }
 .btn-confirm { background: #d31c1c; color: white; box-shadow: 0 4px 12px rgba(211, 28, 28, 0.3); }
 
+  /* ===============================
+   KIOSK MODE SPACING FIX
+   - Prevent text autosizing
+   - Decouple kiosk layout from safe-area vars
+================================ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body.kiosk {
+  /* hard baseline for kiosk screens */
+  --kiosk-bottom: 56px;
+}
+
+/* Use kiosk-specific bottom values instead of --ui-bottom-safe */
+body.kiosk .kiosk-sponsor {
+  bottom: var(--kiosk-bottom);
+}
+
+body.kiosk .kiosk-banner {
+  bottom: calc(var(--kiosk-bottom) + 64px);
+}
+
   /* Toast Notification */
 .toast-box {
   display: none;            
