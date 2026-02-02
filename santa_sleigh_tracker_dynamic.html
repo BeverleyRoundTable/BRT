@@ -80,6 +80,24 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
   cursor: none;
 }
 
+  /* Kill Leaflet tap / focus artifacts (kiosk-safe) */
+.leaflet-container {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.leaflet-container * {
+  outline: none !important;
+}
+
+/* Hide Leaflet's internal focus & tap layers */
+.leaflet-interactive:focus {
+  outline: none !important;
+}
+
+body.kiosk .leaflet-interactive {
+  pointer-events: none;
+}
+
 </style>
 </head>
 
