@@ -671,11 +671,12 @@ kioskBanner = document.getElementById("kioskBanner");
 
 if (isKiosk && kioskBanner) {
   kioskBanner.innerHTML = `
-    🎅 LIVE TRACKING
+    <div id="kioskStatus">🎄 PREPARING IN LAPLAND</div>
     <div class="kiosk-subtitle">
       ${sleighName}
     </div>
   `;
+  kioskBanner.classList.add("visible");
 }
 
     if (!todayRoute) {
@@ -789,13 +790,16 @@ if (isKiosk) {
       const age = Date.now() - ts;
       
       const gpsFresh = age <= STALE_MS;
+      
+      const kioskStatusEl = document.getElementById("kioskStatus");
+
+if (isKiosk && kioskStatusEl) {
+  kioskStatusEl.textContent = gpsFresh
+    ? "🎅 LIVE TRACKING"
+    : "🎄 PREPARING IN LAPLAND";
+}
 
       const kioskLive = isKiosk && gpsFresh;
-
-// LIVE banner: GPS only
-if (kioskBanner) {
-  kioskBanner.classList.toggle("visible", kioskLive);
-}
 
 // Sponsor: GPS + sponsor present
 if (sponsorBox) {
