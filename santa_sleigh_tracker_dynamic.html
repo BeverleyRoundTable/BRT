@@ -629,10 +629,17 @@ document.getElementById("subEmail").addEventListener("keydown", (e) => {
 });
 
   function fireBrowserNotification(title, body) {
-      if (!("Notification" in window)) return;
-      if (Notification.permission !== "granted") return;
-      try { new Notification(title, { body, icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png", badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png", requireInteraction: true }); } catch (e) {}}
-    }
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+  try {
+    new Notification(title, {
+      body,
+      icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
+      badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png",
+      requireInteraction: true
+    });
+  } catch (e) {}
+}
   
   /* ---------- INIT ---------- */
   async function init(){
@@ -897,7 +904,7 @@ if (sponsorBox) {
         setDimUI(false); statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
       }
 
-    }catch {
+    }catch (e) {
       if (lastGoodFix) {
         animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
         statusBox.textContent = "🎅 Santa is nearby…";
