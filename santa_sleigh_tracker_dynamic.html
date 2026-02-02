@@ -82,6 +82,10 @@ body.kiosk .toast-box {
   display: none !important;
 }
 
+  body.kiosk .status-popup {
+  display: none !important;
+}
+
   /* ===============================
    KIOSK MODE HARD LOCK
 ================================ */
@@ -127,7 +131,8 @@ body.kiosk .info-popup {
 /* Kiosk LIVE banner (top-centre hero) */
 .kiosk-banner {
   position: fixed;
-  top: 22px;
+  top: auto;
+  bottom: calc(var(--ui-bottom-safe) + 110px);
   left: 50%;
   transform: translateX(-50%) translateY(-6px);
   background: rgba(20,20,20,0.96);
@@ -168,7 +173,8 @@ body.kiosk .kiosk-banner {
   /* Kiosk sponsor badge */
 .kiosk-sponsor {
   position: fixed;
-  top: 90px;
+  top: auto;
+  bottom: calc(var(--ui-bottom-safe) + 60px);
   left: 50%;
   transform: translateX(-50%) translateY(6px);
   background: rgba(20,20,20,0.95);
