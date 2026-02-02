@@ -308,11 +308,6 @@ async function requestWakeLock() {
   } catch {}
 }
 
-// Re-request on visibility regain
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) requestWakeLock();
-});
-
  // ===============================
 // URL + KIOSK MODE (SINGLE SOURCE)
 // ===============================
@@ -398,6 +393,8 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   let sponsorBox = null;
   let todayRoute = null;
   let settings = {};
+  let pageVisible = !document.hidden;
+
 
   const snowCanvas = document.getElementById("snow");
   const snowCtx = snowCanvas.getContext("2d");
@@ -982,8 +979,10 @@ if (
   
   document.addEventListener("visibilitychange", () => {
   pageVisible = !document.hidden;
-  if (pageVisible && snowActive) {
-    drawSnow(); // resume without resetting
+
+  if (pageVisible) {
+    requestWakeLock();
+    if (snowActive) drawSnow();
   }
 });
 
