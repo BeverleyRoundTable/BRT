@@ -120,6 +120,11 @@ body.kiosk #statusDot {
   display: none !important;
 }
 
+  /* Hide Leaflet zoom controls in kiosk */
+body.kiosk .leaflet-control-zoom {
+  display: none !important;
+}
+
 </style>
 </head>
 
@@ -418,7 +423,10 @@ const isKiosk = params.get("kiosk") === "1";
       await loadGpxRoute(todayRoute.gpxUrl); // ✅ Updated logic handles error internally
     }
 
-    map = L.map("map").setView(LAPLAND, 5);
+    map = L.map("map", {
+  zoomControl: !isKiosk
+}).setView(LAPLAND, 5);
+
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
 
     if (isKiosk) {
