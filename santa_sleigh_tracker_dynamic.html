@@ -597,13 +597,16 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
       .then(data => {
         if (data.ok) {
   sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-          statusBox.textContent = "✅ You’re all set!";
-          if (email) {
-            alert("🎅 You're signed up! We’ll email you when Santa is close.");
-          } else {
-            alert("🎅 You're signed up!\n\n⚠️ Keep this page open to receive the notification.\nFor guaranteed alerts next time, add your email.");
-          }
-          setTimeout(() => { statusBox.textContent = ""; }, 3000);
+          sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+
+if (email) {
+  showToast("✅ Signed up! We’ll email you when Santa is close 🎄");
+} else {
+  showToast("✅ Signed up! Keep this page open for alerts 🎅");
+}
+
+statusBox.textContent = "";
+
         } else {
           alert("❌ Error: " + (data.error || "Could not subscribe."));
           statusBox.textContent = "❌ Failed to save.";
