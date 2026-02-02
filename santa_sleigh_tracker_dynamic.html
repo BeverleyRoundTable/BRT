@@ -814,24 +814,35 @@ if (sponsorBox) {
 
       if (gpsFresh && isAfterSunset(p.lat, p.lng)) { document.body.classList.add("night-mode"); } else { document.body.classList.remove("night-mode"); }
       
-      if (age <= STALE_MS) {
-        staleSince = null; lastGoodFix = { lat: p.lat, lng: p.lng };
-      } else {
-        if (!staleSince) staleSince = ts;
-       if (Date.now() - staleSince > STALE_MS) {
+      iif (age <= STALE_MS) {
+  staleSince = null;
+  lastGoodFix = { lat: p.lat, lng: p.lng };
 
-  marker.setLatLng(LAPLAND);
-  if (follow) map.setView(LAPLAND, 5, { animate: true, duration: 2 });
-  statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
-  dot.style.display = "none";
-  setDimUI(false);
-  firstFix = true;
+} else {
+  if (!staleSince) staleSince = ts;
 
-  if (animRaf) cancelAnimationFrame(animRaf);
-  animRaf = null;
+  if (Date.now() - staleSince > STALE_MS) {
 
-  setTimeout(tick, REFRESH);
-  return;
+    marker.setLatLng(LAPLAND);
+    if (follow) map.setView(LAPLAND, 5, { animate: true, duration: 2 });
+
+    statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
+    dot.style.display = "none";
+    setDimUI(false);
+    firstFix = true;
+
+    if (animRaf) cancelAnimationFrame(animRaf);
+    animRaf = null;
+
+    setTimeout(tick, REFRESH);
+    return;
+  }
+
+  if (lastGoodFix) {
+    animateMarkerTo(L.latLng(lastGoodFix.lat, lastGoodFix.lng));
+    statusBox.textContent = "🎅 Santa is nearby…";
+    return;
+  }
 }
 
         if (lastGoodFix) {
