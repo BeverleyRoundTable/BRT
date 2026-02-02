@@ -988,7 +988,13 @@ if (
   }
 });
 
-}
+  // Re-request wake lock when window regains focus (Android TV, HDMI wake, etc.)
+window.addEventListener("focus", () => {
+  if (isKiosk) {
+    requestWakeLock();
+    if (snowActive) drawSnow();
+  }
+});
   
   init();
   
