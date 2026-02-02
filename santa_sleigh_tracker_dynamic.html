@@ -352,7 +352,7 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   
   const CONFIG = {
     REFRESH_MS: 6000, STALE_MS: 5 * 60 * 1000, MOTION_WINDOW_MS: 25 * 1000, MOVE_THRESHOLD_METERS: 8,
-    MIN_FIXES_FOR_ETA: 3, MIN_ETA_WINDOW_MS: 15 * 1000, OFF_ROUTE_THRESHOLD_METERS: 60,
+    MIN_FIXES_FOR_ETA: 3, MIN_ETA_WINDOW_MS: 15 * 1000,
     GPX_SEARCH: { AHEAD: 80, BACK: 5, EARLY_EXIT_METERS: 25 },
     SNOW: { ETA_MINUTES_MAX: 15, LEVELS: { LIGHT: 1, HEAVY: 2, BLIZZARD: 3 }, MOBILE_BASE_COUNT: 30, DESKTOP_BASE_COUNT: 60, MULTIPLIERS: [0, 1, 2.5, 5] },
     BATTERY: { LOW: 0.4, CRITICAL: 0.2, FRAME_SKIP: { LOW: 2, CRITICAL: 3 } },
@@ -559,11 +559,10 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   }
   
   function getVisualLatLng(rawPos) {
-    if (!gpxLoaded) return rawPos;
-    const snap = snapToGpxIndex(rawPos);
-    if (snap && snap.distance <= OFF_ROUTE_THRESHOLD_METERS) return snap.point;
-    return rawPos;
-  }
+  if (!gpxLoaded) return rawPos;
+  const snap = snapToGpxIndex(rawPos);
+  return snap ? snap.point : rawPos;
+}
 
   function snapSubscriberToGpx(pos) {
     if (!gpxRoute) return null;
@@ -961,8 +960,6 @@ if (
         else if (mins > 15) statusBox.textContent = "🎅 Santa is on the way…";
         else if (mins > 5) statusBox.textContent = "🎅 Santa is nearly here!";
         else statusBox.textContent = `🎅 Santa is ${Math.max(1, mins)} min away!`;
-      } else if (offRoute && moving) {
-        setDimUI(false); statusBox.textContent = "🎅 Santa is nearby…";
       } else if (moving) {
         setDimUI(false); statusBox.textContent = "🎅 Santa is out spreading joy!";
       } else {
