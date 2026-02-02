@@ -173,17 +173,8 @@ body.kiosk .kiosk-banner {
     </div>
   </div>
 </div>
-
-  const kioskBanner = document.getElementById("kioskBanner");
-
-if (isKiosk && kioskBanner) {
-  kioskBanner.innerHTML = `
-    🎅 LIVE TRACKING
-    <div style="font-size:0.75em; opacity:0.85; margin-top:4px;">
-      ${sleighName}
-    </div>
-  `;
-}
+  
+<div id="kioskBanner" class="kiosk-banner"></div>
 
 <div id="map"></div>
 <canvas id="snow"></canvas>
@@ -259,6 +250,9 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   let staleSince = null;
   let animCurrent = null; let animTarget = null; let animStart = 0; let animDuration = 900; let animRaf = null;
   let gpxRoute = null; let gpxTotalDistance = 0; let gpxLoaded = false; let lastSnapIndex = 0;
+  let sleighName = "Santa Sleigh";
+  let kioskBanner = null;
+
 
   const snowCanvas = document.getElementById("snow");
   const snowCtx = snowCanvas.getContext("2d");
@@ -448,6 +442,18 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
     const s = data.settings || {};
     if (s.donate_url) { donateLink.href = s.donate_url; donateBox.style.display = "block"; } else { donateBox.style.display = "none"; }
     firebaseBaseUrl = data.tracker?.firebase_url || null;
+
+    sleighName = s.sleigh_display_name || "Santa Sleigh";
+kioskBanner = document.getElementById("kioskBanner");
+
+if (isKiosk && kioskBanner) {
+  kioskBanner.innerHTML = `
+    🎅 LIVE TRACKING
+    <div style="font-size:0.75em; opacity:0.85; margin-top:4px;">
+      ${sleighName}
+    </div>
+  `;
+}
     
     const today = new Date().toISOString().slice(0, 10);
     const todayRoute = (data.routes || []).find(r => r.date === today && r.gpxUrl);
@@ -458,9 +464,9 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
       await loadGpxRoute(todayRoute.gpxUrl); // ✅ Updated logic handles error internally
     }
 
-    map = L.map("map", {
+    .map("map", {
   zoomControl: !isKiosk
-}).setView(LAPLAND, 5);
+}).setView(LAPLAND, isKiosk ? 6 : 5);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
 
