@@ -298,7 +298,8 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   let gpxRoute = null; let gpxTotalDistance = 0; let gpxLoaded = false; let lastSnapIndex = 0;
   var sleighName = "Santa Sleigh";
   let kioskBanner = null;
-
+  let kioskBanner = null;
+  let sponsorBox = null;
 
   const snowCanvas = document.getElementById("snow");
   const snowCtx = snowCanvas.getContext("2d");
@@ -538,7 +539,7 @@ if (isKiosk && kioskBanner) {
       gpxLayer.addTo(map);
     }
 
-    const sponsorBox = document.getElementById("kioskSponsor");
+    sponsorBox = document.getElementById("kioskSponsor");
 
 if (isKiosk && todayRoute?.sponsorUrl) {
   sponsorBox.innerHTML = `
