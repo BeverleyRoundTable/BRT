@@ -258,8 +258,8 @@ body.kiosk .kiosk-banner {
     <div class="modal-desc">Want to know when Santa is nearby? Enter your email below (optional).</div>
     <input type="email" id="subEmail" class="modal-input" placeholder="santa@example.com">
     <div class="modal-btns">
-      <button class="btn-full btn-cancel" onclick="closeSubscribeModal()">Cancel</button>
-      <button class="btn-full btn-confirm" onclick="confirmSubscription()">Notify Me</button>
+      <button class="btn-full btn-cancel" id="modalCancelBtn">Cancel</button>
+<button class="btn-full btn-confirm" id="modalConfirmBtn">Notify Me</button>
     </div>
   </div>
 </div>
@@ -547,6 +547,94 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
     while (recentFixes.length && recentFixes[0].ts < cutoff) recentFixes.shift();
   }
 
+  let pendingSubscription = null;
+
+function openSubscribeModal(lat, lng) {
+  if (isKiosk) return;
+  pendingSubscription = { lat, lng };
+  document.getElementById("emailModal").style.display = "flex";
+  document.getElementById("subEmail").focus();
+}
+
+function closeSubscribeModal() {
+  document.getElementById("emailModal").style.display = "none";
+  statusBox.textContent = "Tap the pin to try again";
+}
+
+function confirmSubscription() {
+  if (!pendingSubscription) return;
+  const email = document.getElementById("subEmail").value.trim();
+  closeSubscribeModal();
+  submitSubscription(pendingSubscription.lat, pendingSubscription.lng, email);
+}
+
+  function submitSubscription(lat, lng, email) {
+    if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
+  showToast("🎅 You’re already signed up!");
+  return;
+}
+    statusBox.textContent = "🔔 Saving your notification...";
+
+    const subscribeUrl = `${apiUrl}?function=subscribe` +
+      `&lat=${lat}` +
+      `&lng=${lng}` +
+      `&email=${encodeURIComponent(email || "")}`;
+
+    fetch(subscribeUrl, { method: "GET" })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+  sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+
+if (email) {
+  showToast("✅ Signed up! We’ll email you when Santa is close 🎄");
+} else {
+  showToast("✅ Signed up! Keep this page open for alerts 🎅");
+}
+
+statusBox.textContent = "";
+
+        } else {
+          showToast("❌ Could not save notification. Please try again.");
+statusBox.textContent = "";
+        }
+      })
+      .catch(() => {
+        showToast("❌ Network error. Please try again.");
+statusBox.textContent = "";
+      });
+  }
+
+  function showToast(message) {
+  if (isKiosk) return; // never show in kiosk
+
+  const t = document.getElementById("toast");
+  if (!message) return;
+
+  t.textContent = message;
+  t.classList.add("toast-visible");
+
+  setTimeout(() => {
+    t.classList.remove("toast-visible");
+    t.textContent = "";
+  }, 4000);
+}
+  }  
+  
+  document.getElementById("modalCancelBtn").addEventListener("click", closeSubscribeModal);
+document.getElementById("modalConfirmBtn").addEventListener("click", confirmSubscription);
+
+// Optional UX: press Enter in email field
+document.getElementById("subEmail").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") confirmSubscription();
+});
+
+  function fireBrowserNotification(title, body) {
+      if (!("Notification" in window)) return;
+      if (Notification.permission !== "granted") return;
+      try { new Notification(title, { body, icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png", badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png", requireInteraction: true }); } catch {}
+    }
+  
   /* ---------- INIT ---------- */
   async function init(){
     const data = await loadJSON(apiUrl);
@@ -673,12 +761,6 @@ if (isKiosk) {
 }
 
     loadingCover.style.display="none";
-
-    function fireBrowserNotification(title, body) {
-      if (!("Notification" in window)) return;
-      if (Notification.permission !== "granted") return;
-      try { new Notification(title, { body, icon: "https://i.ibb.co/6cZwpb07/Santa-Marker.png", badge: "https://i.ibb.co/6cZwpb07/Santa-Marker.png", requireInteraction: true }); } catch {}
-    }
 
     tick();
   }
@@ -869,62 +951,9 @@ if (sponsorBox) {
     submitSubscription(pendingSubscription.lat, pendingSubscription.lng, email);
   }
 
-  function submitSubscription(lat, lng, email) {
-    if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
-  showToast("🎅 You’re already signed up!");
-  return;
-}
-    statusBox.textContent = "🔔 Saving your notification...";
-
-    const subscribeUrl = `${apiUrl}?function=subscribe` +
-      `&lat=${lat}` +
-      `&lng=${lng}` +
-      `&email=${encodeURIComponent(email || "")}`;
-
-    fetch(subscribeUrl, { method: "GET" })
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok) {
-  sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-
-if (email) {
-  showToast("✅ Signed up! We’ll email you when Santa is close 🎄");
-} else {
-  showToast("✅ Signed up! Keep this page open for alerts 🎅");
-}
-
-statusBox.textContent = "";
-
-        } else {
-          showToast("❌ Could not save notification. Please try again.");
-statusBox.textContent = "";
-        }
-      })
-      .catch(() => {
-        showToast("❌ Network error. Please try again.");
-statusBox.textContent = "";
-      });
-  }
-
   function subscribeUser(lat, lng) {
      openSubscribeModal(lat, lng);
   }
-
-  function showToast(message) {
-  if (isKiosk) return; // never show in kiosk
-
-  const t = document.getElementById("toast");
-  if (!message) return;
-
-  t.textContent = message;
-  t.classList.add("toast-visible");
-
-  setTimeout(() => {
-    t.classList.remove("toast-visible");
-    t.textContent = "";
-  }, 4000);
-}
-  }  
   
   // 🕯️ Keep Screen Awake (Screen Wake Lock API)
 if ("wakeLock" in navigator) {
