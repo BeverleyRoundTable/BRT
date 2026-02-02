@@ -122,7 +122,6 @@ body.kiosk #statusDot {
 <div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
 <div class="donate-box" id="donateBox"><a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a></div>
 <div class="info-popup">
-  <div id="statusDot" class="status-dot"></div>
   <button class="btn" id="followBtn">Follow: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
   <button class="btn" id="notifyBtn">🔔 Notify Me</button>
@@ -588,8 +587,6 @@ if (isKiosk) {
       if (firstFix) { map.setView(ll, 16); firstFix = false; }
 
       const moving = isSleighMoving();
-      dot.style.display = "block";
-      dot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
 
       if (passedSubscriber) {
         statusBox.textContent = "🎄 Santa has just been here!"; setDimUI(false);
