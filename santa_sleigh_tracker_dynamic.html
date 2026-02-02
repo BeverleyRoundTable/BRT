@@ -129,14 +129,16 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
   }
 
   const params = new URLSearchParams(location.search);
-  let apiUrl = params.get("api");
-  if (!apiUrl) apiUrl = sessionStorage.getItem("SANTA_API");
-  if (!apiUrl) { alert("Missing ?api=YOUR_SCRIPT_URL"); throw new Error("API missing"); }
-  sessionStorage.setItem("SANTA_API", apiUrl);
-  if (location.search.includes("api=")) history.replaceState(null, "", location.pathname);
 
-  const params = new URLSearchParams(location.search);
-  const isKiosk = params.get("kiosk") === "1";
+let apiUrl = params.get("api");
+if (!apiUrl) apiUrl = sessionStorage.getItem("SANTA_API");
+if (!apiUrl) { alert("Missing ?api=YOUR_SCRIPT_URL"); throw new Error("API missing"); }
+
+sessionStorage.setItem("SANTA_API", apiUrl);
+if (location.search.includes("api=")) history.replaceState(null, "", location.pathname);
+
+// ✅ kiosk flag (no redeclare)
+const isKiosk = params.get("kiosk") === "1";
 
   const CONFIG = {
     REFRESH_MS: 6000, STALE_MS: 5 * 60 * 1000, MOTION_WINDOW_MS: 25 * 1000, MOVE_THRESHOLD_METERS: 8,
