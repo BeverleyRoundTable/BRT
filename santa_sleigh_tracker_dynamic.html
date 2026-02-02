@@ -210,7 +210,8 @@ if (location.search.includes("api=")) history.replaceState(null, "", location.pa
 
 // ✅ kiosk flag (no redeclare)
 const isKiosk = params.get("kiosk") === "1";
-
+const INITIAL_ZOOM = isKiosk ? 15 : 16;
+  
   const CONFIG = {
     REFRESH_MS: 6000, STALE_MS: 5 * 60 * 1000, MOTION_WINDOW_MS: 25 * 1000, MOVE_THRESHOLD_METERS: 8,
     MIN_FIXES_FOR_ETA: 3, MIN_ETA_WINDOW_MS: 15 * 1000, OFF_ROUTE_THRESHOLD_METERS: 60,
@@ -640,7 +641,10 @@ if (isKiosk && kioskBanner) {
         }
       }
       
-      if (firstFix) { map.setView(ll, 16); firstFix = false; }
+      if (firstFix) {
+  map.setView(ll, INITIAL_ZOOM);
+  firstFix = false;
+}
 
       const moving = isSleighMoving();
       dot.style.display = "block";
