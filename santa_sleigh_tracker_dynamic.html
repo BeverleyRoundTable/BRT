@@ -75,7 +75,11 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
 .toast-visible {
   transform: translateX(-50%) translateY(0);
 }
-  
+
+  body.kiosk {
+  cursor: none;
+}
+
 </style>
 </head>
 
@@ -130,6 +134,9 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
   if (!apiUrl) { alert("Missing ?api=YOUR_SCRIPT_URL"); throw new Error("API missing"); }
   sessionStorage.setItem("SANTA_API", apiUrl);
   if (location.search.includes("api=")) history.replaceState(null, "", location.pathname);
+
+  const params = new URLSearchParams(location.search);
+  const isKiosk = params.get("kiosk") === "1";
 
   const CONFIG = {
     REFRESH_MS: 6000, STALE_MS: 5 * 60 * 1000, MOTION_WINDOW_MS: 25 * 1000, MOVE_THRESHOLD_METERS: 8,
@@ -237,7 +244,9 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
       const t = Math.min(1, (now - animStart) / animDuration); const e = easeOutCubic(t);
       const lat = lerp(startLat, endLat, e); const lng = lerp(startLng, endLng, e);
       const ll = L.latLng(lat, lng); marker.setLatLng(ll); animCurrent = ll;
-      if (follow && !firstFix) map.panTo(ll, { animate: true, duration: 0.6 });
+      if ((follow || isKiosk) && !firstFix) {
+  map.panTo(ll, { animate: true, duration: 0.6 });
+}
       if (t < 1) { animRaf = requestAnimationFrame(step); } else { animRaf = null; }
     }
     animRaf = requestAnimationFrame(step);
@@ -370,6 +379,15 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
     map = L.map("map").setView(LAPLAND, 5);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
 
+    if (isKiosk) {
+  map.dragging.disable();
+  map.scrollWheelZoom.disable();
+  map.doubleClickZoom.disable();
+  map.boxZoom.disable();
+  map.keyboard.disable();
+  map.touchZoom.disable();
+}
+
     if (todayRoute && gpxLoaded) {
       const gpxLayer = new L.GPX(todayRoute.gpxUrl, {
         async: true,
@@ -410,8 +428,30 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
     }
 
     marker = L.marker(LAPLAND,{ icon:L.icon({ iconUrl:s.sleigh_icon_live||FALLBACK.live, iconSize:[64,64], iconAnchor:[32,60] }) }).addTo(map);
-    followBtn.onclick=()=>{follow=!follow;followBtn.textContent="Follow: "+(follow?"ON":"OFF")};
-    recenterBtn.onclick=()=>{follow=true;map.panTo(marker.getLatLng())};
+    followBtn.onclick = () => {
+  if (isKiosk) return;
+  follow = !follow;
+  followBtn.textContent = "Follow: " + (follow ? "ON" : "OFF");
+};
+
+recenterBtn.onclick = () => {
+  if (isKiosk) return;
+  follow = true;
+  map.panTo(marker.getLatLng());
+};
+
+if (isKiosk) {
+  follow = true;
+  followBtn.style.display = "none";
+  recenterBtn.style.display = "none";
+  notifyBtn.style.display = "none";
+  donateBox.style.display = "none"; // optional — keep if you want donations hidden
+}
+
+    if (isKiosk) {
+  document.body.classList.add("kiosk");
+}
+
     loadingCover.style.display="none";
 
     function fireBrowserNotification(title, body) {
