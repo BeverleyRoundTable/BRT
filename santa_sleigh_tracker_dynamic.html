@@ -54,6 +54,28 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
 .btn-full:active { transform: scale(0.96); }
 .btn-cancel { background: #333; color: #aaa; }
 .btn-confirm { background: #d31c1c; color: white; box-shadow: 0 4px 12px rgba(211, 28, 28, 0.3); }
+
+  /* Toast Notification */
+.toast-box {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px); /* Start hidden above */
+  background: rgba(44, 255, 78, 0.95); /* Greenish */
+  color: #000;
+  padding: 16px 24px;
+  font-weight: 800;
+  border-radius: 50px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  z-index: 6000;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-align: center;
+  pointer-events: none;
+}
+.toast-visible {
+  transform: translateX(-50%) translateY(0);
+}
+  
 </style>
 </head>
 
@@ -66,6 +88,7 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
   <button class="btn" id="followBtn">Follow: ON</button>
   <button class="btn" id="recenterBtn">Re-centre</button>
   <button class="btn" id="notifyBtn">🔔 Notify Me</button>
+  <div id="toast" class="toast-box"></div>
 </div>
 
 <div id="emailModal" class="modal-overlay">
@@ -573,7 +596,7 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
       .then(r => r.json())
       .then(data => {
         if (data.ok) {
-          sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+  sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
           statusBox.textContent = "✅ You’re all set!";
           if (email) {
             alert("🎅 You're signed up! We’ll email you when Santa is close.");
@@ -596,22 +619,48 @@ body.snowing #snow { opacity: 1; filter: drop-shadow(0 0 4px white); }
      openSubscribeModal(lat, lng);
   }
 
-  // 🕯️ Keep Screen Awake
-if ('wakeLock' in navigator) {
+  function showToast(message) {
+  const t = document.getElementById("toast");
+  t.textContent = message;
+  t.classList.add("toast-visible");
+  setTimeout(() => t.classList.remove("toast-visible"), 4000);
+}
+  
+  // 🕯️ Keep Screen Awake (Screen Wake Lock API)
+if ("wakeLock" in navigator) {
   let wakeLock = null;
+
   const requestWakeLock = async () => {
     try {
-      wakeLock = await navigator.wakeLock.request('screen');
-    } catch (err) {}
+      if (!wakeLock) {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => {
+          wakeLock = null;
+        });
+      }
+    } catch (err) {
+      wakeLock = null;
+    }
   };
-  
-  // Request on load
+
+  const releaseWakeLock = async () => {
+    try {
+      if (wakeLock) {
+        await wakeLock.release();
+        wakeLock = null;
+      }
+    } catch {}
+  };
+
+  // Initial request
   requestWakeLock();
 
-  // Re-request if they switch tabs and come back
-  document.addEventListener('visibilitychange', async () => {
-    if (wakeLock !== null && document.visibilityState === 'visible') {
+  // Re-request when tab becomes visible
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
       requestWakeLock();
+    } else {
+      releaseWakeLock();
     }
   });
 }
