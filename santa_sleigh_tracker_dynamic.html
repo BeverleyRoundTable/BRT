@@ -174,9 +174,16 @@ body.kiosk .kiosk-banner {
   </div>
 </div>
 
-  <div id="kioskBanner" class="kiosk-banner">
-  🎅 LIVE TRACKING
-</div>
+  const kioskBanner = document.getElementById("kioskBanner");
+
+if (isKiosk && kioskBanner) {
+  kioskBanner.innerHTML = `
+    🎅 LIVE TRACKING
+    <div style="font-size:0.75em; opacity:0.85; margin-top:4px;">
+      ${sleighName}
+    </div>
+  `;
+}
 
 <div id="map"></div>
 <canvas id="snow"></canvas>
@@ -239,6 +246,7 @@ const INITIAL_ZOOM = isKiosk ? 15 : 16;
   const MOTION_WINDOW_MS = CONFIG.MOTION_WINDOW_MS;
   const MOVE_THRESHOLD_METERS = CONFIG.MOVE_THRESHOLD_METERS;
   const OFF_ROUTE_THRESHOLD_METERS = CONFIG.OFF_ROUTE_THRESHOLD_METERS;
+  const sleighName = s.sleigh_display_name || "Santa Sleigh";
 
   let map, marker, follow=true, firstFix=true, lastFix=null;
   let awaitingPin = false;
