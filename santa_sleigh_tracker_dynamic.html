@@ -619,8 +619,7 @@ statusBox.textContent = "";
     t.textContent = "";
   }, 4000);
 }
-  }  
-  
+   
   document.getElementById("modalCancelBtn").addEventListener("click", closeSubscribeModal);
 document.getElementById("modalConfirmBtn").addEventListener("click", confirmSubscription);
 
@@ -906,53 +905,6 @@ if (sponsorBox) {
       }
     }
     setTimeout(tick, REFRESH);
-  }
-  
-/* ===================================================
-   NOTIFICATION UI LOGIC
-=================================================== */
-
-  if (!isKiosk) {
-  notifyBtn.onclick = () => {
-    follow = false; followBtn.textContent = "Follow: OFF";
-    document.addEventListener("keydown", function esc(e) {
-      if (e.key === "Escape" && awaitingPin) {
-        awaitingPin = false; if (notifyMarker) map.removeLayer(notifyMarker);
-        statusBox.textContent = ""; document.removeEventListener("keydown", esc);
-      }
-    });
-    browserNotified = false;
-    sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
-    sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
-    sessionStorage.removeItem("SANTA_NOTIFY_POINT");
-    if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
-    awaitingPin = true; pinPreview = null;
-    statusBox.textContent = "📍 Tap the map to place your pin, then tap the pin to confirm";
-  };
-
-  let pendingSubscription = null; 
-
-  function openSubscribeModal(lat, lng) {
-    pendingSubscription = { lat, lng };
-    document.getElementById("emailModal").style.display = "flex";
-    document.getElementById("subEmail").focus();
-  }
-
-  function closeSubscribeModal() {
-    document.getElementById("emailModal").style.display = "none";
-    statusBox.textContent = "Tap the pin to try again";
-  }
-
-  function confirmSubscription() {
-    if (!pendingSubscription) return;
-    const emailInput = document.getElementById("subEmail");
-    const email = emailInput.value.trim();
-    closeSubscribeModal();
-    submitSubscription(pendingSubscription.lat, pendingSubscription.lng, email);
-  }
-
-  function subscribeUser(lat, lng) {
-     openSubscribeModal(lat, lng);
   }
   
   // 🕯️ Keep Screen Awake (Screen Wake Lock API)
