@@ -941,11 +941,15 @@ requestAnimationFrame(SnowSystem.draw);
           history.replaceState(null, "", location.pathname);
         }
 
-        if (AppState.flags.isKiosk) {
-           document.body.classList.add("kiosk");
-           requestWakeLock();
-           setInterval(() => { if (document.visibilityState === "visible") requestWakeLock(); }, 60000);
-        }
+        // ALWAYS request wake-lock
+requestWakeLock();
+
+// Re-request periodically & when visible
+setInterval(() => {
+  if (document.visibilityState === "visible") {
+    requestWakeLock();
+  }
+}, 60000);
 
         const apiData = await Utils.loadJSON(AppState.vars.apiUrl);
         const settings = apiData.settings || {};
