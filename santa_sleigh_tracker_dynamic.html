@@ -690,6 +690,7 @@
             swaySpeed: Math.random() * 0.02 + 0.005
           }));
         },
+        
         draw() {
           if (!AppState.flags.snowActive || !AppState.flags.pageVisible) return;
           let frameSkip = 0;
@@ -698,7 +699,7 @@
             else if (batteryState.level <= AppConfig.BATTERY.LOW) frameSkip = AppConfig.BATTERY.FRAME_SKIP.LOW;
           }
           
-          SSnowSystem._frame = (SnowSystem._frame || 0) + 1;
+          SnowSystem._frame = (SnowSystem._frame || 0) + 1;
 if (frameSkip && SnowSystem._frame % (frameSkip + 1) !== 0) {
   requestAnimationFrame(SnowSystem.draw);
   return;
