@@ -697,25 +697,37 @@
             if (batteryState.level <= AppConfig.BATTERY.CRITICAL) frameSkip = AppConfig.BATTERY.FRAME_SKIP.CRITICAL;
             else if (batteryState.level <= AppConfig.BATTERY.LOW) frameSkip = AppConfig.BATTERY.FRAME_SKIP.LOW;
           }
-          if (frameSkip && Date.now() % (frameSkip + 1) !== 0) { requestAnimationFrame(SnowSystem.draw); return; }
           
-          const ctx = AppState.dom.snowCanvas.getContext("2d");
-          ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height);
-          ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-          ctx.beginPath();
-          
-          for (const f of AppState.vars.snowflakes) {
-            f.y += f.speed;
-            f.swayOffset += f.swaySpeed;
-            f.x += Math.sin(f.swayOffset) * 0.5;
-            if (f.y > AppState.dom.snowCanvas.height) { f.y = -10; f.x = Math.random() * AppState.dom.snowCanvas.width; }
-            if (f.x > AppState.dom.snowCanvas.width) f.x = 0;
-            if (f.x < 0) f.x = AppState.dom.snowCanvas.width;
-            ctx.moveTo(f.x, f.y);
-            ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-          }
-          ctx.fill();
-          requestAnimationFrame(SnowSystem.draw);
+          SSnowSystem._frame = (SnowSystem._frame || 0) + 1;
+if (frameSkip && SnowSystem._frame % (frameSkip + 1) !== 0) {
+  requestAnimationFrame(SnowSystem.draw);
+  return;
+}
+
+const ctx = AppState.dom.snowCanvas.getContext("2d");
+ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height);
+ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+ctx.beginPath();
+
+for (const f of AppState.vars.snowflakes) {
+  f.y += f.speed;
+  f.swayOffset += f.swaySpeed;
+  f.x += Math.sin(f.swayOffset) * 0.5;
+
+  if (f.y > AppState.dom.snowCanvas.height) {
+    f.y = -10;
+    f.x = Math.random() * AppState.dom.snowCanvas.width;
+  }
+  if (f.x > AppState.dom.snowCanvas.width) f.x = 0;
+  if (f.x < 0) f.x = AppState.dom.snowCanvas.width;
+
+  ctx.moveTo(f.x, f.y);
+  ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+}
+
+ctx.fill();
+requestAnimationFrame(SnowSystem.draw);
+
         },
         setLevel(on, level) {
           if (!on) return;
