@@ -458,7 +458,8 @@
           lastSnapIndex: 0,
           snowflakes: [],
           animRaf: null,
-          pendingSubscription: null
+          pendingSubscription: null,
+          lastVisualPos: null
         },
         dom: {
           loading: document.getElementById("loadingCover"),
@@ -573,7 +574,8 @@
           const ll = L.latLng(lat, lng);
           
           AppState.marker.setLatLng(ll);
-          
+          AppState.vars.lastVisualPos = { lat: ll.lat, lng: ll.lng };
+
           if ((AppState.flags.follow || AppState.flags.isKiosk) && !AppState.flags.firstFix) {
             AppState.map.panTo(ll, { animate: true, duration: 0.6 });
           }
@@ -1141,12 +1143,21 @@ setInterval(() => {
       }
 
       document.addEventListener("visibilitychange", () => {
-        AppState.flags.pageVisible = !document.hidden;
-        if (AppState.flags.pageVisible) {
-          if (AppState.flags.isKiosk) requestWakeLock();
-          if (AppState.flags.snowActive) SnowSystem.draw();
-        }
-      });
+  AppState.flags.pageVisible = !document.hidden;
+
+  if (AppState.flags.pageVisible) {
+    // Re-acquire wake lock
+    if (AppState.flags.isKiosk) requestWakeLock();
+
+    // ✅ Restore last rendered position (prevents jump)
+    if (AppState.vars.lastVisualPos && AppState.marker) {
+      AppState.marker.setLatLng(AppState.vars.lastVisualPos);
+    }
+
+    // Resume snow smoothly
+    if (AppState.flags.snowActive) SnowSystem.draw();
+  }
+});
 
       init();
     });
