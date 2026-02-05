@@ -829,10 +829,15 @@ requestAnimationFrame(SnowSystem.draw);
           }
 
           let visualPos = { lat: data.lat, lng: data.lng };
-          if (AppState.flags.gpxLoaded) {
-             const snap = snapToGpxIndex(visualPos, AppConfig.GPX);
-             if (snap) visualPos = snap.point;
-          }
+
+if (AppState.flags.gpxLoaded) {
+  const snap = snapToGpxIndex(visualPos, AppConfig.GPX);
+
+  // ✅ Only snap if GPS fix is close to the GPX
+  if (snap && snap.distance < 50) {
+    visualPos = snap.point;
+  }
+}
           
           animateMarkerTo(visualPos.lat, visualPos.lng);
           pushFix(data.lat, data.lng, Date.now());
