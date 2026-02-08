@@ -750,7 +750,19 @@ requestAnimationFrame(SnowSystem.draw);
 
         },
         setLevel(on, level) {
-          if (!on) return;
+          // FIX: Handle the "OFF" state first
+          if (!on) {
+            if (AppState.flags.snowActive) {
+              AppState.flags.snowActive = false;
+              document.body.classList.remove("snowing");
+              // Optional: Clear canvas
+              const ctx = AppState.dom.snowCanvas.getContext("2d");
+              ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height);
+            }
+            return;
+          }
+
+          // Existing "ON" logic
           if (AppState.currentSnowLevel !== level) {
             AppState.currentSnowLevel = level;
             SnowSystem.create(level);
@@ -876,23 +888,35 @@ if (AppState.flags.gpxLoaded) {
                   passedSubscriber = true;
                 } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
-                  const speed = Utils.calculateSpeed(AppState.recentFixes);
-                  if (speed && isSleighMoving()) {
-                    etaSeconds = remaining / speed;
-                  }
+                  
+                  // 🔧 FIX 1: Fallback Speed
+                  // If calculated speed is null (not enough data yet) or 0 (stopped), 
+                  // default to 15 m/s (approx 33mph) so we always get an ETA.
+                  const calculatedSpeed = Utils.calculateSpeed(AppState.recentFixes);
+                  const useSpeed = (calculatedSpeed && calculatedSpeed > 0.5) ? calculatedSpeed : 15;
+                  
+                  etaSeconds = remaining / useSpeed;
                 }
               }
             }
           }
 
           const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
+          
+          // 🔧 FIX 2: Snow Logic
           let snowLevel = 1;
           let triggerSnow = false;
-          if (AppState.notifyMarker && etaSeconds !== null && isFresh && isNight && isSleighMoving()) {
-            triggerSnow = true;
-            if (etaMinutes < 2) snowLevel = 3;
-            else if (etaMinutes < 7) snowLevel = 2;
+          
+          // Only trigger snow if we haven't passed yet
+          if (AppState.notifyMarker && !passedSubscriber && etaSeconds !== null && isFresh && isNight) {
+            // Trigger snow if less than 15 mins away
+            if (etaMinutes < 15) {
+               triggerSnow = true;
+               if (etaMinutes < 2) snowLevel = 3;      // Blizzard last 2 mins
+               else if (etaMinutes < 7) snowLevel = 2; // Heavy snow last 7 mins
+            }
           }
+          
           const { maxLevel } = function(){
              if (batteryState.supported && !batteryState.charging) {
                if(batteryState.level <= AppConfig.BATTERY.CRITICAL) return { maxLevel: 1 };
@@ -900,15 +924,22 @@ if (AppState.flags.gpxLoaded) {
              }
              return { maxLevel: 3 };
           }();
+          
+          // This will now correctly turn snow OFF because of your Step 1 fix
           SnowSystem.setLevel(triggerSnow, Math.min(snowLevel, maxLevel));
 
+          // 🔧 FIX 3: Notification Logic
           if (AppState.notifyMarker && !AppState.flags.browserNotified && !passedSubscriber) {
-            const dist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.notifyMarker.getLatLng());
-            if (dist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS) {
+            const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.notifyMarker.getLatLng());
+            
+            // Trigger if physical distance is < 1000m OR time is < 3 minutes
+            // This fixes the issue where he "snaps" past the small 250m window too fast
+            if (straightDist < 1000 || (etaSeconds !== null && etaSeconds < 180)) {
               AppState.flags.browserNotified = true;
               sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
-              fireBrowserNotification("🎅 Santa is nearly here!", "He’s about 5 minutes away — get ready! 🎄");
+              fireBrowserNotification("🎅 Santa is nearly here!", "He’s approaching your location! 🎄");
             }
+          }
           }
 
           if (AppState.flags.firstFix) {
