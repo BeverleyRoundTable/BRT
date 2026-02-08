@@ -279,32 +279,32 @@
     .btn-confirm { background: #d31c1c; color: white; box-shadow: 0 4px 12px rgba(211, 28, 28, 0.3); }
 
     .toast-box {
-  display: none;
-  position: fixed;
-  left: 50%;
-  bottom: calc(var(--donate-bottom) + 80px);
-  transform: translateX(-50%);
-  background: rgba(44, 255, 78, 0.95);
-  color: #000;
-  padding: 14px 20px;
-  font-weight: 800;
-  border-radius: 22px;              /* 🔧 key change */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  z-index: 6000;
-  pointer-events: none;
-  max-width: min(90vw, 420px);      /* 🔧 prevents giant circles */
-  text-align: center;               /* 🔧 multiline friendly */
-  line-height: 1.3;                 /* 🔧 nicer wrapping */
-}
+      display: none;
+      position: fixed;
+      left: 50%;
+      bottom: calc(var(--donate-bottom) + 80px);
+      transform: translateX(-50%);
+      background: rgba(44, 255, 78, 0.95);
+      color: #000;
+      padding: 14px 20px;
+      font-weight: 800;
+      border-radius: 22px;              
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      z-index: 6000;
+      pointer-events: none;
+      max-width: min(90vw, 420px);      
+      text-align: center;               
+      line-height: 1.3;                 
+    }
     .toast-visible { display: block; }
 
     @media (max-width: 480px) {
-  .toast-box {
-    font-size: 0.9em;
-    padding: 12px 16px;
-    bottom: calc(var(--donate-bottom) + 64px);
-  }
-}
+      .toast-box {
+        font-size: 0.9em;
+        padding: 12px 16px;
+        bottom: calc(var(--donate-bottom) + 64px);
+      }
+    }
 
     /* =========================================
        5. KIOSK MODE
@@ -719,35 +719,34 @@
           }
           
           SnowSystem._frame = (SnowSystem._frame || 0) + 1;
-if (frameSkip && SnowSystem._frame % (frameSkip + 1) !== 0) {
-  requestAnimationFrame(SnowSystem.draw);
-  return;
-}
+          if (frameSkip && SnowSystem._frame % (frameSkip + 1) !== 0) {
+            requestAnimationFrame(SnowSystem.draw);
+            return;
+          }
 
-const ctx = AppState.dom.snowCanvas.getContext("2d");
-ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height);
-ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-ctx.beginPath();
+          const ctx = AppState.dom.snowCanvas.getContext("2d");
+          ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+          ctx.beginPath();
 
-for (const f of AppState.vars.snowflakes) {
-  f.y += f.speed;
-  f.swayOffset += f.swaySpeed;
-  f.x += Math.sin(f.swayOffset) * 0.5;
+          for (const f of AppState.vars.snowflakes) {
+            f.y += f.speed;
+            f.swayOffset += f.swaySpeed;
+            f.x += Math.sin(f.swayOffset) * 0.5;
 
-  if (f.y > AppState.dom.snowCanvas.height) {
-    f.y = -10;
-    f.x = Math.random() * AppState.dom.snowCanvas.width;
-  }
-  if (f.x > AppState.dom.snowCanvas.width) f.x = 0;
-  if (f.x < 0) f.x = AppState.dom.snowCanvas.width;
+            if (f.y > AppState.dom.snowCanvas.height) {
+              f.y = -10;
+              f.x = Math.random() * AppState.dom.snowCanvas.width;
+            }
+            if (f.x > AppState.dom.snowCanvas.width) f.x = 0;
+            if (f.x < 0) f.x = AppState.dom.snowCanvas.width;
 
-  ctx.moveTo(f.x, f.y);
-  ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-}
+            ctx.moveTo(f.x, f.y);
+            ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+          }
 
-ctx.fill();
-requestAnimationFrame(SnowSystem.draw);
-
+          ctx.fill();
+          requestAnimationFrame(SnowSystem.draw);
         },
         setLevel(on, level) {
           // FIX: Handle the "OFF" state first
@@ -861,37 +860,39 @@ requestAnimationFrame(SnowSystem.draw);
 
           let visualPos = { lat: data.lat, lng: data.lng };
 
-if (AppState.flags.gpxLoaded) {
-  const snap = snapToGpxIndex(visualPos, AppConfig.GPX);
-
-  if (snap && snap.distance < 50) {
-    visualPos = snap.point;
-  } else {
-    // 🔧 fallback to raw GPS so marker always moves
-    visualPos = { lat: data.lat, lng: data.lng };
-  }
-}
+          if (AppState.flags.gpxLoaded) {
+            const snap = snapToGpxIndex(visualPos, AppConfig.GPX);
+            if (snap && snap.distance < 50) {
+              visualPos = snap.point;
+            } else {
+              visualPos = { lat: data.lat, lng: data.lng };
+            }
+          }
           
           animateMarkerTo(visualPos.lat, visualPos.lng);
           pushFix(data.lat, data.lng, Date.now());
 
+          // --------------------------------------------------------
+          // START: NEW FIXES (ETA FALLBACK, SNOW, NOTIFICATIONS)
+          // --------------------------------------------------------
           let etaSeconds = null;
           let passedSubscriber = false;
 
           if (AppState.notifyMarker && AppState.flags.gpxLoaded && isFresh) {
             const santaSnap = snapToGpxIndex({ lat: data.lat, lng: data.lng }, AppConfig.GPX);
+            
             if (santaSnap) {
               const userPos = AppState.notifyMarker.getLatLng();
-              const userSnap = snapToGpxIndex(userPos, null);
+              const userSnap = snapToGpxIndex(userPos, null); // Global search for user
+              
               if (userSnap) {
                 if (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) {
                   passedSubscriber = true;
                 } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
                   
-                  // 🔧 FIX 1: Fallback Speed
-                  // If calculated speed is null (not enough data yet) or 0 (stopped), 
-                  // default to 15 m/s (approx 33mph) so we always get an ETA.
+                  // FIX 1: Use fallback speed if live speed is 0 or null
+                  // Default to 15 m/s (~33mph) if we can't calculate speed yet
                   const calculatedSpeed = Utils.calculateSpeed(AppState.recentFixes);
                   const useSpeed = (calculatedSpeed && calculatedSpeed > 0.5) ? calculatedSpeed : 15;
                   
@@ -903,18 +904,17 @@ if (AppState.flags.gpxLoaded) {
 
           const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
           
-          // 🔧 FIX 2: Snow Logic
+          // FIX 2: Snow Logic - Ensure snow turns OFF if passed
           let snowLevel = 1;
           let triggerSnow = false;
           
-          // Only trigger snow if we haven't passed yet
           if (AppState.notifyMarker && !passedSubscriber && etaSeconds !== null && isFresh && isNight) {
-            // Trigger snow if less than 15 mins away
-            if (etaMinutes < 15) {
-               triggerSnow = true;
-               if (etaMinutes < 2) snowLevel = 3;      // Blizzard last 2 mins
-               else if (etaMinutes < 7) snowLevel = 2; // Heavy snow last 7 mins
-            }
+             // Logic: Snow if less than 15 mins away
+             if (etaMinutes < 15) {
+                triggerSnow = true;
+                if (etaMinutes < 2) snowLevel = 3;
+                else if (etaMinutes < 7) snowLevel = 2;
+             }
           }
           
           const { maxLevel } = function(){
@@ -925,22 +925,22 @@ if (AppState.flags.gpxLoaded) {
              return { maxLevel: 3 };
           }();
           
-          // This will now correctly turn snow OFF because of your Step 1 fix
           SnowSystem.setLevel(triggerSnow, Math.min(snowLevel, maxLevel));
 
-          // 🔧 FIX 3: Notification Logic
+          // FIX 3: Notification Logic - Increased Distance/Time
           if (AppState.notifyMarker && !AppState.flags.browserNotified && !passedSubscriber) {
             const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.notifyMarker.getLatLng());
             
-            // Trigger if physical distance is < 1000m OR time is < 3 minutes
-            // This fixes the issue where he "snaps" past the small 250m window too fast
+            // Trigger if closer than 1000m (was 250m) OR less than 3 minutes away
             if (straightDist < 1000 || (etaSeconds !== null && etaSeconds < 180)) {
               AppState.flags.browserNotified = true;
               sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
               fireBrowserNotification("🎅 Santa is nearly here!", "He’s approaching your location! 🎄");
             }
           }
-          }
+          // --------------------------------------------------------
+          // END: NEW FIXES
+          // --------------------------------------------------------
 
           if (AppState.flags.firstFix) {
              const zoom = AppState.flags.isKiosk ? 15 : 16;
@@ -999,14 +999,14 @@ if (AppState.flags.gpxLoaded) {
         }
 
         // ALWAYS request wake-lock
-requestWakeLock();
+        requestWakeLock();
 
-// Re-request periodically & when visible
-setInterval(() => {
-  if (document.visibilityState === "visible") {
-    requestWakeLock();
-  }
-}, 60000);
+        // Re-request periodically & when visible
+        setInterval(() => {
+          if (document.visibilityState === "visible") {
+            requestWakeLock();
+          }
+        }, 60000);
 
         const apiData = await Utils.loadJSON(AppState.vars.apiUrl);
         const settings = apiData.settings || {};
@@ -1044,13 +1044,13 @@ setInterval(() => {
 
         if (route && AppState.flags.gpxLoaded) {
            new L.GPX(route.gpxUrl, {
-              async: true,
-              polyline_options: { color: settings.accent_color || "#ffd700", weight: 4, opacity: 0.85 },
-              marker_options: {
+             async: true,
+             polyline_options: { color: settings.accent_color || "#ffd700", weight: 4, opacity: 0.85 },
+             marker_options: {
                  startIcon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
                  endIcon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
                  shadowUrl: null
-              }
+             }
            }).addTo(AppState.map);
         }
 
@@ -1081,10 +1081,10 @@ setInterval(() => {
            const posMap = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" };
            const LogoControl = L.control({ position: posMap[settings.logo_overlay_position] || "bottomright" });
            LogoControl.onAdd = () => {
-              const img = L.DomUtil.create("img");
-              img.src = settings.logo_overlay_url;
-              img.className = "logo-overlay";
-              return img;
+             const img = L.DomUtil.create("img");
+             img.src = settings.logo_overlay_url;
+             img.className = "logo-overlay";
+             return img;
            };
            LogoControl.addTo(AppState.map);
         }
@@ -1121,7 +1121,7 @@ setInterval(() => {
            
            // 4. Request Permission
            if ("Notification" in window && Notification.permission === "default") {
-              Notification.requestPermission();
+             Notification.requestPermission();
            }
 
            AppState.flags.awaitingPin = true;
@@ -1131,11 +1131,11 @@ setInterval(() => {
            // 5. Escape Key Listener to cancel
            const onEsc = (e) => {
              if (e.key === "Escape" && AppState.flags.awaitingPin) {
-                AppState.flags.awaitingPin = false;
-                if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
-                AppState.dom.statusBox.textContent = "";
-                Utils.toggleFollowControls(true); // Re-enable buttons
-                document.removeEventListener("keydown", onEsc);
+               AppState.flags.awaitingPin = false;
+               if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
+               AppState.dom.statusBox.textContent = "";
+               Utils.toggleFollowControls(true); // Re-enable buttons
+               document.removeEventListener("keydown", onEsc);
              }
            };
            document.addEventListener("keydown", onEsc);
@@ -1156,26 +1156,26 @@ setInterval(() => {
            Utils.toggleFollowControls(true);
            
            if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
-              showToast("🎅 You’re already signed up!");
-              return;
+             showToast("🎅 You’re already signed up!");
+             return;
            }
 
            AppState.dom.statusBox.textContent = "🔔 Saving your notification...";
            const url = `${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`;
            
            fetch(url).then(r=>r.json()).then(d => {
-              if (d.ok) {
-                 sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-                 const msg = email ? "🎅 You're signed up! We’ll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
-                 showToast(msg);
-                 AppState.dom.statusBox.textContent = "";
-              } else {
-                 showToast("❌ Error saving notification.");
-                 AppState.dom.statusBox.textContent = "❌ Failed to save.";
-              }
+             if (d.ok) {
+                sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+                const msg = email ? "🎅 You're signed up! We’ll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
+                showToast(msg);
+                AppState.dom.statusBox.textContent = "";
+             } else {
+                showToast("❌ Error saving notification.");
+                AppState.dom.statusBox.textContent = "❌ Failed to save.";
+             }
            }).catch(() => {
-              showToast("❌ Network error.");
-              AppState.dom.statusBox.textContent = "❌ Connection failed.";
+             showToast("❌ Network error.");
+             AppState.dom.statusBox.textContent = "❌ Connection failed.";
            });
         });
 
@@ -1193,25 +1193,24 @@ setInterval(() => {
       }
 
       document.addEventListener("visibilitychange", () => {
-  AppState.flags.pageVisible = !document.hidden;
+        AppState.flags.pageVisible = !document.hidden;
 
-  if (AppState.flags.pageVisible) {
-    // Re-acquire wake lock
-    if (AppState.flags.isKiosk) requestWakeLock();
+        if (AppState.flags.pageVisible) {
+          // Re-acquire wake lock
+          if (AppState.flags.isKiosk) requestWakeLock();
 
-    // ✅ Restore last rendered position (prevents jump)
-    if (AppState.vars.lastVisualPos && AppState.marker) {
-      AppState.marker.setLatLng(AppState.vars.lastVisualPos);
-    }
+          // ✅ Restore last rendered position (prevents jump)
+          if (AppState.vars.lastVisualPos && AppState.marker) {
+            AppState.marker.setLatLng(AppState.vars.lastVisualPos);
+          }
 
-    // Resume snow smoothly
-    if (AppState.flags.snowActive) SnowSystem.draw();
-  }
-});
+          // Resume snow smoothly
+          if (AppState.flags.snowActive) SnowSystem.draw();
+        }
+      });
 
       init();
     });
   </script>
 </body>
 </html>
-
