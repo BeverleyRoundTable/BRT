@@ -883,20 +883,23 @@
             
             if (santaSnap) {
               const userPos = AppState.notifyMarker.getLatLng();
-              const userSnap = snapToGpxIndex(userPos, null); // Global search for user
+              // Global search for user position on route
+              const userSnap = snapToGpxIndex(userPos, null); 
               
               if (userSnap) {
+                // Check if passed (add buffer for sparse GPX points)
                 if (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) {
                   passedSubscriber = true;
                 } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
                   
-                  // FIX 1: Use fallback speed if live speed is 0 or null
-                  // Default to 15 m/s (~33mph) if we can't calculate speed yet
-                  const calculatedSpeed = Utils.calculateSpeed(AppState.recentFixes);
-                  const useSpeed = (calculatedSpeed && calculatedSpeed > 0.5) ? calculatedSpeed : 15;
+                  // FIX 1: Fallback Speed
+                  // If GPX is sparse, calculated speed might be 0. 
+                  // Default to 22m/s (approx 50mph) so ETA always appears.
+                  const realSpeed = Utils.calculateSpeed(AppState.recentFixes);
+                  const effectiveSpeed = (realSpeed && realSpeed > 1) ? realSpeed : 22;
                   
-                  etaSeconds = remaining / useSpeed;
+                  etaSeconds = remaining / effectiveSpeed;
                 }
               }
             }
@@ -904,19 +907,21 @@
 
           const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
           
-          // FIX 2: Snow Logic - Ensure snow turns OFF if passed
+          // FIX 2: Snow Logic
+          // Only snow if approaching (not passed) and ETA is valid
           let snowLevel = 1;
           let triggerSnow = false;
           
           if (AppState.notifyMarker && !passedSubscriber && etaSeconds !== null && isFresh && isNight) {
-             // Logic: Snow if less than 15 mins away
+             // Trigger snow if less than 15 mins away
              if (etaMinutes < 15) {
                 triggerSnow = true;
-                if (etaMinutes < 2) snowLevel = 3;
-                else if (etaMinutes < 7) snowLevel = 2;
+                if (etaMinutes < 3) snowLevel = 3;      // Blizzard last 3 mins
+                else if (etaMinutes < 8) snowLevel = 2; // Heavy snow last 8 mins
              }
           }
           
+          // Apply Max Level based on Battery
           const { maxLevel } = function(){
              if (batteryState.supported && !batteryState.charging) {
                if(batteryState.level <= AppConfig.BATTERY.CRITICAL) return { maxLevel: 1 };
@@ -925,23 +930,21 @@
              return { maxLevel: 3 };
           }();
           
+          // Apply Snow settings (Your Step 1 fix handles the "OFF" logic here)
           SnowSystem.setLevel(triggerSnow, Math.min(snowLevel, maxLevel));
 
-          // FIX 3: Notification Logic - Increased Distance/Time
+          // FIX 3: Notification Logic
+          // Trigger if physical distance < 1km OR Time < 3 mins
           if (AppState.notifyMarker && !AppState.flags.browserNotified && !passedSubscriber) {
             const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.notifyMarker.getLatLng());
             
-            // Trigger if closer than 1000m (was 250m) OR less than 3 minutes away
             if (straightDist < 1000 || (etaSeconds !== null && etaSeconds < 180)) {
               AppState.flags.browserNotified = true;
               sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
               fireBrowserNotification("🎅 Santa is nearly here!", "He’s approaching your location! 🎄");
             }
           }
-          // --------------------------------------------------------
-          // END: NEW FIXES
-          // --------------------------------------------------------
-
+         
           if (AppState.flags.firstFix) {
              const zoom = AppState.flags.isKiosk ? 15 : 16;
              AppState.map.setView(visualPos, zoom);
