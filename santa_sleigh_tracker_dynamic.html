@@ -419,7 +419,7 @@
         },
         NOTIFICATIONS: {
           NEAR_DISTANCE_METERS: 250,
-          PASSED_DISTANCE_OFFSET: 30
+          PASSED_DISTANCE_OFFSET: 150
         },
         GPX: { 
           SEARCH_AHEAD: 80, 
@@ -897,7 +897,8 @@
                   // If GPX is sparse, calculated speed might be 0. 
                   // Default to 22m/s (approx 50mph) so ETA always appears.
                   const realSpeed = Utils.calculateSpeed(AppState.recentFixes);
-                  const effectiveSpeed = (realSpeed && realSpeed > 1) ? realSpeed : 22;
+                  // ✅ Fix: Default to 6m/s (approx 13mph) - a realistic sleigh speed
+                  const effectiveSpeed = (realSpeed && realSpeed > 1) ? realSpeed : 6;
                   
                   etaSeconds = remaining / effectiveSpeed;
                 }
@@ -938,11 +939,16 @@
           if (AppState.notifyMarker && !AppState.flags.browserNotified && !passedSubscriber) {
             const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.notifyMarker.getLatLng());
             
-            if (straightDist < 1000 || (etaSeconds !== null && etaSeconds < 180)) {
-              AppState.flags.browserNotified = true;
-              sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
-              fireBrowserNotification("🎅 Santa is nearly here!", "He’s approaching your location! 🎄");
-            }
+            // ✅ Fix: Only use distance if ETA is unknown or reasonable (< 10 mins)
+// This prevents alert if he is 250m away physically but 20 mins away by road.
+const isSmartEta = (etaSeconds !== null && etaSeconds < 180); // 3 mins
+const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600);
+
+if (isSmartEta || isCloseFallback) {
+  AppState.flags.browserNotified = true;
+  sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
+  fireBrowserNotification("🎅 Santa is nearly here!", "He’s approaching your location! 🎄");
+}
           }
          
           if (AppState.flags.firstFix) {
