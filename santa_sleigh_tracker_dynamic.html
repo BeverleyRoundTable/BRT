@@ -896,7 +896,7 @@
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
                   // Default speed to 6 m/s if calculation fails (prevents infinite/zero ETA)
                   const realSpeed = Utils.calculateSpeed(AppState.recentFixes);
-                  const effectiveSpeed = (realSpeed && realSpeed > 0.5) ? realSpeed : 6; 
+                  const effectiveSpeed = (realSpeed && realSpeed > 0.5) ? realSpeed : 3;
                   etaSeconds = remaining / effectiveSpeed;
                 }
               }
