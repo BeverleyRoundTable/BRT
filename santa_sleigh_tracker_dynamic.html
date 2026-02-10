@@ -1003,6 +1003,13 @@
         if (!AppState.vars.apiUrl) { alert("Missing ?api=URL"); return; }
         sessionStorage.setItem("SANTA_API", AppState.vars.apiUrl);
 
+        // Fire Analytics "View" Event
+fetch(`${AppState.vars.apiUrl}?function=logView` + 
+      `&ua=${encodeURIComponent(navigator.userAgent)}` + 
+      `&source=web` +
+      `&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.date : 'unknown')}`, 
+      { keepalive: true });
+        
         if (!AppState.flags.isKiosk && location.search.includes("api=")) {
           history.replaceState(null, "", location.pathname);
         }
