@@ -1002,13 +1002,6 @@
         AppState.vars.apiUrl = params.get("api") || sessionStorage.getItem("SANTA_API");
         if (!AppState.vars.apiUrl) { alert("Missing ?api=URL"); return; }
         sessionStorage.setItem("SANTA_API", AppState.vars.apiUrl);
-
-        // Fire Analytics "View" Event
-fetch(`${AppState.vars.apiUrl}?function=logView` + 
-      `&ua=${encodeURIComponent(navigator.userAgent)}` + 
-      `&source=web` +
-      `&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.date : 'unknown')}`, 
-      { keepalive: true });
         
         if (!AppState.flags.isKiosk && location.search.includes("api=")) {
           history.replaceState(null, "", location.pathname);
@@ -1032,6 +1025,12 @@ fetch(`${AppState.vars.apiUrl}?function=logView` +
         const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
         AppState.vars.todayRoute = route;
 
+        fetch(`${AppState.vars.apiUrl}?function=logView` + 
+              `&ua=${encodeURIComponent(navigator.userAgent)}` + 
+              `&source=web` +
+              `&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.date : 'unknown')}`, 
+              { keepalive: true });
+        
         if (AppState.flags.isKiosk && AppState.dom.kioskBanner) {
            AppState.dom.kioskBanner.innerHTML = `<div id="kioskStatus">🎄 PREPARING IN LAPLAND</div><div class="kiosk-subtitle">${AppState.vars.sleighName}</div>`;
            AppState.dom.kioskBanner.classList.add("visible");
