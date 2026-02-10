@@ -467,6 +467,7 @@
           pageVisible: !document.hidden,
           awaitingPin: false,
           browserNotified: sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1"
+          hasPassedSticky: false
         },
         vars: {
           apiUrl: null,
@@ -819,8 +820,8 @@
         try {
           const data = await Utils.loadJSON(AppState.vars.apiUrl + "?function=proxyFirebase");
           if (!Utils.validPos(data.lat, data.lng)) throw new Error("Invalid Coords");
+          
           const ts = new Date(data.ts).getTime();
-          if (!Number.isFinite(ts)) throw new Error("Invalid TS");
           const age = Date.now() - ts;
           const isFresh = age <= AppConfig.API.STALE_MS;
           
@@ -873,33 +874,29 @@
           pushFix(data.lat, data.lng, Date.now());
 
           // --------------------------------------------------------
-          // START: NEW FIXES (ETA FALLBACK, SNOW, NOTIFICATIONS)
+          // 🛠️ NEW LOGIC: STICKY PASS & SNOW CONTROL
           // --------------------------------------------------------
           let etaSeconds = null;
-          let passedSubscriber = false;
-
-          if (AppState.notifyMarker && AppState.flags.gpxLoaded && isFresh) {
+          
+          // 1. Check Passed State
+          if (AppState.flags.hasPassedSticky) {
+             // Already passed, do nothing (keeps status locked)
+          } 
+          else if (AppState.notifyMarker && AppState.flags.gpxLoaded && isFresh) {
             const santaSnap = snapToGpxIndex({ lat: data.lat, lng: data.lng }, AppConfig.GPX);
             
             if (santaSnap) {
               const userPos = AppState.notifyMarker.getLatLng();
-              // Global search for user position on route
               const userSnap = snapToGpxIndex(userPos, null); 
               
               if (userSnap) {
-                // Check if passed (add buffer for sparse GPX points)
                 if (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) {
-                  passedSubscriber = true;
+                  AppState.flags.hasPassedSticky = true; // ✅ LOCK IT IN
                 } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
-                  
-                  // FIX 1: Fallback Speed
-                  // If GPX is sparse, calculated speed might be 0. 
-                  // Default to 22m/s (approx 50mph) so ETA always appears.
+                  // Default speed to 6 m/s if calculation fails (prevents infinite/zero ETA)
                   const realSpeed = Utils.calculateSpeed(AppState.recentFixes);
-                  // ✅ Fix: Default to 6m/s (approx 13mph) - a realistic sleigh speed
-                  const effectiveSpeed = (realSpeed && realSpeed > 1) ? realSpeed : 6;
-                  
+                  const effectiveSpeed = (realSpeed && realSpeed > 0.5) ? realSpeed : 6; 
                   etaSeconds = remaining / effectiveSpeed;
                 }
               }
@@ -908,21 +905,26 @@
 
           const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
           
-          // FIX 2: Snow Logic
-          // Only snow if approaching (not passed) and ETA is valid
-          let snowLevel = 1;
+          // 2. Snow Logic
+          let snowLevel = 0;
           let triggerSnow = false;
           
-          if (AppState.notifyMarker && !passedSubscriber && etaSeconds !== null && isFresh && isNight) {
-             // Trigger snow if less than 15 mins away
+          if (AppState.notifyMarker && !AppState.flags.hasPassedSticky && etaSeconds !== null && isFresh && isNight) {
              if (etaMinutes < 15) {
                 triggerSnow = true;
-                if (etaMinutes < 3) snowLevel = 3;      // Blizzard last 3 mins
-                else if (etaMinutes < 8) snowLevel = 2; // Heavy snow last 8 mins
+                if (etaMinutes < 3) snowLevel = 3;      
+                else if (etaMinutes < 8) snowLevel = 2; 
+                else snowLevel = 1;                     
              }
           }
           
-          // Apply Max Level based on Battery
+          // FORCE SNOW OFF if passed
+          if (AppState.flags.hasPassedSticky) {
+             triggerSnow = false;
+             snowLevel = 0;
+          }
+
+          // Battery Check
           const { maxLevel } = function(){
              if (batteryState.supported && !batteryState.charging) {
                if(batteryState.level <= AppConfig.BATTERY.CRITICAL) return { maxLevel: 1 };
@@ -931,47 +933,25 @@
              return { maxLevel: 3 };
           }();
           
-          // Apply Snow settings (Your Step 1 fix handles the "OFF" logic here)
           SnowSystem.setLevel(triggerSnow, Math.min(snowLevel, maxLevel));
 
-          // FIX 3: Notification Logic
-          // Trigger if physical distance < 1km OR Time < 3 mins
-          if (AppState.notifyMarker && !AppState.flags.browserNotified && !passedSubscriber) {
-            const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.notifyMarker.getLatLng());
-            
-            // ✅ Fix: Only use distance if ETA is unknown or reasonable (< 10 mins)
-// This prevents alert if he is 250m away physically but 20 mins away by road.
-const isSmartEta = (etaSeconds !== null && etaSeconds < 180); // 3 mins
-const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600);
-
-if (isSmartEta || isCloseFallback) {
-  AppState.flags.browserNotified = true;
-  sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
-  fireBrowserNotification("🎅 Santa is nearly here!", "He’s approaching your location! 🎄");
-}
-          }
-         
-          if (AppState.flags.firstFix) {
-             const zoom = AppState.flags.isKiosk ? 15 : 16;
-             AppState.map.setView(visualPos, zoom);
-             AppState.flags.firstFix = false;
-          }
-
+          // 3. Status Text & Dimming
           const moving = isSleighMoving();
           AppState.dom.statusDot.style.display = "block";
           AppState.dom.statusDot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
 
-          if (passedSubscriber) {
+          if (AppState.flags.hasPassedSticky) {
             AppState.dom.statusBox.textContent = "🎄 Santa has just been here!";
             setDimUI(false);
           } else if (etaSeconds !== null) {
              const mins = Math.max(1, Math.round(etaSeconds / 60));
              const unit = mins === 1 ? "min" : "mins";
-             AppState.dom.statusBox.textContent = `🎅 Santa is ${mins} ${unit} away!`;
+             
+             // Prevent "0 mins" or jumpy text
+             if (mins <= 1) AppState.dom.statusBox.textContent = "🎅 Santa is nearly here!";
+             else AppState.dom.statusBox.textContent = `🎅 Santa is ${mins} ${unit} away!`;
+             
              setDimUI(mins > 45);
-             if (mins > 45) AppState.dom.statusBox.textContent = "🎅 Santa is out delivering this evening…";
-             else if (mins > 15) AppState.dom.statusBox.textContent = "🎅 Santa is on the way…";
-             else if (mins > 5) AppState.dom.statusBox.textContent = "🎅 Santa is nearly here!";
           } else if (moving) {
             setDimUI(false);
             AppState.dom.statusBox.textContent = "🎅 Santa is out spreading joy!";
@@ -979,6 +959,26 @@ if (isSmartEta || isCloseFallback) {
             setDimUI(false);
             AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
           }
+          
+          // 4. Browser Notification
+          if (AppState.notifyMarker && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) {
+             const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.notifyMarker.getLatLng());
+             const isSmartEta = (etaSeconds !== null && etaSeconds < 180);
+             const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600);
+
+             if (isSmartEta || isCloseFallback) {
+                AppState.flags.browserNotified = true;
+                sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
+                fireBrowserNotification("🎅 Santa is nearly here!", "He’s approaching your location! 🎄");
+             }
+          }
+          
+          if (AppState.flags.firstFix) {
+             const zoom = AppState.flags.isKiosk ? 15 : 16;
+             AppState.map.setView(visualPos, zoom);
+             AppState.flags.firstFix = false;
+          }
+
         } catch (e) {
           if (AppState.lastFix) {
             animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
