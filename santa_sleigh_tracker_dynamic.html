@@ -1288,22 +1288,26 @@ if (settings.donate_url) {
            const url = `${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`;
            
            fetch(url).then(r=>r.json()).then(d => {
-             if (d.ok) {
-                sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-                const msg = email ? "🎅 You're signed up! We’ll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
-                showToast(msg);
-                AppState.dom.statusBox.textContent = "";
+  if (d.ok) {
+     sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+     const msg = email ? "🎅 You're signed up! We'll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
+     showToast(msg);
+     AppState.dom.statusBox.textContent = "";
 
-                // Remove the pin immediately
-                if (AppState.notifyMarker) {
-                    AppState.map.removeLayer(AppState.notifyMarker);
-                    AppState.notifyMarker = null;
-                }
-                sessionStorage.removeItem("SANTA_NOTIFY_POINT"); 
+     // Remove the pin immediately
+     if (AppState.notifyMarker) {
+         AppState.map.removeLayer(AppState.notifyMarker);
+         AppState.notifyMarker = null;
+     }
+     sessionStorage.removeItem("SANTA_NOTIFY_POINT");
+     
+     // ✅ Clear pending subscription
+     AppState.vars.pendingSubscription = null;
 
-             } else {
-                showToast("❌ Error saving notification.");
-                AppState.dom.statusBox.textContent = "❌ Failed to save.";
+  } else {
+     showToast("❌ Error saving notification.");
+     AppState.dom.statusBox.textContent = "❌ Failed to save.";
+  }
              }
            }).catch(() => {
              showToast("❌ Network error.");
