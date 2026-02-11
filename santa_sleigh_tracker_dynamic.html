@@ -1199,22 +1199,39 @@ if (settings.donate_url) {
         });
         
         document.getElementById("modalConfirmBtn").addEventListener("click", () => {
-   // ... variables ...
-   // ... fetch ...
-   
-   fetch(url).then(r=>r.json()).then(d => {
+           const email = document.getElementById("subEmail").value.trim();
+           document.getElementById("emailModal").style.display = "none";
+           
+           // Unlock controls now that we are done
+           Utils.toggleFollowControls(true);
+           
+           if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
+             showToast("🎅 You’re already signed up!");
+             return;
+           }
+
+           AppState.dom.statusBox.textContent = "🔔 Saving your notification...";
+           
+           // Ensure coordinates exist before sending
+           if (!AppState.vars.pendingSubscription) {
+               showToast("❌ Error: No location selected.");
+               return;
+           }
+
+           const url = `${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`;
+           
+           fetch(url).then(r=>r.json()).then(d => {
              if (d.ok) {
                 sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
                 const msg = email ? "🎅 You're signed up! We’ll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
                 showToast(msg);
                 AppState.dom.statusBox.textContent = "";
 
-                // ✅ ADD THIS: Remove the pin immediately
+                // Remove the pin immediately
                 if (AppState.notifyMarker) {
                     AppState.map.removeLayer(AppState.notifyMarker);
                     AppState.notifyMarker = null;
                 }
-                // ✅ ADD THIS: Forget the location so it doesn't come back on refresh
                 sessionStorage.removeItem("SANTA_NOTIFY_POINT"); 
 
              } else {
@@ -1225,7 +1242,6 @@ if (settings.donate_url) {
              showToast("❌ Network error.");
              AppState.dom.statusBox.textContent = "❌ Connection failed.";
            });
-
         });
 
         if (settings.donate_url) {
