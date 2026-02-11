@@ -162,16 +162,22 @@
     }
 
     .donate-btn {
-      background: #d31c1c;
-      color: #fff;
-      padding: 14px 0;
-      display: block;
-      text-align: center;
-      border-radius: 16px;
-      font-weight: 900;
-      text-decoration: none;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
-    }
+  background: #d31c1c; /* Default: Solid Red */
+  color: #fff;
+  padding: 14px 0;
+  display: block;
+  text-align: center;
+  border-radius: 16px;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
+  
+  /* ✅ BORDER: Keeps the shape defined even if the fill is transparent */
+  border: 2px solid #d31c1c; 
+  transition: background 0.5s ease;
+  position: relative;
+  z-index: 1;
+}
 
     body.dim-ui .donate-box,
     body.dim-ui .info-popup,
@@ -1025,6 +1031,30 @@
         const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
         AppState.vars.todayRoute = route;
 
+        const don = apiData.donations || {}; 
+
+if (settings.donate_url) {
+  const btn = AppState.dom.donateLink;
+  btn.href = settings.donate_url;
+  AppState.dom.donateBox.style.display = "block";
+
+  // Reset to default (Solid Red)
+  btn.style.background = ""; 
+
+  // ✅ GHOST THERMOMETER LOGIC
+  if (don.target && don.target > 0) {
+    // 1. Calculate % (Clamp min 10% so the button always has a "base")
+    const pct = Math.min(100, Math.max(10, Math.round((don.total / don.target) * 100)));
+    
+    // 2. Apply Gradient: 
+    // Left = Solid Red (#d31c1c)
+    // Right = 30% Opacity Red (rgba(211, 28, 28, 0.3))
+    btn.style.background = `linear-gradient(90deg, #d31c1c ${pct}%, rgba(211, 28, 28, 0.3) ${pct}%)`;
+  }
+} else {
+  AppState.dom.donateBox.style.display = "none";
+}
+
         fetch(`${AppState.vars.apiUrl}?function=logView` + 
               `&ua=${encodeURIComponent(navigator.userAgent)}` + 
               `&source=web` +
@@ -1121,27 +1151,32 @@
         
         // --- FIXED NOTIFY LOGIC ---
         AppState.dom.notifyBtn.onclick = () => {
-           // 1. Force Follow OFF immediately
-           AppState.flags.follow = false; 
-           AppState.dom.followBtn.textContent = "Follow: OFF";
-           
-           // 2. Visually disable Follow/Recenter so user can't accidentally enable them
-           Utils.toggleFollowControls(false);
+   // 1. Force Follow OFF immediately
+   AppState.flags.follow = false; 
+   AppState.dom.followBtn.textContent = "Follow: OFF";
+   
+   // ... (lines omitted) ...
 
-           // 3. Reset Session Data
-           AppState.flags.browserNotified = false;
-           sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
-           sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
-           sessionStorage.removeItem("SANTA_NOTIFY_POINT");
-           
-           // 4. Request Permission
-           if ("Notification" in window && Notification.permission === "default") {
-             Notification.requestPermission();
-           }
+   // 3. Reset Session Data
+   AppState.flags.browserNotified = false;
+   sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+   sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
+   sessionStorage.removeItem("SANTA_NOTIFY_POINT");
+   
+   // ... request permission ...
 
-           AppState.flags.awaitingPin = true;
-           AppState.notifyMarker = null;
-           AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin, then tap the pin to confirm";
+   AppState.flags.awaitingPin = true;
+   
+   // ❌ THE BUG WAS HERE: We cleared the variable but left the pin on the map
+   // AppState.notifyMarker = null; 
+
+   // ✅ THE FIX: Remove it from the map first!
+   if (AppState.notifyMarker) {
+       AppState.map.removeLayer(AppState.notifyMarker);
+   }
+   AppState.notifyMarker = null;
+
+   AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin...";
 
            // 5. Escape Key Listener to cancel
            const onEsc = (e) => {
@@ -1164,35 +1199,33 @@
         });
         
         document.getElementById("modalConfirmBtn").addEventListener("click", () => {
-           const email = document.getElementById("subEmail").value.trim();
-           document.getElementById("emailModal").style.display = "none";
-           
-           // Unlock controls now that we are done
-           Utils.toggleFollowControls(true);
-           
-           if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
-             showToast("🎅 You’re already signed up!");
-             return;
-           }
+   // ... variables ...
+   // ... fetch ...
+   
+   fetch(url).then(r=>r.json()).then(d => {
+     if (d.ok) {
+    sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+    // ... showToast code ...
+    
+    // ✅ ADD THIS: Remove the pin immediately
+    if (AppState.notifyMarker) {
+        AppState.map.removeLayer(AppState.notifyMarker);
+        AppState.notifyMarker = null;
+    }
+    // ✅ ADD THIS: Forget the location so it doesn't come back on refresh
+    sessionStorage.removeItem("SANTA_NOTIFY_POINT"); 
 
-           AppState.dom.statusBox.textContent = "🔔 Saving your notification...";
-           const url = `${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`;
-           
-           fetch(url).then(r=>r.json()).then(d => {
-             if (d.ok) {
-                sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-                const msg = email ? "🎅 You're signed up! We’ll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
-                showToast(msg);
-                AppState.dom.statusBox.textContent = "";
-             } else {
-                showToast("❌ Error saving notification.");
-                AppState.dom.statusBox.textContent = "❌ Failed to save.";
-             }
-           }).catch(() => {
-             showToast("❌ Network error.");
-             AppState.dom.statusBox.textContent = "❌ Connection failed.";
-           });
-        });
+    AppState.dom.statusBox.textContent = "";
+}
+     } else {
+       
+        showToast("❌ Error saving notification.");
+        AppState.dom.statusBox.textContent = "❌ Failed to save.";
+     }
+   }).catch(() => {
+     // ...
+   });
+});
 
         if (settings.donate_url) {
            AppState.dom.donateLink.href = settings.donate_url;
