@@ -1204,19 +1204,19 @@ if (settings.donate_url) {
    
    fetch(url).then(r=>r.json()).then(d => {
      if (d.ok) {
-    sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-    // ... showToast code ...
-    
-    // ✅ ADD THIS: Remove the pin immediately
-    if (AppState.notifyMarker) {
-        AppState.map.removeLayer(AppState.notifyMarker);
-        AppState.notifyMarker = null;
-    }
-    // ✅ ADD THIS: Forget the location so it doesn't come back on refresh
-    sessionStorage.removeItem("SANTA_NOTIFY_POINT"); 
+                sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+                const msg = email ? "🎅 You're signed up! We’ll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
+                showToast(msg);
+                AppState.dom.statusBox.textContent = "";
 
-    AppState.dom.statusBox.textContent = "";
-     } else {
+                // ✅ ADDED: Remove pin immediately
+                if (AppState.notifyMarker) {
+                    AppState.map.removeLayer(AppState.notifyMarker);
+                    AppState.notifyMarker = null;
+                }
+                sessionStorage.removeItem("SANTA_NOTIFY_POINT"); 
+
+             } else {
        
         showToast("❌ Error saving notification.");
         AppState.dom.statusBox.textContent = "❌ Failed to save.";
