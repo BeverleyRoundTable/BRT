@@ -1218,13 +1218,15 @@ if (settings.donate_url) {
                 sessionStorage.removeItem("SANTA_NOTIFY_POINT"); 
 
              } else {
-                
                 showToast("❌ Error saving notification.");
                 AppState.dom.statusBox.textContent = "❌ Failed to save.";
              }
            }).catch(() => {
-             // ...
+             showToast("❌ Network error.");
+             AppState.dom.statusBox.textContent = "❌ Connection failed.";
            });
+
+        });
 
         if (settings.donate_url) {
            AppState.dom.donateLink.href = settings.donate_url;
