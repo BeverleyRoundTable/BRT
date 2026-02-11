@@ -1180,8 +1180,13 @@ if (settings.donate_url) {
    AppState.flags.follow = false; 
    AppState.dom.followBtn.textContent = "Follow: OFF";
    
-   // ... (lines omitted) ...
-
+   // 3. Reset Session Data
+   AppState.flags.browserNotified = false;
+   AppState.flags.hasPassedSticky = false; // ← ADD THIS LINE
+   sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+   sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
+   sessionStorage.removeItem("SANTA_NOTIFY_POINT");
+   
    // 3. Reset Session Data
    AppState.flags.browserNotified = false;
    sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
@@ -1192,10 +1197,6 @@ if (settings.donate_url) {
 
    AppState.flags.awaitingPin = true;
    
-   // ❌ THE BUG WAS HERE: We cleared the variable but left the pin on the map
-   // AppState.notifyMarker = null; 
-
-   // ✅ THE FIX: Remove it from the map first!
    if (AppState.notifyMarker) {
        AppState.map.removeLayer(AppState.notifyMarker);
    }
