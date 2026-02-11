@@ -483,6 +483,7 @@
           snowflakes: [],
           animRaf: null,
           pendingSubscription: null,
+          notifyLatLng: null,
           lastVisualPos: null,
           escapeListener: null
         },
@@ -515,7 +516,6 @@
     if (!url || typeof url !== 'string') return false;
     try {
       const parsed = new URL(url);
-      // Only allow http, https, and data URLs (for base64 images)
       return ['http:', 'https:', 'data:'].includes(parsed.protocol);
     } catch {
       return false;
@@ -598,7 +598,7 @@
         const end = { lat: targetLat, lng: targetLng };
         
         const startTime = performance.now();
-        const duration = 900; // ms
+        const duration = 900;
 
         if (AppState.vars.animRaf) cancelAnimationFrame(AppState.vars.animRaf);
 
@@ -769,19 +769,16 @@
           requestAnimationFrame(SnowSystem.draw);
         },
         setLevel(on, level) {
-          // FIX: Handle the "OFF" state first
           if (!on) {
             if (AppState.flags.snowActive) {
               AppState.flags.snowActive = false;
               document.body.classList.remove("snowing");
-              // Optional: Clear canvas
               const ctx = AppState.dom.snowCanvas.getContext("2d");
               ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height);
             }
             return;
           }
 
-          // Existing "ON" logic
           if (AppState.currentSnowLevel !== level) {
             AppState.currentSnowLevel = level;
             SnowSystem.create(level);
@@ -813,6 +810,7 @@
             showNotifyMarker(lat, lng, true);
             sessionStorage.setItem("SANTA_NOTIFY_POINT", JSON.stringify({ lat, lng }));
             AppState.vars.pendingSubscription = { lat, lng };
+            AppState.vars.notifyLatLng = { lat, lng };
             document.getElementById("emailModal").style.display = "flex";
             document.getElementById("subEmail").focus();
           });
@@ -893,28 +891,29 @@
           pushFix(data.lat, data.lng, Date.now());
 
           // --------------------------------------------------------
-          // 🛠️ NEW LOGIC: STICKY PASS & SNOW CONTROL
+          // STICKY PASS & SNOW CONTROL
           // --------------------------------------------------------
           let etaSeconds = null;
           
-          // 1. Check Passed State
+          // 1. Check Passed State — use notifyLatLng (persists after marker removal)
           if (AppState.flags.hasPassedSticky) {
              // Already passed, do nothing (keeps status locked)
           } 
-          else if (AppState.notifyMarker && AppState.flags.gpxLoaded && isFresh) {
+          else if (AppState.vars.notifyLatLng && AppState.flags.gpxLoaded && isFresh) {
             const santaSnap = snapToGpxIndex({ lat: data.lat, lng: data.lng }, AppConfig.GPX);
             
             if (santaSnap) {
-              const userPos = AppState.notifyMarker.getLatLng();
+              const userPos = AppState.vars.notifyLatLng;
+              // Save/restore lastSnapIndex so user's global snap doesn't corrupt Santa's incremental snap
+              const savedSnapIdx = AppState.vars.lastSnapIndex;
               const userSnap = snapToGpxIndex(userPos, null); 
+              AppState.vars.lastSnapIndex = savedSnapIdx;
               
               if (userSnap) {
                 if (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) {
-                  AppState.flags.hasPassedSticky = true; // ✅ LOCK IT IN
+                  AppState.flags.hasPassedSticky = true;
                 } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
-                  // Fallback to 3 m/s if speed calculation fails
-                 // 3 m/s (~11 km/h) = brisk walking pace for charity volunteers alongside sleigh
                   const realSpeed = Utils.calculateSpeed(AppState.recentFixes);
                   const effectiveSpeed = (realSpeed && realSpeed > 0.5) ? realSpeed : 3;
                   etaSeconds = remaining / effectiveSpeed;
@@ -925,11 +924,11 @@
 
           const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
           
-          // 2. Snow Logic
+          // 2. Snow Logic — use notifyLatLng
           let snowLevel = 0;
           let triggerSnow = false;
           
-          if (AppState.notifyMarker && !AppState.flags.hasPassedSticky && etaSeconds !== null && isFresh && isNight) {
+          if (AppState.vars.notifyLatLng && !AppState.flags.hasPassedSticky && etaSeconds !== null && isFresh && isNight) {
              if (etaMinutes < 15) {
                 triggerSnow = true;
                 if (etaMinutes < 3) snowLevel = 3;      
@@ -969,13 +968,11 @@ if (AppState.flags.hasPassedSticky) {
 
 } else if (etaSeconds !== null && !moving) {
 
-  // ✅ NEW: stopped while ETA exists
   AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!";
   setDimUI(false);
 
 } else if (etaSeconds !== null) {
 
-  // ETA confidence bands
   const mins = etaSeconds / 60;
   let etaText;
 
@@ -1005,16 +1002,16 @@ if (AppState.flags.hasPassedSticky) {
   setDimUI(false);
 }
           
-          // 4. Browser Notification
-          if (AppState.notifyMarker && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) {
-             const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.notifyMarker.getLatLng());
+          // 4. Browser Notification — use notifyLatLng
+          if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) {
+             const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.vars.notifyLatLng);
              const isSmartEta = (etaSeconds !== null && etaSeconds < 180);
              const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600);
 
              if (isSmartEta || isCloseFallback) {
                 AppState.flags.browserNotified = true;
                 sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
-                fireBrowserNotification("🎅 Santa is nearly here!", "He’s approaching your location! 🎄");
+                fireBrowserNotification("🎅 Santa is nearly here!", "He's approaching your location! 🎄");
              }
           }
           
@@ -1052,10 +1049,8 @@ if (AppState.flags.hasPassedSticky) {
           history.replaceState(null, "", location.pathname);
         }
 
-        // ALWAYS request wake-lock
         requestWakeLock();
 
-        // Re-request periodically & when visible
         setInterval(() => {
           if (document.visibilityState === "visible") {
             requestWakeLock();
@@ -1077,17 +1072,10 @@ if (settings.donate_url) {
   btn.href = settings.donate_url;
   AppState.dom.donateBox.style.display = "block";
 
-  // Reset to default (Solid Red)
   btn.style.background = ""; 
 
-  // ✅ GHOST THERMOMETER LOGIC
   if (don.target && don.target > 0) {
-    // 1. Calculate percentage (0-100%)
     const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100)));
-    
-    // 2. Apply Gradient: 
-    // Left = Solid Red (#d31c1c)
-    // Right = 30% Opacity Red (rgba(211, 28, 28, 0.3))
     btn.style.background = `linear-gradient(90deg, #d31c1c ${pct}%, rgba(211, 28, 28, 0.3) ${pct}%)`;
   }
 } else {
@@ -1101,16 +1089,15 @@ if (settings.donate_url) {
               { keepalive: true });
         
         if (AppState.flags.isKiosk && AppState.dom.kioskBanner) {
-   // Use DOM methods to prevent XSS
    const statusDiv = document.createElement('div');
    statusDiv.id = 'kioskStatus';
    statusDiv.textContent = '🎄 PREPARING IN LAPLAND';
    
    const subtitleDiv = document.createElement('div');
    subtitleDiv.className = 'kiosk-subtitle';
-   subtitleDiv.textContent = AppState.vars.sleighName; // textContent escapes HTML
+   subtitleDiv.textContent = AppState.vars.sleighName;
    
-   AppState.dom.kioskBanner.innerHTML = ''; // Clear first
+   AppState.dom.kioskBanner.innerHTML = '';
    AppState.dom.kioskBanner.appendChild(statusDiv);
    AppState.dom.kioskBanner.appendChild(subtitleDiv);
    AppState.dom.kioskBanner.classList.add("visible");
@@ -1150,7 +1137,6 @@ if (settings.donate_url) {
         }
 
         if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
-  // Use DOM methods instead of innerHTML
   const span = document.createElement('span');
   span.textContent = 'Proudly sponsored by';
   
@@ -1158,7 +1144,7 @@ if (settings.donate_url) {
   img.src = route.sponsorUrl;
   img.alt = 'Sponsor';
   
-  AppState.dom.sponsorBox.innerHTML = ''; // Clear first
+  AppState.dom.sponsorBox.innerHTML = '';
   AppState.dom.sponsorBox.appendChild(span);
   AppState.dom.sponsorBox.appendChild(img);
 }
@@ -1170,6 +1156,7 @@ if (settings.donate_url) {
                const p = JSON.parse(savedPin);
                AppState.flags.browserNotified = false;
                sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+               AppState.vars.notifyLatLng = { lat: p.lat, lng: p.lng };
                showNotifyMarker(p.lat, p.lng, true);
              } catch(e) {}
            }
@@ -1210,33 +1197,29 @@ if (settings.donate_url) {
         };
         
         AppState.dom.notifyBtn.onclick = () => {
-   // 1. Force Follow OFF immediately
    AppState.flags.follow = false; 
    AppState.dom.followBtn.textContent = "Follow: OFF";
    
-   // 2. Reset Session Data
    AppState.flags.browserNotified = false;
-   AppState.flags.hasPassedSticky = false; // ✅ Reset for new pin
+   AppState.flags.hasPassedSticky = false;
    sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
    sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
    sessionStorage.removeItem("SANTA_NOTIFY_POINT");
    
-   // 3. Enter pin placement mode
    AppState.flags.awaitingPin = true;
    
    if (AppState.notifyMarker) {
        AppState.map.removeLayer(AppState.notifyMarker);
    }
    AppState.notifyMarker = null;
+   AppState.vars.notifyLatLng = null;
 
    AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin...";
 
-           // 4. Remove old listener if it exists
    if (AppState.vars.escapeListener) {
      document.removeEventListener("keydown", AppState.vars.escapeListener);
    }
    
-   // 5. Create and store new listener
    AppState.vars.escapeListener = (e) => {
      if (e.key === "Escape" && AppState.flags.awaitingPin) {
        AppState.flags.awaitingPin = false;
@@ -1269,17 +1252,15 @@ if (settings.donate_url) {
      AppState.vars.escapeListener = null;
    }
    
-   // Unlock controls now that we are done
    Utils.toggleFollowControls(true);
            
            if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
-             showToast("🎅 You’re already signed up!");
+             showToast("🎅 You're already signed up!");
              return;
            }
 
            AppState.dom.statusBox.textContent = "🔔 Saving your notification...";
            
-           // Ensure coordinates exist before sending
            if (!AppState.vars.pendingSubscription) {
                showToast("❌ Error: No location selected.");
                return;
@@ -1294,21 +1275,20 @@ if (settings.donate_url) {
      showToast(msg);
      AppState.dom.statusBox.textContent = "";
 
-     // Remove the pin immediately
+     // Remove the visual marker but KEEP notifyLatLng for ETA/snow/passed logic
      if (AppState.notifyMarker) {
          AppState.map.removeLayer(AppState.notifyMarker);
          AppState.notifyMarker = null;
      }
      sessionStorage.removeItem("SANTA_NOTIFY_POINT");
      
-     // ✅ Clear pending subscription
      AppState.vars.pendingSubscription = null;
+     // NOTE: notifyLatLng is intentionally NOT cleared here
 
   } else {
      showToast("❌ Error saving notification.");
      AppState.dom.statusBox.textContent = "❌ Failed to save.";
   }
-             }
            }).catch(() => {
              showToast("❌ Network error.");
              AppState.dom.statusBox.textContent = "❌ Connection failed.";
@@ -1334,15 +1314,12 @@ if (settings.donate_url) {
         AppState.flags.pageVisible = !document.hidden;
 
         if (AppState.flags.pageVisible) {
-          // Re-acquire wake lock
           if (AppState.flags.isKiosk) requestWakeLock();
 
-          // ✅ Restore last rendered position (prevents jump)
           if (AppState.vars.lastVisualPos && AppState.marker) {
             AppState.marker.setLatLng(AppState.vars.lastVisualPos);
           }
 
-          // Resume snow smoothly
           if (AppState.flags.snowActive) SnowSystem.draw();
         }
       });
@@ -1352,4 +1329,3 @@ if (settings.donate_url) {
   </script>
 </body>
 </html>
-
