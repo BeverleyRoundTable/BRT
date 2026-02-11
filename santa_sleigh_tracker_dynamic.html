@@ -950,21 +950,34 @@
             AppState.dom.statusBox.textContent = "🎄 Santa has just been here!";
             setDimUI(false);
           } else if (etaSeconds !== null) {
-             const mins = Math.max(1, Math.round(etaSeconds / 60));
-             const unit = mins === 1 ? "min" : "mins";
-             
-             // Prevent "0 mins" or jumpy text
-             if (mins <= 1) AppState.dom.statusBox.textContent = "🎅 Santa is nearly here!";
-             else AppState.dom.statusBox.textContent = `🎅 Santa is ${mins} ${unit} away!`;
+             const mins = etaSeconds / 60;
+
+let etaText;
+if (mins < 2) {
+  etaText = "🎅 Santa is nearly here!";
+} else if (mins < 4) {
+  etaText = "🎅 Santa is ~3 mins away!";
+} else if (mins < 7) {
+  etaText = "🎅 Santa is ~5 mins away!";
+} else if (mins < 12) {
+  etaText = "🎅 Santa is ~10 mins away!";
+} else {
+  etaText = "🎅 Santa is ~15 mins away!";
+}
+
+AppState.dom.statusBox.textContent = etaText;
              
              setDimUI(mins > 45);
-          } else if (moving) {
-            setDimUI(false);
-            AppState.dom.statusBox.textContent = "🎅 Santa is out spreading joy!";
-          } else {
-            setDimUI(false);
-            AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
-          }
+          } else if (etaSeconds !== null && !moving) {
+  setDimUI(false);
+  AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!";
+} else if (moving) {
+  setDimUI(false);
+  AppState.dom.statusBox.textContent = "🎅 Santa is out spreading joy!";
+} else {
+  setDimUI(false);
+  AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
+}
           
           // 4. Browser Notification
           if (AppState.notifyMarker && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) {
