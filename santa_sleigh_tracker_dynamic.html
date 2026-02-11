@@ -913,7 +913,8 @@
                   AppState.flags.hasPassedSticky = true; // ✅ LOCK IT IN
                 } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
-                  // Default speed to 6 m/s if calculation fails (prevents infinite/zero ETA)
+                  // Fallback to 3 m/s if speed calculation fails
+                 // 3 m/s (~11 km/h) = brisk walking pace for charity volunteers alongside sleigh
                   const realSpeed = Utils.calculateSpeed(AppState.recentFixes);
                   const effectiveSpeed = (realSpeed && realSpeed > 0.5) ? realSpeed : 3;
                   etaSeconds = remaining / effectiveSpeed;
