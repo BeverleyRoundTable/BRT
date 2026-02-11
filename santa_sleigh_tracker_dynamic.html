@@ -1100,9 +1100,20 @@ if (settings.donate_url) {
               { keepalive: true });
         
         if (AppState.flags.isKiosk && AppState.dom.kioskBanner) {
-           AppState.dom.kioskBanner.innerHTML = `<div id="kioskStatus">🎄 PREPARING IN LAPLAND</div><div class="kiosk-subtitle">${AppState.vars.sleighName}</div>`;
-           AppState.dom.kioskBanner.classList.add("visible");
-        }
+   // Use DOM methods to prevent XSS
+   const statusDiv = document.createElement('div');
+   statusDiv.id = 'kioskStatus';
+   statusDiv.textContent = '🎄 PREPARING IN LAPLAND';
+   
+   const subtitleDiv = document.createElement('div');
+   subtitleDiv.className = 'kiosk-subtitle';
+   subtitleDiv.textContent = AppState.vars.sleighName; // textContent escapes HTML
+   
+   AppState.dom.kioskBanner.innerHTML = ''; // Clear first
+   AppState.dom.kioskBanner.appendChild(statusDiv);
+   AppState.dom.kioskBanner.appendChild(subtitleDiv);
+   AppState.dom.kioskBanner.classList.add("visible");
+}
 
         if (!route) {
           AppState.dom.notifyBtn.style.display = "none";
@@ -1137,9 +1148,19 @@ if (settings.donate_url) {
            }).addTo(AppState.map);
         }
 
-        if (AppState.flags.isKiosk && route?.sponsorUrl) {
-          AppState.dom.sponsorBox.innerHTML = `<span>Proudly sponsored by</span><img src="${route.sponsorUrl}" alt="Sponsor">`;
-        }
+        if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
+  // Use DOM methods instead of innerHTML
+  const span = document.createElement('span');
+  span.textContent = 'Proudly sponsored by';
+  
+  const img = document.createElement('img');
+  img.src = route.sponsorUrl;
+  img.alt = 'Sponsor';
+  
+  AppState.dom.sponsorBox.innerHTML = ''; // Clear first
+  AppState.dom.sponsorBox.appendChild(span);
+  AppState.dom.sponsorBox.appendChild(img);
+}
 
         if (!AppState.flags.isKiosk) {
            const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
