@@ -1174,27 +1174,19 @@ if (settings.donate_url) {
            AppState.map.panTo(AppState.marker.getLatLng());
         };
         
-        // --- FIXED NOTIFY LOGIC ---
         AppState.dom.notifyBtn.onclick = () => {
    // 1. Force Follow OFF immediately
    AppState.flags.follow = false; 
    AppState.dom.followBtn.textContent = "Follow: OFF";
    
-   // 3. Reset Session Data
+   // 2. Reset Session Data
    AppState.flags.browserNotified = false;
-   AppState.flags.hasPassedSticky = false; // ← ADD THIS LINE
+   AppState.flags.hasPassedSticky = false; // ✅ Reset for new pin
    sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
    sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
    sessionStorage.removeItem("SANTA_NOTIFY_POINT");
    
-   // 3. Reset Session Data
-   AppState.flags.browserNotified = false;
-   sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
-   sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
-   sessionStorage.removeItem("SANTA_NOTIFY_POINT");
-   
-   // ... request permission ...
-
+   // 3. Enter pin placement mode
    AppState.flags.awaitingPin = true;
    
    if (AppState.notifyMarker) {
@@ -1204,7 +1196,7 @@ if (settings.donate_url) {
 
    AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin...";
 
-           // 5. Escape Key Listener to cancel
+           // 4. Escape Key Listener to cancel
            const onEsc = (e) => {
              if (e.key === "Escape" && AppState.flags.awaitingPin) {
                AppState.flags.awaitingPin = false;
