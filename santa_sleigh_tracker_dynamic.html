@@ -510,6 +510,18 @@
         validPos: (lat, lng) => typeof lat === "number" && !isNaN(lat) && typeof lng === "number" && !isNaN(lng),
         lerp: (a, b, t) => a + (b - a) * t,
         easeOutCubic: (t) => 1 - Math.pow(1 - t, 3),
+
+        isValidImageUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    try {
+      const parsed = new URL(url);
+      // Only allow http, https, and data URLs (for base64 images)
+      return ['http:', 'https:', 'data:'].includes(parsed.protocol);
+    } catch {
+      return false;
+    }
+  },
+        
         async loadJSON(url) {
           const r = await fetch(url, { cache: "no-store" });
           if (!r.ok) throw new Error(`Fetch failed: ${r.status}`);
@@ -1148,18 +1160,18 @@ if (settings.donate_url) {
            AppState.dom.statusBox.textContent = "📍 Pin moved — tap again to confirm";
         });
 
-        if (settings.logo_overlay_url) {
-           const posMap = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" };
-           const LogoControl = L.control({ position: posMap[settings.logo_overlay_position] || "bottomright" });
-           LogoControl.onAdd = () => {
-             const img = L.DomUtil.create("img");
-             img.src = settings.logo_overlay_url;
-             img.className = "logo-overlay";
-             return img;
-           };
-           LogoControl.addTo(AppState.map);
-        }
-
+        if (settings.logo_overlay_url && Utils.isValidImageUrl(settings.logo_overlay_url)) {
+   const posMap = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" };
+   const LogoControl = L.control({ position: posMap[settings.logo_overlay_position] || "bottomright" });
+   LogoControl.onAdd = () => {
+     const img = L.DomUtil.create("img");
+     img.src = settings.logo_overlay_url;
+     img.className = "logo-overlay";
+     return img;
+   };
+   LogoControl.addTo(AppState.map);
+}
+        
         AppState.marker = L.marker(AppConfig.LOCATIONS.LAPLAND, {
           icon: L.icon({ iconUrl: settings.sleigh_icon_live || AppConfig.ICONS.FALLBACK_LIVE, iconSize: [64, 64], iconAnchor: [32, 60] })
         }).addTo(AppState.map);
