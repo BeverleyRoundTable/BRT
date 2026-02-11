@@ -943,40 +943,52 @@
 
           // 3. Status Text & Dimming
           const moving = isSleighMoving();
-          AppState.dom.statusDot.style.display = "block";
-          AppState.dom.statusDot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
+AppState.dom.statusDot.style.display = "block";
+AppState.dom.statusDot.className = moving
+  ? "status-dot dot-moving"
+  : "status-dot dot-stopped";
 
-          if (AppState.flags.hasPassedSticky) {
-            AppState.dom.statusBox.textContent = "🎄 Santa has just been here!";
-            setDimUI(false);
-          } else if (etaSeconds !== null) {
-             const mins = etaSeconds / 60;
+if (AppState.flags.hasPassedSticky) {
 
-let etaText;
-if (mins < 2) {
-  etaText = "🎅 Santa is nearly here!";
-} else if (mins < 4) {
-  etaText = "🎅 Santa is ~3 mins away!";
-} else if (mins < 7) {
-  etaText = "🎅 Santa is ~5 mins away!";
-} else if (mins < 12) {
-  etaText = "🎅 Santa is ~10 mins away!";
-} else {
-  etaText = "🎅 Santa is ~15 mins away!";
-}
-
-AppState.dom.statusBox.textContent = etaText;
-             
-             setDimUI(mins > 45);
-          } else if (etaSeconds !== null && !moving) {
+  AppState.dom.statusBox.textContent = "🎄 Santa has just been here!";
   setDimUI(false);
+
+} else if (etaSeconds !== null && !moving) {
+
+  // ✅ NEW: stopped while ETA exists
   AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!";
+  setDimUI(false);
+
+} else if (etaSeconds !== null) {
+
+  // ETA confidence bands
+  const mins = etaSeconds / 60;
+  let etaText;
+
+  if (mins < 2) {
+    etaText = "🎅 Santa is nearly here!";
+  } else if (mins < 4) {
+    etaText = "🎅 Santa is ~3 mins away!";
+  } else if (mins < 7) {
+    etaText = "🎅 Santa is ~5 mins away!";
+  } else if (mins < 12) {
+    etaText = "🎅 Santa is ~10 mins away!";
+  } else {
+    etaText = "🎅 Santa is ~15 mins away!";
+  }
+
+  AppState.dom.statusBox.textContent = etaText;
+  setDimUI(mins > 45);
+
 } else if (moving) {
-  setDimUI(false);
+
   AppState.dom.statusBox.textContent = "🎅 Santa is out spreading joy!";
-} else {
   setDimUI(false);
+
+} else {
+
   AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
+  setDimUI(false);
 }
           
           // 4. Browser Notification
