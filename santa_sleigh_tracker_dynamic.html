@@ -483,7 +483,8 @@
           snowflakes: [],
           animRaf: null,
           pendingSubscription: null,
-          lastVisualPos: null
+          lastVisualPos: null,
+          escapeListener: null
         },
         dom: {
           loading: document.getElementById("loadingCover"),
@@ -1196,32 +1197,46 @@ if (settings.donate_url) {
 
    AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin...";
 
-           // 4. Escape Key Listener to cancel
-           const onEsc = (e) => {
-             if (e.key === "Escape" && AppState.flags.awaitingPin) {
-               AppState.flags.awaitingPin = false;
-               if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
-               AppState.dom.statusBox.textContent = "";
-               Utils.toggleFollowControls(true); // Re-enable buttons
-               document.removeEventListener("keydown", onEsc);
-             }
-           };
-           document.addEventListener("keydown", onEsc);
-        };
+           // 4. Remove old listener if it exists
+   if (AppState.vars.escapeListener) {
+     document.removeEventListener("keydown", AppState.vars.escapeListener);
+   }
+   
+   // 5. Create and store new listener
+   AppState.vars.escapeListener = (e) => {
+     if (e.key === "Escape" && AppState.flags.awaitingPin) {
+       AppState.flags.awaitingPin = false;
+       if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
+       AppState.dom.statusBox.textContent = "";
+       Utils.toggleFollowControls(true);
+       document.removeEventListener("keydown", AppState.vars.escapeListener);
+       AppState.vars.escapeListener = null;
+     }
+   };
+   document.addEventListener("keydown", AppState.vars.escapeListener);
+};
         
         // --- MODAL HANDLERS ---
         document.getElementById("modalCancelBtn").addEventListener("click", () => {
            document.getElementById("emailModal").style.display = "none";
            AppState.dom.statusBox.textContent = "Tap the pin to try again";
-           // Note: We do NOT unlock controls here yet, user can still move pin
-        });
+          if (AppState.vars.escapeListener) {
+     document.removeEventListener("keydown", AppState.vars.escapeListener);
+     AppState.vars.escapeListener = null;
+   }
+});
         
         document.getElementById("modalConfirmBtn").addEventListener("click", () => {
-           const email = document.getElementById("subEmail").value.trim();
-           document.getElementById("emailModal").style.display = "none";
-           
-           // Unlock controls now that we are done
-           Utils.toggleFollowControls(true);
+   const email = document.getElementById("subEmail").value.trim();
+   document.getElementById("emailModal").style.display = "none";
+
+   if (AppState.vars.escapeListener) {
+     document.removeEventListener("keydown", AppState.vars.escapeListener);
+     AppState.vars.escapeListener = null;
+   }
+   
+   // Unlock controls now that we are done
+   Utils.toggleFollowControls(true);
            
            if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
              showToast("🎅 You’re already signed up!");
