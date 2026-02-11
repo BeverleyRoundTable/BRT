@@ -547,7 +547,7 @@
           if (elapsed < AppConfig.API.MIN_ETA_WINDOW_MS) return null;
           const dist = last.cumulative - first.cumulative;
           const speed = dist / (elapsed / 1000); 
-          return Math.min(Math.max(speed, 0.3), 6); 
+          return Math.min(Math.max(speed, 0.3), 31); 
         },
         toggleFollowControls(enable) {
           const { followBtn, recenterBtn } = AppState.dom;
@@ -928,7 +928,7 @@
           let snowLevel = 0;
           let triggerSnow = false;
           
-          if (AppState.vars.notifyLatLng && !AppState.flags.hasPassedSticky && etaSeconds !== null && isFresh && isNight) {
+          if (AppState.vars.notifyLatLng && !AppState.flags.hasPassedSticky && etaSeconds !== null && isFresh) {
              if (etaMinutes < 15) {
                 triggerSnow = true;
                 if (etaMinutes < 3) snowLevel = 3;      
@@ -1280,8 +1280,7 @@ if (settings.donate_url) {
          AppState.map.removeLayer(AppState.notifyMarker);
          AppState.notifyMarker = null;
      }
-     sessionStorage.removeItem("SANTA_NOTIFY_POINT");
-     
+     // NOTE: SANTA_NOTIFY_POINT intentionally kept so ETA/snow survives refresh
      AppState.vars.pendingSubscription = null;
      // NOTE: notifyLatLng is intentionally NOT cleared here
 
