@@ -1041,8 +1041,9 @@ if (AppState.flags.hasPassedSticky) {
         AppState.flags.isKiosk = params.get("kiosk") === "1" || sessionStorage.getItem("SANTA_KIOSK") === "1";
         if (params.get("kiosk") === "1") sessionStorage.setItem("SANTA_KIOSK", "1");
         
-        AppState.vars.apiUrl = params.get("api") || sessionStorage.getItem("SANTA_API");
+        AppState.vars.apiUrl = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
         if (!AppState.vars.apiUrl) { alert("Missing ?api=URL"); return; }
+        localStorage.setItem("SANTA_API", AppState.vars.apiUrl);
         sessionStorage.setItem("SANTA_API", AppState.vars.apiUrl);
         
         if (!AppState.flags.isKiosk && location.search.includes("api=")) {
