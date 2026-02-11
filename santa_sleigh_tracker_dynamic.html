@@ -1044,7 +1044,7 @@ if (settings.donate_url) {
   // ✅ GHOST THERMOMETER LOGIC
   if (don.target && don.target > 0) {
     // 1. Calculate % (Clamp min 10% so the button always has a "base")
-    const pct = Math.min(100, Math.max(10, Math.round((don.total / don.target) * 100)));
+    const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100)));
     
     // 2. Apply Gradient: 
     // Left = Solid Red (#d31c1c)
