@@ -699,25 +699,49 @@
         }
 
         // ── GPX ROUTE LAYERS ──
-        if (route && AppState.flags.gpxLoaded) {
-           // Gold glow (bottom layer, no markers)
-           new L.GPX(route.gpxUrl, {
-             async: true,
-             polyline_options: { color: "#ffd700", weight: 7, opacity: 0.45 },
-             marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
-           }).addTo(AppState.map);
+if (route && AppState.flags.gpxLoaded) {
 
-           // Red route (top layer, with start/end markers)
-           new L.GPX(route.gpxUrl, {
-             async: true,
-             polyline_options: { color: "#d31c1c", weight: 4, opacity: 0.95 },
-             marker_options: {
-                 startIcon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
-                 endIcon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
-                 shadowUrl: null
-             }
-           }).addTo(AppState.map);
-        }
+  // 🟡 Gold glow (bottom)
+  AppState.routeGlowLayer = new L.GPX(route.gpxUrl, {
+    async: true,
+    polyline_options: {
+      color: "#ffd700",
+      weight: 7,
+      opacity: 0.45
+    },
+    marker_options: {
+      startIconUrl: null,
+      endIconUrl: null,
+      shadowUrl: null
+    }
+  }).addTo(AppState.map);
+
+  // 🔴 Red route (top)
+  AppState.routeMainLayer = new L.GPX(route.gpxUrl, {
+    async: true,
+    polyline_options: {
+      color: "#d31c1c",
+      weight: 4,
+      opacity: 0.95
+    },
+    marker_options: {
+      startIcon: L.icon({
+        iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START,
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        shadowUrl: null
+      }),
+      endIcon: L.icon({
+        iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END,
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        shadowUrl: null
+      }),
+      shadowUrl: null
+    }
+  }).addTo(AppState.map);
+
+}
 
         if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
           const span = document.createElement('span');
