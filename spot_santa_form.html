@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>🎅 Spot Santa</title>
+
+  <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/exifr/dist/lite.umd.js"></script>
+
+  <style>
+    body {
+      margin:0;
+      font-family:system-ui;
+      background:#081015;
+      color:#fff;
+    }
+    .card {
+      max-width:480px;
+      margin:16px auto;
+      padding:16px;
+      background:rgba(18,25,30,.95);
+      border-radius:14px;
+    }
+    button {
+      width:100%;
+      padding:14px;
+      border-radius:10px;
+      background:#d31c1c;
+      color:#fff;
+      font-size:16px;
+      border:none;
+    }
+    input, textarea {
+      width:100%;
+      margin-top:10px;
+      padding:12px;
+      border-radius:8px;
+      border:none;
+    }
+    #map { height:160px; border-radius:10px; margin-top:10px }
+  </style>
+</head>
+
+<body>
+<div class="card">
+  <h2>📸 Spot Santa!</h2>
+
+  <input id="photo" type="file" accept="image/*" capture="environment">
+  <img id="preview" style="width:100%;display:none;margin-top:10px">
+
+  <div id="map"></div>
+
+  <textarea id="caption"
+    maxlength="200"
+    placeholder="Optional caption…"></textarea>
+
+  <button onclick="submitPhoto()">Submit</button>
+
+  <p id="status"></p>
+</div>
