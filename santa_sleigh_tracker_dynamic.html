@@ -1128,7 +1128,26 @@ if (settings.donate_url) {
         if (route && AppState.flags.gpxLoaded) {
            new L.GPX(route.gpxUrl, {
              async: true,
-             polyline_options: { color: settings.accent_color || "#ffd700", weight: 4, opacity: 0.85 },
+         
+             // Gold glow (bottom)
+new L.GPX(route.gpxUrl, {
+  async: true,
+  polyline_options: {
+    color: "#ffd700",
+    weight: 7,
+    opacity: 0.45
+  }
+}).addTo(AppState.map);
+
+// Red route (top)
+new L.GPX(route.gpxUrl, {
+  async: true,
+  polyline_options: {
+    color: "#d31c1c",
+    weight: 4,
+    opacity: 0.95
+  },
+        
              marker_options: {
                  startIcon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
                  endIcon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
