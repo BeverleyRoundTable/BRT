@@ -164,7 +164,7 @@
           pageVisible: !document.hidden,
           awaitingPin: false,
           browserNotified: sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1",
-          hasPassedSticky: false
+          hasPassedSticky: sessionStorage.getItem("SANTA_HAS_PASSED") === "1"
         },
         vars: {
           apiUrl: null,
@@ -522,7 +522,7 @@
 
               if (userSnap) {
                 if (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) {
-                  AppState.flags.hasPassedSticky = true;
+                  sessionStorage.setItem("SANTA_HAS_PASSED", "1");
                 } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
                   // Use route-based speed (same units as remaining) for accurate ETA
@@ -821,6 +821,7 @@ if (route && AppState.flags.gpxLoaded) {
           sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
           sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
           sessionStorage.removeItem("SANTA_NOTIFY_POINT");
+          sessionStorage.removeItem("SANTA_HAS_PASSED");
           AppState.flags.awaitingPin = true;
           if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); }
           AppState.notifyMarker = null;
