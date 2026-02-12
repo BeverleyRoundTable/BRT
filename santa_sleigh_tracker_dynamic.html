@@ -11,369 +11,66 @@
   <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
 
   <style>
-    /* =========================================
-       1. GLOBAL LAYOUT & RESET
-       ========================================= */
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: #001;
-      color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
-      overflow: hidden;
-    }
-
-    html {
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
-    }
-
-    :root {
-      --ui-bottom-safe: 72px;
-      --donate-bottom: calc(var(--ui-bottom-safe) + 92px);
-      --info-bottom: var(--ui-bottom-safe);
-    }
-
-    @supports(padding: env(safe-area-inset-bottom)) {
-      :root {
-        --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom));
-        --donate-bottom: calc(var(--ui-bottom-safe) + 92px);
-        --info-bottom: var(--ui-bottom-safe);
-      }
-    }
-
-    /* =========================================
-       2. MAP & ENVIRONMENT
-       ========================================= */
-    #map {
-      position: absolute;
-      inset: 0;
-      z-index: 100;
-    }
-
-    body.dim-ui #map {
-      filter: brightness(0.85);
-      transition: filter 600ms ease;
-    }
-
-    body.night-mode #map {
-      filter: brightness(0.75) saturate(0.9) hue-rotate(-8deg);
-    }
-
-    #snow {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1500;
-      opacity: 0;
-      transition: opacity 800ms ease;
-    }
-
-    body.snowing #snow {
-      opacity: 1;
-      filter: drop-shadow(0 0 4px white);
-    }
-
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 1.5s ease;
-      z-index: 1400;
-    }
-
-    body.snowing::after { opacity: 1; }
-
-    /* =========================================
-       3. UI COMPONENTS
-       ========================================= */
-    .status-popup {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(24, 24, 24, .95);
-      padding: 14px 20px;
-      font-size: 1.05em;
-      font-weight: 800;
-      border-radius: 16px;
-      max-width: 90%;
-      box-shadow: 0 4px 24px #0006;
-      z-index: 4000;
-      text-align: center;
-      transition: opacity 600ms ease;
-    }
-
-    body.night-mode .status-popup {
-      background: rgba(12, 16, 28, 0.95);
-    }
-
-    .info-popup {
-      position: fixed;
-      bottom: var(--info-bottom);
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(20, 20, 20, .94);
-      padding: 10px 14px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: .85em;
-      font-weight: 800;
-      z-index: 2000;
-      max-width: calc(100vw - 32px);
-      box-sizing: border-box;
-      transition: opacity 600ms ease;
-    }
-
-    /* Buttons */
-    .btn {
-      background: #0b1220;
-      color: #fff;
-      border: 1px solid #ffffff26;
-      border-radius: 10px;
-      padding: 7px 12px;
-      cursor: pointer;
-      font-weight: 800;
-      transition: opacity 0.3s;
-    }
-
-    /* Disabled state for Follow button */
-    .btn.locked {
-      opacity: 0.4;
-      pointer-events: none;
-      filter: grayscale(1);
-    }
-
-    .donate-box {
-      position: fixed;
-      bottom: var(--donate-bottom);
-      left: 50%;
-      transform: translateX(-50%);
-      width: 70%;
-      max-width: 420px;
-      z-index: 2000;
-      transition: opacity 600ms ease;
-    }
-
-    .donate-btn {
-  background: #d31c1c; /* Default: Solid Red */
-  color: #fff;
-  padding: 14px 0;
-  display: block;
-  text-align: center;
-  border-radius: 16px;
-  font-weight: 900;
-  text-decoration: none;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
-  
-  /* ✅ BORDER: Keeps the shape defined even if the fill is transparent */
-  border: 2px solid #d31c1c; 
-  transition: background 0.5s ease;
-  position: relative;
-  z-index: 1;
-}
-
-    body.dim-ui .donate-box,
-    body.dim-ui .info-popup,
-    body.dim-ui .status-popup {
-      opacity: 0.45;
-      filter: saturate(0.85);
-    }
-    
-    body.dim-ui .donate-box:hover,
-    body.dim-ui .info-popup:hover,
-    body.dim-ui .status-popup:hover {
-      opacity: 0.75;
-    }
-
-    .status-dot {
-      width: 12px;
-      aspect-ratio: 1 / 1;
-      border-radius: 50%;
-      flex-shrink: 0;
-      display: none;
-    }
-    .dot-moving { background: #2cff4e; animation: pulse 1.4s infinite; }
-    .dot-stopped { background: #ffb020; }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(44, 255, 78, .6); }
-      70% { box-shadow: 0 0 0 10px rgba(44, 255, 78, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(44, 255, 78, 0); }
-    }
-
-    .logo-overlay {
-      position: relative;
-      width: 48px;
-      max-width: 18vw;
-      pointer-events: none;
-      opacity: .9;
-      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .5));
-    }
-
-    #loadingCover {
-      position: fixed;
-      inset: 0;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 6000;
-    }
-    #loadingSpinner {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      border: 4px solid rgba(255, 255, 255, .25);
-      border-top-color: #ffd700;
-      animation: spin .9s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg) } }
-
-    /* =========================================
-       4. MODALS & TOASTS
-       ========================================= */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: 5000;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(4px);
-      padding: 20px;
-    }
-
-    .modal-box {
-      background: #1a1a1a;
-      padding: 24px;
-      border-radius: 20px;
-      width: 100%;
-      max-width: 340px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-    .modal-title { font-size: 1.2em; font-weight: 800; margin: 0 0 8px 0; color: #ffd700; }
-    .modal-desc { font-size: 0.9em; color: #ccc; margin-bottom: 20px; line-height: 1.4; }
-    
-    .modal-input {
-      width: 100%; padding: 14px; margin-bottom: 20px;
-      background: #2a2a2a; border: 2px solid #444; border-radius: 12px;
-      color: white; font-size: 16px; box-sizing: border-box; text-align: center;
-    }
-    .modal-input:focus { outline: none; border-color: #ffd700; }
-
-    .modal-btns { display: flex; gap: 12px; }
-    .btn-full {
-      flex: 1; padding: 12px; border-radius: 12px;
-      font-weight: 800; font-size: 0.95em; cursor: pointer; border: none;
-      transition: transform 0.1s;
-    }
-    .btn-full:active { transform: scale(0.96); }
-    .btn-cancel { background: #333; color: #aaa; }
-    .btn-confirm { background: #d31c1c; color: white; box-shadow: 0 4px 12px rgba(211, 28, 28, 0.3); }
-
-    .toast-box {
-      display: none;
-      position: fixed;
-      left: 50%;
-      bottom: calc(var(--donate-bottom) + 80px);
-      transform: translateX(-50%);
-      background: rgba(44, 255, 78, 0.95);
-      color: #000;
-      padding: 14px 20px;
-      font-weight: 800;
-      border-radius: 22px;              
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-      z-index: 6000;
-      pointer-events: none;
-      max-width: min(90vw, 420px);      
-      text-align: center;               
-      line-height: 1.3;                 
-    }
-    .toast-visible { display: block; }
-
-    @media (max-width: 480px) {
-      .toast-box {
-        font-size: 0.9em;
-        padding: 12px 16px;
-        bottom: calc(var(--donate-bottom) + 64px);
-      }
-    }
-
-    /* =========================================
-       5. KIOSK MODE
-       ========================================= */
-    body.kiosk { --kiosk-bottom: 56px; cursor: none; }
-    body.kiosk .kiosk-sponsor { bottom: var(--kiosk-bottom); }
-    body.kiosk .kiosk-banner { bottom: calc(var(--kiosk-bottom) + 64px); }
-    
-    body.kiosk .toast-box, 
-    body.kiosk .status-popup, 
-    body.kiosk #statusDot,
-    body.kiosk .leaflet-control-zoom,
-    body.kiosk .info-popup { display: none !important; }
-
-    body.kiosk .leaflet-container { -webkit-tap-highlight-color: transparent; }
-    body.kiosk .leaflet-container *,
-    body.kiosk .leaflet-interactive:focus,
-    body.kiosk .leaflet-interactive { outline: none !important; pointer-events: none; }
-
-    .kiosk-banner {
-      position: fixed;
-      bottom: calc(var(--kiosk-bottom) + 64px);
-      left: 50%; transform: translateX(-50%) translateY(-6px);
-      background: rgba(20, 20, 20, 0.96); color: #fff;
-      padding: 16px 36px; border-radius: 999px;
-      font-size: 1.25em; font-weight: 900; letter-spacing: 0.4px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
-      z-index: 4500; pointer-events: none;
-      opacity: 0; transition: opacity 0.6s ease, transform 0.6s ease;
-      text-align: center;
-      display: none;
-    }
-    body.kiosk .kiosk-banner { display: block; }
-    
-    .kiosk-banner.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .kiosk-banner.live { animation: kioskPulse 2.8s ease-in-out infinite; }
-    .kiosk-subtitle { font-size: 0.75em; opacity: 0.85; margin-top: 4px; text-align: center; }
-
-    @keyframes kioskPulse {
-      0%, 100% { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55); }
-      50% { box-shadow: 0 8px 34px rgba(255, 215, 0, 0.6); }
-    }
-
-    .kiosk-sponsor {
-      position: fixed; bottom: var(--kiosk-bottom); left: 50%;
-      transform: translateX(-50%) translateY(6px);
-      background: rgba(20, 20, 20, 0.95);
-      padding: 10px 18px; border-radius: 14px;
-      display: flex; align-items: center; gap: 12px;
-      z-index: 4400; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
-      opacity: 0; filter: saturate(0.9); pointer-events: none;
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-    .kiosk-sponsor.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: none; }
-    .kiosk-sponsor span { font-size: 0.75em; font-weight: 700; opacity: 0.85; white-space: nowrap; }
-    .kiosk-sponsor img { max-height: 34px; max-width: 160px; object-fit: contain; }
-
-    @media (max-height: 700px) {
-      :root { --ui-bottom-safe: calc(64px + env(safe-area-inset-bottom)); }
-      .donate-box { width: 85%; max-width: 360px; }
-      .info-popup { font-size: .8em; padding: 8px 12px; }
-      .status-popup { font-size: .95em; padding: 12px 16px; }
-    }
+    html, body { margin:0;padding:0;height:100%;background:#001;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;overflow:hidden }
+    html { -webkit-text-size-adjust:100%;text-size-adjust:100% }
+    :root { --ui-bottom-safe:72px;--donate-bottom:calc(var(--ui-bottom-safe) + 92px);--info-bottom:var(--ui-bottom-safe) }
+    @supports(padding:env(safe-area-inset-bottom)){ :root{--ui-bottom-safe:calc(88px + env(safe-area-inset-bottom));--donate-bottom:calc(var(--ui-bottom-safe) + 92px);--info-bottom:var(--ui-bottom-safe)} }
+    #map { position:absolute;inset:0;z-index:100 }
+    body.dim-ui #map { filter:brightness(0.85);transition:filter 600ms ease }
+    body.night-mode #map { filter:brightness(0.75) saturate(0.9) hue-rotate(-8deg) }
+    #snow { position:fixed;inset:0;pointer-events:none;z-index:1500;opacity:0;transition:opacity 800ms ease }
+    body.snowing #snow { opacity:1;filter:drop-shadow(0 0 4px white) }
+    body::after { content:'';position:fixed;inset:0;background:radial-gradient(circle,transparent 40%,rgba(0,0,0,0.6) 100%);pointer-events:none;opacity:0;transition:opacity 1.5s ease;z-index:1400 }
+    body.snowing::after { opacity:1 }
+    .status-popup { position:absolute;top:20px;left:50%;transform:translateX(-50%);background:rgba(24,24,24,.95);padding:14px 20px;font-size:1.05em;font-weight:800;border-radius:16px;max-width:90%;box-shadow:0 4px 24px #0006;z-index:4000;text-align:center;transition:opacity 600ms ease }
+    body.night-mode .status-popup { background:rgba(12,16,28,0.95) }
+    .info-popup { position:fixed;bottom:var(--info-bottom);left:50%;transform:translateX(-50%);background:rgba(20,20,20,.94);padding:10px 14px;border-radius:14px;display:flex;align-items:center;gap:12px;font-size:.85em;font-weight:800;z-index:2000;max-width:calc(100vw - 32px);box-sizing:border-box;transition:opacity 600ms ease }
+    .btn { background:#0b1220;color:#fff;border:1px solid #ffffff26;border-radius:10px;padding:7px 12px;cursor:pointer;font-weight:800;transition:opacity 0.3s }
+    .btn.locked { opacity:0.4;pointer-events:none;filter:grayscale(1) }
+    .donate-box { position:fixed;bottom:var(--donate-bottom);left:50%;transform:translateX(-50%);width:70%;max-width:420px;z-index:2000;transition:opacity 600ms ease }
+    .donate-btn { background:#d31c1c;color:#fff;padding:14px 0;display:block;text-align:center;border-radius:16px;font-weight:900;text-decoration:none;box-shadow:0 4px 16px rgba(0,0,0,.4);border:2px solid #d31c1c;transition:background 0.5s ease;position:relative;z-index:1 }
+    body.dim-ui .donate-box, body.dim-ui .info-popup, body.dim-ui .status-popup { opacity:0.45;filter:saturate(0.85) }
+    body.dim-ui .donate-box:hover, body.dim-ui .info-popup:hover, body.dim-ui .status-popup:hover { opacity:0.75 }
+    .status-dot { width:12px;aspect-ratio:1/1;border-radius:50%;flex-shrink:0;display:none }
+    .dot-moving { background:#2cff4e;animation:pulse 1.4s infinite }
+    .dot-stopped { background:#ffb020 }
+    @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(44,255,78,.6)}70%{box-shadow:0 0 0 10px rgba(44,255,78,0)}100%{box-shadow:0 0 0 0 rgba(44,255,78,0)} }
+    .logo-overlay { position:relative;width:48px;max-width:18vw;pointer-events:none;opacity:.9;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5)) }
+    #loadingCover { position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:6000 }
+    #loadingSpinner { width:52px;height:52px;border-radius:50%;border:4px solid rgba(255,255,255,.25);border-top-color:#ffd700;animation:spin .9s linear infinite }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:5000;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px }
+    .modal-box { background:#1a1a1a;padding:24px;border-radius:20px;width:100%;max-width:340px;text-align:center;border:1px solid rgba(255,255,255,0.1);box-shadow:0 10px 40px rgba(0,0,0,0.6);animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1) }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1} }
+    .modal-title { font-size:1.2em;font-weight:800;margin:0 0 8px 0;color:#ffd700 }
+    .modal-desc { font-size:0.9em;color:#ccc;margin-bottom:20px;line-height:1.4 }
+    .modal-input { width:100%;padding:14px;margin-bottom:20px;background:#2a2a2a;border:2px solid #444;border-radius:12px;color:white;font-size:16px;box-sizing:border-box;text-align:center }
+    .modal-input:focus { outline:none;border-color:#ffd700 }
+    .modal-btns { display:flex;gap:12px }
+    .btn-full { flex:1;padding:12px;border-radius:12px;font-weight:800;font-size:0.95em;cursor:pointer;border:none;transition:transform 0.1s }
+    .btn-full:active { transform:scale(0.96) }
+    .btn-cancel { background:#333;color:#aaa }
+    .btn-confirm { background:#d31c1c;color:white;box-shadow:0 4px 12px rgba(211,28,28,0.3) }
+    .toast-box { display:none;position:fixed;left:50%;bottom:calc(var(--donate-bottom) + 80px);transform:translateX(-50%);background:rgba(44,255,78,0.95);color:#000;padding:14px 20px;font-weight:800;border-radius:22px;box-shadow:0 4px 20px rgba(0,0,0,0.5);z-index:6000;pointer-events:none;max-width:min(90vw,420px);text-align:center;line-height:1.3 }
+    .toast-visible { display:block }
+    @media(max-width:480px){ .toast-box{font-size:0.9em;padding:12px 16px;bottom:calc(var(--donate-bottom) + 64px)} }
+    body.kiosk { --kiosk-bottom:56px;cursor:none }
+    body.kiosk .kiosk-sponsor { bottom:var(--kiosk-bottom) }
+    body.kiosk .kiosk-banner { bottom:calc(var(--kiosk-bottom) + 64px) }
+    body.kiosk .toast-box, body.kiosk .status-popup, body.kiosk #statusDot, body.kiosk .leaflet-control-zoom, body.kiosk .info-popup { display:none !important }
+    body.kiosk .leaflet-container { -webkit-tap-highlight-color:transparent }
+    body.kiosk .leaflet-container *, body.kiosk .leaflet-interactive:focus, body.kiosk .leaflet-interactive { outline:none !important;pointer-events:none }
+    .kiosk-banner { position:fixed;bottom:calc(var(--kiosk-bottom) + 64px);left:50%;transform:translateX(-50%) translateY(-6px);background:rgba(20,20,20,0.96);color:#fff;padding:16px 36px;border-radius:999px;font-size:1.25em;font-weight:900;letter-spacing:0.4px;box-shadow:0 8px 28px rgba(0,0,0,0.55);z-index:4500;pointer-events:none;opacity:0;transition:opacity 0.6s ease,transform 0.6s ease;text-align:center;display:none }
+    body.kiosk .kiosk-banner { display:block }
+    .kiosk-banner.visible { opacity:1;transform:translateX(-50%) translateY(0) }
+    .kiosk-banner.live { animation:kioskPulse 2.8s ease-in-out infinite }
+    .kiosk-subtitle { font-size:0.75em;opacity:0.85;margin-top:4px;text-align:center }
+    @keyframes kioskPulse { 0%,100%{box-shadow:0 8px 28px rgba(0,0,0,0.55)}50%{box-shadow:0 8px 34px rgba(255,215,0,0.6)} }
+    .kiosk-sponsor { position:fixed;bottom:var(--kiosk-bottom);left:50%;transform:translateX(-50%) translateY(6px);background:rgba(20,20,20,0.95);padding:10px 18px;border-radius:14px;display:flex;align-items:center;gap:12px;z-index:4400;box-shadow:0 6px 22px rgba(0,0,0,0.55);opacity:0;filter:saturate(0.9);pointer-events:none;transition:opacity 0.6s ease,transform 0.6s ease }
+    .kiosk-sponsor.visible { opacity:1;transform:translateX(-50%) translateY(0);pointer-events:none }
+    .kiosk-sponsor span { font-size:0.75em;font-weight:700;opacity:0.85;white-space:nowrap }
+    .kiosk-sponsor img { max-height:34px;max-width:160px;object-fit:contain }
+    @media(max-height:700px){ :root{--ui-bottom-safe:calc(64px + env(safe-area-inset-bottom))}.donate-box{width:85%;max-width:360px}.info-popup{font-size:.8em;padding:8px 12px}.status-popup{font-size:.95em;padding:12px 16px} }
   </style>
 </head>
 
@@ -381,7 +78,6 @@
   <div id="loadingCover"><div id="loadingSpinner"></div></div>
   <div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
   <div class="donate-box" id="donateBox"><a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a></div>
-  
   <div class="info-popup">
     <div id="statusDot" class="status-dot"></div>
     <button class="btn" id="followBtn">Follow: ON</button>
@@ -389,7 +85,6 @@
     <button class="btn" id="notifyBtn">🔔 Notify Me</button>
     <div id="toast" class="toast-box"></div>
   </div>
-
   <div id="emailModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-title">🔔 Get Notified</div>
@@ -401,24 +96,19 @@
       </div>
     </div>
   </div>
-
   <div id="kioskBanner" class="kiosk-banner"></div>
   <div id="kioskSponsor" class="kiosk-sponsor"></div>
-
   <div id="map"></div>
   <canvas id="snow"></canvas>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      
-      // =========================================
-      // 1. CONFIGURATION & STATE
-      // =========================================
+
       const AppConfig = {
         API: {
           REFRESH_MS: 6000,
           STALE_MS: 5 * 60 * 1000,
-          MOTION_WINDOW_MS: 25 * 1000,
+          MOTION_WINDOW_MS: 60 * 1000,
           MOVE_THRESHOLD_METERS: 8,
           MIN_FIXES_FOR_ETA: 3,
           MIN_ETA_WINDOW_MS: 15 * 1000,
@@ -428,8 +118,8 @@
           PASSED_DISTANCE_OFFSET: 150
         },
         GPX: { 
-          SEARCH_AHEAD: 80, 
-          SEARCH_BACK: 5, 
+          AHEAD: 80, 
+          BACK: 5, 
           EARLY_EXIT_METERS: 25 
         },
         SNOW: {
@@ -464,6 +154,7 @@
         gpxRoute: null,
         lastFix: null,
         recentFixes: [],
+        routeFixes: [],
         flags: {
           follow: true,
           firstFix: true,
@@ -503,33 +194,23 @@
         }
       };
 
-      // =========================================
-      // 2. UTILITY FUNCTIONS
-      // =========================================
-      
       const Utils = {
         validPos: (lat, lng) => typeof lat === "number" && !isNaN(lat) && typeof lng === "number" && !isNaN(lng),
         lerp: (a, b, t) => a + (b - a) * t,
         easeOutCubic: (t) => 1 - Math.pow(1 - t, 3),
-
         isValidImageUrl(url) {
-    if (!url || typeof url !== 'string') return false;
-    try {
-      const parsed = new URL(url);
-      return ['http:', 'https:', 'data:'].includes(parsed.protocol);
-    } catch {
-      return false;
-    }
-  },
-        
+          if (!url || typeof url !== 'string') return false;
+          try { const parsed = new URL(url); return ['http:', 'https:', 'data:'].includes(parsed.protocol); }
+          catch { return false; }
+        },
         async loadJSON(url) {
           const r = await fetch(url, { cache: "no-store" });
           if (!r.ok) throw new Error(`Fetch failed: ${r.status}`);
           return r.json();
         },
         haversineMeters(a, b) {
-          const R = 6371000; 
-          const dLat = (b.lat - a.lat) * Math.PI / 180; 
+          const R = 6371000;
+          const dLat = (b.lat - a.lat) * Math.PI / 180;
           const dLng = (b.lng - a.lng) * Math.PI / 180;
           const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
           return 2 * R * Math.asin(Math.sqrt(s));
@@ -541,30 +222,32 @@
         },
         calculateSpeed(fixes) {
           if (fixes.length < AppConfig.API.MIN_FIXES_FOR_ETA) return null;
-          const first = fixes[0]; 
+          const first = fixes[0];
           const last = fixes[fixes.length - 1];
-          const elapsed = last.ts - first.ts; 
+          const elapsed = last.ts - first.ts;
           if (elapsed < AppConfig.API.MIN_ETA_WINDOW_MS) return null;
           const dist = last.cumulative - first.cumulative;
-          const speed = dist / (elapsed / 1000); 
-          return Math.min(Math.max(speed, 0.3), 31); 
+          const speed = dist / (elapsed / 1000);
+          return Math.min(Math.max(speed, 0.3), 31);
+        },
+        calculateRouteSpeed(routeFixes) {
+          if (routeFixes.length < AppConfig.API.MIN_FIXES_FOR_ETA) return null;
+          const first = routeFixes[0];
+          const last = routeFixes[routeFixes.length - 1];
+          const elapsed = last.ts - first.ts;
+          if (elapsed < AppConfig.API.MIN_ETA_WINDOW_MS) return null;
+          const dist = last.routeDist - first.routeDist;
+          if (dist <= 0) return null;
+          const speed = dist / (elapsed / 1000);
+          return Math.min(Math.max(speed, 0.1), 31);
         },
         toggleFollowControls(enable) {
           const { followBtn, recenterBtn } = AppState.dom;
-          if (enable) {
-            followBtn.classList.remove("locked");
-            recenterBtn.classList.remove("locked");
-          } else {
-            followBtn.classList.add("locked");
-            recenterBtn.classList.add("locked");
-          }
+          if (enable) { followBtn.classList.remove("locked"); recenterBtn.classList.remove("locked"); }
+          else { followBtn.classList.add("locked"); recenterBtn.classList.add("locked"); }
         }
       };
 
-      // =========================================
-      // 3. HARDWARE & PERMISSIONS
-      // =========================================
-      
       let batteryState = { supported: false, charging: true, level: 1 };
       if ("getBattery" in navigator) {
         navigator.getBattery().then(battery => {
@@ -578,50 +261,30 @@
 
       let wakeLock = null;
       async function requestWakeLock() {
-        try {
-          if ("wakeLock" in navigator) {
-            wakeLock = await navigator.wakeLock.request("screen");
-            wakeLock.addEventListener("release", () => setTimeout(requestWakeLock, 2000));
-          }
-        } catch(e) {}
+        try { if ("wakeLock" in navigator) { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => setTimeout(requestWakeLock, 2000)); } } catch(e) {}
       }
-
-      // =========================================
-      // 4. MAP & ANIMATION LOGIC
-      // =========================================
 
       function animateMarkerTo(targetLat, targetLng) {
         if (!AppState.marker) return;
-
         const startLL = AppState.marker.getLatLng();
         const start = { lat: startLL.lat, lng: startLL.lng };
         const end = { lat: targetLat, lng: targetLng };
-        
         const startTime = performance.now();
         const duration = 900;
-
         if (AppState.vars.animRaf) cancelAnimationFrame(AppState.vars.animRaf);
-
         function step(now) {
           const t = Math.min(1, (now - startTime) / duration);
           const e = Utils.easeOutCubic(t);
-          
           const lat = Utils.lerp(start.lat, end.lat, e);
           const lng = Utils.lerp(start.lng, end.lng, e);
           const ll = L.latLng(lat, lng);
-          
           AppState.marker.setLatLng(ll);
           AppState.vars.lastVisualPos = { lat: ll.lat, lng: ll.lng };
-
           if ((AppState.flags.follow || AppState.flags.isKiosk) && !AppState.flags.firstFix) {
             AppState.map.panTo(ll, { animate: true, duration: 0.6 });
           }
-
-          if (t < 1) {
-            AppState.vars.animRaf = requestAnimationFrame(step);
-          } else {
-            AppState.vars.animRaf = null;
-          }
+          if (t < 1) { AppState.vars.animRaf = requestAnimationFrame(step); }
+          else { AppState.vars.animRaf = null; }
         }
         AppState.vars.animRaf = requestAnimationFrame(step);
       }
@@ -635,16 +298,19 @@
         while (fixes.length && fixes[0].ts < cutoff) fixes.shift();
       }
 
+      function pushRouteFix(routeDist, ts) {
+        const fixes = AppState.routeFixes;
+        fixes.push({ routeDist, ts });
+        const cutoff = ts - AppConfig.API.MOTION_WINDOW_MS;
+        while (fixes.length && fixes[0].ts < cutoff) fixes.shift();
+      }
+
       function isSleighMoving() {
         if (AppState.recentFixes.length < 2) return false;
         const first = AppState.recentFixes[0];
         const last = AppState.recentFixes[AppState.recentFixes.length - 1];
         return (last.cumulative - first.cumulative) >= AppConfig.API.MOVE_THRESHOLD_METERS;
       }
-
-      // =========================================
-      // 5. GPX & ROUTE LOGIC
-      // =========================================
 
       async function loadGpxRoute(url) {
         try {
@@ -657,7 +323,6 @@
           const xml = new DOMParser().parseFromString(text, "text/xml");
           const pts = [...xml.getElementsByTagName("trkpt")];
           if (pts.length < 2) throw new Error("GPX too short");
-
           let dist = 0; let route = [];
           for (let i = 0; i < pts.length; i++) {
             const lat = parseFloat(pts[i].getAttribute("lat"));
@@ -677,30 +342,21 @@
       function snapToGpxIndex(pos, searchOpts) {
         if (!AppState.gpxRoute) return null;
         const { AHEAD, BACK, EARLY_EXIT_METERS } = searchOpts || AppConfig.GPX;
-        const isGlobalSearch = !searchOpts; 
+        const isGlobalSearch = !searchOpts;
         const start = isGlobalSearch ? 0 : Math.max(0, AppState.vars.lastSnapIndex - BACK);
         const end = isGlobalSearch ? AppState.gpxRoute.length - 1 : Math.min(AppState.gpxRoute.length - 1, AppState.vars.lastSnapIndex + AHEAD);
-
         let bestIndex = isGlobalSearch ? 0 : AppState.vars.lastSnapIndex;
         let bestDist = Infinity;
-
         for (let i = start; i <= end; i++) {
           const d = Utils.haversineMeters(pos, AppState.gpxRoute[i]);
           if (d < bestDist) { bestDist = d; bestIndex = i; }
           if (!isGlobalSearch && i > AppState.vars.lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break;
         }
-
         if (!isGlobalSearch) AppState.vars.lastSnapIndex = bestIndex;
         return { point: AppState.gpxRoute[bestIndex], distance: bestDist };
       }
 
-      // =========================================
-      // 6. UI & SNOW RENDERER
-      // =========================================
-
-      function setDimUI(dim) {
-        document.body.classList.toggle("dim-ui", !!dim);
-      }
+      function setDimUI(dim) { document.body.classList.toggle("dim-ui", !!dim); }
 
       function showToast(message) {
         if (AppState.flags.isKiosk) return;
@@ -710,12 +366,8 @@
         setTimeout(() => t.classList.remove("toast-visible"), 4000);
       }
 
-      /* Snow System */
       const SnowSystem = {
-        resize() {
-          AppState.dom.snowCanvas.width = window.innerWidth;
-          AppState.dom.snowCanvas.height = window.innerHeight;
-        },
+        resize() { AppState.dom.snowCanvas.width = window.innerWidth; AppState.dom.snowCanvas.height = window.innerHeight; },
         create(level) {
           const isMobile = window.innerWidth < 600;
           const baseCount = isMobile ? AppConfig.SNOW.MOBILE_BASE_COUNT : AppConfig.SNOW.DESKTOP_BASE_COUNT;
@@ -729,7 +381,6 @@
             swaySpeed: Math.random() * 0.02 + 0.005
           }));
         },
-        
         draw() {
           if (!AppState.flags.snowActive || !AppState.flags.pageVisible) return;
           let frameSkip = 0;
@@ -737,34 +388,19 @@
             if (batteryState.level <= AppConfig.BATTERY.CRITICAL) frameSkip = AppConfig.BATTERY.FRAME_SKIP.CRITICAL;
             else if (batteryState.level <= AppConfig.BATTERY.LOW) frameSkip = AppConfig.BATTERY.FRAME_SKIP.LOW;
           }
-          
           SnowSystem._frame = (SnowSystem._frame || 0) + 1;
-          if (frameSkip && SnowSystem._frame % (frameSkip + 1) !== 0) {
-            requestAnimationFrame(SnowSystem.draw);
-            return;
-          }
-
+          if (frameSkip && SnowSystem._frame % (frameSkip + 1) !== 0) { requestAnimationFrame(SnowSystem.draw); return; }
           const ctx = AppState.dom.snowCanvas.getContext("2d");
           ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height);
           ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
           ctx.beginPath();
-
           for (const f of AppState.vars.snowflakes) {
-            f.y += f.speed;
-            f.swayOffset += f.swaySpeed;
-            f.x += Math.sin(f.swayOffset) * 0.5;
-
-            if (f.y > AppState.dom.snowCanvas.height) {
-              f.y = -10;
-              f.x = Math.random() * AppState.dom.snowCanvas.width;
-            }
+            f.y += f.speed; f.swayOffset += f.swaySpeed; f.x += Math.sin(f.swayOffset) * 0.5;
+            if (f.y > AppState.dom.snowCanvas.height) { f.y = -10; f.x = Math.random() * AppState.dom.snowCanvas.width; }
             if (f.x > AppState.dom.snowCanvas.width) f.x = 0;
             if (f.x < 0) f.x = AppState.dom.snowCanvas.width;
-
-            ctx.moveTo(f.x, f.y);
-            ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+            ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
           }
-
           ctx.fill();
           requestAnimationFrame(SnowSystem.draw);
         },
@@ -778,31 +414,18 @@
             }
             return;
           }
-
-          if (AppState.currentSnowLevel !== level) {
-            AppState.currentSnowLevel = level;
-            SnowSystem.create(level);
-          }
-          if (!AppState.flags.snowActive) {
-            AppState.flags.snowActive = true;
-            document.body.classList.add("snowing");
-            SnowSystem.draw();
-          }
+          if (AppState.currentSnowLevel !== level) { AppState.currentSnowLevel = level; SnowSystem.create(level); }
+          if (!AppState.flags.snowActive) { AppState.flags.snowActive = true; document.body.classList.add("snowing"); SnowSystem.draw(); }
         }
       };
-
-      // =========================================
-      // 7. NOTIFICATION LOGIC
-      // =========================================
 
       function showNotifyMarker(lat, lng, confirmed) {
         if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
         const iconUrl = confirmed ? AppConfig.ICONS.CONFIRMED : AppConfig.ICONS.PREVIEW;
-        AppState.notifyMarker = L.marker([lat, lng], { 
-          icon: L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", shadowSize: [41, 41] }), 
-          interactive: true 
+        AppState.notifyMarker = L.marker([lat, lng], {
+          icon: L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", shadowSize: [41, 41] }),
+          interactive: true
         }).addTo(AppState.map);
-
         if (!confirmed) {
           AppState.notifyMarker.bindPopup("📍 Tap this pin again to confirm").openPopup();
           AppState.notifyMarker.once("click", () => {
@@ -820,28 +443,18 @@
       function fireBrowserNotification(title, body) {
         if (!("Notification" in window)) return;
         if (Notification.permission !== "granted") return;
-        try {
-          new Notification(title, {
-            body,
-            icon: AppConfig.ICONS.BROWSER_ICON,
-            requireInteraction: true
-          });
-        } catch (e) {}
+        try { new Notification(title, { body, icon: AppConfig.ICONS.BROWSER_ICON, requireInteraction: true }); } catch (e) {}
       }
-
-      // =========================================
-      // 8. MAIN APP LOGIC (THE TICK)
-      // =========================================
 
       async function updateTracker() {
         try {
           const data = await Utils.loadJSON(AppState.vars.apiUrl + "?function=proxyFirebase");
           if (!Utils.validPos(data.lat, data.lng)) throw new Error("Invalid Coords");
-          
+
           const ts = new Date(data.ts).getTime();
           const age = Date.now() - ts;
           const isFresh = age <= AppConfig.API.STALE_MS;
-          
+
           if (AppState.flags.isKiosk) {
             AppState.dom.kioskBanner.classList.toggle("live", isFresh);
             const statusEl = document.getElementById("kioskStatus");
@@ -880,13 +493,10 @@
 
           if (AppState.flags.gpxLoaded) {
             const snap = snapToGpxIndex(visualPos, AppConfig.GPX);
-            if (snap && snap.distance < 50) {
-              visualPos = snap.point;
-            } else {
-              visualPos = { lat: data.lat, lng: data.lng };
-            }
+            if (snap && snap.distance < 50) { visualPos = snap.point; }
+            else { visualPos = { lat: data.lat, lng: data.lng }; }
           }
-          
+
           animateMarkerTo(visualPos.lat, visualPos.lng);
           pushFix(data.lat, data.lng, Date.now());
 
@@ -894,28 +504,34 @@
           // STICKY PASS & SNOW CONTROL
           // --------------------------------------------------------
           let etaSeconds = null;
-          
-          // 1. Check Passed State — use notifyLatLng (persists after marker removal)
+
           if (AppState.flags.hasPassedSticky) {
-             // Already passed, do nothing (keeps status locked)
-          } 
+             // Already passed — keep status locked
+          }
           else if (AppState.vars.notifyLatLng && AppState.flags.gpxLoaded && isFresh) {
             const santaSnap = snapToGpxIndex({ lat: data.lat, lng: data.lng }, AppConfig.GPX);
-            
+
             if (santaSnap) {
               const userPos = AppState.vars.notifyLatLng;
-              // Save/restore lastSnapIndex so user's global snap doesn't corrupt Santa's incremental snap
               const savedSnapIdx = AppState.vars.lastSnapIndex;
-              const userSnap = snapToGpxIndex(userPos, null); 
+              const userSnap = snapToGpxIndex(userPos, null);
               AppState.vars.lastSnapIndex = savedSnapIdx;
-              
+
+              // Track Santa's route progress for speed calculation
+              pushRouteFix(santaSnap.point.dist, Date.now());
+
               if (userSnap) {
                 if (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) {
                   AppState.flags.hasPassedSticky = true;
                 } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
-                  const realSpeed = Utils.calculateSpeed(AppState.recentFixes);
-                  const effectiveSpeed = (realSpeed && realSpeed > 0.5) ? realSpeed : 3;
+                  // Use route-based speed (same units as remaining) for accurate ETA
+                  const routeSpeed = Utils.calculateRouteSpeed(AppState.routeFixes);
+                  const rawSpeed = Utils.calculateSpeed(AppState.recentFixes);
+                  // Prefer route speed; fall back to raw GPS speed; last resort: walking pace ~1.4 m/s
+                  const effectiveSpeed = (routeSpeed && routeSpeed > 0.3) ? routeSpeed
+                                       : (rawSpeed && rawSpeed > 0.5) ? rawSpeed
+                                       : 1.4;
                   etaSeconds = remaining / effectiveSpeed;
                 }
               }
@@ -923,27 +539,22 @@
           }
 
           const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
-          
-          // 2. Snow Logic — use notifyLatLng
+
+          // Snow Logic
           let snowLevel = 0;
           let triggerSnow = false;
-          
+
           if (AppState.vars.notifyLatLng && !AppState.flags.hasPassedSticky && etaSeconds !== null && isFresh) {
              if (etaMinutes < 15) {
                 triggerSnow = true;
-                if (etaMinutes < 3) snowLevel = 3;      
-                else if (etaMinutes < 8) snowLevel = 2; 
-                else snowLevel = 1;                     
+                if (etaMinutes < 3) snowLevel = 3;
+                else if (etaMinutes < 8) snowLevel = 2;
+                else snowLevel = 1;
              }
           }
-          
-          // FORCE SNOW OFF if passed
-          if (AppState.flags.hasPassedSticky) {
-             triggerSnow = false;
-             snowLevel = 0;
-          }
 
-          // Battery Check
+          if (AppState.flags.hasPassedSticky) { triggerSnow = false; snowLevel = 0; }
+
           const { maxLevel } = function(){
              if (batteryState.supported && !batteryState.charging) {
                if(batteryState.level <= AppConfig.BATTERY.CRITICAL) return { maxLevel: 1 };
@@ -951,70 +562,50 @@
              }
              return { maxLevel: 3 };
           }();
-          
+
           SnowSystem.setLevel(triggerSnow, Math.min(snowLevel, maxLevel));
 
-          // 3. Status Text & Dimming
+          // Status Text & Dimming
           const moving = isSleighMoving();
-AppState.dom.statusDot.style.display = "block";
-AppState.dom.statusDot.className = moving
-  ? "status-dot dot-moving"
-  : "status-dot dot-stopped";
+          AppState.dom.statusDot.style.display = "block";
+          AppState.dom.statusDot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
 
-if (AppState.flags.hasPassedSticky) {
+          if (AppState.flags.hasPassedSticky) {
+            AppState.dom.statusBox.textContent = "🎄 Santa has just been here!";
+            setDimUI(false);
+          } else if (etaSeconds !== null && !moving) {
+            AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!";
+            setDimUI(false);
+          } else if (etaSeconds !== null) {
+            const mins = etaSeconds / 60;
+            let etaText;
+            if (mins < 2) etaText = "🎅 Santa is nearly here!";
+            else if (mins < 4) etaText = "🎅 Santa is ~3 mins away!";
+            else if (mins < 7) etaText = "🎅 Santa is ~5 mins away!";
+            else if (mins < 12) etaText = "🎅 Santa is ~10 mins away!";
+            else etaText = "🎅 Santa is ~15 mins away!";
+            AppState.dom.statusBox.textContent = etaText;
+            setDimUI(mins > 45);
+          } else if (moving) {
+            AppState.dom.statusBox.textContent = "🎅 Santa is out spreading joy!";
+            setDimUI(false);
+          } else {
+            AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
+            setDimUI(false);
+          }
 
-  AppState.dom.statusBox.textContent = "🎄 Santa has just been here!";
-  setDimUI(false);
-
-} else if (etaSeconds !== null && !moving) {
-
-  AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!";
-  setDimUI(false);
-
-} else if (etaSeconds !== null) {
-
-  const mins = etaSeconds / 60;
-  let etaText;
-
-  if (mins < 2) {
-    etaText = "🎅 Santa is nearly here!";
-  } else if (mins < 4) {
-    etaText = "🎅 Santa is ~3 mins away!";
-  } else if (mins < 7) {
-    etaText = "🎅 Santa is ~5 mins away!";
-  } else if (mins < 12) {
-    etaText = "🎅 Santa is ~10 mins away!";
-  } else {
-    etaText = "🎅 Santa is ~15 mins away!";
-  }
-
-  AppState.dom.statusBox.textContent = etaText;
-  setDimUI(mins > 45);
-
-} else if (moving) {
-
-  AppState.dom.statusBox.textContent = "🎅 Santa is out spreading joy!";
-  setDimUI(false);
-
-} else {
-
-  AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
-  setDimUI(false);
-}
-          
-          // 4. Browser Notification — use notifyLatLng
+          // Browser Notification
           if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) {
              const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.vars.notifyLatLng);
              const isSmartEta = (etaSeconds !== null && etaSeconds < 180);
              const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600);
-
              if (isSmartEta || isCloseFallback) {
                 AppState.flags.browserNotified = true;
                 sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
                 fireBrowserNotification("🎅 Santa is nearly here!", "He's approaching your location! 🎄");
              }
           }
-          
+
           if (AppState.flags.firstFix) {
              const zoom = AppState.flags.isKiosk ? 15 : 16;
              AppState.map.setView(visualPos, zoom);
@@ -1032,77 +623,59 @@ if (AppState.flags.hasPassedSticky) {
         setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
       }
 
-      // =========================================
-      // 9. INITIALIZATION
-      // =========================================
-
       async function init() {
         const params = new URLSearchParams(location.search);
         AppState.flags.isKiosk = params.get("kiosk") === "1" || sessionStorage.getItem("SANTA_KIOSK") === "1";
         if (params.get("kiosk") === "1") sessionStorage.setItem("SANTA_KIOSK", "1");
-        
+
         AppState.vars.apiUrl = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
         if (!AppState.vars.apiUrl) { alert("Missing ?api=URL"); return; }
         localStorage.setItem("SANTA_API", AppState.vars.apiUrl);
         sessionStorage.setItem("SANTA_API", AppState.vars.apiUrl);
-        
+
         if (!AppState.flags.isKiosk && location.search.includes("api=")) {
           history.replaceState(null, "", location.pathname);
         }
 
         requestWakeLock();
-
-        setInterval(() => {
-          if (document.visibilityState === "visible") {
-            requestWakeLock();
-          }
-        }, 60000);
+        setInterval(() => { if (document.visibilityState === "visible") requestWakeLock(); }, 60000);
 
         const apiData = await Utils.loadJSON(AppState.vars.apiUrl);
         const settings = apiData.settings || {};
         AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
-        
+
         const today = new Date().toISOString().slice(0, 10);
         const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
         AppState.vars.todayRoute = route;
 
-        const don = apiData.donations || {}; 
+        const don = apiData.donations || {};
+        if (settings.donate_url) {
+          const btn = AppState.dom.donateLink;
+          btn.href = settings.donate_url;
+          AppState.dom.donateBox.style.display = "block";
+          btn.style.background = "";
+          if (don.target && don.target > 0) {
+            const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100)));
+            btn.style.background = `linear-gradient(90deg, #d31c1c ${pct}%, rgba(211, 28, 28, 0.3) ${pct}%)`;
+          }
+        } else {
+          AppState.dom.donateBox.style.display = "none";
+        }
 
-if (settings.donate_url) {
-  const btn = AppState.dom.donateLink;
-  btn.href = settings.donate_url;
-  AppState.dom.donateBox.style.display = "block";
+        fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.date : 'unknown')}`, { keepalive: true });
 
-  btn.style.background = ""; 
-
-  if (don.target && don.target > 0) {
-    const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100)));
-    btn.style.background = `linear-gradient(90deg, #d31c1c ${pct}%, rgba(211, 28, 28, 0.3) ${pct}%)`;
-  }
-} else {
-  AppState.dom.donateBox.style.display = "none";
-}
-
-        fetch(`${AppState.vars.apiUrl}?function=logView` + 
-              `&ua=${encodeURIComponent(navigator.userAgent)}` + 
-              `&source=web` +
-              `&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.date : 'unknown')}`, 
-              { keepalive: true });
-        
         if (AppState.flags.isKiosk && AppState.dom.kioskBanner) {
-   const statusDiv = document.createElement('div');
-   statusDiv.id = 'kioskStatus';
-   statusDiv.textContent = '🎄 PREPARING IN LAPLAND';
-   
-   const subtitleDiv = document.createElement('div');
-   subtitleDiv.className = 'kiosk-subtitle';
-   subtitleDiv.textContent = AppState.vars.sleighName;
-   
-   AppState.dom.kioskBanner.innerHTML = '';
-   AppState.dom.kioskBanner.appendChild(statusDiv);
-   AppState.dom.kioskBanner.appendChild(subtitleDiv);
-   AppState.dom.kioskBanner.classList.add("visible");
-}
+          const statusDiv = document.createElement('div');
+          statusDiv.id = 'kioskStatus';
+          statusDiv.textContent = '🎄 PREPARING IN LAPLAND';
+          const subtitleDiv = document.createElement('div');
+          subtitleDiv.className = 'kiosk-subtitle';
+          subtitleDiv.textContent = AppState.vars.sleighName;
+          AppState.dom.kioskBanner.innerHTML = '';
+          AppState.dom.kioskBanner.appendChild(statusDiv);
+          AppState.dom.kioskBanner.appendChild(subtitleDiv);
+          AppState.dom.kioskBanner.classList.add("visible");
+        }
 
         if (!route) {
           AppState.dom.notifyBtn.style.display = "none";
@@ -1112,7 +685,7 @@ if (settings.donate_url) {
 
         AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk })
           .setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
-        
+
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(AppState.map);
 
         if (AppState.flags.isKiosk) {
@@ -1125,29 +698,19 @@ if (settings.donate_url) {
            AppState.dom.donateBox.style.display = "none";
         }
 
+        // ── GPX ROUTE LAYERS ──
         if (route && AppState.flags.gpxLoaded) {
+           // Gold glow (bottom layer, no markers)
            new L.GPX(route.gpxUrl, {
              async: true,
-         
-             // Gold glow (bottom)
-new L.GPX(route.gpxUrl, {
-  async: true,
-  polyline_options: {
-    color: "#ffd700",
-    weight: 7,
-    opacity: 0.45
-  }
-}).addTo(AppState.map);
+             polyline_options: { color: "#ffd700", weight: 7, opacity: 0.45 },
+             marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
+           }).addTo(AppState.map);
 
-// Red route (top)
-new L.GPX(route.gpxUrl, {
-  async: true,
-  polyline_options: {
-    color: "#d31c1c",
-    weight: 4,
-    opacity: 0.95
-  },
-        
+           // Red route (top layer, with start/end markers)
+           new L.GPX(route.gpxUrl, {
+             async: true,
+             polyline_options: { color: "#d31c1c", weight: 4, opacity: 0.95 },
              marker_options: {
                  startIcon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
                  endIcon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
@@ -1157,17 +720,15 @@ new L.GPX(route.gpxUrl, {
         }
 
         if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
-  const span = document.createElement('span');
-  span.textContent = 'Proudly sponsored by';
-  
-  const img = document.createElement('img');
-  img.src = route.sponsorUrl;
-  img.alt = 'Sponsor';
-  
-  AppState.dom.sponsorBox.innerHTML = '';
-  AppState.dom.sponsorBox.appendChild(span);
-  AppState.dom.sponsorBox.appendChild(img);
-}
+          const span = document.createElement('span');
+          span.textContent = 'Proudly sponsored by';
+          const img = document.createElement('img');
+          img.src = route.sponsorUrl;
+          img.alt = 'Sponsor';
+          AppState.dom.sponsorBox.innerHTML = '';
+          AppState.dom.sponsorBox.appendChild(span);
+          AppState.dom.sponsorBox.appendChild(img);
+        }
 
         if (!AppState.flags.isKiosk) {
            const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
@@ -1190,17 +751,12 @@ new L.GPX(route.gpxUrl, {
         });
 
         if (settings.logo_overlay_url && Utils.isValidImageUrl(settings.logo_overlay_url)) {
-   const posMap = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" };
-   const LogoControl = L.control({ position: posMap[settings.logo_overlay_position] || "bottomright" });
-   LogoControl.onAdd = () => {
-     const img = L.DomUtil.create("img");
-     img.src = settings.logo_overlay_url;
-     img.className = "logo-overlay";
-     return img;
-   };
-   LogoControl.addTo(AppState.map);
-}
-        
+          const posMap = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" };
+          const LogoControl = L.control({ position: posMap[settings.logo_overlay_position] || "bottomright" });
+          LogoControl.onAdd = () => { const img = L.DomUtil.create("img"); img.src = settings.logo_overlay_url; img.className = "logo-overlay"; return img; };
+          LogoControl.addTo(AppState.map);
+        }
+
         AppState.marker = L.marker(AppConfig.LOCATIONS.LAPLAND, {
           icon: L.icon({ iconUrl: settings.sleigh_icon_live || AppConfig.ICONS.FALLBACK_LIVE, iconSize: [64, 64], iconAnchor: [32, 60] })
         }).addTo(AppState.map);
@@ -1209,136 +765,94 @@ new L.GPX(route.gpxUrl, {
            AppState.flags.follow = !AppState.flags.follow;
            AppState.dom.followBtn.textContent = "Follow: " + (AppState.flags.follow ? "ON" : "OFF");
         };
-        
+
         AppState.dom.recenterBtn.onclick = () => {
            AppState.flags.follow = true;
            AppState.dom.followBtn.textContent = "Follow: ON";
            AppState.map.panTo(AppState.marker.getLatLng());
         };
-        
+
         AppState.dom.notifyBtn.onclick = () => {
-   AppState.flags.follow = false; 
-   AppState.dom.followBtn.textContent = "Follow: OFF";
-   
-   AppState.flags.browserNotified = false;
-   AppState.flags.hasPassedSticky = false;
-   sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
-   sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
-   sessionStorage.removeItem("SANTA_NOTIFY_POINT");
-   
-   AppState.flags.awaitingPin = true;
-   
-   if (AppState.notifyMarker) {
-       AppState.map.removeLayer(AppState.notifyMarker);
-   }
-   AppState.notifyMarker = null;
-   AppState.vars.notifyLatLng = null;
+          AppState.flags.follow = false;
+          AppState.dom.followBtn.textContent = "Follow: OFF";
+          AppState.flags.browserNotified = false;
+          AppState.flags.hasPassedSticky = false;
+          AppState.routeFixes = [];
+          sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+          sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
+          sessionStorage.removeItem("SANTA_NOTIFY_POINT");
+          AppState.flags.awaitingPin = true;
+          if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); }
+          AppState.notifyMarker = null;
+          AppState.vars.notifyLatLng = null;
+          AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin...";
+          if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); }
+          AppState.vars.escapeListener = (e) => {
+            if (e.key === "Escape" && AppState.flags.awaitingPin) {
+              AppState.flags.awaitingPin = false;
+              if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
+              AppState.dom.statusBox.textContent = "";
+              Utils.toggleFollowControls(true);
+              document.removeEventListener("keydown", AppState.vars.escapeListener);
+              AppState.vars.escapeListener = null;
+            }
+          };
+          document.addEventListener("keydown", AppState.vars.escapeListener);
+        };
 
-   AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin...";
-
-   if (AppState.vars.escapeListener) {
-     document.removeEventListener("keydown", AppState.vars.escapeListener);
-   }
-   
-   AppState.vars.escapeListener = (e) => {
-     if (e.key === "Escape" && AppState.flags.awaitingPin) {
-       AppState.flags.awaitingPin = false;
-       if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
-       AppState.dom.statusBox.textContent = "";
-       Utils.toggleFollowControls(true);
-       document.removeEventListener("keydown", AppState.vars.escapeListener);
-       AppState.vars.escapeListener = null;
-     }
-   };
-   document.addEventListener("keydown", AppState.vars.escapeListener);
-};
-        
-        // --- MODAL HANDLERS ---
         document.getElementById("modalCancelBtn").addEventListener("click", () => {
            document.getElementById("emailModal").style.display = "none";
            AppState.dom.statusBox.textContent = "Tap the pin to try again";
-          if (AppState.vars.escapeListener) {
-     document.removeEventListener("keydown", AppState.vars.escapeListener);
-     AppState.vars.escapeListener = null;
-   }
-});
-        
-        document.getElementById("modalConfirmBtn").addEventListener("click", () => {
-   const email = document.getElementById("subEmail").value.trim();
-   document.getElementById("emailModal").style.display = "none";
-
-   if (AppState.vars.escapeListener) {
-     document.removeEventListener("keydown", AppState.vars.escapeListener);
-     AppState.vars.escapeListener = null;
-   }
-   
-   Utils.toggleFollowControls(true);
-           
-           if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") {
-             showToast("🎅 You're already signed up!");
-             return;
-           }
-
-           AppState.dom.statusBox.textContent = "🔔 Saving your notification...";
-           
-           if (!AppState.vars.pendingSubscription) {
-               showToast("❌ Error: No location selected.");
-               return;
-           }
-
-           const url = `${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`;
-           
-           fetch(url).then(r=>r.json()).then(d => {
-  if (d.ok) {
-     sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-     const msg = email ? "🎅 You're signed up! We'll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
-     showToast(msg);
-     AppState.dom.statusBox.textContent = "";
-
-     // Remove the visual marker but KEEP notifyLatLng for ETA/snow/passed logic
-     if (AppState.notifyMarker) {
-         AppState.map.removeLayer(AppState.notifyMarker);
-         AppState.notifyMarker = null;
-     }
-     // NOTE: SANTA_NOTIFY_POINT intentionally kept so ETA/snow survives refresh
-     AppState.vars.pendingSubscription = null;
-     // NOTE: notifyLatLng is intentionally NOT cleared here
-
-  } else {
-     showToast("❌ Error saving notification.");
-     AppState.dom.statusBox.textContent = "❌ Failed to save.";
-  }
-           }).catch(() => {
-             showToast("❌ Network error.");
-             AppState.dom.statusBox.textContent = "❌ Connection failed.";
-           });
+           if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; }
         });
 
-        if (settings.donate_url) {
-           AppState.dom.donateLink.href = settings.donate_url;
-           AppState.dom.donateBox.style.display = "block";
-        } else {
-           AppState.dom.donateBox.style.display = "none";
-        }
+        document.getElementById("modalConfirmBtn").addEventListener("click", () => {
+          const email = document.getElementById("subEmail").value.trim();
+          document.getElementById("emailModal").style.display = "none";
+          if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; }
+          Utils.toggleFollowControls(true);
+
+          if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") { showToast("🎅 You're already signed up!"); return; }
+
+          AppState.dom.statusBox.textContent = "🔔 Saving your notification...";
+
+          if (!AppState.vars.pendingSubscription) { showToast("❌ Error: No location selected."); return; }
+
+          const url = `${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`;
+
+          fetch(url).then(r=>r.json()).then(d => {
+            if (d.ok) {
+               sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
+               const msg = email ? "🎅 You're signed up! We'll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
+               showToast(msg);
+               AppState.dom.statusBox.textContent = "";
+               if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; }
+               AppState.vars.pendingSubscription = null;
+            } else {
+               showToast("❌ Error saving notification.");
+               AppState.dom.statusBox.textContent = "❌ Failed to save.";
+            }
+          }).catch(() => {
+            showToast("❌ Network error.");
+            AppState.dom.statusBox.textContent = "❌ Connection failed.";
+          });
+        });
+
+        if (settings.donate_url) { AppState.dom.donateLink.href = settings.donate_url; AppState.dom.donateBox.style.display = "block"; }
+        else { AppState.dom.donateBox.style.display = "none"; }
 
         AppState.dom.loading.style.display = "none";
         SnowSystem.resize();
         window.addEventListener("resize", SnowSystem.resize);
         updateTracker();
-
         window.SantaDebug = { AppState, SnowSystem, animateMarkerTo, Utils, AppConfig };
       }
 
       document.addEventListener("visibilitychange", () => {
         AppState.flags.pageVisible = !document.hidden;
-
         if (AppState.flags.pageVisible) {
           if (AppState.flags.isKiosk) requestWakeLock();
-
-          if (AppState.vars.lastVisualPos && AppState.marker) {
-            AppState.marker.setLatLng(AppState.vars.lastVisualPos);
-          }
-
+          if (AppState.vars.lastVisualPos && AppState.marker) { AppState.marker.setLatLng(AppState.vars.lastVisualPos); }
           if (AppState.flags.snowActive) SnowSystem.draw();
         }
       });
