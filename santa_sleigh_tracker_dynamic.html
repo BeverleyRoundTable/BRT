@@ -686,6 +686,18 @@
         AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk })
           .setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
 
+        AppState.map.on("zoomend", () => {
+  if (!AppState.routeMainLayer || !AppState.routeGlowLayer) return;
+
+  const z = AppState.map.getZoom();
+
+  const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3;
+  const glowWeight = mainWeight + 3;
+
+  AppState.routeMainLayer.setStyle({ weight: mainWeight });
+  AppState.routeGlowLayer.setStyle({ weight: glowWeight });
+});
+
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(AppState.map);
 
         if (AppState.flags.isKiosk) {
