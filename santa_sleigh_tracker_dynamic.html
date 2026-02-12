@@ -520,12 +520,10 @@
               // Track Santa's route progress for speed calculation
               pushRouteFix(santaSnap.point.dist, Date.now());
 
-              if (userSnap) {
+             if (userSnap) {
                 if (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) {
-  AppState.flags.hasPassedSticky = true;
-  sessionStorage.setItem("SANTA_HAS_PASSED", "1");
-}
-              }
+                  AppState.flags.hasPassedSticky = true;
+                  sessionStorage.setItem("SANTA_HAS_PASSED", "1");
                 } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
                   // Use route-based speed (same units as remaining) for accurate ETA
