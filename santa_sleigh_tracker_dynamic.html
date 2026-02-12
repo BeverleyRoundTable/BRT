@@ -753,6 +753,10 @@ if (route && AppState.flags.gpxLoaded) {
     }
   }).addTo(AppState.map);
 
+  AppState.routeMainLayer.on("loaded", () => {
+  AppState.map.fire("zoomend");
+});
+
 }
 
         if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
