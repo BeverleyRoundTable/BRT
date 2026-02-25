@@ -482,6 +482,7 @@
             if (AppState.lastFix) {
               animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
               AppState.dom.statusBox.textContent = "🎅 Santa is nearby…";
+              setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
               return;
             }
           } else {
@@ -896,6 +897,7 @@ if (route && AppState.flags.gpxLoaded) {
           if (AppState.flags.isKiosk) requestWakeLock();
           if (AppState.vars.lastVisualPos && AppState.marker) { AppState.marker.setLatLng(AppState.vars.lastVisualPos); }
           if (AppState.flags.snowActive) SnowSystem.draw();
+          updateTracker();
         }
       });
 
