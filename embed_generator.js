@@ -310,5 +310,7 @@ document.getElementById("recommendedTracker").value = recommendedTracker.trim();
 document.getElementById("trackerKioskLink").value = trackerKioskLink.trim();
 document.getElementById("recommendedTrackerKiosk").value = recommendedTrackerKiosk.trim();
 document.getElementById("routesLink").value = routesLink.trim();
+document.getElementById("routeCardLink").value = routeCardLink.trim();
+document.getElementById("recommendedRouteCard").value = recommendedRouteCard.trim();
 document.getElementById("recommendedRoutes").value = recommendedRoutes.trim();
 document.getElementById("snowmanFrameEmbed").value = snowmanFrameEmbed.trim();
