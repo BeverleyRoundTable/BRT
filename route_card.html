@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Route Card Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0e14;
+    --surface: #161923;
+    --surface-2: #1e2230;
+    --border: rgba(255,255,255,0.08);
+    --text: #e8e8ec;
+    --text-dim: #8a8d9b;
+    --accent: #d31c1c;
+    --accent-glow: rgba(211,28,28,0.25);
+    --gold: #ffd700;
+    --gold-dim: rgba(255,215,0,0.15);
+    --success: #2cff4e;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  header h1 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 2.2em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 30%, var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    color: var(--text-dim);
+    margin-top: 6px;
+    font-size: 0.95em;
+  }
+
+  /* ── SETUP BAR ── */
+  .setup {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .setup label {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .setup input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 0.9em;
+    font-family: 'DM Sans', monospace;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .setup input:focus { border-color: var(--gold); }
+
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85em;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+
+  .btn-ghost {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), #ffaa00);
+    color: #1a1000;
+    box-shadow: 0 4px 16px var(--gold-dim);
+  }
+
+  /* ── STATUS ── */
+  .status {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 0.9em;
+  }
+
+  .status.error { color: #ff6b6b; }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── ROUTE LIST ── */
+  .routes-grid {
+    display: grid;
+    gap: 20px;
+  }
+
+  .route-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: center;
+    transition: border-color 0.2s;
+  }
+
+  .route-item:hover { border-color: rgba(255,215,0,0.2); }
+
+  .route-meta h3 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.3em;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .route-meta .date {
+    color: var(--text-dim);
+    font-size: 0.9em;
+    margin-bottom: 8px;
+  }
+
+  .route-meta .streets {
+    font-size: 0.8em;
+    color: var(--text-dim);
+    line-height: 1.4;
+    max-width: 500px;
+  }
+
+  .route-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 140px;
+  }
+
+  /* ── CARD FORMATS SELECTOR ── */
+  .format-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .format-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78em;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .format-btn:hover { border-color: var(--gold); color: var(--text); }
+  .format-btn.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+
+  /* ── PREVIEW MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 9000;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(6px);
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal-inner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    text-align: center;
+  }
+
+  .modal-inner h2 {
+    font-family: 'Fredoka', sans-serif;
+    margin-bottom: 16px;
+    font-size: 1.2em;
+  }
+
+  .preview-wrap {
+    display: inline-block;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    margin-bottom: 20px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ── CARD CANVAS (rendered offscreen then captured) ── */
+  .card-render-area {
+    position: fixed;
+    left: -9999px;
+    top: 0;
+  }
+
+  /* ===========================
+     CARD DESIGNS
+     =========================== */
+
+  /* ── SQUARE 1080×1080 ── */
+  .card-square {
+    width: 1080px;
+    height: 1080px;
+    background: #0c0e14;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Fredoka', sans-serif;
+    color: white;
+  }
+
+  .card-square .card-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(211,28,28,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(255,215,0,0.08) 0%, transparent 50%),
+      linear-gradient(170deg, #0f1219 0%, #0c0e14 100%);
+  }
+
+  .card-square .card-snowflakes {
+    position: absolute;
+    inset: 0;
+    opacity: 0.12;
+    background-image:
+      radial-gradient(2px 2px at 10% 15%, white, transparent),
+      radial-gradient(2px 2px at 25% 40%, white, transparent),
+      radial-gradient(1.5px 1.5px at 45% 10%, white, transparent),
+      radial-gradient(2px 2px at 60% 55%, white, transparent),
+      radial-gradient(1px 1px at 75% 20%, white, transparent),
+      radial-gradient(2px 2px at 90% 45%, white, transparent),
+      radial-gradient(1.5px 1.5px at 15% 70%, white, transparent),
+      radial-gradient(2px 2px at 50% 80%, white, transparent),
+      radial-gradient(1px 1px at 80% 75%, white, transparent),
+      radial-gradient(2px 2px at 35% 90%, white, transparent),
+      radial-gradient(1.5px 1.5px at 65% 35%, white, transparent),
+      radial-gradient(1px 1px at 5% 50%, white, transparent),
+      radial-gradient(2px 2px at 95% 85%, white, transparent);
+  }
+
+  .card-square .card-border {
+    position: absolute;
+    inset: 20px;
+    border: 2px solid rgba(255,215,0,0.35);
+    border-radius: 24px;
+    pointer-events: none;
+  }
+
+  .card-square .card-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 56px 64px;
+  }
+
+  .card-square .card-top {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .card-square .card-logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    object-fit: contain;
+    background: rgba(255,255,255,0.06);
+    padding: 4px;
+  }
+
+  .card-square .card-sleigh-name {
+    font-size: 32px;
+    font-weight: 700;
+    opacity: 0.9;
+    letter-spacing: -0.01em;
+  }
+
+  .card-square .card-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .card-square .card-emoji {
+    font-size: 56px;
+    margin-bottom: 16px;
+  }
+
+  .card-square .card-route-name {
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 40%, #ffd700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card-square .card-date {
+    font-size: 36px;
+    font-weight: 500;
+    color: #ffd700;
+    margin-bottom: 24px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .card-square .card-streets {
+    font-size: 24px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.5;
+    font-family: 'DM Sans', sans-serif;
+    max-width: 700px;
+  }
+
+  .card-square .card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 32px;
+  }
+
+  .card-square .card-cta {
+    font-size: 26px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .card-square .card-map-thumb {
+    width: 280px;
+    height: 200px;
+    border-radius: 16px;
+    object-fit: cover;
+    border: 2px solid rgba(255,215,0,0.25);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .card-square .card-sponsor-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .card-square .card-sponsor-label {
+    font-size: 18px;
+    color: rgba(255,255,255,0.4);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .card-square .card-sponsor-img {
+    max-height: 48px;
+    max-width: 180px;
+    object-fit: contain;
+  }
+
+  /* ── LANDSCAPE 1200×630 ── */
+  .card-landscape {
+    width: 1200px;
+    height: 630px;
+    background: #0c0e14;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Fredoka', sans-serif;
+    color: white;
+  }
+
+  .card-landscape .card-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 10% 0%, rgba(211,28,28,0.18) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 100%, rgba(255,215,0,0.1) 0%, transparent 50%),
+      linear-gradient(170deg, #0f1219 0%, #0c0e14 100%);
+  }
+
+  .card-landscape .card-snowflakes {
+    position: absolute;
+    inset: 0;
+    opacity: 0.1;
+    background-image:
+      radial-gradient(2px 2px at 10% 15%, white, transparent),
+      radial-gradient(2px 2px at 25% 40%, white, transparent),
+      radial-gradient(1.5px 1.5px at 45% 10%, white, transparent),
+      radial-gradient(2px 2px at 60% 55%, white, transparent),
+      radial-gradient(1px 1px at 75% 20%, white, transparent),
+      radial-gradient(2px 2px at 90% 45%, white, transparent),
+      radial-gradient(1.5px 1.5px at 15% 70%, white, transparent),
+      radial-gradient(2px 2px at 50% 80%, white, transparent);
+  }
+
+  .card-landscape .card-border {
+    position: absolute;
+    inset: 16px;
+    border: 2px solid rgba(255,215,0,0.3);
+    border-radius: 20px;
+  }
+
+  .card-landscape .card-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    padding: 44px 52px;
+    gap: 32px;
+  }
+
+  .card-landscape .card-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .card-landscape .card-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .card-landscape .card-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    object-fit: contain;
+    background: rgba(255,255,255,0.06);
+    padding: 4px;
+  }
+
+  .card-landscape .card-sleigh-name {
+    font-size: 24px;
+    font-weight: 700;
+    opacity: 0.85;
+  }
+
+  .card-landscape .card-route-name {
+    font-size: 58px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 40%, #ffd700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card-landscape .card-date {
+    font-size: 30px;
+    font-weight: 500;
+    color: #ffd700;
+    margin-bottom: 16px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .card-landscape .card-streets {
+    font-size: 20px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.5;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .card-landscape .card-sponsor-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .card-landscape .card-sponsor-label {
+    font-size: 16px;
+    color: rgba(255,255,255,0.35);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .card-landscape .card-sponsor-img {
+    max-height: 40px;
+    max-width: 160px;
+    object-fit: contain;
+  }
+
+  .card-landscape .card-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .card-landscape .card-map-thumb {
+    width: 320px;
+    height: 280px;
+    border-radius: 16px;
+    object-fit: cover;
+    border: 2px solid rgba(255,215,0,0.25);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  .card-landscape .card-cta {
+    font-size: 20px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    font-family: 'DM Sans', sans-serif;
+    text-align: center;
+  }
+
+  /* ── STORY 1080×1920 ── */
+  .card-story {
+    width: 1080px;
+    height: 1920px;
+    background: #0c0e14;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Fredoka', sans-serif;
+    color: white;
+  }
+
+  .card-story .card-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(211,28,28,0.2) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(255,215,0,0.1) 0%, transparent 40%),
+      linear-gradient(180deg, #12151e 0%, #0c0e14 100%);
+  }
+
+  .card-story .card-snowflakes {
+    position: absolute;
+    inset: 0;
+    opacity: 0.12;
+    background-image:
+      radial-gradient(2px 2px at 10% 8%, white, transparent),
+      radial-gradient(2px 2px at 25% 20%, white, transparent),
+      radial-gradient(1.5px 1.5px at 45% 5%, white, transparent),
+      radial-gradient(2px 2px at 60% 30%, white, transparent),
+      radial-gradient(1px 1px at 75% 12%, white, transparent),
+      radial-gradient(2px 2px at 90% 25%, white, transparent),
+      radial-gradient(1.5px 1.5px at 15% 45%, white, transparent),
+      radial-gradient(2px 2px at 50% 55%, white, transparent),
+      radial-gradient(1px 1px at 80% 50%, white, transparent),
+      radial-gradient(2px 2px at 35% 65%, white, transparent),
+      radial-gradient(1.5px 1.5px at 65% 75%, white, transparent),
+      radial-gradient(2px 2px at 20% 85%, white, transparent),
+      radial-gradient(1px 1px at 55% 90%, white, transparent),
+      radial-gradient(2px 2px at 85% 80%, white, transparent);
+  }
+
+  .card-story .card-border {
+    position: absolute;
+    inset: 24px;
+    border: 2px solid rgba(255,215,0,0.3);
+    border-radius: 28px;
+  }
+
+  .card-story .card-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 80px 64px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .card-story .card-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 60px;
+  }
+
+  .card-story .card-logo {
+    width: 88px;
+    height: 88px;
+    border-radius: 20px;
+    object-fit: contain;
+    background: rgba(255,255,255,0.06);
+    padding: 6px;
+  }
+
+  .card-story .card-sleigh-name {
+    font-size: 32px;
+    font-weight: 700;
+    opacity: 0.85;
+  }
+
+  .card-story .card-emoji {
+    font-size: 72px;
+    margin-bottom: 24px;
+  }
+
+  .card-story .card-route-name {
+    font-size: 86px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 40%, #ffd700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card-story .card-date {
+    font-size: 42px;
+    font-weight: 500;
+    color: #ffd700;
+    margin-bottom: 32px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .card-story .card-map-thumb {
+    width: 800px;
+    height: 500px;
+    border-radius: 24px;
+    object-fit: cover;
+    border: 2px solid rgba(255,215,0,0.25);
+    box-shadow: 0 12px 48px rgba(0,0,0,0.5);
+    margin-bottom: 40px;
+  }
+
+  .card-story .card-streets {
+    font-size: 28px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.6;
+    font-family: 'DM Sans', sans-serif;
+    max-width: 800px;
+  }
+
+  .card-story .card-bottom {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .card-story .card-cta {
+    font-size: 28px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.65);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .card-story .card-sponsor-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+  }
+
+  .card-story .card-sponsor-label {
+    font-size: 20px;
+    color: rgba(255,255,255,0.35);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .card-story .card-sponsor-img {
+    max-height: 56px;
+    max-width: 200px;
+    object-fit: contain;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .setup { flex-direction: column; }
+    .setup input[type="text"] { min-width: 100%; }
+    .route-item { grid-template-columns: 1fr; }
+    .route-actions { flex-direction: row; flex-wrap: wrap; }
+    header h1 { font-size: 1.6em; }
+    .modal-inner { padding: 16px; }
+  }
+
+  /* ── CUSTOM TEXT INPUT ── */
+  .custom-field {
+    margin-top: 8px;
+  }
+
+  .custom-field label {
+    display: block;
+    font-size: 0.75em;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+  }
+
+  .custom-field input,
+  .custom-field textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-size: 0.82em;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    resize: vertical;
+  }
+
+  .custom-field input:focus,
+  .custom-field textarea:focus { border-color: var(--gold); }
+
+  .edit-fields {
+    display: none;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .edit-fields.open { display: block; }
+
+  .toggle-edit {
+    font-size: 0.78em;
+    color: var(--text-dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: 'DM Sans', sans-serif;
+    margin-top: 8px;
+  }
+
+  .toggle-edit:hover { color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🎅 Route Card Generator</h1>
+    <p>Generate branded social media cards from your TurboSanta routes</p>
+  </header>
+
+  <div class="setup">
+    <label>API URL</label>
+    <input type="text" id="apiInput" placeholder="https://script.google.com/macros/s/…/exec">
+    <button class="btn btn-primary" id="loadBtn" onclick="loadRoutes()">Load Routes</button>
+  </div>
+
+  <div id="routesList">
+    <div class="status" id="statusMsg">Enter your TurboSanta API URL above to get started.</div>
+  </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal-inner">
+    <h2 id="previewTitle">Preview</h2>
+    <div class="preview-wrap" id="previewWrap"></div>
+    <div class="modal-actions">
+      <button class="btn btn-gold" onclick="downloadCard()">⬇ Download PNG</button>
+      <button class="btn btn-ghost" onclick="closePreview()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Offscreen render area -->
+<div class="card-render-area" id="renderArea"></div>
+
+<script>
+const STATE = {
+  routes: [],
+  settings: {},
+  donations: {},
+  currentCard: null,
+  currentSlug: ''
+};
+
+// ── PERSISTENCE ──
+function saveApiUrl(url) {
+  try { localStorage.setItem('TURBOSANTA_API', url); } catch(e) {}
+}
+function loadApiUrl() {
+  try { return localStorage.getItem('TURBOSANTA_API') || ''; } catch(e) { return ''; }
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = loadApiUrl();
+  if (saved) {
+    document.getElementById('apiInput').value = saved;
+    loadRoutes();
+  }
+});
+
+// ── LOAD ROUTES ──
+async function loadRoutes() {
+  const url = document.getElementById('apiInput').value.trim();
+  if (!url) return;
+  saveApiUrl(url);
+
+  const status = document.getElementById('statusMsg');
+  const list = document.getElementById('routesList');
+  list.innerHTML = '<div class="status"><div class="spinner"></div>Loading routes…</div>';
+
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    const data = await res.json();
+
+    STATE.routes = data.routes || [];
+    STATE.settings = data.settings || {};
+    STATE.donations = data.donations || {};
+
+    if (!STATE.routes.length) {
+      list.innerHTML = '<div class="status">No routes found in API response.</div>';
+      return;
+    }
+
+    renderRouteList();
+  } catch(e) {
+    list.innerHTML = `<div class="status error">Failed to load: ${e.message}</div>`;
+  }
+}
+
+// ── FORMAT DATE ──
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function shortDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+}
+
+// ── RENDER ROUTE LIST ──
+function renderRouteList() {
+  const list = document.getElementById('routesList');
+  const html = STATE.routes.map((r, i) => {
+    const streets = r.streets || '';
+    const streetsPreview = streets.length > 120 ? streets.slice(0,120) + '…' : streets;
+
+    return `
+      <div class="route-item">
+        <div class="route-meta">
+          <h3>${r.routeName || 'Unnamed Route'}</h3>
+          <div class="date">📅 ${formatDate(r.date)}</div>
+          ${streetsPreview ? `<div class="streets">${streetsPreview}</div>` : ''}
+
+          <button class="toggle-edit" onclick="toggleEdit(${i})">✏️ Customise text</button>
+          <div class="edit-fields" id="edit-${i}">
+            <div class="custom-field">
+              <label>Route Title</label>
+              <input type="text" id="title-${i}" value="${(r.routeName || '').replace(/"/g, '&quot;')}">
+            </div>
+            <div class="custom-field">
+              <label>Date Text</label>
+              <input type="text" id="date-${i}" value="${formatDate(r.date).replace(/"/g, '&quot;')}">
+            </div>
+            <div class="custom-field">
+              <label>Streets / Description</label>
+              <textarea rows="2" id="streets-${i}">${streets}</textarea>
+            </div>
+            <div class="custom-field">
+              <label>Call to Action</label>
+              <input type="text" id="cta-${i}" value="Track Santa live at our website!" placeholder="Track Santa live...">
+            </div>
+          </div>
+        </div>
+        <div class="route-actions">
+          <div class="format-row">
+            <button class="format-btn active" data-route="${i}" data-fmt="square" onclick="selectFormat(this)">Square</button>
+            <button class="format-btn" data-route="${i}" data-fmt="landscape" onclick="selectFormat(this)">Landscape</button>
+            <button class="format-btn" data-route="${i}" data-fmt="story" onclick="selectFormat(this)">Story</button>
+          </div>
+          <button class="btn btn-gold" onclick="generateCard(${i})">Generate Card</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  list.innerHTML = `<div class="routes-grid">${html}</div>`;
+}
+
+function toggleEdit(i) {
+  document.getElementById(`edit-${i}`).classList.toggle('open');
+}
+
+function selectFormat(btn) {
+  const route = btn.dataset.route;
+  btn.parentElement.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function getSelectedFormat(routeIndex) {
+  const active = document.querySelector(`.format-btn.active[data-route="${routeIndex}"]`);
+  return active ? active.dataset.fmt : 'square';
+}
+
+// ── PRELOAD IMAGE AS BASE64 ──
+async function preloadImage(url) {
+  if (!url) return '';
+  try {
+    // Try loading via an Image element first to verify it works
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(url);
+      img.onerror = () => resolve('');
+      img.src = url;
+      setTimeout(() => resolve(url), 3000);
+    });
+  } catch { return ''; }
+}
+
+// ── GENERATE CARD ──
+async function generateCard(routeIndex) {
+  const route = STATE.routes[routeIndex];
+  const format = getSelectedFormat(routeIndex);
+
+  // Get custom values or defaults
+  const title = document.getElementById(`title-${routeIndex}`)?.value || route.routeName || 'Route';
+  const dateText = document.getElementById(`date-${routeIndex}`)?.value || formatDate(route.date);
+  const streets = document.getElementById(`streets-${routeIndex}`)?.value || route.streets || '';
+  const cta = document.getElementById(`cta-${routeIndex}`)?.value || 'Track Santa live at our website!';
+
+  const logoUrl = STATE.settings.logo_overlay_url || '';
+  const sponsorUrl = route.sponsorUrl || '';
+  const mapUrl = route.mapImageUrl || '';
+  const sleighName = STATE.settings.sleigh_display_name || STATE.settings.sleigh_name || 'Santa Sleigh';
+
+  // Build card HTML
+  const renderArea = document.getElementById('renderArea');
+  let cardClass, cardHtml;
+
+  const logoHtml = logoUrl ? `<img class="card-logo" src="${logoUrl}" crossorigin="anonymous">` : '';
+  const mapHtml = mapUrl ? `<img class="card-map-thumb" src="${mapUrl}" crossorigin="anonymous">` : '';
+  const sponsorHtml = sponsorUrl ? `
+    <div class="card-sponsor-area">
+      <span class="card-sponsor-label">Proudly sponsored by</span>
+      <img class="card-sponsor-img" src="${sponsorUrl}" crossorigin="anonymous">
+    </div>` : '';
+
+  const streetsHtml = streets ? `<div class="card-streets">${streets.replace(/,/g, ' · ')}</div>` : '';
+
+  if (format === 'square') {
+    cardClass = 'card-square';
+    cardHtml = `
+      <div class="card-bg"></div>
+      <div class="card-snowflakes"></div>
+      <div class="card-border"></div>
+      <div class="card-content">
+        <div class="card-top">
+          ${logoHtml}
+          <div class="card-sleigh-name">${sleighName}</div>
+        </div>
+        <div class="card-center">
+          <div class="card-emoji">🎅</div>
+          <div class="card-route-name">${title}</div>
+          <div class="card-date">${dateText}</div>
+          ${streetsHtml}
+        </div>
+        <div class="card-bottom">
+          <div>
+            <div class="card-cta">${cta}</div>
+            ${sponsorHtml}
+          </div>
+          ${mapHtml}
+        </div>
+      </div>`;
+  } else if (format === 'landscape') {
+    cardClass = 'card-landscape';
+    cardHtml = `
+      <div class="card-bg"></div>
+      <div class="card-snowflakes"></div>
+      <div class="card-border"></div>
+      <div class="card-content">
+        <div class="card-left">
+          <div class="card-top">
+            ${logoHtml}
+            <div class="card-sleigh-name">${sleighName}</div>
+          </div>
+          <div class="card-route-name">${title}</div>
+          <div class="card-date">${dateText}</div>
+          ${streetsHtml}
+          ${sponsorHtml}
+        </div>
+        <div class="card-right">
+          ${mapHtml}
+          <div class="card-cta">${cta}</div>
+        </div>
+      </div>`;
+  } else {
+    cardClass = 'card-story';
+    cardHtml = `
+      <div class="card-bg"></div>
+      <div class="card-snowflakes"></div>
+      <div class="card-border"></div>
+      <div class="card-content">
+        <div class="card-top">
+          ${logoHtml}
+          <div class="card-sleigh-name">${sleighName}</div>
+        </div>
+        <div class="card-emoji">🎅</div>
+        <div class="card-route-name">${title}</div>
+        <div class="card-date">${dateText}</div>
+        ${mapHtml}
+        ${streetsHtml}
+        <div class="card-bottom">
+          <div class="card-cta">${cta}</div>
+          ${sponsorHtml}
+        </div>
+      </div>`;
+  }
+
+  renderArea.innerHTML = `<div class="${cardClass}" id="cardCapture">${cardHtml}</div>`;
+
+  // Wait for images to load
+  const images = renderArea.querySelectorAll('img');
+  await Promise.all([...images].map(img => new Promise(resolve => {
+    if (img.complete) return resolve();
+    img.onload = resolve;
+    img.onerror = resolve;
+    setTimeout(resolve, 4000);
+  })));
+
+  // Small delay for fonts
+  await new Promise(r => setTimeout(r, 200));
+
+  // Capture
+  const el = document.getElementById('cardCapture');
+  try {
+    const canvas = await html2canvas(el, {
+      scale: 1,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#0c0e14',
+      logging: false,
+      width: el.offsetWidth,
+      height: el.offsetHeight
+    });
+
+    STATE.currentCard = canvas;
+    STATE.currentSlug = `${(route.routeName || 'route').replace(/\s+/g, '_')}_${format}`;
+
+    // Show preview
+    const previewWrap = document.getElementById('previewWrap');
+    const previewImg = document.createElement('img');
+
+    // Scale preview to fit screen
+    const maxW = Math.min(window.innerWidth * 0.8, 800);
+    const ratio = el.offsetHeight / el.offsetWidth;
+    previewImg.style.width = maxW + 'px';
+    previewImg.style.height = (maxW * ratio) + 'px';
+    previewImg.src = canvas.toDataURL('image/png');
+
+    previewWrap.innerHTML = '';
+    previewWrap.appendChild(previewImg);
+
+    document.getElementById('previewTitle').textContent = `${title} — ${format}`;
+    document.getElementById('previewModal').classList.add('open');
+  } catch(e) {
+    alert('Error generating card: ' + e.message);
+  }
+}
+
+// ── DOWNLOAD ──
+function downloadCard() {
+  if (!STATE.currentCard) return;
+  const link = document.createElement('a');
+  link.download = `${STATE.currentSlug}.png`;
+  link.href = STATE.currentCard.toDataURL('image/png');
+  link.click();
+}
+
+// ── CLOSE PREVIEW ──
+function closePreview() {
+  document.getElementById('previewModal').classList.remove('open');
+}
+
+// Close on escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePreview();
+});
+
+// Close on backdrop click
+document.getElementById('previewModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closePreview();
+});
+</script>
+</body>
+</html>
