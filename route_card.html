@@ -241,475 +241,358 @@
   }
 
   /* ===========================
-     CARD DESIGNS
+     CARD DESIGNS — V2 (packed)
      =========================== */
 
-  /* ── SQUARE 1080×1080 ── */
-  .card-square {
-    width: 1080px;
-    height: 1080px;
-    background: #0c0e14;
+  /* ── SHARED CARD ELEMENTS ── */
+  .card-square, .card-landscape, .card-story {
     position: relative;
     overflow: hidden;
     font-family: 'Fredoka', sans-serif;
     color: white;
+    background: #0c0e14;
   }
 
-  .card-square .card-bg {
+  .card-bg-dark {
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse at 20% 0%, rgba(211,28,28,0.15) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 100%, rgba(255,215,0,0.08) 0%, transparent 50%),
-      linear-gradient(170deg, #0f1219 0%, #0c0e14 100%);
+      radial-gradient(ellipse at 30% 100%, rgba(211,28,28,0.12) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 0%, rgba(255,215,0,0.06) 0%, transparent 45%),
+      #0c0e14;
   }
 
-  .card-square .card-snowflakes {
-    position: absolute;
-    inset: 0;
-    opacity: 0.12;
-    background-image:
-      radial-gradient(2px 2px at 10% 15%, white, transparent),
-      radial-gradient(2px 2px at 25% 40%, white, transparent),
-      radial-gradient(1.5px 1.5px at 45% 10%, white, transparent),
-      radial-gradient(2px 2px at 60% 55%, white, transparent),
-      radial-gradient(1px 1px at 75% 20%, white, transparent),
-      radial-gradient(2px 2px at 90% 45%, white, transparent),
-      radial-gradient(1.5px 1.5px at 15% 70%, white, transparent),
-      radial-gradient(2px 2px at 50% 80%, white, transparent),
-      radial-gradient(1px 1px at 80% 75%, white, transparent),
-      radial-gradient(2px 2px at 35% 90%, white, transparent),
-      radial-gradient(1.5px 1.5px at 65% 35%, white, transparent),
-      radial-gradient(1px 1px at 5% 50%, white, transparent),
-      radial-gradient(2px 2px at 95% 85%, white, transparent);
+  .card-accent-bar {
+    height: 8px;
+    background: linear-gradient(90deg, #d31c1c 0%, #ffd700 100%);
+    flex-shrink: 0;
   }
 
-  .card-square .card-border {
-    position: absolute;
-    inset: 20px;
-    border: 2px solid rgba(255,215,0,0.35);
-    border-radius: 24px;
-    pointer-events: none;
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    background: rgba(0,0,0,0.4);
+    flex-shrink: 0;
   }
 
-  .card-square .card-content {
+  .card-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .card-footer .card-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    object-fit: contain;
+    background: rgba(255,255,255,0.08);
+    padding: 3px;
+  }
+
+  .card-footer .card-sleigh-name {
+    font-size: 22px;
+    font-weight: 700;
+    opacity: 0.9;
+  }
+
+  .card-footer .card-sponsor-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-footer .card-sponsor-label {
+    font-size: 15px;
+    color: rgba(255,255,255,0.4);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .card-footer .card-sponsor-img {
+    max-height: 44px;
+    max-width: 160px;
+    object-fit: contain;
+  }
+
+  /* ── SQUARE 1080×1080 ── */
+  .card-square { width: 1080px; height: 1080px; }
+
+  .card-square .card-inner {
     position: relative;
     z-index: 2;
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 56px 64px;
   }
 
-  .card-square .card-top {
+  .card-square .card-map-hero {
+    width: 100%;
+    height: 480px;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: block;
+  }
+
+  .card-square .card-map-placeholder {
+    width: 100%;
+    height: 480px;
+    flex-shrink: 0;
+    background:
+      radial-gradient(ellipse at 50% 50%, rgba(211,28,28,0.15), transparent 70%),
+      linear-gradient(135deg, #141722 0%, #0c0e14 100%);
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 48px;
+    justify-content: center;
+    font-size: 120px;
   }
 
-  .card-square .card-logo {
-    width: 72px;
-    height: 72px;
-    border-radius: 16px;
-    object-fit: contain;
-    background: rgba(255,255,255,0.06);
-    padding: 4px;
-  }
-
-  .card-square .card-sleigh-name {
-    font-size: 32px;
-    font-weight: 700;
-    opacity: 0.9;
-    letter-spacing: -0.01em;
-  }
-
-  .card-square .card-center {
+  .card-square .card-body {
     flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
-  }
-
-  .card-square .card-emoji {
-    font-size: 56px;
-    margin-bottom: 16px;
+    padding: 36px 48px 24px;
   }
 
   .card-square .card-route-name {
-    font-size: 72px;
+    font-size: 82px;
     font-weight: 700;
-    line-height: 1.1;
-    margin-bottom: 16px;
+    line-height: 1.05;
+    margin-bottom: 10px;
     letter-spacing: -0.02em;
-    color: #ffffff;
-    text-shadow: 0 0 40px rgba(255,215,0,0.3);
+    color: #fff;
+    text-shadow: 0 0 40px rgba(255,215,0,0.25);
   }
 
   .card-square .card-date {
-    font-size: 36px;
-    font-weight: 500;
+    font-size: 38px;
+    font-weight: 600;
     color: #ffd700;
-    margin-bottom: 24px;
+    margin-bottom: 14px;
     font-family: 'DM Sans', sans-serif;
   }
 
   .card-square .card-streets {
     font-size: 24px;
     font-weight: 400;
-    color: rgba(255,255,255,0.6);
-    line-height: 1.5;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.4;
     font-family: 'DM Sans', sans-serif;
-    max-width: 700px;
-  }
-
-  .card-square .card-bottom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: auto;
-    padding-top: 32px;
   }
 
   .card-square .card-cta {
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 600;
-    color: rgba(255,255,255,0.7);
+    color: rgba(255,255,255,0.5);
     font-family: 'DM Sans', sans-serif;
+    margin-top: 12px;
   }
 
-  .card-square .card-map-thumb {
-    width: 280px;
-    height: 200px;
-    border-radius: 16px;
-    object-fit: cover;
-    border: 2px solid rgba(255,215,0,0.25);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  }
-
-  .card-square .card-sponsor-area {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 20px;
-  }
-
-  .card-square .card-sponsor-label {
-    font-size: 18px;
-    color: rgba(255,255,255,0.4);
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  .card-square .card-sponsor-img {
-    max-height: 48px;
-    max-width: 180px;
-    object-fit: contain;
-  }
+  .card-square .card-footer { padding: 16px 48px; }
 
   /* ── LANDSCAPE 1200×630 ── */
-  .card-landscape {
-    width: 1200px;
-    height: 630px;
-    background: #0c0e14;
-    position: relative;
-    overflow: hidden;
-    font-family: 'Fredoka', sans-serif;
-    color: white;
-  }
+  .card-landscape { width: 1200px; height: 630px; }
 
-  .card-landscape .card-bg {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(ellipse at 10% 0%, rgba(211,28,28,0.18) 0%, transparent 50%),
-      radial-gradient(ellipse at 90% 100%, rgba(255,215,0,0.1) 0%, transparent 50%),
-      linear-gradient(170deg, #0f1219 0%, #0c0e14 100%);
-  }
-
-  .card-landscape .card-snowflakes {
-    position: absolute;
-    inset: 0;
-    opacity: 0.1;
-    background-image:
-      radial-gradient(2px 2px at 10% 15%, white, transparent),
-      radial-gradient(2px 2px at 25% 40%, white, transparent),
-      radial-gradient(1.5px 1.5px at 45% 10%, white, transparent),
-      radial-gradient(2px 2px at 60% 55%, white, transparent),
-      radial-gradient(1px 1px at 75% 20%, white, transparent),
-      radial-gradient(2px 2px at 90% 45%, white, transparent),
-      radial-gradient(1.5px 1.5px at 15% 70%, white, transparent),
-      radial-gradient(2px 2px at 50% 80%, white, transparent);
-  }
-
-  .card-landscape .card-border {
-    position: absolute;
-    inset: 16px;
-    border: 2px solid rgba(255,215,0,0.3);
-    border-radius: 20px;
-  }
-
-  .card-landscape .card-content {
+  .card-landscape .card-inner {
     position: relative;
     z-index: 2;
     height: 100%;
     display: grid;
-    grid-template-columns: 1fr 360px;
-    padding: 44px 52px;
-    gap: 32px;
+    grid-template-columns: 1fr 440px;
+    grid-template-rows: 1fr auto auto;
   }
 
-  .card-landscape .card-left {
+  .card-landscape .card-body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-  }
-
-  .card-landscape .card-top {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 28px;
-  }
-
-  .card-landscape .card-logo {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    object-fit: contain;
-    background: rgba(255,255,255,0.06);
-    padding: 4px;
-  }
-
-  .card-landscape .card-sleigh-name {
-    font-size: 24px;
-    font-weight: 700;
-    opacity: 0.85;
+    padding: 36px 44px;
+    grid-row: 1;
+    grid-column: 1;
   }
 
   .card-landscape .card-route-name {
-    font-size: 58px;
+    font-size: 64px;
     font-weight: 700;
-    line-height: 1.1;
-    margin-bottom: 12px;
+    line-height: 1.05;
+    margin-bottom: 8px;
     letter-spacing: -0.02em;
-    color: #ffffff;
-    text-shadow: 0 0 40px rgba(255,215,0,0.3);
+    color: #fff;
+    text-shadow: 0 0 40px rgba(255,215,0,0.25);
   }
 
   .card-landscape .card-date {
-    font-size: 30px;
-    font-weight: 500;
+    font-size: 32px;
+    font-weight: 600;
     color: #ffd700;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     font-family: 'DM Sans', sans-serif;
   }
 
   .card-landscape .card-streets {
     font-size: 20px;
-    color: rgba(255,255,255,0.55);
-    line-height: 1.5;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.4;
     font-family: 'DM Sans', sans-serif;
-  }
-
-  .card-landscape .card-sponsor-area {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 20px;
-  }
-
-  .card-landscape .card-sponsor-label {
-    font-size: 16px;
-    color: rgba(255,255,255,0.35);
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  .card-landscape .card-sponsor-img {
-    max-height: 40px;
-    max-width: 160px;
-    object-fit: contain;
-  }
-
-  .card-landscape .card-right {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-  }
-
-  .card-landscape .card-map-thumb {
-    width: 320px;
-    height: 280px;
-    border-radius: 16px;
-    object-fit: cover;
-    border: 2px solid rgba(255,215,0,0.25);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   }
 
   .card-landscape .card-cta {
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 600;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255,255,255,0.45);
     font-family: 'DM Sans', sans-serif;
-    text-align: center;
+    margin-top: 14px;
+  }
+
+  .card-landscape .card-map-side {
+    grid-row: 1 / 4;
+    grid-column: 2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .card-landscape .card-map-placeholder {
+    grid-row: 1 / 4;
+    grid-column: 2;
+    background:
+      radial-gradient(ellipse at 50% 50%, rgba(211,28,28,0.12), transparent 70%),
+      linear-gradient(135deg, #141722, #0c0e14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 100px;
+  }
+
+  .card-landscape .card-accent-bar {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  .card-landscape .card-footer {
+    grid-row: 3;
+    grid-column: 1;
+    padding: 14px 44px;
+  }
+
+  .card-landscape .card-footer .card-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .card-landscape .card-footer .card-sleigh-name {
+    font-size: 18px;
+  }
+
+  .card-landscape .card-footer .card-sponsor-label {
+    font-size: 13px;
+  }
+
+  .card-landscape .card-footer .card-sponsor-img {
+    max-height: 34px;
+    max-width: 130px;
   }
 
   /* ── STORY 1080×1920 ── */
-  .card-story {
-    width: 1080px;
-    height: 1920px;
-    background: #0c0e14;
-    position: relative;
-    overflow: hidden;
-    font-family: 'Fredoka', sans-serif;
-    color: white;
-  }
+  .card-story { width: 1080px; height: 1920px; }
 
-  .card-story .card-bg {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(ellipse at 50% 0%, rgba(211,28,28,0.2) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 100%, rgba(255,215,0,0.1) 0%, transparent 40%),
-      linear-gradient(180deg, #12151e 0%, #0c0e14 100%);
-  }
-
-  .card-story .card-snowflakes {
-    position: absolute;
-    inset: 0;
-    opacity: 0.12;
-    background-image:
-      radial-gradient(2px 2px at 10% 8%, white, transparent),
-      radial-gradient(2px 2px at 25% 20%, white, transparent),
-      radial-gradient(1.5px 1.5px at 45% 5%, white, transparent),
-      radial-gradient(2px 2px at 60% 30%, white, transparent),
-      radial-gradient(1px 1px at 75% 12%, white, transparent),
-      radial-gradient(2px 2px at 90% 25%, white, transparent),
-      radial-gradient(1.5px 1.5px at 15% 45%, white, transparent),
-      radial-gradient(2px 2px at 50% 55%, white, transparent),
-      radial-gradient(1px 1px at 80% 50%, white, transparent),
-      radial-gradient(2px 2px at 35% 65%, white, transparent),
-      radial-gradient(1.5px 1.5px at 65% 75%, white, transparent),
-      radial-gradient(2px 2px at 20% 85%, white, transparent),
-      radial-gradient(1px 1px at 55% 90%, white, transparent),
-      radial-gradient(2px 2px at 85% 80%, white, transparent);
-  }
-
-  .card-story .card-border {
-    position: absolute;
-    inset: 24px;
-    border: 2px solid rgba(255,215,0,0.3);
-    border-radius: 28px;
-  }
-
-  .card-story .card-content {
+  .card-story .card-inner {
     position: relative;
     z-index: 2;
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 80px 64px;
-    align-items: center;
-    text-align: center;
   }
 
-  .card-story .card-top {
+  .card-story .card-map-hero {
+    width: 100%;
+    height: 760px;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: block;
+  }
+
+  .card-story .card-map-placeholder {
+    width: 100%;
+    height: 760px;
+    flex-shrink: 0;
+    background:
+      radial-gradient(ellipse at 50% 50%, rgba(211,28,28,0.15), transparent 70%),
+      linear-gradient(135deg, #141722 0%, #0c0e14 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 140px;
+  }
+
+  .card-story .card-body {
+    flex: 1;
     display: flex;
     flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 60px;
-  }
-
-  .card-story .card-logo {
-    width: 88px;
-    height: 88px;
-    border-radius: 20px;
-    object-fit: contain;
-    background: rgba(255,255,255,0.06);
-    padding: 6px;
-  }
-
-  .card-story .card-sleigh-name {
-    font-size: 32px;
-    font-weight: 700;
-    opacity: 0.85;
-  }
-
-  .card-story .card-emoji {
-    font-size: 72px;
-    margin-bottom: 24px;
+    text-align: center;
+    padding: 48px 64px 32px;
   }
 
   .card-story .card-route-name {
-    font-size: 86px;
+    font-size: 96px;
     font-weight: 700;
-    line-height: 1.1;
-    margin-bottom: 20px;
+    line-height: 1.05;
+    margin-bottom: 16px;
     letter-spacing: -0.02em;
-    color: #ffffff;
-    text-shadow: 0 0 50px rgba(255,215,0,0.3);
+    color: #fff;
+    text-shadow: 0 0 50px rgba(255,215,0,0.25);
   }
 
   .card-story .card-date {
-    font-size: 42px;
-    font-weight: 500;
+    font-size: 48px;
+    font-weight: 600;
     color: #ffd700;
-    margin-bottom: 32px;
+    margin-bottom: 20px;
     font-family: 'DM Sans', sans-serif;
-  }
-
-  .card-story .card-map-thumb {
-    width: 800px;
-    height: 500px;
-    border-radius: 24px;
-    object-fit: cover;
-    border: 2px solid rgba(255,215,0,0.25);
-    box-shadow: 0 12px 48px rgba(0,0,0,0.5);
-    margin-bottom: 40px;
   }
 
   .card-story .card-streets {
-    font-size: 28px;
+    font-size: 30px;
     color: rgba(255,255,255,0.55);
-    line-height: 1.6;
+    line-height: 1.5;
     font-family: 'DM Sans', sans-serif;
-    max-width: 800px;
-  }
-
-  .card-story .card-bottom {
-    margin-top: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
+    max-width: 850px;
   }
 
   .card-story .card-cta {
     font-size: 28px;
     font-weight: 600;
-    color: rgba(255,255,255,0.65);
+    color: rgba(255,255,255,0.5);
     font-family: 'DM Sans', sans-serif;
+    margin-top: 20px;
   }
 
-  .card-story .card-sponsor-area {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 12px;
+  .card-story .card-footer {
+    padding: 24px 64px;
   }
 
-  .card-story .card-sponsor-label {
-    font-size: 20px;
-    color: rgba(255,255,255,0.35);
-    font-family: 'DM Sans', sans-serif;
+  .card-story .card-footer .card-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
   }
 
-  .card-story .card-sponsor-img {
-    max-height: 56px;
-    max-width: 200px;
-    object-fit: contain;
+  .card-story .card-footer .card-sleigh-name {
+    font-size: 26px;
+  }
+
+  .card-story .card-footer .card-sponsor-img {
+    max-height: 52px;
+    max-width: 180px;
+  }
+
+  .card-story .card-footer .card-sponsor-label {
+    font-size: 18px;
   }
 
   /* ── RESPONSIVE ── */
@@ -970,7 +853,6 @@ async function generateCard(routeIndex) {
   let cardClass, cardHtml;
 
   const logoHtml = logoUrl ? `<img class="card-logo" src="${logoUrl}" crossorigin="anonymous">` : '';
-  const mapHtml = mapUrl ? `<img class="card-map-thumb" src="${mapUrl}" crossorigin="anonymous">` : '';
   const sponsorHtml = sponsorUrl ? `
     <div class="card-sponsor-area">
       <span class="card-sponsor-label">Proudly sponsored by</span>
@@ -979,73 +861,74 @@ async function generateCard(routeIndex) {
 
   const streetsHtml = streets ? `<div class="card-streets">${streets.replace(/,/g, ' · ')}</div>` : '';
 
+  // Footer is shared across all formats
+  const footerHtml = `
+    <div class="card-accent-bar"></div>
+    <div class="card-footer">
+      <div class="card-footer-left">
+        ${logoHtml}
+        <div class="card-sleigh-name">${sleighName}</div>
+      </div>
+      ${sponsorHtml}
+    </div>`;
+
   if (format === 'square') {
     cardClass = 'card-square';
+    const mapSection = mapUrl
+      ? `<img class="card-map-hero" src="${mapUrl}" crossorigin="anonymous">`
+      : `<div class="card-map-placeholder">🎅</div>`;
     cardHtml = `
-      <div class="card-bg"></div>
-      <div class="card-snowflakes"></div>
-      <div class="card-border"></div>
-      <div class="card-content">
-        <div class="card-top">
-          ${logoHtml}
-          <div class="card-sleigh-name">${sleighName}</div>
-        </div>
-        <div class="card-center">
-          <div class="card-emoji">🎅</div>
+      <div class="card-bg-dark"></div>
+      <div class="card-inner">
+        ${mapSection}
+        <div class="card-body">
           <div class="card-route-name">${title}</div>
           <div class="card-date">${dateText}</div>
           ${streetsHtml}
+          <div class="card-cta">${cta}</div>
         </div>
-        <div class="card-bottom">
-          <div>
-            <div class="card-cta">${cta}</div>
-            ${sponsorHtml}
-          </div>
-          ${mapHtml}
-        </div>
+        ${footerHtml}
       </div>`;
   } else if (format === 'landscape') {
     cardClass = 'card-landscape';
+    const mapSection = mapUrl
+      ? `<img class="card-map-side" src="${mapUrl}" crossorigin="anonymous">`
+      : `<div class="card-map-placeholder">🎅</div>`;
     cardHtml = `
-      <div class="card-bg"></div>
-      <div class="card-snowflakes"></div>
-      <div class="card-border"></div>
-      <div class="card-content">
-        <div class="card-left">
-          <div class="card-top">
-            ${logoHtml}
-            <div class="card-sleigh-name">${sleighName}</div>
-          </div>
+      <div class="card-bg-dark"></div>
+      <div class="card-inner">
+        <div class="card-body">
           <div class="card-route-name">${title}</div>
           <div class="card-date">${dateText}</div>
           ${streetsHtml}
-          ${sponsorHtml}
-        </div>
-        <div class="card-right">
-          ${mapHtml}
           <div class="card-cta">${cta}</div>
+        </div>
+        ${mapSection}
+        <div class="card-accent-bar"></div>
+        <div class="card-footer">
+          <div class="card-footer-left">
+            ${logoHtml}
+            <div class="card-sleigh-name">${sleighName}</div>
+          </div>
+          ${sponsorHtml}
         </div>
       </div>`;
   } else {
     cardClass = 'card-story';
+    const mapSection = mapUrl
+      ? `<img class="card-map-hero" src="${mapUrl}" crossorigin="anonymous">`
+      : `<div class="card-map-placeholder">🎅</div>`;
     cardHtml = `
-      <div class="card-bg"></div>
-      <div class="card-snowflakes"></div>
-      <div class="card-border"></div>
-      <div class="card-content">
-        <div class="card-top">
-          ${logoHtml}
-          <div class="card-sleigh-name">${sleighName}</div>
-        </div>
-        <div class="card-emoji">🎅</div>
-        <div class="card-route-name">${title}</div>
-        <div class="card-date">${dateText}</div>
-        ${mapHtml}
-        ${streetsHtml}
-        <div class="card-bottom">
+      <div class="card-bg-dark"></div>
+      <div class="card-inner">
+        ${mapSection}
+        <div class="card-body">
+          <div class="card-route-name">${title}</div>
+          <div class="card-date">${dateText}</div>
+          ${streetsHtml}
           <div class="card-cta">${cta}</div>
-          ${sponsorHtml}
         </div>
+        ${footerHtml}
       </div>`;
   }
 
