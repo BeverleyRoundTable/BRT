@@ -499,6 +499,18 @@
     padding: 12px 52px;
   }
 
+  .card-landscape .card-map-corner {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 3;
+  }
+
+  .card-landscape .card-map-inset {
+    width: 200px;
+    height: 150px;
+  }
+
   .card-landscape .card-footer .card-logo {
     width: 38px;
     height: 38px;
@@ -922,6 +934,7 @@ async function generateCard(routeIndex) {
           ${streetsHtml}
           <div class="card-cta">${cta}</div>
         </div>
+        ${mapInsetHtml ? `<div class="card-map-corner">${mapInsetHtml}</div>` : ''}
         ${footerHtml}
       </div>`;
   } else {
