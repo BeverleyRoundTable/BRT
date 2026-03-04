@@ -522,10 +522,23 @@
               pushRouteFix(santaSnap.point.dist, Date.now());
 
              if (userSnap) {
-                if (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) {
-                  AppState.flags.hasPassedSticky = true;
-                  sessionStorage.setItem("SANTA_HAS_PASSED", "1");
-                } else {
+  const totalRouteDist = AppState.gpxRoute[AppState.gpxRoute.length - 1].dist;
+  
+  // Check if the user is pinned near the very end of the route
+  const isUserNearEnd = userSnap.point.dist > (totalRouteDist - AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET);
+  
+  // Check if Santa has basically reached the end of the track (within 10 meters)
+  const santaReachedEnd = santaSnap.point.dist >= (totalRouteDist - 10);
+
+  // Trigger if he passes them normally, OR if they are an edge case and he finished the route
+  if (
+    (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) ||
+    (isUserNearEnd && santaReachedEnd)
+  ) {
+    AppState.flags.hasPassedSticky = true;
+    sessionStorage.setItem("SANTA_HAS_PASSED", "1");
+  } else {
+    
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
                   // Use route-based speed (same units as remaining) for accurate ETA
                   const routeSpeed = Utils.calculateRouteSpeed(AppState.routeFixes);
