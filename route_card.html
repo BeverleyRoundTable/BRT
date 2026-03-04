@@ -259,7 +259,13 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center;
+    object-position: center top;
+  }
+
+  /* Story: image sits in top portion only, not stretched full height */
+  .card-story .card-bg-img {
+    height: 65%;
+    bottom: auto;
   }
 
   .card-bg-overlay {
@@ -510,10 +516,11 @@
     background: linear-gradient(
       to bottom,
       rgba(0,0,0,0.05) 0%,
-      rgba(0,0,0,0.15) 30%,
-      rgba(0,0,0,0.5) 55%,
-      rgba(12,14,20,0.95) 75%,
-      rgba(12,14,20,0.99) 100%
+      rgba(0,0,0,0.1) 35%,
+      rgba(12,14,20,0.7) 58%,
+      rgba(12,14,20,0.98) 68%,
+      rgba(12,14,20,1) 75%,
+      rgba(12,14,20,1) 100%
     );
   }
 
@@ -779,7 +786,7 @@ function renderRouteList() {
             </div>
             <div class="custom-field">
               <label>Background Image URL (sleigh photo, event photo, etc.)</label>
-              <input type="text" id="bg-${i}" value="${(r.bgImageUrl || '').replace(/"/g, '&quot;')}" placeholder="https://i.ibb.co/…">
+              <input type="text" id="bg-${i}" value="${(r.bgImageUrl || STATE.settings?.bgImageUrl || '').replace(/"/g, '&quot;')}" placeholder="https://i.postimg.cc/…">
             </div>
           </div>
         </div>
@@ -843,7 +850,7 @@ async function generateCard(routeIndex) {
   const logoUrl = STATE.settings.logo_overlay_url || '';
   const sponsorUrl = route.sponsorUrl || '';
   const mapUrl = route.mapImageUrl || '';
-  const bgUrl = document.getElementById(`bg-${routeIndex}`)?.value || route.bgImageUrl || '';
+  const bgUrl = document.getElementById(`bg-${routeIndex}`)?.value || route.bgImageUrl || STATE.settings.bgImageUrl || '';
   const sleighName = STATE.settings.sleigh_display_name || STATE.settings.sleigh_name || 'Santa Sleigh';
 
   // Build card HTML
