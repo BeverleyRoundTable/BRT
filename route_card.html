@@ -61,41 +61,6 @@
     font-size: 0.95em;
   }
 
-  /* ── SETUP BAR ── */
-  .setup {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px 24px;
-    margin-bottom: 32px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .setup label {
-    font-size: 0.85em;
-    font-weight: 600;
-    color: var(--text-dim);
-    white-space: nowrap;
-  }
-
-  .setup input[type="text"] {
-    flex: 1;
-    min-width: 200px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px 14px;
-    color: var(--text);
-    font-size: 0.9em;
-    font-family: 'DM Sans', monospace;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .setup input:focus { border-color: var(--gold); }
 
   .btn {
     font-family: 'DM Sans', sans-serif;
@@ -749,8 +714,6 @@
 
   /* ── RESPONSIVE ── */
   @media (max-width: 700px) {
-    .setup { flex-direction: column; }
-    .setup input[type="text"] { min-width: 100%; }
     .route-item { grid-template-columns: 1fr; }
     .route-actions { flex-direction: row; flex-wrap: wrap; }
     header h1 { font-size: 1.6em; }
@@ -816,14 +779,8 @@
     <p>Generate branded social media cards from your TurboSanta routes</p>
   </header>
 
-  <div class="setup">
-    <label>API URL</label>
-    <input type="text" id="apiInput" placeholder="https://script.google.com/macros/s/…/exec">
-    <button class="btn btn-primary" id="loadBtn" onclick="loadRoutes()">Load Routes</button>
-  </div>
-
   <div id="routesList">
-    <div class="status" id="statusMsg">Enter your TurboSanta API URL above to get started.</div>
+    <div class="status" id="statusMsg"><div class="spinner"></div>Loading routes…</div>
   </div>
 </div>
 
@@ -852,29 +809,25 @@ const STATE = {
 };
 
 // ── PERSISTENCE ──
-function saveApiUrl(url) {
-  try { localStorage.setItem('TURBOSANTA_API', url); } catch(e) {}
-}
-function loadApiUrl() {
-  try { return localStorage.getItem('TURBOSANTA_API') || ''; } catch(e) { return ''; }
+function getApiUrl() {
+  const params = new URLSearchParams(location.search);
+  return params.get('api') || '';
 }
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
-  const saved = loadApiUrl();
-  if (saved) {
-    document.getElementById('apiInput').value = saved;
-    loadRoutes();
+  const api = getApiUrl();
+  if (!api) {
+    document.getElementById('routesList').innerHTML =
+      '<div class="status error">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>route_cards?api=YOUR_TURBOSANTA_API_URL</code></div>';
+    return;
   }
+  loadRoutes();
 });
 
 // ── LOAD ROUTES ──
 async function loadRoutes() {
-  const url = document.getElementById('apiInput').value.trim();
-  if (!url) return;
-  saveApiUrl(url);
-
-  const status = document.getElementById('statusMsg');
+  const url = getApiUrl();
   const list = document.getElementById('routesList');
   list.innerHTML = '<div class="status"><div class="spinner"></div>Loading routes…</div>';
 
