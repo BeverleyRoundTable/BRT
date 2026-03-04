@@ -242,6 +242,33 @@ const recommendedRoutes = `
 `;
 
 // ================================
+// Route Card
+// ================================
+const routeCardLink = `
+https://brt-23f.pages.dev/route_card?api=${ensureApi()}
+`;
+
+const recommendedRouteCard = `
+<div style="width:100%;max-width:1000px;margin:0 auto;">
+  <iframe
+    id="routeCardFrame"
+    src="https://brt-23f.pages.dev/route_card?api=${ensureApi()}"
+    style="width:100%;border:none;border-radius:15px;transition:height .25s ease;"
+    loading="lazy"
+  ></iframe>
+</div>
+
+<script>
+  window.addEventListener("message", (e) => {
+    if (e.data.routeCardHeight) {
+      const frame = document.getElementById("routeCardFrame");
+      if (frame) frame.style.height = e.data.routeCardHeight + "px";
+    }
+  });
+</script>
+`;
+
+// ================================
 // GPX Animation Routes List
 // ================================
 async function loadRoutes() {
