@@ -452,6 +452,12 @@
     flex-direction: column;
   }
 
+  .card-landscape .card-main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
   .card-landscape .card-body {
     flex: 1;
     display: flex;
@@ -506,12 +512,8 @@
   }
 
   .card-landscape .card-map-corner {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1;
     width: 50%;
+    flex-shrink: 0;
   }
 
   .card-landscape .card-map-inset {
@@ -948,13 +950,15 @@ async function generateCard(routeIndex) {
       ${effectiveBgHtml}
       <div class="card-bg-overlay"></div>
       <div class="card-inner">
-        <div class="card-body">
-          <div class="card-date">${dateText}</div>
-          <div class="card-route-name">${title}</div>
-          ${streetsHtml}
-          <div class="card-cta">${cta}</div>
+        <div class="card-main">
+          <div class="card-body">
+            <div class="card-date">${dateText}</div>
+            <div class="card-route-name">${title}</div>
+            ${streetsHtml}
+            <div class="card-cta">${cta}</div>
+          </div>
+          ${mapInsetHtml ? `<div class="card-map-corner">${mapInsetHtml}</div>` : ''}
         </div>
-        ${mapInsetHtml ? `<div class="card-map-corner">${mapInsetHtml}</div>` : ''}
         ${footerHtml}
       </div>`;
   } else {
