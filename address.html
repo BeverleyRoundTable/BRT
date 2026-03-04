@@ -7,22 +7,22 @@
 
   <style>
     body {
-  margin: 0;
-  padding: 14px 12px 0;
-  background: transparent;
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-}
+      margin: 0;
+      padding: 14px 12px 0;
+      background: transparent;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
 
     #address-root {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 14px 12px 16px;
-  background: rgba(15, 17, 21, 0.92);
-  border-radius: 22px;
-}
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 14px 12px 16px;
+      background: rgba(15, 17, 21, 0.92);
+      border-radius: 22px;
+    }
 
-    /* Search box row */
+    /* ── Search box ── */
     .address-search {
       display: flex;
       flex-direction: column;
@@ -46,6 +46,9 @@
       background-position: 12px center;
       background-size: 22px;
       padding-left: 46px;
+      appearance: none;
+      -webkit-appearance: none;
+      background-clip: padding-box;
     }
 
     .address-search-input::placeholder {
@@ -53,45 +56,34 @@
     }
 
     .address-search-input:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(211,28,28,0.25);
-
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(211,28,28,0.25);
     }
 
-    /* Kill mobile autofill blue */
-.address-search-input {
-  appearance: none;
-  -webkit-appearance: none;
-  background-clip: padding-box;
-}
-
-/* iOS / Chrome autofill override */
-.address-search-input:-webkit-autofill,
-.address-search-input:-webkit-autofill:hover,
-.address-search-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #fff;
-  box-shadow: 0 0 0px 1000px rgba(0,0,0,0.35) inset;
-  transition: background-color 9999s ease-out;
-}
+    .address-search-input:-webkit-autofill,
+    .address-search-input:-webkit-autofill:hover,
+    .address-search-input:-webkit-autofill:focus {
+      -webkit-text-fill-color: #fff;
+      box-shadow: 0 0 0px 1000px rgba(0,0,0,0.35) inset;
+      transition: background-color 9999s ease-out;
+    }
 
     .address-search button {
-  height: 42px;
-  padding: 0 26px;
-  border-radius: 999px;
-  border: none;
-  background: #d31c1c;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  box-shadow:
-    0 0 8px rgba(211, 28, 28, 0.6),
-    0 0 16px rgba(211, 28, 28, 0.5);
-}
+      height: 42px;
+      padding: 0 26px;
+      border-radius: 999px;
+      border: none;
+      background: #d31c1c;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 0 8px rgba(211, 28, 28, 0.6),
+        0 0 16px rgba(211, 28, 28, 0.5);
+    }
 
     .address-search button:hover {
       transform: scale(1.04);
@@ -100,12 +92,22 @@
         0 0 24px rgba(211, 28, 28, 0.7);
     }
 
-    /* 🔽 ADD THIS (results collapse when empty) */
+    @keyframes searchPulse {
+      0%   { box-shadow: 0 0 0 rgba(211,28,28,0); }
+      50%  { box-shadow: 0 0 14px rgba(211,28,28,0.6); }
+      100% { box-shadow: 0 0 0 rgba(211,28,28,0); }
+    }
+
+    .address-search button.pulse {
+      animation: searchPulse 0.8s ease-out;
+    }
+
+    /* ── Results collapse when empty ── */
     #results:empty {
       margin-top: 0;
     }
 
-    /* Cards */
+    /* ── Cards ── */
     .addr-route-card {
       background: rgba(255,255,255,0.07);
       border-radius: 18px;
@@ -115,51 +117,161 @@
       box-shadow: 0 4px 18px rgba(0,0,0,0.45);
     }
 
+    /* Header row: title + countdown badge */
+    .addr-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .addr-card-titles {
+      flex: 1;
+      min-width: 0;
+    }
+
     .addr-route-title {
-      margin: 0 0 8px;
+      margin: 0 0 4px;
       font-size: 1.35rem;
+      line-height: 1.2;
     }
 
     .addr-route-date {
-      margin: 0 0 10px;
+      margin: 0;
       opacity: 0.9;
       font-size: 0.95rem;
     }
 
+    /* ── Countdown badge ── */
+    .addr-countdown {
+      flex-shrink: 0;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+
+    .countdown-imminent {
+      background: #d31c1c;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(211, 28, 28, 0.6);
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+
+    .countdown-soon {
+      background: rgba(255, 215, 0, 0.18);
+      color: #ffd700;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .countdown-future {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .countdown-past {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.45);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    @keyframes badgePulse {
+      0%, 100% { box-shadow: 0 0 6px rgba(211, 28, 28, 0.4); }
+      50%      { box-shadow: 0 0 16px rgba(211, 28, 28, 0.8); }
+    }
+
+    /* ── Map thumbnail ── */
+    .addr-route-map {
+      margin: 10px 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .addr-route-map img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 180px;
+      object-fit: cover;
+    }
+
+    /* ── Street list ── */
     .addr-streets-list {
       list-style: none;
       padding: 0;
-      margin: 6px 0 0;
+      margin: 10px 0 0;
       font-size: 0.98rem;
     }
 
     .addr-streets-list li {
-      margin: 2px 0;
+      margin: 3px 0;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
     }
 
+    .addr-streets-list li .pin {
+      flex-shrink: 0;
+    }
+
+    /* Highlighted match text */
+    .addr-streets-list mark {
+      background: rgba(211, 28, 28, 0.35);
+      color: #fff;
+      border-radius: 3px;
+      padding: 0 2px;
+    }
+
+    /* ── Sponsor bar ── */
+    .addr-sponsor {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .addr-sponsor .sponsor-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+
+    .addr-sponsor img {
+      height: 28px;
+      width: auto;
+      max-width: 140px;
+      object-fit: contain;
+      opacity: 0.85;
+      border-radius: 4px;
+    }
+
+    /* ── No results ── */
     .addr-no-results {
       text-align: center;
       margin-top: 18px;
       opacity: 0.9;
     }
 
-    /* Desktop: subtle breathing room, not a gap */
+    .addr-no-results small {
+      opacity: 0.6;
+    }
+
+    /* ── Desktop breathing room ── */
     @media (min-width: 700px) {
       body {
         padding-top: 18px;
       }
     }
-
-    @keyframes searchPulse {
-  0%   { box-shadow: 0 0 0 rgba(211,28,28,0); }
-  50%  { box-shadow: 0 0 14px rgba(211,28,28,0.6); }
-  100% { box-shadow: 0 0 0 rgba(211,28,28,0); }
-}
-
-.address-search button.pulse {
-  animation: searchPulse 0.8s ease-out;
-}
-
   </style>
 </head>
 
