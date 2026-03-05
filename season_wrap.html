@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Season Wrap Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+  :root {
+    --bg: #0a0c12;
+    --surface: #12151e;
+    --surface-2: #1a1e2a;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --text-dim: rgba(255,255,255,0.55);
+    --text-muted: rgba(255,255,255,0.35);
+    --red: #d31c1c;
+    --gold: #ffd700;
+    --gold-dim: rgba(255,215,0,0.15);
+    --green: #22c55e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Open Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── LOADING ── */
+  .loader {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 20px; z-index: 9999;
+    transition: opacity 0.4s;
+  }
+  .loader.done { opacity: 0; pointer-events: none; }
+  .loader-spin {
+    width: 44px; height: 44px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-text { color: var(--text-dim); font-size: 0.9em; }
+
+  .error-msg {
+    text-align: center; padding: 80px 24px; color: #ff6b6b;
+    font-size: 1.1em; max-width: 600px; margin: 0 auto;
+  }
+  .error-msg code {
+    background: var(--surface); padding: 4px 10px; border-radius: 6px; font-size: 0.85em;
+  }
+
+  /* ── PRINT BUTTON ── */
+  .print-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(10,12,18,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .print-bar-title {
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .print-btn {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.82em;
+    border: none;
+    background: linear-gradient(135deg, var(--gold), #ffaa00);
+    color: #1a1000;
+    padding: 8px 24px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .print-btn:hover { transform: translateY(-1px); }
+  .print-btn:active { transform: scale(0.97); }
+
+  /* ── REPORT CONTAINER ── */
+  .report {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+  }
+
+  /* ── HEADER ── */
+  .report-header {
+    text-align: center;
+    padding: 60px 0 48px;
+    position: relative;
+  }
+
+  .report-header::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+    margin: 32px auto 0;
+    border-radius: 2px;
+  }
+
+  .report-logo {
+    width: 80px; height: 80px;
+    border-radius: 20px;
+    object-fit: contain;
+    background: rgba(255,255,255,0.06);
+    padding: 4px;
+    margin: 0 auto 16px;
+    display: block;
+  }
+
+  .report-sleigh-name {
+    font-size: 0.9em;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .report-title {
+    font-size: 3em;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .report-year {
+    display: inline-block;
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--gold);
+    background: var(--gold-dim);
+    padding: 6px 20px;
+    border-radius: 100px;
+    margin-top: 16px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── SECTION ── */
+  .section {
+    margin-top: 56px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .section-head .icon {
+    font-size: 1.4em;
+  }
+
+  .section-head h2 {
+    font-size: 1.5em;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .section-divider {
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 56px;
+  }
+
+  /* ── HERO STATS ── */
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 48px;
+  }
+
+  .hero-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 20px;
+    text-align: center;
+    position: relative;
+  }
+
+  .hero-stat .number {
+    font-size: 2.8em;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+  }
+  .hero-stat .number.gold { color: var(--gold); }
+  .hero-stat .number.red { color: var(--red); }
+  .hero-stat .number.green { color: var(--green); }
+
+  .hero-stat .label {
+    font-size: 0.78em;
+    color: var(--text-dim);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .hero-stat .sub {
+    font-size: 0.72em;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* ── DONATION BAR ── */
+  .donation-section {
+    margin-top: 32px;
+  }
+
+  .donation-bar-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+  }
+
+  .donation-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 0.85em;
+    font-weight: 700;
+  }
+
+  .donation-raised { color: var(--gold); }
+  .donation-target { color: var(--text-dim); }
+
+  .donation-bar-outer {
+    height: 28px;
+    background: var(--surface-2);
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .donation-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+    border-radius: 14px;
+    transition: width 1s ease;
+    min-width: 20px;
+  }
+
+  .donation-pct {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.9em;
+    font-weight: 700;
+    color: var(--text-dim);
+  }
+
+  /* ── ROUTE LIST ── */
+  .route-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+
+  .route-table th {
+    text-align: left;
+    font-size: 0.72em;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .route-table td {
+    padding: 14px 16px;
+    font-size: 0.9em;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .route-table tr:last-child td { border-bottom: none; }
+
+  .route-table .route-name {
+    font-weight: 700;
+  }
+
+  .route-table .route-date {
+    color: var(--gold);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .route-table .route-streets {
+    color: var(--text-dim);
+    font-size: 0.85em;
+    line-height: 1.5;
+  }
+
+  .route-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  /* ── DIGITAL REACH ── */
+  .reach-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .reach-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+  }
+
+  .reach-item .icon { font-size: 1.8em; margin-bottom: 10px; }
+  .reach-item .number { font-size: 2em; font-weight: 800; margin-bottom: 4px; }
+  .reach-item .label { font-size: 0.78em; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .reach-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85em;
+    padding: 32px;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+  }
+
+  .reach-empty code {
+    background: var(--surface-2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  /* ── HIGHLIGHT QUOTE ── */
+  .highlight-quote {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--gold);
+    border-radius: 0 16px 16px 0;
+    padding: 32px 40px;
+    margin-top: 8px;
+    font-size: 1.15em;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  /* ── SPONSORS ── */
+  .sponsors-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .sponsor-card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 14px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 150px;
+    min-height: 70px;
+  }
+
+  .sponsor-card img {
+    max-height: 50px;
+    max-width: 140px;
+    object-fit: contain;
+  }
+
+  /* ── ROUTE MAPS GRID ── */
+  .maps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .map-card {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .map-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .map-card-label {
+    padding: 12px 16px;
+    font-size: 0.85em;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .map-card-label .date {
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 0.9em;
+  }
+
+  /* ── FOOTER ── */
+  .report-footer {
+    text-align: center;
+    padding: 48px 0 24px;
+    margin-top: 56px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.78em;
+  }
+
+  .report-footer img {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 6px;
+    background: rgba(255,255,255,0.06);
+  }
+
+  /* ═══════════════════
+     PRINT STYLES
+     ═══════════════════ */
+  @media print {
+    :root {
+      --bg: #fff;
+      --surface: #f8f8f8;
+      --surface-2: #eee;
+      --border: #ddd;
+      --text: #111;
+      --text-dim: #555;
+      --text-muted: #999;
+      --red: #c00;
+      --gold: #b8860b;
+      --gold-dim: rgba(184,134,11,0.1);
+      --green: #16a34a;
+    }
+
+    body { background: white; color: #111; }
+
+    .print-bar { display: none !important; }
+    .loader { display: none !important; }
+
+    .report { padding: 0 20px; }
+    .report-header { padding: 24px 0 32px; }
+    .report-title { font-size: 2.2em; }
+
+    .hero-stats { gap: 10px; }
+    .hero-stat { padding: 20px 14px; }
+    .hero-stat .number { font-size: 2em; }
+
+    .section { margin-top: 32px; }
+    .section-divider { margin-bottom: 32px; }
+
+    .donation-bar-inner {
+      background: #b8860b !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .donation-bar-outer {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .hero-stat, .reach-item, .route-table-wrap, .donation-bar-wrap,
+    .highlight-quote, .map-card {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      border: 1px solid #ccc;
+    }
+
+    .sponsor-card {
+      border: 1px solid #ddd;
+    }
+
+    .route-table td, .route-table th {
+      padding: 8px 12px;
+      font-size: 0.82em;
+    }
+
+    .maps-grid { gap: 10px; }
+    .map-card img { height: 150px; }
+
+    .report-footer { margin-top: 24px; padding-top: 16px; }
+
+    @page {
+      margin: 1.5cm;
+      size: A4;
+    }
+
+    /* Avoid breaks inside cards */
+    .hero-stat, .reach-item, .donation-bar-wrap, .highlight-quote,
+    .map-card, .route-table-wrap {
+      break-inside: avoid;
+    }
+
+    .section { break-inside: avoid; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 800px) {
+    .hero-stats { grid-template-columns: repeat(2, 1fr); }
+    .reach-row { grid-template-columns: 1fr; }
+    .report { padding: 70px 20px 40px; }
+    .report-title { font-size: 2.2em; }
+  }
+
+  @media (max-width: 500px) {
+    .hero-stats { grid-template-columns: 1fr; }
+    .report-title { font-size: 1.8em; }
+  }
+  </style>
+</head>
+<body>
+
+<div class="loader" id="loader">
+  <div class="loader-spin"></div>
+  <div class="loader-text">Generating season report...</div>
+</div>
+
+<div id="app"></div>
+
+<script>
+function getApiUrl() {
+  return new URLSearchParams(location.search).get('api') || '';
+}
+
+function fmtDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function fmtDateLong(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const api = getApiUrl();
+  if (!api) {
+    document.getElementById('loader').classList.add('done');
+    document.getElementById('app').innerHTML =
+      '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>season_wrap?api=YOUR_API_URL</code></div>';
+    return;
+  }
+
+  try {
+    const res = await fetch(api);
+    const data = await res.json();
+    render(data);
+  } catch(e) {
+    document.getElementById('loader').classList.add('done');
+    document.getElementById('app').innerHTML =
+      `<div class="error-msg">Failed to load data.<br><br>${e.message}</div>`;
+  }
+});
+
+function render(data) {
+  const s = data.settings || {};
+  const routes = data.routes || [];
+  const donations = data.donations || {};
+  const streets = data.streets || [];
+  const sponsors = data.sponsors || [];
+
+  const logo = s.logo_overlay_url || '';
+  const sleighName = s.sleigh_display_name || s.sleigh_name || 'Santa Sleigh';
+  const currency = donations.currency || '£';
+  const year = s.wrap_year || s.sponsor_pack_year || new Date().getFullYear();
+
+  // Computed — split routes by date
+  const today = new Date();
+  today.setHours(23, 59, 59, 999); // include today as completed
+  const completedRoutes = routes.filter(r => {
+    if (!r.date) return false;
+    return new Date(r.date + 'T23:59:59') <= today;
+  });
+  const plannedRoutes = routes.filter(r => {
+    if (!r.date) return false;
+    return new Date(r.date + 'T23:59:59') > today;
+  });
+
+  const routeCount = completedRoutes.length;
+  const completedRouteNames = new Set(completedRoutes.map(r => r.routeName));
+  const completedStreets = streets.filter(x => completedRouteNames.has(x.routeName));
+  const uniqueStreets = [...new Set(completedStreets.map(x => x.street))].length;
+  const totalRaised = donations.total || 0;
+  const targetAmount = donations.target || 0;
+  const pct = targetAmount > 0 ? Math.min(100, Math.round((totalRaised / targetAmount) * 100)) : 0;
+  const volunteers = s.wrap_volunteers || s.sponsor_pack_volunteers || '—';
+
+  // Analytics (from Settings, manual entry)
+  const totalViews = s.wrap_total_views || '';
+  const desktopMobile = s.wrap_desktop_mobile || '';
+  const popularRoute = s.wrap_most_popular_route || '';
+  const fbFollowers = s.wrap_facebook_followers || s.sponsor_pack_facebook_followers || '';
+  const fbReach = s.wrap_facebook_reach || s.sponsor_pack_facebook_reach || '';
+  const webViews = s.wrap_website_views || s.sponsor_pack_website_views || '';
+
+  const highlight = s.wrap_highlight || '';
+
+  // Sorted completed routes by date
+  const sortedRoutes = [...completedRoutes].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const sortedPlanned = [...plannedRoutes].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  // Sponsor logos (from completed routes only)
+  const sponsorUrls = [...new Set(completedRoutes.map(r => r.sponsorUrl).filter(Boolean))];
+
+  // Date range (completed only)
+  const dates = completedRoutes.map(r => r.date).filter(Boolean).sort();
+  const firstDate = dates[0] ? fmtDate(dates[0]) : '';
+  const lastDate = dates[dates.length - 1] ? fmtDate(dates[dates.length - 1]) : '';
+  const dateRange = firstDate && lastDate ? `${firstDate} — ${lastDate}` : '';
+
+  // Has digital stats?
+  const hasDigital = totalViews || fbFollowers || fbReach || webViews;
+
+  // Build
+  let h = '';
+
+  // Print bar
+  h += `
+    <div class="print-bar">
+      <div class="print-bar-title">${sleighName} · Season Report ${year}</div>
+      <button class="print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+    </div>`;
+
+  h += '<div class="report">';
+
+  // ── HEADER ──
+  h += `
+    <div class="report-header">
+      ${logo ? `<img class="report-logo" src="${logo}" alt="">` : ''}
+      <div class="report-sleigh-name">${sleighName}</div>
+      <h1 class="report-title">Season Wrap<br>Report</h1>
+      <div class="report-year">${year} Season</div>
+    </div>`;
+
+  // ── HEADLINE STATS ──
+  h += `
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="number gold">${routeCount}</div>
+        <div class="label">Routes Completed</div>
+        ${dateRange ? `<div class="sub">${dateRange}</div>` : ''}
+      </div>
+      <div class="hero-stat">
+        <div class="number">${uniqueStreets}</div>
+        <div class="label">Streets Visited</div>
+      </div>
+      <div class="hero-stat">
+        <div class="number red">${currency}${totalRaised.toLocaleString()}</div>
+        <div class="label">Raised</div>
+        ${targetAmount ? `<div class="sub">Target: ${currency}${targetAmount.toLocaleString()}</div>` : ''}
+      </div>
+      <div class="hero-stat">
+        <div class="number gold">${volunteers}</div>
+        <div class="label">Volunteers</div>
+      </div>
+    </div>`;
+
+  // ── DONATION PROGRESS ──
+  if (targetAmount > 0) {
+    h += `
+      <div class="donation-section">
+        <div class="donation-bar-wrap">
+          <div class="donation-labels">
+            <span class="donation-raised">${currency}${totalRaised.toLocaleString()} raised</span>
+            <span class="donation-target">${currency}${targetAmount.toLocaleString()} target</span>
+          </div>
+          <div class="donation-bar-outer">
+            <div class="donation-bar-inner" style="width:${pct}%"></div>
+          </div>
+          <div class="donation-pct">${pct}% of target</div>
+        </div>
+      </div>`;
+  }
+
+  // ── HIGHLIGHT ──
+  if (highlight) {
+    h += `
+      <div class="section">
+        <div class="section-head">
+          <span class="icon">⭐</span>
+          <h2>Season Highlight</h2>
+        </div>
+        <div class="highlight-quote">"${highlight}"</div>
+      </div>
+      <div class="section-divider"></div>`;
+  }
+
+  // ── ROUTES TABLE ──
+  if (sortedRoutes.length) {
+    h += `
+      <div class="section">
+        <div class="section-head">
+          <span class="icon">✅</span>
+          <h2>Routes Completed (${routeCount})</h2>
+        </div>
+        <div class="route-table-wrap">
+          <table class="route-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Route</th>
+                <th>Streets</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sortedRoutes.map(r => {
+                const st = (r.streets || '').replace(/,/g, ', ');
+                return `<tr>
+                  <td class="route-date">${fmtDateLong(r.date)}</td>
+                  <td class="route-name">${r.routeName || '—'}</td>
+                  <td class="route-streets">${st || '—'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  if (sortedPlanned.length) {
+    h += `
+      <div class="section">
+        <div class="section-head">
+          <span class="icon">📅</span>
+          <h2>Upcoming Routes (${sortedPlanned.length})</h2>
+        </div>
+        <div class="route-table-wrap">
+          <table class="route-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Route</th>
+                <th>Streets</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sortedPlanned.map(r => {
+                const st = (r.streets || '').replace(/,/g, ', ');
+                return `<tr>
+                  <td class="route-date">${fmtDateLong(r.date)}</td>
+                  <td class="route-name">${r.routeName || '—'}</td>
+                  <td class="route-streets">${st || '—'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  // ── ROUTE MAPS ──
+  const routesWithMaps = sortedRoutes.filter(r => r.mapImageUrl);
+  if (routesWithMaps.length) {
+    h += `
+      <div class="section">
+        <div class="section-head">
+          <span class="icon">📍</span>
+          <h2>Route Coverage</h2>
+        </div>
+        <div class="maps-grid">
+          ${routesWithMaps.map(r => `
+            <div class="map-card">
+              <img src="${r.mapImageUrl}" alt="${r.routeName}">
+              <div class="map-card-label">
+                <span>${r.routeName || 'Route'}</span>
+                <span class="date">${fmtDate(r.date)}</span>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  h += '<div class="section-divider"></div>';
+
+  // ── DIGITAL REACH ──
+  h += `
+    <div class="section">
+      <div class="section-head">
+        <span class="icon">📊</span>
+        <h2>Digital Reach</h2>
+      </div>`;
+
+  if (hasDigital) {
+    h += '<div class="reach-row">';
+    if (totalViews) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">🌐</div>
+          <div class="number">${totalViews}</div>
+          <div class="label">Tracker Page Views</div>
+        </div>`;
+    }
+    if (fbFollowers) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">📱</div>
+          <div class="number">${fbFollowers}</div>
+          <div class="label">Facebook Followers</div>
+        </div>`;
+    }
+    if (fbReach) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">👀</div>
+          <div class="number">${fbReach}</div>
+          <div class="label">Social Media Reach</div>
+        </div>`;
+    }
+    if (webViews) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">💻</div>
+          <div class="number">${webViews}</div>
+          <div class="label">Website Views</div>
+        </div>`;
+    }
+    if (desktopMobile) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">📱💻</div>
+          <div class="number">${desktopMobile}</div>
+          <div class="label">Desktop / Mobile %</div>
+        </div>`;
+    }
+    if (popularRoute) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">🏆</div>
+          <div class="number" style="font-size:1.4em">${popularRoute}</div>
+          <div class="label">Most Viewed Route</div>
+        </div>`;
+    }
+    h += '</div>';
+  } else {
+    h += `
+      <div class="reach-row">
+        <div class="reach-empty">
+          Add analytics data to your Settings sheet to populate this section.<br>
+          Keys: <code>wrap_total_views</code>, <code>wrap_facebook_followers</code>, <code>wrap_facebook_reach</code>, <code>wrap_website_views</code>
+        </div>
+      </div>`;
+  }
+
+  h += '</div>';
+
+  // ── SPONSORS ──
+  if (sponsorUrls.length) {
+    h += `
+      <div class="section-divider"></div>
+      <div class="section">
+        <div class="section-head">
+          <span class="icon">🤝</span>
+          <h2>Thank You to Our Sponsors</h2>
+        </div>
+        <div class="sponsors-row">
+          ${sponsorUrls.map(url => `
+            <div class="sponsor-card">
+              <img src="${url}" alt="Sponsor">
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  // ── FOOTER ──
+  h += `
+    <div class="report-footer">
+      ${logo ? `<img src="${logo}" alt="">` : ''}
+      ${sleighName} · Season Report ${year} · Powered by TurboSanta
+    </div>`;
+
+  h += '</div>'; // end .report
+
+  document.getElementById('app').innerHTML = h;
+
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('done');
+  }, 300);
+}
+</script>
+</body>
+</html>
