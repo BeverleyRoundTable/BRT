@@ -295,6 +295,12 @@ async function loadRoutes() {
 }
 loadRoutes();
 
+// ================================
+// Season Wrap Report
+// ================================
+const seasonWrapLink = `
+https://brt-23f.pages.dev/season_wrap?api=${ensureApi()}
+`;
 
 // ================================
 // Inject into UI textareas
@@ -314,3 +320,4 @@ document.getElementById("routeCardLink").value = routeCardLink.trim();
 document.getElementById("recommendedRouteCard").value = recommendedRouteCard.trim();
 document.getElementById("recommendedRoutes").value = recommendedRoutes.trim();
 document.getElementById("snowmanFrameEmbed").value = snowmanFrameEmbed.trim();
+document.getElementById("seasonWrapLink").value = seasonWrapLink.trim();
