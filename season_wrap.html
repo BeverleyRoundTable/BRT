@@ -505,29 +505,34 @@
      ═══════════════════ */
   @media print {
     :root {
-      --bg: #fff;
-      --surface: #f8f8f8;
-      --surface-2: #eee;
-      --border: #ddd;
-      --text: #111;
-      --text-dim: #555;
-      --text-muted: #999;
-      --red: #c00;
-      --gold: #b8860b;
-      --gold-dim: rgba(184,134,11,0.1);
-      --green: #16a34a;
+      --bg: #1D1D1A;
+      --surface: #262622;
+      --surface-2: #2f2f2a;
+      --border: rgba(255,255,255,0.12);
+      --text: #f0f0f0;
+      --text-dim: rgba(255,255,255,0.55);
+      --text-muted: rgba(255,255,255,0.35);
+      --red: #d31c1c;
+      --gold: #FBAF33;
+      --gold-dim: rgba(251,175,51,0.15);
+      --green: #22c55e;
     }
 
-    body { background: white; color: #111; }
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body { background: #1D1D1A; color: #f0f0f0; }
 
     .print-bar { display: none !important; }
     .loader { display: none !important; }
 
     .report { padding: 0 20px; }
-    .report-header { padding: 24px 20px 32px; min-height: auto; }
-    .report-hero-bg { display: none !important; }
-    .report-hero-overlay, .report-hero-no-img { display: none !important; }
-    .report-title { font-size: 2.2em; }
+    .report-header {
+      padding: 60px 40px 48px;
+      min-height: 300px;
+    }
 
     .hero-stats { gap: 10px; }
     .hero-stat { padding: 20px 14px; }
@@ -535,28 +540,6 @@
 
     .section { margin-top: 32px; }
     .section-divider { margin-bottom: 32px; }
-
-    .donation-bar-inner {
-      background: #b8860b !important;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-
-    .donation-bar-outer {
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-
-    .hero-stat, .reach-item, .route-table-wrap, .donation-bar-wrap,
-    .highlight-quote, .map-card {
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-      border: 1px solid #ccc;
-    }
-
-    .sponsor-card {
-      border: 1px solid #ddd;
-    }
 
     .route-table td, .route-table th {
       padding: 8px 12px;
