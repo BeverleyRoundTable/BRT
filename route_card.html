@@ -631,6 +631,71 @@
   .card-story .card-footer .card-sponsor-img { max-height: 48px; max-width: 170px; }
   .card-story .card-footer .card-sponsor-label { font-size: 16px; }
 
+  /* ── CAPTION AREA ── */
+  .caption-area {
+    margin-top: 20px;
+    text-align: left;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+  }
+
+  .caption-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.82em;
+    font-weight: 700;
+    color: var(--text-dim);
+  }
+
+  .btn-copy {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.8em;
+    font-weight: 700;
+    background: var(--gold);
+    color: #1a1000;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  .btn-copy:active { transform: scale(0.95); }
+
+  .caption-text {
+    width: 100%;
+    min-height: 140px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--text);
+    font-size: 0.88em;
+    font-family: 'Open Sans', sans-serif;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+  }
+
+  .caption-text:focus { border-color: var(--gold); }
+
+  .caption-copied {
+    display: none;
+    position: absolute;
+    top: 16px;
+    right: 80px;
+    font-size: 0.78em;
+    font-weight: 700;
+    color: #22c55e;
+  }
+
+  .caption-copied.show { display: inline; }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 700px) {
     .route-item { grid-template-columns: 1fr; }
@@ -711,6 +776,14 @@
     <div class="modal-actions">
       <button class="btn btn-gold" onclick="downloadCard()">⬇ Download PNG</button>
       <button class="btn btn-ghost" onclick="closePreview()">Close</button>
+    </div>
+    <div class="caption-area" id="captionArea">
+      <div class="caption-header">
+        <span>📋 Social Media Caption</span>
+        <button class="btn-copy" onclick="copyCaption()">Copy</button>
+      </div>
+      <textarea class="caption-text" id="captionText" readonly></textarea>
+      <div class="caption-copied" id="captionCopied">✓ Copied!</div>
     </div>
   </div>
 </div>
@@ -1023,6 +1096,10 @@ async function generateCard(routeIndex) {
     previewWrap.appendChild(previewImg);
 
     document.getElementById('previewTitle').textContent = `${title} — ${format}`;
+
+    // Generate social caption
+    generateCaption(route, title, dateText, streets, cta);
+
     document.getElementById('previewModal').classList.add('open');
   } catch(e) {
     alert('Error generating card: ' + e.message);
@@ -1041,6 +1118,58 @@ function downloadCard() {
 // ── CLOSE PREVIEW ──
 function closePreview() {
   document.getElementById('previewModal').classList.remove('open');
+  document.getElementById('captionCopied').classList.remove('show');
+}
+
+// ── GENERATE CAPTION ──
+function generateCaption(route, title, dateText, streets, cta) {
+  const sleighName = STATE.settings.sleigh_display_name || STATE.settings.sleigh_name || 'Santa Sleigh';
+  const donateUrl = STATE.settings.donate_url || '';
+
+  // Build tracker URL from the API URL
+  const apiUrl = getApiUrl();
+  const trackerUrl = `https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${encodeURIComponent(apiUrl)}`;
+
+  // Format streets nicely
+  const streetList = streets
+    ? streets.split(',').map(s => s.trim()).filter(Boolean).join(' · ')
+    : '';
+
+  // Build hashtags from sleigh name
+  const hashName = sleighName.replace(/[^a-zA-Z0-9]/g, '');
+  const hashtags = `#${hashName} #SantaSleigh #Christmas #ChristmasIsComing`;
+
+  // Build caption
+  let caption = '';
+  caption += `🎅 Santa's sleigh is heading to YOUR street! 🛷\n\n`;
+  caption += `📅 ${dateText}\n`;
+  if (streetList) {
+    caption += `📍 ${streetList}\n`;
+  }
+  caption += `\n`;
+  caption += `Track Santa LIVE 🗺️\n`;
+  caption += `${trackerUrl}\n`;
+  if (donateUrl) {
+    caption += `\n❤️ Donate: ${donateUrl}\n`;
+  }
+  caption += `\n${hashtags}`;
+
+  const el = document.getElementById('captionText');
+  if (el) {
+    el.value = caption;
+    el.readOnly = false; // let them edit before copying
+  }
+}
+
+// ── COPY CAPTION ──
+function copyCaption() {
+  const el = document.getElementById('captionText');
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    const badge = document.getElementById('captionCopied');
+    badge.classList.add('show');
+    setTimeout(() => badge.classList.remove('show'), 2000);
+  });
 }
 
 // Close on escape
