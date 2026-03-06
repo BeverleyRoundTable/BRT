@@ -367,78 +367,42 @@
     overflow: hidden;
   }
 
-  // ── DIGITAL REACH ──
-  h += `
-    <div class="section">
-      <div class="section-head">
-        <span class="icon">📊</span>
-        <h2>Digital Reach</h2>
-      </div>`;
-
-  if (hasDigital) {
-    h += '<div class="reach-row">';
-    if (totalViews) {
-      h += `
-        <div class="reach-item">
-          <div class="icon">🌐</div>
-          <div class="number">${totalViews}</div>
-          <div class="label">Tracker Page Views</div>
-        </div>`;
-    }
-    // CHANGED fbFollowers -> socialFollowers
-    if (socialFollowers) {
-      h += `
-        <div class="reach-item">
-          <div class="icon">📱</div>
-          <div class="number">${socialFollowers}</div>
-          <div class="label">Social Followers</div>
-        </div>`;
-    }
-    // CHANGED fbReach -> socialReach
-    if (socialReach) {
-      h += `
-        <div class="reach-item">
-          <div class="icon">👀</div>
-          <div class="number">${socialReach}</div>
-          <div class="label">Total Social Reach</div>
-        </div>`;
-    }
-    if (webViews) {
-      h += `
-        <div class="reach-item">
-          <div class="icon">💻</div>
-          <div class="number">${webViews}</div>
-          <div class="label">Website Views</div>
-        </div>`;
-    }
-    if (desktopMobile) {
-      h += `
-        <div class="reach-item">
-          <div class="icon">📱💻</div>
-          <div class="number">${desktopMobile}</div>
-          <div class="label">Desktop / Mobile %</div>
-        </div>`;
-    }
-    if (popularRoute) {
-      h += `
-        <div class="reach-item">
-          <div class="icon">🏆</div>
-          <div class="number" style="font-size:1.4em">${popularRoute}</div>
-          <div class="label">Most Viewed Route</div>
-        </div>`;
-    }
-    h += '</div>';
-  } else {
-    h += `
-      <div class="reach-row">
-        <div class="reach-empty">
-          Add analytics data to your Settings sheet to populate this section.<br>
-          Keys: <code>wrap_total_views</code>, <code>wrap_social_followers</code>, <code>wrap_social_reach</code>, <code>wrap_website_views</code>
-        </div>
-      </div>`;
+  /* ── DIGITAL REACH ── */
+  .reach-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
   }
 
-  h += '</div>';
+  .reach-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+  }
+
+  .reach-item .icon { font-size: 1.8em; margin-bottom: 10px; }
+  .reach-item .number { font-size: 2em; font-weight: 800; margin-bottom: 4px; }
+  .reach-item .label { font-size: 0.78em; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .reach-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85em;
+    padding: 32px;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+  }
+
+  .reach-empty code {
+    background: var(--surface-2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
 
   /* ── HIGHLIGHT QUOTE ── */
   .highlight-quote {
@@ -701,8 +665,8 @@ function render(data) {
   const totalViews = s.wrap_total_views || '';
   const desktopMobile = s.wrap_desktop_mobile || '';
   const popularRoute = s.wrap_most_popular_route || '';
-  const fbFollowers = s.wrap_facebook_followers || s.sponsor_pack_facebook_followers || '';
-  const fbReach = s.wrap_facebook_reach || s.sponsor_pack_facebook_reach || '';
+  const socialFollowers = s.wrap_social_followers || s.wrap_facebook_followers || s.sponsor_pack_facebook_followers || '';
+  const socialReach = s.wrap_social_reach || s.wrap_facebook_reach || s.sponsor_pack_facebook_reach || '';
   const webViews = s.wrap_website_views || s.sponsor_pack_website_views || '';
 
   const highlight = s.wrap_highlight || '';
@@ -721,7 +685,7 @@ function render(data) {
   const dateRange = firstDate && lastDate ? `${firstDate} — ${lastDate}` : '';
 
   // Has digital stats?
-  const hasDigital = totalViews || fbFollowers || fbReach || webViews;
+  const hasDigital = totalViews || socialFollowers || socialReach || webViews || desktopMobile || popularRoute;
 
   // Build
   let h = '';
@@ -906,20 +870,20 @@ function render(data) {
           <div class="label">Tracker Page Views</div>
         </div>`;
     }
-    if (fbFollowers) {
+    if (socialFollowers) {
       h += `
         <div class="reach-item">
           <div class="icon">📱</div>
-          <div class="number">${fbFollowers}</div>
-          <div class="label">Facebook Followers</div>
+          <div class="number">${socialFollowers}</div>
+          <div class="label">Social Followers</div>
         </div>`;
     }
-    if (fbReach) {
+    if (socialReach) {
       h += `
         <div class="reach-item">
           <div class="icon">👀</div>
-          <div class="number">${fbReach}</div>
-          <div class="label">Social Media Reach</div>
+          <div class="number">${socialReach}</div>
+          <div class="label">Total Social Reach</div>
         </div>`;
     }
     if (webViews) {
@@ -952,7 +916,7 @@ function render(data) {
       <div class="reach-row">
         <div class="reach-empty">
           Add analytics data to your Settings sheet to populate this section.<br>
-          Keys: <code>wrap_total_views</code>, <code>wrap_facebook_followers</code>, <code>wrap_facebook_reach</code>, <code>wrap_website_views</code>
+          Keys: <code>wrap_total_views</code>, <code>wrap_social_followers</code>, <code>wrap_social_reach</code>, <code>wrap_website_views</code>
         </div>
       </div>`;
   }
