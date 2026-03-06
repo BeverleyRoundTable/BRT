@@ -303,6 +303,13 @@ https://brt-23f.pages.dev/season_wrap?api=${ensureApi()}
 `;
 
 // ================================
+// God Mode Dashboard
+// ================================
+const godModeLink = `
+https://brt-23f.pages.dev/god_mode?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -321,3 +328,4 @@ document.getElementById("recommendedRouteCard").value = recommendedRouteCard.tri
 document.getElementById("recommendedRoutes").value = recommendedRoutes.trim();
 document.getElementById("snowmanFrameEmbed").value = snowmanFrameEmbed.trim();
 document.getElementById("seasonWrapLink").value = seasonWrapLink.trim();
+document.getElementById("godModeLink").value = godModeLink.trim();
