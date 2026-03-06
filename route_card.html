@@ -1126,9 +1126,10 @@ function generateCaption(route, title, dateText, streets, cta) {
   const sleighName = STATE.settings.sleigh_display_name || STATE.settings.sleigh_name || 'Santa Sleigh';
   const donateUrl = STATE.settings.donate_url || '';
 
-  // Build tracker URL from the API URL
+  // Build tracker URL — prefer clean URL from Settings
   const apiUrl = getApiUrl();
-  const trackerUrl = `https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${encodeURIComponent(apiUrl)}`;
+  const trackerUrl = STATE.settings.tracker_url
+    || `https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${encodeURIComponent(apiUrl)}`;
 
   // Format streets nicely
   const streetList = streets
