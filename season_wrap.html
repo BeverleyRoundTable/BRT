@@ -367,42 +367,78 @@
     overflow: hidden;
   }
 
-  /* ── DIGITAL REACH ── */
-  .reach-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
+  // ── DIGITAL REACH ──
+  h += `
+    <div class="section">
+      <div class="section-head">
+        <span class="icon">📊</span>
+        <h2>Digital Reach</h2>
+      </div>`;
+
+  if (hasDigital) {
+    h += '<div class="reach-row">';
+    if (totalViews) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">🌐</div>
+          <div class="number">${totalViews}</div>
+          <div class="label">Tracker Page Views</div>
+        </div>`;
+    }
+    // CHANGED fbFollowers -> socialFollowers
+    if (socialFollowers) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">📱</div>
+          <div class="number">${socialFollowers}</div>
+          <div class="label">Social Followers</div>
+        </div>`;
+    }
+    // CHANGED fbReach -> socialReach
+    if (socialReach) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">👀</div>
+          <div class="number">${socialReach}</div>
+          <div class="label">Total Social Reach</div>
+        </div>`;
+    }
+    if (webViews) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">💻</div>
+          <div class="number">${webViews}</div>
+          <div class="label">Website Views</div>
+        </div>`;
+    }
+    if (desktopMobile) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">📱💻</div>
+          <div class="number">${desktopMobile}</div>
+          <div class="label">Desktop / Mobile %</div>
+        </div>`;
+    }
+    if (popularRoute) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">🏆</div>
+          <div class="number" style="font-size:1.4em">${popularRoute}</div>
+          <div class="label">Most Viewed Route</div>
+        </div>`;
+    }
+    h += '</div>';
+  } else {
+    h += `
+      <div class="reach-row">
+        <div class="reach-empty">
+          Add analytics data to your Settings sheet to populate this section.<br>
+          Keys: <code>wrap_total_views</code>, <code>wrap_social_followers</code>, <code>wrap_social_reach</code>, <code>wrap_website_views</code>
+        </div>
+      </div>`;
   }
 
-  .reach-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 28px 20px;
-    text-align: center;
-  }
-
-  .reach-item .icon { font-size: 1.8em; margin-bottom: 10px; }
-  .reach-item .number { font-size: 2em; font-weight: 800; margin-bottom: 4px; }
-  .reach-item .label { font-size: 0.78em; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-
-  .reach-empty {
-    grid-column: 1 / -1;
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 0.85em;
-    padding: 32px;
-    background: var(--surface);
-    border: 1px dashed var(--border);
-    border-radius: 16px;
-  }
-
-  .reach-empty code {
-    background: var(--surface-2);
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.9em;
-  }
+  h += '</div>';
 
   /* ── HIGHLIGHT QUOTE ── */
   .highlight-quote {
