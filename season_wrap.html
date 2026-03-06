@@ -870,6 +870,7 @@ function render(data) {
           <div class="label">Tracker Page Views</div>
         </div>`;
     }
+    
     if (socialFollowers) {
       h += `
         <div class="reach-item">
@@ -878,6 +879,7 @@ function render(data) {
           <div class="label">Social Followers</div>
         </div>`;
     }
+    
     if (socialReach) {
       h += `
         <div class="reach-item">
@@ -886,6 +888,7 @@ function render(data) {
           <div class="label">Total Social Reach</div>
         </div>`;
     }
+    
     if (webViews) {
       h += `
         <div class="reach-item">
@@ -894,6 +897,7 @@ function render(data) {
           <div class="label">Website Views</div>
         </div>`;
     }
+    
     if (desktopMobile) {
       h += `
         <div class="reach-item">
@@ -902,6 +906,7 @@ function render(data) {
           <div class="label">Desktop / Mobile %</div>
         </div>`;
     }
+    
     if (popularRoute) {
       h += `
         <div class="reach-item">
@@ -910,13 +915,24 @@ function render(data) {
           <div class="label">Most Viewed Route</div>
         </div>`;
     }
+    
+    if (peakViewers) {
+      h += `
+        <div class="reach-item">
+          <div class="icon">🔥</div>
+          <div class="number">${peakViewers}</div>
+          <div class="label">Peak Crowd (30 Mins)</div>
+        </div>`;
+    }
     h += '</div>';
-  } else {
+  } 
+  
+  else {
     h += `
       <div class="reach-row">
         <div class="reach-empty">
           Add analytics data to your Settings sheet to populate this section.<br>
-          Keys: <code>wrap_total_views</code>, <code>wrap_social_followers</code>, <code>wrap_social_reach</code>, <code>wrap_website_views</code>
+          Keys: <code>wrap_total_views</code>, <code>wrap_social_followers</code>, <code>wrap_social_reach</code>, <code>wrap_peak_viewers</code>
         </div>
       </div>`;
   }
