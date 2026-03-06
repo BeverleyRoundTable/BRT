@@ -481,6 +481,16 @@
     font-size: 0.9em;
   }
 
+  .map-card-views {
+    padding: 0 16px 16px;
+    font-size: 0.8em;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+    
   /* ── FOOTER ── */
   .report-footer {
     text-align: center;
@@ -846,6 +856,10 @@ function render(data) {
                 <span>${r.routeName || 'Route'}</span>
                 <span class="date">${fmtDate(r.date)}</span>
               </div>
+              ${r.views !== undefined ? `
+              <div class="map-card-views">
+                👁️ ${r.views} ${r.views === 1 ? 'view' : 'views'}
+              </div>` : ''}
             </div>`).join('')}
         </div>
       </div>`;
