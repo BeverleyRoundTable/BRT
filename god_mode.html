@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>God Mode</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+  :root {
+    --bg: #1D1D1A;
+    --surface: #262622;
+    --surface-2: #2f2f2a;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --text-dim: rgba(255,255,255,0.5);
+    --text-muted: rgba(255,255,255,0.3);
+    --gold: #FBAF33;
+    --gold-dim: rgba(251,175,51,0.12);
+    --red: #d31c1c;
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --red-dim: rgba(211,28,28,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Open Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .loader {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px; z-index: 9999;
+    transition: opacity 0.4s;
+  }
+  .loader.done { opacity: 0; pointer-events: none; }
+  .loader-spin {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg {
+    text-align: center; padding: 80px 24px; color: #ff6b6b;
+    font-size: 1.1em; max-width: 600px; margin: 0 auto;
+  }
+  .error-msg code {
+    background: var(--surface); padding: 4px 10px; border-radius: 6px; font-size: 0.85em;
+  }
+
+  .dashboard { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  /* ── TOP BAR ── */
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+  }
+  .top-bar-left { display: flex; align-items: center; gap: 14px; }
+  .top-bar .logo {
+    width: 48px; height: 48px; border-radius: 12px;
+    object-fit: contain; background: rgba(255,255,255,0.06); padding: 2px;
+  }
+  .top-bar .title { font-size: 1.4em; font-weight: 800; letter-spacing: -0.02em; }
+  .top-bar .title span { color: var(--gold); }
+  .top-bar-right { display: flex; align-items: center; gap: 16px; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.78em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--green); background: var(--green-dim);
+    padding: 6px 14px; border-radius: 100px;
+  }
+  .live-dot {
+    width: 8px; height: 8px; background: var(--green);
+    border-radius: 50%; animation: pulse 1.5s ease-in-out infinite;
+  }
+  .live-badge.stale { color: var(--red); background: var(--red-dim); }
+  .live-badge.stale .live-dot { background: var(--red); animation: none; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .clock {
+    font-size: 1.4em; font-weight: 700; color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── STAT CARDS ── */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 16px; margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px 20px; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .stat-card .label {
+    font-size: 0.7em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;
+  }
+  .stat-card .value {
+    font-size: 2.2em; font-weight: 800; line-height: 1;
+    letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+  }
+  .stat-card .sub { font-size: 0.75em; color: var(--text-muted); margin-top: 6px; }
+  .stat-card .value.gold { color: var(--gold); }
+  .stat-card .value.green { color: var(--green); }
+  .stat-card .value.red { color: var(--red); }
+
+  /* ── MAIN GRID ── */
+  .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+
+  .map-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden; position: relative; min-height: 500px;
+  }
+  .map-panel iframe { width: 100%; height: 100%; border: none; min-height: 500px; }
+  .map-overlay-label {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(29,29,26,0.85); color: var(--text);
+    font-size: 0.72em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; padding: 6px 12px; border-radius: 8px;
+    z-index: 10; pointer-events: none;
+  }
+
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px;
+  }
+  .panel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .panel-header .icon { font-size: 1.2em; }
+  .panel-header h3 {
+    font-size: 0.85em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-dim);
+  }
+
+  /* ── GPS INFO ── */
+  .gps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .gps-item { background: var(--surface-2); border-radius: 10px; padding: 12px; }
+  .gps-item .gps-label {
+    font-size: 0.68em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 4px;
+  }
+  .gps-item .gps-value { font-size: 1.05em; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ── ROUTE INFO ── */
+  .route-info { display: flex; flex-direction: column; gap: 10px; }
+  .route-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; background: var(--surface-2); border-radius: 10px;
+  }
+  .route-row .route-label { font-size: 0.78em; color: var(--text-dim); font-weight: 600; }
+  .route-row .route-value { font-size: 0.9em; font-weight: 700; }
+  .route-row .route-value.gold { color: var(--gold); }
+  .no-route { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.85em; }
+
+  /* ── DONATIONS ── */
+  .donation-mini { display: flex; flex-direction: column; gap: 8px; }
+  .donation-labels { display: flex; justify-content: space-between; font-size: 0.8em; font-weight: 700; }
+  .donation-labels .raised { color: var(--gold); }
+  .donation-labels .target { color: var(--text-muted); }
+  .donation-bar-outer { height: 16px; background: var(--surface-2); border-radius: 8px; overflow: hidden; }
+  .donation-bar-inner {
+    height: 100%; background: linear-gradient(90deg, var(--red), var(--gold));
+    border-radius: 8px; transition: width 1s ease; min-width: 8px;
+  }
+  .donation-pct { text-align: center; font-size: 0.75em; font-weight: 700; color: var(--text-muted); }
+
+  /* ── STREETS ── */
+  .streets-scroll {
+    max-height: 180px; overflow-y: auto; font-size: 0.82em;
+    color: var(--text-dim); line-height: 1.8; padding-right: 8px; margin-top: 8px;
+  }
+  .streets-scroll::-webkit-scrollbar { width: 4px; }
+  .streets-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .last-updated {
+    text-align: center; font-size: 0.7em; color: var(--text-muted);
+    margin-top: 20px; font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+    .map-panel { min-height: 400px; }
+  }
+  @media (max-width: 500px) {
+    .stats-row { grid-template-columns: 1fr; }
+    .dashboard { padding: 16px; }
+    .top-bar .title { font-size: 1.1em; }
+  }
+  </style>
+</head>
+<body>
+
+<div class="loader" id="loader"><div class="loader-spin"></div></div>
+<div id="app"></div>
+
+<script>
+const API = new URLSearchParams(location.search).get('api') || '';
+let lastMapCoord = '';
+
+const STATE = {
+  settings: {}, routes: [], donations: {}, tracker: {}, streets: [],
+  gps: null, activeViewers: 0,
+  lastApiUpdate: null, lastGpsUpdate: null, lastViewerUpdate: null
+};
+
+if (!API) {
+  document.getElementById('loader').classList.add('done');
+  document.getElementById('app').innerHTML =
+    '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>god_mode?api=YOUR_API_URL</code></div>';
+} else {
+  init();
+}
+
+async function init() {
+  await fetchApiData();
+  buildDashboard();
+  document.getElementById('loader').classList.add('done');
+  fetchGps();
+  fetchViewers();
+  setInterval(fetchApiData, 30000);
+  setInterval(fetchGps, 5000);
+  setInterval(fetchViewers, 10000);
+  setInterval(updateClock, 1000);
+  setInterval(updateGpsAge, 1000);
+}
+
+async function fetchApiData() {
+  try {
+    const res = await fetch(API);
+    const data = await res.json();
+    STATE.settings = data.settings || {};
+    STATE.routes = data.routes || [];
+    STATE.donations = data.donations || {};
+    STATE.tracker = data.tracker || {};
+    STATE.streets = data.streets || [];
+    STATE.lastApiUpdate = new Date();
+    updateDashboard();
+  } catch(e) { console.error('API:', e); }
+}
+
+async function fetchGps() {
+  try {
+    const sep = API.includes('?') ? '&' : '?';
+    const res = await fetch(API + sep + 'function=proxyFirebase');
+    const data = await res.json();
+    if (data && data.lat) { STATE.gps = data; STATE.lastGpsUpdate = new Date(); }
+    updateGps();
+  } catch(e) { console.error('GPS:', e); }
+}
+
+async function fetchViewers() {
+  try {
+    const sep = API.includes('?') ? '&' : '?';
+    const res = await fetch(API + sep + 'function=getActiveViewers');
+    const data = await res.json();
+    STATE.activeViewers = data.active || 0;
+    STATE.lastViewerUpdate = new Date();
+    updateViewers();
+  } catch(e) { console.error('Viewers:', e); }
+}
+
+function getTodayRoute() {
+  const today = new Date().toISOString().slice(0, 10);
+  return STATE.routes.find(r => r.date === today) || null;
+}
+
+function getNextRoute() {
+  const today = new Date().toISOString().slice(0, 10);
+  return STATE.routes.filter(r => r.date && r.date > today)
+    .sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d + 'T00:00:00');
+  return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function fmtTime(d) {
+  return d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--';
+}
+
+function gpsAgeText() {
+  if (!STATE.gps?.ts) return 'No signal';
+  const s = Math.floor((Date.now() - new Date(STATE.gps.ts).getTime()) / 1000);
+  if (s < 0) return 'Just now';
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  return Math.floor(s / 3600) + 'h ago';
+}
+
+function isGpsFresh() {
+  return STATE.gps?.ts && (Date.now() - new Date(STATE.gps.ts).getTime()) < 120000;
+}
+
+function buildDashboard() {
+  const s = STATE.settings;
+  const logo = s.logo_overlay_url || '';
+  const sleighName = s.sleigh_display_name || s.sleigh_name || 'Santa Sleigh';
+  const currency = STATE.donations.currency || '£';
+  const todayRoute = getTodayRoute();
+
+  let h = '<div class="dashboard">';
+
+  h += `<div class="top-bar">
+    <div class="top-bar-left">
+      ${logo ? `<img class="logo" src="${logo}">` : ''}
+      <div class="title"><span>God</span> Mode</div>
+    </div>
+    <div class="top-bar-right">
+      <div class="live-badge" id="liveBadge"><div class="live-dot"></div><span id="liveBadgeText">CONNECTING</span></div>
+      <div class="clock" id="clock">${fmtTime(new Date())}</div>
+    </div>
+  </div>`;
+
+  h += `<div class="stats-row">
+    <div class="stat-card">
+      <div class="label">Active Route</div>
+      <div class="value gold" id="statRoute" style="font-size:1.6em">${todayRoute?.routeName || '—'}</div>
+      <div class="sub" id="statRouteDate">${todayRoute ? 'Tonight' : 'No route today'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Live Viewers</div>
+      <div class="value green" id="statViewers">—</div>
+      <div class="sub">Last 5 minutes</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">GPS Signal</div>
+      <div class="value" id="statGpsStatus">—</div>
+      <div class="sub" id="statGpsAge">Waiting...</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Raised Tonight</div>
+      <div class="value gold" id="statRaised">${currency}${(STATE.donations.total || 0).toLocaleString()}</div>
+      <div class="sub" id="statTarget">of ${currency}${(STATE.donations.target || 0).toLocaleString()}</div>
+    </div>
+  </div>`;
+
+  // Default map centre: Beverley
+  const lat = STATE.gps?.lat || 53.8426;
+  const lng = STATE.gps?.lng || -0.4276;
+
+  h += `<div class="main-grid">
+    <div class="map-panel">
+      <div class="map-overlay-label" id="mapLabel">Live Position</div>
+      <iframe id="mapFrame" src="https://maps.google.com/maps?q=${lat},${lng}&z=16&output=embed" loading="lazy"></iframe>
+    </div>
+    <div class="sidebar">
+      <div class="panel">
+        <div class="panel-header"><span class="icon">📡</span><h3>GPS Data</h3></div>
+        <div class="gps-grid">
+          <div class="gps-item"><div class="gps-label">Latitude</div><div class="gps-value" id="gpsLat">${STATE.gps?.lat || '—'}</div></div>
+          <div class="gps-item"><div class="gps-label">Longitude</div><div class="gps-value" id="gpsLng">${STATE.gps?.lng || '—'}</div></div>
+          <div class="gps-item"><div class="gps-label">Last Fix</div><div class="gps-value" id="gpsTime">—</div></div>
+          <div class="gps-item"><div class="gps-label">Signal Age</div><div class="gps-value" id="gpsAgeLive">${gpsAgeText()}</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="icon">🗺️</span><h3>Route</h3></div>
+        <div id="routeDetail"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="icon">❤️</span><h3>Donations</h3></div>
+        <div id="donationDetail"></div>
+      </div>
+    </div>
+  </div>`;
+
+  h += '<div class="last-updated" id="lastUpdated">Connecting...</div>';
+  h += '</div>';
+
+  document.getElementById('app').innerHTML = h;
+  updateDashboard();
+}
+
+function updateDashboard() { updateRouteDetail(); updateDonationDetail(); updateRaisedStat(); }
+
+function updateClock() {
+  const el = document.getElementById('clock');
+  if (el) el.textContent = fmtTime(new Date());
+}
+
+function updateGpsAge() {
+  const fresh = isGpsFresh();
+  const age = gpsAgeText();
+
+  const el = (id, fn) => { const e = document.getElementById(id); if (e) fn(e); };
+
+  el('gpsAgeLive', e => e.textContent = age);
+  el('statGpsAge', e => e.textContent = age);
+  el('statGpsStatus', e => { e.textContent = fresh ? 'LIVE' : 'STALE'; e.className = 'value ' + (fresh ? 'green' : 'red'); });
+  el('liveBadge', e => e.className = 'live-badge' + (fresh ? '' : ' stale'));
+  el('liveBadgeText', e => e.textContent = fresh ? 'LIVE' : 'NO SIGNAL');
+  el('mapLabel', e => e.textContent = fresh ? 'Live Position' : 'Last Known Position');
+
+  el('lastUpdated', e => {
+    const p = [];
+    if (STATE.lastGpsUpdate) p.push('GPS ' + fmtTime(STATE.lastGpsUpdate));
+    if (STATE.lastViewerUpdate) p.push('Viewers ' + fmtTime(STATE.lastViewerUpdate));
+    if (STATE.lastApiUpdate) p.push('API ' + fmtTime(STATE.lastApiUpdate));
+    e.textContent = p.join('  ·  ');
+  });
+}
+
+function updateGps() {
+  if (!STATE.gps) return;
+  const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+
+  el('gpsLat', parseFloat(STATE.gps.lat).toFixed(6));
+  el('gpsLng', parseFloat(STATE.gps.lng).toFixed(6));
+  if (STATE.gps.ts) el('gpsTime', fmtTime(new Date(STATE.gps.ts)));
+
+  const coord = `${parseFloat(STATE.gps.lat).toFixed(4)},${parseFloat(STATE.gps.lng).toFixed(4)}`;
+  if (coord !== lastMapCoord) {
+    lastMapCoord = coord;
+    const frame = document.getElementById('mapFrame');
+    if (frame) frame.src = `https://maps.google.com/maps?q=${STATE.gps.lat},${STATE.gps.lng}&z=16&output=embed`;
+  }
+
+  updateGpsAge();
+}
+
+function updateViewers() {
+  const el = document.getElementById('statViewers');
+  if (el) el.textContent = STATE.activeViewers;
+}
+
+function updateRouteDetail() {
+  const c = document.getElementById('routeDetail');
+  if (!c) return;
+
+  const today = getTodayRoute();
+  const next = getNextRoute();
+  const route = today || next;
+  const isToday = !!today;
+
+  if (!route) { c.innerHTML = '<div class="no-route">No routes scheduled</div>'; return; }
+
+  const streets = (route.streets || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  c.innerHTML = `<div class="route-info">
+    <div class="route-row"><span class="route-label">Route</span><span class="route-value">${route.routeName || '—'}</span></div>
+    <div class="route-row"><span class="route-label">${isToday ? 'Tonight' : 'Next'}</span><span class="route-value gold">${fmtDate(route.date)}</span></div>
+    <div class="route-row"><span class="route-label">Streets</span><span class="route-value">${streets.length}</span></div>
+    ${streets.length ? `<div class="streets-scroll">${streets.join(' · ')}</div>` : ''}
+  </div>`;
+
+  const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  el('statRoute', route.routeName || '—');
+  el('statRouteDate', isToday ? 'Tonight' : fmtDate(route.date));
+}
+
+function updateDonationDetail() {
+  const c = document.getElementById('donationDetail');
+  if (!c) return;
+  const d = STATE.donations;
+  const cur = d.currency || '£';
+  const total = d.total || 0;
+  const target = d.target || 0;
+  const pct = target > 0 ? Math.min(100, Math.round((total / target) * 100)) : 0;
+
+  c.innerHTML = `<div class="donation-mini">
+    <div class="donation-labels"><span class="raised">${cur}${total.toLocaleString()}</span><span class="target">${cur}${target.toLocaleString()}</span></div>
+    <div class="donation-bar-outer"><div class="donation-bar-inner" style="width:${pct}%"></div></div>
+    <div class="donation-pct">${pct}% of target</div>
+  </div>`;
+}
+
+function updateRaisedStat() {
+  const d = STATE.donations;
+  const cur = d.currency || '£';
+  const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  el('statRaised', `${cur}${(d.total || 0).toLocaleString()}`);
+  el('statTarget', `of ${cur}${(d.target || 0).toLocaleString()}`);
+}
+</script>
+</body>
+</html>
