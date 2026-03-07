@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You Card Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1D1D1A;
+    --surface: #262622;
+    --surface-2: #2f2f2a;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --text-dim: rgba(255,255,255,0.5);
+    --gold: #FBAF33;
+    --gold-dim: rgba(251,175,51,0.15);
+    --red: #d31c1c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Open Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app { max-width: 900px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header { text-align: center; margin-bottom: 32px; }
+
+  header h1 {
+    font-size: 2em; font-weight: 700;
+    background: linear-gradient(135deg, #fff 30%, var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  header p { color: var(--text-dim); margin-top: 6px; font-size: 0.9em; }
+
+  /* ── CONTROLS ── */
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; margin-bottom: 20px;
+  }
+
+  .panel h3 {
+    font-size: 0.82em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 16px;
+  }
+
+  .field { margin-bottom: 14px; }
+
+  .field label {
+    display: block; font-size: 0.75em; font-weight: 700;
+    color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 5px;
+  }
+
+  .field input, .field textarea, .field select {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; color: var(--text);
+    font-family: 'Open Sans', sans-serif; font-size: 0.88em; outline: none;
+  }
+
+  .field input:focus, .field textarea:focus { border-color: var(--gold); }
+
+  .field textarea { resize: vertical; min-height: 60px; }
+
+  .stat-preview {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; margin-bottom: 16px;
+  }
+
+  .stat-mini {
+    background: var(--surface-2); border-radius: 10px;
+    padding: 12px 8px; text-align: center;
+  }
+
+  .stat-mini .val {
+    font-size: 1.3em; font-weight: 800; color: var(--gold);
+  }
+
+  .stat-mini .lbl {
+    font-size: 0.65em; color: var(--text-dim); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px;
+  }
+
+  .format-row {
+    display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+
+  .format-btn {
+    font-family: 'Open Sans', sans-serif; font-size: 0.8em; font-weight: 600;
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text-dim); cursor: pointer;
+  }
+
+  .format-btn:hover { border-color: var(--gold); color: var(--text); }
+  .format-btn.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+
+  .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  .btn {
+    font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 0.88em;
+    border: none; border-radius: 10px; padding: 12px 24px; cursor: pointer;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), #e89a1d); color: #1a1000;
+  }
+
+  .btn-ghost {
+    background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+  }
+
+  /* ── PREVIEW ── */
+  .preview-area {
+    text-align: center; margin-top: 24px;
+  }
+
+  .preview-area img {
+    max-width: 100%; border-radius: 12px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+
+  .preview-label {
+    font-size: 0.75em; color: var(--text-dim); margin-bottom: 10px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+
+  /* ── LOADING ── */
+  .status { text-align: center; padding: 40px; color: var(--text-dim); }
+
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--gold); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg { text-align: center; padding: 60px 24px; color: #ff6b6b; }
+  .error-msg code { background: var(--surface); padding: 4px 10px; border-radius: 6px; }
+
+  /* ── OFFSCREEN RENDER ── */
+  .card-render-area { position: fixed; left: -9999px; top: 0; }
+
+  /* ═══════════════════════════
+     CARD DESIGNS
+     ═══════════════════════════ */
+  .ty-card {
+    position: relative; overflow: hidden;
+    font-family: 'Open Sans', sans-serif; color: white;
+    background: #1D1D1A;
+  }
+
+  .ty-card.square { width: 1080px; height: 1080px; }
+  .ty-card.landscape { width: 1200px; height: 630px; }
+  .ty-card.story { width: 1080px; height: 1920px; }
+
+  .ty-bg-img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: center;
+  }
+
+  .ty-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(29,29,26,0.5) 0%,
+      rgba(29,29,26,0.8) 40%,
+      rgba(29,29,26,0.95) 65%,
+      rgba(29,29,26,1) 100%
+    );
+  }
+
+  .ty-no-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(211,28,28,0.15) 0%, transparent 55%),
+      radial-gradient(ellipse at 70% 80%, rgba(251,175,51,0.08) 0%, transparent 45%),
+      #1D1D1A;
+  }
+
+  .ty-inner {
+    position: relative; z-index: 2;
+    height: 100%; display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center; padding: 60px;
+  }
+
+  .ty-logo {
+    width: 80px; height: 80px; border-radius: 20px;
+    object-fit: contain; background: rgba(255,255,255,0.08);
+    padding: 4px; margin-bottom: 20px;
+  }
+
+  .ty-thank {
+    font-size: 64px; font-weight: 900; color: #FBAF33;
+    line-height: 1.1; margin-bottom: 8px;
+    text-shadow: 0 3px 16px rgba(0,0,0,0.5);
+  }
+
+  .ty-town {
+    font-size: 36px; font-weight: 700; color: rgba(255,255,255,0.9);
+    margin-bottom: 32px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  }
+
+  .ty-stats-row {
+    display: flex; gap: 24px; margin-bottom: 32px;
+    flex-wrap: wrap; justify-content: center;
+  }
+
+  .ty-stat {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px; padding: 24px 28px;
+    text-align: center; min-width: 140px;
+  }
+
+  .ty-stat .num {
+    font-size: 42px; font-weight: 900; line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .ty-stat .num.gold { color: #FBAF33; }
+  .ty-stat .num.red { color: #d31c1c; }
+  .ty-stat .num.white { color: rgba(255,255,255,0.9); }
+
+  .ty-stat .lab {
+    font-size: 13px; font-weight: 700;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+
+  .ty-message {
+    font-size: 22px; font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    max-width: 700px; line-height: 1.6;
+    margin-bottom: 28px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.3);
+  }
+
+  .ty-accent-bar {
+    width: 80px; height: 4px;
+    background: linear-gradient(90deg, #d31c1c, #FBAF33);
+    border-radius: 2px; margin-bottom: 20px;
+  }
+
+  .ty-footer {
+    display: flex; align-items: center; gap: 12px;
+    margin-top: auto; padding-top: 20px;
+  }
+
+  .ty-footer img {
+    width: 40px; height: 40px; border-radius: 10px;
+    object-fit: contain; background: rgba(255,255,255,0.08); padding: 2px;
+  }
+
+  .ty-footer .name {
+    font-size: 18px; font-weight: 700;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* Story adjustments */
+  .ty-card.story .ty-inner { padding: 80px 64px; }
+  .ty-card.story .ty-thank { font-size: 80px; }
+  .ty-card.story .ty-town { font-size: 44px; }
+  .ty-card.story .ty-stat .num { font-size: 52px; }
+  .ty-card.story .ty-message { font-size: 28px; }
+
+  /* Landscape adjustments */
+  .ty-card.landscape .ty-inner { padding: 40px 60px; }
+  .ty-card.landscape .ty-thank { font-size: 48px; }
+  .ty-card.landscape .ty-town { font-size: 28px; margin-bottom: 20px; }
+  .ty-card.landscape .ty-stat { padding: 18px 22px; min-width: 120px; }
+  .ty-card.landscape .ty-stat .num { font-size: 34px; }
+  .ty-card.landscape .ty-message { font-size: 18px; margin-bottom: 16px; }
+  .ty-card.landscape .ty-logo { width: 60px; height: 60px; margin-bottom: 14px; }
+
+  @media (max-width: 700px) {
+    header h1 { font-size: 1.5em; }
+    .stat-preview { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>❤️ Thank You Card Generator</h1>
+    <p>Generate a post-season shareable with your stats</p>
+  </header>
+
+  <div id="content">
+    <div class="status"><div class="spinner"></div>Loading data…</div>
+  </div>
+</div>
+
+<div class="card-render-area" id="renderArea"></div>
+
+<script>
+const API = new URLSearchParams(location.search).get('api') || '';
+
+const STATE = {
+  settings: {}, routes: [], donations: {}, streets: [],
+  currentCard: null, currentSlug: ''
+};
+
+if (!API) {
+  document.getElementById('content').innerHTML =
+    '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>thank_you?api=YOUR_API_URL</code></div>';
+} else {
+  init();
+}
+
+async function init() {
+  try {
+    const res = await fetch(API);
+    const data = await res.json();
+    STATE.settings = data.settings || {};
+    STATE.routes = data.routes || [];
+    STATE.donations = data.donations || {};
+    STATE.streets = data.streets || [];
+    renderUI();
+  } catch(e) {
+    document.getElementById('content').innerHTML =
+      `<div class="status" style="color:#ff6b6b;">Failed: ${e.message}</div>`;
+  }
+}
+
+function getStats() {
+  const today = new Date().toISOString().slice(0, 10);
+  const completed = STATE.routes.filter(r => r.date && r.date <= today);
+  const routeNames = new Set(completed.map(r => r.routeName));
+  const completedStreets = STATE.streets.filter(s => routeNames.has(s.routeName));
+  const uniqueStreets = [...new Set(completedStreets.map(s => s.street))].length;
+  const currency = STATE.donations.currency || '£';
+  const total = STATE.donations.total || 0;
+  const volunteers = STATE.settings.wrap_volunteers || '—';
+
+  return {
+    routes: completed.length,
+    streets: uniqueStreets,
+    raised: `${currency}${total.toLocaleString()}`,
+    volunteers
+  };
+}
+
+function renderUI() {
+  const s = STATE.settings;
+  const stats = getStats();
+  const sleighName = s.sleigh_display_name || s.sleigh_name || 'Santa Sleigh';
+  const year = s.wrap_year || new Date().getFullYear();
+
+  // Guess town from sleigh name
+  const townGuess = sleighName.replace(/round\s*table/i, '').replace(/santa\s*sleigh/i, '').trim() || '';
+
+  document.getElementById('content').innerHTML = `
+    <div class="panel">
+      <h3>Season Stats (auto-populated)</h3>
+      <div class="stat-preview">
+        <div class="stat-mini"><div class="val">${stats.routes}</div><div class="lbl">Routes</div></div>
+        <div class="stat-mini"><div class="val">${stats.streets}</div><div class="lbl">Streets</div></div>
+        <div class="stat-mini"><div class="val">${stats.raised}</div><div class="lbl">Raised</div></div>
+        <div class="stat-mini"><div class="val">${stats.volunteers}</div><div class="lbl">Volunteers</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Customise</h3>
+      <div class="field">
+        <label>Town / Area Name</label>
+        <input type="text" id="townName" value="${townGuess}" placeholder="Beverley">
+      </div>
+      <div class="field">
+        <label>Thank You Message</label>
+        <textarea id="message">Thank you for your incredible generosity this Christmas. Every donation makes a real difference to our community.</textarea>
+      </div>
+      <div class="field">
+        <label>Background Image URL (optional)</label>
+        <input type="text" id="bgUrl" value="${s.bgImageUrl || ''}" placeholder="https://...">
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Format</h3>
+      <div class="format-row">
+        <button class="format-btn active" data-fmt="square" onclick="selectFmt(this)">Square (1080×1080)</button>
+        <button class="format-btn" data-fmt="landscape" onclick="selectFmt(this)">Landscape (1200×630)</button>
+        <button class="format-btn" data-fmt="story" onclick="selectFmt(this)">Story (1080×1920)</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="generate()">Generate Card</button>
+      </div>
+    </div>
+
+    <div class="preview-area" id="previewArea"></div>
+  `;
+}
+
+function selectFmt(btn) {
+  document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function getFormat() {
+  const active = document.querySelector('.format-btn.active');
+  return active ? active.dataset.fmt : 'square';
+}
+
+async function generate() {
+  const s = STATE.settings;
+  const stats = getStats();
+  const format = getFormat();
+  const logo = s.logo_overlay_url || '';
+  const sleighName = s.sleigh_display_name || s.sleigh_name || 'Santa Sleigh';
+  const year = s.wrap_year || new Date().getFullYear();
+  const town = document.getElementById('townName').value.trim() || '';
+  const message = document.getElementById('message').value.trim();
+  const bgUrl = document.getElementById('bgUrl').value.trim();
+  const hasBg = !!bgUrl;
+
+  const bgHtml = hasBg
+    ? `<img class="ty-bg-img" src="${bgUrl}" crossorigin="anonymous">`
+    : '';
+
+  const overlayHtml = hasBg
+    ? '<div class="ty-overlay"></div>'
+    : '<div class="ty-no-bg"></div>';
+
+  const cardHtml = `
+    ${bgHtml}
+    ${overlayHtml}
+    <div class="ty-inner">
+      ${logo ? `<img class="ty-logo" src="${logo}" crossorigin="anonymous">` : ''}
+      <div class="ty-thank">Thank You${town ? ',' : '!'}</div>
+      ${town ? `<div class="ty-town">${town}!</div>` : ''}
+      <div class="ty-stats-row">
+        <div class="ty-stat"><div class="num gold">${stats.routes}</div><div class="lab">Routes</div></div>
+        <div class="ty-stat"><div class="num white">${stats.streets}</div><div class="lab">Streets</div></div>
+        <div class="ty-stat"><div class="num red">${stats.raised}</div><div class="lab">Raised</div></div>
+        <div class="ty-stat"><div class="num gold">${stats.volunteers}</div><div class="lab">Volunteers</div></div>
+      </div>
+      ${message ? `<div class="ty-message">${message}</div>` : ''}
+      <div class="ty-accent-bar"></div>
+      <div class="ty-footer">
+        ${logo ? `<img src="${logo}" crossorigin="anonymous">` : ''}
+        <span class="name">${sleighName} · ${year}</span>
+      </div>
+    </div>
+  `;
+
+  const renderArea = document.getElementById('renderArea');
+  renderArea.innerHTML = `<div class="ty-card ${format}" id="tyCapture">${cardHtml}</div>`;
+
+  // Wait for images
+  const imgs = renderArea.querySelectorAll('img');
+  await Promise.all([...imgs].map(img => new Promise(resolve => {
+    if (img.complete) return resolve();
+    img.onload = resolve;
+    img.onerror = resolve;
+    setTimeout(resolve, 4000);
+  })));
+
+  await new Promise(r => setTimeout(r, 300));
+
+  const el = document.getElementById('tyCapture');
+
+  try {
+    const canvas = await html2canvas(el, {
+      scale: 1, useCORS: true, allowTaint: true,
+      backgroundColor: '#1D1D1A', logging: false,
+      width: el.offsetWidth, height: el.offsetHeight
+    });
+
+    STATE.currentCard = canvas;
+    STATE.currentSlug = `thank_you_${format}`;
+
+    const maxW = Math.min(window.innerWidth * 0.85, 700);
+    const ratio = el.offsetHeight / el.offsetWidth;
+
+    const preview = document.getElementById('previewArea');
+    preview.innerHTML = `
+      <div class="preview-label">Preview</div>
+      <img src="${canvas.toDataURL('image/png')}" style="width:${maxW}px; height:${maxW * ratio}px;">
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-gold" onclick="download()">⬇ Download PNG</button>
+      </div>
+    `;
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function download() {
+  if (!STATE.currentCard) return;
+  const link = document.createElement('a');
+  link.download = `${STATE.currentSlug}.png`;
+  link.href = STATE.currentCard.toDataURL('image/png');
+  link.click();
+}
+</script>
+</body>
+</html>
