@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Poster Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1D1D1A;
+    --surface: #262622;
+    --surface-2: #2f2f2a;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --text-dim: rgba(255,255,255,0.5);
+    --gold: #FBAF33;
+    --gold-dim: rgba(251,175,51,0.15);
+    --red: #d31c1c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Open Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── CONTROLS (screen only) ── */
+  .controls {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 24px 24px;
+  }
+
+  .controls header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .controls h1 {
+    font-size: 2em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff 30%, var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .controls header p {
+    color: var(--text-dim);
+    margin-top: 6px;
+    font-size: 0.9em;
+  }
+
+  .control-row {
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .control-group {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .control-group label {
+    display: block;
+    font-size: 0.75em;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .control-group select,
+  .control-group input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.9em;
+    outline: none;
+  }
+
+  .control-group select:focus,
+  .control-group input:focus { border-color: var(--gold); }
+
+  .btn {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.88em;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: transform 0.1s;
+    white-space: nowrap;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), #e89a1d);
+    color: #1a1000;
+  }
+
+  .btn-ghost {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .status {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 0.9em;
+  }
+
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg {
+    text-align: center; padding: 60px 24px; color: #ff6b6b;
+    font-size: 1em;
+  }
+
+  .error-msg code {
+    background: var(--surface); padding: 4px 10px; border-radius: 6px; font-size: 0.85em;
+  }
+
+  /* ── POSTER PREVIEW (screen) ── */
+  .poster-preview-wrap {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  /* ── THE POSTER ── */
+  .poster {
+    width: 210mm;
+    min-height: 297mm;
+    background: #ffffff;
+    color: #1D1D1A;
+    font-family: 'Open Sans', sans-serif;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    border-radius: 4px;
+  }
+
+  .poster-accent-top {
+    height: 8px;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+  }
+
+  .poster-content {
+    padding: 40px 48px 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .poster-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 18px;
+    object-fit: contain;
+    margin-bottom: 12px;
+  }
+
+  .poster-sleigh-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 24px;
+  }
+
+  .poster-headline {
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--red);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .poster-subline {
+    font-size: 20px;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: 28px;
+  }
+
+  .poster-date-block {
+    background: var(--red);
+    color: white;
+    padding: 16px 48px;
+    border-radius: 14px;
+    margin-bottom: 24px;
+  }
+
+  .poster-date-block .day-name {
+    font-size: 18px;
+    font-weight: 600;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .poster-date-block .date-main {
+    font-size: 38px;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+
+  .poster-streets {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.8;
+    margin-bottom: 28px;
+    max-width: 500px;
+  }
+
+  .poster-streets span {
+    display: inline;
+  }
+
+  .poster-streets .separator {
+    color: #ccc;
+    margin: 0 6px;
+  }
+
+  .poster-divider {
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+    border-radius: 2px;
+    margin: 0 auto 28px;
+  }
+
+  .poster-qr-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .poster-qr-box {
+    padding: 16px;
+    border: 3px solid #1D1D1A;
+    border-radius: 16px;
+    display: inline-block;
+    margin-bottom: 14px;
+    background: white;
+  }
+
+  .poster-qr-box canvas,
+  .poster-qr-box img {
+    display: block;
+  }
+
+  .poster-scan-text {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .poster-scan-sub {
+    font-size: 14px;
+    font-weight: 600;
+    color: #888;
+    margin-top: 4px;
+  }
+
+  .poster-footer {
+    margin-top: auto;
+    padding: 20px 48px;
+    background: #1D1D1A;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .poster-footer img {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: contain;
+  }
+
+  .poster-footer .footer-text {
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  .poster-sponsor {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .poster-sponsor .sponsor-label {
+    font-size: 11px;
+    color: #aaa;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .poster-sponsor img {
+    max-height: 40px;
+    max-width: 140px;
+    object-fit: contain;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; }
+    .controls { display: none !important; }
+    .poster-preview-wrap { padding: 0; max-width: none; }
+
+    .poster {
+      width: 100%;
+      min-height: auto;
+      box-shadow: none;
+      border-radius: 0;
+      page-break-inside: avoid;
+    }
+
+    .poster-accent-top,
+    .poster-footer,
+    .poster-date-block,
+    .poster-qr-box {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    @page {
+      margin: 0;
+      size: A4 portrait;
+    }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .poster {
+      width: 100%;
+      min-height: auto;
+    }
+    .poster-headline { font-size: 28px; }
+    .poster-date-block .date-main { font-size: 28px; }
+    .poster-content { padding: 28px 24px 24px; }
+    .controls h1 { font-size: 1.5em; }
+  }
+</style>
+</head>
+<body>
+
+<div class="controls" id="controls">
+  <header>
+    <h1>📌 QR Poster Generator</h1>
+    <p>Generate printable posters with QR codes for each route</p>
+  </header>
+  <div id="controlsInner">
+    <div class="status"><div class="spinner"></div>Loading routes…</div>
+  </div>
+</div>
+
+<div class="poster-preview-wrap" id="posterWrap" style="display:none;">
+  <div class="poster" id="poster"></div>
+</div>
+
+<script>
+const API = new URLSearchParams(location.search).get('api') || '';
+
+const STATE = {
+  settings: {},
+  routes: [],
+  donations: {},
+  selectedRoute: 0
+};
+
+if (!API) {
+  document.getElementById('controlsInner').innerHTML =
+    '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>qr_poster?api=YOUR_API_URL</code></div>';
+} else {
+  init();
+}
+
+async function init() {
+  try {
+    const res = await fetch(API);
+    const data = await res.json();
+    STATE.settings = data.settings || {};
+    STATE.routes = data.routes || [];
+    STATE.donations = data.donations || {};
+
+    if (!STATE.routes.length) {
+      document.getElementById('controlsInner').innerHTML =
+        '<div class="status">No routes found.</div>';
+      return;
+    }
+
+    renderControls();
+    generatePoster();
+  } catch(e) {
+    document.getElementById('controlsInner').innerHTML =
+      `<div class="status" style="color:#ff6b6b;">Failed to load: ${e.message}</div>`;
+  }
+}
+
+function formatDateLong(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function getDayName(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return '';
+  return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
+}
+
+function renderControls() {
+  const options = STATE.routes.map((r, i) =>
+    `<option value="${i}">${r.routeName || 'Route ' + (i+1)} — ${formatDateLong(r.date)}</option>`
+  ).join('');
+
+  document.getElementById('controlsInner').innerHTML = `
+    <div class="control-row">
+      <div class="control-group">
+        <label>Select Route</label>
+        <select id="routeSelect" onchange="onRouteChange()">
+          ${options}
+        </select>
+      </div>
+    </div>
+    <div class="control-row">
+      <div class="control-group">
+        <label>Custom Headline (optional)</label>
+        <input type="text" id="customHeadline" placeholder="Santa's Coming to YOUR Street!" oninput="generatePoster()">
+      </div>
+    </div>
+    <div class="control-row">
+      <div class="control-group">
+        <label>Custom QR URL (optional — defaults to tracker)</label>
+        <input type="text" id="customQrUrl" placeholder="https://..." oninput="generatePoster()">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="window.print()">🖨️ Print Poster</button>
+      <button class="btn btn-ghost" onclick="printAll()">🖨️ Print All Routes</button>
+    </div>
+  `;
+}
+
+function onRouteChange() {
+  STATE.selectedRoute = parseInt(document.getElementById('routeSelect').value);
+  generatePoster();
+}
+
+function getTrackerUrl() {
+  const custom = document.getElementById('customQrUrl')?.value?.trim();
+  if (custom) return custom;
+  return STATE.settings.tracker_url
+    || `https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=${encodeURIComponent(API)}`;
+}
+
+function generatePoster(routeIndex) {
+  const idx = routeIndex !== undefined ? routeIndex : STATE.selectedRoute;
+  const route = STATE.routes[idx];
+  if (!route) return;
+
+  const s = STATE.settings;
+  const logo = s.logo_overlay_url || '';
+  const sleighName = s.sleigh_display_name || s.sleigh_name || 'Santa Sleigh';
+  const headline = document.getElementById('customHeadline')?.value?.trim()
+    || "Santa's Coming to YOUR Street!";
+  const trackerUrl = getTrackerUrl();
+  const sponsorUrl = route.sponsorUrl || '';
+
+  const dayName = getDayName(route.date);
+  const dateStr = formatDateLong(route.date);
+
+  const streets = (route.streets || '').split(',').map(s => s.trim()).filter(Boolean);
+  const streetsHtml = streets.length
+    ? streets.map(s => `<span>${s}</span>`).join('<span class="separator">·</span>')
+    : '';
+
+  let h = '';
+
+  h += '<div class="poster-accent-top"></div>';
+  h += '<div class="poster-content">';
+
+  // Logo + name
+  if (logo) h += `<img class="poster-logo" src="${logo}">`;
+  h += `<div class="poster-sleigh-name">${sleighName}</div>`;
+
+  // Headline
+  h += `<div class="poster-headline">${headline}</div>`;
+  h += `<div class="poster-subline">${route.routeName || ''}</div>`;
+
+  // Date block
+  if (route.date) {
+    h += `<div class="poster-date-block">
+      <div class="day-name">${dayName}</div>
+      <div class="date-main">${dateStr}</div>
+    </div>`;
+  }
+
+  // Streets
+  if (streetsHtml) {
+    h += `<div class="poster-streets">${streetsHtml}</div>`;
+  }
+
+  // Divider
+  h += '<div class="poster-divider"></div>';
+
+  // QR section
+  h += `<div class="poster-qr-section">
+    <div class="poster-qr-box" id="qrTarget"></div>
+    <div class="poster-scan-text">Scan to Track Santa LIVE</div>
+    <div class="poster-scan-sub">${trackerUrl.replace(/^https?:\/\//, '').split('?')[0]}</div>
+  </div>`;
+
+  // Sponsor
+  if (sponsorUrl) {
+    h += `<div class="poster-sponsor">
+      <span class="sponsor-label">Sponsored by</span>
+      <img src="${sponsorUrl}">
+    </div>`;
+  }
+
+  h += '</div>'; // poster-content
+
+  // Footer
+  h += `<div class="poster-footer">
+    ${logo ? `<img src="${logo}">` : ''}
+    <span class="footer-text">${sleighName} · Powered by TurboSanta</span>
+  </div>`;
+
+  const poster = document.getElementById('poster');
+  poster.innerHTML = h;
+  document.getElementById('posterWrap').style.display = 'block';
+
+  // Generate QR code
+  const qrTarget = document.getElementById('qrTarget');
+  if (qrTarget) {
+    qrTarget.innerHTML = '';
+    new QRCode(qrTarget, {
+      text: trackerUrl,
+      width: 200,
+      height: 200,
+      colorDark: '#1D1D1A',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
+}
+
+async function printAll() {
+  const wrap = document.getElementById('posterWrap');
+  const poster = document.getElementById('poster');
+  let allHtml = '';
+
+  for (let i = 0; i < STATE.routes.length; i++) {
+    STATE.selectedRoute = i;
+    generatePoster(i);
+
+    // Wait for QR to render
+    await new Promise(r => setTimeout(r, 300));
+
+    allHtml += `<div class="poster" style="page-break-after: always;">${poster.innerHTML}</div>`;
+  }
+
+  poster.outerHTML = allHtml;
+  wrap.style.display = 'block';
+
+  await new Promise(r => setTimeout(r, 500));
+  window.print();
+
+  // Restore single poster view
+  wrap.innerHTML = '<div class="poster" id="poster"></div>';
+  STATE.selectedRoute = 0;
+  document.getElementById('routeSelect').value = '0';
+  generatePoster();
+}
+</script>
+</body>
+</html>
