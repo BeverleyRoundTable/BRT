@@ -1,12 +1,15 @@
 <script>
 const API = new URLSearchParams(location.search).get('api') || '';
 
-if (!API) {
-  document.getElementById('initArea').innerHTML = 
-    '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>crew.html?api=YOUR_API_URL</code></div>';
-} else {
-  init();
-}
+// ⭐ This tells the script to wait for the HTML to load before running
+document.addEventListener("DOMContentLoaded", () => {
+  if (!API) {
+    document.getElementById('initArea').innerHTML = 
+      '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>crew.html?api=YOUR_API_URL</code></div>';
+  } else {
+    init();
+  }
+});
 
 async function init() {
   try {
