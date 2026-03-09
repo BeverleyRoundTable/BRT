@@ -18,32 +18,121 @@
     --gold-dim: rgba(251,175,51,0.15);
     --red: #d31c1c;
   }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Open Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+  body {
+    font-family: 'Open Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
   .app { max-width: 600px; margin: 0 auto; padding: 32px 24px 64px; }
+
   header { text-align: center; margin-bottom: 32px; }
-  header h1 { font-size: 2em; font-weight: 700; background: linear-gradient(135deg, #fff 30%, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  header h1 {
+    font-size: 2em; font-weight: 700;
+    background: linear-gradient(135deg, #fff 30%, var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
   header p { color: var(--text-dim); margin-top: 6px; font-size: 0.9em; }
-  .format-row { display: flex; gap: 8px; margin-bottom: 24px; justify-content: center; }
-  .format-btn { font-family: 'Open Sans', sans-serif; font-size: 0.9em; font-weight: 700; padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim); cursor: pointer; transition: 0.2s; flex: 1; text-align: center; max-width: 200px; }
+
+  /* ── TABS ── */
+  .format-row {
+    display: flex; gap: 8px; margin-bottom: 24px; justify-content: center;
+  }
+
+  .format-btn {
+    font-family: 'Open Sans', sans-serif; font-size: 0.9em; font-weight: 700;
+    padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text-dim); cursor: pointer;
+    transition: 0.2s; flex: 1; text-align: center; max-width: 200px;
+  }
+
   .format-btn:hover { border-color: var(--gold); color: var(--text); }
   .format-btn.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+
+  /* ── PANELS & FIELDS ── */
   .section { display: none; }
   .section.active { display: block; animation: fadeIn 0.3s ease; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
-  .panel h3 { font-size: 0.82em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold); margin-bottom: 16px; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; margin-bottom: 20px;
+  }
+
+  .panel h3 {
+    font-size: 0.82em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--gold); margin-bottom: 16px;
+  }
+
   .field { margin-bottom: 16px; }
-  .field label { display: block; font-size: 0.75em; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-  .field input, .field select { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; color: var(--text); font-family: 'Open Sans', sans-serif; font-size: 0.95em; outline: none; }
-  .btn { width: 100%; font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 0.95em; border: none; border-radius: 10px; padding: 14px 24px; cursor: pointer; transition: 0.2s; }
+
+  .field label {
+    display: block; font-size: 0.75em; font-weight: 700;
+    color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 6px;
+  }
+
+  .field input, .field select {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; color: var(--text);
+    font-family: 'Open Sans', sans-serif; font-size: 0.95em; outline: none;
+    transition: 0.2s;
+  }
+
+  .field input:focus, .field select:focus { border-color: var(--gold); }
+  .field select option { background: var(--surface-2); color: var(--text); }
+
+  /* ── BUTTONS ── */
+  .btn-row { display: flex; gap: 10px; margin-top: 24px; }
+  .btn {
+    width: 100%; font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 0.95em;
+    border: none; border-radius: 10px; padding: 14px 24px; cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn:active { transform: scale(0.98); }
   .btn-gold { background: linear-gradient(135deg, var(--gold), #e89a1d); color: #1a1000; }
-  .check-item { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); }
-  .check-item input[type="checkbox"] { width: 22px; height: 22px; margin-right: 14px; accent-color: var(--gold); }
-  .vol-card { background: var(--surface-2); border-left: 4px solid var(--gold); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+  .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── CHECKLIST & ROSTER ── */
+  .check-item {
+    display: flex; align-items: center; padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-item input[type="checkbox"] {
+    width: 22px; height: 22px; margin-right: 14px; cursor: pointer;
+    accent-color: var(--gold);
+  }
+  .check-item label {
+    font-size: 0.95em; color: var(--text); font-weight: 600;
+    margin: 0; cursor: pointer; flex: 1;
+  }
+
+  .vol-card {
+    background: var(--surface-2); border-left: 4px solid var(--gold);
+    border-radius: 8px; padding: 14px 16px; margin-bottom: 12px;
+  }
+  .vol-card strong { display: block; font-size: 1.05em; color: var(--gold); margin-bottom: 2px;}
+  .vol-card span { font-size: 0.85em; color: var(--text-dim); }
+
+  /* ── LOADING & STATUS ── */
   .status { text-align: center; padding: 40px; color: var(--text-dim); font-size: 0.9em; }
-  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--gold); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { text-align: center; padding: 60px 24px; color: #ff6b6b; }
+  .error-msg code { background: var(--surface); padding: 4px 10px; border-radius: 6px; }
+
 </style>
 </head>
 <body>
@@ -59,6 +148,7 @@
   </div>
 
   <div id="mainApp" style="display: none;">
+    
     <div class="format-row">
       <button class="format-btn active" data-target="signup" onclick="switchTab(this)">📝 Sign Up</button>
       <button class="format-btn" data-target="ops" onclick="switchTab(this)">🛠️ Operations</button>
@@ -68,19 +158,35 @@
       <div class="panel">
         <h3>Join a Route</h3>
         <form id="signupForm" onsubmit="submitVolunteer(event)">
-          <div class="field"><label>Select Route & Date</label><select id="routeSelect" required><option value="">Loading...</option></select></div>
-          <div class="field"><label>Full Name</label><input type="text" id="volName" required></div>
-          <div class="field"><label>Preferred Role</label>
+          <div class="field">
+            <label>Select Route & Date</label>
+            <select id="routeSelect" required>
+              <option value="">Loading routes...</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Full Name</label>
+            <input type="text" id="volName" required placeholder="e.g. John Smith">
+          </div>
+          <div class="field">
+            <label>Preferred Role</label>
             <select id="volRole" required>
-          <option value="Driver">Driver</option>
-          <option value="Collections">Collections</option>
-          <option value="Lead Elf">Lead Elf</option>
-          <option value="Santa">Santa</option>
-          <option value="Tech/GPS">Tech/GPS</option>
-          <option value="Safety Walkers">Safety Walkers</option>
-  </select>
-          <div class="field"><label>Phone Number</label><input type="tel" id="volPhone" required></div>
-          <button type="submit" id="submitBtn" class="btn btn-gold">Sign Up Now</button>
+              <option value="">Select a role...</option>
+              <option value="Driver">Driver</option>
+              <option value="Collections">Collections</option>
+              <option value="Lead Elf">Lead Elf</option>
+              <option value="Santa">Santa</option>
+              <option value="Tech/GPS">Tech/GPS</option>
+              <option value="Safety Walkers">Safety Walkers</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Phone Number (For the night)</label>
+            <input type="tel" id="volPhone" required placeholder="07...">
+          </div>
+          <div class="btn-row">
+            <button type="submit" id="submitBtn" class="btn btn-gold">Sign Up Now</button>
+          </div>
         </form>
       </div>
     </div>
@@ -88,13 +194,29 @@
     <div id="ops" class="section">
       <div class="panel">
         <h3>Tonight's Setup</h3>
-        <div class="field"><select id="opsRouteSelect" onchange="loadRouteData()"><option value="">Choose Route</option></select></div>
+        <div class="field" style="margin-bottom: 0;">
+          <label>Select Route to Manage</label>
+          <select id="opsRouteSelect" onchange="loadRouteData()">
+            <option value="">Loading routes...</option>
+          </select>
+        </div>
       </div>
+
       <div id="opsContent" style="display:none;">
-        <div class="panel"><h3>Pre-Departure Checklist</h3><div id="checklistContainer"></div></div>
-        <div class="panel"><h3>Tonight's Crew</h3><div id="crewContainer"></div></div>
+        <div class="panel">
+          <h3>Pre-Departure Checklist</h3>
+          <div id="checklistContainer">
+            </div>
+        </div>
+
+        <div class="panel">
+          <h3>Tonight's Crew</h3>
+          <div id="crewContainer">
+            </div>
+        </div>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -104,10 +226,9 @@ const OPS_PASSWORD = "magic";
 let isOpsAuthenticated = false;
 
 document.addEventListener("DOMContentLoaded", () => {
-  const initArea = document.getElementById('initArea');
-  if (!initArea) return;
   if (!API) {
-    initArea.innerHTML = '<div class="error-msg">Missing API parameter.</div>';
+    document.getElementById('initArea').innerHTML = 
+      '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>crew.html?api=YOUR_API_URL</code></div>';
   } else {
     init();
   }
@@ -117,37 +238,49 @@ async function init() {
   try {
     const res = await fetch(`${API}?function=getRoutes`);
     const data = await res.json();
+    
+    if(!data.routes) throw new Error("Invalid API response");
+
     populateRouteDropdowns(data.routes);
+    
     document.getElementById('initArea').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
   } catch(e) {
-    document.getElementById('initArea').innerHTML = `<div class="error-msg">Failed: ${e.message}</div>`;
+    document.getElementById('initArea').innerHTML = 
+      `<div class="error-msg">Connection Failed: ${e.message}</div>`;
   }
 }
 
 function switchTab(btn) {
   const target = btn.dataset.target;
+  
+  // Re-added the Ops Password protection from your 'current' code
   if (target === "ops" && !isOpsAuthenticated) {
     if (prompt("Enter Ops Password:") !== OPS_PASSWORD) return;
     isOpsAuthenticated = true;
   }
+
   document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  
   btn.classList.add('active');
   document.getElementById(target).classList.add('active');
 }
 
 function populateRouteDropdowns(routes) {
   const dropdowns = [document.getElementById('routeSelect'), document.getElementById('opsRouteSelect')];
+  
   dropdowns.forEach(dropdown => {
-    dropdown.innerHTML = '<option value="">-- Choose Route --</option>';
+    dropdown.innerHTML = '<option value="">-- Choose a Route --</option>';
     routes.forEach(route => {
       if(route.routeName && route.date) {
         const d = new Date(route.date);
-        const opt = document.createElement('option');
-        opt.value = route.routeName;
-        opt.textContent = `${route.routeName} — ${d.toLocaleDateString('en-GB', {day:'numeric', month:'short'})}`;
-        dropdown.appendChild(opt);
+        const friendlyDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        
+        const option = document.createElement('option');
+        option.value = route.routeName;
+        option.textContent = `${route.routeName} — ${friendlyDate}`;
+        dropdown.appendChild(option);
       }
     });
   });
@@ -156,7 +289,9 @@ function populateRouteDropdowns(routes) {
 async function submitVolunteer(e) {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
-  btn.innerText = "Submitting..."; btn.disabled = true;
+  btn.innerText = "Submitting...";
+  btn.disabled = true;
+
   const payload = {
     action: "registerVolunteer",
     routeName: document.getElementById('routeSelect').value,
@@ -164,71 +299,148 @@ async function submitVolunteer(e) {
     role: document.getElementById('volRole').value,
     phone: document.getElementById('volPhone').value
   };
+
   try {
     await fetch(API, { method: "POST", body: JSON.stringify(payload) });
-    alert("🎉 Sign up successful!");
+    alert("🎉 Thanks for signing up! You've been added to the roster.");
     document.getElementById('signupForm').reset();
-  } catch (err) { alert("Error submitting."); }
-  finally { btn.innerText = "Sign Up Now"; btn.disabled = false; }
+  } catch (err) {
+    alert("Something went wrong. Please check your connection and try again.");
+  } finally {
+    btn.innerText = "Sign Up Now";
+    btn.disabled = false;
+  }
 }
 
 async function loadRouteData() {
   const routeName = document.getElementById('opsRouteSelect').value;
-  if (!routeName) return;
-  document.getElementById('opsContent').style.display = 'block';
-  const [checklistRes, volRes] = await Promise.all([
-    fetch(`${API}?function=getChecklist&route=${routeName}`),
-    fetch(`${API}?function=getVolunteers&route=${routeName}`)
-  ]);
-  const checklistPayload = await checklistRes.json();
-  const volData = await volRes.json();
-  renderChecklist(routeName, checklistPayload.tasks, checklistPayload.data);
-  renderCrew(volData);
+  const contentDiv = document.getElementById('opsContent');
+  
+  if (!routeName) {
+    contentDiv.style.display = 'none';
+    return;
+  }
+  
+  contentDiv.style.display = 'block';
+  document.getElementById('checklistContainer').innerHTML = '<div class="status"><div class="spinner"></div></div>';
+  document.getElementById('crewContainer').innerHTML = '<div class="status"><div class="spinner"></div></div>';
+
+  try {
+    const [checklistRes, volRes] = await Promise.all([
+      fetch(`${API}?function=getChecklist&route=${routeName}`),
+      fetch(`${API}?function=getVolunteers&route=${routeName}`)
+    ]);
+
+    const checklistPayload = await checklistRes.json();
+    const volData = await volRes.json();
+
+    renderChecklist(routeName, checklistPayload.tasks, checklistPayload.data);
+    renderCrew(volData);
+  } catch (e) {
+    document.getElementById('checklistContainer').innerHTML = `<p style="color:#ff6b6b">Error loading data.</p>`;
+    document.getElementById('crewContainer').innerHTML = ``;
+  }
 }
 
 function renderChecklist(routeName, tasks, data) {
   const container = document.getElementById('checklistContainer');
   container.innerHTML = "";
+
+  if (!tasks || tasks.length === 0) {
+    container.innerHTML = "<p>No checklist items found in sheet.</p>";
+    return;
+  }
+
   tasks.forEach(item => {
-    const isChecked = data[item] === true || data[item] === "TRUE";
+    const isChecked = data[item] === true || data[item] === "TRUE" || data[item] === "true";
+    const id = `chk_${item.replace(/\s+/g, '')}`;
+    
     const div = document.createElement('div');
     div.className = 'check-item';
-    div.innerHTML = `<input type="checkbox" ${isChecked?'checked':''} onchange="updateChecklistItem('${routeName}', '${item}', this.checked)"><label>${item}</label>`;
+    div.innerHTML = `
+      <input type="checkbox" id="${id}" ${isChecked ? 'checked' : ''} 
+             onchange="updateChecklistItem('${routeName}', '${item}', this.checked)">
+      <label for="${id}">${item}</label>
+    `;
     container.appendChild(div);
   });
 }
 
 async function updateChecklistItem(routeName, item, isChecked) {
-  await fetch(API, { method: "POST", body: JSON.stringify({ action: "updateChecklist", routeName, item, value: isChecked }) });
+  const payload = {
+    action: "updateChecklist",
+    routeName: routeName,
+    item: item,
+    value: isChecked
+  };
+
+  try {
+    await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+  } catch (err) {
+    console.error("Failed to update checklist", err);
+    alert("Failed to save. Check your connection.");
+  }
 }
 
 function renderCrew(volunteers) {
   const container = document.getElementById('crewContainer');
   container.innerHTML = "";
+
   if (!volunteers || volunteers.length === 0) {
-    container.innerHTML = '<p>No volunteers yet.</p>'; return;
+    container.innerHTML = '<p style="color:var(--text-dim); font-size:0.9em;">No volunteers signed up yet.</p>';
+    return;
   }
+
   volunteers.forEach(vol => {
     const div = document.createElement('div');
     div.className = 'vol-card';
+    
+    const name = vol["Volunteer Name"] || "Unknown";
+    const role = vol["Role"] || "Volunteer";
+    const phone = vol["Phone Number"] || "No number";
     const status = vol["Check-in Status"] || "Pending";
-    const isHere = status === "Checked In";
+    const routeName = vol["RouteName"];
+
+    const btnStyle = status === "Checked In" 
+      ? "background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; cursor: default;" 
+      : "background: var(--surface); color: var(--gold); border: 1px solid var(--gold); padding: 4px 8px; border-radius: 4px; font-size: 0.8em; cursor: pointer;";
+    
+    const btnText = status === "Checked In" ? "✅ Here" : "Tap to Check-in";
+    const disabledAttr = status === "Checked In" ? "disabled" : "";
+
     div.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div><strong>${vol["Volunteer Name"]}</strong><span>${vol["Role"]} · ${vol["Phone Number"]}</span></div>
-        <button class="btn" style="width:auto; padding:5px 10px; background:${isHere?'#28a745':'var(--surface)'}; color:white;" 
-          ${isHere?'disabled':''} onclick="checkInVolunteer(this, '${vol["RouteName"]}', '${vol["Volunteer Name"]}')">
-          ${isHere?'✅ Here':'Check-in'}
-        </button>
-      </div>`;
+        <div>
+          <strong>${name}</strong>
+          <span>${role} &nbsp;·&nbsp; 📞 ${phone}</span>
+        </div>
+        <button style="${btnStyle}" ${disabledAttr} onclick="checkInVolunteer(this, '${routeName}', '${name}')">${btnText}</button>
+      </div>
+    `;
     container.appendChild(div);
   });
 }
 
-async function checkInVolunteer(btn, routeName, name) {
-  btn.innerText = "...";
-  await fetch(API, { method: "POST", body: JSON.stringify({ action: "checkIn", routeName, name }) });
-  btn.innerText = "✅ Here"; btn.style.background = "#28a745"; btn.disabled = true;
+async function checkInVolunteer(btn, routeName, volName) {
+  btn.innerText = "⏳...";
+  
+  const payload = {
+    action: "checkIn",
+    routeName: routeName,
+    name: volName
+  };
+
+  try {
+    await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+    btn.innerText = "✅ Here";
+    btn.style.background = "#28a745";
+    btn.style.color = "white";
+    btn.style.border = "none";
+    btn.disabled = true;
+  } catch (err) {
+    alert("Failed to check in. Try again.");
+    btn.innerText = "Tap to Check-in";
+  }
 }
 </script>
 </body>
