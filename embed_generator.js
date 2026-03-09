@@ -310,6 +310,27 @@ https://brt-23f.pages.dev/god_mode?api=${ensureApi()}
 `;
 
 // ================================
+// QR Poster Generator
+// ================================
+const qrPosterLink = `
+https://brt-23f.pages.dev/qr_poster?api=${ensureApi()}
+`;
+
+// ================================
+// Thank You Card
+// ================================
+const thankYouLink = `
+https://brt-23f.pages.dev/thank_you?api=${ensureApi()}
+`;
+
+// ================================
+// Reindeer Adoption
+// ================================
+const reindeerLink = `
+https://brt-23f.pages.dev/reindeer?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -329,3 +350,6 @@ document.getElementById("recommendedRoutes").value = recommendedRoutes.trim();
 document.getElementById("snowmanFrameEmbed").value = snowmanFrameEmbed.trim();
 document.getElementById("seasonWrapLink").value = seasonWrapLink.trim();
 document.getElementById("godModeLink").value = godModeLink.trim();
+document.getElementById("qrPosterLink").value = qrPosterLink.trim();
+document.getElementById("thankYouLink").value = thankYouLink.trim();
+document.getElementById("reindeerLink").value = reindeerLink.trim();
