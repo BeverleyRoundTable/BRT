@@ -190,6 +190,11 @@
             <input type="tel" id="volPhone" required placeholder="07...">
           </div>
 
+          <div class="field">
+            <label>Organisation (Optional)</label>
+            <input type="text" id="volOrg" placeholder="e.g. Scouts, Round Table, or leave blank">
+          </div>
+
           <div class="field" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
             <label style="color: var(--gold);">Volunteer Agreement</label>
             
@@ -313,6 +318,7 @@ async function submitVolunteer(e) {
     name: document.getElementById('volName').value,
     role: document.getElementById('volRole').value,
     phone: document.getElementById('volPhone').value
+    organisation: document.getElementById('volOrg').value
   };
 
   try {
@@ -423,11 +429,13 @@ function renderCrew(volunteers) {
     const btnText = status === "Checked In" ? "✅ Here" : "Tap to Check-in";
     const disabledAttr = status === "Checked In" ? "disabled" : "";
 
+    const orgBadge = vol["Organisation"] ? `<span style="background: var(--gold-dim); color: var(--gold); padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 6px;">${vol["Organisation"]}</span>` : "";
+
     div.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <strong>${name}</strong>
-          <span>${role} &nbsp;·&nbsp; 📞 ${phone}</span>
+          <strong>${name}${orgBadge}</strong>
+          <span>${role}  ·  📞 ${phone}</span>
         </div>
         <button style="${btnStyle}" ${disabledAttr} onclick="checkInVolunteer(this, '${routeName}', '${name}')">${btnText}</button>
       </div>
