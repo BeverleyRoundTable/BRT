@@ -333,7 +333,7 @@ https://brt-23f.pages.dev/adopt_reindeer?api=${ensureApi()}
 // ================================
 // Crew Signup-Check-in
 // ================================
-const reindeerLink = `
+const crewLink = `
 https://brt-23f.pages.dev/crew?api=${ensureApi()}
 `;
 
