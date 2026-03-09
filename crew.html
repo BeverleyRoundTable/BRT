@@ -437,29 +437,43 @@ function renderCrew(volunteers) {
           <strong>${name}${orgBadge}</strong>
           <span>${role}  ·  📞 ${phone}</span>
         </div>
-        <button style="${btnStyle}" ${disabledAttr} onclick="checkInVolunteer(this, '${routeName}', '${name}')">${btnText}</button>
+        <button style="${btnStyle}" ${disabledAttr} onclick="checkInVolunteer(this, '${routeName}', '${name}', '${role}')">${btnText}</button>
       </div>
     `;
     container.appendChild(div);
   });
 }
 
-async function checkInVolunteer(btn, routeName, volName) {
+async function checkInVolunteer(btn, routeName, volName, role) {
+  let bucketNumber = "";
+
+  // Only ask for a bucket if they are doing Collections
+  if (role.toLowerCase().includes("collect")) {
+    bucketNumber = prompt(`Assign a Bucket Number for ${volName}:`);
+    if (bucketNumber === null) return; // User clicked cancel
+  }
+
   btn.innerText = "⏳...";
   
   const payload = {
     action: "checkIn",
     routeName: routeName,
-    name: volName
+    name: volName,
+    bucket: bucketNumber // Pass the bucket number to the server
   };
 
   try {
     await fetch(API, { method: "POST", body: JSON.stringify(payload) });
-    btn.innerText = "✅ Here";
+    btn.innerText = "✅ Here" + (bucketNumber ? ` (#${bucketNumber})` : "");
     btn.style.background = "#28a745";
     btn.style.color = "white";
     btn.style.border = "none";
     btn.disabled = true;
+    
+    // Optional: Update the UI text to show the bucket number
+    const infoSpan = btn.parentElement.querySelector('span');
+    if (bucketNumber) infoSpan.innerText += `  ·  🪣 Bucket: ${bucketNumber}`;
+
   } catch (err) {
     alert("Failed to check in. Try again.");
     btn.innerText = "Tap to Check-in";
