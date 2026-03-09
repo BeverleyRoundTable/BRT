@@ -331,6 +331,13 @@ https://brt-23f.pages.dev/adopt_reindeer?api=${ensureApi()}
 `;
 
 // ================================
+// Crew Signup-Check-in
+// ================================
+const reindeerLink = `
+https://brt-23f.pages.dev/crew?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -353,3 +360,4 @@ document.getElementById("godModeLink").value = godModeLink.trim();
 document.getElementById("qrPosterLink").value = qrPosterLink.trim();
 document.getElementById("thankYouLink").value = thankYouLink.trim();
 document.getElementById("reindeerLink").value = reindeerLink.trim();
+document.getElementById("crewLink").value = reindeerLink.trim();
