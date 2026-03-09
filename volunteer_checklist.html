@@ -166,12 +166,50 @@ function renderCrew(volunteers) {
     const name = vol["Volunteer Name"] || "Unknown";
     const role = vol["Role"] || "Volunteer";
     const phone = vol["Phone Number"] || "No number";
+    const status = vol["Check-in Status"] || "Pending";
+    const routeName = vol["RouteName"];
+
+    // Make the button turn green if they are already checked in
+    const btnStyle = status === "Checked In" 
+      ? "background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; cursor: default;" 
+      : "background: var(--surface); color: var(--gold); border: 1px solid var(--gold); padding: 4px 8px; border-radius: 4px; font-size: 0.8em; cursor: pointer;";
+    
+    const btnText = status === "Checked In" ? "✅ Here" : "Tap to Check-in";
+    const disabledAttr = status === "Checked In" ? "disabled" : "";
 
     div.innerHTML = `
-      <strong>${name}</strong>
-      <span>${role} &nbsp;·&nbsp; 📞 ${phone}</span>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>${name}</strong>
+          <span>${role} &nbsp;·&nbsp; 📞 ${phone}</span>
+        </div>
+        <button style="${btnStyle}" ${disabledAttr} onclick="checkInVolunteer(this, '${routeName}', '${name}')">${btnText}</button>
+      </div>
     `;
     container.appendChild(div);
   });
+}
+
+// The function that sends the check-in to Google Sheets
+async function checkInVolunteer(btn, routeName, volName) {
+  btn.innerText = "⏳...";
+  
+  const payload = {
+    action: "checkIn",
+    routeName: routeName,
+    name: volName
+  };
+
+  try {
+    await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+    btn.innerText = "✅ Here";
+    btn.style.background = "#28a745";
+    btn.style.color = "white";
+    btn.style.border = "none";
+    btn.disabled = true;
+  } catch (err) {
+    alert("Failed to check in. Try again.");
+    btn.innerText = "Tap to Check-in";
+  }
 }
 </script>
