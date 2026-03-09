@@ -213,7 +213,12 @@
 
     <div id="ops" class="section">
       <div class="panel">
-        <h3>Tonight's Setup</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="margin-bottom: 0;">Tonight's Setup</h3>
+          <button id="refreshBtn" onclick="loadRouteData()" style="display: none; background: var(--surface-2); border: 1px solid var(--border); color: var(--gold); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: bold; transition: 0.2s;">
+            🔄 Refresh
+          </button>
+        </div>
         <div class="field" style="margin-bottom: 0;">
           <label>Select Route to Manage</label>
           <select id="opsRouteSelect" onchange="loadRouteData()">
@@ -336,13 +341,17 @@ async function submitVolunteer(e) {
 async function loadRouteData() {
   const routeName = document.getElementById('opsRouteSelect').value;
   const contentDiv = document.getElementById('opsContent');
+  const refreshBtn = document.getElementById('refreshBtn'); // Grab the new button
   
   if (!routeName) {
     contentDiv.style.display = 'none';
+    refreshBtn.style.display = 'none'; // Hide if no route selected
     return;
   }
   
   contentDiv.style.display = 'block';
+  refreshBtn.style.display = 'block'; // Show button!
+  
   document.getElementById('checklistContainer').innerHTML = '<div class="status"><div class="spinner"></div></div>';
   document.getElementById('crewContainer').innerHTML = '<div class="status"><div class="spinner"></div></div>';
 
