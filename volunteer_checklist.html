@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TurboSanta | Crew Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1D1D1A;
+    --surface: #262622;
+    --surface-2: #2f2f2a;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --text-dim: rgba(255,255,255,0.5);
+    --gold: #FBAF33;
+    --gold-dim: rgba(251,175,51,0.15);
+    --red: #d31c1c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Open Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app { max-width: 600px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header { text-align: center; margin-bottom: 32px; }
+
+  header h1 {
+    font-size: 2em; font-weight: 700;
+    background: linear-gradient(135deg, #fff 30%, var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  header p { color: var(--text-dim); margin-top: 6px; font-size: 0.9em; }
+
+  /* ── TABS ── */
+  .format-row {
+    display: flex; gap: 8px; margin-bottom: 24px; justify-content: center;
+  }
+
+  .format-btn {
+    font-family: 'Open Sans', sans-serif; font-size: 0.9em; font-weight: 700;
+    padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text-dim); cursor: pointer;
+    transition: 0.2s; flex: 1; text-align: center; max-width: 200px;
+  }
+
+  .format-btn:hover { border-color: var(--gold); color: var(--text); }
+  .format-btn.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+
+  /* ── PANELS & FIELDS ── */
+  .section { display: none; }
+  .section.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px; margin-bottom: 20px;
+  }
+
+  .panel h3 {
+    font-size: 0.82em; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--gold); margin-bottom: 16px;
+  }
+
+  .field { margin-bottom: 16px; }
+
+  .field label {
+    display: block; font-size: 0.75em; font-weight: 700;
+    color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 6px;
+  }
+
+  .field input, .field select {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; color: var(--text);
+    font-family: 'Open Sans', sans-serif; font-size: 0.95em; outline: none;
+    transition: 0.2s;
+  }
+
+  .field input:focus, .field select:focus { border-color: var(--gold); }
+  .field select option { background: var(--surface-2); color: var(--text); }
+
+  /* ── BUTTONS ── */
+  .btn-row { display: flex; gap: 10px; margin-top: 24px; }
+  .btn {
+    width: 100%; font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 0.95em;
+    border: none; border-radius: 10px; padding: 14px 24px; cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-gold { background: linear-gradient(135deg, var(--gold), #e89a1d); color: #1a1000; }
+  .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── CHECKLIST & ROSTER ── */
+  .check-item {
+    display: flex; align-items: center; padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-item input[type="checkbox"] {
+    width: 22px; height: 22px; margin-right: 14px; cursor: pointer;
+    accent-color: var(--gold);
+  }
+  .check-item label {
+    font-size: 0.95em; color: var(--text); font-weight: 600;
+    margin: 0; cursor: pointer; flex: 1;
+  }
+
+  .vol-card {
+    background: var(--surface-2); border-left: 4px solid var(--gold);
+    border-radius: 8px; padding: 14px 16px; margin-bottom: 12px;
+  }
+  .vol-card strong { display: block; font-size: 1.05em; color: var(--gold); margin-bottom: 2px;}
+  .vol-card span { font-size: 0.85em; color: var(--text-dim); }
+
+  /* ── LOADING & STATUS ── */
+  .status { text-align: center; padding: 40px; color: var(--text-dim); font-size: 0.9em; }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--gold); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { text-align: center; padding: 60px 24px; color: #ff6b6b; }
+  .error-msg code { background: var(--surface); padding: 4px 10px; border-radius: 6px; }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1>🎅 Crew Hub</h1>
+    <p>Sign up and manage live operations</p>
+  </header>
+
+  <div id="initArea">
+    <div class="status"><div class="spinner"></div>Connecting to TurboSanta API...</div>
+  </div>
+
+  <div id="mainApp" style="display: none;">
+    
+    <div class="format-row">
+      <button class="format-btn active" data-target="signup" onclick="switchTab(this)">📝 Sign Up</button>
+      <button class="format-btn" data-target="ops" onclick="switchTab(this)">🛠️ Operations</button>
+    </div>
+
+    <div id="signup" class="section active">
+      <div class="panel">
+        <h3>Join a Route</h3>
+        <form id="signupForm" onsubmit="submitVolunteer(event)">
+          <div class="field">
+            <label>Select Route & Date</label>
+            <select id="routeSelect" required>
+              <option value="">Loading routes...</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Full Name</label>
+            <input type="text" id="volName" required placeholder="e.g. John Smith">
+          </div>
+          <div class="field">
+            <label>Preferred Role</label>
+            <select id="volRole" required>
+              <option value="">Select a role...</option>
+              <option value="Lead Elf">Lead Elf (Manager)</option>
+              <option value="Driver">Driver</option>
+              <option value="Collector">Collector (Bucket Shaker)</option>
+              <option value="Safety Walker">Safety Walker</option>
+              <option value="Tech/Media">Tech / Media</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Phone Number (For the night)</label>
+            <input type="tel" id="volPhone" required placeholder="07...">
+          </div>
+          <div class="btn-row">
+            <button type="submit" id="submitBtn" class="btn btn-gold">Sign Up Now</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="ops" class="section">
+      <div class="panel">
+        <h3>Tonight's Setup</h3>
+        <div class="field" style="margin-bottom: 0;">
+          <label>Select Route to Manage</label>
+          <select id="opsRouteSelect" onchange="loadRouteData()">
+            <option value="">Loading routes...</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="opsContent" style="display:none;">
+        <div class="panel">
+          <h3>Pre-Departure Checklist</h3>
+          <div id="checklistContainer">
+            </div>
+        </div>
+
+        <div class="panel">
+          <h3>Tonight's Crew</h3>
+          <div id="crewContainer">
+            </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Grab API from URL just like the Thank You card
+const API = new URLSearchParams(location.search).get('api') || '';
+
+// Exact matching headers from your Google Sheet Checklist tab
+const CHECKLIST_ITEMS = [
+  "Generator Charged",
+  "GPS Logger On",
+  "Tins Ready",
+  "Music Tested",
+  "Lights Tested",
+  "Safety Briefing"
+];
+
+if (!API) {
+  document.getElementById('initArea').innerHTML = 
+    '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>crew.html?api=YOUR_API_URL</code></div>';
+} else {
+  init();
+}
+
+async function init() {
+  try {
+    const res = await fetch(`${API}?function=getRoutes`);
+    const data = await res.json();
+    
+    if(!data.routes) throw new Error("Invalid API response");
+
+    populateRouteDropdowns(data.routes);
+    
+    document.getElementById('initArea').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+  } catch(e) {
+    document.getElementById('initArea').innerHTML = 
+      `<div class="error-msg">Connection Failed: ${e.message}</div>`;
+  }
+}
+
+function switchTab(btn) {
+  document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  
+  btn.classList.add('active');
+  document.getElementById(btn.dataset.target).classList.add('active');
+}
+
+function populateRouteDropdowns(routes) {
+  const dropdowns = [document.getElementById('routeSelect'), document.getElementById('opsRouteSelect')];
+  
+  dropdowns.forEach(dropdown => {
+    dropdown.innerHTML = '<option value="">-- Choose a Route --</option>';
+    routes.forEach(route => {
+      // Only show routes that have a name and a date assigned
+      if(route.routeName && route.date) {
+        const d = new Date(route.date);
+        const friendlyDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        
+        const option = document.createElement('option');
+        option.value = route.routeName;
+        option.textContent = `${route.routeName} — ${friendlyDate}`;
+        dropdown.appendChild(option);
+      }
+    });
+  });
+}
+
+async function submitVolunteer(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.innerText = "Submitting...";
+  btn.disabled = true;
+
+  const payload = {
+    action: "registerVolunteer",
+    routeName: document.getElementById('routeSelect').value,
+    name: document.getElementById('volName').value,
+    role: document.getElementById('volRole').value,
+    phone: document.getElementById('volPhone').value
+  };
+
+  try {
+    await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+    alert("🎉 Thanks for signing up! You've been added to the roster.");
+    document.getElementById('signupForm').reset();
+  } catch (err) {
+    alert("Something went wrong. Please check your connection and try again.");
+  } finally {
+    btn.innerText = "Sign Up Now";
+    btn.disabled = false;
+  }
+}
+
+async function loadRouteData() {
+  const routeName = document.getElementById('opsRouteSelect').value;
+  const contentDiv = document.getElementById('opsContent');
+  
+  if (!routeName) {
+    contentDiv.style.display = 'none';
+    return;
+  }
+  
+  contentDiv.style.display = 'block';
+  document.getElementById('checklistContainer').innerHTML = '<div class="status"><div class="spinner"></div></div>';
+  document.getElementById('crewContainer').innerHTML = '<div class="status"><div class="spinner"></div></div>';
+
+  try {
+    const [checklistRes, volRes] = await Promise.all([
+      fetch(`${API}?function=getChecklist&route=${routeName}`),
+      fetch(`${API}?function=getVolunteers&route=${routeName}`)
+    ]);
+
+    const checklistData = await checklistRes.json();
+    const volData = await volRes.json();
+
+    renderChecklist(routeName, checklistData);
+    renderCrew(volData);
+  } catch (e) {
+    document.getElementById('checklistContainer').innerHTML = `<p style="color:#ff6b6b">Error loading data.</p>`;
+    document.getElementById('crewContainer').innerHTML = ``;
+  }
+}
+
+function renderChecklist(routeName, data) {
+  const container = document.getElementById('checklistContainer');
+  container.innerHTML = "";
+
+  CHECKLIST_ITEMS.forEach(item => {
+    // Handle string "TRUE" or boolean true from Sheets
+    const isChecked = data[item] === true || data[item] === "TRUE" || data[item] === "true";
+    const id = `chk_${item.replace(/\s+/g, '')}`;
+    
+    const div = document.createElement('div');
+    div.className = 'check-item';
+    div.innerHTML = `
+      <input type="checkbox" id="${id}" ${isChecked ? 'checked' : ''} 
+             onchange="updateChecklistItem('${routeName}', '${item}', this.checked)">
+      <label for="${id}">${item}</label>
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function updateChecklistItem(routeName, item, isChecked) {
+  const payload = {
+    action: "updateChecklist",
+    routeName: routeName,
+    item: item,
+    value: isChecked
+  };
+
+  try {
+    await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+  } catch (err) {
+    console.error("Failed to update checklist", err);
+    alert("Failed to save. Check your connection.");
+  }
+}
+
+function renderCrew(volunteers) {
+  const container = document.getElementById('crewContainer');
+  container.innerHTML = "";
+
+  if (!volunteers || volunteers.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-dim); font-size:0.9em;">No volunteers signed up yet.</p>';
+    return;
+  }
+
+  volunteers.forEach(vol => {
+    const div = document.createElement('div');
+    div.className = 'vol-card';
+    
+    // Using exact headers from your Volunteers tab
+    const name = vol["Volunteer Name"] || "Unknown";
+    const role = vol["Role"] || "Volunteer";
+    const phone = vol["Phone Number"] || "No number";
+    const status = vol["Check-in Status"] || "Pending";
+
+    div.innerHTML = `
+      <strong>${name}</strong>
+      <span>${role} &nbsp;·&nbsp; 📞 ${phone}</span>
+    `;
+    container.appendChild(div);
+  });
+}
+</script>
+</body>
+</html>
