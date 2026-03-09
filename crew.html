@@ -223,6 +223,10 @@
 <script>
 const API = new URLSearchParams(location.search).get('api') || '';
 
+// ⭐ Set your Operations password here:
+const OPS_PASSWORD = "magic"; 
+let isOpsAuthenticated = false; // Keeps them logged in until they close the page
+
 document.addEventListener("DOMContentLoaded", () => {
   if (!API) {
     document.getElementById('initArea').innerHTML = 
@@ -250,11 +254,23 @@ async function init() {
 }
 
 function switchTab(btn) {
+  const target = btn.dataset.target;
+
+  // ⭐ PASSWORD PROTECTION LOGIC
+  if (target === "ops" && !isOpsAuthenticated) {
+    const input = prompt("Restricted Access. Enter Operations Password:");
+    if (input !== OPS_PASSWORD) {
+      alert("Incorrect password.");
+      return; // Stop here, don't let them switch tabs
+    }
+    isOpsAuthenticated = true; // Unlock it so it doesn't ask again this session
+  }
+
   document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   
   btn.classList.add('active');
-  document.getElementById(btn.dataset.target).classList.add('active');
+  document.getElementById(target).classList.add('active');
 }
 
 function populateRouteDropdowns(routes) {
@@ -402,7 +418,7 @@ function renderCrew(volunteers) {
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
           <strong>${name}</strong>
-          <span>${role} &nbsp;·&nbsp; 📞 ${phone}</span>
+          <span>${role}  ·  📞 ${phone}</span>
         </div>
         <button style="${btnStyle}" ${disabledAttr} onclick="checkInVolunteer(this, '${routeName}', '${name}')">${btnText}</button>
       </div>
