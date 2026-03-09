@@ -327,7 +327,7 @@ https://brt-23f.pages.dev/thank_you?api=${ensureApi()}
 // Reindeer Adoption
 // ================================
 const reindeerLink = `
-https://brt-23f.pages.dev/reindeer?api=${ensureApi()}
+https://brt-23f.pages.dev/adopt_reindeer?api=${ensureApi()}
 `;
 
 // ================================
