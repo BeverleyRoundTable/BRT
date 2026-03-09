@@ -360,4 +360,4 @@ document.getElementById("godModeLink").value = godModeLink.trim();
 document.getElementById("qrPosterLink").value = qrPosterLink.trim();
 document.getElementById("thankYouLink").value = thankYouLink.trim();
 document.getElementById("reindeerLink").value = reindeerLink.trim();
-document.getElementById("crewLink").value = reindeerLink.trim();
+document.getElementById("crewLink").value = crewLink.trim();
