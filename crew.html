@@ -228,9 +228,11 @@ const OPS_PASSWORD = "magic";
 let isOpsAuthenticated = false; // Keeps them logged in until they close the page
 
 document.addEventListener("DOMContentLoaded", () => {
+  const initArea = document.getElementById('initArea');
+  if (!initArea) return; // Guard against null
+
   if (!API) {
-    document.getElementById('initArea').innerHTML = 
-      '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>crew.html?api=YOUR_API_URL</code></div>';
+    initArea.innerHTML = '<div class="error-msg">Missing <strong>?api=</strong> parameter.</div>';
   } else {
     init();
   }
