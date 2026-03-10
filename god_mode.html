@@ -165,20 +165,26 @@
   }
   .pa-btns button:active { transform: scale(0.96); }
   
-  /* Button Normal State (Red) */
-  .btn-broadcast { background: linear-gradient(135deg, var(--red), #900000); color: white; }
+  /* Button Normal State (Brand Grey) */
+  .btn-broadcast { 
+    background: var(--surface-2); 
+    color: var(--text-dim); 
+    border: 1px solid var(--border);
+  }
   
-  /* Button Active State (Gold Pulsing) */
+  /* Button Active State (Official Gold Pulsing) */
   .btn-broadcast.live-active { 
-    background: linear-gradient(135deg, #d4af37, #b8860b); 
-    color: #000; 
+    background: var(--gold); 
+    color: var(--bg); /* Dark text on gold background  */
+    font-weight: 800;
     animation: pulse-broadcast 2s infinite; 
+    border: none;
   }
   
   @keyframes pulse-broadcast {
-    0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(251, 175, 51, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(251, 175, 51, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(251, 175, 51, 0); }
   }
 
   .btn-clear { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
