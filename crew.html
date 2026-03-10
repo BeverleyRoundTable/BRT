@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TurboSanta | Crew Hub</title>
-<link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-<link href="[https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800;900&display=swap](https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800;900&display=swap)" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #1D1D1A;
@@ -255,8 +255,6 @@ header p {
 
 <script>
 const API = new URLSearchParams(location.search).get('api') || '';
-const OPS_PASSWORD = "magic"; 
-let isOpsAuthenticated = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!API) {
@@ -284,13 +282,39 @@ async function init() {
   }
 }
 
-function switchTab(btn) {
+// ⭐ NEW: Async Tab Switcher for the Bouncer 
+async function switchTab(btn) {
   const target = btn.dataset.target;
   
-  // Ops Password protection
-  if (target === "ops" && !isOpsAuthenticated) {
-    if (prompt("Enter Ops Password:") !== OPS_PASSWORD) return;
-    isOpsAuthenticated = true;
+  if (target === "ops") {
+    let secret = sessionStorage.getItem('opsSecret');
+    
+    if (!secret) {
+      secret = prompt("🎅 Operations Authorization Required\n\nEnter the Master Password:");
+      if (!secret) return; // User cancelled
+      
+      const originalText = btn.innerText;
+      btn.innerText = "Verifying...";
+      
+      try {
+        const sep = API.includes('?') ? '&' : '?';
+        const check = await fetch(`${API}${sep}function=verifyGodMode&secret=${encodeURIComponent(secret)}`);
+        const result = await check.json();
+        
+        if (!result.valid) {
+          alert("❌ Access Denied. Incorrect Password.");
+          btn.innerText = originalText;
+          return;
+        }
+        
+        sessionStorage.setItem('opsSecret', secret);
+      } catch(e) {
+        alert("❌ Connection failed.");
+        btn.innerText = originalText;
+        return;
+      }
+      btn.innerText = originalText;
+    }
   }
 
   document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
@@ -319,6 +343,7 @@ function populateRouteDropdowns(routes) {
   });
 }
 
+// ⭐ NOTE: This does NOT use the secret, so the public can sign up
 async function submitVolunteer(e) {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
@@ -349,16 +374,16 @@ async function submitVolunteer(e) {
 async function loadRouteData() {
   const routeName = document.getElementById('opsRouteSelect').value;
   const contentDiv = document.getElementById('opsContent');
-  const refreshBtn = document.getElementById('refreshBtn'); // Grab the new button
+  const refreshBtn = document.getElementById('refreshBtn'); 
   
   if (!routeName) {
     contentDiv.style.display = 'none';
-    refreshBtn.style.display = 'none'; // Hide if no route selected
+    refreshBtn.style.display = 'none'; 
     return;
   }
   
   contentDiv.style.display = 'block';
-  refreshBtn.style.display = 'block'; // Show button!
+  refreshBtn.style.display = 'block'; 
   
   document.getElementById('checklistContainer').innerHTML = '<div class="status"><div class="spinner"></div></div>';
   document.getElementById('crewContainer').innerHTML = '<div class="status"><div class="spinner"></div></div>';
@@ -404,16 +429,25 @@ function renderChecklist(routeName, tasks, data) {
   });
 }
 
+// ⭐ NEW: Payload attaches the secret to pass the Bouncer
 async function updateChecklistItem(routeName, item, isChecked) {
+  const secret = sessionStorage.getItem('opsSecret') || '';
   const payload = {
     action: "updateChecklist",
     routeName: routeName,
     item: item,
-    value: isChecked
+    value: isChecked,
+    secret: secret
   };
 
   try {
-    await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+    const response = await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+    const result = await response.json();
+    if(!result.ok) {
+        alert("Blocked: " + result.error);
+        // Revert the checkbox visually if it failed
+        document.getElementById(`chk_${item.replace(/\s+/g, '')}`).checked = !isChecked;
+    }
   } catch (err) {
     console.error("Failed to update checklist", err);
     alert("Failed to save. Check your connection.");
@@ -461,33 +495,42 @@ function renderCrew(volunteers) {
   });
 }
 
+// ⭐ NEW: Payload attaches the secret to pass the Bouncer
 async function checkInVolunteer(btn, routeName, volName, role) {
   let bucketNumber = "";
 
-  // Only ask for a bucket if they are doing Collections
   if (role.toLowerCase().includes("collect")) {
     bucketNumber = prompt(`Assign a Bucket Number for ${volName}:`);
-    if (bucketNumber === null) return; // User clicked cancel
+    if (bucketNumber === null) return; 
   }
 
   btn.innerText = "⏳...";
+  const secret = sessionStorage.getItem('opsSecret') || '';
   
   const payload = {
     action: "checkIn",
     routeName: routeName,
     name: volName,
-    bucket: bucketNumber // Pass the bucket number to the server
+    bucket: bucketNumber,
+    secret: secret
   };
 
   try {
-    await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+    const response = await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+    const result = await response.json();
+    
+    if(!result.ok) {
+        alert("Blocked: " + result.error);
+        btn.innerText = "Tap to Check-in";
+        return;
+    }
+    
     btn.innerText = "✅ Here" + (bucketNumber ? ` (#${bucketNumber})` : "");
     btn.style.background = "#28a745";
     btn.style.color = "white";
     btn.style.border = "none";
     btn.disabled = true;
     
-    // Optional: Update the UI text to show the bucket number
     const infoSpan = btn.parentElement.querySelector('span');
     if (bucketNumber) infoSpan.innerText += `  ·  🪣 Bucket: ${bucketNumber}`;
 
