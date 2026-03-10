@@ -22,7 +22,37 @@
     body.snowing #snow { opacity:1;filter:drop-shadow(0 0 4px white) }
     body::after { content:'';position:fixed;inset:0;background:radial-gradient(circle,transparent 40%,rgba(0,0,0,0.6) 100%);pointer-events:none;opacity:0;transition:opacity 1.5s ease;z-index:1400 }
     body.snowing::after { opacity:1 }
-    .status-popup { position:absolute;top:20px;left:50%;transform:translateX(-50%);background:rgba(24,24,24,.95);padding:14px 20px;font-size:1.05em;font-weight:800;border-radius:16px;max-width:90%;box-shadow:0 4px 24px #0006;z-index:4000;text-align:center;transition:opacity 600ms ease }
+    
+    /* ── LIVE ANNOUNCEMENT BANNER ── */
+    #announcementBanner {
+      position: fixed;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(211, 28, 28, 0.95);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 0 0 16px 16px;
+      font-weight: 800;
+      font-size: 0.95em;
+      text-align: center;
+      z-index: 5000;
+      box-shadow: 0 8px 32px rgba(211, 28, 28, 0.4);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-top: none;
+      transition: top 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      width: 90%;
+      max-width: 420px;
+      line-height: 1.4;
+    }
+    #announcementBanner.active {
+      top: 0;
+    }
+
+    .status-popup { position:absolute;top:20px;left:50%;transform:translateX(-50%);background:rgba(24,24,24,.95);padding:14px 20px;font-size:1.05em;font-weight:800;border-radius:16px;max-width:90%;box-shadow:0 4px 24px #0006;z-index:4000;text-align:center;transition:top 0.5s ease, opacity 600ms ease; }
     body.night-mode .status-popup { background:rgba(12,16,28,0.95) }
     .info-popup { position:fixed;bottom:var(--info-bottom);left:50%;transform:translateX(-50%);background:rgba(20,20,20,.94);padding:10px 14px;border-radius:14px;display:flex;align-items:center;gap:12px;font-size:.85em;font-weight:800;z-index:2000;max-width:calc(100vw - 32px);box-sizing:border-box;transition:opacity 600ms ease }
     .btn { background:#0b1220;color:#fff;border:1px solid #ffffff26;border-radius:10px;padding:7px 12px;cursor:pointer;font-weight:800;transition:opacity 0.3s }
@@ -76,6 +106,7 @@
 
 <body>
   <div id="loadingCover"><div id="loadingSpinner"></div></div>
+  <div id="announcementBanner"></div>
   <div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
   <div class="donate-box" id="donateBox"><a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a></div>
   <div class="info-popup">
@@ -446,6 +477,19 @@
         try { new Notification(title, { body, icon: AppConfig.ICONS.BROWSER_ICON, requireInteraction: true }); } catch (e) {}
       }
 
+      function applyAnnouncement(settings) {
+        const banner = document.getElementById("announcementBanner");
+        const msg = settings.live_announcement;
+        if (msg && msg.trim() !== "") {
+          banner.innerHTML = `📢 ${msg}`;
+          banner.classList.add("active");
+          AppState.dom.statusBox.style.top = "80px"; 
+        } else {
+          banner.classList.remove("active");
+          AppState.dom.statusBox.style.top = "20px";
+        }
+      }
+
       async function updateTracker() {
         try {
           const data = await Utils.loadJSON(AppState.vars.apiUrl + "?function=proxyFirebase");
@@ -522,23 +566,22 @@
               pushRouteFix(santaSnap.point.dist, Date.now());
 
              if (userSnap) {
-  const totalRouteDist = AppState.gpxRoute[AppState.gpxRoute.length - 1].dist;
-  
-  // Check if the user is pinned near the very end of the route
-  const isUserNearEnd = userSnap.point.dist > (totalRouteDist - AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET);
-  
-  // Check if Santa has basically reached the end of the track (within 10 meters)
-  const santaReachedEnd = santaSnap.point.dist >= (totalRouteDist - 10);
+                const totalRouteDist = AppState.gpxRoute[AppState.gpxRoute.length - 1].dist;
+                
+                // Check if the user is pinned near the very end of the route
+                const isUserNearEnd = userSnap.point.dist > (totalRouteDist - AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET);
+                
+                // Check if Santa has basically reached the end of the track (within 10 meters)
+                const santaReachedEnd = santaSnap.point.dist >= (totalRouteDist - 10);
 
-  // Trigger if he passes them normally, OR if they are an edge case and he finished the route
-  if (
-    (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) ||
-    (isUserNearEnd && santaReachedEnd)
-  ) {
-    AppState.flags.hasPassedSticky = true;
-    sessionStorage.setItem("SANTA_HAS_PASSED", "1");
-  } else {
-    
+                // Trigger if he passes them normally, OR if they are an edge case and he finished the route
+                if (
+                  (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) ||
+                  (isUserNearEnd && santaReachedEnd)
+                ) {
+                  AppState.flags.hasPassedSticky = true;
+                  sessionStorage.setItem("SANTA_HAS_PASSED", "1");
+                } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
                   // Use route-based speed (same units as remaining) for accurate ETA
                   const routeSpeed = Utils.calculateRouteSpeed(AppState.routeFixes);
@@ -659,6 +702,18 @@
         const settings = apiData.settings || {};
         AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
 
+        // Initial PA System Apply
+        applyAnnouncement(settings);
+
+        // Safe background polling for PA system updates (every 30 seconds)
+        setInterval(async () => {
+          if (!AppState.flags.pageVisible) return;
+          try {
+            const data = await Utils.loadJSON(AppState.vars.apiUrl);
+            if (data && data.settings) applyAnnouncement(data.settings);
+          } catch(e) {}
+        }, 30000);
+
         const today = new Date().toISOString().slice(0, 10);
         const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
         AppState.vars.todayRoute = route;
@@ -702,16 +757,16 @@
           .setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
 
         AppState.map.on("zoomend", () => {
-  if (!AppState.routeMainLayer || !AppState.routeGlowLayer) return;
+          if (!AppState.routeMainLayer || !AppState.routeGlowLayer) return;
 
-  const z = AppState.map.getZoom();
+          const z = AppState.map.getZoom();
 
-  const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3;
-  const glowWeight = mainWeight + 3;
+          const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3;
+          const glowWeight = mainWeight + 3;
 
-  AppState.routeMainLayer.setStyle({ weight: mainWeight });
-  AppState.routeGlowLayer.setStyle({ weight: glowWeight });
-});
+          AppState.routeMainLayer.setStyle({ weight: mainWeight });
+          AppState.routeGlowLayer.setStyle({ weight: glowWeight });
+        });
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(AppState.map);
 
@@ -726,53 +781,37 @@
         }
 
         // ── GPX ROUTE LAYERS ──
-if (route && AppState.flags.gpxLoaded) {
+        if (route && AppState.flags.gpxLoaded) {
+          // 🟡 Gold glow (bottom)
+          AppState.routeGlowLayer = new L.GPX(route.gpxUrl, {
+            async: true,
+            polyline_options: { color: "#ffd700", weight: 7, opacity: 0.45 },
+            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
+          }).addTo(AppState.map);
 
-  // 🟡 Gold glow (bottom)
-  AppState.routeGlowLayer = new L.GPX(route.gpxUrl, {
-    async: true,
-    polyline_options: {
-      color: "#ffd700",
-      weight: 7,
-      opacity: 0.45
-    },
-    marker_options: {
-      startIconUrl: null,
-      endIconUrl: null,
-      shadowUrl: null
-    }
-  }).addTo(AppState.map);
+          // 🔴 Red route (top)
+          AppState.routeMainLayer = new L.GPX(route.gpxUrl, {
+            async: true,
+            polyline_options: { color: "#d31c1c", weight: 4, opacity: 0.95 },
+            marker_options: {
+              startIcon: L.icon({
+                iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START,
+                iconSize: [48, 48],
+                iconAnchor: [24, 48],
+                shadowUrl: null
+              }),
+              endIcon: L.icon({
+                iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END,
+                iconSize: [48, 48],
+                iconAnchor: [24, 48],
+                shadowUrl: null
+              }),
+              shadowUrl: null
+            }
+          }).addTo(AppState.map);
 
-  // 🔴 Red route (top)
-  AppState.routeMainLayer = new L.GPX(route.gpxUrl, {
-    async: true,
-    polyline_options: {
-      color: "#d31c1c",
-      weight: 4,
-      opacity: 0.95
-    },
-    marker_options: {
-      startIcon: L.icon({
-        iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START,
-        iconSize: [48, 48],
-        iconAnchor: [24, 48],
-        shadowUrl: null
-      }),
-      endIcon: L.icon({
-        iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END,
-        iconSize: [48, 48],
-        iconAnchor: [24, 48],
-        shadowUrl: null
-      }),
-      shadowUrl: null
-    }
-  }).addTo(AppState.map);
-
-  AppState.routeMainLayer.on("loaded", () => {
-  AppState.map.fire("zoomend");
-});
-
-}
+          AppState.routeMainLayer.on("loaded", () => { AppState.map.fire("zoomend"); });
+        }
 
         if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
           const span = document.createElement('span');
