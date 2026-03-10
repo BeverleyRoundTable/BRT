@@ -281,11 +281,15 @@ async function init() {
   buildDashboard();
   initMap();
   document.getElementById('loader').classList.add('done');
+  
   fetchGps();
   fetchViewers();
+  fetchWeather(); // <--- This triggers the weather check!
+  
   setInterval(fetchApiData, 30000);
   setInterval(fetchGps, 5000);
   setInterval(fetchViewers, 10000);
+  setInterval(fetchWeather, 900000); // <--- This updates it every 15 mins
   setInterval(updateClock, 1000);
   setInterval(updateGpsAge, 1000);
 }
@@ -332,6 +336,61 @@ async function fetchViewers() {
   } catch(e) { console.error('Viewers:', e); }
 }
 
+  // --- WEATHER SYSTEM ---
+function getWeatherEmoji(code) {
+  // Standard WMO Weather codes
+  if (code === 0) return '☀️ Clear';
+  if (code <= 3) return '☁️ Cloudy';
+  if (code <= 48) return '🌫️ Fog';
+  if (code <= 67) return '🌧️ Rain';
+  if (code <= 77) return '❄️ Snow';
+  if (code <= 82) return '🌧️ Showers';
+  if (code <= 86) return '❄️ Snow Showers';
+  if (code >= 95) return '⛈️ Thunderstorm';
+  return '🌡️ Unknown';
+}
+
+async function fetchWeather() {
+  // Use live GPS if available, otherwise fallback to the default map center
+  const lat = STATE.gps?.lat || 53.8426; 
+  const lng = STATE.gps?.lng || -0.4275;
+  try {
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`);
+    const data = await res.json();
+    if (data.current_weather) {
+      STATE.weather = data.current_weather;
+      updateWeather();
+    }
+  } catch(e) { console.error('Weather fetching failed:', e); }
+}
+
+function updateWeather() {
+  const container = document.getElementById('weatherDetail');
+  if (!container || !STATE.weather) return;
+  
+  const w = STATE.weather;
+  const condition = getWeatherEmoji(w.weathercode);
+  
+  // If the weather code is greater than 50, it's rain, snow, or worse. Make it red!
+  const conditionColor = w.weathercode > 50 ? 'color: var(--red);' : '';
+  
+  container.innerHTML = `
+    <div class="gps-grid">
+      <div class="gps-item" style="grid-column: span 2;">
+        <div class="gps-label">Condition</div>
+        <div class="gps-value" style="${conditionColor}">${condition}</div>
+      </div>
+      <div class="gps-item">
+        <div class="gps-label">Temp</div>
+        <div class="gps-value">${w.temperature}°C</div>
+      </div>
+      <div class="gps-item">
+        <div class="gps-label">Wind</div>
+        <div class="gps-value">${w.windspeed} km/h</div>
+      </div>
+    </div>`;
+}
+  
 function getTodayRoute() {
   const today = new Date().toISOString().slice(0, 10);
   return STATE.routes.find(r => r.date === today) || null;
@@ -472,6 +531,13 @@ function buildDashboard() {
         </div>
       </div>
 
+<div class="panel">
+        <div class="panel-header"><span class="icon">☁️</span><h3>Live Weather</h3></div>
+        <div id="weatherDetail">
+          <div class="no-route">Fetching atmosphere data...</div>
+        </div>
+      </div>
+      
       <div class="panel">
         <div class="panel-header"><span class="icon">📡</span><h3>GPS Data</h3></div>
         <div class="gps-grid">
