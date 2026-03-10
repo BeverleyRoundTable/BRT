@@ -6,19 +6,19 @@
 <title>Route Card Generator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #1D1D1A;
     --surface: #262622;
     --surface-2: #2f2f2a;
     --border: rgba(255,255,255,0.08);
-    --text: #e8e8ec;
-    --text-dim: #8a8d9b;
-    --accent: #d31c1c;
-    --accent-glow: rgba(211,28,28,0.25);
+    --text: #f0f0f0;
+    --text-dim: rgba(255,255,255,0.5);
     --gold: #FBAF33;
     --gold-dim: rgba(251,175,51,0.15);
+    --red: #d31c1c;
+    --red-glow: rgba(211,28,28,0.25);
     --success: #2cff4e;
   }
 
@@ -30,6 +30,7 @@
     font-family: 'Open Sans', sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
   /* ── LAYOUT ── */
@@ -46,31 +47,29 @@
 
   header h1 {
     font-family: 'Open Sans', sans-serif;
-    font-size: 2.2em;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, #fff 30%, var(--gold));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: 2em;
+    font-weight: 800;
+    color: var(--gold);
+    -webkit-background-clip: initial; 
+    -webkit-text-fill-color: initial;
   }
 
   header p {
-    color: var(--text-dim);
+    color: #FFFFFF;
     margin-top: 6px;
-    font-size: 0.95em;
+    font-size: 0.9em;
+    opacity: 0.8;
   }
-
 
   .btn {
     font-family: 'Open Sans', sans-serif;
-    font-weight: 600;
-    font-size: 0.85em;
+    font-weight: 700;
+    font-size: 0.95em;
     border: none;
     border-radius: 10px;
     padding: 10px 20px;
     cursor: pointer;
-    transition: transform 0.1s, opacity 0.2s;
+    transition: 0.2s;
     white-space: nowrap;
   }
 
@@ -78,9 +77,9 @@
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .btn-primary {
-    background: var(--accent);
+    background: var(--red);
     color: white;
-    box-shadow: 0 4px 16px var(--accent-glow);
+    box-shadow: 0 4px 16px var(--red-glow);
   }
 
   .btn-ghost {
@@ -92,7 +91,6 @@
   .btn-gold {
     background: linear-gradient(135deg, var(--gold), #e89a1d);
     color: #1a1000;
-    box-shadow: 0 4px 16px var(--gold-dim);
   }
 
   /* ── STATUS ── */
@@ -126,7 +124,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 20px;
+    padding: 24px;
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 16px;
@@ -139,7 +137,7 @@
   .route-meta h3 {
     font-family: 'Open Sans', sans-serif;
     font-size: 1.3em;
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 4px;
   }
 
@@ -150,7 +148,7 @@
   }
 
   .route-meta .streets {
-    font-size: 0.8em;
+    font-size: 0.85em;
     color: var(--text-dim);
     line-height: 1.4;
     max-width: 500px;
@@ -159,7 +157,7 @@
   .route-actions {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
     min-width: 140px;
   }
 
@@ -168,23 +166,83 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    justify-content: center;
   }
 
   .format-btn {
     font-family: 'Open Sans', sans-serif;
-    font-size: 0.78em;
-    font-weight: 600;
-    padding: 6px 12px;
+    font-size: 0.9em;
+    font-weight: 700;
+    padding: 10px 20px;
     border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--surface-2);
     color: var(--text-dim);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: 0.2s;
+    flex: 1;
+    text-align: center;
   }
 
   .format-btn:hover { border-color: var(--gold); color: var(--text); }
   .format-btn.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+
+  /* ── CUSTOM TEXT INPUT ── */
+  .custom-field {
+    margin-top: 16px;
+  }
+
+  .custom-field label {
+    display: block; 
+    font-size: 0.75em; 
+    font-weight: 700;
+    color: var(--text-dim); 
+    text-transform: uppercase;
+    letter-spacing: 0.05em; 
+    margin-bottom: 6px;
+  }
+
+  .custom-field input,
+  .custom-field textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 0.95em;
+    font-family: 'Open Sans', sans-serif;
+    outline: none;
+    resize: vertical;
+    transition: 0.2s;
+  }
+
+  .custom-field input:focus,
+  .custom-field textarea:focus { border-color: var(--gold); }
+
+  .edit-fields {
+    display: none;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .edit-fields.open { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  .toggle-edit {
+    font-size: 0.8em;
+    color: var(--text-dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: 'Open Sans', sans-serif;
+    margin-top: 12px;
+    font-weight: 600;
+  }
+
+  .toggle-edit:hover { color: var(--gold); }
 
   /* ── PREVIEW MODAL ── */
   .modal-overlay {
@@ -204,7 +262,7 @@
   .modal-inner {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-radius: 16px;
     padding: 24px;
     max-width: 90vw;
     max-height: 90vh;
@@ -216,6 +274,8 @@
     font-family: 'Open Sans', sans-serif;
     margin-bottom: 16px;
     font-size: 1.2em;
+    color: var(--gold);
+    font-weight: 700;
   }
 
   .preview-wrap {
@@ -232,6 +292,79 @@
     justify-content: center;
     flex-wrap: wrap;
   }
+
+  /* ── CAPTION AREA ── */
+  .caption-area {
+    margin-top: 24px;
+    text-align: left;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+  }
+
+  .caption-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-copy {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.8em;
+    font-weight: 700;
+    background: var(--surface);
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .btn-copy:hover {
+    background: var(--gold);
+    color: #1a1000;
+  }
+
+  .btn-copy:active { transform: scale(0.95); }
+
+  .caption-text {
+    width: 100%;
+    min-height: 140px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    color: var(--text);
+    font-size: 0.9em;
+    font-family: 'Open Sans', sans-serif;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+    transition: 0.2s;
+  }
+
+  .caption-text:focus { border-color: var(--gold); }
+
+  .caption-copied {
+    display: none;
+    position: absolute;
+    top: 16px;
+    right: 80px;
+    font-size: 0.78em;
+    font-weight: 700;
+    color: #28a745;
+  }
+
+  .caption-copied.show { display: inline; }
 
   /* ── CARD CANVAS (rendered offscreen then captured) ── */
   .card-render-area {
@@ -631,71 +764,6 @@
   .card-story .card-footer .card-sponsor-img { max-height: 48px; max-width: 170px; }
   .card-story .card-footer .card-sponsor-label { font-size: 16px; }
 
-  /* ── CAPTION AREA ── */
-  .caption-area {
-    margin-top: 20px;
-    text-align: left;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    position: relative;
-  }
-
-  .caption-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    font-size: 0.82em;
-    font-weight: 700;
-    color: var(--text-dim);
-  }
-
-  .btn-copy {
-    font-family: 'Open Sans', sans-serif;
-    font-size: 0.8em;
-    font-weight: 700;
-    background: var(--gold);
-    color: #1a1000;
-    border: none;
-    border-radius: 8px;
-    padding: 6px 14px;
-    cursor: pointer;
-    transition: transform 0.1s;
-  }
-
-  .btn-copy:active { transform: scale(0.95); }
-
-  .caption-text {
-    width: 100%;
-    min-height: 140px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    color: var(--text);
-    font-size: 0.88em;
-    font-family: 'Open Sans', sans-serif;
-    line-height: 1.6;
-    resize: vertical;
-    outline: none;
-  }
-
-  .caption-text:focus { border-color: var(--gold); }
-
-  .caption-copied {
-    display: none;
-    position: absolute;
-    top: 16px;
-    right: 80px;
-    font-size: 0.78em;
-    font-weight: 700;
-    color: #22c55e;
-  }
-
-  .caption-copied.show { display: inline; }
-
   /* ── RESPONSIVE ── */
   @media (max-width: 700px) {
     .route-item { grid-template-columns: 1fr; }
@@ -704,56 +772,6 @@
     .modal-inner { padding: 16px; }
   }
 
-  /* ── CUSTOM TEXT INPUT ── */
-  .custom-field {
-    margin-top: 8px;
-  }
-
-  .custom-field label {
-    display: block;
-    font-size: 0.75em;
-    color: var(--text-dim);
-    margin-bottom: 3px;
-  }
-
-  .custom-field input,
-  .custom-field textarea {
-    width: 100%;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 10px;
-    color: var(--text);
-    font-size: 0.82em;
-    font-family: 'Open Sans', sans-serif;
-    outline: none;
-    resize: vertical;
-  }
-
-  .custom-field input:focus,
-  .custom-field textarea:focus { border-color: var(--gold); }
-
-  .edit-fields {
-    display: none;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-  }
-
-  .edit-fields.open { display: block; }
-
-  .toggle-edit {
-    font-size: 0.78em;
-    color: var(--text-dim);
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-decoration: underline;
-    font-family: 'Open Sans', sans-serif;
-    margin-top: 8px;
-  }
-
-  .toggle-edit:hover { color: var(--gold); }
 </style>
 </head>
 <body>
@@ -768,7 +786,6 @@
   </div>
 </div>
 
-<!-- Preview Modal -->
 <div class="modal-overlay" id="previewModal">
   <div class="modal-inner">
     <h2 id="previewTitle">Preview</h2>
@@ -788,7 +805,6 @@
   </div>
 </div>
 
-<!-- Offscreen render area -->
 <div class="card-render-area" id="renderArea"></div>
 
 <script>
@@ -1224,5 +1240,4 @@ document.getElementById('previewModal').addEventListener('click', e => {
 });
 </script>
 </body>
-  
 </html>
