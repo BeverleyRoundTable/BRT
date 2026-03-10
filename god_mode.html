@@ -396,18 +396,20 @@ async function clearAnnouncement() {
 
 function updatePaButtonState() {
   const btn = document.getElementById('broadcastBtn');
+  const paInput = document.getElementById("paInput");
   const msg = STATE.settings.live_announcement || '';
   
+  // Update the input box value to match the sheet 
+  if (paInput && document.activeElement !== paInput) {
+    paInput.value = msg;
+  }
+
   if (msg.trim() !== '') {
     btn.innerText = "ACTIVE ON TRACKER";
     btn.className = "btn-broadcast live-active";
-    btn.style.background = ""; 
-    btn.style.color = "";
   } else {
     btn.innerText = "Broadcast Live";
     btn.className = "btn-broadcast";
-    btn.style.background = ""; 
-    btn.style.color = "";
   }
 }
 // -------------------------
