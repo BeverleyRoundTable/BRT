@@ -149,6 +149,22 @@
     letter-spacing: 0.06em; color: var(--text-dim);
   }
 
+  /* ── PA SYSTEM ── */
+  .pa-input {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+    color: white; padding: 12px; border-radius: 8px; font-family: inherit; font-size: 0.9em;
+    margin-bottom: 10px; outline: none; box-sizing: border-box;
+  }
+  .pa-input:focus { border-color: var(--gold); }
+  .pa-btns { display: flex; gap: 8px; }
+  .pa-btns button {
+    flex: 1; padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer;
+    border: none; transition: 0.2s; font-family: inherit; font-size: 0.85em;
+  }
+  .pa-btns button:active { transform: scale(0.96); }
+  .btn-broadcast { background: linear-gradient(135deg, var(--red), #900000); color: white; }
+  .btn-clear { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
+
   /* ── GPS INFO ── */
   .gps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .gps-item { background: var(--surface-2); border-radius: 10px; padding: 12px; }
@@ -231,7 +247,7 @@ const STATE = {
 if (!API) {
   document.getElementById('loader').classList.add('done');
   document.getElementById('app').innerHTML =
-    '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>god_mode?api=YOUR_API_URL</code></div>';
+    '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>god_mode.html?api=YOUR_API_URL</code></div>';
 } else {
   init();
 }
@@ -260,6 +276,13 @@ async function fetchApiData() {
     STATE.tracker = data.tracker || {};
     STATE.streets = data.streets || [];
     STATE.lastApiUpdate = new Date();
+    
+    // Update the PA input box silently in the background if another admin changed it
+    const paInput = document.getElementById("paInput");
+    if (paInput && document.activeElement !== paInput) {
+      paInput.value = STATE.settings.live_announcement || '';
+    }
+
     updateDashboard();
   } catch(e) { console.error('API:', e); }
 }
@@ -319,6 +342,29 @@ function isGpsFresh() {
   return STATE.gps?.ts && (Date.now() - new Date(STATE.gps.ts).getTime()) < 120000;
 }
 
+// --- PA SYSTEM ACTIONS ---
+async function sendAnnouncement() {
+  const msg = document.getElementById('paInput').value.trim();
+  const btn = document.getElementById('broadcastBtn');
+  btn.innerText = "Sending...";
+  try {
+    await fetch(API, { method: "POST", body: JSON.stringify({ action: "updateAnnouncement", message: msg }) });
+    STATE.settings.live_announcement = msg;
+    btn.innerText = "Broadcast Live";
+    btn.style.background = "var(--green)";
+    setTimeout(() => { btn.style.background = ""; }, 2000);
+  } catch(e) { 
+    alert('Failed to update announcement. Check connection.'); 
+    btn.innerText = "Broadcast Live"; 
+  }
+}
+
+async function clearAnnouncement() {
+  document.getElementById('paInput').value = '';
+  await sendAnnouncement();
+}
+// -------------------------
+
 function buildDashboard() {
   const s = STATE.settings;
   const logo = s.logo_overlay_url || '';
@@ -367,6 +413,16 @@ function buildDashboard() {
       <div id="godMap"></div>
     </div>
     <div class="sidebar">
+
+      <div class="panel">
+        <div class="panel-header"><span class="icon">📢</span><h3>Live PA System</h3></div>
+        <input type="text" id="paInput" class="pa-input" placeholder="e.g. 🚨 Delayed by 15 mins!" value="${s.live_announcement || ''}" />
+        <div class="pa-btns">
+          <button id="broadcastBtn" class="btn-broadcast" onclick="sendAnnouncement()">Broadcast Live</button>
+          <button class="btn-clear" onclick="clearAnnouncement()">Clear</button>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-header"><span class="icon">📡</span><h3>GPS Data</h3></div>
         <div class="gps-grid">
@@ -390,7 +446,11 @@ function buildDashboard() {
   h += '<div class="last-updated" id="lastUpdated">Connecting...</div>';
   h += '</div>';
 
-  document.getElementById('app').innerHTML = h;
+  // Only render HTML if empty so the text box doesn't glitch while typing
+  if (document.getElementById('app').innerHTML === "") {
+    document.getElementById('app').innerHTML = h;
+  }
+  
   updateDashboard();
 }
 
