@@ -1,201 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Santa Sleigh – Embed Code Generator</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <title>Santa Sleigh – Embed Code Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<style>
-body {
-    background: #111;
-    color: #fff;
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    max-width: 900px;
-    margin: auto;
-}
-h1, h2 {
-    color: #ffd700;
-    text-align: center;
-}
-.block {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    padding: 20px;
-    border-radius: 14px;
-    margin-bottom: 30px;
-}
-textarea {
-    width: 100%;
-    height: 140px;
-    background: #000;
-    color: #0f0;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid #333;
-    font-family: monospace;
-    font-size: 0.9rem;
-    resize: vertical;
-}
-button.copy {
-    margin-top: 10px;
-    padding: 10px 18px;
-    border: none;
-    border-radius: 10px;
-    background: #d31c1c;
-    color: white;
-    cursor: pointer;
-}
-</style>
+  <style>
+    :root {
+      --bg: #1D1D1A;
+      --surface: #262622;
+      --surface-2: #2f2f2a;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.15);
+      --text: #f0f0f0;
+      --text-dim: rgba(255,255,255,0.55);
+      --text-muted: rgba(255,255,255,0.35);
+      --red: #d31c1c;
+      --gold: #FBAF33;
+      --gold-dim: rgba(251,175,51,0.15);
+      --green: #22c55e;
+    }
 
-<script src="embed_generator.js" defer></script>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding: 40px 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── HEADER ── */
+    .header-wrap {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    h1 {
+      font-size: 2.2em;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    .api-display-wrap {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 6px 20px;
+      border-radius: 100px;
+      font-size: 0.85em;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+
+    .api-display-wrap span {
+      color: var(--gold);
+    }
+
+    /* ── BLOCKS / CARDS ── */
+    .block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      transition: border-color 0.2s ease;
+    }
+
+    .block:hover {
+      border-color: var(--border-hover);
+    }
+
+    .block h2 {
+      font-size: 1.25em;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 16px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ── TEXTAREAS ── */
+    textarea {
+      width: 100%;
+      height: 120px;
+      background: #151513; /* Slightly darker than base bg for inset depth */
+      color: var(--text-dim);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-family: monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+      transition: border-color 0.2s, color 0.2s;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: var(--gold);
+      color: var(--text);
+    }
+
+    /* ── BUTTONS ── */
+    button.copy {
+      font-family: 'Open Sans', sans-serif;
+      font-weight: 700;
+      font-size: 0.82em;
+      margin-top: 16px;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 100px;
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    button.copy:hover {
+      background: linear-gradient(135deg, var(--gold), #ffaa00);
+      color: #1a1000;
+      transform: translateY(-1px);
+    }
+
+    button.copy:active {
+      transform: scale(0.97);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .block {
+        padding: 20px 24px;
+      }
+    }
+  </style>
+
+  <script src="embed_generator.js" defer></script>
 </head>
 
 <body>
 
-<h1>🎅 Santa Sleigh – Embed Generator</h1>
-<p style="text-align:center;color:#ccc;">
-Detected API: <span id="apiDisplay"></span>
-</p>
+  <div class="header-wrap">
+    <h1>🎅 Santa Sleigh – Embed Generator</h1>
+    <div class="api-display-wrap">
+      Detected API: <span id="apiDisplay"></span>
+    </div>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Mini Thermometer</h2>
     <textarea id="miniThermo"></textarea>
-    <button class="copy" onclick="copyCode('miniThermo')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('miniThermo')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Full Thermometer</h2>
     <textarea id="fullThermo"></textarea>
-    <button class="copy" onclick="copyCode('fullThermo')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('fullThermo')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Carousel</h2>
     <textarea id="carouselCode"></textarea>
-    <button class="copy" onclick="copyCode('carouselCode')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('carouselCode')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Address Lookup</h2>
     <textarea id="addressLookup"></textarea>
-    <button class="copy" onclick="copyCode('addressLookup')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('addressLookup')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Santa Nice List</h2>
     <textarea id="niceListEmbed" style="height:220px;"></textarea>
-    <button class="copy" onclick="copyCode('niceListEmbed')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('niceListEmbed')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Santa’s Been – Photo Generator</h2>
     <textarea id="santasBeenEmbed" style="height:220px;"></textarea>
-    <button class="copy" onclick="copyCode('santasBeenEmbed')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('santasBeenEmbed')">Copy Code</button>
+  </div>
 
-    <div class="block">
+  <div class="block">
     <h2>☃️ Snowman Frame – Face Photo</h2>
     <textarea id="snowmanFrameEmbed" style="height:220px;"></textarea>
-    <button class="copy" onclick="copyCode('snowmanFrameEmbed')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('snowmanFrameEmbed')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Recommended Tracker Embed</h2>
     <textarea id="recommendedTracker"></textarea>
-    <button class="copy" onclick="copyCode('recommendedTracker')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('recommendedTracker')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>📺 Tracker – TV / Kiosk Mode (Recommended)</h2>
     <textarea id="recommendedTrackerKiosk"></textarea>
-    <button class="copy" onclick="copyCode('recommendedTrackerKiosk')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('recommendedTrackerKiosk')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Raw Tracker Link</h2>
     <textarea id="trackerLink"></textarea>
-    <button class="copy" onclick="copyCode('trackerLink')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('trackerLink')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>📺 Tracker – Raw Kiosk Link</h2>
     <textarea id="trackerKioskLink"></textarea>
-    <button class="copy" onclick="copyCode('trackerKioskLink')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('trackerKioskLink')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Recommended Routes Embed</h2>
     <textarea id="recommendedRoutes"></textarea>
-    <button class="copy" onclick="copyCode('recommendedRoutes')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('recommendedRoutes')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Raw Routes Link</h2>
     <textarea id="routesLink"></textarea>
-    <button class="copy" onclick="copyCode('routesLink')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('routesLink')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>🗺️ Route Card (Recommended Embed)</h2>
     <textarea id="recommendedRouteCard"></textarea>
-    <button class="copy" onclick="copyCode('recommendedRouteCard')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('recommendedRouteCard')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>🗺️ Route Card – Raw Link</h2>
     <textarea id="routeCardLink"></textarea>
-    <button class="copy" onclick="copyCode('routeCardLink')">Copy</button>
-</div>
-    
-<div class="block">
+    <button class="copy" onclick="copyCode('routeCardLink')">Copy Code</button>
+  </div>
+
+  <div class="block">
     <h2>GPX Animation Links (auto)</h2>
     <textarea id="gpxList" style="height:200px;"></textarea>
-</div>
+    <button class="copy" onclick="copyCode('gpxList')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>📊 Season Wrap Report – Raw Link</h2>
     <textarea id="seasonWrapLink"></textarea>
-    <button class="copy" onclick="copyCode('seasonWrapLink')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('seasonWrapLink')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>🛡️ God Mode Dashboard – Raw Link</h2>
     <textarea id="godModeLink"></textarea>
-    <button class="copy" onclick="copyCode('godModeLink')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('godModeLink')">Copy Code</button>
+  </div>
 
- <div class="block">
+  <div class="block">
     <h2>📌 QR Poster Generator – Raw Link</h2>
     <textarea id="qrPosterLink"></textarea>
-    <button class="copy" onclick="copyCode('qrPosterLink')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('qrPosterLink')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>❤️ Thank You Card – Raw Link</h2>
     <textarea id="thankYouLink"></textarea>
-    <button class="copy" onclick="copyCode('thankYouLink')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('thankYouLink')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>🦌 Reindeer Adoption – Raw Link</h2>
     <textarea id="reindeerLink"></textarea>
-    <button class="copy" onclick="copyCode('reindeerLink')">Copy</button>
-</div>
+    <button class="copy" onclick="copyCode('reindeerLink')">Copy Code</button>
+  </div>
 
-<div class="block">
+  <div class="block">
     <h2>Crew Signup/Check-in – Raw Link</h2>
     <textarea id="crewLink"></textarea>
-    <button class="copy" onclick="copyCode('crewLink')">Copy</button>
-</div>
-    
-<script>
-function copyCode(id){
-    const el = document.getElementById(id);
-    el.select();
-    navigator.clipboard.writeText(el.value);
-}
-</script>
+    <button class="copy" onclick="copyCode('crewLink')">Copy Code</button>
+  </div>
+
+  <script>
+    function copyCode(id){
+      const el = document.getElementById(id);
+      el.select();
+      navigator.clipboard.writeText(el.value);
+      
+      // Optional: Give quick feedback that it copied
+      const btn = el.nextElementSibling;
+      const originalText = btn.innerText;
+      btn.innerText = "Copied! ✨";
+      setTimeout(() => { btn.innerText = originalText; }, 1500);
+    }
+  </script>
 
 </body>
 </html>
