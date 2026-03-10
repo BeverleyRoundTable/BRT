@@ -677,7 +677,7 @@
           AppState.dom.donateBox.style.display = "none";
         }
 
-        fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.date : 'unknown')}`, { keepalive: true });
+        fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { keepalive: true });
 
         if (AppState.flags.isKiosk && AppState.dom.kioskBanner) {
           const statusDiv = document.createElement('div');
