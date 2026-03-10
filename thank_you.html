@@ -18,6 +18,7 @@
     --gold: #FBAF33;
     --gold-dim: rgba(251,175,51,0.15);
     --red: #d31c1c;
+    --red-glow: rgba(211,28,28,0.25);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,12 +36,21 @@
   header { text-align: center; margin-bottom: 32px; }
 
   header h1 {
-    font-size: 2em; font-weight: 700;
-    background: linear-gradient(135deg, #fff 30%, var(--gold));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 2em;
+    font-weight: 800;
+    color: var(--gold);
+    -webkit-background-clip: initial; 
+    -webkit-text-fill-color: initial;
+    background: none;
   }
 
-  header p { color: var(--text-dim); margin-top: 6px; font-size: 0.9em; }
+  header p {
+    color: #FFFFFF;
+    margin-top: 6px;
+    font-size: 0.9em;
+    opacity: 0.8;
+  }
 
   /* ── CONTROLS ── */
   .panel {
@@ -50,64 +60,68 @@
 
   .panel h3 {
     font-size: 0.82em; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 16px;
+    letter-spacing: 0.06em; color: var(--gold); margin-bottom: 16px;
   }
 
-  .field { margin-bottom: 14px; }
+  .field { margin-bottom: 16px; }
 
   .field label {
     display: block; font-size: 0.75em; font-weight: 700;
     color: var(--text-dim); text-transform: uppercase;
-    letter-spacing: 0.05em; margin-bottom: 5px;
+    letter-spacing: 0.05em; margin-bottom: 6px;
   }
 
   .field input, .field textarea, .field select {
     width: 100%; background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 14px; color: var(--text);
-    font-family: 'Open Sans', sans-serif; font-size: 0.88em; outline: none;
+    border-radius: 10px; padding: 12px 14px; color: var(--text);
+    font-family: 'Open Sans', sans-serif; font-size: 0.95em; outline: none;
+    transition: 0.2s;
   }
 
   .field input:focus, .field textarea:focus { border-color: var(--gold); }
 
-  .field textarea { resize: vertical; min-height: 60px; }
+  .field textarea { resize: vertical; min-height: 80px; }
 
   .stat-preview {
     display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 10px; margin-bottom: 16px;
+    gap: 12px; margin-bottom: 8px;
   }
 
   .stat-mini {
-    background: var(--surface-2); border-radius: 10px;
-    padding: 12px 8px; text-align: center;
+    background: var(--surface-2); border-radius: 12px;
+    padding: 16px 8px; text-align: center;
+    border: 1px solid var(--border);
   }
 
   .stat-mini .val {
-    font-size: 1.3em; font-weight: 800; color: var(--gold);
+    font-size: 1.4em; font-weight: 800; color: var(--gold);
   }
 
   .stat-mini .lbl {
-    font-size: 0.65em; color: var(--text-dim); font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px;
+    font-size: 0.7em; color: var(--text-dim); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px;
   }
 
   .format-row {
-    display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    display: flex; gap: 8px; margin-bottom: 24px; justify-content: center; flex-wrap: wrap;
   }
 
   .format-btn {
-    font-family: 'Open Sans', sans-serif; font-size: 0.8em; font-weight: 600;
-    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    font-family: 'Open Sans', sans-serif; font-size: 0.9em; font-weight: 700;
+    padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--surface-2); color: var(--text-dim); cursor: pointer;
+    transition: 0.2s; flex: 1; text-align: center; max-width: 250px;
   }
 
   .format-btn:hover { border-color: var(--gold); color: var(--text); }
   .format-btn.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
 
-  .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
 
   .btn {
-    font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 0.88em;
+    font-family: 'Open Sans', sans-serif; font-weight: 700; font-size: 0.95em;
     border: none; border-radius: 10px; padding: 12px 24px; cursor: pointer;
+    transition: 0.2s; white-space: nowrap;
   }
 
   .btn:active { transform: scale(0.97); }
@@ -131,8 +145,8 @@
   }
 
   .preview-label {
-    font-size: 0.75em; color: var(--text-dim); margin-bottom: 10px;
-    font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    font-size: 0.75em; color: var(--text-dim); margin-bottom: 12px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
   }
 
   /* ── LOADING ── */
@@ -497,7 +511,7 @@ async function generate() {
     preview.innerHTML = `
       <div class="preview-label">Preview</div>
       <img src="${canvas.toDataURL('image/png')}" style="width:${maxW}px; height:${maxW * ratio}px;">
-      <div class="btn-row" style="margin-top:16px;">
+      <div class="btn-row" style="margin-top:24px;">
         <button class="btn btn-gold" onclick="download()">⬇ Download PNG</button>
       </div>
     `;
