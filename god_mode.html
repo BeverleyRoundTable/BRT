@@ -11,14 +11,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
   <style>
   :root {
-    --bg: #1D1D1A;         /* Official Table Grey [cite: 128] */
+    --bg: #1D1D1A;         /* Official Table Grey */
     --surface: #262622;
     --surface-2: #2f2f2a;
     --border: rgba(255,255,255,0.08);
     --text: #f0f0f0;
     --text-dim: rgba(255,255,255,0.5);
     --text-muted: rgba(255,255,255,0.3);
-    --gold: #FBAF33;       /* Official Golden Yellow [cite: 127] */
+    --gold: #FBAF33;       /* Official Golden Yellow */
     --gold-dim: rgba(251,175,51,0.12);
     
     /* Replaced non-brand Red and Green with Brand Compliant versions */
@@ -268,6 +268,14 @@ const STATE = {
   map: null, marker: null, routeGlowLayer: null, routeMainLayer: null, gpxLoaded: false
 };
 
+// ⭐ NEW: Helper function to build API URLs with the secret password attached
+function getApiUrl(params = '') {
+  const secret = sessionStorage.getItem('sleighSecret') || '';
+  const base = API.includes('?') ? API : API + '?';
+  const separator = base.endsWith('?') ? '' : '&';
+  return `${base}${separator}secret=${encodeURIComponent(secret)}${params ? '&' + params : ''}`;
+}
+
 if (!API) {
   document.getElementById('loader').classList.add('done');
   document.getElementById('app').innerHTML =
@@ -276,7 +284,41 @@ if (!API) {
   init();
 }
 
+// ⭐ NEW: Updated Init function to check password before loading
 async function init() {
+  let secret = sessionStorage.getItem('sleighSecret');
+  
+  if (!secret) {
+    // 1. Prompt for password
+    secret = prompt("🎅 God Mode Authorization Required\n\nEnter the Master Password:");
+    if (!secret) {
+      document.getElementById('app').innerHTML = '<div class="error-msg">Authorization required. Refresh the page to try again.</div>';
+      document.getElementById('loader').classList.add('done');
+      return;
+    }
+    
+    // 2. Ask the Apps Script Bouncer if it's correct
+    try {
+      const sep = API.includes('?') ? '&' : '?';
+      const check = await fetch(`${API}${sep}function=verifyGodMode&secret=${encodeURIComponent(secret)}`);
+      const result = await check.json();
+      
+      if (!result.valid) {
+        document.getElementById('app').innerHTML = '<div class="error-msg">❌ Access Denied. Incorrect Password.</div>';
+        document.getElementById('loader').classList.add('done');
+        return;
+      }
+      
+      // 3. Password is good! Save it for this session.
+      sessionStorage.setItem('sleighSecret', secret);
+    } catch(e) {
+      document.getElementById('app').innerHTML = '<div class="error-msg">❌ Failed to connect to API to verify password.</div>';
+      document.getElementById('loader').classList.add('done');
+      return;
+    }
+  }
+
+  // If we made it here, they have the correct password! Build the dashboard.
   await fetchApiData();
   buildDashboard();
   initMap();
@@ -284,19 +326,20 @@ async function init() {
   
   fetchGps();
   fetchViewers();
-  fetchWeather(); // <--- This triggers the weather check!
+  fetchWeather();
   
   setInterval(fetchApiData, 30000);
   setInterval(fetchGps, 5000);
   setInterval(fetchViewers, 10000);
-  setInterval(fetchWeather, 900000); // <--- This updates it every 15 mins
+  setInterval(fetchWeather, 900000); // 15 mins
   setInterval(updateClock, 1000);
   setInterval(updateGpsAge, 1000);
 }
 
+// ⭐ NEW: All fetch calls below now use getApiUrl() to pass the secret
 async function fetchApiData() {
   try {
-    const res = await fetch(API);
+    const res = await fetch(getApiUrl());
     const data = await res.json();
     STATE.settings = data.settings || {};
     STATE.routes = data.routes || [];
@@ -317,8 +360,7 @@ async function fetchApiData() {
 
 async function fetchGps() {
   try {
-    const sep = API.includes('?') ? '&' : '?';
-    const res = await fetch(API + sep + 'function=proxyFirebase');
+    const res = await fetch(getApiUrl('function=proxyFirebase'));
     const data = await res.json();
     if (data && data.lat) { STATE.gps = data; STATE.lastGpsUpdate = new Date(); }
     updateGps();
@@ -327,8 +369,7 @@ async function fetchGps() {
 
 async function fetchViewers() {
   try {
-    const sep = API.includes('?') ? '&' : '?';
-    const res = await fetch(API + sep + 'function=getActiveViewers');
+    const res = await fetch(getApiUrl('function=getActiveViewers'));
     const data = await res.json();
     STATE.activeViewers = data.active || 0;
     STATE.lastViewerUpdate = new Date();
@@ -429,6 +470,7 @@ function isGpsFresh() {
 async function sendAnnouncement() {
   const msg = document.getElementById('paInput').value.trim();
   const btn = document.getElementById('broadcastBtn');
+  const secret = sessionStorage.getItem('sleighSecret') || ''; // ⭐ NEW: Grab saved secret
   
   // Show sending state
   btn.innerText = "Sending...";
@@ -436,10 +478,24 @@ async function sendAnnouncement() {
   btn.style.color = "var(--text-dim)";
   
   try {
-    await fetch(API, { method: "POST", body: JSON.stringify({ action: "updateAnnouncement", message: msg }) });
-    STATE.settings.live_announcement = msg;
+    // ⭐ NEW: Pass the secret payload to the doPost function!
+    const response = await fetch(API, { 
+      method: "POST", 
+      body: JSON.stringify({ 
+        action: "updateAnnouncement", 
+        message: msg,
+        secret: secret 
+      }) 
+    });
     
-    // Once sent, check if we need to show the "Live" state or return to "Idle" state
+    const result = await response.json();
+    
+    if (result.ok) {
+      STATE.settings.live_announcement = msg;
+    } else {
+      alert("Action Blocked: " + result.error); // Will show Bouncer error if unauthorized
+    }
+    
     updatePaButtonState();
     
   } catch(e) { 
