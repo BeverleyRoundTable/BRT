@@ -249,6 +249,19 @@
       btn.innerHTML = "Try Again 🚀";
     }
   }
+<script>
+  // Send height to parent window so the iframe can resize
+  function sendHeight() {
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ letterHeight: height }, "*");
+  }
+
+  // Send height on load and whenever the success message shows
+  window.addEventListener("load", sendHeight);
+  
+  // Create an observer to watch for the success panel showing up
+  const observer = new MutationObserver(sendHeight);
+  observer.observe(document.body, { attributes: true, childList: true, subtree: true });
 </script>
 
 </body>
