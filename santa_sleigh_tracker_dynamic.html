@@ -761,6 +761,9 @@
         AppState.flags.isKiosk = params.get("kiosk") === "1" || sessionStorage.getItem("SANTA_KIOSK") === "1";
         if (params.get("kiosk") === "1") sessionStorage.setItem("SANTA_KIOSK", "1");
 
+        // 👈 ADD THIS LINE TO FIX ALL KIOSK CSS LAYOUT ISSUES:
+        if (AppState.flags.isKiosk) document.body.classList.add("kiosk");
+
         AppState.vars.apiUrl = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
         if (!AppState.vars.apiUrl) { alert("Missing ?api=URL"); return; }
         localStorage.setItem("SANTA_API", AppState.vars.apiUrl);
