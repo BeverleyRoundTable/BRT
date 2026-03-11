@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Letter to Santa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1D1D1A;         /* Official Table Grey */
+      --surface: #262622;
+      --surface-2: #2f2f2a;
+      --border: rgba(255,255,255,0.08);
+      --text: #f0f0f0;
+      --text-dim: rgba(255,255,255,0.7);
+      --text-muted: rgba(255,255,255,0.4);
+      --gold: #FBAF33;       /* Official Golden Yellow */
+      --red: #d31c1c;        /* Festive Red */
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-size: 1.8em;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 0.95em;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85em;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--surface-2);
+      border: 2px solid var(--border);
+      color: white;
+      padding: 14px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 1em;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--gold);
+    }
+
+    textarea.form-input {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--gold);
+      color: #000;
+      border: none;
+      padding: 16px;
+      font-size: 1.05em;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: transform 0.2s, background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    .btn-submit:disabled {
+      background: var(--surface-2);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    /* Success State */
+    .success-panel {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .success-icon {
+      font-size: 4em;
+      margin-bottom: 16px;
+      animation: bounce 2s infinite;
+    }
+
+    .success-panel h2 {
+      color: var(--gold);
+      margin-bottom: 12px;
+    }
+
+    .success-panel p {
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-20px); }
+      60% { transform: translateY(-10px); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="panel" id="letterPanel">
+    <div class="header">
+      <h1>✉️ Write to Santa</h1>
+      <p>Send your Christmas wishlist straight to the North Pole! Santa will reply to your parents' email.</p>
+    </div>
+
+    <form id="santaForm" onsubmit="submitLetter(event)">
+      <div class="form-group">
+        <label class="form-label">Child's First Name</label>
+        <input type="text" id="childName" class="form-input" placeholder="e.g. Leo" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Parent's Email</label>
+        <input type="email" id="parentEmail" class="form-input" placeholder="To receive Santa's reply..." required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Your Wishlist</label>
+        <textarea id="wishlist" class="form-input" placeholder="Dear Santa, this year I would love..." required></textarea>
+      </div>
+
+      <button type="submit" id="submitBtn" class="btn-submit">
+        Send to North Pole 🚀
+      </button>
+    </form>
+  </div>
+
+  <div class="panel success-panel" id="successPanel">
+    <div class="success-icon">🛷✨</div>
+    <h2>Whoosh! It's gone!</h2>
+    <p>Your letter is flying through the snowy skies to the North Pole right now.</p>
+    <br>
+    <p><strong>Parents:</strong> Check your inbox shortly for a magical reply from Santa Claus himself!</p>
+  </div>
+</div>
+
+<script>
+  // Automatically grab the API URL from the browser's address bar
+  const API = new URLSearchParams(location.search).get('api') || '';
+
+  async function submitLetter(event) {
+    event.preventDefault(); // Stop page from refreshing
+
+    if (!API) {
+      alert("Missing ?api= URL parameter! The letter doesn't know where to fly.");
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = "Flying to North Pole... 🦌💨";
+
+    const payload = {
+      action: "sendLetterToSanta",
+      childName: document.getElementById('childName').value.trim(),
+      parentEmail: document.getElementById('parentEmail').value.trim(),
+      wishlist: document.getElementById('wishlist').value.trim()
+    };
+
+    try {
+      const response = await fetch(API, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (result.ok) {
+        // Hide the form, show the success message!
+        document.getElementById('letterPanel').style.display = 'none';
+        document.getElementById('successPanel').style.display = 'block';
+      } else {
+        alert("Oh no! The elves dropped the letter: " + result.error);
+        btn.disabled = false;
+        btn.innerHTML = "Try Again 🚀";
+      }
+    } catch (error) {
+      alert("Connection error to the North Pole! Please check your internet.");
+      btn.disabled = false;
+      btn.innerHTML = "Try Again 🚀";
+    }
+  }
+</script>
+
+</body>
+</html>
