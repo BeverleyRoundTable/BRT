@@ -57,6 +57,21 @@
       100% { box-shadow: 0 0 0 0 rgba(251, 175, 51, 0); transform: translateX(-50%) scale(1); }
     }
 
+    /* ⭐ WAVE ANIMATION CSS */
+    .wave-emoji {
+      position: fixed;
+      font-size: 3.5em;
+      pointer-events: none;
+      z-index: 9999;
+      animation: floatWave 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+    @keyframes floatWave {
+      0% { opacity: 1; transform: translateY(0) scale(0.8) rotate(0deg); }
+      30% { transform: translateY(-40px) scale(1.2) rotate(20deg); }
+      60% { transform: translateY(-70px) scale(1.2) rotate(-15deg); }
+      100% { opacity: 0; transform: translateY(-120px) scale(1) rotate(10deg); }
+    }
+
     .info-popup { position:fixed;bottom:var(--info-bottom);left:50%;transform:translateX(-50%);background:rgba(20,20,20,.94);padding:10px 14px;border-radius:14px;display:flex;align-items:center;gap:12px;font-size:.85em;font-weight:800;z-index:2000;max-width:calc(100vw - 32px);box-sizing:border-box;transition:opacity 600ms ease }
     .btn { background:#0b1220;color:#fff;border:1px solid #ffffff26;border-radius:10px;padding:7px 12px;cursor:pointer;font-weight:800;transition:opacity 0.3s }
     .btn.locked { opacity:0.4;pointer-events:none;filter:grayscale(1) }
@@ -111,13 +126,16 @@
   <div id="loadingCover"><div id="loadingSpinner"></div></div>
   <div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
   <div class="donate-box" id="donateBox"><a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a></div>
+  
   <div class="info-popup">
     <div id="statusDot" class="status-dot"></div>
     <button class="btn" id="followBtn">Follow: ON</button>
     <button class="btn" id="recenterBtn">Re-centre</button>
     <button class="btn" id="notifyBtn">🔔 Notify Me</button>
+    <button class="btn" id="waveBtn" style="background: var(--gold); color: #000; border-color: var(--gold);">👋 Wave</button>
     <div id="toast" class="toast-box"></div>
   </div>
+
   <div id="emailModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-title">🔔 Get Notified</div>
@@ -217,6 +235,7 @@
           followBtn: document.getElementById("followBtn"),
           recenterBtn: document.getElementById("recenterBtn"),
           notifyBtn: document.getElementById("notifyBtn"),
+          waveBtn: document.getElementById("waveBtn"), // ⭐ MAPPED DOM ELEMENT
           statusDot: document.getElementById("statusDot"),
           donateLink: document.getElementById("donateLink"),
           donateBox: document.getElementById("donateBox"),
@@ -270,9 +289,16 @@
           return Math.min(Math.max(speed, 0.1), 31);
         },
         toggleFollowControls(enable) {
-          const { followBtn, recenterBtn } = AppState.dom;
-          if (enable) { followBtn.classList.remove("locked"); recenterBtn.classList.remove("locked"); }
-          else { followBtn.classList.add("locked"); recenterBtn.classList.add("locked"); }
+          const { followBtn, recenterBtn, notifyBtn, waveBtn } = AppState.dom;
+          if (enable) { 
+            followBtn.classList.remove("locked"); 
+            recenterBtn.classList.remove("locked");
+            waveBtn.classList.remove("locked");
+          } else { 
+            followBtn.classList.add("locked"); 
+            recenterBtn.classList.add("locked"); 
+            waveBtn.classList.add("locked");
+          }
         }
       };
 
@@ -760,6 +786,7 @@
            AppState.dom.followBtn.style.display = "none";
            AppState.dom.recenterBtn.style.display = "none";
            AppState.dom.notifyBtn.style.display = "none";
+           AppState.dom.waveBtn.style.display = "none"; // Hide Wave button on Kiosk
            AppState.dom.donateBox.style.display = "none";
         }
 
@@ -876,6 +903,34 @@
             }
           };
           document.addEventListener("keydown", AppState.vars.escapeListener);
+        };
+
+        // ⭐ WAVE BUTTON LOGIC
+        AppState.dom.waveBtn.onclick = () => {
+          // Create the visual floating hand
+          const wave = document.createElement("div");
+          wave.textContent = "👋";
+          wave.className = "wave-emoji";
+          
+          // Position it right above the button
+          const rect = AppState.dom.waveBtn.getBoundingClientRect();
+          wave.style.left = (rect.left + rect.width / 2 - 20) + "px";
+          wave.style.top = (rect.top - 10) + "px";
+          document.body.appendChild(wave);
+          
+          // Remove the DOM element after animation finishes
+          setTimeout(() => wave.remove(), 2000);
+          
+          // Ping the backend silently (fire and forget)
+          fetch(`${AppState.vars.apiUrl}?function=wave`, { keepalive: true }).catch(()=>{});
+          
+          // Disable the button for 3 seconds to prevent spamming
+          AppState.dom.waveBtn.disabled = true;
+          AppState.dom.waveBtn.style.opacity = 0.5;
+          setTimeout(() => {
+            AppState.dom.waveBtn.disabled = false;
+            AppState.dom.waveBtn.style.opacity = 1;
+          }, 3000);
         };
 
         document.getElementById("modalCancelBtn").addEventListener("click", () => {
