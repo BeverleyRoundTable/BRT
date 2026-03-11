@@ -149,7 +149,7 @@
     body.kiosk { --kiosk-bottom: 56px; cursor: none; }
     body.kiosk .kiosk-sponsor { bottom: var(--kiosk-bottom); }
     body.kiosk .kiosk-banner { bottom: calc(var(--kiosk-bottom) + 64px); }
-    body.kiosk .toast-box, body.kiosk .status-popup, body.kiosk #statusDot, body.kiosk .leaflet-control-zoom, body.kiosk .info-popup { display: none !important; }
+    body.kiosk .toast-box, body.kiosk .status-popup:not(.is-announcement), body.kiosk #statusDot, body.kiosk .leaflet-control-zoom, body.kiosk .info-popup { display: none !important; }
     body.kiosk .leaflet-container { -webkit-tap-highlight-color: transparent; }
     body.kiosk .leaflet-container *, body.kiosk .leaflet-interactive:focus, body.kiosk .leaflet-interactive { outline: none !important; pointer-events: none; }
     .kiosk-banner { position: fixed; bottom: calc(var(--kiosk-bottom) + 64px); left: 50%; transform: translateX(-50%) translateY(-6px); background: rgba(29, 29, 26, 0.96); border: 1px solid var(--border); color: var(--text); padding: 16px 36px; border-radius: 999px; font-size: 1.25em; font-weight: 900; letter-spacing: 0.4px; box-shadow: 0 8px 28px rgba(0,0,0,0.55); z-index: 4500; pointer-events: none; opacity: 0; transition: opacity 0.6s ease, transform 0.6s ease; text-align: center; display: none; }
@@ -785,18 +785,17 @@
         AppState.vars.todayRoute = route;
 
         const don = apiData.donations || {};
-        if (settings.donate_url) {
-          const btn = AppState.dom.donateLink;
-          btn.href = settings.donate_url;
-          AppState.dom.donateBox.style.display = "block";
-          btn.style.background = "";
-          if (don.target && don.target > 0) {
-            const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100)));
-            btn.style.background = `linear-gradient(90deg, #FBAF33 ${pct}%, rgba(251, 175, 51, 0.3) ${pct}%)`;
-        }
-        } else {
-          AppState.dom.donateBox.style.display = "none";
-        }
+if (settings.donate_url && !AppState.flags.isKiosk)
+  const btn = AppState.dom.donateLink;
+  btn.href = settings.donate_url;
+  AppState.dom.donateBox.style.display = "block";
+  if (don.target && don.target > 0) {
+    const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100)));
+    btn.style.background = `linear-gradient(90deg, #FBAF33 ${pct}%, rgba(251, 175, 51, 0.3) ${pct}%)`;
+  }
+} else {
+  AppState.dom.donateBox.style.display = "none";
+}
 
         fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { keepalive: true });
 
@@ -1059,9 +1058,6 @@
             AppState.dom.statusBox.textContent = "❌ Connection failed.";
           });
         });
-
-        if (settings.donate_url) { AppState.dom.donateLink.href = settings.donate_url; AppState.dom.donateBox.style.display = "block"; }
-        else { AppState.dom.donateBox.style.display = "none"; }
 
         AppState.dom.loading.style.display = "none";
         SnowSystem.resize();
