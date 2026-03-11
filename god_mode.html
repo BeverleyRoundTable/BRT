@@ -102,7 +102,8 @@
 
   /* ── STAT CARDS ── */
   .stats-row {
-    display: grid; grid-template-columns: repeat(4, 1fr);
+    display: grid; 
+    grid-template-columns: repeat(5, 1fr); /* ⭐ CHANGED TO 5 COLUMNS */
     gap: 16px; margin-bottom: 24px;
   }
   .stat-card {
@@ -243,12 +244,12 @@
   .leaflet-top, .leaflet-bottom { z-index: 500 !important; }
 
   @media (max-width: 900px) {
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .stats-row { grid-template-columns: repeat(3, 1fr); } /* Better wrapping for tablets */
     .main-grid { grid-template-columns: 1fr; }
     .map-panel { min-height: 400px; }
   }
   @media (max-width: 500px) {
-    .stats-row { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr 1fr; } /* Fits nicely on mobile */
     .dashboard { padding: 16px; }
     .top-bar .title { font-size: 1.1em; }
   }
@@ -264,13 +265,12 @@ const API = new URLSearchParams(location.search).get('api') || '';
 
 const STATE = {
   settings: {}, routes: [], donations: {}, tracker: {}, streets: [],
-  gps: null, activeViewers: 0,
+  gps: null, activeViewers: 0, totalWaves: 0, // ⭐ Added totalWaves state
   lastApiUpdate: null, lastGpsUpdate: null, lastViewerUpdate: null,
   // Leaflet state
   map: null, marker: null, routeGlowLayer: null, routeMainLayer: null, gpxLoaded: false
 };
 
-// ⭐ NEW: Helper function to build API URLs with the secret password attached
 function getApiUrl(params = '') {
   const secret = sessionStorage.getItem('sleighSecret') || '';
   const base = API.includes('?') ? API : API + '?';
@@ -286,12 +286,10 @@ if (!API) {
   init();
 }
 
-// ⭐ NEW: Updated Init function to check password before loading
 async function init() {
   let secret = sessionStorage.getItem('sleighSecret');
   
   if (!secret) {
-    // 1. Prompt for password
     secret = prompt("🎅 God Mode Authorization Required\n\nEnter the Master Password:");
     if (!secret) {
       document.getElementById('app').innerHTML = '<div class="error-msg">Authorization required. Refresh the page to try again.</div>';
@@ -299,7 +297,6 @@ async function init() {
       return;
     }
     
-    // 2. Ask the Apps Script Bouncer if it's correct
     try {
       const sep = API.includes('?') ? '&' : '?';
       const check = await fetch(`${API}${sep}function=verifyGodMode&secret=${encodeURIComponent(secret)}`);
@@ -311,7 +308,6 @@ async function init() {
         return;
       }
       
-      // 3. Password is good! Save it for this session.
       sessionStorage.setItem('sleighSecret', secret);
     } catch(e) {
       document.getElementById('app').innerHTML = '<div class="error-msg">❌ Failed to connect to API to verify password.</div>';
@@ -320,7 +316,6 @@ async function init() {
     }
   }
 
-  // If we made it here, they have the correct password! Build the dashboard.
   await fetchApiData();
   buildDashboard();
   initMap();
@@ -338,7 +333,6 @@ async function init() {
   setInterval(updateGpsAge, 1000);
 }
 
-// ⭐ NEW: All fetch calls below now use getApiUrl() to pass the secret
 async function fetchApiData() {
   try {
     const res = await fetch(getApiUrl());
@@ -350,7 +344,6 @@ async function fetchApiData() {
     STATE.streets = data.streets || [];
     STATE.lastApiUpdate = new Date();
     
-    // Update the PA input box silently in the background if another admin changed it
     const paInput = document.getElementById("paInput");
     if (paInput && document.activeElement !== paInput) {
       paInput.value = STATE.settings.live_announcement || '';
@@ -374,14 +367,13 @@ async function fetchViewers() {
     const res = await fetch(getApiUrl('function=getActiveViewers'));
     const data = await res.json();
     STATE.activeViewers = data.active || 0;
+    STATE.totalWaves = data.waves || 0; // ⭐ Save wave count
     STATE.lastViewerUpdate = new Date();
     updateViewers();
   } catch(e) { console.error('Viewers:', e); }
 }
 
-  // --- WEATHER SYSTEM ---
 function getWeatherEmoji(code) {
-  // Standard WMO Weather codes
   if (code === 0) return '☀️ Clear';
   if (code <= 3) return '☁️ Cloudy';
   if (code <= 48) return '🌫️ Fog';
@@ -394,7 +386,6 @@ function getWeatherEmoji(code) {
 }
 
 async function fetchWeather() {
-  // Use live GPS if available, otherwise fallback to the default map center
   const lat = STATE.gps?.lat || 53.8426; 
   const lng = STATE.gps?.lng || -0.4275;
   try {
@@ -413,8 +404,6 @@ function updateWeather() {
   
   const w = STATE.weather;
   const condition = getWeatherEmoji(w.weathercode);
-  
-  // If the weather code is greater than 50, it's rain, snow, or worse. Make it red!
   const conditionColor = w.weathercode > 50 ? 'color: var(--red);' : '';
   
   container.innerHTML = `
@@ -468,19 +457,16 @@ function isGpsFresh() {
   return STATE.gps?.ts && (Date.now() - new Date(STATE.gps.ts).getTime()) < 120000;
 }
 
-// --- PA SYSTEM ACTIONS ---
 async function sendAnnouncement() {
   const msg = document.getElementById('paInput').value.trim();
   const btn = document.getElementById('broadcastBtn');
-  const secret = sessionStorage.getItem('sleighSecret') || ''; // ⭐ NEW: Grab saved secret
+  const secret = sessionStorage.getItem('sleighSecret') || ''; 
   
-  // Show sending state
   btn.innerText = "Sending...";
   btn.style.background = "var(--surface-2)";
   btn.style.color = "var(--text-dim)";
   
   try {
-    // ⭐ NEW: Pass the secret payload to the doPost function!
     const response = await fetch(API, { 
       method: "POST", 
       body: JSON.stringify({ 
@@ -495,7 +481,7 @@ async function sendAnnouncement() {
     if (result.ok) {
       STATE.settings.live_announcement = msg;
     } else {
-      alert("Action Blocked: " + result.error); // Will show Bouncer error if unauthorized
+      alert("Action Blocked: " + result.error); 
     }
     
     updatePaButtonState();
@@ -516,7 +502,6 @@ function updatePaButtonState() {
   const paInput = document.getElementById("paInput");
   const msg = STATE.settings.live_announcement || '';
   
-  // Update the input box value to match the sheet 
   if (paInput && document.activeElement !== paInput) {
     paInput.value = msg;
   }
@@ -529,7 +514,6 @@ function updatePaButtonState() {
     btn.className = "btn-broadcast";
   }
 }
-// -------------------------
 
 function buildDashboard() {
   const s = STATE.settings;
@@ -561,6 +545,13 @@ function buildDashboard() {
       <div class="value green" id="statViewers">—</div>
       <div class="sub">Last 5 minutes</div>
     </div>
+    
+    <div class="stat-card">
+      <div class="label">Waves Received</div>
+      <div class="value gold" id="statWaves">—</div>
+      <div class="sub">Tonight</div>
+    </div>
+
     <div class="stat-card">
       <div class="label">GPS Signal</div>
       <div class="value" id="statGpsStatus">—</div>
@@ -589,7 +580,7 @@ function buildDashboard() {
         </div>
       </div>
 
-<div class="panel">
+      <div class="panel">
         <div class="panel-header"><span class="icon">☁️</span><h3>Live Weather</h3></div>
         <div id="weatherDetail">
           <div class="no-route">Fetching atmosphere data...</div>
@@ -619,13 +610,12 @@ function buildDashboard() {
   h += '<div class="last-updated" id="lastUpdated">Connecting...</div>';
   h += '</div>';
 
-  // Only render HTML if empty so the text box doesn't glitch while typing
   if (document.getElementById('app').innerHTML === "") {
     document.getElementById('app').innerHTML = h;
   }
   
   updateDashboard();
-  updatePaButtonState(); // Make sure button starts in the right visual state
+  updatePaButtonState(); 
 }
 
 function initMap() {
@@ -640,13 +630,11 @@ function initMap() {
     attribution: '© OpenStreetMap'
   }).addTo(STATE.map);
 
-  // Santa marker — use the live icon from settings or fallback
   const iconUrl = s.sleigh_icon_live || 'https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png';
   STATE.marker = L.marker([startLat, startLng], {
     icon: L.icon({ iconUrl, iconSize: [64, 64], iconAnchor: [32, 60] })
   }).addTo(STATE.map);
 
-  // Load GPX route for today (or next route with GPX)
   const todayRoute = getTodayRoute();
   const nextRoute = getNextRoute();
   const route = todayRoute || nextRoute;
@@ -655,7 +643,6 @@ function initMap() {
     loadGpxRoute(route, s);
   }
 
-  // Dynamic route weight on zoom
   STATE.map.on('zoomend', () => {
     if (!STATE.routeMainLayer || !STATE.routeGlowLayer) return;
     const z = STATE.map.getZoom();
@@ -670,14 +657,12 @@ function loadGpxRoute(route, settings) {
   const startIconUrl = settings.sleigh_icon_start || 'https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png';
   const endIconUrl = settings.sleigh_icon_end || 'https://i.ibb.co/39WF0kBd/Santa-Marker-5.png';
 
-  // Gold glow layer (bottom)
   STATE.routeGlowLayer = new L.GPX(route.gpxUrl, {
     async: true,
     polyline_options: { color: '#ffd700', weight: 7, opacity: 0.45 },
     marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
   }).addTo(STATE.map);
 
-  // Red route layer (top)
   STATE.routeMainLayer = new L.GPX(route.gpxUrl, {
     async: true,
     polyline_options: { color: '#d31c1c', weight: 4, opacity: 0.95 },
@@ -688,10 +673,8 @@ function loadGpxRoute(route, settings) {
     }
   }).addTo(STATE.map);
 
-  // Fit map to route bounds once loaded, then fire zoomend for weight calc
   STATE.routeMainLayer.on('loaded', (e) => {
     STATE.gpxLoaded = true;
-    // Only fit to route if we don't have a live GPS fix yet
     if (!STATE.gps) {
       STATE.map.fitBounds(e.target.getBounds(), { padding: [30, 30] });
     }
@@ -736,7 +719,6 @@ function updateGps() {
   el('gpsLng', parseFloat(STATE.gps.lng).toFixed(6));
   if (STATE.gps.ts) el('gpsTime', fmtTime(new Date(STATE.gps.ts)));
 
-  // Update Leaflet marker + pan
   if (STATE.map && STATE.marker) {
     const ll = L.latLng(STATE.gps.lat, STATE.gps.lng);
     STATE.marker.setLatLng(ll);
@@ -747,8 +729,11 @@ function updateGps() {
 }
 
 function updateViewers() {
-  const el = document.getElementById('statViewers');
-  if (el) el.textContent = STATE.activeViewers;
+  const vEl = document.getElementById('statViewers');
+  const wEl = document.getElementById('statWaves'); // ⭐ MAP DOM
+  
+  if (vEl) vEl.textContent = STATE.activeViewers;
+  if (wEl) wEl.textContent = (STATE.totalWaves !== undefined) ? STATE.totalWaves : '—';
 }
 
 function updateRouteDetail() {
