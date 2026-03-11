@@ -103,7 +103,7 @@
   /* ── STAT CARDS ── */
   .stats-row {
     display: grid; 
-    grid-template-columns: repeat(5, 1fr); /* ⭐ CHANGED TO 5 COLUMNS */
+    grid-template-columns: repeat(5, 1fr); 
     gap: 16px; margin-bottom: 24px;
   }
   .stat-card {
@@ -159,6 +159,10 @@
     margin-bottom: 10px; outline: none; box-sizing: border-box;
   }
   .pa-input:focus { border-color: var(--gold); }
+  
+  select.pa-input { cursor: pointer; }
+  select.pa-input option { background: var(--surface); color: var(--text); }
+
   .pa-btns { display: flex; gap: 8px; }
   .pa-btns button {
     flex: 1; padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer;
@@ -244,12 +248,12 @@
   .leaflet-top, .leaflet-bottom { z-index: 500 !important; }
 
   @media (max-width: 900px) {
-    .stats-row { grid-template-columns: repeat(3, 1fr); } /* Better wrapping for tablets */
+    .stats-row { grid-template-columns: repeat(3, 1fr); } 
     .main-grid { grid-template-columns: 1fr; }
     .map-panel { min-height: 400px; }
   }
   @media (max-width: 500px) {
-    .stats-row { grid-template-columns: 1fr 1fr; } /* Fits nicely on mobile */
+    .stats-row { grid-template-columns: 1fr 1fr; } 
     .dashboard { padding: 16px; }
     .top-bar .title { font-size: 1.1em; }
   }
@@ -265,7 +269,7 @@ const API = new URLSearchParams(location.search).get('api') || '';
 
 const STATE = {
   settings: {}, routes: [], donations: {}, tracker: {}, streets: [],
-  gps: null, activeViewers: 0, totalWaves: 0, // ⭐ Added totalWaves state
+  gps: null, activeViewers: 0, totalWaves: 0, 
   lastApiUpdate: null, lastGpsUpdate: null, lastViewerUpdate: null,
   // Leaflet state
   map: null, marker: null, routeGlowLayer: null, routeMainLayer: null, gpxLoaded: false
@@ -367,7 +371,7 @@ async function fetchViewers() {
     const res = await fetch(getApiUrl('function=getActiveViewers'));
     const data = await res.json();
     STATE.activeViewers = data.active || 0;
-    STATE.totalWaves = data.waves || 0; // ⭐ Save wave count
+    STATE.totalWaves = data.waves || 0; 
     STATE.lastViewerUpdate = new Date();
     updateViewers();
   } catch(e) { console.error('Viewers:', e); }
@@ -521,6 +525,24 @@ function buildDashboard() {
   const currency = STATE.donations.currency || '£';
   const todayRoute = getTodayRoute();
 
+  // Purely dynamic generation: expects `presets` array from API
+  const presetList = Array.isArray(s.presets) ? s.presets : [];
+  
+  let presetOptionsHTML = '<select class="pa-input" id="paSelect" onchange="if(this.value){ document.getElementById(\'paInput\').value = this.value; this.value=\'\'; }">';
+  
+  if (presetList.length > 0) {
+    presetOptionsHTML += '<option value="">-- Quick select a preset message --</option>';
+    presetList.forEach(p => {
+      if (p.trim() !== '') {
+        const label = p.length > 55 ? p.substring(0, 52) + '...' : p;
+        presetOptionsHTML += `<option value="${p.replace(/"/g, '&quot;')}">${label}</option>`;
+      }
+    });
+  } else {
+    presetOptionsHTML += '<option value="" disabled selected>No presets loaded from settings</option>';
+  }
+  presetOptionsHTML += '</select>';
+
   let h = '<div class="dashboard">';
 
   h += `<div class="top-bar">
@@ -573,7 +595,10 @@ function buildDashboard() {
 
       <div class="panel">
         <div class="panel-header"><span class="icon">📢</span><h3>Live PA System</h3></div>
-        <input type="text" id="paInput" class="pa-input" placeholder="e.g. 🚨 Delayed by 15 mins!" value="${s.live_announcement || ''}" />
+        
+        ${presetOptionsHTML}
+        
+        <input type="text" id="paInput" class="pa-input" placeholder="Type a custom alert or select above..." value="${s.live_announcement || ''}" />
         <div class="pa-btns">
           <button id="broadcastBtn" class="btn-broadcast" onclick="sendAnnouncement()">Broadcast Live</button>
           <button class="btn-clear" onclick="clearAnnouncement()">Clear</button>
@@ -730,7 +755,7 @@ function updateGps() {
 
 function updateViewers() {
   const vEl = document.getElementById('statViewers');
-  const wEl = document.getElementById('statWaves'); // ⭐ MAP DOM
+  const wEl = document.getElementById('statWaves'); 
   
   if (vEl) vEl.textContent = STATE.activeViewers;
   if (wEl) wEl.textContent = (STATE.totalWaves !== undefined) ? STATE.totalWaves : '—';
