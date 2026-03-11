@@ -368,4 +368,4 @@ document.getElementById("qrPosterLink").value = qrPosterLink.trim();
 document.getElementById("thankYouLink").value = thankYouLink.trim();
 document.getElementById("reindeerLink").value = reindeerLink.trim();
 document.getElementById("crewLink").value = crewLink.trim();
-document.getElementById("letterLink").value = letterLink.trim();
+document.getElementById("letterLink").value = LetterLink.trim();
