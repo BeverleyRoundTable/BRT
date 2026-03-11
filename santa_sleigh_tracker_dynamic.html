@@ -935,8 +935,11 @@
 
         // ⭐ THE "DISNEY MAGIC" AMBIENT WAVES
         function triggerAmbientWave() {
-          // Only show ambient waves if they are actually looking at the page
-          if (AppState.flags.pageVisible && !AppState.flags.isKiosk) {
+          // 1. Make sure we actually have a fresh GPS signal!
+          const isGpsActive = AppState.lastFix !== null && AppState.vars.staleSince === null;
+
+          // 2. Only show waves if they are looking at the page, not on a kiosk, AND Santa is live.
+          if (AppState.flags.pageVisible && !AppState.flags.isKiosk && isGpsActive) {
             const wave = document.createElement("div");
             wave.textContent = "👋";
             wave.className = "wave-emoji";
@@ -954,12 +957,12 @@
             setTimeout(() => wave.remove(), 2000);
           }
 
-          // Pick a random time between 15s (15000ms) and 40s (40000ms) for the next one
+          // Pick a random time between 15s and 40s for the next one
           const nextDelay = Math.floor(Math.random() * (40000 - 15000 + 1)) + 15000;
           setTimeout(triggerAmbientWave, nextDelay);
         }
 
-        // Kick off the first ambient wave 5 to 10 seconds after the page loads
+        // Kick off the loop 5 to 10 seconds after the page loads
         setTimeout(triggerAmbientWave, Math.floor(Math.random() * 5000) + 5000);
 
         document.getElementById("modalCancelBtn").addEventListener("click", () => {
