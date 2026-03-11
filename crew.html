@@ -34,20 +34,19 @@
   header { text-align: center; margin-bottom: 32px; }
 
   header h1 {
-  font-size: 2em; 
-  font-weight: 800; /* Increased weight slightly to match brand feel */
-  color: #FBAF33;   /* Official Golden Yellow */
-  /* Removed background-clip and text-fill-color to allow solid color */
-  -webkit-background-clip: initial; 
-  -webkit-text-fill-color: initial;
-}
+    font-size: 2em; 
+    font-weight: 800; 
+    color: #FBAF33;   
+    -webkit-background-clip: initial; 
+    -webkit-text-fill-color: initial;
+  }
 
-header p { 
-  color: #FFFFFF; /* Using pure brand white for the subheader */
-  margin-top: 6px; 
-  font-size: 0.9em; 
-  opacity: 0.8;   /* Softened slightly so the Yellow header pops */
-}
+  header p { 
+    color: #FFFFFF; 
+    margin-top: 6px; 
+    font-size: 0.9em; 
+    opacity: 0.8;   
+  }
 
   /* ── TABS ── */
   .format-row {
@@ -55,8 +54,8 @@ header p {
   }
 
   .format-btn {
-    font-family: 'Open Sans', sans-serif; font-size: 0.9em; font-weight: 700;
-    padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border);
+    font-family: 'Open Sans', sans-serif; font-size: 0.85em; font-weight: 700;
+    padding: 10px 10px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--surface-2); color: var(--text-dim); cursor: pointer;
     transition: 0.2s; flex: 1; text-align: center; max-width: 200px;
   }
@@ -164,7 +163,8 @@ header p {
     
     <div class="format-row">
       <button class="format-btn active" data-target="signup" onclick="switchTab(this)">📝 Sign Up</button>
-      <button class="format-btn" data-target="ops" onclick="switchTab(this)">🛠️ Operations</button>
+      <button class="format-btn" data-target="qr" onclick="switchTab(this)">📱 QR Code</button>
+      <button class="format-btn" data-target="ops" onclick="switchTab(this)">🛠️ Ops</button>
     </div>
 
     <div id="signup" class="section active">
@@ -219,6 +219,19 @@ header p {
       </div>
     </div>
 
+    <div id="qr" class="section">
+      <div class="panel" style="text-align: center;">
+        <h3>Street Collection Tool</h3>
+        <p style="font-size: 0.9em; color: var(--text-dim); margin-bottom: 20px;">
+          Use this to quickly take digital donations on the move.
+        </p>
+        
+        <button onclick="openFullQR()" class="btn btn-gold" style="box-shadow: 0 4px 15px rgba(251,175,51,0.4);">
+          ⚡ Open Full-Screen QR
+        </button>
+      </div>
+    </div>
+
     <div id="ops" class="section">
       <div class="panel">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -253,8 +266,16 @@ header p {
   </div>
 </div>
 
+<div id="qrModal" style="display:none; position:fixed; inset:0; background:#ffffff; z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align: center;">
+  <h2 style="color:#000; font-weight:900; margin-bottom:10px; font-size:2.2em; text-transform:uppercase;">Donate Here</h2>
+  <p style="color:#333; font-weight:700; margin-bottom:30px; font-size:1.1em;">Scan with your phone camera</p>
+  <img id="qrImage" src="" style="width: 80vw; max-width: 350px; aspect-ratio: 1/1; margin-bottom: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-radius: 12px; border: 4px solid #fff;">
+  <button onclick="document.getElementById('qrModal').style.display='none'" style="background:#1D1D1A; color:#fff; padding:16px 40px; border-radius:12px; font-size:1.1em; font-weight:bold; border:none; cursor:pointer; width: 80%; max-width: 300px;">Close / Back to Hub</button>
+</div>
+
 <script>
 const API = new URLSearchParams(location.search).get('api') || '';
+let globalDonateUrl = ""; // ⭐ Saves the donation link
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!API) {
@@ -272,6 +293,9 @@ async function init() {
     
     if(!data.routes) throw new Error("Invalid API response");
 
+    // ⭐ Grab the donate URL from the settings response
+    globalDonateUrl = data.settings?.donate_url || "";
+
     populateRouteDropdowns(data.routes);
     
     document.getElementById('initArea').style.display = 'none';
@@ -282,7 +306,16 @@ async function init() {
   }
 }
 
-// ⭐ NEW: Async Tab Switcher for the Bouncer 
+// ⭐ NEW QR LOGIC
+function openFullQR() {
+  if (!globalDonateUrl) {
+    alert("No donation URL is set in your Settings sheet!");
+    return;
+  }
+  document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(globalDonateUrl)}`;
+  document.getElementById('qrModal').style.display = 'flex';
+}
+
 async function switchTab(btn) {
   const target = btn.dataset.target;
   
@@ -291,7 +324,7 @@ async function switchTab(btn) {
     
     if (!secret) {
       secret = prompt("🎅 Operations Authorization Required\n\nEnter the Master Password:");
-      if (!secret) return; // User cancelled
+      if (!secret) return; 
       
       const originalText = btn.innerText;
       btn.innerText = "Verifying...";
@@ -343,7 +376,6 @@ function populateRouteDropdowns(routes) {
   });
 }
 
-// ⭐ NOTE: This does NOT use the secret, so the public can sign up
 async function submitVolunteer(e) {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
@@ -429,7 +461,6 @@ function renderChecklist(routeName, tasks, data) {
   });
 }
 
-// ⭐ NEW: Payload attaches the secret to pass the Bouncer
 async function updateChecklistItem(routeName, item, isChecked) {
   const secret = sessionStorage.getItem('opsSecret') || '';
   const payload = {
@@ -445,7 +476,6 @@ async function updateChecklistItem(routeName, item, isChecked) {
     const result = await response.json();
     if(!result.ok) {
         alert("Blocked: " + result.error);
-        // Revert the checkbox visually if it failed
         document.getElementById(`chk_${item.replace(/\s+/g, '')}`).checked = !isChecked;
     }
   } catch (err) {
@@ -495,7 +525,6 @@ function renderCrew(volunteers) {
   });
 }
 
-// ⭐ NEW: Payload attaches the secret to pass the Bouncer
 async function checkInVolunteer(btn, routeName, volName, role) {
   let bucketNumber = "";
 
