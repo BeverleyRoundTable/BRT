@@ -344,6 +344,27 @@ const letterLink = `
 https://brt-23f.pages.dev/letter?api=${ensureApi()}
 `;
 
+const recommendedLetter = `
+<div style="width:100%;max-width:600px;margin:0 auto;">
+  <iframe
+    id="letterFrame"
+    src="https://brt-23f.pages.dev/letter.html?api=${ensureApi()}"
+    style="width:100%;border:none;border-radius:16px;transition:height .25s ease;"
+    scrolling="no"
+    loading="lazy"
+  ></iframe>
+</div>
+
+<script>
+  window.addEventListener("message", (e) => {
+    if (e.data.letterHeight) {
+      const frame = document.getElementById("letterFrame");
+      if (frame) frame.style.height = e.data.letterHeight + "px";
+    }
+  });
+</script>
+`;
+
 // ================================
 // Inject into UI textareas
 // ================================
@@ -369,3 +390,4 @@ document.getElementById("thankYouLink").value = thankYouLink.trim();
 document.getElementById("reindeerLink").value = reindeerLink.trim();
 document.getElementById("crewLink").value = crewLink.trim();
 document.getElementById("letterLink").value = letterLink.trim();
+document.getElementById("recommendedLetter").value = recommendedLetter.trim();
