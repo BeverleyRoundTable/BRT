@@ -338,6 +338,13 @@ https://brt-23f.pages.dev/crew?api=${ensureApi()}
 `;
 
 // ================================
+// Letter to Santa
+// ================================
+const crewLink = `
+https://brt-23f.pages.dev/letter?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -361,3 +368,4 @@ document.getElementById("qrPosterLink").value = qrPosterLink.trim();
 document.getElementById("thankYouLink").value = thankYouLink.trim();
 document.getElementById("reindeerLink").value = reindeerLink.trim();
 document.getElementById("crewLink").value = crewLink.trim();
+document.getElementById("letterLink").value = letterLink.trim();
