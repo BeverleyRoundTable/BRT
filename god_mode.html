@@ -536,11 +536,13 @@ function buildDashboard() {
       // Safely ensure p exists and isn't just a blank cell before processing
       if (p && String(p).trim() !== '') {
         const cleanStr = String(p).trim();
-        const label = cleanStr.length > 55 ? cleanStr.substring(0, 52) + '...' : cleanStr;
-        presetOptionsHTML += `<option value="${cleanStr.replace(/"/g, '&quot;')}">${label}</option>`;
+        const safeVal = cleanStr.replace(/"/g, '&quot;');
+        // Removed the hard truncation so the full text shows, and added a title tooltip!
+        presetOptionsHTML += `<option value="${safeVal}" title="${safeVal}">${cleanStr}</option>`;
       }
     });
-  } else {
+  }
+  else {
     presetOptionsHTML += '<option value="" disabled selected>No presets loaded from settings</option>';
   }
   presetOptionsHTML += '</select>';
