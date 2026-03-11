@@ -785,17 +785,17 @@
         AppState.vars.todayRoute = route;
 
         const don = apiData.donations || {};
-if (settings.donate_url && !AppState.flags.isKiosk)
-  const btn = AppState.dom.donateLink;
-  btn.href = settings.donate_url;
-  AppState.dom.donateBox.style.display = "block";
-  if (don.target && don.target > 0) {
-    const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100)));
-    btn.style.background = `linear-gradient(90deg, #FBAF33 ${pct}%, rgba(251, 175, 51, 0.3) ${pct}%)`;
-  }
-} else {
-  AppState.dom.donateBox.style.display = "none";
-}
+        if (settings.donate_url && !AppState.flags.isKiosk) {
+          const btn = AppState.dom.donateLink;
+          btn.href = settings.donate_url;
+          AppState.dom.donateBox.style.display = "block";
+          if (don.target && don.target > 0) {
+            const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100)));
+            btn.style.background = `linear-gradient(90deg, #FBAF33 ${pct}%, rgba(251, 175, 51, 0.3) ${pct}%)`;
+          }
+        } else {
+          AppState.dom.donateBox.style.display = "none";
+        }
 
         fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { keepalive: true });
 
