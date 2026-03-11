@@ -340,7 +340,7 @@ https://brt-23f.pages.dev/crew?api=${ensureApi()}
 // ================================
 // Letter to Santa
 // ================================
-const crewLink = `
+const LetterLink = `
 https://brt-23f.pages.dev/letter?api=${ensureApi()}
 `;
 
