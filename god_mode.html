@@ -533,9 +533,11 @@ function buildDashboard() {
   if (presetList.length > 0) {
     presetOptionsHTML += '<option value="">-- Quick select a preset message --</option>';
     presetList.forEach(p => {
-      if (p.trim() !== '') {
-        const label = p.length > 55 ? p.substring(0, 52) + '...' : p;
-        presetOptionsHTML += `<option value="${p.replace(/"/g, '&quot;')}">${label}</option>`;
+      // Safely ensure p exists and isn't just a blank cell before processing
+      if (p && String(p).trim() !== '') {
+        const cleanStr = String(p).trim();
+        const label = cleanStr.length > 55 ? cleanStr.substring(0, 52) + '...' : cleanStr;
+        presetOptionsHTML += `<option value="${cleanStr.replace(/"/g, '&quot;')}">${label}</option>`;
       }
     });
   } else {
