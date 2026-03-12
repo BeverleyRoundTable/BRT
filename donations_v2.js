@@ -38,7 +38,7 @@
     }
 
     /* ---------------------------------------------------------
-       INSTALL SAFE CSS (Leaflet / Carrd compatible)
+       INSTALL SAFE CSS (Aligned with Brand Guidelines & God Mode)
     --------------------------------------------------------- */
     function installCSS() {
     if (document.getElementById("donations-v2-style")) return;
@@ -46,8 +46,8 @@
     const css = `
 .santa-mini-wrapper,
 .santa-thermo-wrapper {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
-    color: white;
+    font-family: "Open Sans", sans-serif;
+    color: #FFFFFF;
     margin: 1.2rem auto;
     max-width: 420px;
     width: 100%;
@@ -58,14 +58,14 @@
 .santa-mini-track {
     width: 100%;
     height: 14px;
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.08); /* Matched God Mode border/dim */
     border-radius: 8px;
     overflow: hidden;
 }
 .santa-mini-fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #d31c1c, #7f0f0f);
+    background: linear-gradient(90deg, #d31c1c, #FBAF33); /* Red to Brand Gold */
     border-radius: 8px;
     transition: width 1s ease-out;
 }
@@ -76,16 +76,17 @@
 }
 .santa-mini-val {
     margin-top: 0.5rem;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 1rem;
 }
 
 /* ---------- THERMO CARD ---------- */
 .santa-thermo-card {
-    background: rgba(18,19,23,0.92);
+    background: rgba(29, 29, 26, 0.95); /* Brand Table Grey */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow:
         0 6px 20px rgba(0,0,0,0.35),
         inset 0 1px 0 rgba(255,255,255,0.05);
@@ -94,8 +95,10 @@
 
 .santa-thermo-title {
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
 .santa-thermo-layout {
@@ -111,11 +114,9 @@
     height: 260px;
     border-radius: 999px;
     overflow: hidden;
-    background: #222;
-
-    border: 2px solid #ffd700;
-    box-shadow: 0 0 6px rgba(255,215,0,0.35);
-
+    background: #262622; /* God Mode Surface */
+    border: 2px solid #FBAF33; /* Brand Golden Yellow */
+    box-shadow: 0 0 6px rgba(251, 175, 51, 0.35);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -124,15 +125,15 @@
 .santa-thermo-fill {
     width: 100%;
     height: 0%;
-    background: linear-gradient(#d31c1c, #7f0f0f);
+    background: linear-gradient(#d31c1c, #FBAF33); /* Red to Brand Gold */
     transition: height 1.4s ease-out;
 }
 
 /* ---------- SUBTLE UPDATE PULSE ---------- */
 @keyframes thermoPulse {
-  0%   { box-shadow: 0 0 0 rgba(211,28,28,0); }
-  50%  { box-shadow: 0 0 14px rgba(211,28,28,0.35); }
-  100% { box-shadow: 0 0 0 rgba(211,28,28,0); }
+  0%   { box-shadow: 0 0 0 rgba(251, 175, 51, 0); }
+  50%  { box-shadow: 0 0 14px rgba(251, 175, 51, 0.4); }
+  100% { box-shadow: 0 0 0 rgba(251, 175, 51, 0); }
 }
 
 .santa-thermo-fill.pulse {
@@ -144,19 +145,22 @@
     font-size: 0.9rem;
     line-height: 1.4;
     width: 140px;
-    color: white;
+    color: #FFFFFF;
 }
 .santa-thermo-info strong {
-    font-size: 1.05rem;
+    font-size: 1.15rem;
+    color: #FBAF33; /* Brand Golden Yellow */
 }
 
 /* ---------- LOGO ---------- */
 .santa-thermo-logo {
     width: 64px;
     height: 64px;
-    border-radius: 50%;
-    border: 2px solid white;
-    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px;
+    object-fit: contain;
     display: block;
     margin: 1rem auto 0;
 }
@@ -203,7 +207,7 @@
                         </div>
                         <div class="santa-thermo-info">
                             <div id="thermoAmount"><strong>Loading…</strong></div>
-                            <div id="thermoLast" style="opacity:0.8;"></div>
+                            <div id="thermoLast" style="opacity:0.6; margin-top: 6px; font-size: 0.8em;"></div>
                         </div>
                     </div>
                     <img class="santa-thermo-logo" id="thermoLogo" src="">
@@ -227,8 +231,8 @@
         const mf = document.getElementById("miniFill");
         const mv = document.getElementById("miniVal");
         if (mf) mf.style.width = pct + "%";
-        if (mv) mv.textContent =
-            `£${total.toLocaleString("en-GB")} of £${target.toLocaleString("en-GB")}`;
+        if (mv) mv.innerHTML = 
+            `<span style="color: #FBAF33;">£${total.toLocaleString("en-GB")}</span> of £${target.toLocaleString("en-GB")}`;
 
         /* THERMOMETER */
         const tf = document.getElementById("thermoFill");
@@ -245,15 +249,16 @@
   tf.classList.add("pulse");
 }
 
-        if (ta) ta.innerHTML =
-            `<strong>£${total.toLocaleString("en-GB")}</strong> raised of £${target.toLocaleString("en-GB")}`;
+        if (ta) ta.innerHTML = 
+            `<strong>£${total.toLocaleString("en-GB")}</strong><br>raised of £${target.toLocaleString("en-GB")}`;
 
-        if (tl) tl.textContent =
+        if (tl) tl.textContent = 
             "Last updated: " + (donations.lastUpdatePretty || "Awaiting first update");
 
         // dynamic logo support (Settings → logo_overlay_url)
         if (logo) {
             logo.src = donations.logo || settings.logo_overlay_url || "";
+            logo.style.display = logo.src ? "block" : "none"; // Hide if no source
         }
     }
 
