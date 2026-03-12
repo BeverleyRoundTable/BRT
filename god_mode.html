@@ -685,7 +685,8 @@ function initMap() {
   const startLng = STATE.gps?.lng || -1.9206740193920633;
   const startZoom = 15;
 
-  STATE.map = L.map('godMap', { zoomControl: true }).setView([startLat, startLng], startZoom);
+  // Added preferCanvas: true right here 👇
+  STATE.map = L.map('godMap', { zoomControl: true, preferCanvas: true }).setView([startLat, startLng], startZoom);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
