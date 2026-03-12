@@ -93,7 +93,7 @@
       map = L.map("map", { zoomControl: false }).setView([53.84, -0.42], 13);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
       
-      // Using standard OpenStreetMap tiles to match your tracker exactly
+      // Standard OpenStreetMap tiles
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
@@ -104,13 +104,18 @@
         const data = await res.json();
         const routes = data.routes || [];
 
-        // Load all existing GPX tracks so users can see where we already go
-        routes.forEach(route => {
+        // ⭐ CURATED COLOR PALETTE: Red, Blue, Forest Green, Deep Orange, Purple, Teal
+        const colorPalette = ['#d31c1c', '#1E90FF', '#228B22', '#FF8C00', '#8A2BE2', '#008B8B'];
+
+        // Load all existing GPX tracks
+        routes.forEach((route, index) => {
           if (route.gpxUrl) {
+            // Pick a color from the palette based on the route index
+            const routeColor = colorPalette[index % colorPalette.length];
+
             new L.GPX(route.gpxUrl, {
               async: true,
-              // Faint red line so it stands out against the standard map
-              polyline_options: { color: "#d31c1c", weight: 4, opacity: 0.4 },
+              polyline_options: { color: routeColor, weight: 4, opacity: 0.7 },
               marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
             }).addTo(map);
           }
