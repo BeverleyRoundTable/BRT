@@ -13,7 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
   <style>
-    /* ── ROUND TABLE BRAND VARIABLES ── */
+   /* ── ROUND TABLE BRAND VARIABLES ── */
     :root {
       --rt-grey: #1D1D1A;
       --rt-gold: #FBAF33;
@@ -23,14 +23,15 @@
       --text: #f0f0f0;
       --text-dim: rgba(255,255,255,0.8);
       
-      --ui-bottom-safe: 72px;
-      --donate-bottom: calc(var(--ui-bottom-safe) + 92px);
+      /* Dropped lower to the screen edge and increased the gap */
+      --ui-bottom-safe: 36px;
+      --donate-bottom: calc(var(--ui-bottom-safe) + 85px);
       --info-bottom: var(--ui-bottom-safe);
     }
     @supports(padding:env(safe-area-inset-bottom)){ 
       :root{
-        --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom));
-        --donate-bottom: calc(var(--ui-bottom-safe) + 92px);
+        --ui-bottom-safe: calc(36px + env(safe-area-inset-bottom));
+        --donate-bottom: calc(var(--ui-bottom-safe) + 85px);
         --info-bottom: var(--ui-bottom-safe);
       } 
     }
