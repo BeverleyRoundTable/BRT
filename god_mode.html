@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <style>
   :root {
     --bg: #1D1D1A;         /* Official Table Grey */
@@ -170,14 +171,12 @@
   }
   .pa-btns button:active { transform: scale(0.96); }
   
-  /* Button Normal State (Brand Grey) */
   .btn-broadcast { 
     background: var(--surface-2); 
     color: var(--text-dim); 
     border: 1px solid var(--border);
   }
   
-  /* Button Active State (Official Gold Pulsing) */
   .btn-broadcast.live-active { 
     background: var(--gold) !important; 
     color: #000000 !important; 
@@ -215,6 +214,15 @@
   .route-row .route-value { font-size: 0.9em; font-weight: 700; }
   .route-row .route-value.gold { color: var(--gold); }
   .no-route { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.85em; }
+
+  /* ⭐ NEW: HEATMAP CONTROLS UI */
+  .heatmap-controls { display: none; margin-top: 15px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; }
+  .heatmap-controls.active { display: block; animation: slideDown 0.3s ease-out; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  .heatmap-controls select { width: 100%; margin-bottom: 8px; padding: 10px; background: var(--surface-2); color: var(--gold); font-weight: bold; border: 1px solid var(--border); border-radius: 8px; outline: none; cursor: pointer; }
+  .btn-heat { background: var(--surface-2); color: #ff6b6b; border: 1px solid var(--border); margin-top: 12px; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: inherit;}
+  .btn-heat:active { transform: scale(0.96); }
+  .btn-heat.active { background: #ff6b6b; color: #000; border-color: #ff6b6b; box-shadow: 0 0 15px rgba(255, 107, 107, 0.4); }
 
   /* ── DONATIONS ── */
   .donation-mini { display: flex; flex-direction: column; gap: 8px; }
@@ -525,19 +533,15 @@ function buildDashboard() {
   const currency = STATE.donations.currency || '£';
   const todayRoute = getTodayRoute();
 
-  // Purely dynamic generation: expects `presets` array from API
   const presetList = Array.isArray(s.presets) ? s.presets : [];
-  
   let presetOptionsHTML = '<select class="pa-input" id="paSelect" onchange="if(this.value){ document.getElementById(\'paInput\').value = this.value; this.value=\'\'; }">';
   
   if (presetList.length > 0) {
     presetOptionsHTML += '<option value="">-- Quick select a preset message --</option>';
     presetList.forEach(p => {
-      // Safely ensure p exists and isn't just a blank cell before processing
       if (p && String(p).trim() !== '') {
         const cleanStr = String(p).trim();
         const safeVal = cleanStr.replace(/"/g, '&quot;');
-        // Removed the hard truncation so the full text shows, and added a title tooltip!
         presetOptionsHTML += `<option value="${safeVal}" title="${safeVal}">${cleanStr}</option>`;
       }
     });
@@ -610,6 +614,21 @@ function buildDashboard() {
       </div>
 
       <div class="panel">
+        <div class="panel-header"><span class="icon">🗺️</span><h3>Route & Planning</h3></div>
+        <div id="routeDetail"></div>
+        <button id="toggleHeatmapBtn" class="btn-heat" onclick="toggleHeatmap()">🔥 AGM Heatmap Mode</button>
+        <div id="heatmapControls" class="heatmap-controls">
+          <select id="heatType" onchange="drawHeatmap()">
+            <option value="subscribers">📍 Live Subscribers (Waited)</option>
+            <option value="suggestions">✉️ Route Requests (Asked)</option>
+          </select>
+          <select id="heatYear" onchange="drawHeatmap()">
+            <option value="All">All Time</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel">
         <div class="panel-header"><span class="icon">☁️</span><h3>Live Weather</h3></div>
         <div id="weatherDetail">
           <div class="no-route">Fetching atmosphere data...</div>
@@ -624,10 +643,6 @@ function buildDashboard() {
           <div class="gps-item"><div class="gps-label">Last Fix</div><div class="gps-value" id="gpsTime">—</div></div>
           <div class="gps-item"><div class="gps-label">Signal Age</div><div class="gps-value" id="gpsAgeLive">${gpsAgeText()}</div></div>
         </div>
-      </div>
-      <div class="panel">
-        <div class="panel-header"><span class="icon">🗺️</span><h3>Route</h3></div>
-        <div id="routeDetail"></div>
       </div>
       <div class="panel">
         <div class="panel-header"><span class="icon">❤️</span><h3>Donations</h3></div>
@@ -704,7 +719,8 @@ function loadGpxRoute(route, settings) {
 
   STATE.routeMainLayer.on('loaded', (e) => {
     STATE.gpxLoaded = true;
-    if (!STATE.gps) {
+    // Only fit bounds if we aren't following live GPS
+    if (!STATE.gps && !heatmapMode) {
       STATE.map.fitBounds(e.target.getBounds(), { padding: [30, 30] });
     }
     STATE.map.fire('zoomend');
@@ -729,7 +745,10 @@ function updateGpsAge() {
   el('statGpsStatus', e => { e.textContent = fresh ? 'LIVE' : 'STALE'; e.className = 'value ' + (fresh ? 'green' : 'red'); });
   el('liveBadge', e => e.className = 'live-badge' + (fresh ? '' : ' stale'));
   el('liveBadgeText', e => e.textContent = fresh ? 'LIVE' : 'NO SIGNAL');
-  el('mapLabel', e => e.textContent = fresh ? 'Live Position' : 'Last Known Position');
+  
+  if (!heatmapMode) {
+    el('mapLabel', e => e.textContent = fresh ? 'Live Position' : 'Last Known Position');
+  }
 
   el('lastUpdated', e => {
     const p = [];
@@ -748,7 +767,7 @@ function updateGps() {
   el('gpsLng', parseFloat(STATE.gps.lng).toFixed(6));
   if (STATE.gps.ts) el('gpsTime', fmtTime(new Date(STATE.gps.ts)));
 
-  if (STATE.map && STATE.marker) {
+  if (STATE.map && STATE.marker && !heatmapMode) {
     const ll = L.latLng(STATE.gps.lat, STATE.gps.lng);
     STATE.marker.setLatLng(ll);
     STATE.map.panTo(ll, { animate: true, duration: 0.8 });
@@ -812,6 +831,112 @@ function updateRaisedStat() {
   const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   el('statRaised', `${cur}${(d.total || 0).toLocaleString()}`);
   el('statTarget', `of ${cur}${(d.target || 0).toLocaleString()}`);
+}
+
+// ⭐ NEW: AGM HEATMAP LOGIC
+let heatmapMode = false;
+let heatLayer = null;
+let allHeatData = null;
+let allGpxLayers = [];
+
+async function toggleHeatmap() {
+  const btn = document.getElementById('toggleHeatmapBtn');
+  const controls = document.getElementById('heatmapControls');
+
+  if (heatmapMode) {
+    // Turn OFF Heatmap Mode
+    heatmapMode = false;
+    btn.className = "btn-heat";
+    controls.classList.remove('active');
+    document.getElementById('mapLabel').textContent = isGpsFresh() ? 'Live Position' : 'Last Known Position';
+    
+    if (heatLayer) STATE.map.removeLayer(heatLayer);
+    allGpxLayers.forEach(layer => STATE.map.removeLayer(layer));
+    allGpxLayers = [];
+    
+    // Restore live map tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(STATE.map);
+    
+    if (STATE.marker && STATE.gps) {
+      STATE.marker.addTo(STATE.map);
+      STATE.map.panTo([STATE.gps.lat, STATE.gps.lng]);
+    }
+    
+    // Restore today's route layers
+    if (STATE.routeGlowLayer) STATE.routeGlowLayer.addTo(STATE.map);
+    if (STATE.routeMainLayer) STATE.routeMainLayer.addTo(STATE.map);
+    
+  } else {
+    // Turn ON Heatmap Mode
+    btn.innerText = "Loading Data...";
+    try {
+      const res = await fetch(getApiUrl('function=getHeatmapData'));
+      allHeatData = await res.json();
+      
+      if (allHeatData.error) throw new Error(allHeatData.error);
+      
+      heatmapMode = true;
+      btn.innerText = "Exit Heatmap Mode";
+      btn.className = "btn-heat active";
+      controls.classList.add('active');
+      document.getElementById('mapLabel').textContent = 'AGM Planning Map';
+
+      // Clean up live map elements
+      if (STATE.marker) STATE.map.removeLayer(STATE.marker);
+      if (STATE.routeGlowLayer) STATE.map.removeLayer(STATE.routeGlowLayer);
+      if (STATE.routeMainLayer) STATE.map.removeLayer(STATE.routeMainLayer);
+      
+      // Switch to dark base map so heat glows
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(STATE.map);
+
+      // Load all GPX routes as ghost lines
+      STATE.routes.forEach(route => {
+        if (route.gpxUrl) {
+          const l = new L.GPX(route.gpxUrl, {
+            async: true,
+            polyline_options: { color: "#ffffff", weight: 3, opacity: 0.35 },
+            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
+          }).addTo(STATE.map);
+          allGpxLayers.push(l);
+        }
+      });
+
+      // Setup Years
+      const allYears = [...(allHeatData.subscribers||[]).map(d=>d.year), ...(allHeatData.suggestions||[]).map(d=>d.year)];
+      const uniqueYears = [...new Set(allYears)].filter(y => y !== "Unknown").sort().reverse();
+      const yearSelect = document.getElementById('heatYear');
+      yearSelect.innerHTML = '<option value="All">All Time</option>';
+      uniqueYears.forEach(y => {
+        yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+      });
+      if (uniqueYears.length > 0) yearSelect.value = uniqueYears[0];
+
+      drawHeatmap();
+
+    } catch (e) {
+      alert("Failed to load Heatmap data. " + e.message);
+      btn.innerText = "🔥 AGM Heatmap Mode";
+    }
+  }
+}
+
+function drawHeatmap() {
+  if (!heatmapMode || !allHeatData) return;
+  if (heatLayer) STATE.map.removeLayer(heatLayer);
+  
+  const type = document.getElementById('heatType').value; 
+  const year = document.getElementById('heatYear').value;
+  
+  const activeDataset = allHeatData[type] || [];
+  const filtered = activeDataset.filter(d => year === "All" || d.year === year);
+  const leafletFormat = filtered.map(d => [d.lat, d.lng, 1]);
+
+  if (leafletFormat.length === 0) return; 
+
+  heatLayer = L.heatLayer(leafletFormat, {
+    radius: 25, blur: 15, maxZoom: 15,
+    gradient: {0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red'}
+  }).addTo(STATE.map);
 }
 </script>
 </body>
