@@ -369,7 +369,15 @@ async function fetchGps() {
   try {
     const res = await fetch(getApiUrl('function=proxyFirebase'));
     const data = await res.json();
-    if (data && data.lat) { STATE.gps = data; STATE.lastGpsUpdate = new Date(); }
+    if (data && data.lat) { 
+      STATE.gps = data; 
+      STATE.lastGpsUpdate = new Date(); 
+      
+      // NEW: If we finally have GPS coordinates but no weather yet, fetch it immediately!
+      if (!STATE.weather) {
+        fetchWeather();
+      }
+    }
     updateGps();
   } catch(e) { console.error('GPS:', e); }
 }
@@ -398,10 +406,21 @@ function getWeatherEmoji(code) {
 }
 
 async function fetchWeather() {
-  const lat = STATE.gps?.lat || 53.8426; 
-  const lng = STATE.gps?.lng || -0.4275;
+  // Removed the hardcoded fallback coordinates
+  const lat = STATE.gps?.lat; 
+  const lng = STATE.gps?.lng;
+
+  // If we don't have a location yet, update the UI and exit early
+  if (!lat || !lng) {
+    const container = document.getElementById('weatherDetail');
+    if (container) {
+      container.innerHTML = '<div class="no-route">Waiting for location data...</div>';
+    }
+    return;
+  }
+
   try {
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`);
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&windspeed_unit=mph`);
     const data = await res.json();
     if (data.current_weather) {
       STATE.weather = data.current_weather;
@@ -430,7 +449,7 @@ function updateWeather() {
       </div>
       <div class="gps-item">
         <div class="gps-label">Wind</div>
-        <div class="gps-value">${w.windspeed} km/h</div>
+        <div class="gps-value">${w.windspeed} mph</div>
       </div>
     </div>`;
 }
