@@ -888,10 +888,6 @@
         localStorage.setItem("SANTA_API", AppState.vars.apiUrl);
         sessionStorage.setItem("SANTA_API", AppState.vars.apiUrl);
 
-        if (!AppState.flags.isKiosk && location.search.includes("api=")) {
-          history.replaceState(null, "", location.pathname);
-        }
-
         requestWakeLock();
         setInterval(() => { if (document.visibilityState === "visible") requestWakeLock(); }, 60000);
 
