@@ -781,25 +781,23 @@ function updateGps() {
     const ll = L.latLng(STATE.gps.lat, STATE.gps.lng);
     STATE.marker.setLatLng(ll);
     
-    // Check how far the map center is from the live sleigh (in meters)
+    // Check how far the map center is from the live sleigh
     const distance = STATE.map.getCenter().distanceTo(ll);
 
-    // If we are more than 5km away (e.g. sitting at HQ), do the big flight!
+    // If we are more than 5km away (e.g. sitting at HQ), do the big cloaked flight!
     if (distance > 5000) {
-      // 1. Temporarily hide the dense GPX layers so they don't bloom during the zoom out
       if (STATE.routeGlowLayer) STATE.map.removeLayer(STATE.routeGlowLayer);
       if (STATE.routeMainLayer) STATE.map.removeLayer(STATE.routeMainLayer);
       
-      // 2. Initiate the flight
       STATE.map.flyTo(ll, 15, { animate: true, duration: 2.0 });
       
-      // 3. Wait for the flight to land, then bring the routes back
       STATE.map.once('moveend', () => {
         if (!heatmapMode && STATE.routeGlowLayer) STATE.routeGlowLayer.addTo(STATE.map);
         if (!heatmapMode && STATE.routeMainLayer) STATE.routeMainLayer.addTo(STATE.map);
       });
-    } else {
-      // If we are already local, just pan the camera smoothly down the street
+      
+    // ONLY pan the camera if Santa has moved more than 10 meters from the center
+    } else if (distance > 10) {
       STATE.map.panTo(ll, { animate: true, duration: 0.8 });
     }
   }
