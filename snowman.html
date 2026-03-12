@@ -4,63 +4,81 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Snowman Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-body{
-  margin:0;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto;
-  background:transparent;
-  color:#fff;
+body {
+  margin: 0;
+  font-family: 'Open Sans', sans-serif;
+  background: transparent;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
 }
-.wrapper{
- max-width:980px;
- margin:0 auto;
- padding:20px 18px 22px;
- background: rgba(18,19,23,0.92);
- backdrop-filter: blur(8px);
- -webkit-backdrop-filter: blur(8px);
- border-radius:22px;
- box-shadow:
- 0 4px 18px rgba(0,0,0,0.35),
- inset 0 1px 0 rgba(255,255,255,0.05);
+.wrapper {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 20px 18px 22px;
+  background: rgba(29, 29, 26, 0.95); /* Brand Table Grey */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 6px 20px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.05);
 }
-h1{
-  text-align:center;
-  margin-bottom:20px;
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
-.group{
-  background:#ffffff12;
-  border-radius:16px;
-  padding:14px;
-  margin-bottom:14px;
+.group {
+  background: #262622; /* God Mode Surface */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
 }
-.group h3{
-  margin:0 0 10px 0;
-  font-size:16px;
+.group h3 {
+  margin: 0 0 10px 0;
+  font-size: 0.85em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.5);
 }
-.options{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
+.options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
-.options button{
-  background:#e8edff;
-  color:#000;
-  border:none;
-  padding:8px 14px;
-  border-radius:999px;
-  font-weight:600;
-  cursor:pointer;
+.options button {
+  background: #2f2f2a; /* God Mode Surface-2 */
+  color: #f0f0f0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
-.options button.active{
-  background:#3b82f6;
-  color:#fff;
+.options button:active {
+  transform: scale(0.96);
 }
-.builder{
-  display:grid;
+.options button.active {
+  background: #FBAF33; /* Brand Golden Yellow */
+  color: #000000;
+  border-color: #FBAF33;
+}
+.builder {
+  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap:20px;
-  align-items:center;
+  gap: 20px;
+  align-items: center;
 }
 canvas {
   display: block;
@@ -68,21 +86,29 @@ canvas {
   max-width: 100%;
   height: auto;
 }
-.download{
-  text-align:center;
-  margin-top:20px;
+.download {
+  text-align: center;
+  margin-top: 20px;
 }
-.download button{
-  background:#b01d23;
-  color:#fff;
-  border:none;
-  padding:14px 22px;
-  border-radius:999px;
-  font-size:16px;
-  cursor:pointer;
+.download button {
+  background: #FBAF33; /* Brand Golden Yellow */
+  color: #000000;
+  border: none;
+  padding: 14px 22px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.download button:active {
+  transform: scale(0.96);
 }
   
-  body.embed {
+body.embed {
   width: 100%;
   overflow-x: hidden;
 }
@@ -214,7 +240,7 @@ else{ emoji(snowman.eyes==="hearts"?"❤️":"⭐",L-12,EYE_Y+12); emoji(snowman
 snowman.nose==="carrot"?carrot():emoji(snowman.nose==="candy"?"🍬":"🔴",288,215);
 
 // scarf
-ctx.fillStyle={red:"#b01d23",blue:"#2563eb",green:"#16a34a",purple:"#7c3aed"}[snowman.scarf];
+ctx.fillStyle={red:"#d31c1c",blue:"#2563eb",green:"#16a34a",purple:"#7c3aed"}[snowman.scarf];
 ctx.fillRect(190,260,220,28);
 
 // hat
@@ -233,7 +259,7 @@ function carrot(){ ctx.fillStyle="#ff7a00"; ctx.beginPath(); ctx.moveTo(300,HEAD
 function topHat(){ ctx.fillStyle="#000"; ctx.fillRect(240,60,120,70); ctx.fillRect(220,130,160,12); }
 function beanie(){ ctx.fillStyle="#3b82f6"; ctx.beginPath(); ctx.arc(300,110,60,Math.PI,0); ctx.fill(); }
 function santaHat(){
-ctx.fillStyle="#b01d23";
+ctx.fillStyle="#d31c1c";
 ctx.beginPath(); ctx.moveTo(220,120); ctx.quadraticCurveTo(300,40,380,120); ctx.fill();
 ctx.fillStyle="#fff"; ctx.fillRect(220,120,160,16);
 ctx.beginPath(); ctx.arc(380,120,10,0,Math.PI*2); ctx.fill();
@@ -257,7 +283,7 @@ function bodyAccessory(){
   }
 
   if(snowman.body==="badge"){
-    ctx.fillStyle="#facc15";
+    ctx.fillStyle="#FBAF33";
     ctx.beginPath();
     ctx.arc(330,320,14,0,Math.PI*2);
     ctx.fill();
@@ -320,7 +346,7 @@ ctx.fillStyle="#facc15"; ctx.fillRect(110,210,20,12);
 }
 
 function dot(x,y){ ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle="#000"; ctx.fill(); }
-function mitten(x,y){ ctx.beginPath(); ctx.arc(x,y,14,0,Math.PI*2); ctx.fillStyle="#b01d23"; ctx.fill(); }
+function mitten(x,y){ ctx.beginPath(); ctx.arc(x,y,14,0,Math.PI*2); ctx.fillStyle="#d31c1c"; ctx.fill(); }
 
 function downloadPNG(){
 const a=document.createElement("a");
