@@ -23,15 +23,16 @@
       --text: #f0f0f0;
       --text-dim: rgba(255,255,255,0.8);
       
-      /* Dropped lower to the screen edge and increased the gap */
-      --ui-bottom-safe: 36px;
-      --donate-bottom: calc(var(--ui-bottom-safe) + 85px);
+      --ui-bottom-safe: 72px;
+      /* 👇 FIX: Increased to 130px to push the Donate button higher up */
+      --donate-bottom: calc(var(--ui-bottom-safe) + 130px);
       --info-bottom: var(--ui-bottom-safe);
     }
     @supports(padding:env(safe-area-inset-bottom)){ 
       :root{
-        --ui-bottom-safe: calc(36px + env(safe-area-inset-bottom));
-        --donate-bottom: calc(var(--ui-bottom-safe) + 85px);
+        --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom));
+        /* 👇 FIX: Increased to 130px here too */
+        --donate-bottom: calc(var(--ui-bottom-safe) + 130px);
         --info-bottom: var(--ui-bottom-safe);
       } 
     }
