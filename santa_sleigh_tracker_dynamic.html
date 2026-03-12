@@ -7,7 +7,7 @@
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1D1D1A">
-  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/Beverley_Santa_Logo.png">
+  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png">
   
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -190,6 +190,44 @@
     @media(max-width:480px){ 
       .toast-box{ font-size: 0.9em; padding: 12px 16px; bottom: calc(var(--donate-bottom) + 64px); } 
     }
+
+    /* FIX 2: ── iOS INSTALL TOOLTIP ── */
+    .ios-install-prompt {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(29, 29, 26, 0.95);
+      border: 1px solid var(--rt-gold);
+      color: #fff;
+      padding: 16px;
+      border-radius: 16px;
+      font-size: 0.9em;
+      font-weight: 700;
+      text-align: center;
+      z-index: 9999;
+      width: 85%;
+      max-width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      opacity: 0;
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .ios-install-prompt.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .ios-install-prompt .close-btn {
+      position: absolute;
+      top: 4px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.5em;
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -201,6 +239,13 @@
   
   <div class="install-overlay" id="installOverlayBox">
     <button id="installAppBtn" class="donate-btn" style="width: 100%; border: 2px solid #fff; cursor: pointer; font-family: inherit; font-size: 1.05em;">📲 Add App to Home Screen</button>
+  </div>
+
+  <div id="iosPrompt" class="ios-install-prompt">
+    <button class="close-btn" id="iosCloseBtn">&times;</button>
+    To install this tracker, tap the <strong>Share</strong> icon below <br>
+    (the square with an arrow) and select <br>
+    <span style="color: var(--rt-gold);">"Add to Home Screen"</span>
   </div>
 
   <div class="info-popup">
@@ -230,6 +275,21 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+
+      // FIX 4: Detect iOS and show the new installation prompt
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+      if (isIOS && !isStandalone) {
+        const iosPrompt = document.getElementById('iosPrompt');
+        setTimeout(() => {
+          if(iosPrompt) iosPrompt.classList.add('visible');
+        }, 3000);
+
+        document.getElementById('iosCloseBtn').addEventListener('click', () => {
+          iosPrompt.classList.remove('visible');
+        });
+      }
 
       // Register Service Worker for PWA
       if ('serviceWorker' in navigator) {
@@ -350,793 +410,4 @@
           notifyBtn: document.getElementById("notifyBtn"),
           waveBtn: document.getElementById("waveBtn"), 
           statusDot: document.getElementById("statusDot"),
-          donateLink: document.getElementById("donateLink"),
-          donateBox: document.getElementById("donateBox"),
-          kioskBanner: document.getElementById("kioskBanner"),
-          sponsorBox: document.getElementById("kioskSponsor"),
-          toast: document.getElementById("toast"),
-          snowCanvas: document.getElementById("snow")
-        }
-      };
-
-      const Utils = {
-        validPos: (lat, lng) => typeof lat === "number" && !isNaN(lat) && typeof lng === "number" && !isNaN(lng),
-        lerp: (a, b, t) => a + (b - a) * t,
-        easeOutCubic: (t) => 1 - Math.pow(1 - t, 3),
-        isValidImageUrl(url) {
-          if (!url || typeof url !== 'string') return false;
-          try { const parsed = new URL(url); return ['http:', 'https:', 'data:'].includes(parsed.protocol); }
-          catch { return false; }
-        },
-        async loadJSON(url) {
-          const r = await fetch(url, { cache: "no-store" });
-          if (!r.ok) throw new Error(`Fetch failed: ${r.status}`);
-          return r.json();
-        },
-        haversineMeters(a, b) {
-          const R = 6371000;
-          const dLat = (b.lat - a.lat) * Math.PI / 180;
-          const dLng = (b.lng - a.lng) * Math.PI / 180;
-          const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-          return 2 * R * Math.asin(Math.sqrt(s));
-        },
-        calculateSpeed(fixes) {
-          if (fixes.length < AppConfig.API.MIN_FIXES_FOR_ETA) return null;
-          const first = fixes[0];
-          const last = fixes[fixes.length - 1];
-          const elapsed = last.ts - first.ts;
-          if (elapsed < AppConfig.API.MIN_ETA_WINDOW_MS) return null;
-          const dist = last.cumulative - first.cumulative;
-          const speed = dist / (elapsed / 1000);
-          return Math.min(Math.max(speed, 0.3), 31);
-        },
-        calculateRouteSpeed(routeFixes) {
-          if (routeFixes.length < AppConfig.API.MIN_FIXES_FOR_ETA) return null;
-          const first = routeFixes[0];
-          const last = routeFixes[routeFixes.length - 1];
-          const elapsed = last.ts - first.ts;
-          if (elapsed < AppConfig.API.MIN_ETA_WINDOW_MS) return null;
-          const dist = last.routeDist - first.routeDist;
-          if (dist <= 0) return null;
-          const speed = dist / (elapsed / 1000);
-          return Math.min(Math.max(speed, 0.1), 31);
-        },
-        toggleFollowControls(enable) {
-          const { followBtn, recenterBtn, notifyBtn, waveBtn } = AppState.dom;
-          if (enable) { 
-            followBtn.classList.remove("locked"); 
-            recenterBtn.classList.remove("locked");
-            waveBtn.classList.remove("locked");
-          } else { 
-            followBtn.classList.add("locked"); 
-            recenterBtn.classList.add("locked"); 
-            waveBtn.classList.add("locked");
-          }
-        }
-      };
-
-      let batteryState = { supported: false, charging: true, level: 1 };
-      if ("getBattery" in navigator) {
-        navigator.getBattery().then(battery => {
-          batteryState.supported = true;
-          const update = () => { batteryState.charging = battery.charging; batteryState.level = battery.level; };
-          update();
-          battery.addEventListener("chargingchange", update);
-          battery.addEventListener("levelchange", update);
-        });
-      }
-
-      let wakeLock = null;
-      async function requestWakeLock() {
-        try { if ("wakeLock" in navigator) { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => setTimeout(requestWakeLock, 2000)); } } catch(e) {}
-      }
-
-      function animateMarkerTo(targetLat, targetLng) {
-        if (!AppState.marker) return;
-        const startLL = AppState.marker.getLatLng();
-        const start = { lat: startLL.lat, lng: startLL.lng };
-        const end = { lat: targetLat, lng: targetLng };
-        const startTime = performance.now();
-        const duration = 900;
-        if (AppState.vars.animRaf) cancelAnimationFrame(AppState.vars.animRaf);
-        function step(now) {
-          const t = Math.min(1, (now - startTime) / duration);
-          const e = Utils.easeOutCubic(t);
-          const lat = Utils.lerp(start.lat, end.lat, e);
-          const lng = Utils.lerp(start.lng, end.lng, e);
-          const ll = L.latLng(lat, lng);
-          AppState.marker.setLatLng(ll);
-          AppState.vars.lastVisualPos = { lat: ll.lat, lng: ll.lng };
-          if ((AppState.flags.follow || AppState.flags.isKiosk) && !AppState.flags.firstFix) {
-            AppState.map.panTo(ll, { animate: true, duration: 0.6 });
-          }
-          if (t < 1) { AppState.vars.animRaf = requestAnimationFrame(step); }
-          else { AppState.vars.animRaf = null; }
-        }
-        AppState.vars.animRaf = requestAnimationFrame(step);
-      }
-
-      function pushFix(lat, lng, ts) {
-        const fixes = AppState.recentFixes;
-        const last = fixes[fixes.length - 1];
-        const dist = last ? Utils.haversineMeters(last, { lat, lng }) : 0;
-        fixes.push({ lat, lng, ts, cumulative: (last?.cumulative || 0) + dist });
-        const cutoff = ts - AppConfig.API.MOTION_WINDOW_MS;
-        while (fixes.length && fixes[0].ts < cutoff) fixes.shift();
-      }
-
-      function pushRouteFix(routeDist, ts) {
-        const fixes = AppState.routeFixes;
-        fixes.push({ routeDist, ts });
-        const cutoff = ts - AppConfig.API.MOTION_WINDOW_MS;
-        while (fixes.length && fixes[0].ts < cutoff) fixes.shift();
-      }
-
-      function isSleighMoving() {
-        if (AppState.recentFixes.length < 2) return false;
-        const first = AppState.recentFixes[0];
-        const last = AppState.recentFixes[AppState.recentFixes.length - 1];
-        return (last.cumulative - first.cumulative) >= AppConfig.API.MOVE_THRESHOLD_METERS;
-      }
-
-      async function loadGpxRoute(url) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-          const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-          clearTimeout(timeoutId);
-          if (!res.ok) throw new Error("GPX fetch failed");
-          const text = await res.text();
-          const xml = new DOMParser().parseFromString(text, "text/xml");
-          const pts = [...xml.getElementsByTagName("trkpt")];
-          if (pts.length < 2) throw new Error("GPX too short");
-          let dist = 0; let route = [];
-          for (let i = 0; i < pts.length; i++) {
-            const lat = parseFloat(pts[i].getAttribute("lat"));
-            const lng = parseFloat(pts[i].getAttribute("lon"));
-            if (i > 0) dist += Utils.haversineMeters(route[i - 1], { lat, lng });
-            route.push({ lat, lng, dist });
-          }
-          AppState.gpxRoute = route;
-          AppState.flags.gpxLoaded = true;
-          AppState.vars.lastSnapIndex = 0;
-        } catch (e) {
-          AppState.flags.gpxLoaded = false;
-          AppState.dom.notifyBtn.style.display = "none";
-        }
-      }
-
-      function snapToGpxIndex(pos, searchOpts) {
-        if (!AppState.gpxRoute) return null;
-        const { AHEAD, BACK, EARLY_EXIT_METERS } = searchOpts || AppConfig.GPX;
-        const isGlobalSearch = !searchOpts;
-        const start = isGlobalSearch ? 0 : Math.max(0, AppState.vars.lastSnapIndex - BACK);
-        const end = isGlobalSearch ? AppState.gpxRoute.length - 1 : Math.min(AppState.gpxRoute.length - 1, AppState.vars.lastSnapIndex + AHEAD);
-        let bestIndex = isGlobalSearch ? 0 : AppState.vars.lastSnapIndex;
-        let bestDist = Infinity;
-        for (let i = start; i <= end; i++) {
-          const d = Utils.haversineMeters(pos, AppState.gpxRoute[i]);
-          if (d < bestDist) { bestDist = d; bestIndex = i; }
-          if (!isGlobalSearch && i > AppState.vars.lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break;
-        }
-        if (!isGlobalSearch) AppState.vars.lastSnapIndex = bestIndex;
-        return { point: AppState.gpxRoute[bestIndex], distance: bestDist };
-      }
-
-      function setDimUI(dim) { document.body.classList.toggle("dim-ui", !!dim); }
-
-      function showToast(message) {
-        if (AppState.flags.isKiosk) return;
-        const t = AppState.dom.toast;
-        t.textContent = message;
-        t.classList.add("toast-visible");
-        setTimeout(() => t.classList.remove("toast-visible"), 4000);
-      }
-
-      const SnowSystem = {
-        resize() { AppState.dom.snowCanvas.width = window.innerWidth; AppState.dom.snowCanvas.height = window.innerHeight; },
-        create(level) {
-          const isMobile = window.innerWidth < 600;
-          const baseCount = isMobile ? AppConfig.SNOW.MOBILE_BASE_COUNT : AppConfig.SNOW.DESKTOP_BASE_COUNT;
-          const count = Math.floor(baseCount * AppConfig.SNOW.MULTIPLIERS[level]);
-          AppState.vars.snowflakes = Array.from({ length: count }, () => ({
-            x: Math.random() * AppState.dom.snowCanvas.width,
-            y: Math.random() * AppState.dom.snowCanvas.height,
-            radius: Math.random() * 3 + 1,
-            speed: ((Math.random() * 1 + 0.5) + (Math.random() * 1.5)) * (level === 3 ? 1.3 : 1),
-            swayOffset: Math.random() * Math.PI * 2,
-            swaySpeed: Math.random() * 0.02 + 0.005
-          }));
-        },
-        draw() {
-          if (!AppState.flags.snowActive || !AppState.flags.pageVisible) return;
-          let frameSkip = 0;
-          if (batteryState.supported && !batteryState.charging) {
-            if (batteryState.level <= AppConfig.BATTERY.CRITICAL) frameSkip = AppConfig.BATTERY.FRAME_SKIP.CRITICAL;
-            else if (batteryState.level <= AppConfig.BATTERY.LOW) frameSkip = AppConfig.BATTERY.FRAME_SKIP.LOW;
-          }
-          SnowSystem._frame = (SnowSystem._frame || 0) + 1;
-          if (frameSkip && SnowSystem._frame % (frameSkip + 1) !== 0) { requestAnimationFrame(SnowSystem.draw); return; }
-          const ctx = AppState.dom.snowCanvas.getContext("2d");
-          ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height);
-          ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-          ctx.beginPath();
-          for (const f of AppState.vars.snowflakes) {
-            f.y += f.speed; f.swayOffset += f.swaySpeed; f.x += Math.sin(f.swayOffset) * 0.5;
-            if (f.y > AppState.dom.snowCanvas.height) { f.y = -10; f.x = Math.random() * AppState.dom.snowCanvas.width; }
-            if (f.x > AppState.dom.snowCanvas.width) f.x = 0;
-            if (f.x < 0) f.x = AppState.dom.snowCanvas.width;
-            ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-          }
-          ctx.fill();
-          requestAnimationFrame(SnowSystem.draw);
-        },
-        setLevel(on, level) {
-          if (!on) {
-            if (AppState.flags.snowActive) {
-              AppState.flags.snowActive = false;
-              document.body.classList.remove("snowing");
-              const ctx = AppState.dom.snowCanvas.getContext("2d");
-              ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height);
-            }
-            return;
-          }
-          if (AppState.currentSnowLevel !== level) { AppState.currentSnowLevel = level; SnowSystem.create(level); }
-          if (!AppState.flags.snowActive) { AppState.flags.snowActive = true; document.body.classList.add("snowing"); SnowSystem.draw(); }
-        }
-      };
-
-      function showNotifyMarker(lat, lng, confirmed) {
-        if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
-        const iconUrl = confirmed ? AppConfig.ICONS.CONFIRMED : AppConfig.ICONS.PREVIEW;
-        AppState.notifyMarker = L.marker([lat, lng], {
-          icon: L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", shadowSize: [41, 41] }),
-          interactive: true
-        }).addTo(AppState.map);
-        if (!confirmed) {
-          AppState.notifyMarker.bindPopup("📍 Tap this pin again to confirm").openPopup();
-          AppState.notifyMarker.once("click", () => {
-            AppState.flags.awaitingPin = false;
-            showNotifyMarker(lat, lng, true);
-            sessionStorage.setItem("SANTA_NOTIFY_POINT", JSON.stringify({ lat, lng }));
-            AppState.vars.pendingSubscription = { lat, lng };
-            AppState.vars.notifyLatLng = { lat, lng };
-            document.getElementById("emailModal").style.display = "flex";
-            document.getElementById("subEmail").focus();
-          });
-        }
-      }
-
-      function fireBrowserNotification(title, body) {
-        if (!("Notification" in window)) return;
-        if (Notification.permission !== "granted") return;
-        try { new Notification(title, { body, icon: AppConfig.ICONS.BROWSER_ICON, requireInteraction: true }); } catch (e) {}
-      }
-
-      async function updateTracker() {
-        try {
-          const data = await Utils.loadJSON(AppState.vars.apiUrl + "?function=proxyFirebase");
-          if (!Utils.validPos(data.lat, data.lng)) throw new Error("Invalid Coords");
-
-          const ts = new Date(data.ts).getTime();
-          const age = Date.now() - ts;
-          const isFresh = age <= AppConfig.API.STALE_MS;
-
-          if (AppState.flags.isKiosk) {
-            AppState.dom.kioskBanner.classList.toggle("live", isFresh);
-            const statusEl = document.getElementById("kioskStatus");
-            if (statusEl) statusEl.textContent = isFresh ? "🎅 LIVE TRACKING" : "🎄 PREPARING IN LAPLAND";
-            if (AppState.dom.sponsorBox) {
-              AppState.dom.sponsorBox.classList.toggle("visible", isFresh && !!AppState.vars.todayRoute?.sponsorUrl);
-            }
-          }
-
-          if (!isFresh) {
-            if (!AppState.vars.staleSince) AppState.vars.staleSince = ts;
-            if (Date.now() - AppState.vars.staleSince > AppConfig.API.STALE_MS) {
-              AppState.marker.setLatLng(AppConfig.LOCATIONS.LAPLAND);
-              if (AppState.flags.follow) AppState.map.setView(AppConfig.LOCATIONS.LAPLAND, 5, { animate: true, duration: 2 });
-              AppState.dom.statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
-              AppState.dom.statusDot.style.display = "none";
-              setDimUI(false);
-              AppState.flags.firstFix = true;
-              setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
-              return;
-            }
-            if (AppState.lastFix) {
-              animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
-              AppState.dom.statusBox.textContent = "🎅 Santa is nearby…";
-              setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
-              return;
-            }
-          } else {
-            AppState.vars.staleSince = null;
-            AppState.lastFix = { lat: data.lat, lng: data.lng };
-          }
-
-          let visualPos = { lat: data.lat, lng: data.lng };
-
-          if (AppState.flags.gpxLoaded) {
-            const snap = snapToGpxIndex(visualPos, AppConfig.GPX);
-            if (snap && snap.distance < 50) { visualPos = snap.point; }
-            else { visualPos = { lat: data.lat, lng: data.lng }; }
-          }
-
-          animateMarkerTo(visualPos.lat, visualPos.lng);
-          pushFix(data.lat, data.lng, Date.now());
-
-          // --------------------------------------------------------
-          // STICKY PASS & SNOW CONTROL
-          // --------------------------------------------------------
-          let etaSeconds = null;
-
-          if (AppState.flags.hasPassedSticky) {
-             // Already passed — keep status locked
-          }
-          else if (AppState.vars.notifyLatLng && AppState.flags.gpxLoaded && isFresh) {
-            const santaSnap = snapToGpxIndex({ lat: data.lat, lng: data.lng }, AppConfig.GPX);
-
-            if (santaSnap) {
-              const userPos = AppState.vars.notifyLatLng;
-              const savedSnapIdx = AppState.vars.lastSnapIndex;
-              const userSnap = snapToGpxIndex(userPos, null);
-              AppState.vars.lastSnapIndex = savedSnapIdx;
-
-              // Track Santa's route progress for speed calculation
-              pushRouteFix(santaSnap.point.dist, Date.now());
-
-             if (userSnap) {
-                const totalRouteDist = AppState.gpxRoute[AppState.gpxRoute.length - 1].dist;
-                
-                // Check if the user is pinned near the very end of the route
-                const isUserNearEnd = userSnap.point.dist > (totalRouteDist - AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET);
-                
-                // Check if Santa has basically reached the end of the track (within 10 meters)
-                const santaReachedEnd = santaSnap.point.dist >= (totalRouteDist - 10);
-
-                // Trigger if he passes them normally, OR if they are an edge case and he finished the route
-                if (
-                  (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) ||
-                  (isUserNearEnd && santaReachedEnd)
-                ) {
-                  AppState.flags.hasPassedSticky = true;
-                  sessionStorage.setItem("SANTA_HAS_PASSED", "1");
-                } else {
-                  const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
-                  // Use route-based speed (same units as remaining) for accurate ETA
-                  const routeSpeed = Utils.calculateRouteSpeed(AppState.routeFixes);
-                  const rawSpeed = Utils.calculateSpeed(AppState.recentFixes);
-                  // Prefer route speed; fall back to raw GPS speed; last resort: walking pace ~1.4 m/s
-                  const effectiveSpeed = (routeSpeed && routeSpeed > 0.3) ? routeSpeed
-                                       : (rawSpeed && rawSpeed > 0.5) ? rawSpeed
-                                       : 1.4;
-                  etaSeconds = remaining / effectiveSpeed;
-                }
-              }
-            }
-          }
-
-          const etaMinutes = isFinite(etaSeconds) ? etaSeconds / 60 : Infinity;
-
-          // Snow Logic
-          let snowLevel = 0;
-          let triggerSnow = false;
-
-          if (AppState.vars.notifyLatLng && !AppState.flags.hasPassedSticky && etaSeconds !== null && isFresh) {
-             if (etaMinutes < 15) {
-                triggerSnow = true;
-                if (etaMinutes < 3) snowLevel = 3;
-                else if (etaMinutes < 8) snowLevel = 2;
-                else snowLevel = 1;
-             }
-          }
-
-          if (AppState.flags.hasPassedSticky) { triggerSnow = false; snowLevel = 0; }
-
-          const { maxLevel } = function(){
-             if (batteryState.supported && !batteryState.charging) {
-               if(batteryState.level <= AppConfig.BATTERY.CRITICAL) return { maxLevel: 1 };
-               if(batteryState.level <= AppConfig.BATTERY.LOW) return { maxLevel: 2 };
-             }
-             return { maxLevel: 3 };
-          }();
-
-          SnowSystem.setLevel(triggerSnow, Math.min(snowLevel, maxLevel));
-
-          // Status Text & Dimming
-          const moving = isSleighMoving();
-          AppState.dom.statusDot.style.display = "block";
-          AppState.dom.statusDot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
-
-          // Fetch fresh settings in the background to check for announcements
-          const latestApiData = await Utils.loadJSON(AppState.vars.apiUrl);
-          const liveMsg = latestApiData.settings?.live_announcement;
-
-          // PA SYSTEM OVERRIDE: If an announcement exists, it takes over the box.
-          if (liveMsg && liveMsg.trim() !== "") {
-            AppState.dom.statusBox.textContent = `📢 ${liveMsg}`;
-            AppState.dom.statusBox.classList.add("is-announcement");
-            setDimUI(false); // Never dim the screen during an emergency announcement
-          } else {
-            // NORMAL TRACKER STATUS: Remove red styling and return to standard text
-            AppState.dom.statusBox.classList.remove("is-announcement");
-            
-            if (AppState.flags.hasPassedSticky) {
-              AppState.dom.statusBox.textContent = "🎄 Santa has just been here!";
-              setDimUI(false);
-            } else if (etaSeconds !== null && !moving) {
-              AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!";
-              setDimUI(false);
-            } else if (etaSeconds !== null) {
-              const mins = etaSeconds / 60;
-              let etaText;
-              if (mins < 2) etaText = "🎅 Santa is nearly here!";
-              else if (mins < 4) etaText = "🎅 Santa is ~3 mins away!";
-              else if (mins < 7) etaText = "🎅 Santa is ~5 mins away!";
-              else if (mins < 12) etaText = "🎅 Santa is ~10 mins away!";
-              else etaText = "🎅 Santa is ~15 mins away!";
-              AppState.dom.statusBox.textContent = etaText;
-              setDimUI(mins > 45);
-            } else if (moving) {
-              AppState.dom.statusBox.textContent = "🎅 Santa is out spreading joy!";
-              setDimUI(false);
-            } else {
-              AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
-              setDimUI(false);
-            }
-          }
-
-          // Browser Notification
-          if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) {
-             const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.vars.notifyLatLng);
-             const isSmartEta = (etaSeconds !== null && etaSeconds < 180);
-             const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600);
-             if (isSmartEta || isCloseFallback) {
-                AppState.flags.browserNotified = true;
-                sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
-                fireBrowserNotification("🎅 Santa is nearly here!", "He's approaching your location! 🎄");
-             }
-          }
-
-          if (AppState.flags.firstFix) {
-             const zoom = AppState.flags.isKiosk ? 15 : 16;
-             AppState.map.setView(visualPos, zoom);
-             AppState.flags.firstFix = false;
-          }
-
-        } catch (e) {
-          if (AppState.lastFix) {
-            animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
-            AppState.dom.statusBox.textContent = "🎅 Santa is nearby…";
-            AppState.dom.statusDot.style.display = "none";
-            setDimUI(false);
-          }
-        }
-        setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
-      }
-
-      async function init() {
-        const params = new URLSearchParams(location.search);
-        AppState.flags.isKiosk = params.get("kiosk") === "1" || sessionStorage.getItem("SANTA_KIOSK") === "1";
-        if (params.get("kiosk") === "1") sessionStorage.setItem("SANTA_KIOSK", "1");
-
-        // 👈 ADD THIS LINE TO FIX ALL KIOSK CSS LAYOUT ISSUES:
-        if (AppState.flags.isKiosk) document.body.classList.add("kiosk");
-
-        AppState.vars.apiUrl = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
-        if (!AppState.vars.apiUrl) { alert("Missing ?api=URL"); return; }
-        localStorage.setItem("SANTA_API", AppState.vars.apiUrl);
-        sessionStorage.setItem("SANTA_API", AppState.vars.apiUrl);
-
-        if (!AppState.flags.isKiosk && location.search.includes("api=")) {
-          history.replaceState(null, "", location.pathname);
-        }
-
-        requestWakeLock();
-        setInterval(() => { if (document.visibilityState === "visible") requestWakeLock(); }, 60000);
-
-        const apiData = await Utils.loadJSON(AppState.vars.apiUrl);
-        const settings = apiData.settings || {};
-        AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
-
-        const today = new Date().toISOString().slice(0, 10);
-        const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
-        AppState.vars.todayRoute = route;
-
-        const don = apiData.donations || {};
-        if (settings.donate_url && !AppState.flags.isKiosk) {
-          const btn = AppState.dom.donateLink;
-          btn.href = settings.donate_url;
-          AppState.dom.donateBox.style.display = "block";
-          if (don.target && don.target > 0) {
-            const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100)));
-            btn.style.background = `linear-gradient(90deg, #FBAF33 ${pct}%, rgba(251, 175, 51, 0.3) ${pct}%)`;
-          }
-        } else {
-          AppState.dom.donateBox.style.display = "none";
-        }
-
-        fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { keepalive: true });
-
-        if (AppState.flags.isKiosk && AppState.dom.kioskBanner) {
-          const statusDiv = document.createElement('div');
-          statusDiv.id = 'kioskStatus';
-          statusDiv.textContent = '🎄 PREPARING IN LAPLAND';
-          const subtitleDiv = document.createElement('div');
-          subtitleDiv.className = 'kiosk-subtitle';
-          subtitleDiv.textContent = AppState.vars.sleighName;
-          AppState.dom.kioskBanner.innerHTML = '';
-          AppState.dom.kioskBanner.appendChild(statusDiv);
-          AppState.dom.kioskBanner.appendChild(subtitleDiv);
-          AppState.dom.kioskBanner.classList.add("visible");
-        }
-
-        if (!route) {
-          AppState.dom.notifyBtn.style.display = "none";
-        } else {
-          await loadGpxRoute(route.gpxUrl);
-        }
-
-        AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk })
-          .setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
-
-        AppState.map.on("zoomend", () => {
-          if (!AppState.routeMainLayer || !AppState.routeGlowLayer) return;
-
-          const z = AppState.map.getZoom();
-
-          const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3;
-          const glowWeight = mainWeight + 3;
-
-          AppState.routeMainLayer.setStyle({ weight: mainWeight });
-          AppState.routeGlowLayer.setStyle({ weight: glowWeight });
-        });
-
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(AppState.map);
-
-        if (AppState.flags.isKiosk) {
-           const m = AppState.map;
-           m.dragging.disable(); m.scrollWheelZoom.disable(); m.doubleClickZoom.disable();
-           m.boxZoom.disable(); m.keyboard.disable(); m.touchZoom.disable();
-           AppState.dom.followBtn.style.display = "none";
-           AppState.dom.recenterBtn.style.display = "none";
-           AppState.dom.notifyBtn.style.display = "none";
-           AppState.dom.waveBtn.style.display = "none"; // Hide Wave button on Kiosk
-           AppState.dom.donateBox.style.display = "none";
-        }
-
-        // ── GPX ROUTE LAYERS ──
-        if (route && AppState.flags.gpxLoaded) {
-          // 🟡 Gold glow (bottom)
-          AppState.routeGlowLayer = new L.GPX(route.gpxUrl, {
-            async: true,
-            polyline_options: { color: "#ffd700", weight: 7, opacity: 0.45 },
-            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
-          }).addTo(AppState.map);
-
-          // 🔴 Red route (top)
-          AppState.routeMainLayer = new L.GPX(route.gpxUrl, {
-            async: true,
-            polyline_options: { color: "#d31c1c", weight: 4, opacity: 0.95 },
-            marker_options: {
-              startIcon: L.icon({
-                iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START,
-                iconSize: [48, 48],
-                iconAnchor: [24, 48],
-                shadowUrl: null
-              }),
-              endIcon: L.icon({
-                iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END,
-                iconSize: [48, 48],
-                iconAnchor: [24, 48],
-                shadowUrl: null
-              }),
-              shadowUrl: null
-            }
-          }).addTo(AppState.map);
-
-          AppState.routeMainLayer.on("loaded", () => { AppState.map.fire("zoomend"); });
-        }
-
-        if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
-          const span = document.createElement('span');
-          span.textContent = 'Proudly sponsored by';
-          const img = document.createElement('img');
-          img.src = route.sponsorUrl;
-          img.alt = 'Sponsor';
-          AppState.dom.sponsorBox.innerHTML = '';
-          AppState.dom.sponsorBox.appendChild(span);
-          AppState.dom.sponsorBox.appendChild(img);
-        }
-
-        if (!AppState.flags.isKiosk) {
-           const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
-           if (savedPin) {
-             try {
-               const p = JSON.parse(savedPin);
-               AppState.flags.browserNotified = false;
-               sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
-               AppState.vars.notifyLatLng = { lat: p.lat, lng: p.lng };
-               showNotifyMarker(p.lat, p.lng, true);
-             } catch(e) {}
-           }
-        }
-
-        AppState.map.on("click", e => {
-           if (!AppState.flags.awaitingPin) return;
-           const { lat, lng } = e.latlng;
-           showNotifyMarker(lat, lng, false);
-           AppState.dom.statusBox.textContent = "📍 Pin moved — tap again to confirm";
-        });
-
-        if (settings.logo_overlay_url && Utils.isValidImageUrl(settings.logo_overlay_url)) {
-          const posMap = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" };
-          const LogoControl = L.control({ position: posMap[settings.logo_overlay_position] || "bottomright" });
-          LogoControl.onAdd = () => { const img = L.DomUtil.create("img"); img.src = settings.logo_overlay_url; img.className = "logo-overlay"; return img; };
-          LogoControl.addTo(AppState.map);
-        }
-
-        AppState.marker = L.marker(AppConfig.LOCATIONS.LAPLAND, {
-          icon: L.icon({ iconUrl: settings.sleigh_icon_live || AppConfig.ICONS.FALLBACK_LIVE, iconSize: [64, 64], iconAnchor: [32, 60] })
-        }).addTo(AppState.map);
-
-        AppState.dom.followBtn.onclick = () => {
-           AppState.flags.follow = !AppState.flags.follow;
-           AppState.dom.followBtn.textContent = "Follow: " + (AppState.flags.follow ? "ON" : "OFF");
-        };
-
-        AppState.dom.recenterBtn.onclick = () => {
-           AppState.flags.follow = true;
-           AppState.dom.followBtn.textContent = "Follow: ON";
-           AppState.map.panTo(AppState.marker.getLatLng());
-        };
-
-        AppState.dom.notifyBtn.onclick = () => {
-          AppState.flags.follow = false;
-          AppState.dom.followBtn.textContent = "Follow: OFF";
-          AppState.flags.browserNotified = false;
-          AppState.flags.hasPassedSticky = false;
-          AppState.routeFixes = [];
-          sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
-          sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
-          sessionStorage.removeItem("SANTA_NOTIFY_POINT");
-          sessionStorage.removeItem("SANTA_HAS_PASSED");
-          AppState.flags.awaitingPin = true;
-          if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); }
-          AppState.notifyMarker = null;
-          AppState.vars.notifyLatLng = null;
-          AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin...";
-          if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); }
-          AppState.vars.escapeListener = (e) => {
-            if (e.key === "Escape" && AppState.flags.awaitingPin) {
-              AppState.flags.awaitingPin = false;
-              if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
-              AppState.dom.statusBox.textContent = "";
-              Utils.toggleFollowControls(true);
-              document.removeEventListener("keydown", AppState.vars.escapeListener);
-              AppState.vars.escapeListener = null;
-            }
-          };
-          document.addEventListener("keydown", AppState.vars.escapeListener);
-        };
-
-        // ⭐ WAVE BUTTON LOGIC
-        AppState.dom.waveBtn.onclick = () => {
-          // Create the visual floating hand
-          const wave = document.createElement("div");
-          wave.textContent = "👋";
-          wave.className = "wave-emoji";
-          
-          // Position it right above the button
-          const rect = AppState.dom.waveBtn.getBoundingClientRect();
-          wave.style.left = (rect.left + rect.width / 2 - 20) + "px";
-          wave.style.top = (rect.top - 10) + "px";
-          document.body.appendChild(wave);
-          
-          // Remove the DOM element after animation finishes
-          setTimeout(() => wave.remove(), 2000);
-          
-          // Ping the backend silently (fire and forget)
-          fetch(`${AppState.vars.apiUrl}?function=wave`, { keepalive: true }).catch(()=>{});
-          
-          // Disable the button for 3 seconds to prevent spamming
-          AppState.dom.waveBtn.disabled = true;
-          AppState.dom.waveBtn.style.opacity = 0.5;
-          setTimeout(() => {
-            AppState.dom.waveBtn.disabled = false;
-            AppState.dom.waveBtn.style.opacity = 1;
-          }, 3000);
-        };
-
-        // ⭐ THE "DISNEY MAGIC" AMBIENT WAVES
-        function triggerAmbientWave() {
-          // 1. Make sure we actually have a fresh GPS signal!
-          const isGpsActive = AppState.lastFix !== null && AppState.vars.staleSince === null;
-
-          // 2. Only show waves if they are looking at the page, not on a kiosk, AND Santa is live.
-          if (AppState.flags.pageVisible && !AppState.flags.isKiosk && isGpsActive) {
-            const wave = document.createElement("div");
-            wave.textContent = "👋";
-            wave.className = "wave-emoji";
-            
-            // Random horizontal position (between 10% and 90% of screen width)
-            wave.style.left = Math.floor(Math.random() * 80 + 10) + "vw";
-            // Start near the bottom of the screen
-            wave.style.bottom = "120px"; 
-            
-            // Make them slightly smaller and softer than the user's own wave
-            wave.style.fontSize = "2.5em";
-            wave.style.opacity = "0.7"; 
-            
-            document.body.appendChild(wave);
-            setTimeout(() => wave.remove(), 2000);
-          }
-
-          // Pick a random time between 15s and 40s for the next one
-          const nextDelay = Math.floor(Math.random() * (40000 - 15000 + 1)) + 15000;
-          setTimeout(triggerAmbientWave, nextDelay);
-        }
-
-        // Kick off the loop 5 to 10 seconds after the page loads
-        setTimeout(triggerAmbientWave, Math.floor(Math.random() * 5000) + 5000);
-
-        document.getElementById("modalCancelBtn").addEventListener("click", () => {
-           document.getElementById("emailModal").style.display = "none";
-           AppState.dom.statusBox.textContent = "Tap the pin to try again";
-           if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; }
-        });
-
-        document.getElementById("modalConfirmBtn").addEventListener("click", () => {
-          const email = document.getElementById("subEmail").value.trim();
-          document.getElementById("emailModal").style.display = "none";
-          if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; }
-          Utils.toggleFollowControls(true);
-
-          if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") { showToast("🎅 You're already signed up!"); return; }
-
-          AppState.dom.statusBox.textContent = "🔔 Saving your notification...";
-
-          if (!AppState.vars.pendingSubscription) { showToast("❌ Error: No location selected."); return; }
-
-          const url = `${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`;
-
-          fetch(url).then(r=>r.json()).then(d => {
-            if (d.ok) {
-               sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1");
-               const msg = email ? "🎅 You're signed up! We'll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts.";
-               showToast(msg);
-               AppState.dom.statusBox.textContent = "";
-               if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; }
-               AppState.vars.pendingSubscription = null;
-            } else {
-               showToast("❌ Error saving notification.");
-               AppState.dom.statusBox.textContent = "❌ Failed to save.";
-            }
-          }).catch(() => {
-            showToast("❌ Network error.");
-            AppState.dom.statusBox.textContent = "❌ Connection failed.";
-          });
-        });
-
-        AppState.dom.loading.style.display = "none";
-        SnowSystem.resize();
-        window.addEventListener("resize", SnowSystem.resize);
-        updateTracker();
-        window.SantaDebug = { AppState, SnowSystem, animateMarkerTo, Utils, AppConfig };
-      }
-
-      document.addEventListener("visibilitychange", () => {
-        AppState.flags.pageVisible = !document.hidden;
-        if (AppState.flags.pageVisible) {
-          if (AppState.flags.isKiosk) requestWakeLock();
-          if (AppState.vars.lastVisualPos && AppState.marker) { AppState.marker.setLatLng(AppState.vars.lastVisualPos); }
-          if (AppState.flags.snowActive) SnowSystem.draw();
-          updateTracker();
-        }
-      });
-
-      init();
-    });
-  </script>
-</body>
-</html>
+          donateLink: document.getElementById("donat
