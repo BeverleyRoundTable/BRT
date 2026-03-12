@@ -368,7 +368,7 @@ const recommendedLetter = `
 // ================================
 // Suggest New Routes
 // ================================
-const crewLink = `
+const suggestLink = `
 https://brt-23f.pages.dev/suggest?api=${ensureApi()}
 `;
 
