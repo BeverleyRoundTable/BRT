@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Santa Sleigh Tracker</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1D1D1A">
+  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/Beverley_Santa_Logo.png">
+  
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -90,7 +95,7 @@
     .btn:active { transform: scale(0.96); border-color: var(--rt-gold); color: var(--rt-gold); }
     .btn.locked { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
 
-    /* ── DONATE BUTTON ── */
+    /* ── DONATE BUTTON & INSTALL OVERLAY ── */
     .donate-box { 
       position: fixed; bottom: var(--donate-bottom); left: 50%; transform: translateX(-50%); 
       width: 70%; max-width: 420px; z-index: 2000; transition: opacity 600ms ease; 
@@ -101,6 +106,14 @@
       font-weight: 900; text-decoration: none; box-shadow: 0 4px 16px rgba(0,0,0,.4); 
       transition: background 0.5s ease; position: relative; z-index: 1; 
     }
+
+    /* PWA overlay covers the donate box, then fades out */
+    .install-overlay {
+      position: fixed; bottom: var(--donate-bottom); left: 50%; transform: translateX(-50%); 
+      width: 70%; max-width: 420px; z-index: 2005; /* Sits right on top */
+      opacity: 0; pointer-events: none; transition: opacity 0.8s ease;
+    }
+    .install-overlay.visible { opacity: 1; pointer-events: auto; }
 
     /* ── WAVE ANIMATION ── */
     .wave-emoji {
@@ -183,8 +196,13 @@
 <body>
   <div id="loadingCover"><div id="loadingSpinner"></div></div>
   <div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
+  
   <div class="donate-box" id="donateBox"><a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a></div>
   
+  <div class="install-overlay" id="installOverlayBox">
+    <button id="installAppBtn" class="donate-btn" style="width: 100%; border: 2px solid #fff; cursor: pointer; font-family: inherit; font-size: 1.05em;">📲 Add App to Home Screen</button>
+  </div>
+
   <div class="info-popup">
     <div id="statusDot" class="status-dot"></div>
     <button class="btn" id="followBtn">Follow: ON</button>
@@ -212,6 +230,43 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+
+      // Register Service Worker for PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+      }
+
+      // ⭐ Crossfade Install Prompt Logic
+      let deferredPrompt;
+      let installTimeout;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent default infobar
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show the install overlay (which covers the donate button perfectly)
+        const overlay = document.getElementById('installOverlayBox');
+        overlay.classList.add('visible');
+        
+        // Auto-fadeout after 10 seconds to reveal the Donate link beneath it
+        installTimeout = setTimeout(() => {
+          overlay.classList.remove('visible');
+        }, 10000);
+      });
+
+      document.getElementById('installAppBtn').addEventListener('click', async () => {
+        const overlay = document.getElementById('installOverlayBox');
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          // Hide our custom UI immediately after they make a choice
+          overlay.classList.remove('visible');
+          deferredPrompt = null;
+          clearTimeout(installTimeout);
+        }
+      });
 
       const AppConfig = {
         API: {
