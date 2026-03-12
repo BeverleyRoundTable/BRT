@@ -13,7 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
   <style>
-   /* ── ROUND TABLE BRAND VARIABLES ── */
+    /* ── ROUND TABLE BRAND VARIABLES ── */
     :root {
       --rt-grey: #1D1D1A;
       --rt-gold: #FBAF33;
@@ -24,14 +24,12 @@
       --text-dim: rgba(255,255,255,0.8);
       
       --ui-bottom-safe: 72px;
-      /* 👇 FIX: Increased to 130px to push the Donate button higher up */
       --donate-bottom: calc(var(--ui-bottom-safe) + 130px);
       --info-bottom: var(--ui-bottom-safe);
     }
     @supports(padding:env(safe-area-inset-bottom)){ 
       :root{
         --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom));
-        /* 👇 FIX: Increased to 130px here too */
         --donate-bottom: calc(var(--ui-bottom-safe) + 130px);
         --info-bottom: var(--ui-bottom-safe);
       } 
@@ -115,6 +113,18 @@
       100% { opacity: 0; transform: translateY(-120px) scale(1) rotate(10deg); }
     }
 
+    /* ── PWA INSTALL TOAST (NEW) ── */
+    .install-toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--rt-gold); color: #000; padding: 10px 24px; border-radius: 20px;
+      font-size: 0.95em; font-weight: 900; box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      z-index: 5000; cursor: pointer; opacity: 0; pointer-events: none;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex; align-items: center; gap: 8px; border: 2px solid #fff; white-space: nowrap;
+    }
+    .install-toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+    .install-toast:active { transform: translateX(-50%) scale(0.95); }
+
     /* ── UI UTILITIES ── */
     body.dim-ui .donate-box, body.dim-ui .info-popup, body.dim-ui .status-popup { opacity: 0.45; filter: saturate(0.85); }
     body.dim-ui .donate-box:hover, body.dim-ui .info-popup:hover, body.dim-ui .status-popup:hover { opacity: 0.75; }
@@ -192,9 +202,10 @@
     <button class="btn" id="recenterBtn">Re-centre</button>
     <button class="btn" id="notifyBtn">🔔 Notify Me</button>
     <button class="btn" id="waveBtn">👋 Wave</button>
-    <button class="btn" id="installBtn" style="display: none; color: var(--rt-gold); border-color: var(--rt-gold);">📲 Install App</button>
     <div id="toast" class="toast-box"></div>
   </div>
+
+  <div id="installToast" class="install-toast">📲 Add App to Home Screen</div>
 
   <div id="emailModal" class="modal-overlay">
     <div class="modal-box">
@@ -219,30 +230,38 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').catch(() => {
-            console.log("PWA registration failed (ignoring).");
+            console.log("PWA registration failed.");
           });
         });
       }
 
-      // ⭐ NEW: PWA Install Button Logic
+      // ⭐ NEW: Custom Install Prompt Logic
       let deferredPrompt;
+      let installTimeout;
       window.addEventListener('beforeinstallprompt', (e) => {
-        // Prevent Chrome from hiding the prompt
+        // Prevent the default mini-infobar from appearing on mobile
         e.preventDefault();
-        // Stash the event so it can be triggered when they click our button
         deferredPrompt = e;
-        // Show our custom install button!
-        document.getElementById('installBtn').style.display = 'block';
+        
+        const toast = document.getElementById('installToast');
+        // Slide the pill up onto the screen
+        toast.classList.add('visible');
+        
+        // Auto-dismiss after 15 seconds if ignored
+        installTimeout = setTimeout(() => {
+          toast.classList.remove('visible');
+        }, 15000);
       });
 
-      document.getElementById('installBtn').addEventListener('click', async () => {
+      document.getElementById('installToast').addEventListener('click', async () => {
+        const toast = document.getElementById('installToast');
         if (deferredPrompt) {
           deferredPrompt.prompt();
           const { outcome } = await deferredPrompt.userChoice;
-          if (outcome === 'accepted') {
-            document.getElementById('installBtn').style.display = 'none'; // Hide button once installed
-          }
+          // Hide our custom UI immediately after they make a choice
+          toast.classList.remove('visible');
           deferredPrompt = null;
+          clearTimeout(installTimeout);
         }
       });
       
