@@ -616,7 +616,7 @@ function buildDashboard() {
       <div class="panel">
         <div class="panel-header"><span class="icon">🗺️</span><h3>Route & Planning</h3></div>
         <div id="routeDetail"></div>
-        <button id="toggleHeatmapBtn" class="btn-heat" onclick="toggleHeatmap()">🔥 AGM Heatmap Mode</button>
+        <button id="toggleHeatmapBtn" class="btn-heat" onclick="toggleHeatmap()">🔥Heatmap Mode</button>
         <div id="heatmapControls" class="heatmap-controls">
           <select id="heatType" onchange="drawHeatmap()">
             <option value="subscribers">📍 Live Subscribers (Waited)</option>
@@ -833,7 +833,7 @@ function updateRaisedStat() {
   el('statTarget', `of ${cur}${(d.target || 0).toLocaleString()}`);
 }
 
-// ⭐ NEW: AGM HEATMAP LOGIC
+// ⭐ NEW: HEATMAP LOGIC
 let heatmapMode = false;
 let heatLayer = null;
 let allHeatData = null;
@@ -846,6 +846,7 @@ async function toggleHeatmap() {
   if (heatmapMode) {
     // Turn OFF Heatmap Mode
     heatmapMode = false;
+    btn.innerText = "🔥Heatmap Mode"; // 👈 FIX: Restores button text
     btn.className = "btn-heat";
     controls.classList.remove('active');
     document.getElementById('mapLabel').textContent = isGpsFresh() ? 'Live Position' : 'Last Known Position';
@@ -854,8 +855,7 @@ async function toggleHeatmap() {
     allGpxLayers.forEach(layer => STATE.map.removeLayer(layer));
     allGpxLayers = [];
     
-    // Restore live map tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(STATE.map);
+    // (We no longer swap the base map tiles here, so it stays standard)
     
     if (STATE.marker && STATE.gps) {
       STATE.marker.addTo(STATE.map);
@@ -879,22 +879,22 @@ async function toggleHeatmap() {
       btn.innerText = "Exit Heatmap Mode";
       btn.className = "btn-heat active";
       controls.classList.add('active');
-      document.getElementById('mapLabel').textContent = 'AGM Planning Map';
+      document.getElementById('mapLabel').textContent = 'Planning Map';
 
       // Clean up live map elements
       if (STATE.marker) STATE.map.removeLayer(STATE.marker);
       if (STATE.routeGlowLayer) STATE.map.removeLayer(STATE.routeGlowLayer);
       if (STATE.routeMainLayer) STATE.map.removeLayer(STATE.routeMainLayer);
       
-      // Switch to dark base map so heat glows
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(STATE.map);
+      // (We no longer swap to the dark base map tiles here)
 
-      // Load all GPX routes as ghost lines
+      // Load all GPX routes as ghost lines 
+      // 👈 FIX: Changed from white to Brand Grey so they are visible on the light map!
       STATE.routes.forEach(route => {
         if (route.gpxUrl) {
           const l = new L.GPX(route.gpxUrl, {
             async: true,
-            polyline_options: { color: "#ffffff", weight: 3, opacity: 0.35 },
+            polyline_options: { color: "#1D1D1A", weight: 4, opacity: 0.35 }, 
             marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
           }).addTo(STATE.map);
           allGpxLayers.push(l);
@@ -915,7 +915,7 @@ async function toggleHeatmap() {
 
     } catch (e) {
       alert("Failed to load Heatmap data. " + e.message);
-      btn.innerText = "🔥 AGM Heatmap Mode";
+      btn.innerText = "🔥Heatmap Mode";
     }
   }
 }
