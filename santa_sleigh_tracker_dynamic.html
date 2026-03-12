@@ -81,8 +81,12 @@
       background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); 
       border-radius: 10px; padding: 7px 12px; cursor: pointer; font-weight: 800; 
       font-family: inherit; transition: all 0.2s ease; 
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
     }
-    .btn:hover { background: var(--surface); color: var(--text); }
+    @media (hover: hover) {
+      .btn:hover { background: var(--surface); color: var(--text); }
+    }
     .btn:active { transform: scale(0.96); border-color: var(--rt-gold); color: var(--rt-gold); }
     .btn.locked { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
 
