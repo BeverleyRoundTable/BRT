@@ -192,6 +192,7 @@
     <button class="btn" id="recenterBtn">Re-centre</button>
     <button class="btn" id="notifyBtn">🔔 Notify Me</button>
     <button class="btn" id="waveBtn">👋 Wave</button>
+    <button class="btn" id="installBtn" style="display: none; color: var(--rt-gold); border-color: var(--rt-gold);">📲 Install App</button>
     <div id="toast" class="toast-box"></div>
   </div>
 
@@ -222,6 +223,28 @@
           });
         });
       }
+
+      // ⭐ NEW: PWA Install Button Logic
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent Chrome from hiding the prompt
+        e.preventDefault();
+        // Stash the event so it can be triggered when they click our button
+        deferredPrompt = e;
+        // Show our custom install button!
+        document.getElementById('installBtn').style.display = 'block';
+      });
+
+      document.getElementById('installBtn').addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            document.getElementById('installBtn').style.display = 'none'; // Hide button once installed
+          }
+          deferredPrompt = null;
+        }
+      });
       
       const AppConfig = {
         API: {
