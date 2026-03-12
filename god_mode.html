@@ -373,7 +373,6 @@ async function fetchGps() {
       STATE.gps = data; 
       STATE.lastGpsUpdate = new Date(); 
       
-      // NEW: If we finally have GPS coordinates but no weather yet, fetch it immediately!
       if (!STATE.weather) {
         fetchWeather();
       }
@@ -406,11 +405,9 @@ function getWeatherEmoji(code) {
 }
 
 async function fetchWeather() {
-  // Removed the hardcoded fallback coordinates
   const lat = STATE.gps?.lat; 
   const lng = STATE.gps?.lng;
 
-  // If we don't have a location yet, update the UI and exit early
   if (!lat || !lng) {
     const container = document.getElementById('weatherDetail');
     if (container) {
@@ -684,11 +681,8 @@ function buildDashboard() {
 function initMap() {
   const s = STATE.settings;
   
-  // Default to Marchesi House (Round Table HQ) if no GPS signal yet
   const startLat = STATE.gps?.lat || 52.47080954243374;
   const startLng = STATE.gps?.lng || -1.9206740193920633;
-  
-  // Start zoomed in to HQ (15), it will move when GPS connects
   const startZoom = 15;
 
   STATE.map = L.map('godMap', { zoomControl: true }).setView([startLat, startLng], startZoom);
@@ -710,15 +704,6 @@ function initMap() {
   if (route && route.gpxUrl) {
     loadGpxRoute(route, s);
   }
-
-  STATE.map.on('zoomend', () => {
-    if (!STATE.routeMainLayer || !STATE.routeGlowLayer) return;
-    const z = STATE.map.getZoom();
-    const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3;
-    const glowWeight = mainWeight + 3;
-    STATE.routeMainLayer.setStyle({ weight: mainWeight });
-    STATE.routeGlowLayer.setStyle({ weight: glowWeight });
-  });
 }
 
 function loadGpxRoute(route, settings) {
@@ -727,13 +712,15 @@ function loadGpxRoute(route, settings) {
 
   STATE.routeGlowLayer = new L.GPX(route.gpxUrl, {
     async: true,
-    polyline_options: { color: '#ffd700', weight: 7, opacity: 0.45 },
+    // Fix: Added lineCap and lineJoin to prevent massive SVG rendering spikes
+    polyline_options: { color: '#ffd700', weight: 7, opacity: 0.45, lineCap: 'round', lineJoin: 'round' },
     marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
   }).addTo(STATE.map);
 
   STATE.routeMainLayer = new L.GPX(route.gpxUrl, {
     async: true,
-    polyline_options: { color: '#d31c1c', weight: 4, opacity: 0.95 },
+    // Fix: Added lineCap and lineJoin here as well
+    polyline_options: { color: '#d31c1c', weight: 4, opacity: 0.95, lineCap: 'round', lineJoin: 'round' },
     marker_options: {
       startIcon: L.icon({ iconUrl: startIconUrl, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
       endIcon: L.icon({ iconUrl: endIconUrl, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
@@ -743,11 +730,9 @@ function loadGpxRoute(route, settings) {
 
   STATE.routeMainLayer.on('loaded', (e) => {
     STATE.gpxLoaded = true;
-    // Only fit bounds if we aren't following live GPS
     if (!STATE.gps && !heatmapMode) {
       STATE.map.fitBounds(e.target.getBounds(), { padding: [30, 30] });
     }
-    STATE.map.fire('zoomend');
   });
 }
 
@@ -795,7 +780,6 @@ function updateGps() {
     const ll = L.latLng(STATE.gps.lat, STATE.gps.lng);
     STATE.marker.setLatLng(ll);
     
-    // Use flyTo instead of panTo for a smooth animation from HQ to the live location
     STATE.map.flyTo(ll, 15, { animate: true, duration: 1.5 });
   }
 
@@ -870,9 +854,8 @@ async function toggleHeatmap() {
   const controls = document.getElementById('heatmapControls');
 
   if (heatmapMode) {
-    // Turn OFF Heatmap Mode
     heatmapMode = false;
-    btn.innerText = "🔥Heatmap Mode"; // 👈 FIX: Restores button text
+    btn.innerText = "🔥Heatmap Mode"; 
     btn.className = "btn-heat";
     controls.classList.remove('active');
     document.getElementById('mapLabel').textContent = isGpsFresh() ? 'Live Position' : 'Last Known Position';
@@ -881,19 +864,15 @@ async function toggleHeatmap() {
     allGpxLayers.forEach(layer => STATE.map.removeLayer(layer));
     allGpxLayers = [];
     
-    // (We no longer swap the base map tiles here, so it stays standard)
-    
     if (STATE.marker && STATE.gps) {
       STATE.marker.addTo(STATE.map);
       STATE.map.panTo([STATE.gps.lat, STATE.gps.lng]);
     }
     
-    // Restore today's route layers
     if (STATE.routeGlowLayer) STATE.routeGlowLayer.addTo(STATE.map);
     if (STATE.routeMainLayer) STATE.routeMainLayer.addTo(STATE.map);
     
   } else {
-    // Turn ON Heatmap Mode
     btn.innerText = "Loading Data...";
     try {
       const res = await fetch(getApiUrl('function=getHeatmapData'));
@@ -907,27 +886,22 @@ async function toggleHeatmap() {
       controls.classList.add('active');
       document.getElementById('mapLabel').textContent = 'Planning Map';
 
-      // Clean up live map elements
       if (STATE.marker) STATE.map.removeLayer(STATE.marker);
       if (STATE.routeGlowLayer) STATE.map.removeLayer(STATE.routeGlowLayer);
       if (STATE.routeMainLayer) STATE.map.removeLayer(STATE.routeMainLayer);
       
-      // (We no longer swap to the dark base map tiles here)
-
-      // Load all GPX routes as ghost lines 
-      // 👈 FIX: Changed from white to Brand Grey so they are visible on the light map!
       STATE.routes.forEach(route => {
         if (route.gpxUrl) {
           const l = new L.GPX(route.gpxUrl, {
             async: true,
-            polyline_options: { color: "#1D1D1A", weight: 4, opacity: 0.35 }, 
+            // Fix: Also added to the ghost routes just in case!
+            polyline_options: { color: "#1D1D1A", weight: 4, opacity: 0.35, lineCap: 'round', lineJoin: 'round' }, 
             marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
           }).addTo(STATE.map);
           allGpxLayers.push(l);
         }
       });
 
-      // Setup Years
       const allYears = [...(allHeatData.subscribers||[]).map(d=>d.year), ...(allHeatData.suggestions||[]).map(d=>d.year)];
       const uniqueYears = [...new Set(allYears)].filter(y => y !== "Unknown").sort().reverse();
       const yearSelect = document.getElementById('heatYear');
