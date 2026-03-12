@@ -683,14 +683,24 @@ function buildDashboard() {
 
 function initMap() {
   const s = STATE.settings;
-  const startLat = STATE.gps?.lat || 53.8426;
-  const startLng = STATE.gps?.lng || -0.4275;
+  
+  // Default to Marchesi House (Round Table HQ) if no GPS signal yet
+  const startLat = STATE.gps?.lat || 52.4651;
+  const startLng = STATE.gps?.lng || -1.9157;
+  
+  // Start zoomed in to HQ (15), it will move when GPS connects
+  const startZoom = 15;
 
-  STATE.map = L.map('godMap', { zoomControl: true }).setView([startLat, startLng], 15);
+  STATE.map = L.map('godMap', { zoomControl: true }).setView([startLat, startLng], startZoom);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap'
+  }).addTo(STATE.map);
+
+  const iconUrl = s.sleigh_icon_live || 'https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png';
+  STATE.marker = L.marker([startLat, startLng], {
+    icon: L.icon({ iconUrl, iconSize: [64, 64], iconAnchor: [32, 60] })
   }).addTo(STATE.map);
 
   const iconUrl = s.sleigh_icon_live || 'https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png';
@@ -789,7 +799,9 @@ function updateGps() {
   if (STATE.map && STATE.marker && !heatmapMode) {
     const ll = L.latLng(STATE.gps.lat, STATE.gps.lng);
     STATE.marker.setLatLng(ll);
-    STATE.map.panTo(ll, { animate: true, duration: 0.8 });
+    
+    // Use flyTo instead of panTo for a smooth animation from HQ to the live location
+    STATE.map.flyTo(ll, 15, { animate: true, duration: 1.5 });
   }
 
   updateGpsAge();
