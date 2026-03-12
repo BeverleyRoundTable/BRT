@@ -4,29 +4,40 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Sleigh Routes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
     body {
-    background: transparent;
-    color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
-    margin: 0;
-    padding: 0;
-}
+        background: transparent;
+        color: #FFFFFF;
+        font-family: 'Open Sans', sans-serif;
+        margin: 0;
+        padding: 0;
+        -webkit-font-smoothing: antialiased;
+    }
 
     #routes-root {
-    max-width: 980px;
-    margin: 0 auto;
-    padding: 22px 18px 28px;
-    background: rgba(18, 19, 23, 0.92);
-    border-radius: 22px;
-}
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 24px 20px 28px;
+        background: rgba(29, 29, 26, 0.95); /* Brand Table Grey */
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow:
+            0 6px 20px rgba(0,0,0,0.35),
+            inset 0 1px 0 rgba(255,255,255,0.05);
+    }
 
     h1 {
         text-align: center;
-        padding: 26px 0 10px;
-        font-size: 2rem;
-        letter-spacing: 0.5px;
+        padding: 20px 0 16px;
+        margin: 0;
+        font-size: 2.2rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
     }
 
     #tonights-route,
@@ -38,77 +49,85 @@
 
     /* Modern route card */
     .santa-route-card {
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.14);
-        border-radius: 16px;
+        background: #2f2f2a; /* God Mode Surface-2 */
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
         padding: 22px;
         margin: 25px 0;
-        box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+        box-shadow: 0 4px 18px rgba(0,0,0,0.25);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .santa-route-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 26px rgba(0,0,0,0.45);
     }
 
     /* Highlight card for Tonight/Next */
     .santa-route-card--highlight {
-        border: 1px solid #ffd700;
-        box-shadow: 0 0 22px rgba(255,215,0,0.25);
+        border: 1px solid #FBAF33; /* Brand Golden Yellow */
+        box-shadow: 0 0 22px rgba(251, 175, 51, 0.2);
     }
 
     /* Card layout */
     .santa-route-main {
         display: flex;
         flex-direction: column;
-        gap: 18px;
+        gap: 20px;
     }
 
     .santa-route-text h3 {
         font-size: 1.7rem;
+        font-weight: 800;
         margin: 0 0 8px;
         text-align: left;
+        letter-spacing: -0.01em;
     }
 
     .santa-route-date {
         opacity: 0.9;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
+        font-weight: 600;
+        color: #FBAF33; /* Brand Golden Yellow */
     }
 
     .santa-route-streets {
-        opacity: 0.9;
-        line-height: 1.5;
-        margin-bottom: 8px;
+        opacity: 0.85;
+        line-height: 1.6;
+        margin-bottom: 12px;
     }
 
     /* Buttons */
     .santa-route-actions {
-        margin: 10px 0 5px;
+        margin: 14px 0 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
     }
 
     .santa-btn {
-        display: inline-block;
-        background: #d31c1c;
-        padding: 10px 18px;
-        border-radius: 10px;
-        color: #fff;
-        margin-right: 10px;
-        margin-bottom: 10px;
-        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #FBAF33; /* Brand Golden Yellow */
+        padding: 12px 24px;
+        border-radius: 999px;
+        color: #000000;
+        font-weight: 800;
+        font-family: inherit;
+        font-size: 0.95em;
         text-decoration: none;
-        box-shadow: 0 0 6px rgba(211, 28, 28, 0.45);
-        transition: transform 0.15s ease, box-shadow 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
     }
 
-    .santa-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 0 12px rgba(211, 28, 28, 0.7);
+    .santa-btn:active {
+        transform: scale(0.96);
     }
 
     .santa-btn--ghost {
-  background: transparent;
-  border: 2px solid rgba(255,255,255,0.75);
+        background: #2f2f2a;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #FFFFFF;
+        font-weight: 700;
     }
 
     /* Map preview */
@@ -117,6 +136,7 @@
         width: 100%;
         max-width: 430px;
         border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: 0 4px 12px rgba(0,0,0,0.35);
         display: block;
         margin: 0 auto;
@@ -125,9 +145,13 @@
     /* Sponsor */
     .santa-route-sponsor {
         text-align: center;
-        margin-top: 18px;
+        margin-top: 20px;
         opacity: 0.95;
-        font-size: 1rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
     }
 
     .santa-route-sponsor img {
@@ -135,13 +159,15 @@
         max-width: 60%;
         display: block;
         margin: 10px auto;
+        border-radius: 6px;
     }
 
     /* Section titles */
     .santa-section-title {
         text-align: center;
         font-size: 1.4rem;
-        margin: 30px 0 8px;
+        font-weight: 800;
+        margin: 30px 0 10px;
         opacity: 0.95;
     }
 
@@ -149,9 +175,9 @@
     .route-divider {
         width: 100%;
         max-width: 260px;
-        margin: 28px auto 10px;
+        margin: 32px auto 16px;
         border: 0;
-        border-bottom: 2px solid rgba(255,255,255,0.3);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     /* Desktop layout */
@@ -168,14 +194,14 @@
     }
 
     @keyframes routeGlow {
-  0%   { box-shadow: 0 0 0 rgba(255,215,0,0); }
-  50%  { box-shadow: 0 0 18px rgba(255,215,0,0.25); }
-  100% { box-shadow: 0 0 0 rgba(255,215,0,0); }
-}
+      0%   { box-shadow: 0 0 0 rgba(251, 175, 51, 0); }
+      50%  { box-shadow: 0 0 18px rgba(251, 175, 51, 0.25); }
+      100% { box-shadow: 0 0 0 rgba(251, 175, 51, 0); }
+    }
 
-.santa-route-card.pulse {
-  animation: routeGlow 1.2s ease-out;
-}
+    .santa-route-card.pulse {
+      animation: routeGlow 1.2s ease-out;
+    }
 
 </style>
 </head>
@@ -194,7 +220,6 @@
 
 </div>
 
-<!-- Load your routes.js with cache-busting -->
 <script>
 (function () {
     const s = document.createElement("script");
@@ -203,7 +228,7 @@
 })();
 </script>
 
-    <script>
+<script>
   function sendHeight() {
     const height = document.documentElement.scrollHeight;
     parent.postMessage({ routesHeight: height }, "*");
