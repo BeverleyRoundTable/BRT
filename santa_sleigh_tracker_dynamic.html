@@ -191,21 +191,21 @@
     @media(max-width: 480px) { 
       .toast-box { font-size: 0.9em; padding: 12px 16px; bottom: calc(var(--donate-bottom) + 64px); } 
 
-      /* Expand the bar slightly to use more of the screen edge */
+      /* Expand the bar slightly and move it UP into the dead space */
       .info-popup { 
         width: calc(100vw - 16px); 
         padding: 8px 6px; 
-        gap: 4px; /* Tighten the space between buttons */
+        gap: 4px; 
+        bottom: calc(var(--info-bottom) + 35px); /* Bumps the box up to clear the logo */
       }
 
       /* Force buttons to share space equally and prevent text wrap */
       .info-popup .btn {
         flex: 1; 
-        padding: 8px 2px; /* Reduce horizontal padding */
+        padding: 8px 2px; 
         font-size: 0.9em; 
-        white-space: nowrap; /* Keep text on one line */
+        white-space: nowrap; 
         text-align: center;
-        /* Optional: adds ... if a screen is incredibly narrow */
         overflow: hidden;
         text-overflow: ellipsis;
       }
