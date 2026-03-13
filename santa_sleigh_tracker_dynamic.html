@@ -228,6 +228,47 @@
       font-size: 1.5em;
       cursor: pointer;
     }
+
+    /* ── ELF CAM POLAROIDS ── */
+    .polaroid {
+      position: fixed;
+      background: #fff;
+      padding: 8px 8px 24px 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 3000;
+      pointer-events: none; /* User can swipe the map right through the image */
+      opacity: 0;
+      animation: polaroidFade 8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      max-width: 220px;
+      border-radius: 4px;
+    }
+    .polaroid img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 2px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .polaroid-caption {
+      color: #111;
+      font-family: 'Open Sans', sans-serif;
+      font-weight: 900;
+      font-size: 0.9em;
+      text-align: center;
+      margin-top: 10px;
+      letter-spacing: 0.5px;
+    }
+    @keyframes polaroidFade {
+      0% { opacity: 0; transform: scale(0.6) translateY(40px) rotate(calc(var(--rot) * 2)); }
+      10% { opacity: 1; transform: scale(1) translateY(0) rotate(var(--rot)); }
+      85% { opacity: 1; transform: scale(1) translateY(0) rotate(var(--rot)); }
+      100% { opacity: 0; transform: scale(0.9) translateY(-30px) rotate(calc(var(--rot) * 0.5)); }
+    }
+    @media (max-width: 600px) {
+      .polaroid { max-width: 130px; padding: 5px 5px 16px 5px; }
+      .polaroid-caption { font-size: 0.75em; margin-top: 6px; }
+    }
+    
   </style>
 </head>
 
@@ -430,7 +471,8 @@
           pendingSubscription: null,
           notifyLatLng: null,
           lastVisualPos: null,
-          escapeListener: null
+          escapeListener: null,
+          lastElfCamUrl: null
         },
         dom: {
           loading: document.getElementById("loadingCover"),
@@ -856,6 +898,13 @@
           const latestApiData = await Utils.loadJSON(AppState.vars.apiUrl);
           const liveMsg = latestApiData.settings?.live_announcement;
 
+          // ⭐ ELF CAM CHECK: Does the sheet have a new photo URL?
+          const elfCamUrl = latestApiData.settings?.elf_cam_url;
+          if (elfCamUrl && elfCamUrl !== AppState.vars.lastElfCamUrl && Utils.isValidImageUrl(elfCamUrl)) {
+              AppState.vars.lastElfCamUrl = elfCamUrl; // Remember it so we don't spam it
+              triggerPolaroid(elfCamUrl, "Live from the Sleigh!");
+          }
+
           // PA SYSTEM OVERRIDE: If an announcement exists, it takes over the box.
           if (liveMsg && liveMsg.trim() !== "") {
             AppState.dom.statusBox.textContent = `📢 ${liveMsg}`;
@@ -1168,6 +1217,35 @@
           setTimeout(triggerAmbientWave, nextDelay);
         }
 
+        // ⭐ ELF CAM POLAROID ENGINE
+        function triggerPolaroid(imgSrc, captionText = "Live from the Sleigh!") {
+          if (!AppState.flags.pageVisible || AppState.flags.isKiosk) return;
+          
+          const p = document.createElement("div");
+          p.className = "polaroid";
+          
+          const isMobile = window.innerWidth < 600;
+          const isLeft = Math.random() > 0.5; 
+          
+          if (!isMobile) {
+            p.style.left = isLeft ? (Math.random() * 10 + 2) + "%" : "auto";
+            p.style.right = !isLeft ? (Math.random() * 10 + 2) + "%" : "auto";
+            p.style.top = (Math.random() * 50 + 15) + "%"; 
+          } else {
+            p.style.left = isLeft ? "3%" : "auto";
+            p.style.right = !isLeft ? "3%" : "auto";
+            p.style.top = (Math.random() * 30 + 15) + "%"; 
+          }
+
+          const rot = (Math.random() * 24 - 12) + "deg";
+          p.style.setProperty("--rot", rot);
+          
+          p.innerHTML = `<img src="${imgSrc}" alt="Elf Cam"><div class="polaroid-caption">${captionText}</div>`;
+          document.body.appendChild(p);
+          
+          setTimeout(() => p.remove(), 8500);
+        }
+        
         // Kick off the loop 5 to 10 seconds after the page loads
         setTimeout(triggerAmbientWave, Math.floor(Math.random() * 5000) + 5000);
 
