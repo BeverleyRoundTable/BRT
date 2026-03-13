@@ -650,7 +650,15 @@ function buildDashboard() {
           <div class="no-route">Fetching atmosphere data...</div>
         </div>
       </div>
-      
+
+      <div class="panel">
+  <div class="panel-header"><span class="icon">📸</span><h3>Elf Cam</h3></div>
+  <div id="elfCamPreview">
+    <div class="no-route">Waiting for first image...</div>
+  </div>
+  <div style="font-size:0.7em; color:var(--text-muted); margin-top:8px; text-align:center;" id="elfCamAge">No image received</div>
+</div>
+
       <div class="panel">
         <div class="panel-header"><span class="icon">📡</span><h3>GPS Data</h3></div>
         <div class="gps-grid">
@@ -737,7 +745,12 @@ function loadGpxRoute(route, settings) {
   });
 }
 
-function updateDashboard() { updateRouteDetail(); updateDonationDetail(); updateRaisedStat(); }
+function updateDashboard() { 
+  updateRouteDetail(); 
+  updateDonationDetail(); 
+  updateRaisedStat(); 
+  updateElfCam();
+}
 
 function updateClock() {
   const el = document.getElementById('clock');
@@ -957,6 +970,37 @@ function drawHeatmap() {
     gradient: {0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red'}
   }).addTo(STATE.map);
 }
+
+  function updateElfCam() {
+  const url = STATE.settings?.elf_cam_url;
+  const container = document.getElementById('elfCamPreview');
+  const ageEl = document.getElementById('elfCamAge');
+  if (!container) return;
+
+  if (!url) {
+    container.innerHTML = '<div class="no-route">No elf_cam_url in settings</div>';
+    return;
+  }
+
+  // Convert to thumbnail URL the same way the tracker does
+  let finalUrl = url;
+  if (url.includes('drive.google.com')) {
+    try {
+      const urlObj = new URL(url);
+      const fileId = urlObj.searchParams.get('id');
+      if (fileId) finalUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+    } catch(e) {}
+  }
+
+  container.innerHTML = `
+    <img src="${finalUrl}" 
+      style="width:100%; border-radius:8px; border:2px solid var(--border); background:#111; min-height:80px;"
+      onerror="this.style.border='2px solid var(--red)'; this.alt='⚠️ Image failed to load — check Drive sharing';"
+      alt="Elf Cam">`;
+  
+  if (ageEl) ageEl.textContent = 'Last updated: ' + fmtTime(new Date());
+}
+  
 </script>
 </body>
 </html>
