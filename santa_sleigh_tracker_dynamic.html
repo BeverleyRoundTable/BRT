@@ -759,30 +759,25 @@
   const isMobile = window.innerWidth < 600;
   const isLeft = Math.random() > 0.5;
 
-  // Safe zone: clear the status bar at top and donate+controls bar at bottom
-  const TOP_SAFE    = 90;  // px — clears the status bar (~20px offset + ~60px height)
-  const BOTTOM_SAFE = isMobile ? 230 : 210; // px — clears donate button + info bar
-  const POLAROID_H  = isMobile ? 180 : 300; // px — approximate rendered height
+  const TOP_SAFE    = 90;
+  const BOTTOM_SAFE = isMobile ? 230 : 210;
+  const POLAROID_H  = isMobile ? 180 : 300;
 
   const availableH = window.innerHeight - TOP_SAFE - BOTTOM_SAFE - POLAROID_H;
   const safeTop = TOP_SAFE + (availableH > 0 ? Math.random() * availableH : 0);
 
-  // Horizontal — hug the sides, away from centre map content
   if (isMobile) {
-    if (isMobile) {
-  // 22px accounts for max rotation bleed (~16px) plus a small visual buffer
-  p.style.left  = isLeft ? "22px" : "auto";
-  p.style.right = isLeft ? "auto" : "22px";
-}
-    else {
+    p.style.left  = isLeft ? "22px" : "auto";
+    p.style.right = isLeft ? "auto" : "22px";
+  } else {
     p.style.left  = isLeft ? (Math.random() * 6 + 1) + "%" : "auto";
     p.style.right = isLeft ? "auto" : (Math.random() * 6 + 1) + "%";
   }
 
   p.style.top = safeTop + "px";
 
-  const maxRot = isMobile ? 6 : 12;  // gentler tilt on mobile
-const rot = Math.random() * (maxRot * 2) - maxRot;
+  const maxRot = isMobile ? 6 : 12;
+  const rot = Math.random() * (maxRot * 2) - maxRot;
   p.style.setProperty("--rotStart", (rot * 2) + "deg");
   p.style.setProperty("--rotMid",   rot + "deg");
   p.style.setProperty("--rotEnd",   (rot * 0.5) + "deg");
