@@ -993,10 +993,10 @@ function drawHeatmap() {
   }
 
   container.innerHTML = `
-    <img src="${finalUrl}" 
-      style="width:100%; border-radius:8px; border:2px solid var(--border); background:#111; min-height:80px;"
-      onerror="this.style.border='2px solid var(--red)'; this.alt='⚠️ Image failed to load — check Drive sharing';"
-      alt="Elf Cam">`;
+  <img src="${finalUrl}" 
+    style="width:100%; max-height:120px; object-fit:cover; object-position:center top; border-radius:8px; border:2px solid var(--border); background:#111;"
+    onerror="this.style.border='2px solid var(--red)'; this.alt='⚠️ Image failed to load — check Drive sharing';"
+    alt="Elf Cam">`;
   
   if (ageEl) ageEl.textContent = 'Last updated: ' + fmtTime(new Date());
 }
