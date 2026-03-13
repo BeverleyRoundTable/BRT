@@ -187,8 +187,34 @@
       .info-popup{ font-size: .8em; padding: 8px 12px; }
       .status-popup{ font-size: .95em; padding: 12px 16px; } 
     }
-    @media(max-width:480px){ 
-      .toast-box{ font-size: 0.9em; padding: 12px 16px; bottom: calc(var(--donate-bottom) + 64px); } 
+    
+    @media(max-width: 480px) { 
+      .toast-box { font-size: 0.9em; padding: 12px 16px; bottom: calc(var(--donate-bottom) + 64px); } 
+
+      /* Expand the bar slightly to use more of the screen edge */
+      .info-popup { 
+        width: calc(100vw - 16px); 
+        padding: 8px 6px; 
+        gap: 4px; /* Tighten the space between buttons */
+      }
+
+      /* Force buttons to share space equally and prevent text wrap */
+      .info-popup .btn {
+        flex: 1; 
+        padding: 8px 2px; /* Reduce horizontal padding */
+        font-size: 0.9em; 
+        white-space: nowrap; /* Keep text on one line */
+        text-align: center;
+        /* Optional: adds ... if a screen is incredibly narrow */
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Shrink the green status dot slightly to save space */
+      .status-dot {
+        width: 10px;
+        margin-right: 2px;
+      }
     }
 
     /* FIX 2: ── iOS INSTALL TOOLTIP ── */
