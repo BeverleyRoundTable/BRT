@@ -781,7 +781,8 @@
 
   p.style.top = safeTop + "px";
 
-  const rot = Math.random() * 24 - 12;
+  const maxRot = isMobile ? 6 : 12;  // gentler tilt on mobile
+const rot = Math.random() * (maxRot * 2) - maxRot;
   p.style.setProperty("--rotStart", (rot * 2) + "deg");
   p.style.setProperty("--rotMid",   rot + "deg");
   p.style.setProperty("--rotEnd",   (rot * 0.5) + "deg");
