@@ -373,6 +373,13 @@ https://brt-23f.pages.dev/suggest?api=${ensureApi()}
 `;
 
 // ================================
+// Elf Dashcam
+// ================================
+const elfdashboardLink = `
+https://brt-23f.pages.dev/elf_dashboard?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -399,3 +406,4 @@ document.getElementById("crewLink").value = crewLink.trim();
 document.getElementById("letterLink").value = letterLink.trim();
 document.getElementById("recommendedLetter").value = recommendedLetter.trim();
 document.getElementById("suggestLink").value = suggestLink.trim();
+document.getElementById("elfdashboardLink").value = elfdashboardLink.trim();
