@@ -645,13 +645,13 @@ function buildDashboard() {
       </div>
 
       <div class="panel">
-        <div class="panel-header"><span class="icon">☁️</span><h3>Live Weather</h3></div>
-        <div id="weatherDetail">
-          <div class="no-route">Fetching atmosphere data...</div>
-        </div>
-      </div>
+  <div class="panel-header"><span class="icon">☁️</span><h3>Live Weather</h3></div>
+  <div id="weatherDetail">
+    <div class="no-route">Fetching atmosphere data...</div>
+  </div>
+</div>
 
-      <div class="panel">
+      <div class="panel" id="elfCamPanel">
   <div class="panel-header"><span class="icon">📸</span><h3>Elf Cam</h3></div>
   <div id="elfCamPreview">
     <div class="no-route">Waiting for first image...</div>
@@ -975,12 +975,15 @@ function drawHeatmap() {
   const url = STATE.settings?.elf_cam_url;
   const container = document.getElementById('elfCamPreview');
   const ageEl = document.getElementById('elfCamAge');
+  const panel = document.getElementById('elfCamPanel');
   if (!container) return;
 
   if (!url) {
-    container.innerHTML = '<div class="no-route">No elf_cam_url in settings</div>';
+    if (panel) panel.style.display = 'none';  // hide entirely if not configured
     return;
   }
+
+  if (panel) panel.style.display = '';  // restore when a URL arrives mid-session
 
   // Convert to thumbnail URL the same way the tracker does
   let finalUrl = url;
