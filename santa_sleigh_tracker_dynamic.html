@@ -769,9 +769,12 @@
 
   // Horizontal — hug the sides, away from centre map content
   if (isMobile) {
-    p.style.left  = isLeft ? "2%" : "auto";
-    p.style.right = isLeft ? "auto" : "2%";
-  } else {
+    if (isMobile) {
+  // 22px accounts for max rotation bleed (~16px) plus a small visual buffer
+  p.style.left  = isLeft ? "22px" : "auto";
+  p.style.right = isLeft ? "auto" : "22px";
+}
+    else {
     p.style.left  = isLeft ? (Math.random() * 6 + 1) + "%" : "auto";
     p.style.right = isLeft ? "auto" : (Math.random() * 6 + 1) + "%";
   }
