@@ -747,6 +747,16 @@
 
       async function updateTracker() {
         try {
+          // ⭐ NEW: Fetch settings FIRST so Elf Cam works even when Santa is in Lapland
+          const latestApiData = await Utils.loadJSON(AppState.vars.apiUrl);
+          
+          const elfCamUrl = latestApiData.settings?.elf_cam_url;
+          if (elfCamUrl && elfCamUrl !== AppState.vars.lastElfCamUrl && Utils.isValidImageUrl(elfCamUrl)) {
+              AppState.vars.lastElfCamUrl = elfCamUrl; 
+              triggerPolaroid(elfCamUrl, "Live from the Sleigh!");
+          }
+
+          // ⭐ NORMAL GPS LOGIC
           const data = await Utils.loadJSON(AppState.vars.apiUrl + "?function=proxyFirebase");
           if (!Utils.validPos(data.lat, data.lng)) throw new Error("Invalid Coords");
 
@@ -796,11 +806,9 @@
             // ⭐ PAC-MAN ROUTE ERASER
             if (AppState.dynamicRouteRemainingMain) {
               const idx = AppState.vars.lastSnapIndex;
-              // Slice the GPX array into two halves at his current location
               const completedPts = AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lat, p.lng]);
               const remainingPts = AppState.gpxRoute.slice(idx).map(p => [p.lat, p.lng]);
               
-              // Instantly update the lines on the map
               AppState.dynamicRouteCompleted.setLatLngs(completedPts);
               AppState.dynamicRouteRemainingMain.setLatLngs(remainingPts);
               AppState.dynamicRouteRemainingGlow.setLatLngs(remainingPts);
@@ -828,19 +836,13 @@
               const userSnap = snapToGpxIndex(userPos, null);
               AppState.vars.lastSnapIndex = savedSnapIdx;
 
-              // Track Santa's route progress for speed calculation
               pushRouteFix(santaSnap.point.dist, Date.now());
 
              if (userSnap) {
                 const totalRouteDist = AppState.gpxRoute[AppState.gpxRoute.length - 1].dist;
-                
-                // Check if the user is pinned near the very end of the route
                 const isUserNearEnd = userSnap.point.dist > (totalRouteDist - AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET);
-                
-                // Check if Santa has basically reached the end of the track (within 10 meters)
                 const santaReachedEnd = santaSnap.point.dist >= (totalRouteDist - 10);
 
-                // Trigger if he passes them normally, OR if they are an edge case and he finished the route
                 if (
                   (santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) ||
                   (isUserNearEnd && santaReachedEnd)
@@ -849,10 +851,8 @@
                   sessionStorage.setItem("SANTA_HAS_PASSED", "1");
                 } else {
                   const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist);
-                  // Use route-based speed (same units as remaining) for accurate ETA
                   const routeSpeed = Utils.calculateRouteSpeed(AppState.routeFixes);
                   const rawSpeed = Utils.calculateSpeed(AppState.recentFixes);
-                  // Prefer route speed; fall back to raw GPS speed; last resort: walking pace ~1.4 m/s
                   const effectiveSpeed = (routeSpeed && routeSpeed > 0.3) ? routeSpeed
                                        : (rawSpeed && rawSpeed > 0.5) ? rawSpeed
                                        : 1.4;
@@ -894,24 +894,18 @@
           AppState.dom.statusDot.style.display = "block";
           AppState.dom.statusDot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
 
-          // Fetch fresh settings in the background to check for announcements
-          const latestApiData = await Utils.loadJSON(AppState.vars.apiUrl);
+          // PA SYSTEM OVERRIDE: Use the settings we fetched at the top of the loop
           const liveMsg = latestApiData.settings?.live_announcement;
-
-          // ⭐ ELF CAM CHECK: Does the sheet have a new photo URL?
-          const elfCamUrl = latestApiData.settings?.elf_cam_url;
-          if (elfCamUrl && elfCamUrl !== AppState.vars.lastElfCamUrl && Utils.isValidImageUrl(elfCamUrl)) {
-              AppState.vars.lastElfCamUrl = elfCamUrl; // Remember it so we don't spam it
-              triggerPolaroid(elfCamUrl, "Live from the Sleigh!");
-          }
 
           // PA SYSTEM OVERRIDE: If an announcement exists, it takes over the box.
           if (liveMsg && liveMsg.trim() !== "") {
             AppState.dom.statusBox.textContent = `📢 ${liveMsg}`;
             AppState.dom.statusBox.classList.add("is-announcement");
-            setDimUI(false); // Never dim the screen during an emergency announcement
+            setDimUI(false); 
           } else {
-            // NORMAL TRACKER STATUS: Remove red styling and return to standard text
+            AppState.dom.statusBox.classList.add("is-announcement");
+            setDimUI(false); 
+          } else {
             AppState.dom.statusBox.classList.remove("is-announcement");
             
             if (AppState.flags.hasPassedSticky) {
@@ -938,6 +932,35 @@
               setDimUI(false);
             }
           }
+
+          // Browser Notification
+          if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) {
+             const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.vars.notifyLatLng);
+             const isSmartEta = (etaSeconds !== null && etaSeconds < 180);
+             const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600);
+             if (isSmartEta || isCloseFallback) {
+                AppState.flags.browserNotified = true;
+                sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
+                fireBrowserNotification("🎅 Santa is nearly here!", "He's approaching your location! 🎄");
+             }
+          }
+
+          if (AppState.flags.firstFix) {
+             const zoom = AppState.flags.isKiosk ? 15 : 16;
+             AppState.map.setView(visualPos, zoom);
+             AppState.flags.firstFix = false;
+          }
+
+        } catch (e) {
+          if (AppState.lastFix) {
+            animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
+            AppState.dom.statusBox.textContent = "🎅 Santa is nearby…";
+            AppState.dom.statusDot.style.display = "none";
+            setDimUI(false);
+          }
+        }
+        setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
+      }
 
           // Browser Notification
           if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) {
