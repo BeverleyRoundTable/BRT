@@ -189,18 +189,27 @@
     }
     
     @media(max-width: 480px) { 
-      .toast-box { font-size: 0.9em; padding: 12px 16px; bottom: calc(var(--donate-bottom) + 64px); } 
+      /* 1. Explicitly position the Donate box to make room */
+      .donate-box, .install-overlay {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 145px) !important;
+      }
 
-      /* Expand the bar slightly and move it UP into the dead space */
+      /* 2. Position the Grey Bar perfectly between the logo and donate box */
       .info-popup { 
         width: calc(100vw - 16px); 
         padding: 8px 6px; 
         gap: 4px; 
-        /* INCREASED THIS NUMBER to push it higher above the logo */
-        bottom: calc(var(--info-bottom) + 65px); 
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 85px) !important; 
       }
 
-      /* Force buttons to share space equally and prevent text wrap */
+      /* 3. Keep toasts above the Donate Box */
+      .toast-box { 
+        font-size: 0.9em; 
+        padding: 12px 16px; 
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 215px) !important; 
+      } 
+
+      /* Force buttons to share space equally without wrapping */
       .info-popup .btn {
         flex: 1; 
         padding: 8px 2px; 
@@ -211,11 +220,12 @@
         text-overflow: ellipsis;
       }
 
-      /* Shrink the green status dot slightly to save space */
+      /* Shrink the green status dot slightly */
       .status-dot {
         width: 10px;
         margin-right: 2px;
       }
+    }
 
       /* Make Donate and Install buttons wide to perfectly match the bottom bar */
       .donate-box, .install-overlay {
