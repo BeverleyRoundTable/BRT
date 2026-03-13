@@ -757,13 +757,16 @@
               if (AppState.flags.pageVisible) {
                   AppState.vars.lastElfCamUrl = rawElfCamUrl; 
                   
-                  // ⭐ FIX: Convert Google Drive links into raw image thumbnails so the browser doesn't block them
+                  // ⭐ BULLETPROOF FIX: Convert Google Drive links into raw image thumbnails
                   let finalImgUrl = rawElfCamUrl;
-                  if (finalImgUrl.includes("drive.google.com/uc")) {
-                      const match = finalImgUrl.match(/id=([^&]+)/);
-                      if (match && match[1]) {
-                          finalImgUrl = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
-                      }
+                  if (finalImgUrl.includes("drive.google.com")) {
+                      try {
+                          const urlObj = new URL(finalImgUrl);
+                          const fileId = urlObj.searchParams.get("id");
+                          if (fileId) {
+                              finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+                          }
+                      } catch(e) {} // Fallback to raw URL if parsing fails
                   }
                   
                   triggerPolaroid(finalImgUrl, "Live from the Sleigh!");
