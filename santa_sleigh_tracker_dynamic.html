@@ -751,36 +751,42 @@
 
       // ⭐ ELF CAM POLAROID ENGINE
         function triggerPolaroid(imgSrc, captionText = "Live from the Sleigh!") {
-          if (!AppState.flags.pageVisible) return;
-          
-          const p = document.createElement("div");
-          p.className = "polaroid";
-          
-          const isMobile = window.innerWidth < 600;
-          const isLeft = Math.random() > 0.5; 
-          
-          if (!isMobile) {
-            p.style.left = isLeft ? (Math.random() * 10 + 2) + "%" : "auto";
-            p.style.right = !isLeft ? (Math.random() * 10 + 2) + "%" : "auto";
-            p.style.top = (Math.random() * 50 + 15) + "%"; 
-          } else {
-            p.style.left = isLeft ? "3%" : "auto";
-            p.style.right = !isLeft ? "3%" : "auto";
-            p.style.top = (Math.random() * 30 + 15) + "%"; 
-          }
+  if (!AppState.flags.pageVisible) return;
 
-          // Pre-calculate rotations safely in JS to avoid CSS calc() crashing
-          const rot = (Math.random() * 24 - 12);
-          p.style.setProperty("--rotStart", (rot * 2) + "deg");
-          p.style.setProperty("--rotMid", rot + "deg");
-          p.style.setProperty("--rotEnd", (rot * 0.5) + "deg");
-          
-          p.innerHTML = `<img src="${imgSrc}" alt="Elf Cam"><div class="polaroid-caption">${captionText}</div>`;
-          document.body.appendChild(p);
-          
-          // Stay on screen for 15 seconds now!
-          setTimeout(() => p.remove(), 15000);
-        }
+  const p = document.createElement("div");
+  p.className = "polaroid";
+
+  const isMobile = window.innerWidth < 600;
+  const isLeft = Math.random() > 0.5;
+
+  // Safe zone: clear the status bar at top and donate+controls bar at bottom
+  const TOP_SAFE    = 90;  // px — clears the status bar (~20px offset + ~60px height)
+  const BOTTOM_SAFE = isMobile ? 230 : 210; // px — clears donate button + info bar
+  const POLAROID_H  = isMobile ? 180 : 300; // px — approximate rendered height
+
+  const availableH = window.innerHeight - TOP_SAFE - BOTTOM_SAFE - POLAROID_H;
+  const safeTop = TOP_SAFE + (availableH > 0 ? Math.random() * availableH : 0);
+
+  // Horizontal — hug the sides, away from centre map content
+  if (isMobile) {
+    p.style.left  = isLeft ? "2%" : "auto";
+    p.style.right = isLeft ? "auto" : "2%";
+  } else {
+    p.style.left  = isLeft ? (Math.random() * 6 + 1) + "%" : "auto";
+    p.style.right = isLeft ? "auto" : (Math.random() * 6 + 1) + "%";
+  }
+
+  p.style.top = safeTop + "px";
+
+  const rot = Math.random() * 24 - 12;
+  p.style.setProperty("--rotStart", (rot * 2) + "deg");
+  p.style.setProperty("--rotMid",   rot + "deg");
+  p.style.setProperty("--rotEnd",   (rot * 0.5) + "deg");
+
+  p.innerHTML = `<img src="${imgSrc}" alt="Elf Cam"><div class="polaroid-caption">${captionText}</div>`;
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 15000);
+}
         
       async function updateTracker() {
         try {
