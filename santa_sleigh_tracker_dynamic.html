@@ -761,14 +761,14 @@
               if (AppState.flags.pageVisible) {
                   AppState.vars.lastElfCamUrl = rawElfCamUrl; 
                   
-                  // ⭐ BULLETPROOF FIX: Convert Google Drive links into high-speed thumbnails
+                  // ⭐ BULLETPROOF FIX: Convert to raw download link
                   let finalImgUrl = rawElfCamUrl;
                   if (finalImgUrl.includes("drive.google.com")) {
                       try {
                           const urlObj = new URL(finalImgUrl);
                           const fileId = urlObj.searchParams.get("id");
                           if (fileId) {
-                              finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+                              finalImgUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
                           }
                       } catch(e) {} 
                   }
@@ -1202,29 +1202,18 @@
 
         // ⭐ THE "DISNEY MAGIC" AMBIENT WAVES
         function triggerAmbientWave() {
-          // 1. Make sure we actually have a fresh GPS signal!
           const isGpsActive = AppState.lastFix !== null && AppState.vars.staleSince === null;
-
-          // 2. Only show waves if they are looking at the page, not on a kiosk, AND Santa is live.
           if (AppState.flags.pageVisible && !AppState.flags.isKiosk && isGpsActive) {
             const wave = document.createElement("div");
             wave.textContent = "👋";
             wave.className = "wave-emoji";
-            
-            // Random horizontal position (between 10% and 90% of screen width)
             wave.style.left = Math.floor(Math.random() * 80 + 10) + "vw";
-            // Start near the bottom of the screen
             wave.style.bottom = "120px"; 
-            
-            // Make them slightly smaller and softer than the user's own wave
             wave.style.fontSize = "2.5em";
             wave.style.opacity = "0.7"; 
-            
             document.body.appendChild(wave);
             setTimeout(() => wave.remove(), 2000);
           }
-
-          // Pick a random time between 15s and 40s for the next one
           const nextDelay = Math.floor(Math.random() * (40000 - 15000 + 1)) + 15000;
           setTimeout(triggerAmbientWave, nextDelay);
         }
@@ -1249,18 +1238,21 @@
             p.style.top = (Math.random() * 30 + 15) + "%"; 
           }
 
-          const rot = (Math.random() * 24 - 12) + "deg";
-          p.style.setProperty("--rot", rot);
+          // Pre-calculate rotations safely in JS to avoid CSS calc() crashing
+          const rot = (Math.random() * 24 - 12);
+          p.style.setProperty("--rotStart", (rot * 2) + "deg");
+          p.style.setProperty("--rotMid", rot + "deg");
+          p.style.setProperty("--rotEnd", (rot * 0.5) + "deg");
           
           p.innerHTML = `<img src="${imgSrc}" alt="Elf Cam"><div class="polaroid-caption">${captionText}</div>`;
           document.body.appendChild(p);
           
-          setTimeout(() => p.remove(), 8500);
+          // Stay on screen for 15 seconds now!
+          setTimeout(() => p.remove(), 15000);
         }
         
         // Kick off the loop 5 to 10 seconds after the page loads
         setTimeout(triggerAmbientWave, Math.floor(Math.random() * 5000) + 5000);
-
         document.getElementById("modalCancelBtn").addEventListener("click", () => {
            document.getElementById("emailModal").style.display = "none";
            AppState.dom.statusBox.textContent = "Tap the pin to try again";
