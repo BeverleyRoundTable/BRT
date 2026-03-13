@@ -897,12 +897,8 @@
           // PA SYSTEM OVERRIDE: Use the settings we fetched at the top of the loop
           const liveMsg = latestApiData.settings?.live_announcement;
 
-          // PA SYSTEM OVERRIDE: If an announcement exists, it takes over the box.
           if (liveMsg && liveMsg.trim() !== "") {
             AppState.dom.statusBox.textContent = `📢 ${liveMsg}`;
-            AppState.dom.statusBox.classList.add("is-announcement");
-            setDimUI(false); 
-          } else {
             AppState.dom.statusBox.classList.add("is-announcement");
             setDimUI(false); 
           } else {
@@ -932,35 +928,6 @@
               setDimUI(false);
             }
           }
-
-          // Browser Notification
-          if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) {
-             const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.vars.notifyLatLng);
-             const isSmartEta = (etaSeconds !== null && etaSeconds < 180);
-             const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600);
-             if (isSmartEta || isCloseFallback) {
-                AppState.flags.browserNotified = true;
-                sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1");
-                fireBrowserNotification("🎅 Santa is nearly here!", "He's approaching your location! 🎄");
-             }
-          }
-
-          if (AppState.flags.firstFix) {
-             const zoom = AppState.flags.isKiosk ? 15 : 16;
-             AppState.map.setView(visualPos, zoom);
-             AppState.flags.firstFix = false;
-          }
-
-        } catch (e) {
-          if (AppState.lastFix) {
-            animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
-            AppState.dom.statusBox.textContent = "🎅 Santa is nearby…";
-            AppState.dom.statusDot.style.display = "none";
-            setDimUI(false);
-          }
-        }
-        setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
-      }
 
           // Browser Notification
           if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) {
