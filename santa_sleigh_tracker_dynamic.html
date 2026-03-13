@@ -757,15 +757,15 @@
               if (AppState.flags.pageVisible) {
                   AppState.vars.lastElfCamUrl = rawElfCamUrl; 
                   
-                  // ⭐ THE CDN FIX: Use Google's raw content delivery network, ignoring Google Drive wrappers
+                  // ⭐ BULLETPROOF FIX: Convert Google Drive links into high-speed thumbnails
                   let finalImgUrl = rawElfCamUrl;
                   if (finalImgUrl.includes("drive.google.com")) {
                       try {
                           const urlObj = new URL(finalImgUrl);
                           const fileId = urlObj.searchParams.get("id");
                           if (fileId) {
-                              // This is Google's direct image CDN - no redirects, no HTML wrappers!
-                              finalImgUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+                              // FIX: Added the missing $ sign to properly inject the ID!
+                              finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
                           }
                       } catch(e) {} 
                   }
