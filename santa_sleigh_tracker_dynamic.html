@@ -234,12 +234,13 @@
       position: fixed;
       background: #fff;
       padding: 8px 8px 24px 8px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      z-index: 3000;
-      pointer-events: none; /* User can swipe the map right through the image */
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      z-index: 9000; /* Brought to the very front */
+      pointer-events: none; 
       opacity: 0;
-      animation: polaroidFade 8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      max-width: 220px;
+      /* Increased time to 15 seconds so you don't miss it! */
+      animation: polaroidFade 15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      max-width: 280px;
       border-radius: 4px;
     }
     .polaroid img {
@@ -248,25 +249,28 @@
       display: block;
       border-radius: 2px;
       border: 1px solid rgba(0,0,0,0.1);
+      min-height: 150px; /* Ensures a white box appears even if image is loading */
+      background: #f0f0f0;
     }
     .polaroid-caption {
       color: #111;
       font-family: 'Open Sans', sans-serif;
       font-weight: 900;
-      font-size: 0.9em;
+      font-size: 1.0em;
       text-align: center;
       margin-top: 10px;
       letter-spacing: 0.5px;
     }
+    /* Removed complex calc() math so it doesn't crash older browsers */
     @keyframes polaroidFade {
-      0% { opacity: 0; transform: scale(0.6) translateY(40px) rotate(calc(var(--rot) * 2)); }
-      10% { opacity: 1; transform: scale(1) translateY(0) rotate(var(--rot)); }
-      85% { opacity: 1; transform: scale(1) translateY(0) rotate(var(--rot)); }
-      100% { opacity: 0; transform: scale(0.9) translateY(-30px) rotate(calc(var(--rot) * 0.5)); }
+      0% { opacity: 0; transform: scale(0.6) translateY(40px) rotate(var(--rotStart)); }
+      10% { opacity: 1; transform: scale(1) translateY(0) rotate(var(--rotMid)); }
+      85% { opacity: 1; transform: scale(1) translateY(0) rotate(var(--rotMid)); }
+      100% { opacity: 0; transform: scale(0.9) translateY(-30px) rotate(var(--rotEnd)); }
     }
     @media (max-width: 600px) {
-      .polaroid { max-width: 130px; padding: 5px 5px 16px 5px; }
-      .polaroid-caption { font-size: 0.75em; margin-top: 6px; }
+      .polaroid { max-width: 160px; padding: 5px 5px 16px 5px; }
+      .polaroid-caption { font-size: 0.85em; margin-top: 6px; }
     }
     
   </style>
