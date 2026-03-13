@@ -749,6 +749,39 @@
         try { new Notification(title, { body, icon: AppConfig.ICONS.BROWSER_ICON, requireInteraction: true }); } catch (e) {}
       }
 
+      // ⭐ ELF CAM POLAROID ENGINE
+        function triggerPolaroid(imgSrc, captionText = "Live from the Sleigh!") {
+          if (!AppState.flags.pageVisible) return;
+          
+          const p = document.createElement("div");
+          p.className = "polaroid";
+          
+          const isMobile = window.innerWidth < 600;
+          const isLeft = Math.random() > 0.5; 
+          
+          if (!isMobile) {
+            p.style.left = isLeft ? (Math.random() * 10 + 2) + "%" : "auto";
+            p.style.right = !isLeft ? (Math.random() * 10 + 2) + "%" : "auto";
+            p.style.top = (Math.random() * 50 + 15) + "%"; 
+          } else {
+            p.style.left = isLeft ? "3%" : "auto";
+            p.style.right = !isLeft ? "3%" : "auto";
+            p.style.top = (Math.random() * 30 + 15) + "%"; 
+          }
+
+          // Pre-calculate rotations safely in JS to avoid CSS calc() crashing
+          const rot = (Math.random() * 24 - 12);
+          p.style.setProperty("--rotStart", (rot * 2) + "deg");
+          p.style.setProperty("--rotMid", rot + "deg");
+          p.style.setProperty("--rotEnd", (rot * 0.5) + "deg");
+          
+          p.innerHTML = `<img src="${imgSrc}" alt="Elf Cam"><div class="polaroid-caption">${captionText}</div>`;
+          document.body.appendChild(p);
+          
+          // Stay on screen for 15 seconds now!
+          setTimeout(() => p.remove(), 15000);
+        }
+        
       async function updateTracker() {
         try {
           // ⭐ NEW: Fetch settings FIRST so Elf Cam works even when Santa is in Lapland
@@ -1216,39 +1249,6 @@
           }
           const nextDelay = Math.floor(Math.random() * (40000 - 15000 + 1)) + 15000;
           setTimeout(triggerAmbientWave, nextDelay);
-        }
-
-        // ⭐ ELF CAM POLAROID ENGINE
-        function triggerPolaroid(imgSrc, captionText = "Live from the Sleigh!") {
-          if (!AppState.flags.pageVisible) return;
-          
-          const p = document.createElement("div");
-          p.className = "polaroid";
-          
-          const isMobile = window.innerWidth < 600;
-          const isLeft = Math.random() > 0.5; 
-          
-          if (!isMobile) {
-            p.style.left = isLeft ? (Math.random() * 10 + 2) + "%" : "auto";
-            p.style.right = !isLeft ? (Math.random() * 10 + 2) + "%" : "auto";
-            p.style.top = (Math.random() * 50 + 15) + "%"; 
-          } else {
-            p.style.left = isLeft ? "3%" : "auto";
-            p.style.right = !isLeft ? "3%" : "auto";
-            p.style.top = (Math.random() * 30 + 15) + "%"; 
-          }
-
-          // Pre-calculate rotations safely in JS to avoid CSS calc() crashing
-          const rot = (Math.random() * 24 - 12);
-          p.style.setProperty("--rotStart", (rot * 2) + "deg");
-          p.style.setProperty("--rotMid", rot + "deg");
-          p.style.setProperty("--rotEnd", (rot * 0.5) + "deg");
-          
-          p.innerHTML = `<img src="${imgSrc}" alt="Elf Cam"><div class="polaroid-caption">${captionText}</div>`;
-          document.body.appendChild(p);
-          
-          // Stay on screen for 15 seconds now!
-          setTimeout(() => p.remove(), 15000);
         }
         
         // Kick off the loop 5 to 10 seconds after the page loads
