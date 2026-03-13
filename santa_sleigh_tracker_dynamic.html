@@ -750,10 +750,24 @@
           // ⭐ NEW: Fetch settings FIRST so Elf Cam works even when Santa is in Lapland
           const latestApiData = await Utils.loadJSON(AppState.vars.apiUrl);
           
-          const elfCamUrl = latestApiData.settings?.elf_cam_url;
-          if (elfCamUrl && elfCamUrl !== AppState.vars.lastElfCamUrl && Utils.isValidImageUrl(elfCamUrl)) {
-              AppState.vars.lastElfCamUrl = elfCamUrl; 
-              triggerPolaroid(elfCamUrl, "Live from the Sleigh!");
+          const rawElfCamUrl = latestApiData.settings?.elf_cam_url;
+          
+          // Only trigger if there is a new URL AND the user is currently looking at the tab
+          if (rawElfCamUrl && rawElfCamUrl !== AppState.vars.lastElfCamUrl && Utils.isValidImageUrl(rawElfCamUrl)) {
+              if (AppState.flags.pageVisible) {
+                  AppState.vars.lastElfCamUrl = rawElfCamUrl; 
+                  
+                  // ⭐ FIX: Convert Google Drive links into raw image thumbnails so the browser doesn't block them
+                  let finalImgUrl = rawElfCamUrl;
+                  if (finalImgUrl.includes("drive.google.com/uc")) {
+                      const match = finalImgUrl.match(/id=([^&]+)/);
+                      if (match && match[1]) {
+                          finalImgUrl = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+                      }
+                  }
+                  
+                  triggerPolaroid(finalImgUrl, "Live from the Sleigh!");
+              }
           }
 
           // ⭐ NORMAL GPS LOGIC
