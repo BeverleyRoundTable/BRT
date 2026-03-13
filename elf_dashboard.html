@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sleigh Dashboard - Elf Cam</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #1D1D1A; color: #fff; font-family: 'Open Sans', sans-serif;
+      margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center;
+      text-align: center;
+    }
+    h1 { color: #FBAF33; margin-bottom: 5px; }
+    p { color: rgba(255,255,255,0.7); font-size: 0.9em; margin-bottom: 20px; }
+    
+    /* Video stream hidden from view to save battery, but kept active in DOM */
+    #video { display: none; }
+    #canvas { display: none; }
+    
+    .status-box {
+      background: #262622; border: 1px solid rgba(255,255,255,0.1);
+      padding: 15px; border-radius: 12px; width: 100%; max-width: 320px;
+      margin-bottom: 20px;
+    }
+    .status-indicator { font-weight: 900; font-size: 1.2em; color: #f44336; }
+    .status-indicator.active { color: #4caf50; animation: pulse 2s infinite; }
+    
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .btn {
+      background: #FBAF33; color: #000; border: none; padding: 18px 30px;
+      font-size: 1.2em; font-weight: 900; border-radius: 16px; cursor: pointer;
+      width: 100%; max-width: 320px; text-transform: uppercase;
+      box-shadow: 0 4px 15px rgba(251, 175, 51, 0.4); transition: transform 0.1s;
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn.stop { background: #f44336; box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4); color: white; }
+
+    #preview { margin-top: 20px; width: 100%; max-width: 320px; border-radius: 8px; border: 2px solid #333; display: none; }
+    
+    #log { margin-top: 15px; font-size: 0.8em; color: #aaa; height: 60px; overflow: hidden; }
+  </style>
+</head>
+<body>
+
+  <h1>Sleigh Dashboard</h1>
+  <p>Mount phone to dashboard. Keep this page open.</p>
+
+  <div class="status-box">
+    <div>Elf Cam Status</div>
+    <div class="status-indicator" id="statusText">OFFLINE</div>
+  </div>
+
+  <button class="btn" id="startBtn">▶ Start Auto-Camera</button>
+
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <img id="preview" alt="Last Photo Snapped">
+
+  <div id="log">Waiting to start...</div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const startBtn = document.getElementById('startBtn');
+    const statusText = document.getElementById('statusText');
+    const preview = document.getElementById('preview');
+    const log = document.getElementById('log');
+
+    let stream = null;
+    let captureInterval = null;
+    const SNAP_INTERVAL_MS = 60000; // Takes a photo every 60 seconds
+
+    // Grab the API URL from memory, just like the tracker does
+    const params = new URLSearchParams(location.search);
+    const apiUrl = params.get("api") || localStorage.getItem("SANTA_API");
+
+    if (!apiUrl) {
+      log.innerText = "❌ ERROR: No API URL found. Open the main tracker link first!";
+      startBtn.disabled = true;
+      startBtn.style.opacity = 0.5;
+    } else {
+      localStorage.setItem("SANTA_API", apiUrl);
+    }
+
+    function addLog(msg) {
+      log.innerText = msg;
+      console.log(msg);
+    }
+
+    async function startCamera() {
+      try {
+        // Request the rear camera
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream;
+        
+        statusText.innerText = "🟢 BROADCASTING";
+        statusText.className = "status-indicator active";
+        startBtn.innerText = "🛑 Stop Camera";
+        startBtn.classList.add("stop");
+        
+        addLog("Camera started. First photo snapping in 5s...");
+        
+        // Take the first picture quickly, then start the loop
+        setTimeout(snapAndUpload, 5000);
+        captureInterval = setInterval(snapAndUpload, SNAP_INTERVAL_MS);
+
+      } catch (err) {
+        addLog("❌ Camera Error: " + err.message);
+        alert("Could not access camera. Make sure permissions are granted!");
+      }
+    }
+
+    function stopCamera() {
+      if (stream) { stream.getTracks().forEach(track => track.stop()); }
+      clearInterval(captureInterval);
+      
+      statusText.innerText = "OFFLINE";
+      statusText.className = "status-indicator";
+      startBtn.innerText = "▶ Start Auto-Camera";
+      startBtn.classList.remove("stop");
+      addLog("Camera stopped.");
+    }
+
+    async function snapAndUpload() {
+      if (!stream) return;
+      addLog("📸 Snapping photo...");
+
+      // Set canvas size to video size
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Compress the image to JPEG (0.6 quality) to save data/speed up upload
+      const base64Image = canvas.toDataURL('image/jpeg', 0.6);
+      
+      // Show local preview
+      preview.src = base64Image;
+      preview.style.display = "block";
+
+      addLog("☁ Uploading to Google Sheet...");
+
+      try {
+        // Send it precisely matching your existing doPost logic
+        const payload = {
+          action: "uploadElfCam",
+          imageData: base64Image
+        };
+
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (data.ok) {
+          addLog("✅ Upload Success! Next photo in 60s.");
+        } else {
+          addLog("❌ Upload Failed: " + data.error);
+        }
+      } catch (err) {
+        addLog("❌ Network Error during upload.");
+      }
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (statusText.innerText === "OFFLINE") { startCamera(); } 
+      else { stopCamera(); }
+    });
+  </script>
+</body>
+</html>
