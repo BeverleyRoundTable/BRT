@@ -750,9 +750,23 @@
             const snap = snapToGpxIndex(visualPos, AppConfig.GPX);
             if (snap && snap.distance < 50) { visualPos = snap.point; }
             else { visualPos = { lat: data.lat, lng: data.lng }; }
+            
+            // ⭐ PAC-MAN ROUTE ERASER
+            if (AppState.dynamicRouteRemainingMain) {
+              const idx = AppState.vars.lastSnapIndex;
+              // Slice the GPX array into two halves at his current location
+              const completedPts = AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lat, p.lng]);
+              const remainingPts = AppState.gpxRoute.slice(idx).map(p => [p.lat, p.lng]);
+              
+              // Instantly update the lines on the map
+              AppState.dynamicRouteCompleted.setLatLngs(completedPts);
+              AppState.dynamicRouteRemainingMain.setLatLngs(remainingPts);
+              AppState.dynamicRouteRemainingGlow.setLatLngs(remainingPts);
+            }
           }
 
           animateMarkerTo(visualPos.lat, visualPos.lng);
+          
           pushFix(data.lat, data.lng, Date.now());
 
           // --------------------------------------------------------
@@ -967,15 +981,16 @@
           .setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
 
         AppState.map.on("zoomend", () => {
-          if (!AppState.routeMainLayer || !AppState.routeGlowLayer) return;
+          if (!AppState.dynamicRouteRemainingMain) return;
 
           const z = AppState.map.getZoom();
 
           const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3;
           const glowWeight = mainWeight + 3;
 
-          AppState.routeMainLayer.setStyle({ weight: mainWeight });
-          AppState.routeGlowLayer.setStyle({ weight: glowWeight });
+          AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight });
+          AppState.dynamicRouteCompleted.setStyle({ weight: mainWeight });
+          AppState.dynamicRouteRemainingGlow.setStyle({ weight: glowWeight });
         });
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(AppState.map);
@@ -991,39 +1006,29 @@
            AppState.dom.donateBox.style.display = "none";
         }
 
-        // ── GPX ROUTE LAYERS ──
-        if (route && AppState.flags.gpxLoaded) {
-          // 🟡 Gold glow (bottom)
-          AppState.routeGlowLayer = new L.GPX(route.gpxUrl, {
-            async: true,
-            polyline_options: { color: "#ffd700", weight: 7, opacity: 0.45 },
-            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
-          }).addTo(AppState.map);
+        // ── DYNAMIC PAC-MAN ROUTE LAYERS ──
+        if (route && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 0) {
+          const allLatLngs = AppState.gpxRoute.map(p => [p.lat, p.lng]);
+          
+          // ⚪ Completed Route (Grey, dashed line showing where he's been)
+          AppState.dynamicRouteCompleted = L.polyline([], { color: "#808080", weight: 4, opacity: 0.5, dashArray: "8, 8" }).addTo(AppState.map);
+          
+          // 🟡 Upcoming Gold glow (bottom)
+          AppState.dynamicRouteRemainingGlow = L.polyline(allLatLngs, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(AppState.map);
+          
+          // 🔴 Upcoming Red route (top)
+          AppState.dynamicRouteRemainingMain = L.polyline(allLatLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(AppState.map);
 
-          // 🔴 Red route (top)
-          AppState.routeMainLayer = new L.GPX(route.gpxUrl, {
-            async: true,
-            polyline_options: { color: "#d31c1c", weight: 4, opacity: 0.95 },
-            marker_options: {
-              startIcon: L.icon({
-                iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START,
-                iconSize: [48, 48],
-                iconAnchor: [24, 48],
-                shadowUrl: null
-              }),
-              endIcon: L.icon({
-                iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END,
-                iconSize: [48, 48],
-                iconAnchor: [24, 48],
-                shadowUrl: null
-              }),
-              shadowUrl: null
-            }
-          }).addTo(AppState.map);
+          // 🏁 Start/End Icons
+          const startPt = AppState.gpxRoute[0];
+          const endPt = AppState.gpxRoute[AppState.gpxRoute.length - 1];
 
-          AppState.routeMainLayer.on("loaded", () => { AppState.map.fire("zoomend"); });
+          L.marker([startPt.lat, startPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map);
+          L.marker([endPt.lat, endPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map);
+          
+          AppState.map.fire("zoomend");
         }
-
+        
         if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
           const span = document.createElement('span');
           span.textContent = 'Proudly sponsored by';
