@@ -413,7 +413,7 @@ function render(data) {
   const socialReach = s.wrap_social_reach || s.wrap_facebook_reach || s.sponsor_pack_facebook_reach || '';
   const webViews = s.wrap_website_views || s.sponsor_pack_website_views || '';
   const peakViewers = s.wrap_peak_viewers || '';
-  const totalWaves = s.season_total_waves || '';
+  const totalWaves = s.season_total_waves || '';  // ⭐ Wave count accumulated by cleanupOldWaves_
   const highlight = s.wrap_highlight || '';
 
   // Sorted completed routes by date
@@ -430,7 +430,7 @@ function render(data) {
   const dateRange = firstDate && lastDate ? `${firstDate} — ${lastDate}` : '';
 
   // Has digital stats?
-  const hasDigital = totalViews || socialFollowers || socialReach || webViews || desktopMobile || popularRoute || totalWaves;
+  const hasDigital = totalViews || socialFollowers || socialReach || webViews || desktopMobile || popularRoute || peakViewers || totalWaves;
 
   // Build
   let h = '';
