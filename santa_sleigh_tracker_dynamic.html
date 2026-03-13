@@ -757,18 +757,20 @@
               if (AppState.flags.pageVisible) {
                   AppState.vars.lastElfCamUrl = rawElfCamUrl; 
                   
-                  // ⭐ BULLETPROOF FIX: Convert Google Drive links into raw image thumbnails
+                  // ⭐ THE CDN FIX: Use Google's raw content delivery network, ignoring Google Drive wrappers
                   let finalImgUrl = rawElfCamUrl;
                   if (finalImgUrl.includes("drive.google.com")) {
                       try {
                           const urlObj = new URL(finalImgUrl);
                           const fileId = urlObj.searchParams.get("id");
                           if (fileId) {
-                              finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+                              // This is Google's direct image CDN - no redirects, no HTML wrappers!
+                              finalImgUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
                           }
-                      } catch(e) {} // Fallback to raw URL if parsing fails
+                      } catch(e) {} 
                   }
                   
+                  console.log("📸 Displaying Elf Cam:", finalImgUrl);
                   triggerPolaroid(finalImgUrl, "Live from the Sleigh!");
               }
           }
