@@ -55,14 +55,17 @@
     body::after { content:''; position:fixed; inset:0; background:radial-gradient(circle,transparent 40%,rgba(0,0,0,0.6) 100%); pointer-events:none; opacity:0; transition:opacity 1.5s ease; z-index:1400; }
     body.snowing::after { opacity:1; }
 
-    /* ── DYNAMIC STATUS BOX ── */
+        /* ── DYNAMIC STATUS BOX ── */
     .status-popup { 
       position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
-      background: rgba(29, 29, 26, 0.95); border: 1px solid var(--border);
-      color: var(--text); padding: 14px 20px; font-size: 1.05em; font-weight: 800; 
-      border-radius: 16px; max-width: 90%; box-shadow: 0 4px 24px rgba(0,0,0,0.6); 
+      background: rgba(29, 29, 26, 0.95); /* Matched exactly to the bottom bars */
+      border: 1px solid var(--border);
+      color: var(--text); padding: 12px 18px; font-size: 1.05em; font-weight: 800; 
+      border-radius: 14px; /* Matched the 14px radius of your bottom bars */
+      max-width: 90%; box-shadow: 0 4px 24px rgba(0,0,0,0.5); 
       z-index: 4000; text-align: center; transition: all 0.4s ease; line-height: 1.4;
     }
+
     .status-popup.is-announcement {
       background: rgba(29, 29, 26, 0.95) !important; color: var(--rt-gold) !important; 
       border: 1px solid var(--rt-gold) !important; font-weight: 900 !important;
