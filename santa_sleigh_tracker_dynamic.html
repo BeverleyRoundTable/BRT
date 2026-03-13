@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Santa Sleigh Tracker</title>
   
-  <link rel="manifest" href="manifest.json">
+  <link id="dynamic-manifest" rel="manifest" href="">
   <meta name="theme-color" content="#1D1D1A">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png">
   
@@ -276,6 +276,36 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
 
+      // ⭐ DYNAMIC MANIFEST: Bake the exact current URL into the installed app
+      const dynamicManifest = {
+        "name": "Santa Sleigh Tracker",
+        "short_name": "Santa Tracker",
+        "description": "Live GPS tracking for the local Round Table Santa Sleigh.",
+        "start_url": window.location.href, // <--- MAGIC: Captures the ?api= parameter!
+        "display": "standalone",
+        "background_color": "#1D1D1A",
+        "theme_color": "#FBAF33",
+        "icons": [
+          {
+            "src": "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png", 
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+          },
+          {
+            "src": "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+          }
+        ]
+      };
+      
+      // Convert the JSON into a readable file for the browser
+      const manifestBlob = new Blob([JSON.stringify(dynamicManifest)], { type: 'application/json' });
+      const manifestUrl = URL.createObjectURL(manifestBlob);
+      document.getElementById('dynamic-manifest').setAttribute('href', manifestUrl);
+      
       // FIX 4: Detect iOS and show the new installation prompt
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
