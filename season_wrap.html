@@ -329,7 +329,11 @@
   .snapshot-btn.saved { background: #22c55e; color: #000; border-color: #22c55e; cursor: default; }
   .snapshot-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* ── YEAR-ON-YEAR COMPARISON ── */
+  /* ── DESKTOP ENHANCEMENTS ── */
+  @media (min-width: 1100px) {
+    .comparison-grid { grid-template-columns: repeat(3, 1fr); }
+    .hero-stats { grid-template-columns: repeat(4, 1fr); }
+  }
   .comparison-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -367,11 +371,78 @@
   .no-history code { background: var(--surface-2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em; }
 
   @media (max-width: 800px) {
-    .comparison-grid { grid-template-columns: 1fr; }
+    .hero-stats { grid-template-columns: repeat(2, 1fr); }
+    .reach-row { grid-template-columns: repeat(2, 1fr); }
+    .report { padding: 70px 20px 40px; }
+    .report-title { font-size: 2.2em; }
+    .comparison-grid { grid-template-columns: repeat(2, 1fr); }
   }
+
   @media (max-width: 500px) {
-    .hero-stats { grid-template-columns: 1fr; }
+    /* Print bar — stack buttons on small screens */
+    .print-bar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 16px;
+    }
+    .print-bar-title { font-size: 0.78em; }
+    .print-bar > div { width: 100%; display: flex; gap: 8px; }
+    .print-bar > div .snapshot-btn,
+    .print-bar > div .print-btn {
+      flex: 1;
+      text-align: center;
+      margin-right: 0;
+      padding: 10px 8px;
+      font-size: 0.78em;
+    }
+
+    /* Hero stats single column */
+    .hero-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .hero-stat { padding: 20px 12px; }
+    .hero-stat .number { font-size: 2em; }
+
+    /* Report header */
     .report-title { font-size: 1.8em; }
+    .report-header { padding: 80px 24px 48px; min-height: 320px; }
+    .report-logo { width: 60px; height: 60px; }
+
+    /* Report body */
+    .report { padding: 60px 16px 40px; }
+    .section { margin-top: 40px; }
+    .section-head h2 { font-size: 1.2em; }
+
+    /* Donations */
+    .donation-bar-wrap { padding: 20px 16px; }
+    .donation-labels { font-size: 0.8em; }
+
+    /* Route table — hide streets column on mobile */
+    .route-table .route-streets { display: none; }
+    .route-table td, .route-table th { padding: 10px 10px; font-size: 0.82em; }
+
+    /* Reach grid single column */
+    .reach-row { grid-template-columns: 1fr; }
+    .reach-item { padding: 20px 16px; }
+
+    /* Highlight quote */
+    .highlight-quote { padding: 20px 20px; font-size: 1em; }
+
+    /* Charts — single column, shorter height */
+    .comparison-grid { grid-template-columns: 1fr; gap: 12px; }
+    .chart-card { padding: 16px; }
+    .chart-card canvas { max-height: 120px; }
+
+    /* Sponsors */
+    .sponsor-card { min-width: 140px; padding: 16px 20px; }
+
+    /* Footer */
+    .report-footer { padding: 32px 0 16px; font-size: 0.72em; }
+  }
+
+  /* Tablet tweaks */
+  @media (min-width: 501px) and (max-width: 800px) {
+    .route-table .route-streets { display: none; }
+    .chart-card canvas { max-height: 140px; }
   }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -811,6 +882,7 @@ function render(data) {
       cfg.charts.forEach(c => {
         const canvas = document.getElementById(c.id);
         if (!canvas) return;
+        const isMobile = window.innerWidth < 500;
         new Chart(canvas, {
           type: 'bar',
           data: {
@@ -826,20 +898,22 @@ function render(data) {
           },
           options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
               x: {
-                ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 11, weight: '700' } },
+                ticks: { color: 'rgba(255,255,255,0.5)', font: { size: isMobile ? 10 : 11, weight: '700' } },
                 grid: { color: 'rgba(255,255,255,0.05)' }
               },
               y: {
-                ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } },
+                ticks: { color: 'rgba(255,255,255,0.5)', font: { size: isMobile ? 9 : 10 } },
                 grid: { color: 'rgba(255,255,255,0.05)' },
                 beginAtZero: true
               }
             }
           }
         });
+        canvas.parentElement.style.height = isMobile ? '140px' : '180px';
       });
     } catch(e) { console.warn('Chart render error:', e); }
   }
