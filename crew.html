@@ -48,6 +48,26 @@
     opacity: 0.8;   
   }
 
+  /* ── CREW ALERT BANNER ── */
+  .crew-alert {
+    display: none;
+    background: var(--red);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    animation: alertPulse 1.5s infinite;
+  }
+  .crew-alert.active { display: flex; align-items: center; gap: 12px; }
+  @keyframes alertPulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.85; }
+  }
+  .crew-alert-icon { font-size: 1.4em; flex-shrink: 0; }
+  .crew-alert-text { font-size: 0.95em; font-weight: 700; color: #fff; line-height: 1.4; }
+  .crew-alert-label {
+    font-size: 0.65em; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.1em; color: rgba(255,255,255,0.75); display: block; margin-bottom: 2px;
+  }
+
   /* ── TABS ── */
   .format-row {
     display: flex; gap: 8px; margin-bottom: 24px; justify-content: center;
@@ -160,6 +180,15 @@
   </div>
 
   <div id="mainApp" style="display: none;">
+
+    <!-- ── CREW ALERT BANNER — always visible above tabs ── -->
+    <div id="crewAlertBanner" class="crew-alert">
+      <div class="crew-alert-icon">🔔</div>
+      <div class="crew-alert-text">
+        <span class="crew-alert-label">Message from Lead Elf</span>
+        <span id="crewAlertText"></span>
+      </div>
+    </div>
     
     <div class="format-row">
       <button class="format-btn active" data-target="signup" onclick="switchTab(this)">📝 Sign Up</button>
@@ -275,7 +304,7 @@
 
 <script>
 const API = new URLSearchParams(location.search).get('api') || '';
-let globalDonateUrl = ""; // ⭐ Saves the donation link
+let globalDonateUrl = "";
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!API) {
@@ -293,8 +322,11 @@ async function init() {
     
     if(!data.routes) throw new Error("Invalid API response");
 
-    // ⭐ Grab the donate URL from the settings response
     globalDonateUrl = data.settings?.donate_url || "";
+
+    // ── CREW ALERT: read on init and start polling ──
+    updateCrewAlertBanner(data.settings?.crew_alert || '');
+    setInterval(pollCrewAlert, 30000);
 
     populateRouteDropdowns(data.routes);
     
@@ -306,7 +338,30 @@ async function init() {
   }
 }
 
-// ⭐ NEW QR LOGIC
+// ── CREW ALERT FUNCTIONS ──
+
+function updateCrewAlertBanner(msg) {
+  const banner = document.getElementById('crewAlertBanner');
+  const text = document.getElementById('crewAlertText');
+  if (!banner || !text) return;
+  if (msg && msg.trim() !== '') {
+    text.textContent = msg.trim();
+    banner.classList.add('active');
+  } else {
+    banner.classList.remove('active');
+  }
+}
+
+async function pollCrewAlert() {
+  if (document.visibilityState !== 'visible') return;
+  try {
+    const res = await fetch(`${API}?function=getRoutes`);
+    const data = await res.json();
+    updateCrewAlertBanner(data.settings?.crew_alert || '');
+  } catch(e) { /* silent fail — don't disrupt the crew */ }
+}
+
+// ── QR LOGIC ──
 function openFullQR() {
   if (!globalDonateUrl) {
     alert("No donation URL is set in your Settings sheet!");
