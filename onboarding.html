@@ -709,17 +709,17 @@
         </thead>
         <tbody>
           <tr><td>Landing Page</td><td>Your starting point. Click the Dab Santa image to access all generated links, embeds, and tools.</td></tr>
-          <tr><td>Settings</td><td>Master key-value configuration store. Every setting the system reads lives here as a row (Column A = key, Column B = value). See the <a href="#settings-ref" style="color:var(--gold);">Settings Key Reference</a> for the full list.</td></tr>
+          <tr><td>Settings</td><td>Master configuration with three data areas: <strong>Col A/B</strong> = key-value store (all named settings), <strong>Col Q</strong> = route name list for the Donations Wizard dropdown, <strong>Col S</strong> = PA preset messages for God Mode. See the <a href="#settings-ref" style="color:var(--gold);">Settings Key Reference</a>.</td></tr>
           <tr><td>Analytics Dashboard</td><td>Visualises viewer behaviour, device types, and route popularity.</td></tr>
           <tr><td>Routes</td><td>Define nightly routes, dates, map images, GPX links, sponsor logos, and street lists. Also tracks <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">mp4Status</code> and <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">mp4Url</code> for the GPX Animator.</td></tr>
           <tr><td>Donations</td><td>Log offline cash/card donations. Tallying here drives automated crew emails.</td></tr>
-          <tr><td>Tracker</td><td>Firebase connection settings — <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">firebase_url</code>, <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">secret</code>, <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">firebase_db_secret</code>, and the generated GPS Logger URL.</td></tr>
+          <tr><td>Tracker</td><td>Firebase connection settings — <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">firebase_url</code>, <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">firebase_path</code> (defaults to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">/location/current</code>), <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">secret</code>, and <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">firebase_db_secret</code>. Cell B7 auto-generates the GPS Logger URL via formula — do not edit B7 manually.</td></tr>
           <tr><td>RoadLookup</td><td>Powers the Address Lookup embed — maps street names to route/date combinations so families can see when Santa is visiting.</td></tr>
-          <tr><td>Volunteers</td><td>Crew sign-up backend. Columns: Date, Route, Name, Role, Phone, <em>Email</em>, Organisation, Check-in Status, Bucket Number. Syncs with the Crew Portal and Operations Tab.</td></tr>
-          <tr><td>Checklist</td><td>Pre-flight safety checklist backend. Syncs in real-time from the Operations Tab on sleigh night.</td></tr>
+          <tr><td>Volunteers</td><td>Crew sign-up backend. <strong>Column A</strong> is auto-filled with a date VLOOKUP formula — do not edit. Data starts from <strong>Column B</strong>: RouteName, Volunteer Name, Role, Phone, Email, Organisation, Check-in Status, Bucket Number. Syncs with the Crew Portal and Operations Tab on sleigh night.</td></tr>
+          <tr><td>Checklist</td><td>Pre-flight safety checklist backend. Column A = RouteName. <strong>Column B</strong> is auto-filled with a date formula. Remaining columns are checklist item names. Syncs in real-time from the Operations Tab on sleigh night.</td></tr>
           <tr><td>Letters</td><td>Stores Letter to Santa submissions for moderation and social media content ideas.</td></tr>
-          <tr><td>Subscriber Heatmap</td><td>Stores and visualises subscriber pin locations across the route area.</td></tr>
-          <tr><td>Route Suggestions</td><td>Receives public heatmap pins from the post-season Suggest a Route tool for next year's planning.</td></tr>
+          <tr><td>Subscriber Heatmap</td><td>Permanently logs an anonymous lat/lng timestamp row every time someone subscribes for Santa notifications. Used by the AGM Heatmap tool (God Mode password protected). Three columns: timestamp, lat, lng.</td></tr>
+          <tr><td>Route Suggestions</td><td>Receives anonymous lat/lng pins from the post-season Suggest a Route tool. Three columns: timestamp, lat, lng. Used for next year's route planning heatmap.</td></tr>
           <tr><td>Season History</td><td>Stores one row per season snapshot (Year, Raised, Routes, Streets, Peak Viewers, Waves, Volunteers). Auto-created on first snapshot.</td></tr>
           <tr><td>Tracker Analytics</td><td>Syncs automatically from Firebase every 5 minutes with raw view events. Used by <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">GET_PEAK_VIEWERS</code> and the Analytics Dashboard.</td></tr>
           <tr><td>Advanced</td><td>Reserved for future configuration. Leave as-is unless instructed.</td></tr>
@@ -883,21 +883,27 @@
         </div>
       </div>
 
-      <p>In your Google Sheet menu, click <em>🎅 TurboSanta → Wizards</em> and follow the prompts.</p>
+      <p>In your Google Sheet menu, click <em>🎅 TurboSanta</em> — each wizard is listed directly in the menu. Click the one you need and follow the prompts.</p>
 
       <ul class="bullet-list">
+        <li><strong>🚀 Deployment Wizard</strong> — validates your web app deployment and saves the API URL.</li>
+        <li><strong>🏠 TurboSanta Home</strong> — onboarding health check dashboard showing critical issues and warnings.</li>
         <li><strong>Firebase Wizard</strong> — validates DB, generates GPS logger URLs, builds security rules, and silently sets up the 5-minute Analytics sync trigger and 1-minute notification checker.</li>
-        <li><strong>Routes (GPX) Wizard</strong> — configures your nightly route data.</li>
-        <li><strong>GPX Overlay / Animation Wizard</strong> — preps maps for animated route videos.</li>
-        <li><strong>Donations &amp; Carousel Wizards</strong> — sets up live progress bars and photo feeds.</li>
-        <li><strong>Road Lookup &amp; Sleigh Icons Wizards</strong> — configures street searching and map sprites.</li>
+        <li><strong>GPX Overlay Wizard</strong> — configures GPX overlay mode for the map.</li>
+        <li><strong>Routes Wizard</strong> — add, edit, or delete nightly routes.</li>
+        <li><strong>Donations Wizard</strong> — log route donation totals.</li>
+        <li><strong>Carousel Wizard</strong> — connects your Google Drive photo folder to the donation carousel embed.</li>
+        <li><strong>RoadLookup Wizard</strong> — installs the ARRAYFORMULA that powers the Address Lookup embed.</li>
+        <li><strong>Sleigh Icons Wizard</strong> — configure start/end/live marker icons and sleigh mode.</li>
+        <li><strong>🔄 Sync Tracker Analytics</strong> — manually pull the latest Firebase view events into the Tracker Analytics tab.</li>
+        <li><strong>🎬 MP4 Generator</strong> — trigger an animated route video render via GitHub Actions.</li>
       </ul>
 
       <div class="callout callout-info">
         <span class="callout-icon">ℹ️</span>
         <div class="callout-body">
           <strong>Background Triggers</strong>
-          <p>Saving your Firebase settings via the Firebase Wizard automatically creates two Apps Script triggers: a <em>1-minute trigger</em> for <code style="font-family:'DM Mono',monospace;font-size:12px;">checkSubscribersAndNotify</code> and a <em>5-minute trigger</em> for <code style="font-family:'DM Mono',monospace;font-size:12px;">syncTrackerAnalytics</code>. To verify: <em>Extensions → Apps Script → Triggers (clock icon)</em>. If either is missing, re-save your Firebase settings.</p>
+          <p>Saving your Firebase settings via the Firebase Wizard automatically creates two Apps Script triggers: a <em>1-minute trigger</em> for <code style="font-family:'DM Mono',monospace;font-size:12px;">checkSubscribersAndNotify</code> and a <em>5-minute trigger</em> for <code style="font-family:'DM Mono',monospace;font-size:12px;">syncTrackerAnalytics</code>. To verify: <em>Extensions → Apps Script → Triggers (clock icon on the left)</em>. If either is missing, re-save your Firebase settings via the Firebase Wizard. You can also trigger a manual sync at any time from <em>🎅 TurboSanta → 🔄 Sync Tracker Analytics</em>.</p>
         </div>
       </div>
     </section>
@@ -946,9 +952,21 @@
         <span class="callout-icon">ℹ️</span>
         <div class="callout-body">
           <strong>How the Settings Tab Works</strong>
-          <p>The Settings tab is a key-value store, not a column-based config sheet. Every setting is a row: <em>Column A</em> holds the key name, <em>Column B</em> holds the value. The API reads these by key name. See the full <a href="#settings-ref" style="color:var(--gold);">Settings Key Reference</a> below for every documented key.</p>
+          <p>The Settings tab has <em>three separate data areas</em>, not just one. Column A/B is the key-value store. Column Q and Column S hold additional list data used by specific features — do not delete or move these columns.</p>
         </div>
       </div>
+
+      <h3 class="sub-title">PA Presets (Column S)</h3>
+      <p>Column S of the Settings sheet (from S2 downwards) holds pre-written PA announcement messages. The API reads this column on every request and returns them as a <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">presets</code> array, which God Mode loads into a dropdown so your Lead Elf can fire canned announcements quickly without typing on a cold night.</p>
+      <ul class="bullet-list">
+        <li>Each cell in S2:S is one preset message — one per row.</li>
+        <li>Blank cells between entries are ignored.</li>
+        <li>These are separate from the public PA system's <em>live message</em> — presets are pre-loaded options; <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">live_announcement</code> is what's actively broadcasting.</li>
+        <li>Examples: <em>"Santa is running 10 minutes late — thank you for your patience!"</em> or <em>"Challenge: if we raise £50 in the next 5 minutes, the elves will do a dance!"</em></li>
+      </ul>
+
+      <h3 class="sub-title">Donations Route Dropdown (Column Q)</h3>
+      <p>Column Q of the Settings sheet (from Q2 downwards) holds the list of route names that appear in the <em>Donations Wizard</em> dropdown when logging cash/card totals. Keep this in sync with your Routes tab.</p>
 
       <h3 class="sub-title">Live Announcement (PA System)</h3>
       <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">live_announcement</code> key in Settings is the public PA system. When set, its value overrides the normal status box on <em>every</em> viewer's tracker with a pulsing gold announcement banner.</p>
@@ -1154,8 +1172,8 @@
       <div class="callout callout-warning">
         <span class="callout-icon">⚠️</span>
         <div class="callout-body">
-          <strong>Month Guard</strong>
-          <p>The notification code contains a <code style="font-family:'DM Mono',monospace;font-size:12px;">allowEmails</code> flag currently set to <code style="font-family:'DM Mono',monospace;font-size:12px;">true</code> for testing. Before deploying to production, review this setting — you may wish to restrict emails to December and January only.</p>
+          <strong>Month Guard — Currently Disabled</strong>
+          <p>The notification code contains a month guard that is currently <em>force-overridden to <code style="font-family:'DM Mono',monospace;font-size:12px;">allowEmails = true</code></em> for testing. Before going live, locate this line in <code style="font-family:'DM Mono',monospace;font-size:12px;">checkSubscribersAndNotify</code> and switch it to the commented-out production version: <code style="font-family:'DM Mono',monospace;font-size:12px;">const allowEmails = (month === 11 || month === 0);</code> — this restricts emails to December and January only.</p>
         </div>
       </div>
     </section>
@@ -1199,8 +1217,8 @@
         </div>
         <div class="card" style="grid-column: 1 / -1;">
           <span class="card-icon">📸</span>
-          <div class="card-title">Elf Dashboard</div>
-          <div class="card-desc">Captures a photo from the sleigh phone every 60 seconds and displays it on the tracker.</div>
+          <div class="card-title">Elf Dashboard (Elf Cam)</div>
+          <div class="card-desc">Captures a JPEG photo from the sleigh phone at configurable intervals and uploads it to Google Drive via the <em>Highlander Protocol</em> (each new photo replaces the last — only one ever exists). The URL is written to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">elf_cam_url</code> in Settings. The public tracker polls for changes and displays new images as floating polaroid-style cards on the map.</div>
         </div>
       </div>
 
@@ -1209,7 +1227,7 @@
         <div class="card">
           <span class="card-icon">🙋</span>
           <div class="card-title">Crew Portal</div>
-          <div class="card-desc">Volunteers sign up for routes and roles; includes a personal QR generator for phone donations and the real-time crew alert banner.</div>
+          <div class="card-desc">Volunteers sign up for routes and roles; includes a personal QR generator for phone donations and the real-time crew alert banner. When the Lead Elf closes a route via God Mode, all checked-in volunteers automatically receive a debrief email showing the amount raised on their route.</div>
         </div>
         <div class="card">
           <span class="card-icon">✅</span>
