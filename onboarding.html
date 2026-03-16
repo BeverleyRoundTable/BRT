@@ -636,6 +636,7 @@
 
     <span class="nav-section-label">Configuration</span>
     <a class="nav-link" href="#advanced"><span class="nav-num">05</span> Advanced Settings</a>
+    <a class="nav-link" href="#settings-ref"><span class="nav-num">05b</span> Settings Key Reference</a>
     <a class="nav-link" href="#notifications"><span class="nav-num">06</span> Email Notifications</a>
 
     <span class="nav-section-label">App Ecosystem</span>
@@ -708,14 +709,20 @@
         </thead>
         <tbody>
           <tr><td>Landing Page</td><td>Your starting point. Click the Dab Santa image to access all generated links, embeds, and tools.</td></tr>
-          <tr><td>Settings</td><td>Master configuration — API URL, colours, Sleigh Name, PA Presets, passwords (including <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">god_mode_password</code>), and crew alert messaging.</td></tr>
-          <tr><td>Routes</td><td>Define nightly routes, dates, maps, and GPX links.</td></tr>
-          <tr><td>Donations</td><td>Log offline cash/card donations. Tallying here drives automated crew emails.</td></tr>
-          <tr><td>Tracker &amp; RoadLookup</td><td>Connects to Firebase and lets families search for their street.</td></tr>
-          <tr><td>Volunteers &amp; Checklist</td><td>Backend for the Logistics portal — captures emails for impact reporting and real-time safety sync from the Crew Hub.</td></tr>
+          <tr><td>Settings</td><td>Master key-value configuration store. Every setting the system reads lives here as a row (Column A = key, Column B = value). See the <a href="#settings-ref" style="color:var(--gold);">Settings Key Reference</a> for the full list.</td></tr>
           <tr><td>Analytics Dashboard</td><td>Visualises viewer behaviour, device types, and route popularity.</td></tr>
-          <tr><td>Tracker Analytics</td><td>Syncs automatically from Firebase every 5 minutes with raw view events.</td></tr>
-          <tr><td>Season History</td><td>Stores year-on-year season snapshots for AGM comparison charts. Auto-created on first snapshot.</td></tr>
+          <tr><td>Routes</td><td>Define nightly routes, dates, map images, GPX links, sponsor logos, and street lists. Also tracks <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">mp4Status</code> and <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">mp4Url</code> for the GPX Animator.</td></tr>
+          <tr><td>Donations</td><td>Log offline cash/card donations. Tallying here drives automated crew emails.</td></tr>
+          <tr><td>Tracker</td><td>Firebase connection settings — <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">firebase_url</code>, <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">secret</code>, <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">firebase_db_secret</code>, and the generated GPS Logger URL.</td></tr>
+          <tr><td>RoadLookup</td><td>Powers the Address Lookup embed — maps street names to route/date combinations so families can see when Santa is visiting.</td></tr>
+          <tr><td>Volunteers</td><td>Crew sign-up backend. Columns: Date, Route, Name, Role, Phone, <em>Email</em>, Organisation, Check-in Status, Bucket Number. Syncs with the Crew Portal and Operations Tab.</td></tr>
+          <tr><td>Checklist</td><td>Pre-flight safety checklist backend. Syncs in real-time from the Operations Tab on sleigh night.</td></tr>
+          <tr><td>Letters</td><td>Stores Letter to Santa submissions for moderation and social media content ideas.</td></tr>
+          <tr><td>Subscriber Heatmap</td><td>Stores and visualises subscriber pin locations across the route area.</td></tr>
+          <tr><td>Route Suggestions</td><td>Receives public heatmap pins from the post-season Suggest a Route tool for next year's planning.</td></tr>
+          <tr><td>Season History</td><td>Stores one row per season snapshot (Year, Raised, Routes, Streets, Peak Viewers, Waves, Volunteers). Auto-created on first snapshot.</td></tr>
+          <tr><td>Tracker Analytics</td><td>Syncs automatically from Firebase every 5 minutes with raw view events. Used by <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">GET_PEAK_VIEWERS</code> and the Analytics Dashboard.</td></tr>
+          <tr><td>Advanced</td><td>Reserved for future configuration. Leave as-is unless instructed.</td></tr>
         </tbody>
       </table>
     </section>
@@ -741,7 +748,7 @@
         <li><p>Choose <em>Web app</em> as the deployment type.</p></li>
         <li><p>Set <em>Execute as: Me</em> and <em>Who has access: Anyone</em>.</p></li>
         <li><p>Click <em>Deploy</em>, authorise permissions, and <strong>copy the Web App URL</strong>.</p></li>
-        <li><p>Paste the URL into <em>Settings → B2 (api_url)</em>.</p></li>
+        <li><p>Paste the URL into the <em>Settings</em> tab — find the row where Column A = <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">api_url</code> and set Column B to your URL.</p></li>
       </ol>
 
       <div class="callout callout-warning">
@@ -931,20 +938,28 @@
         <div class="section-title-block">
           <span class="section-icon">⚙️</span>
           <h2 class="section-title">Advanced Settings</h2>
-          <span class="section-desc">Settings sheet features not surfaced in the Wizards</span>
+          <span class="section-desc">Key settings rows not covered by the Wizards — all live in the Settings tab</span>
         </div>
       </div>
 
-      <h3 class="sub-title">PA Presets (Column S)</h3>
-      <p>Column S (from S2 downwards) contains pre-written PA announcement messages loaded by God Mode into a dropdown, so your Lead Elf can fire canned announcements quickly without typing on a cold night.</p>
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>How the Settings Tab Works</strong>
+          <p>The Settings tab is a key-value store, not a column-based config sheet. Every setting is a row: <em>Column A</em> holds the key name, <em>Column B</em> holds the value. The API reads these by key name. See the full <a href="#settings-ref" style="color:var(--gold);">Settings Key Reference</a> below for every documented key.</p>
+        </div>
+      </div>
+
+      <h3 class="sub-title">Live Announcement (PA System)</h3>
+      <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">live_announcement</code> key in Settings is the public PA system. When set, its value overrides the normal status box on <em>every</em> viewer's tracker with a pulsing gold announcement banner.</p>
       <ul class="bullet-list">
-        <li>Each cell in S2:S is one preset message.</li>
-        <li>Blank cells between entries are ignored.</li>
-        <li>Examples: <em>"Santa is running 10 minutes late — thank you for your patience!"</em> or <em>"Challenge: if we raise £50 in the next 5 minutes, the elves will do a dance!"</em></li>
+        <li>Set via the God Mode Dashboard PA panel on sleigh night.</li>
+        <li>Clear the value to return to normal ETA/status messages.</li>
+        <li>Examples: <em>"Santa is running 10 minutes late — thank you for your patience!"</em> or <em>"Challenge: raise £50 in the next 5 minutes and the elves will do a dance!"</em></li>
       </ul>
 
       <h3 class="sub-title">Crew Alert</h3>
-      <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">crew_alert</code> row in Settings drives internal messaging from the Lead Elf to all volunteers on the Crew Hub — completely separate from the public PA system.</p>
+      <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">crew_alert</code> key in Settings drives internal messaging from the Lead Elf to all volunteers on the Crew Hub — completely separate from the public PA system and never visible on the public tracker.</p>
 
       <table class="kv-table">
         <thead>
@@ -966,6 +981,14 @@
         </div>
       </div>
 
+      <h3 class="sub-title">Elf Cam URL</h3>
+      <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">elf_cam_url</code> key powers the Elf Dashboard polaroid feature. When the Elf Cam captures a new photo, it writes the Google Drive URL here. The tracker polls for changes and displays any new image as a floating Polaroid on the public map.</p>
+      <ul class="bullet-list">
+        <li>Written automatically by the Elf Cam capture system — no manual editing needed.</li>
+        <li>Google Drive URLs are automatically converted to direct thumbnail links by the tracker.</li>
+        <li>Polaroids only appear on tabs that are currently visible (battery-aware).</li>
+      </ul>
+
       <h3 class="sub-title">GET_PEAK_VIEWERS Formula</h3>
       <p>TurboSanta includes a custom Google Sheets formula to calculate peak simultaneous viewers within any time window:</p>
 
@@ -985,6 +1008,110 @@
           <tr><td>Argument 1</td><td>A range of timestamps — the E column in Tracker Analytics (parsed DateTime values).</td></tr>
           <tr><td>Argument 2</td><td>Window size in minutes. 15 is a sensible default; reduce to 5 for a tighter peak calculation.</td></tr>
           <tr><td>Returns</td><td>The highest number of viewers active within any rolling window of that duration.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── 05b — SETTINGS KEY REFERENCE ── -->
+    <section id="settings-ref" class="section">
+      <div class="section-header">
+        <div class="section-num">05b</div>
+        <div class="section-title-block">
+          <span class="section-icon">🗂️</span>
+          <h2 class="section-title">Settings Key Reference</h2>
+          <span class="section-desc">Every documented key in Column A of the Settings tab</span>
+        </div>
+      </div>
+
+      <h3 class="sub-title">Core / API</h3>
+      <table class="kv-table">
+        <thead><tr><th>Key</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>api_url</td><td>Your deployed Apps Script Web App URL. The single most critical setting — everything reads from this.</td></tr>
+          <tr><td>tracker_url</td><td>The public-facing URL for your sleigh tracker page (used in embeds and QR codes).</td></tr>
+          <tr><td>sleigh_name</td><td>Internal identifier for your sleigh. Used in multi-sleigh setups.</td></tr>
+          <tr><td>sleigh_display_name</td><td>The human-readable sleigh name shown to the public (e.g., "Beverley Round Table Santa Sleigh").</td></tr>
+          <tr><td>sleigh_group</td><td>Group identifier for multi-sleigh tracking. Usually matches <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">sleigh_name</code> for single-sleigh setups.</td></tr>
+          <tr><td>sleigh_mode</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">single</code> or <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">multi</code>. Use <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">single</code> unless running more than one sleigh simultaneously.</td></tr>
+          <tr><td>god_mode_password</td><td>Password for the God Mode Dashboard and Season Wrap Snapshot. Change before going live.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub-title">Tracker Appearance</h3>
+      <table class="kv-table">
+        <thead><tr><th>Key</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>primary_color</td><td>Main accent colour used on the tracker (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">#d31c1c</code>).</td></tr>
+          <tr><td>accent_color</td><td>Secondary accent colour (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">#ffd700</code>).</td></tr>
+          <tr><td>default_map_zoom</td><td>Initial zoom level when the tracker loads (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">16</code>).</td></tr>
+          <tr><td>bgImageUrl</td><td>Background image URL for the tracker landing area.</td></tr>
+          <tr><td>logo_overlay_enabled</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>. Show your Round Table logo pinned to the map.</td></tr>
+          <tr><td>logo_overlay_url</td><td>URL of the logo image to display on the map.</td></tr>
+          <tr><td>logo_overlay_position</td><td>Map corner: <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">top-left</code>, <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">top-right</code>, <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">bottom-left</code>, or <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">bottom-right</code>.</td></tr>
+          <tr><td>logo_overlay_size</td><td>Logo size in pixels (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">64</code>).</td></tr>
+          <tr><td>sleigh_icon_live</td><td>URL for the animated live-position sleigh marker icon.</td></tr>
+          <tr><td>sleigh_icon_start</td><td>URL for the route start point marker icon.</td></tr>
+          <tr><td>sleigh_icon_end</td><td>URL for the route end point marker icon.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub-title">Feature Toggles</h3>
+      <table class="kv-table">
+        <thead><tr><th>Key</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>show_today_route</td><td>Show today's route on the tracker. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
+          <tr><td>show_next_route</td><td>Show the next upcoming route. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
+          <tr><td>show_tracker</td><td>Show the live GPS tracker map. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
+          <tr><td>show_donations</td><td>Show the donation progress bar and total. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
+          <tr><td>show_carousel</td><td>Show the photo carousel. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
+          <tr><td>carousel_folder_id</td><td>Google Drive folder ID containing photos for the carousel embed.</td></tr>
+          <tr><td>donate_url</td><td>URL the Donate button links to on the public tracker.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub-title">Sleigh Night Controls</h3>
+      <table class="kv-table">
+        <thead><tr><th>Key</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>live_announcement</td><td>Public PA message. When set, overrides the ETA/status box on all viewers' trackers with a pulsing gold banner. Clear when done.</td></tr>
+          <tr><td>crew_alert</td><td>Internal crew message. Appears as a pulsing red banner on all Crew Hub screens within 15 seconds. Never visible to the public.</td></tr>
+          <tr><td>elf_cam_url</td><td>Written automatically by the Elf Cam system. Stores the latest photo URL. The tracker polls this and shows new images as floating polaroids.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub-title">GPX Animator (TravelBoast) Settings</h3>
+      <table class="kv-table">
+        <thead><tr><th>Key</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>travelboast_enabled</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>. Enable the animated route video generator.</td></tr>
+          <tr><td>travelboast_sprite</td><td>URL of the animated sprite sheet for the flying Santa character.</td></tr>
+          <tr><td>travelboast_sprite_frames</td><td>Number of animation frames in the sprite sheet (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">5</code>).</td></tr>
+          <tr><td>travelboast_sprite_fps</td><td>Frame rate for sprite animation (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">14</code>).</td></tr>
+          <tr><td>travelboast_sprite_size</td><td>Sprite render size in pixels (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">64</code>).</td></tr>
+          <tr><td>travelboast_speed</td><td>Playback speed for the route animation (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">45</code>).</td></tr>
+          <tr><td>travelboast_mode</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">next_route</code> — which route the animator uses by default.</td></tr>
+          <tr><td>travelboast_gap_fill</td><td>How to handle gaps in the GPX track. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">smooth</code> interpolates between points.</td></tr>
+          <tr><td>travelboast_accent_color</td><td>Route line accent colour in the video.</td></tr>
+          <tr><td>travelboast_shadow</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>. Add a drop shadow to the sprite.</td></tr>
+          <tr><td>travelboast_particle_effects</td><td>Particle effect preset. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">snow</code> adds falling snowflakes to the video.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="sub-title">Season Wrap Fields</h3>
+      <p>These are populated manually after each season before taking a Snapshot. They feed the Season Wrap Report's summary stats.</p>
+      <table class="kv-table">
+        <thead><tr><th>Key</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>wrap_year</td><td>The year of the season being wrapped.</td></tr>
+          <tr><td>wrap_volunteers</td><td>Total volunteer count for the season.</td></tr>
+          <tr><td>wrap_highlight</td><td>A one-line season highlight quote for the report.</td></tr>
+          <tr><td>wrap_total_views</td><td>Total tracker page views across all nights.</td></tr>
+          <tr><td>wrap_desktop_mobile</td><td>Device split as a string, e.g. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">63% / 37%</code>.</td></tr>
+          <tr><td>wrap_most_popular_route</td><td>Most viewed route name and percentage.</td></tr>
+          <tr><td>wrap_peak_viewers</td><td>Highest simultaneous viewer count recorded.</td></tr>
+          <tr><td>wrap_social_followers</td><td>Social media follower count at season end.</td></tr>
+          <tr><td>wrap_social_reach</td><td>Estimated social media reach for the season.</td></tr>
+          <tr><td>season_total_waves</td><td>Total wave interactions recorded across all nights.</td></tr>
         </tbody>
       </table>
     </section>
@@ -1342,7 +1469,7 @@
         <li><p>Delete all default code and paste the worker script below.</p></li>
         <li><p><strong>Critical:</strong> Replace the <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">GAS_URL</code> on line 3 with your actual Google Apps Script Web App URL.</p></li>
         <li><p>Click <em>Deploy</em>. Cloudflare gives you a new Worker URL (e.g., <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">https://santa-api.your-account.workers.dev</code>).</p></li>
-        <li><p>In your Google Sheet, replace <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">api_url</code> in <em>Settings → B2</em> with your new Cloudflare Worker URL.</p></li>
+        <li><p>In your Google Sheet, find the <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">api_url</code> row in the Settings tab and replace Column B with your new Cloudflare Worker URL.</p></li>
       </ol>
 
       <div class="code-block">
