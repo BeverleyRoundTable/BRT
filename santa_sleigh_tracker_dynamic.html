@@ -1128,7 +1128,20 @@
               const lng = pos.coords.longitude;
               const heading = pos.coords.heading || 0; 
               
-              const ll = L.latLng(lat, lng);
+              let visualPos = { lat, lng };
+
+              // 🧲 SNAP-TO-ROUTE LOGIC FOR DRIVERS
+              if (AppState.flags.gpxLoaded && AppState.gpxRoute) {
+                // Pass 'null' to force a global search across the whole route
+                const snap = snapToGpxIndex(visualPos, null); 
+                
+                // 20 meters is perfect for pavement walking vs side-street detour
+                if (snap && snap.distance < 20) { 
+                  visualPos = snap.point; 
+                }
+              }
+
+              const ll = L.latLng(visualPos.lat, visualPos.lng);
               driverMarker.setLatLng(ll);
               
               // Pan the map to keep the car perfectly centered
