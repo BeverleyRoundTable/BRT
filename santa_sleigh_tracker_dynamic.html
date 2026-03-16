@@ -312,6 +312,42 @@
       .polaroid-caption { font-size: 0.85em; margin-top: 6px; }
     }
     
+    /* ── DRIVER MODE (SAT NAV) ── */
+    body.driver-mode {
+      max-width: 500px;
+      margin: 0 auto;
+      position: relative;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    }
+    
+    /* Ruthlessly hide all public popups, prompts, and donate boxes in Driver Mode */
+    body.driver-mode .donate-box,
+    body.driver-mode .info-popup,
+    body.driver-mode .install-overlay,
+    body.driver-mode .ios-install-prompt {
+      display: none !important;
+    }
+
+    /* ── DRIVER MODE (SAT NAV) ── */
+    body.driver-mode {
+      max-width: 500px;
+      margin: 0 auto;
+      position: relative;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    }
+    
+    /* Ruthlessly hide all public popups, prompts, and donate boxes in Driver Mode */
+    body.driver-mode .donate-box,
+    body.driver-mode .info-popup,
+    body.driver-mode .install-overlay,
+    body.driver-mode .ios-install-prompt {
+      display: none !important;
+    }
+    
   </style>
 </head>
 
@@ -1065,73 +1101,72 @@
         if (AppState.flags.isKiosk) document.body.classList.add("kiosk");
 
         // ---------------------------------------------------------
-  // 🧭 SAT-NAV DRIVER MODE
-  // ---------------------------------------------------------
-  AppState.flags.isDriver = params.get("driver") === "1";
+        // 🧭 SAT-NAV DRIVER MODE
+        // ---------------------------------------------------------
+        AppState.flags.isDriver = params.get("driver") === "1";
 
-  if (AppState.flags.isDriver) {
-    // Hide public UI elements to prevent distractions
-    if (AppState.dom.donateBox) AppState.dom.donateBox.style.display = "none";
-    const infoPopup = document.querySelector('.info-popup');
-    if (infoPopup) infoPopup.style.display = "none";
-    
-    // Create the massive "Start Navigation" overlay button
-    const navBtn = document.createElement("button");
-    navBtn.innerHTML = "🧭 START SAT-NAV MODE";
-    navBtn.style.cssText = "position:fixed; bottom:80px; left:10%; width:80%; padding:20px; font-size:20px; font-weight:900; background:#d31c1c; color:#fff; border-radius:16px; z-index:9999; border:none; box-shadow:0 10px 40px rgba(0,0,0,0.6);";
-    document.body.appendChild(navBtn);
+        if (AppState.flags.isDriver) {
+          // Trigger the CSS to narrow the screen and hide all popups
+          document.body.classList.add("driver-mode");
+          
+          // Create the massive "Start Navigation" overlay button
+          const navBtn = document.createElement("button");
+          navBtn.innerHTML = "🧭 START SAT-NAV MODE";
+          // Changed to position:absolute so it stays constrained to the mobile-sized container on desktop!
+          navBtn.style.cssText = "position:absolute; bottom:80px; left:10%; width:80%; padding:20px; font-size:20px; font-weight:900; background:#d31c1c; color:#fff; border-radius:16px; z-index:9999; border:none; box-shadow:0 10px 40px rgba(0,0,0,0.6); cursor:pointer;";
+          document.body.appendChild(navBtn);
 
-    navBtn.onclick = () => {
-      navBtn.style.display = "none";
-      
-      // 🔒 Force the screen to stay awake
-      requestWakeLock();
-      
-      // Change status box to show it's active
-      AppState.dom.statusBox.textContent = "🧭 Sat-Nav Active. Drive the Red Line.";
-      AppState.dom.statusBox.style.color = "#2cff4e"; // Green text
-      
-      // Lock the map zoom to street-level
-      AppState.map.setZoom(18);
-      
-      // Create the blue Driver Arrow
-      const driverMarker = L.marker([0,0], {
-        icon: L.divIcon({
-          className: 'driver-arrow',
-          html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 100%;"></div>',
-          iconSize: [28, 34],
-          iconAnchor: [14, 17]
-        }),
-        zIndexOffset: 1000 // Keep it on top of the route
-      }).addTo(AppState.map);
+          navBtn.onclick = () => {
+            navBtn.style.display = "none";
+            
+            // 🔒 Force the screen to stay awake
+            requestWakeLock();
+            
+            // Change status box to show it's active
+            AppState.dom.statusBox.textContent = "🧭 Sat-Nav Active. Drive the Red Line.";
+            AppState.dom.statusBox.style.color = "#2cff4e"; // Green text
+            
+            // Lock the map zoom to street-level
+            AppState.map.setZoom(18);
+            
+            // Create the blue Driver Arrow
+            const driverMarker = L.marker([0,0], {
+              icon: L.divIcon({
+                className: 'driver-arrow',
+                html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 100%;"></div>',
+                iconSize: [28, 34],
+                iconAnchor: [14, 17]
+              }),
+              zIndexOffset: 1000 // Keep it on top of the route
+            }).addTo(AppState.map);
 
-      // Watch the Navigator's highly-accurate Phone GPS
-      navigator.geolocation.watchPosition((pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const heading = pos.coords.heading || 0; 
-        
-        const ll = L.latLng(lat, lng);
-        driverMarker.setLatLng(ll);
-        
-        // Pan the map to keep the car perfectly centered
-        AppState.map.panTo(ll, { animate: true, duration: 1 });
-        
-        // Rotate the arrow icon to face the direction of travel
-        const arrowDiv = driverMarker.getElement().querySelector('div');
-        if (arrowDiv && pos.coords.speed > 1) { // Only rotate if actually moving
-          arrowDiv.style.transform = `rotate(${heading}deg)`;
+            // Watch the Navigator's highly-accurate Phone GPS
+            navigator.geolocation.watchPosition((pos) => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              const heading = pos.coords.heading || 0; 
+              
+              const ll = L.latLng(lat, lng);
+              driverMarker.setLatLng(ll);
+              
+              // Pan the map to keep the car perfectly centered
+              AppState.map.panTo(ll, { animate: true, duration: 1 });
+              
+              // Rotate the arrow icon to face the direction of travel
+              const arrowDiv = driverMarker.getElement().querySelector('div');
+              if (arrowDiv && pos.coords.speed > 1) { // Only rotate if actually moving
+                arrowDiv.style.transform = `rotate(${heading}deg)`;
+              }
+            }, (err) => {
+              alert("GPS Error: Please ensure Location Services are turned on for your browser.");
+            }, { 
+              enableHighAccuracy: true, 
+              maximumAge: 0, 
+              timeout: 5000 
+            });
+          };
         }
-      }, (err) => {
-        alert("GPS Error: Please ensure Location Services are turned on for your browser.");
-      }, { 
-        enableHighAccuracy: true, 
-        maximumAge: 0, 
-        timeout: 5000 
-      });
-    };
-  }
-  // ---------------------------------------------------------
+        // ---------------------------------------------------------
         
         AppState.vars.apiUrl = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
         if (!AppState.vars.apiUrl) { alert("Missing ?api=URL"); return; }
