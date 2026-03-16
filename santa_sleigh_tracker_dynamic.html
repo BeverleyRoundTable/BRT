@@ -1221,33 +1221,31 @@
         };
 
         AppState.dom.notifyBtn.onclick = () => {
-          AppState.flags.follow = false;
-          AppState.dom.followBtn.textContent = "Follow: OFF";
-          AppState.flags.browserNotified = false;
-          AppState.flags.hasPassedSticky = false;
-          AppState.routeFixes = [];
-          sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
-          sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED");
-          sessionStorage.removeItem("SANTA_NOTIFY_POINT");
-          sessionStorage.removeItem("SANTA_HAS_PASSED");
-          AppState.flags.awaitingPin = true;
-          if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); }
-          AppState.notifyMarker = null;
-          AppState.vars.notifyLatLng = null;
-          AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin...";
-          if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); }
-          AppState.vars.escapeListener = (e) => {
-            if (e.key === "Escape" && AppState.flags.awaitingPin) {
-              AppState.flags.awaitingPin = false;
-              if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker);
-              AppState.dom.statusBox.textContent = "";
-              Utils.toggleFollowControls(true);
-              document.removeEventListener("keydown", AppState.vars.escapeListener);
-              AppState.vars.escapeListener = null;
-            }
-          };
-          document.addEventListener("keydown", AppState.vars.escapeListener);
-        };
+  // ... existing reset logic ...
+  AppState.flags.awaitingPin = true;
+  AppState.dom.statusBox.textContent = "📍 Locating you...";
+
+  // Attempt Auto-Location
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        
+        AppState.map.setView([userLat, userLng], 17);
+        showNotifyMarker(userLat, userLng, false);
+        AppState.dom.statusBox.textContent = "📍 Is this your house? Tap the pin to confirm.";
+      },
+      (error) => {
+        // Fallback to manual tap if they deny location permissions
+        AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin...";
+      },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  } else {
+    AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin...";
+  }
+};
 
         // ⭐ WAVE BUTTON LOGIC
         AppState.dom.waveBtn.onclick = () => {
