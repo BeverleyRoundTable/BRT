@@ -222,9 +222,15 @@
               <option value="Safety Walkers">Safety Walkers</option>
             </select>
           </div>
+          
           <div class="field">
             <label>Phone Number (For the night)</label>
             <input type="tel" id="volPhone" required placeholder="07...">
+          </div>
+
+          <div class="field">
+            <label>Email Address</label>
+            <input type="email" id="volEmail" required placeholder="For your night's impact stats!">
           </div>
 
           <div class="field">
@@ -287,10 +293,15 @@
           <h3>Tonight's Crew</h3>
           <div id="crewContainer"></div>
         </div>
-      </div>
-    </div>
 
-  </div>
+        <div class="panel" style="border-color: var(--gold); background: rgba(251,175,51,0.05);">
+          <h3 style="color: var(--gold);">End of Night</h3>
+          <p style="font-size: 0.85em; color: var(--text-dim); margin-bottom: 16px;">
+            Finished for the night? Close the route to calculate totals and automatically email all checked-in volunteers a thank you with the night's stats.
+          </p>
+          <button id="closeRouteBtn" class="btn btn-gold" onclick="closeRoute()">🏁 Close Route & Email Crew</button>
+        </div>
+</div>
 </div>
 
 <!-- ── QR MODAL ── -->
@@ -451,6 +462,7 @@ async function submitVolunteer(e) {
     name: document.getElementById('volName').value,
     role: document.getElementById('volRole').value,
     phone: document.getElementById('volPhone').value,
+    email: document.getElementById('volEmail').value,
     organisation: document.getElementById('volOrg').value
   };
 
@@ -631,6 +643,45 @@ async function checkInVolunteer(btn, routeName, volName, role) {
     btn.innerText = "Tap to Check-in";
   }
 }
+
+  async function closeRoute() {
+  const routeName = document.getElementById('opsRouteSelect').value;
+  if (!routeName) return alert("Please select a route first.");
+
+  const confirmed = confirm(`Are you sure you want to close "${routeName}"?\n\nThis will calculate the total raised and email all checked-in volunteers. You cannot undo this!`);
+  if (!confirmed) return;
+
+  const btn = document.getElementById('closeRouteBtn');
+  const originalText = btn.innerText;
+  btn.innerText = "⏳ Processing & Sending Emails...";
+  btn.disabled = true;
+
+  const secret = sessionStorage.getItem('opsSecret') || '';
+
+  const payload = {
+    action: "closeRoute",
+    routeName: routeName,
+    secret: secret
+  };
+
+  try {
+    const response = await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+    const result = await response.json();
+
+    if(!result.ok) {
+      alert("❌ Error: " + result.error);
+    } else {
+      alert(`✅ Route Closed Successfully!\n\nSent thank-you emails to ${result.emailsSent} volunteers.`);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("❌ Failed to close route. Check your connection.");
+  } finally {
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }
+}
+  
 </script>
 </body>
 </html>
