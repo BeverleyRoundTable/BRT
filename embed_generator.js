@@ -380,6 +380,13 @@ https://brt-23f.pages.dev/elf_dashboard?api=${ensureApi()}
 `;
 
 // ================================
+// Sat Nav
+// ================================
+const satnavLink = `
+https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic.html?api=${ensureApi()}&driver=1
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -407,3 +414,4 @@ document.getElementById("letterLink").value = letterLink.trim();
 document.getElementById("recommendedLetter").value = recommendedLetter.trim();
 document.getElementById("suggestLink").value = suggestLink.trim();
 document.getElementById("elfdashboardLink").value = elfdashboardLink.trim();
+document.getElementById("satnavLink").value = satnavLink.trim();
