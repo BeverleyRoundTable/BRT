@@ -691,9 +691,9 @@ function buildDashboard() {
     </div>
     
     <div class="stat-card">
-      <div class="label">Waves Received</div>
-      <div class="value gold" id="statWaves">—</div>
-      <div class="sub">Tonight</div>
+    <div class="label">Messages Sent</div>
+    <div class="value gold" id="statWaves">—</div>
+    <div class="sub">Pending approval</div>
     </div>
 
     <div class="stat-card">
@@ -972,10 +972,12 @@ function updateGps() {
 
 function updateViewers() {
   const vEl = document.getElementById('statViewers');
-  const wEl = document.getElementById('statWaves'); 
-  
   if (vEl) vEl.textContent = STATE.activeViewers;
-  if (wEl) wEl.textContent = (STATE.totalWaves !== undefined) ? STATE.totalWaves : '—';
+}
+
+function updatePendingCount(count) {
+  const wEl = document.getElementById('statWaves');
+  if (wEl) wEl.textContent = count > 0 ? count : '0';
 }
 
 function updateRouteDetail() {
@@ -1168,14 +1170,17 @@ async function fetchPendingMessages() {
     
     if(msgs.length === 0) {
        container.innerHTML = '<div class="no-route">No pending messages</div>';
+       updatePendingCount(0);
        return;
     }
     
     let html = '';
     msgs.forEach(m => {
        const safeMsg = encodeURIComponent(m.msg);
+       const routeLabel = m.route ? `<div style="font-size:0.7em;color:var(--gold);margin-bottom:6px;font-weight:700;">📍 ${m.route}</div>` : '';
        html += `
          <div class="msg-item">
+           ${routeLabel}
            <div class="msg-text">"${m.msg}"</div>
            <div class="msg-actions">
              <button class="btn-approve" onclick="handleUserMsg('${safeMsg}', 'approveUserMessage')">Approve (20s)</button>
@@ -1185,7 +1190,9 @@ async function fetchPendingMessages() {
        `;
     });
     container.innerHTML = html;
+    updatePendingCount(msgs.length);
   } catch(e){}
+  
 }
 
 async function handleUserMsg(encodedMsg, action) {
