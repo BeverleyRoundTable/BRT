@@ -77,6 +77,18 @@
       100% { box-shadow: 0 0 0 0 rgba(251, 175, 51, 0); transform: translateX(-50%) scale(1); }
     }
 
+    /* ⭐ NEW: USER MESSAGE POPUP STYLES */
+    .status-popup.is-user-msg {
+      background: rgba(45, 15, 60, 0.95) !important; color: #e6c2ff !important; 
+      border: 1px solid #c88bff !important; font-weight: 900 !important;
+      animation: userPulse 1.5s infinite; 
+    }
+    @keyframes userPulse {
+      0% { box-shadow: 0 0 0 0 rgba(200, 139, 255, 0.6); transform: translateX(-50%) scale(1); }
+      50% { box-shadow: 0 0 0 15px rgba(200, 139, 255, 0); transform: translateX(-50%) scale(1.02); }
+      100% { box-shadow: 0 0 0 0 rgba(200, 139, 255, 0); transform: translateX(-50%) scale(1); }
+    }
+
     /* ── BOTTOM CONTROLS ── */
     .info-popup { 
       position: fixed; bottom: var(--info-bottom); left: 50%; transform: translateX(-50%); 
@@ -147,7 +159,7 @@
     #loadingSpinner { width: 52px; height: 52px; border-radius: 50%; border: 4px solid var(--border); border-top-color: var(--rt-gold); animation: spin .9s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── EMAIL MODAL ── */
+    /* ── MODALS ── */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
     .modal-box { background: var(--surface); padding: 24px; border-radius: 20px; width: 100%; max-width: 340px; text-align: center; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.6); animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -356,6 +368,7 @@
     <button class="btn" id="recenterBtn">Re-centre</button>
     <button class="btn" id="notifyBtn">🔔 Notify Me</button>
     <button class="btn" id="waveBtn">👋 Wave</button>
+    <button class="btn" id="msgBtn" style="display: none;">✉️ Msg</button>
     <div id="toast" class="toast-box"></div>
   </div>
 
@@ -370,6 +383,19 @@
       </div>
     </div>
   </div>
+
+  <div id="msgModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-title">💬 Message Santa</div>
+      <div class="modal-desc">Send a quick message to the sleigh (max 50 chars). They will show on the tracker if the Elves approve them!</div>
+      <input type="text" id="userMsgInput" class="modal-input" placeholder="e.g., We are outside waiting!" maxlength="50">
+      <div class="modal-btns">
+        <button class="btn-full btn-cancel" id="msgCancelBtn">Cancel</button>
+        <button class="btn-full btn-confirm" id="msgConfirmBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
   <div id="kioskBanner" class="kiosk-banner"></div>
   <div id="kioskSponsor" class="kiosk-sponsor"></div>
   <div id="map"></div>
@@ -542,6 +568,7 @@
           recenterBtn: document.getElementById("recenterBtn"),
           notifyBtn: document.getElementById("notifyBtn"),
           waveBtn: document.getElementById("waveBtn"), 
+          msgBtn: document.getElementById("msgBtn"),
           statusDot: document.getElementById("statusDot"),
           donateLink: document.getElementById("donateLink"),
           donateBox: document.getElementById("donateBox"),
@@ -595,15 +622,17 @@
           return Math.min(Math.max(speed, 0.1), 31);
         },
         toggleFollowControls(enable) {
-          const { followBtn, recenterBtn, notifyBtn, waveBtn } = AppState.dom;
+          const { followBtn, recenterBtn, notifyBtn, waveBtn, msgBtn } = AppState.dom;
           if (enable) { 
             followBtn.classList.remove("locked"); 
             recenterBtn.classList.remove("locked");
             waveBtn.classList.remove("locked");
+            if (msgBtn) msgBtn.classList.remove("locked");
           } else { 
             followBtn.classList.add("locked"); 
             recenterBtn.classList.add("locked"); 
             waveBtn.classList.add("locked");
+            if (msgBtn) msgBtn.classList.add("locked");
           }
         }
       };
@@ -849,6 +878,14 @@
           // ⭐ NEW: Fetch settings FIRST so Elf Cam works even when Santa is in Lapland
           const latestApiData = await Utils.loadJSON(AppState.vars.apiUrl);
           
+          // ⭐ Show or hide the Message button based on Settings tab
+          const msgsEnabled = String(latestApiData.settings?.enable_user_messages).toUpperCase() === "TRUE";
+          const msgBtnEl = AppState.dom.msgBtn || document.getElementById("msgBtn");
+          if (msgBtnEl) {
+             // Hide it if Kiosk mode is on, OR if the setting is false
+             msgBtnEl.style.display = (msgsEnabled && !AppState.flags.isKiosk) ? "block" : "none";
+          }
+
           const rawElfCamUrl = latestApiData.settings?.elf_cam_url;
           
           // Only trigger if there is a new URL AND the user is currently looking at the tab
@@ -1011,15 +1048,27 @@
           AppState.dom.statusDot.style.display = "block";
           AppState.dom.statusDot.className = moving ? "status-dot dot-moving" : "status-dot dot-stopped";
 
-          // PA SYSTEM OVERRIDE: Use the settings we fetched at the top of the loop
+          // PA SYSTEM & USER MESSAGE OVERRIDES
           const liveMsg = latestApiData.settings?.live_announcement;
+          const userMsg = latestApiData.settings?.user_announcement;
+          const userMsgTs = parseInt(latestApiData.settings?.user_announcement_ts) || 0;
+          
+          // Show for 20,000ms (20s) because 6-second polling means they might miss the first 5 seconds.
+          const isUserMsgActive = userMsg && (Date.now() - userMsgTs < 20000);
 
           if (liveMsg && liveMsg.trim() !== "") {
             AppState.dom.statusBox.textContent = `📢 ${liveMsg}`;
             AppState.dom.statusBox.classList.add("is-announcement");
+            AppState.dom.statusBox.classList.remove("is-user-msg");
+            setDimUI(false); 
+          } else if (isUserMsgActive) {
+            AppState.dom.statusBox.textContent = `💬 ${userMsg}`;
+            AppState.dom.statusBox.classList.add("is-user-msg");
+            AppState.dom.statusBox.classList.remove("is-announcement");
             setDimUI(false); 
           } else {
             AppState.dom.statusBox.classList.remove("is-announcement");
+            AppState.dom.statusBox.classList.remove("is-user-msg");
             
             if (AppState.flags.hasPassedSticky) {
               AppState.dom.statusBox.textContent = "🎄 Santa has just been here!";
@@ -1239,6 +1288,7 @@
            AppState.dom.recenterBtn.style.display = "none";
            AppState.dom.notifyBtn.style.display = "none";
            AppState.dom.waveBtn.style.display = "none"; // Hide Wave button on Kiosk
+           if(AppState.dom.msgBtn) AppState.dom.msgBtn.style.display = "none";
            AppState.dom.donateBox.style.display = "none";
         }
 
@@ -1396,6 +1446,34 @@
             AppState.dom.waveBtn.disabled = false;
             AppState.dom.waveBtn.style.opacity = 1;
           }, 3000);
+        };
+
+        // ⭐ MESSAGE BUTTON LOGIC
+        if(AppState.dom.msgBtn) {
+          AppState.dom.msgBtn.onclick = () => {
+             document.getElementById('msgModal').style.display = 'flex';
+             document.getElementById('userMsgInput').focus();
+          };
+        }
+        document.getElementById('msgCancelBtn').onclick = () => {
+           document.getElementById('msgModal').style.display = 'none';
+        };
+        document.getElementById('msgConfirmBtn').onclick = () => {
+           const input = document.getElementById('userMsgInput');
+           const msg = input.value.trim();
+           if(!msg) return;
+           
+           document.getElementById('msgModal').style.display = 'none';
+           showToast("Sending message to the elves...");
+           
+           fetch(AppState.vars.apiUrl, {
+             method: 'POST',
+             body: JSON.stringify({ action: "submitUserMessage", message: msg })
+           }).then(r=>r.json()).then(d => {
+             if(d.ok) showToast("💬 Sent! Waiting for Elf approval...");
+             else showToast("❌ Failed to send.");
+           }).catch(()=>showToast("❌ Network error."));
+           input.value = '';
         };
 
         // ⭐ THE "DISNEY MAGIC" AMBIENT WAVES
