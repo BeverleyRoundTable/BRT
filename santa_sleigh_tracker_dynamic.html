@@ -875,14 +875,19 @@
         
       async function updateTracker() {
         try {
-          // ⭐ NEW: Fetch settings FIRST so Elf Cam works even when Santa is in Lapland
-          const latestApiData = await Utils.loadJSON(AppState.vars.apiUrl);
+          const now = Date.now();
+          
+          // 1. THROTTLE SETTINGS (Only hit Google Apps Script every 30 seconds)
+          if (!AppState.vars.lastSettingsFetch || now - AppState.vars.lastSettingsFetch > 30000) {
+            AppState.vars.latestApiData = await Utils.loadJSON(AppState.vars.apiUrl);
+            AppState.vars.lastSettingsFetch = now;
+          }
+          const latestApiData = AppState.vars.latestApiData;
           
           // ⭐ Show or hide the Message button based on Settings tab
           const msgsEnabled = String(latestApiData.settings?.enable_user_messages).toUpperCase() === "TRUE";
           const msgBtnEl = AppState.dom.msgBtn || document.getElementById("msgBtn");
           if (msgBtnEl) {
-             // Hide it if Kiosk mode is on, OR if the setting is false
              msgBtnEl.style.display = (msgsEnabled && !AppState.flags.isKiosk) ? "block" : "none";
           }
 
@@ -896,13 +901,13 @@
                   // ⭐ BULLETPROOF FIX: Convert to raw download link
                   let finalImgUrl = rawElfCamUrl;
                   if (finalImgUrl.includes("drive.google.com")) {
-                  try {
+                    try {
                         const urlObj = new URL(finalImgUrl);
                         const fileId = urlObj.searchParams.get("id");
-                  if (fileId) {
-                        finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+                        if (fileId) {
+                            finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
                         }
-                          } catch(e) {}
+                    } catch(e) {}
                   }
                   
                   console.log("📸 Displaying Elf Cam:", finalImgUrl);
@@ -910,68 +915,20 @@
               }
           }
 
-          // ⭐ NORMAL GPS LOGIC
-          const data = await Utils.loadJSON(AppState.vars.apiUrl + "?function=proxyFirebase");
-          if (!Utils.validPos(data.lat, data.lng)) throw new Error("Invalid Coords");
+          // 2. DIRECT FIREBASE FETCH (Bypass Google Apps Script completely)
+          if (!AppState.vars.firebaseUrl) throw new Error("No Firebase URL found");
+          
+          let data = await Utils.loadJSON(AppState.vars.firebaseUrl + "/location/current.json");
+          
+          // Format the data exactly how your frontend expects it
+          if (data && typeof data === "object" && !data.lat) {
+            const first = Object.values(data)[0];
+            if (first && typeof first === "object") data = first;
+          }
+
+          if (!data || !Utils.validPos(data.lat, data.lng)) throw new Error("Invalid Coords");
 
           const ts = new Date(data.ts).getTime();
-          const age = Date.now() - ts;
-          const isFresh = age <= AppConfig.API.STALE_MS;
-
-          if (AppState.flags.isKiosk) {
-            AppState.dom.kioskBanner.classList.toggle("live", isFresh);
-            const statusEl = document.getElementById("kioskStatus");
-            if (statusEl) statusEl.textContent = isFresh ? "🎅 LIVE TRACKING" : "🎄 PREPARING IN LAPLAND";
-            if (AppState.dom.sponsorBox) {
-              AppState.dom.sponsorBox.classList.toggle("visible", isFresh && !!AppState.vars.todayRoute?.sponsorUrl);
-            }
-          }
-
-          if (!isFresh) {
-            if (!AppState.vars.staleSince) AppState.vars.staleSince = ts;
-            if (Date.now() - AppState.vars.staleSince > AppConfig.API.STALE_MS) {
-              AppState.marker.setLatLng(AppConfig.LOCATIONS.LAPLAND);
-              if (AppState.flags.follow) AppState.map.setView(AppConfig.LOCATIONS.LAPLAND, 5, { animate: true, duration: 2 });
-              AppState.dom.statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!";
-              AppState.dom.statusDot.style.display = "none";
-              setDimUI(false);
-              AppState.flags.firstFix = true;
-              setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
-              return;
-            }
-            if (AppState.lastFix) {
-              animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
-              AppState.dom.statusBox.textContent = "🎅 Santa is nearby…";
-              setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
-              return;
-            }
-          } else {
-            AppState.vars.staleSince = null;
-            AppState.lastFix = { lat: data.lat, lng: data.lng };
-          }
-
-          let visualPos = { lat: data.lat, lng: data.lng };
-
-          if (AppState.flags.gpxLoaded) {
-            const snap = snapToGpxIndex(visualPos, AppConfig.GPX);
-            if (snap && snap.distance < 50) { visualPos = snap.point; }
-            else { visualPos = { lat: data.lat, lng: data.lng }; }
-            
-            // ⭐ PAC-MAN ROUTE ERASER
-            if (AppState.dynamicRouteRemainingMain) {
-              const idx = AppState.vars.lastSnapIndex;
-              const completedPts = AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lat, p.lng]);
-              const remainingPts = AppState.gpxRoute.slice(idx).map(p => [p.lat, p.lng]);
-              
-              AppState.dynamicRouteCompleted.setLatLngs(completedPts);
-              AppState.dynamicRouteRemainingMain.setLatLngs(remainingPts);
-              AppState.dynamicRouteRemainingGlow.setLatLngs(remainingPts);
-            }
-          }
-
-          animateMarkerTo(visualPos.lat, visualPos.lng);
-          
-          pushFix(data.lat, data.lng, Date.now());
 
           // --------------------------------------------------------
           // STICKY PASS & SNOW CONTROL
@@ -1221,6 +1178,9 @@
         setInterval(() => { if (document.visibilityState === "visible") requestWakeLock(); }, 60000);
 
         const apiData = await Utils.loadJSON(AppState.vars.apiUrl);
+        // Save the Firebase URL so we can query it directly!
+        AppState.vars.firebaseUrl = apiData.tracker?.firebase_url ? apiData.tracker.firebase_url.replace(/\/$/, "") : null;
+        
         const settings = apiData.settings || {};
         AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
 
