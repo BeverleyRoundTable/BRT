@@ -27,565 +27,119 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--grey-dark); color: var(--text); line-height: 1.7; font-size: 15px; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--grey-dark);
-    color: var(--text);
-    line-height: 1.7;
-    font-size: 15px;
-  }
+  #sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: var(--grey-mid); border-right: 1px solid var(--grey-border); overflow-y: auto; z-index: 100; display: flex; flex-direction: column; }
+  .sidebar-header { padding: 28px 24px 20px; border-bottom: 1px solid var(--grey-border); background: var(--grey-dark); }
+  .sidebar-logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--gold); line-height: 1; margin-bottom: 4px; }
+  .sidebar-version { font-size: 11px; color: var(--grey-muted); letter-spacing: 1px; text-transform: uppercase; }
+  .sidebar-nav { padding: 16px 0; flex: 1; }
+  .nav-section-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--grey-muted); padding: 12px 24px 4px; display: block; }
+  .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 24px; color: var(--text-muted); text-decoration: none; font-size: 13.5px; font-weight: 500; transition: all 0.15s; border-left: 3px solid transparent; line-height: 1.3; }
+  .nav-link:hover { color: var(--gold); background: var(--gold-glow); border-left-color: var(--gold); }
+  .nav-link .nav-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gold); min-width: 18px; opacity: 0.7; }
 
-  /* ── SIDEBAR ── */
-  #sidebar {
-    position: fixed;
-    top: 0; left: 0;
-    width: var(--sidebar-w);
-    height: 100vh;
-    background: var(--grey-mid);
-    border-right: 1px solid var(--grey-border);
-    overflow-y: auto;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-  }
+  #main { margin-left: var(--sidebar-w); min-height: 100vh; }
 
-  .sidebar-header {
-    padding: 28px 24px 20px;
-    border-bottom: 1px solid var(--grey-border);
-    background: var(--grey-dark);
-  }
-
-  .sidebar-logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 2px;
-    color: var(--gold);
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-
-  .sidebar-version {
-    font-size: 11px;
-    color: var(--grey-muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
-  .sidebar-nav {
-    padding: 16px 0;
-    flex: 1;
-  }
-
-  .nav-section-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--grey-muted);
-    padding: 12px 24px 4px;
-    display: block;
-  }
-
-  .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 24px;
-    color: var(--text-muted);
-    text-decoration: none;
-    font-size: 13.5px;
-    font-weight: 500;
-    transition: all 0.15s;
-    border-left: 3px solid transparent;
-    line-height: 1.3;
-  }
-
-  .nav-link:hover {
-    color: var(--gold);
-    background: var(--gold-glow);
-    border-left-color: var(--gold);
-  }
-
-  .nav-link .nav-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--gold);
-    min-width: 18px;
-    opacity: 0.7;
-  }
-
-  /* ── MAIN CONTENT ── */
-  #main {
-    margin-left: var(--sidebar-w);
-    min-height: 100vh;
-  }
-
-  /* ── HERO ── */
-  .hero {
-    background: var(--grey-dark);
-    border-bottom: 1px solid var(--grey-border);
-    padding: 64px 56px 52px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .hero::before {
-    content: '🎅';
-    position: absolute;
-    right: 48px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 120px;
-    opacity: 0.06;
-    pointer-events: none;
-  }
-
-  .hero-eyebrow {
-    font-size: 11px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--gold);
-    font-weight: 600;
-    margin-bottom: 12px;
-  }
-
-  .hero-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 64px;
-    letter-spacing: 3px;
-    color: #fff;
-    line-height: 0.95;
-    margin-bottom: 16px;
-  }
-
+  .hero { background: var(--grey-dark); border-bottom: 1px solid var(--grey-border); padding: 64px 56px 52px; position: relative; overflow: hidden; }
+  .hero::before { content: '🎅'; position: absolute; right: 48px; top: 50%; transform: translateY(-50%); font-size: 120px; opacity: 0.06; pointer-events: none; }
+  .hero-eyebrow { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 12px; }
+  .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: 64px; letter-spacing: 3px; color: #fff; line-height: 0.95; margin-bottom: 16px; }
   .hero-title span { color: var(--gold); }
-
-  .hero-subtitle {
-    font-size: 17px;
-    color: var(--text-muted);
-    max-width: 540px;
-    line-height: 1.6;
-    margin-bottom: 28px;
-  }
-
-  .hero-badges {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 14px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-  }
-
+  .hero-subtitle { font-size: 17px; color: var(--text-muted); max-width: 540px; line-height: 1.6; margin-bottom: 28px; }
+  .hero-badges { display: flex; gap: 10px; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.3px; }
   .badge-gold { background: var(--gold-glow); color: var(--gold); border: 1px solid rgba(251,175,51,0.3); }
   .badge-grey { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--grey-border); }
 
-  /* ── CONTENT WRAPPER ── */
-  .content {
-    padding: 48px 56px;
-    max-width: 860px;
-  }
+  .content { padding: 48px 56px; max-width: 860px; }
 
-  /* ── SECTION ── */
-  .section {
-    margin-bottom: 56px;
-    scroll-margin-top: 24px;
-  }
+  .section { margin-bottom: 56px; scroll-margin-top: 24px; }
+  .section-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--grey-border); }
+  .section-num { font-family: 'Bebas Neue', sans-serif; font-size: 40px; color: var(--gold); opacity: 0.4; line-height: 1; min-width: 36px; padding-top: 2px; }
+  .section-icon { font-size: 22px; margin-bottom: 4px; display: block; }
+  h2.section-title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1.5px; color: #fff; line-height: 1; margin-bottom: 4px; }
+  .section-desc { font-size: 13.5px; color: var(--text-muted); font-weight: 400; }
 
-  .section-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 28px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--grey-border);
-  }
-
-  .section-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 40px;
-    color: var(--gold);
-    opacity: 0.4;
-    line-height: 1;
-    min-width: 36px;
-    padding-top: 2px;
-  }
-
-  .section-title-block {}
-
-  .section-icon {
-    font-size: 22px;
-    margin-bottom: 4px;
-    display: block;
-  }
-
-  h2.section-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px;
-    letter-spacing: 1.5px;
-    color: #fff;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-
-  .section-desc {
-    font-size: 13.5px;
-    color: var(--text-muted);
-    font-weight: 400;
-  }
-
-  /* ── SUBSECTION ── */
-  h3.sub-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--gold);
-    margin: 28px 0 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  h3.sub-title::before {
-    content: '';
-    display: inline-block;
-    width: 3px;
-    height: 16px;
-    background: var(--gold);
-    border-radius: 2px;
-  }
+  h3.sub-title { font-size: 16px; font-weight: 700; color: var(--gold); margin: 28px 0 12px; display: flex; align-items: center; gap: 8px; }
+  h3.sub-title::before { content: ''; display: inline-block; width: 3px; height: 16px; background: var(--gold); border-radius: 2px; }
 
   p { margin-bottom: 14px; color: var(--text); }
   p:last-child { margin-bottom: 0; }
 
-  /* ── CALLOUT BOXES ── */
-  .callout {
-    border-radius: 8px;
-    padding: 16px 20px;
-    margin: 20px 0;
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-  }
-
+  .callout { border-radius: 8px; padding: 16px 20px; margin: 20px 0; display: flex; gap: 14px; align-items: flex-start; }
   .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-
   .callout-body { flex: 1; }
   .callout-body strong { font-size: 13px; font-weight: 700; display: block; margin-bottom: 4px; letter-spacing: 0.3px; text-transform: uppercase; }
   .callout-body p { font-size: 13.5px; color: inherit; margin-bottom: 0; }
-
-  .callout-warning {
-    background: var(--red-dim);
-    border: 1px solid rgba(211,28,28,0.3);
-    color: #f5a5a5;
-  }
+  .callout-warning { background: var(--red-dim); border: 1px solid rgba(211,28,28,0.3); color: #f5a5a5; }
   .callout-warning strong { color: var(--red); }
-
-  .callout-info {
-    background: var(--blue-dim);
-    border: 1px solid rgba(74,158,255,0.25);
-    color: #a5c8f5;
-  }
+  .callout-info { background: var(--blue-dim); border: 1px solid rgba(74,158,255,0.25); color: #a5c8f5; }
   .callout-info strong { color: var(--blue); }
-
-  .callout-tip {
-    background: var(--gold-glow);
-    border: 1px solid rgba(251,175,51,0.25);
-    color: #f0d49a;
-  }
+  .callout-tip { background: var(--gold-glow); border: 1px solid rgba(251,175,51,0.25); color: #f0d49a; }
   .callout-tip strong { color: var(--gold); }
-
-  .callout-success {
-    background: var(--green-dim);
-    border: 1px solid rgba(46,204,113,0.25);
-    color: #a5e8c3;
-  }
+  .callout-success { background: var(--green-dim); border: 1px solid rgba(46,204,113,0.25); color: #a5e8c3; }
   .callout-success strong { color: var(--green); }
 
-  /* ── STEPS ── */
-  .steps {
-    counter-reset: steps;
-    list-style: none;
-    margin: 16px 0;
-  }
-
-  .steps li {
-    counter-increment: steps;
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--grey-border);
-    font-size: 14px;
-  }
-
+  .steps { counter-reset: steps; list-style: none; margin: 16px 0; }
+  .steps li { counter-increment: steps; display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--grey-border); font-size: 14px; }
   .steps li:last-child { border-bottom: none; }
-
-  .steps li::before {
-    content: counter(steps);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
-    color: var(--gold);
-    background: var(--gold-glow);
-    border: 1px solid rgba(251,175,51,0.3);
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    line-height: 1;
-    padding-top: 1px;
-  }
-
+  .steps li::before { content: counter(steps); font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gold); background: var(--gold-glow); border: 1px solid rgba(251,175,51,0.3); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; line-height: 1; padding-top: 1px; }
   .steps li p { margin: 0; font-size: 14px; padding-top: 4px; }
 
-  /* ── BULLET LIST ── */
-  .bullet-list {
-    list-style: none;
-    margin: 12px 0;
-    padding: 0;
-  }
+  .bullet-list { list-style: none; margin: 12px 0; padding: 0; }
+  .bullet-list li { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; font-size: 14px; color: var(--text); }
+  .bullet-list li::before { content: '▸'; color: var(--gold); flex-shrink: 0; margin-top: 2px; font-size: 12px; }
 
-  .bullet-list li {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    padding: 5px 0;
-    font-size: 14px;
-    color: var(--text);
-  }
+  .code-block { background: #111110; border: 1px solid var(--grey-border); border-radius: 8px; margin: 16px 0; overflow: hidden; }
+  .code-block-header { background: var(--grey-mid); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--grey-border); }
+  .code-lang { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); }
+  .code-label { font-size: 11px; color: var(--grey-muted); }
+  .code-block pre { padding: 20px; overflow-x: auto; font-family: 'DM Mono', monospace; font-size: 12.5px; line-height: 1.7; color: #c9c9c4; }
 
-  .bullet-list li::before {
-    content: '▸';
-    color: var(--gold);
-    flex-shrink: 0;
-    margin-top: 2px;
-    font-size: 12px;
-  }
-
-  /* ── CODE BLOCKS ── */
-  .code-block {
-    background: #111110;
-    border: 1px solid var(--grey-border);
-    border-radius: 8px;
-    margin: 16px 0;
-    overflow: hidden;
-  }
-
-  .code-block-header {
-    background: var(--grey-mid);
-    padding: 8px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--grey-border);
-  }
-
-  .code-lang {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--gold);
-  }
-
-  .code-label {
-    font-size: 11px;
-    color: var(--grey-muted);
-  }
-
-  .code-block pre {
-    padding: 20px;
-    overflow-x: auto;
-    font-family: 'DM Mono', monospace;
-    font-size: 12.5px;
-    line-height: 1.7;
-    color: #c9c9c4;
-  }
-
-  .code-block code .kw { color: #c792ea; }
-  .code-block code .str { color: #a5e8a5; }
-  .code-block code .cm { color: #5c6e6e; font-style: italic; }
-  .code-block code .fn { color: #82aaff; }
-  .code-block code .num { color: #f78c6c; }
-
-  /* ── KEY-VALUE TABLE ── */
-  .kv-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 16px 0;
-    font-size: 13.5px;
-  }
-
-  .kv-table th {
-    text-align: left;
-    padding: 10px 14px;
-    background: var(--grey-mid);
-    color: var(--gold);
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    font-weight: 600;
-    border-bottom: 1px solid var(--grey-border);
-  }
-
-  .kv-table td {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--grey-border);
-    color: var(--text);
-    vertical-align: top;
-  }
-
-  .kv-table td:first-child {
-    font-family: 'DM Mono', monospace;
-    font-size: 12.5px;
-    color: var(--gold);
-    white-space: nowrap;
-    min-width: 180px;
-  }
-
+  .kv-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; }
+  .kv-table th { text-align: left; padding: 10px 14px; background: var(--grey-mid); color: var(--gold); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--grey-border); }
+  .kv-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-border); color: var(--text); vertical-align: top; }
+  .kv-table td:first-child { font-family: 'DM Mono', monospace; font-size: 12.5px; color: var(--gold); white-space: nowrap; min-width: 180px; }
   .kv-table tr:last-child td { border-bottom: none; }
-
   .kv-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
 
-  /* ── CARDS GRID ── */
-  .cards-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin: 16px 0;
-  }
-
-  .card {
-    background: var(--grey-card);
-    border: 1px solid var(--grey-border);
-    border-radius: 8px;
-    padding: 16px 18px;
-  }
-
+  .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .card { background: var(--grey-card); border: 1px solid var(--grey-border); border-radius: 8px; padding: 16px 18px; }
   .card-icon { font-size: 20px; margin-bottom: 8px; display: block; }
   .card-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px; }
   .card-desc { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
 
-  /* ── TWO-DEVICE TABLE ── */
-  .device-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin: 16px 0;
-  }
-
-  .device-card {
-    border-radius: 8px;
-    padding: 18px 20px;
-  }
-
-  .device-card.device-a {
-    background: var(--blue-dim);
-    border: 1px solid rgba(74,158,255,0.2);
-  }
-
-  .device-card.device-b {
-    background: var(--green-dim);
-    border: 1px solid rgba(46,204,113,0.2);
-  }
-
-  .device-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-  }
+  .device-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .device-card { border-radius: 8px; padding: 18px 20px; }
+  .device-card.device-a { background: var(--blue-dim); border: 1px solid rgba(74,158,255,0.2); }
+  .device-card.device-b { background: var(--green-dim); border: 1px solid rgba(46,204,113,0.2); }
+  .device-label { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; margin-bottom: 4px; }
   .device-a .device-label { color: var(--blue); }
   .device-b .device-label { color: var(--green); }
-
   .device-name { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 10px; }
   .device-desc { font-size: 12.5px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.5; }
   .device-operator { font-size: 12px; color: var(--text-muted); font-style: italic; }
 
-  /* ── COLOUR PALETTE ── */
-  .colour-row {
-    display: flex;
-    gap: 12px;
-    margin: 16px 0;
-  }
-
-  .colour-swatch {
-    flex: 1;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid var(--grey-border);
-  }
-
-  .colour-sample {
-    height: 60px;
-  }
-
-  .colour-info {
-    padding: 10px 14px;
-    background: var(--grey-card);
-  }
-
+  .colour-row { display: flex; gap: 12px; margin: 16px 0; }
+  .colour-swatch { flex: 1; border-radius: 8px; overflow: hidden; border: 1px solid var(--grey-border); }
+  .colour-sample { height: 60px; }
+  .colour-info { padding: 10px 14px; background: var(--grey-card); }
   .colour-name { font-size: 12px; font-weight: 700; color: #fff; }
   .colour-hex { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
   .colour-role { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
-  /* ── FIREBASE RULES BLOCK ── */
-  .firebase-node {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    line-height: 1.9;
-  }
+  .divider { border: none; border-top: 1px solid var(--grey-border); margin: 48px 0; }
 
-  .fn-key { color: #82aaff; }
-  .fn-val { color: #a5e8a5; }
-  .fn-brace { color: #fbaf33; }
-  .fn-comment { color: #5c6e6e; font-style: italic; }
-
-  /* ── DIVIDER ── */
-  .divider {
-    border: none;
-    border-top: 1px solid var(--grey-border);
-    margin: 48px 0;
-  }
-
-  /* ── FOOTER ── */
-  .guide-footer {
-    background: var(--grey-mid);
-    border-top: 1px solid var(--grey-border);
-    padding: 32px 56px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .footer-brand {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 2px;
-    color: var(--gold);
-  }
-
+  .guide-footer { background: var(--grey-mid); border-top: 1px solid var(--grey-border); padding: 32px 56px; display: flex; justify-content: space-between; align-items: center; }
+  .footer-brand { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--gold); }
   .footer-meta { font-size: 12px; color: var(--grey-muted); }
 
-  /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--grey-dark); }
   ::-webkit-scrollbar-thumb { background: var(--grey-border); border-radius: 3px; }
 
-  /* ── RESPONSIVE ── */
   @media (max-width: 900px) {
     #sidebar { display: none; }
     #main { margin-left: 0; }
@@ -596,16 +150,7 @@
     .guide-footer { flex-direction: column; gap: 8px; text-align: center; padding: 24px 28px; }
   }
 
-  /* ── INLINE BADGES ── */
-  .tag {
-    display: inline-block;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    vertical-align: middle;
-    font-weight: 500;
-  }
+  .tag { display: inline-block; font-family: 'DM Mono', monospace; font-size: 11px; padding: 2px 8px; border-radius: 4px; vertical-align: middle; font-weight: 500; }
   .tag-gold { background: var(--gold-glow); color: var(--gold); border: 1px solid rgba(251,175,51,0.3); }
   .tag-red { background: var(--red-dim); color: #f5a5a5; border: 1px solid rgba(211,28,28,0.3); }
   .tag-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(74,158,255,0.3); }
@@ -663,6 +208,7 @@
 
   <div class="content">
 
+    <!-- ── BEFORE YOU START ── -->
     <section id="prereqs" class="section">
       <div class="section-header">
         <div class="section-num">✦</div>
@@ -672,7 +218,6 @@
           <span class="section-desc">What you'll need before touching anything else</span>
         </div>
       </div>
-
       <ul class="bullet-list">
         <li>A Google account (Round Table account preferred)</li>
         <li>Your own copy of the <em>TurboSanta Master Sheet</em></li>
@@ -681,6 +226,7 @@
       </ul>
     </section>
 
+    <!-- ── COMMAND CENTRE ── -->
     <section id="command-centre" class="section">
       <div class="section-header">
         <div class="section-num">✦</div>
@@ -690,13 +236,9 @@
           <span class="section-desc">Your Google Sheet and its tab structure</span>
         </div>
       </div>
-
       <p>Make your own copy of the TurboSanta Master Sheet (e.g., <em>Beverley TurboSanta</em>). Every tab has a specific job:</p>
-
       <table class="kv-table" style="margin-top:16px;">
-        <thead>
-          <tr><th>Tab</th><th>Purpose</th></tr>
-        </thead>
+        <thead><tr><th>Tab</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td>Landing Page</td><td>Your starting point. Click the Dab Santa image to access all generated links, embeds, and tools.</td></tr>
           <tr><td>Settings</td><td>Master configuration with three data areas: <strong>Col A/B</strong> = key-value store (all named settings), <strong>Col Q</strong> = route name list for the Donations Wizard dropdown, <strong>Col S</strong> = PA preset messages for God Mode. See the <a href="#settings-ref" style="color:var(--gold);">Settings Key Reference</a>.</td></tr>
@@ -707,10 +249,11 @@
           <tr><td>RoadLookup</td><td>Powers the Address Lookup embed — maps street names to route/date combinations so families can see when Santa is visiting.</td></tr>
           <tr><td>Volunteers</td><td>Crew sign-up backend. <strong>Column A</strong> is auto-filled with a date VLOOKUP formula — do not edit. Data starts from <strong>Column B</strong>: RouteName, Volunteer Name, Role, Phone, Email, Organisation, Check-in Status, Bucket Number. Syncs with the Crew Portal and Operations Tab on sleigh night.</td></tr>
           <tr><td>Checklist</td><td>Pre-flight safety checklist backend. Column A = RouteName. <strong>Column B</strong> is auto-filled with a date formula. Remaining columns are checklist item names. Syncs in real-time from the Operations Tab on sleigh night.</td></tr>
+          <tr><td>Live Messages</td><td>Moderation queue for public Messages to Santa. Columns: Timestamp, Message, Status (Pending/Approved/Rejected), RouteName. God Mode polls this for pending messages; approvals push to the public tracker for 20 seconds.</td></tr>
           <tr><td>Letters</td><td>Stores Letter to Santa submissions for moderation and social media content ideas.</td></tr>
           <tr><td>Subscriber Heatmap</td><td>Permanently logs an anonymous lat/lng timestamp row every time someone subscribes for Santa notifications. Used by the AGM Heatmap tool (God Mode password protected). Three columns: timestamp, lat, lng.</td></tr>
           <tr><td>Route Suggestions</td><td>Receives anonymous lat/lng pins from the post-season Suggest a Route tool. Three columns: timestamp, lat, lng. Used for next year's route planning heatmap.</td></tr>
-          <tr><td>Season History</td><td>Stores one row per season snapshot (Year, Raised, Routes, Streets, Peak Viewers, Waves, Volunteers). Auto-created on first snapshot.</td></tr>
+          <tr><td>Season History</td><td>Stores one row per season snapshot (Year, Raised, Routes, Streets, Peak Viewers, Messages, Volunteers). Auto-created on first snapshot.</td></tr>
           <tr><td>Tracker Analytics</td><td>Syncs automatically from Firebase every 5 minutes with raw view events. Used by <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">GET_PEAK_VIEWERS</code> and the Analytics Dashboard.</td></tr>
           <tr><td>Advanced</td><td>Reserved for future configuration. Leave as-is unless instructed.</td></tr>
         </tbody>
@@ -719,6 +262,7 @@
 
     <hr class="divider">
 
+    <!-- ── DEPLOY API ── -->
     <section id="api" class="section">
       <div class="section-header">
         <div class="section-num">01</div>
@@ -728,9 +272,7 @@
           <span class="section-desc">Must be completed first — everything else depends on this</span>
         </div>
       </div>
-
       <p>The Apps Script API is the invisible brain connecting your Sheet to the live map, Santa's speed calculations, and all your public tools.</p>
-
       <ol class="steps">
         <li><p>In your Sheet, go to <em>Extensions → Apps Script</em>.</p></li>
         <li><p>Click <em>Deploy → New deployment</em>.</p></li>
@@ -739,7 +281,6 @@
         <li><p>Click <em>Deploy</em>, authorise permissions, and <strong>copy the Web App URL</strong>.</p></li>
         <li><p>Paste the URL into the <em>Settings</em> tab — find the row where Column A = <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">api_url</code> and set Column B to your URL.</p></li>
       </ol>
-
       <div class="callout callout-warning">
         <span class="callout-icon">⚠️</span>
         <div class="callout-body">
@@ -749,6 +290,7 @@
       </div>
     </section>
 
+    <!-- ── FIREBASE ── -->
     <section id="firebase" class="section">
       <div class="section-header">
         <div class="section-num">02</div>
@@ -761,11 +303,8 @@
 
       <h3 class="sub-title">Understanding Your Two Firebase Keys</h3>
       <p>TurboSanta uses <em>two distinct keys</em> in the Tracker sheet. These are not interchangeable:</p>
-
       <table class="kv-table">
-        <thead>
-          <tr><th>Key</th><th>What it does</th><th>Where it lives</th></tr>
-        </thead>
+        <thead><tr><th>Key</th><th>What it does</th><th>Where it lives</th></tr></thead>
         <tbody>
           <tr>
             <td>secret</td>
@@ -798,18 +337,15 @@
 
       <h3 class="sub-title">Create Placeholder Nodes</h3>
       <p>Firebase automatically deletes empty nodes. The following placeholders must exist <em>before</em> any data is sent — create each with the value <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">placeholder: true</code>:</p>
-
       <ul class="bullet-list">
         <li><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">location</code></li>
         <li><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">location/current</code></li>
         <li><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">analytics</code></li>
         <li><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">analytics/views</code></li>
-        <li><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">analytics/waves</code></li>
       </ul>
 
       <h3 class="sub-title">Security Rules</h3>
       <p>Open <em>Realtime Database → Rules</em> and paste the following. Replace <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">YOUR_SECRET</code> with your actual secret value.</p>
-
       <div class="code-block">
         <div class="code-block-header">
           <span class="code-lang">JSON</span>
@@ -848,19 +384,17 @@
 
       <h3 class="sub-title">Automatic Data Cleanup</h3>
       <p>TurboSanta prunes old Firebase data automatically in the background to keep things lean:</p>
-
       <table class="kv-table">
-        <thead>
-          <tr><th>Data Type</th><th>Retention Rule</th></tr>
-        </thead>
+        <thead><tr><th>Data Type</th><th>Retention Rule</th></tr></thead>
         <tbody>
           <tr><td>GPS History</td><td>Entries older than 90 minutes are deleted every time the notification checker runs.</td></tr>
-          <tr><td>Wave Events</td><td>Entries older than 12 hours are deleted. God Mode wave counts reflect tonight's activity only.</td></tr>
+          <tr><td>Messages to Santa</td><td>Sent to a moderation queue in the Live Messages sheet. Approved messages display on the public tracker for 20 seconds. All messages (Pending/Approved/Rejected) are retained in the sheet for season reporting.</td></tr>
           <tr><td>Subscribers</td><td>Never-notified subscribers deleted after 24 hours. Notified subscribers deleted 6 hours after the "Santa has passed" email.</td></tr>
         </tbody>
       </table>
     </section>
 
+    <!-- ── WIZARDS ── -->
     <section id="wizards" class="section">
       <div class="section-header">
         <div class="section-num">03</div>
@@ -870,9 +404,7 @@
           <span class="section-desc">Guided setup for every major component — each wizard gives green ticks when complete</span>
         </div>
       </div>
-
       <p>In your Google Sheet menu, click <em>🎅 TurboSanta</em> — each wizard is listed directly in the menu. Click the one you need and follow the prompts.</p>
-
       <ul class="bullet-list">
         <li><strong>🚀 Deployment Wizard</strong> — validates your web app deployment and saves the API URL.</li>
         <li><strong>🏠 TurboSanta Home</strong> — onboarding health check dashboard showing critical issues and warnings.</li>
@@ -886,16 +418,16 @@
         <li><strong>🔄 Sync Tracker Analytics</strong> — manually pull the latest Firebase view events into the Tracker Analytics tab.</li>
         <li><strong>🎬 MP4 Generator</strong> — trigger an animated route video render via GitHub Actions.</li>
       </ul>
-
       <div class="callout callout-info">
         <span class="callout-icon">ℹ️</span>
         <div class="callout-body">
           <strong>Background Triggers</strong>
-          <p>Saving your Firebase settings via the Firebase Wizard automatically creates two Apps Script triggers: a <em>1-minute trigger</em> for <code style="font-family:'DM Mono',monospace;font-size:12px;">checkSubscribersAndNotify</code> and a <em>5-minute trigger</em> for <code style="font-family:'DM Mono',monospace;font-size:12px;">syncTrackerAnalytics</code>. To verify: <em>Extensions → Apps Script → Triggers (clock icon on the left)</em>. If either is missing, re-save your Firebase settings via the Firebase Wizard. You can also trigger a manual sync at any time from <em>🎅 TurboSanta → 🔄 Sync Tracker Analytics</em>.</p>
+          <p>Saving your Firebase settings via the Firebase Wizard automatically creates two Apps Script triggers: a <em>1-minute trigger</em> for <code style="font-family:'DM Mono',monospace;font-size:12px;">checkSubscribersAndNotify</code> and a <em>5-minute trigger</em> for <code style="font-family:'DM Mono',monospace;font-size:12px;">syncTrackerAnalytics</code>. To verify: <em>Extensions → Apps Script → Triggers (clock icon on the left)</em>. If either is missing, re-save your Firebase settings via the Firebase Wizard.</p>
         </div>
       </div>
     </section>
 
+    <!-- ── GPS LOGGER ── -->
     <section id="gps-logger" class="section">
       <div class="section-header">
         <div class="section-num">04</div>
@@ -905,13 +437,9 @@
           <span class="section-desc">The sleigh phone that broadcasts Santa's live location</span>
         </div>
       </div>
-
       <p>Use an app like <em>GPS Logger</em> on the sleigh phone and configure it with the following settings. The Firebase Wizard will provide the exact URL to paste in.</p>
-
       <table class="kv-table">
-        <thead>
-          <tr><th>Setting</th><th>Value</th></tr>
-        </thead>
+        <thead><tr><th>Setting</th><th>Value</th></tr></thead>
         <tbody>
           <tr><td>Log to custom URL</td><td>ON</td></tr>
           <tr><td>HTTP Method</td><td>PUT</td></tr>
@@ -924,6 +452,7 @@
 
     <hr class="divider">
 
+    <!-- ── ADVANCED SETTINGS ── -->
     <section id="advanced" class="section">
       <div class="section-header">
         <div class="section-num">05</div>
@@ -933,7 +462,6 @@
           <span class="section-desc">Key settings rows not covered by the Wizards — all live in the Settings tab</span>
         </div>
       </div>
-
       <div class="callout callout-info">
         <span class="callout-icon">ℹ️</span>
         <div class="callout-body">
@@ -962,13 +490,19 @@
         <li>Examples: <em>"Santa is running 10 minutes late — thank you for your patience!"</em> or <em>"Challenge: raise £50 in the next 5 minutes and the elves will do a dance!"</em></li>
       </ul>
 
+      <h3 class="sub-title">Messages to Santa</h3>
+      <p>The public <em>💬 Msg Santa</em> button lets viewers send a short message (max 50 characters) to the sleigh. Messages go into a moderation queue in God Mode — the Lead Elf can approve or reject each one. Approved messages appear as a pulsing purple banner on the public tracker for 20 seconds, then disappear automatically.</p>
+      <ul class="bullet-list">
+        <li>Enable the feature by setting <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">enable_user_messages</code> to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> in Settings.</li>
+        <li>The button only appears when GPS is live and a route is active — hidden in kiosk mode.</li>
+        <li>God Mode polls for pending messages every 10 seconds and shows the originating route name next to each one.</li>
+        <li>All messages are stored in the Live Messages sheet for season reporting — approved message counts feed into the Season Wrap Report per route.</li>
+      </ul>
+
       <h3 class="sub-title">Crew Alert</h3>
       <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">crew_alert</code> key in Settings drives internal messaging from the Lead Elf to all volunteers on the Crew Hub — completely separate from the public PA system and never visible on the public tracker.</p>
-
       <table class="kv-table">
-        <thead>
-          <tr><th>Property</th><th>Detail</th></tr>
-        </thead>
+        <thead><tr><th>Property</th><th>Detail</th></tr></thead>
         <tbody>
           <tr><td>Default value</td><td>Leave blank</td></tr>
           <tr><td>Written by</td><td>Lead Elf via God Mode on sleigh night</td></tr>
@@ -976,7 +510,6 @@
           <tr><td>Poll frequency</td><td>Every 15 seconds</td></tr>
         </tbody>
       </table>
-
       <div class="callout callout-tip">
         <span class="callout-icon">💡</span>
         <div class="callout-body">
@@ -995,7 +528,6 @@
 
       <h3 class="sub-title">GET_PEAK_VIEWERS Formula</h3>
       <p>TurboSanta includes a custom Google Sheets formula to calculate peak simultaneous viewers within any time window:</p>
-
       <div class="code-block">
         <div class="code-block-header">
           <span class="code-lang">Google Sheets</span>
@@ -1003,11 +535,8 @@
         </div>
         <pre><code>=GET_PEAK_VIEWERS(E2:E, 15)</code></pre>
       </div>
-
       <table class="kv-table">
-        <thead>
-          <tr><th>Argument</th><th>Description</th></tr>
-        </thead>
+        <thead><tr><th>Argument</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>Argument 1</td><td>A range of timestamps — the E column in Tracker Analytics (parsed DateTime values).</td></tr>
           <tr><td>Argument 2</td><td>Window size in minutes. 15 is a sensible default; reduce to 5 for a tighter peak calculation.</td></tr>
@@ -1016,6 +545,7 @@
       </table>
     </section>
 
+    <!-- ── SETTINGS KEY REFERENCE ── -->
     <section id="settings-ref" class="section">
       <div class="section-header">
         <div class="section-num">05b</div>
@@ -1069,6 +599,7 @@
           <tr><td>show_carousel</td><td>Show the photo carousel. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
           <tr><td>carousel_folder_id</td><td>Google Drive folder ID containing photos for the carousel embed.</td></tr>
           <tr><td>donate_url</td><td>URL the Donate button links to on the public tracker.</td></tr>
+          <tr><td>enable_user_messages</td><td>Set to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> to enable the 💬 Msg Santa button on the public tracker. When disabled the button is hidden and submissions are rejected. Leave blank or set to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">FALSE</code> outside of sleigh nights.</td></tr>
         </tbody>
       </table>
 
@@ -1079,6 +610,8 @@
           <tr><td>live_announcement</td><td>Public PA message. When set, overrides the ETA/status box on all viewers' trackers with a pulsing gold banner. Clear when done.</td></tr>
           <tr><td>crew_alert</td><td>Internal crew message. Appears as a pulsing red banner on all Crew Hub screens within 15 seconds. Never visible to the public.</td></tr>
           <tr><td>elf_cam_url</td><td>Written automatically by the Elf Cam system. Stores the latest photo URL. The tracker polls this and shows new images as floating polaroids.</td></tr>
+          <tr><td>user_announcement</td><td>Written automatically when the Lead Elf approves a public message in God Mode. Contains the approved message text. The public tracker displays this as a pulsing purple banner for 20 seconds then clears automatically.</td></tr>
+          <tr><td>user_announcement_ts</td><td>Unix timestamp (ms) written alongside <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">user_announcement</code> on approval. The tracker uses this to start the 20-second countdown. Do not edit manually.</td></tr>
         </tbody>
       </table>
 
@@ -1114,11 +647,12 @@
           <tr><td>wrap_peak_viewers</td><td>Highest simultaneous viewer count recorded.</td></tr>
           <tr><td>wrap_social_followers</td><td>Social media follower count at season end.</td></tr>
           <tr><td>wrap_social_reach</td><td>Estimated social media reach for the season.</td></tr>
-          <tr><td>season_total_waves</td><td>Total wave interactions recorded across all nights.</td></tr>
+          <tr><td>season_total_waves</td><td>Retained for historical season snapshot compatibility. Now stores total approved Messages to Santa across the season. Auto-counted from the Live Messages sheet on snapshot.</td></tr>
         </tbody>
       </table>
     </section>
 
+    <!-- ── NOTIFICATIONS ── -->
     <section id="notifications" class="section">
       <div class="section-header">
         <div class="section-num">06</div>
@@ -1164,6 +698,7 @@
 
     <hr class="divider">
 
+    <!-- ── APP SUITE ── -->
     <section id="app-suite" class="section">
       <div class="section-header">
         <div class="section-num">07</div>
@@ -1173,7 +708,6 @@
           <span class="section-desc">Your full app ecosystem — accessible from the Landing Page</span>
         </div>
       </div>
-
       <p>Once setup is complete, click the <em>Dab Santa image</em> on your Landing Page to open your master directory of tools.</p>
 
       <h3 class="sub-title">📍 Tracking &amp; Operations</h3>
@@ -1181,7 +715,7 @@
         <div class="card">
           <span class="card-icon">🗺️</span>
           <div class="card-title">Sleigh Tracker</div>
-          <div class="card-desc">The main public map, featuring route details, donations, and festive interactions.</div>
+          <div class="card-desc">The main public map, featuring route details, donations, and festive interactions including the 💬 Msg Santa button.</div>
         </div>
         <div class="card">
           <span class="card-icon">🧭</span>
@@ -1191,7 +725,7 @@
         <div class="card">
           <span class="card-icon">⚡</span>
           <div class="card-title">God Mode Dashboard</div>
-          <div class="card-desc">Lead Elf cockpit — live GPS, viewer counts, donations, heatmaps, PA, and crew alerts. Password protected.</div>
+          <div class="card-desc">Lead Elf cockpit — live GPS, viewer counts, donations, heatmaps, PA, crew alerts, and message moderation queue. Password protected.</div>
         </div>
         <div class="card">
           <span class="card-icon">📺</span>
@@ -1287,7 +821,7 @@
         <div class="card">
           <span class="card-icon">📋</span>
           <div class="card-title">Season Wrap Report</div>
-          <div class="card-desc">Auto-generated print-ready AGM report with year-on-year comparison charts and one-click Season Snapshot.</div>
+          <div class="card-desc">Auto-generated print-ready AGM report with year-on-year comparison charts, per-route message counts, and one-click Season Snapshot.</div>
         </div>
         <div class="card">
           <span class="card-icon">📈</span>
@@ -1302,6 +836,7 @@
       </div>
     </section>
 
+    <!-- ── MP4 ── -->
     <section id="mp4" class="section">
       <div class="section-header">
         <div class="section-num">08</div>
@@ -1313,8 +848,6 @@
       </div>
 
       <h3 class="sub-title">One-Time GitHub Token Setup</h3>
-      <p>TurboSanta triggers rendering via a secure GitHub Actions workflow. This requires a Personal Access Token stored in your Apps Script project:</p>
-
       <ol class="steps">
         <li><p>Go to <em>github.com → Settings → Developer settings → Personal access tokens</em>.</p></li>
         <li><p>Create a Classic token with scopes: <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">repo</code> and <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">workflow</code>.</p></li>
@@ -1341,6 +874,7 @@
       </ul>
     </section>
 
+    <!-- ── WRAP REPORT ── -->
     <section id="wrap-report" class="section">
       <div class="section-header">
         <div class="section-num">09</div>
@@ -1370,16 +904,14 @@
 
       <h3 class="sub-title">Season History Columns</h3>
       <table class="kv-table">
-        <thead>
-          <tr><th>Column</th><th>Description</th></tr>
-        </thead>
+        <thead><tr><th>Column</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>Year</td><td>The season year (e.g., 2025)</td></tr>
           <tr><td>Raised</td><td>Total amount raised that season</td></tr>
           <tr><td>Routes</td><td>Number of routes completed</td></tr>
           <tr><td>Streets</td><td>Unique streets visited</td></tr>
           <tr><td>Peak Viewers</td><td>Highest simultaneous live tracker viewers</td></tr>
-          <tr><td>Waves</td><td>Total waves to Santa across the season</td></tr>
+          <tr><td>Messages</td><td>Total approved Messages to Santa across the season</td></tr>
           <tr><td>Volunteers</td><td>Number of volunteers that season</td></tr>
         </tbody>
       </table>
@@ -1391,10 +923,14 @@
         <li>Fully responsive: 3 columns on desktop, 2 on tablet, 1 on mobile.</li>
         <li>A placeholder message is shown until the first snapshot is saved.</li>
       </ul>
+
+      <h3 class="sub-title">Per-Route Message Counts</h3>
+      <p>The Routes Completed table in the Season Wrap Report includes a <em>💬 Messages</em> column showing how many approved messages to Santa were sent during each route. This data is pulled live from the Live Messages sheet via the <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">getMessageStats</code> API endpoint — no manual entry required.</p>
     </section>
 
     <hr class="divider">
 
+    <!-- ── BRAND ── -->
     <section id="brand" class="section">
       <div class="section-header">
         <div class="section-num">10</div>
@@ -1404,9 +940,7 @@
           <span class="section-desc">Round Table brand compliance and going live</span>
         </div>
       </div>
-
       <p>All TurboSanta tools automatically apply Round Table Brand Guidelines:</p>
-
       <div class="colour-row">
         <div class="colour-swatch">
           <div class="colour-sample" style="background:#FBAF33;"></div>
@@ -1433,12 +967,11 @@
           </div>
         </div>
       </div>
-
       <p style="margin-top:8px;">Font: <em>Open Sans</em></p>
-
       <p>To go live: grab your <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">&lt;iframe&gt;</code> or <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">&lt;script&gt;</code> embed codes from the Dab Santa portal and paste them into your Round Table website or Carrd site. Ensure your tracker, donation links, and route maps are front and centre.</p>
     </section>
 
+    <!-- ── SCALING ── -->
     <section id="scaling" class="section">
       <div class="section-header">
         <div class="section-num">11</div>
@@ -1448,9 +981,7 @@
           <span class="section-desc">Optional — for power users expecting large audiences</span>
         </div>
       </div>
-
       <p>Google Apps Script has a hard limit of 30 simultaneous connections. If your tracker link goes viral on a local Facebook group, hundreds of simultaneous visitors can crash the tracker. A free <em>Cloudflare cache</em> eliminates this risk entirely.</p>
-
       <div class="callout callout-success">
         <span class="callout-icon">⚡</span>
         <div class="callout-body">
@@ -1506,6 +1037,7 @@
       </div>
     </section>
 
+    <!-- ── SAT-NAV ── -->
     <section id="satnav" class="section">
       <div class="section-header">
         <div class="section-num">12</div>
@@ -1515,9 +1047,7 @@
           <span class="section-desc">Precise GPX-following navigation for the towing vehicle</span>
         </div>
       </div>
-
       <p>TurboSanta's Sat-Nav strictly follows your loaded GPX routes — unlike Google Maps, which tries to recalculate and skip cul-de-sacs. On sleigh night, you'll run <em>two separate devices</em>:</p>
-
       <div class="device-grid">
         <div class="device-card device-a">
           <div class="device-label">Device A</div>
@@ -1551,20 +1081,23 @@
       <p style="color:var(--text-muted); max-width:460px; margin:0 auto; font-size:14px;">All systems armed. Share the tracker, brief your elves, and bring a little Christmas magic to your streets.</p>
     </div>
 
-  </div><footer class="guide-footer">
+  </div>
+
+  <footer class="guide-footer">
     <div class="footer-brand">🎅 TurboSanta</div>
     <div class="footer-meta">Comprehensive Onboarding Guide · v3.2 · Updated March 2026<br>Beverley Round Table · Built with Apps Script, Firebase &amp; Cloudflare Pages</div>
   </footer>
 
-</div><script>
-  // Highlight active nav link on scroll
+</div>
+
+<script>
   const sections = document.querySelectorAll('section[id]');
   const navLinks = document.querySelectorAll('.nav-link');
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        navLinks.forEach(link => link.style.color = '');
+        navLinks.forEach(link => { link.style.color = ''; link.style.borderLeftColor = ''; link.style.background = ''; });
         const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
         if (active) {
           active.style.color = 'var(--gold)';
