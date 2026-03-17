@@ -224,6 +224,20 @@
   .btn-approve { background: #c88bff; color: #000; border: none; padding: 6px; border-radius: 6px; cursor: pointer; flex: 1; font-weight: bold; }
   .btn-reject { background: var(--surface); color: #ff6b6b; border: 1px solid var(--border); padding: 6px; border-radius: 6px; cursor: pointer; flex: 1; }
 
+  /* ⭐ NEW: Active User Message Display */
+  .active-user-msg { 
+    background: rgba(200, 139, 255, 0.15); border: 1px solid #c88bff; 
+    color: #e6c2ff; padding: 12px; border-radius: 8px; margin-bottom: 12px; 
+    font-size: 0.9em; font-weight: bold; display: none; 
+    animation: userPulseDash 1.5s infinite; text-align: center;
+  }
+  .active-user-msg span { font-style: italic; color: #fff; font-weight: normal; }
+  @keyframes userPulseDash {
+    0% { box-shadow: 0 0 0 0 rgba(200, 139, 255, 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(200, 139, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(200, 139, 255, 0); }
+  }
+
   /* ── GPS INFO ── */
   .gps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .gps-item { background: var(--surface-2); border-radius: 10px; padding: 12px; }
@@ -244,7 +258,7 @@
   .route-row .route-value.gold { color: var(--gold); }
   .no-route { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.85em; }
 
-  /* ⭐ NEW: HEATMAP CONTROLS UI */
+  /* ── HEATMAP CONTROLS UI ── */
   .heatmap-controls { display: none; margin-top: 15px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; }
   .heatmap-controls.active { display: block; animation: slideDown 0.3s ease-out; }
   @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -372,6 +386,9 @@ async function init() {
   setInterval(fetchWeather, 900000); // 15 mins
   setInterval(updateClock, 1000);
   setInterval(updateGpsAge, 1000);
+  
+  // ⭐ NEW: Keep the active user message UI synced perfectly with the clock
+  setInterval(updateUserMsgState, 1000);
 }
 
 async function fetchApiData() {
@@ -397,6 +414,7 @@ async function fetchApiData() {
 
     updateDashboard();
     updateCrewAlertButtonState();
+    updateUserMsgState(); // Ensure the active message display updates
   } catch(e) { console.error('API:', e); }
 }
 
@@ -727,6 +745,9 @@ function buildDashboard() {
           <span class="icon">💌</span>
           <h3>User Messages</h3>
         </div>
+        <div id="activeUserMsgBox" class="active-user-msg">
+          Live Now: <br><span id="activeUserMsgText"></span>
+        </div>
         <div id="pendingMessagesQueue">
            <div class="no-route">No pending messages</div>
         </div>
@@ -860,6 +881,26 @@ function updateDashboard() {
   if (panel) {
     const isEnabled = String(STATE.settings?.enable_user_messages).toUpperCase() === 'TRUE';
     panel.style.display = isEnabled ? 'block' : 'none';
+  }
+}
+
+// ⭐ NEW: Checks if a user message is currently active and updates the UI
+function updateUserMsgState() {
+  const activeMsgBox = document.getElementById('activeUserMsgBox');
+  const activeMsgText = document.getElementById('activeUserMsgText');
+  if (!activeMsgBox || !activeMsgText) return;
+
+  const uMsg = STATE.settings?.user_announcement;
+  const uTs = Number(STATE.settings?.user_announcement_ts) || 0;
+  
+  // Is it active? (Less than 20 seconds old)
+  const isActive = uMsg && (Date.now() - uTs < 20000);
+
+  if (isActive) {
+    activeMsgText.textContent = `"${uMsg}"`;
+    activeMsgBox.style.display = 'block';
+  } else {
+    activeMsgBox.style.display = 'none';
   }
 }
 
@@ -1151,6 +1192,13 @@ async function handleUserMsg(encodedMsg, action) {
   const secret = sessionStorage.getItem('sleighSecret') || '';
   const msg = decodeURIComponent(encodedMsg);
   
+  // Optimistically set the active state instantly so God Mode feels fast
+  if (action === 'approveUserMessage') {
+    STATE.settings.user_announcement = msg;
+    STATE.settings.user_announcement_ts = Date.now();
+    updateUserMsgState();
+  }
+
   // Optimistically remove it from UI to feel fast
   fetchPendingMessages(); 
   
