@@ -930,7 +930,7 @@ if (AppState.flags.isKiosk) {
 }
 
 if (!isFresh) {
-  if (!AppState.vars.staleSince) AppState.vars.staleSince = ts;
+  if (!AppState.vars.staleSince) AppState.vars.staleSince = Date.now();
   if (Date.now() - AppState.vars.staleSince > AppConfig.API.STALE_MS) {
     AppState.marker.setLatLng(AppConfig.LOCATIONS.LAPLAND);
     if (AppState.flags.follow) AppState.map.setView(AppConfig.LOCATIONS.LAPLAND, 5, { animate: true, duration: 2 });
