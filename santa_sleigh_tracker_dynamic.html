@@ -943,11 +943,15 @@ if (!isFresh) {
     return;
   }
   if (AppState.lastFix) {
-    animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
-    AppState.dom.statusBox.textContent = "🎅 Santa is nearby…";
-    setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
-    return;
-  }
+  animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng);
+  AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!";
+  AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg");
+  AppState.dom.statusDot.style.display = "block";
+  AppState.dom.statusDot.className = "status-dot dot-stopped";
+  setDimUI(false);
+  setTimeout(updateTracker, AppConfig.API.REFRESH_MS);
+  return;
+}
 } else {
   AppState.vars.staleSince = null;
   AppState.lastFix = { lat: data.lat, lng: data.lng };
