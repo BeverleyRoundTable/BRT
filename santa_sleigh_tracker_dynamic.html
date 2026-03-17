@@ -350,6 +350,30 @@
       border-right: 1px solid var(--border);
       box-shadow: 0 0 40px rgba(0,0,0,0.8);
     }
+
+    /* ⭐ BIG DRIVER PROGRESS OVERLAY */
+    .driver-progress-box {
+      display: none; /* Hidden by default */
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(29, 29, 26, 0.95);
+      border: 3px solid var(--rt-gold);
+      color: var(--rt-gold);
+      padding: 14px 40px;
+      font-size: 3em; /* Massive text! */
+      font-weight: 900;
+      border-radius: 24px;
+      z-index: 5000;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 15px rgba(251, 175, 51, 0.2);
+      text-align: center;
+      pointer-events: none; /* Lets you tap the map right through it */
+    }
+    /* Only show it when they click Start Navigation */
+    body.driver-mode.nav-active .driver-progress-box {
+      display: block; 
+    }
     
     /* Ruthlessly hide all public popups, prompts, and donate boxes in Driver Mode */
     body.driver-mode .donate-box,
@@ -417,6 +441,13 @@
   <div id="map"></div>
   <canvas id="snow"></canvas>
 
+  <div id="kioskBanner" class="kiosk-banner"></div>
+  <div id="kioskSponsor" class="kiosk-sponsor"></div>
+  <div id="map"></div>
+  <canvas id="snow"></canvas>
+  
+  <div id="driverProgressBox" class="driver-progress-box">0%</div>
+  
   <script>
     document.addEventListener("DOMContentLoaded", () => {
 
@@ -987,13 +1018,10 @@ if (AppState.flags.gpxLoaded) {
     // This instantly updates the CSS width we set above!
     AppState.dom.statusBox.style.setProperty('--progress', `${percentComplete}%`);
     
-    // God-Mode / Driver Override: Append text directly to the box
+    // God-Mode / Driver Override: Giant overlay text
     if (AppState.flags.isDriver) {
-      setTimeout(() => {
-        if (!AppState.dom.statusBox.textContent.includes("%")) {
-          AppState.dom.statusBox.textContent += ` (${percentComplete}%)`;
-        }
-      }, 50); // Small timeout to ensure it appends after your main status text updates
+      const bigBox = document.getElementById("driverProgressBox");
+      if (bigBox) bigBox.textContent = `${percentComplete}%`;
     }
   }
 
@@ -1199,6 +1227,7 @@ if (liveMsg && liveMsg.trim() !== "") {
 
           navBtn.onclick = () => {
             navBtn.style.display = "none";
+            document.body.classList.add("nav-active");
             
             // 🔒 Force the screen to stay awake
             requestWakeLock();
