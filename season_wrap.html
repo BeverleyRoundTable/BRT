@@ -549,7 +549,9 @@ function render(data) {
   const socialReach = s.wrap_social_reach || s.wrap_facebook_reach || s.sponsor_pack_facebook_reach || '';
   const webViews = s.wrap_website_views || s.sponsor_pack_website_views || '';
   const peakViewers = s.wrap_peak_viewers || '';
-  const totalWaves = s.season_total_waves || '';  // ⭐ Wave count accumulated by cleanupOldWaves_
+  const totalWaves = s.season_total_waves || '';
+const messageStats = data.messageStats || { total: 0, byRoute: {} };
+const totalMessages = messageStats.total || 0;
   const highlight = s.wrap_highlight || '';
 
   // Sorted completed routes by date
@@ -566,7 +568,7 @@ function render(data) {
   const dateRange = firstDate && lastDate ? `${firstDate} — ${lastDate}` : '';
 
   // Has digital stats?
-  const hasDigital = totalViews || socialFollowers || socialReach || webViews || desktopMobile || popularRoute || peakViewers || totalWaves;
+  const hasDigital = totalViews || socialFollowers || socialReach || webViews || desktopMobile || popularRoute || peakViewers || totalWaves || totalMessages > 0;
 
   // Build
   let h = '';
@@ -664,6 +666,7 @@ function render(data) {
                 <th>Date</th>
                 <th>Route</th>
                 <th>Streets</th>
+                <th style="text-align:right;">Messages</th>
                 <th style="text-align:right;">Raised</th>
               </tr>
             </thead>
@@ -671,10 +674,13 @@ function render(data) {
               ${sortedRoutes.map(r => {
                 const st = (r.streets || '').replace(/,/g, ', ');
                 const raisedFmt = r.raised ? `${currency}${Number(r.raised).toLocaleString()}` : '—';
+                const msgCount = messageStats.byRoute[r.routeName] || 0;
+                const msgFmt = msgCount > 0 ? `💬 ${msgCount}` : '—';
                 return `<tr>
                   <td class="route-date">${fmtDateLong(r.date)}</td>
                   <td class="route-name">${r.routeName || '—'}</td>
                   <td class="route-streets">${st || '—'}</td>
+                  <td style="text-align:right;color:var(--gold);font-weight:700;">${msgFmt}</td>
                   <td class="route-raised">${raisedFmt}</td>
                 </tr>`;
               }).join('')}
@@ -765,7 +771,7 @@ function render(data) {
     if (desktopMobile) h += `<div class="reach-item"><div class="icon">📱💻</div><div class="number">${desktopMobile}</div><div class="label">Desktop / Mobile %</div></div>`;
     if (popularRoute) h += `<div class="reach-item"><div class="icon">🏆</div><div class="number" style="font-size:1.4em">${popularRoute}</div><div class="label">Most Viewed Route</div></div>`;
     if (peakViewers) h += `<div class="reach-item"><div class="icon">🔥</div><div class="number">${peakViewers}</div><div class="label">Peak Live Trackers</div></div>`;
-    if (totalWaves) h += `<div class="reach-item"><div class="icon">👋</div><div class="number">${Number(totalWaves).toLocaleString()}</div><div class="label">Waves to Santa</div></div>`;
+    if (totalMessages > 0) h += `<div class="reach-item"><div class="icon">💬</div><div class="number">${totalMessages.toLocaleString()}</div><div class="label">Messages to Santa</div></div>`;
     h += '</div>';
   } else {
     h += `<div class="reach-row"><div class="reach-empty">Add analytics data to your Settings sheet to populate this section.<br>Keys: <code>wrap_total_views</code>, <code>wrap_social_followers</code>, etc.</div></div>`;
@@ -838,7 +844,7 @@ function render(data) {
       { id: 'chartRoutes',    label: '✅ Routes Completed', data: allSeasons.map(s => Number(s.routes) || 0),      color: red },
       { id: 'chartStreets',   label: '🏘️ Streets Visited',  data: allSeasons.map(s => Number(s.streets) || 0),     color: green },
       { id: 'chartViewers',   label: '🔥 Peak Viewers',     data: allSeasons.map(s => Number(s.peakViewers) || 0), color: blue },
-      { id: 'chartWaves',     label: '👋 Waves to Santa',   data: allSeasons.map(s => Number(s.waves) || 0),       color: purple },
+      { id: 'chartMessages', label: '💬 Messages to Santa', data: allSeasons.map(s => Number(s.waves) || 0), color: purple },
       { id: 'chartVolunteers',label: '🙋 Volunteers',       data: allSeasons.map(s => Number(s.volunteers) || 0),  color: teal }
     ];
 
@@ -865,14 +871,14 @@ function render(data) {
 
   // Populate snapshot data
   _snapshotData = {
-    year,
-    raised: totalRaised,
-    routes: routeCount,
-    streets: uniqueStreets,
-    peakViewers: peakViewers || '',
-    waves: totalWaves || '',
-    volunteers: volunteers || ''
-  };
+  year,
+  raised: totalRaised,
+  routes: routeCount,
+  streets: uniqueStreets,
+  peakViewers: peakViewers || '',
+  waves: totalMessages || '',
+  volunteers: volunteers || ''
+};
 
   // Render charts if history exists
   const configEl = document.getElementById('chartConfig');
@@ -937,7 +943,7 @@ async function snapshotSeason() {
     `Routes: ${_snapshotData.routes}\n` +
     `Streets: ${_snapshotData.streets}\n` +
     `Peak Viewers: ${_snapshotData.peakViewers || '—'}\n` +
-    `Waves: ${_snapshotData.waves || '—'}\n` +
+    `Messages to Santa: ${_snapshotData.waves || '—'}\n` +
     `Volunteers: ${_snapshotData.volunteers || '—'}\n\n` +
     `This cannot be undone. Continue?`
   );
