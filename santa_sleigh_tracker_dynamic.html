@@ -58,12 +58,29 @@
         /* ── DYNAMIC STATUS BOX ── */
     .status-popup { 
       position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
-      background: rgba(29, 29, 26, 0.95); /* Matched exactly to the bottom bars */
+      background: rgba(29, 29, 26, 0.95);
       border: 1px solid var(--border);
       color: var(--text); padding: 12px 18px; font-size: 1.05em; font-weight: 800; 
-      border-radius: 14px; /* Matched the 14px radius of your bottom bars */
+      border-radius: 14px;
       max-width: 90%; box-shadow: 0 4px 24px rgba(0,0,0,0.5); 
       z-index: 4000; text-align: center; transition: all 0.4s ease; line-height: 1.4;
+      
+      /* ADD THIS LINE so the progress bar respects the rounded corners: */
+      overflow: hidden; 
+    }
+
+    /* ⭐ NEW: TOP-EDGE PROGRESS BAR */
+    .status-popup::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: var(--rt-gold);
+      width: var(--progress, 0%); /* Driven by Javascript */
+      transition: width 1s ease-in-out;
+      box-shadow: 0 0 10px rgba(251, 175, 51, 0.8);
+      z-index: 0;
     }
 
     .status-popup.is-announcement {
@@ -962,6 +979,23 @@ let visualPos = { lat: data.lat, lng: data.lng };
 if (AppState.flags.gpxLoaded) {
   const snap = snapToGpxIndex(visualPos, AppConfig.GPX);
   if (snap && snap.distance < 50) { visualPos = snap.point; }
+
+  // ⭐ NEW: ROUTE PROGRESS BAR CALCULATION
+  if (AppState.gpxRoute && AppState.gpxRoute.length > 1) {
+    const percentComplete = Math.min(100, Math.round((AppState.vars.lastSnapIndex / (AppState.gpxRoute.length - 1)) * 100));
+    
+    // This instantly updates the CSS width we set above!
+    AppState.dom.statusBox.style.setProperty('--progress', `${percentComplete}%`);
+    
+    // God-Mode / Driver Override: Append text directly to the box
+    if (AppState.flags.isDriver) {
+      setTimeout(() => {
+        if (!AppState.dom.statusBox.textContent.includes("%")) {
+          AppState.dom.statusBox.textContent += ` (${percentComplete}%)`;
+        }
+      }, 50); // Small timeout to ensure it appends after your main status text updates
+    }
+  }
 
   // ⭐ PAC-MAN ROUTE ERASER
   if (AppState.dynamicRouteRemainingMain) {
