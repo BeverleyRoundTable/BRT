@@ -549,18 +549,19 @@
           hasPassedSticky: sessionStorage.getItem("SANTA_HAS_PASSED") === "1"
         },
         vars: {
-          apiUrl: null,
-          sleighName: "Santa Sleigh",
-          staleSince: null,
-          lastSnapIndex: 0,
-          snowflakes: [],
-          animRaf: null,
-          pendingSubscription: null,
-          notifyLatLng: null,
-          lastVisualPos: null,
-          escapeListener: null,
-          lastElfCamUrl: null
-        },
+  apiUrl: null,
+  sleighName: "Santa Sleigh",
+  staleSince: null,
+  lastSnapIndex: 0,
+  snowflakes: [],
+  animRaf: null,
+  pendingSubscription: null,
+  notifyLatLng: null,
+  lastVisualPos: null,
+  escapeListener: null,
+  lastElfCamUrl: null,
+  lastSeenMsgTs: Number(sessionStorage.getItem('SANTA_LAST_MSG_TS')) || 0
+},
         dom: {
           loading: document.getElementById("loadingCover"),
           statusBox: document.getElementById("statusBox"),
@@ -1015,6 +1016,7 @@
           // ⭐ If the tracker sees a NEW message, start a local 20-second stopwatch
           if (userMsg && userMsgTs !== AppState.vars.lastSeenMsgTs) {
              AppState.vars.lastSeenMsgTs = userMsgTs;
+            sessionStorage.setItem('SANTA_LAST_MSG_TS', String(userMsgTs));
              AppState.vars.localMsgStartTime = Date.now();
           }
           
