@@ -1008,10 +1008,18 @@
           // PA SYSTEM & USER MESSAGE OVERRIDES
           const liveMsg = latestApiData.settings?.live_announcement;
           const userMsg = latestApiData.settings?.user_announcement;
-          const userMsgTs = Number(latestApiData.settings?.user_announcement_ts) || 0;
           
-          // Show for 20,000ms (20s) because 6-second polling means they might miss the first 5 seconds.
-          const isUserMsgActive = userMsg && (Date.now() - userMsgTs < 20000);
+          // ⭐ Strip any stray apostrophes from Google Sheets just to be safe
+          const userMsgTs = Number(String(latestApiData.settings?.user_announcement_ts).replace(/\D/g, '')) || 0;
+          
+          // ⭐ If the tracker sees a NEW message, start a local 20-second stopwatch
+          if (userMsg && userMsgTs !== AppState.vars.lastSeenMsgTs) {
+             AppState.vars.lastSeenMsgTs = userMsgTs;
+             AppState.vars.localMsgStartTime = Date.now();
+          }
+          
+          // ⭐ Show it for exactly 20 seconds from the moment this user's phone discovered it
+          const isUserMsgActive = userMsg && AppState.vars.localMsgStartTime && (Date.now() - AppState.vars.localMsgStartTime < 20000);
 
           if (liveMsg && liveMsg.trim() !== "") {
             AppState.dom.statusBox.textContent = `📢 ${liveMsg}`;
