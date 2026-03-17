@@ -879,13 +879,6 @@
           }
           const latestApiData = AppState.vars.latestApiData;
           
-          // ⭐ Show or hide the Message button based on Settings tab
-          const msgsEnabled = String(latestApiData.settings?.enable_user_messages).toUpperCase() === "TRUE";
-          const msgBtnEl = AppState.dom.msgBtn || document.getElementById("msgBtn");
-          if (msgBtnEl) {
-             msgBtnEl.style.display = (msgsEnabled && !AppState.flags.isKiosk) ? "block" : "none";
-          }
-
           const rawElfCamUrl = latestApiData.settings?.elf_cam_url;
           
           // Only trigger if there is a new URL AND the user is currently looking at the tab
