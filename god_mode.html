@@ -326,6 +326,14 @@ const STATE = {
   map: null, marker: null, routeGlowLayer: null, routeMainLayer: null, gpxLoaded: false
 };
 
+  function haversineMeters(a, b) {
+  const R = 6371000;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+  
 function getApiUrl(params = '') {
   const secret = sessionStorage.getItem('sleighSecret') || '';
   const base = API.includes('?') ? API : API + '?';
@@ -682,8 +690,17 @@ function buildDashboard() {
     <div class="stat-card">
       <div class="label">Active Route</div>
       <div class="value gold" id="statRoute" style="font-size:1.6em">${todayRoute?.routeName || '—'}</div>
-      <div class="sub" id="statRouteDate">${todayRoute ? 'Tonight' : 'No route today'}</div>
+      
+      <div class="sub" id="statRouteDate" style="display: none;">${todayRoute ? 'Tonight' : 'No route today'}</div>
+      
+      <div class="sub" id="godProgressWrapper" style="margin-top: 10px; display: ${todayRoute ? 'block' : 'none'};">
+        <div style="background: var(--surface-2); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 4px;">
+          <div id="godProgressBar" style="background: var(--gold); width: 0%; height: 100%; transition: width 1s ease-in-out;"></div>
+        </div>
+        <div id="godProgressText" style="font-weight: bold; color: var(--gold);">0% Complete</div>
+      </div>
     </div>
+    
     <div class="stat-card">
       <div class="label">Live Viewers</div>
       <div class="value green" id="statViewers">—</div>
@@ -844,6 +861,16 @@ function loadGpxRoute(route, settings) {
   const startIconUrl = settings.sleigh_icon_start || 'https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png';
   const endIconUrl = settings.sleigh_icon_end || 'https://i.ibb.co/39WF0kBd/Santa-Marker-5.png';
 
+  // ⭐ NEW: Fetch raw points for the progress bar calculation
+  fetch(route.gpxUrl).then(r => r.text()).then(text => {
+    const xml = new DOMParser().parseFromString(text, "text/xml");
+    const pts = [...xml.getElementsByTagName("trkpt")];
+    STATE.gpxRoute = pts.map(p => ({
+      lat: parseFloat(p.getAttribute("lat")),
+      lng: parseFloat(p.getAttribute("lon"))
+    }));
+  }).catch(e => console.error("Error parsing raw GPX for progress:", e));
+  
   STATE.routeGlowLayer = new L.GPX(route.gpxUrl, {
     async: true,
     // Fix: Added lineCap and lineJoin to prevent massive SVG rendering spikes
@@ -968,6 +995,26 @@ function updateGps() {
   }
 
   updateGpsAge();
+
+  // ⭐ NEW: Calculate Progress Percentage
+  if (STATE.gpxRoute && STATE.gpxRoute.length > 1 && STATE.gps) {
+    let bestIndex = 0;
+    let bestDist = Infinity;
+    
+    // We use a global search here (unlike the public app) so the Lead Elf 
+    // never gets "stuck" if they refresh the page halfway through the night.
+    for (let i = 0; i < STATE.gpxRoute.length; i++) {
+      const d = haversineMeters(STATE.gps, STATE.gpxRoute[i]);
+      if (d < bestDist) { bestDist = d; bestIndex = i; }
+    }
+    
+    const pct = Math.min(100, Math.round((bestIndex / (STATE.gpxRoute.length - 1)) * 100));
+    
+    const bar = document.getElementById("godProgressBar");
+    const txt = document.getElementById("godProgressText");
+    if (bar) bar.style.width = pct + "%";
+    if (txt) txt.textContent = pct + "% Complete";
+  }
 }
 
 function updateViewers() {
@@ -1002,8 +1049,20 @@ function updateRouteDetail() {
 
   const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   el('statRoute', route.routeName || '—');
-  el('statRouteDate', isToday ? 'Tonight' : fmtDate(route.date));
-}
+  
+  const dateEl = document.getElementById('statRouteDate');
+  const progWrap = document.getElementById('godProgressWrapper');
+  
+  if (isToday) {
+    if (dateEl) dateEl.style.display = 'none';
+    if (progWrap) progWrap.style.display = 'block';
+  } else {
+    if (dateEl) {
+      dateEl.style.display = 'block';
+      dateEl.textContent = 'Next: ' + fmtDate(route.date);
+    }
+    if (progWrap) progWrap.style.display = 'none';
+  }
 
 function updateDonationDetail() {
   const c = document.getElementById('donationDetail');
