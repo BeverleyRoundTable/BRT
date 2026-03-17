@@ -217,6 +217,13 @@
     100% { box-shadow: 0 0 0 0 rgba(211,28,28,0); transform: scale(1); }
   }
 
+  /* ── USER MESSAGES ── */
+  .msg-item { background: var(--surface-2); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #c88bff; }
+  .msg-text { font-size: 0.95em; margin-bottom: 10px; color: var(--text); font-style: italic; }
+  .msg-actions { display: flex; gap: 8px; }
+  .btn-approve { background: #c88bff; color: #000; border: none; padding: 6px; border-radius: 6px; cursor: pointer; flex: 1; font-weight: bold; }
+  .btn-reject { background: var(--surface); color: #ff6b6b; border: 1px solid var(--border); padding: 6px; border-radius: 6px; cursor: pointer; flex: 1; }
+
   /* ── GPS INFO ── */
   .gps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .gps-item { background: var(--surface-2); border-radius: 10px; padding: 12px; }
@@ -702,7 +709,6 @@ function buildDashboard() {
         </div>
       </div>
 
-      <!-- ── CREW ALERT — internal, shown on Crew Hub only ── -->
       <div class="panel crew-alert-panel">
         <div class="panel-header">
           <span class="icon">🔔</span>
@@ -713,6 +719,16 @@ function buildDashboard() {
         <div class="pa-btns">
           <button id="crewAlertBtn" class="btn-crew-send" onclick="sendCrewAlert()">Send to Crew</button>
           <button class="btn-clear" onclick="clearCrewAlert()">Clear</button>
+        </div>
+      </div>
+
+      <div class="panel" id="userMessagesPanel" style="display: none;">
+        <div class="panel-header">
+          <span class="icon">💌</span>
+          <h3>User Messages</h3>
+        </div>
+        <div id="pendingMessagesQueue">
+           <div class="no-route">No pending messages</div>
         </div>
       </div>
 
@@ -838,6 +854,13 @@ function updateDashboard() {
   updateDonationDetail(); 
   updateRaisedStat(); 
   updateElfCam();
+  
+  // Hide or Show the User Messages Panel based on the Setting toggle
+  const panel = document.getElementById('userMessagesPanel');
+  if (panel) {
+    const isEnabled = String(STATE.settings?.enable_user_messages).toUpperCase() === 'TRUE';
+    panel.style.display = isEnabled ? 'block' : 'none';
+  }
 }
 
 function updateClock() {
@@ -1091,7 +1114,61 @@ function drawHeatmap() {
   
   if (ageEl) ageEl.textContent = 'Last updated: ' + fmtTime(new Date());
 }
+
+// ⭐ NEW: Poll for pending User Messages
+setInterval(fetchPendingMessages, 10000);
+
+async function fetchPendingMessages() {
+  const secret = sessionStorage.getItem('sleighSecret') || '';
+  try {
+    const res = await fetch(`${API}${API.includes('?')?'&':'?'}function=getPendingMessages&secret=${encodeURIComponent(secret)}`);
+    const msgs = await res.json();
+    const container = document.getElementById('pendingMessagesQueue');
+    
+    if(msgs.length === 0) {
+       container.innerHTML = '<div class="no-route">No pending messages</div>';
+       return;
+    }
+    
+    let html = '';
+    msgs.forEach(m => {
+       const safeMsg = encodeURIComponent(m.msg);
+       html += `
+         <div class="msg-item">
+           <div class="msg-text">"${m.msg}"</div>
+           <div class="msg-actions">
+             <button class="btn-approve" onclick="handleUserMsg('${safeMsg}', 'approveUserMessage')">Approve (20s)</button>
+             <button class="btn-reject" onclick="handleUserMsg('${safeMsg}', 'rejectUserMessage')">Reject</button>
+           </div>
+         </div>
+       `;
+    });
+    container.innerHTML = html;
+  } catch(e){}
+}
+
+async function handleUserMsg(encodedMsg, action) {
+  const secret = sessionStorage.getItem('sleighSecret') || '';
+  const msg = decodeURIComponent(encodedMsg);
   
+  // Optimistically remove it from UI to feel fast
+  fetchPendingMessages(); 
+  
+  try {
+    await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({ action: action, message: msg, secret: secret })
+    });
+    // Force immediate tracker setting refresh
+    fetchApiData(); 
+  } catch(e) {
+    alert("Failed to process message.");
+  }
+}
+
+// Kickstart the fetch when dashboard loads
+setTimeout(fetchPendingMessages, 1500);
+
 </script>
 </body>
 </html>
