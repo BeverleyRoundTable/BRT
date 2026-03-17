@@ -873,7 +873,7 @@
           const now = Date.now();
           
           // 1. THROTTLE SETTINGS (Only hit Google Apps Script every 30 seconds)
-          if (!AppState.vars.lastSettingsFetch || now - AppState.vars.lastSettingsFetch > 30000) {
+          if (!AppState.vars.lastSettingsFetch || now - AppState.vars.lastSettingsFetch > 60000) {
             AppState.vars.latestApiData = await Utils.loadJSON(AppState.vars.apiUrl);
             AppState.vars.lastSettingsFetch = now;
           }
