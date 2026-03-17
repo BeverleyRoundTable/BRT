@@ -996,24 +996,29 @@ function updateGps() {
 
   updateGpsAge();
 
-  // ⭐ NEW: Calculate Progress Percentage
+  // ⭐ Calculate Progress Percentage
   if (STATE.gpxRoute && STATE.gpxRoute.length > 1 && STATE.gps) {
     let bestIndex = 0;
     let bestDist = Infinity;
     
-    // We use a global search here (unlike the public app) so the Lead Elf 
-    // never gets "stuck" if they refresh the page halfway through the night.
+    // Global search to find the mathematically closest point
     for (let i = 0; i < STATE.gpxRoute.length; i++) {
       const d = haversineMeters(STATE.gps, STATE.gpxRoute[i]);
       if (d < bestDist) { bestDist = d; bestIndex = i; }
     }
     
-    const pct = Math.min(100, Math.round((bestIndex / (STATE.gpxRoute.length - 1)) * 100));
-    
     const bar = document.getElementById("godProgressBar");
     const txt = document.getElementById("godProgressText");
-    if (bar) bar.style.width = pct + "%";
-    if (txt) txt.textContent = pct + "% Complete";
+    
+    // 🛑 THE FIX: Only update percentage if he is actually near the route (e.g., within 150 meters)
+    if (bestDist > 150) {
+      if (bar) bar.style.width = "0%";
+      if (txt) txt.textContent = "Off Route"; 
+    } else {
+      const pct = Math.min(100, Math.round((bestIndex / (STATE.gpxRoute.length - 1)) * 100));
+      if (bar) bar.style.width = pct + "%";
+      if (txt) txt.textContent = pct + "% Complete";
+    }
   }
 }
 
