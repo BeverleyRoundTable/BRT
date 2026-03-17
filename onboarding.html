@@ -615,9 +615,6 @@
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════════════
-     SIDEBAR
-══════════════════════════════════════════════════════════════ -->
 <nav id="sidebar">
   <div class="sidebar-header">
     <div class="sidebar-logo">🎅 TurboSanta</div>
@@ -651,12 +648,8 @@
   </div>
 </nav>
 
-<!-- ══════════════════════════════════════════════════════════════
-     MAIN
-══════════════════════════════════════════════════════════════ -->
 <div id="main">
 
-  <!-- HERO -->
   <header class="hero">
     <div class="hero-eyebrow">Comprehensive Onboarding Guide</div>
     <h1 class="hero-title">TURBO<span>SANTA</span><br>MISSION CONTROL</h1>
@@ -668,10 +661,8 @@
     </div>
   </header>
 
-  <!-- CONTENT -->
   <div class="content">
 
-    <!-- ── BEFORE YOU START ── -->
     <section id="prereqs" class="section">
       <div class="section-header">
         <div class="section-num">✦</div>
@@ -690,7 +681,6 @@
       </ul>
     </section>
 
-    <!-- ── COMMAND CENTRE ── -->
     <section id="command-centre" class="section">
       <div class="section-header">
         <div class="section-num">✦</div>
@@ -729,7 +719,6 @@
 
     <hr class="divider">
 
-    <!-- ── 01 — DEPLOY THE API ── -->
     <section id="api" class="section">
       <div class="section-header">
         <div class="section-num">01</div>
@@ -760,7 +749,6 @@
       </div>
     </section>
 
-    <!-- ── 02 — FIREBASE ── -->
     <section id="firebase" class="section">
       <div class="section-header">
         <div class="section-num">02</div>
@@ -833,6 +821,8 @@
     ".write": false,
     "location": {
       "current": {
+        // 🔓 ALLOW PUBLIC READ: So the frontend tracker can fetch GPS directly!
+        ".read": true,
         "$secret": {
           ".write": "$secret === 'YOUR_SECRET'"
         }
@@ -872,7 +862,6 @@
       </table>
     </section>
 
-    <!-- ── 03 — WIZARDS ── -->
     <section id="wizards" class="section">
       <div class="section-header">
         <div class="section-num">03</div>
@@ -908,7 +897,6 @@
       </div>
     </section>
 
-    <!-- ── 04 — GPS LOGGER ── -->
     <section id="gps-logger" class="section">
       <div class="section-header">
         <div class="section-num">04</div>
@@ -937,7 +925,6 @@
 
     <hr class="divider">
 
-    <!-- ── 05 — ADVANCED SETTINGS ── -->
     <section id="advanced" class="section">
       <div class="section-header">
         <div class="section-num">05</div>
@@ -1030,7 +1017,6 @@
       </table>
     </section>
 
-    <!-- ── 05b — SETTINGS KEY REFERENCE ── -->
     <section id="settings-ref" class="section">
       <div class="section-header">
         <div class="section-num">05b</div>
@@ -1134,7 +1120,6 @@
       </table>
     </section>
 
-    <!-- ── 06 — NOTIFICATIONS ── -->
     <section id="notifications" class="section">
       <div class="section-header">
         <div class="section-num">06</div>
@@ -1180,7 +1165,6 @@
 
     <hr class="divider">
 
-    <!-- ── 07 — APP SUITE ── -->
     <section id="app-suite" class="section">
       <div class="section-header">
         <div class="section-num">07</div>
@@ -1218,7 +1202,7 @@
         <div class="card" style="grid-column: 1 / -1;">
           <span class="card-icon">📸</span>
           <div class="card-title">Elf Dashboard (Elf Cam)</div>
-          <div class="card-desc">Captures a JPEG photo from the sleigh phone at configurable intervals and uploads it to Google Drive via the <em>Highlander Protocol</em> (each new photo replaces the last — only one ever exists). The URL is written to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">elf_cam_url</code> in Settings. The public tracker polls for changes and displays new images as floating polaroid-style cards on the map.</div>
+          <div class="card-desc">Captures a JPEG photo from the sleigh phone at configurable intervals and uploads it to Google Drive via the <em>Highlander Protocol</em> (each new photo replaces the last — only one ever exists). The URL is written to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">elf_cam_url</code> in Settings. The public tracker polls for changes and displays new images as floating polaroids on the map.</div>
         </div>
       </div>
 
@@ -1319,7 +1303,6 @@
       </div>
     </section>
 
-    <!-- ── 08 — MP4 ── -->
     <section id="mp4" class="section">
       <div class="section-header">
         <div class="section-num">08</div>
@@ -1359,7 +1342,6 @@
       </ul>
     </section>
 
-    <!-- ── 09 — SEASON WRAP ── -->
     <section id="wrap-report" class="section">
       <div class="section-header">
         <div class="section-num">09</div>
@@ -1414,7 +1396,6 @@
 
     <hr class="divider">
 
-    <!-- ── 10 — BRAND ── -->
     <section id="brand" class="section">
       <div class="section-header">
         <div class="section-num">10</div>
@@ -1459,7 +1440,6 @@
       <p>To go live: grab your <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">&lt;iframe&gt;</code> or <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">&lt;script&gt;</code> embed codes from the Dab Santa portal and paste them into your Round Table website or Carrd site. Ensure your tracker, donation links, and route maps are front and centre.</p>
     </section>
 
-    <!-- ── 11 — SCALING ── -->
     <section id="scaling" class="section">
       <div class="section-header">
         <div class="section-num">11</div>
@@ -1476,7 +1456,7 @@
         <span class="callout-icon">⚡</span>
         <div class="callout-body">
           <strong>How it works</strong>
-          <p>Cloudflare acts as a shield — it asks your Google Sheet where Santa is once every 5 seconds, then shares that coordinate with thousands of families instantly. Google only ever sees 12 requests per minute. Cost: <em>£0.00</em>. Capacity: <em>100,000+ simultaneous viewers</em>.</p>
+          <p>Cloudflare acts as a shield — it sits in front of your Apps Script backend and serves cached configurations directly to users. Combined with our new direct Firebase GPS connection, your Google Workspace quotas are fully protected. Cost: <em>£0.00</em>. Capacity: <em>100,000+ simultaneous viewers</em>.</p>
         </div>
       </div>
 
@@ -1511,7 +1491,7 @@
       response = await fetch(targetUrl);
       response = new Response(response.body, response);
 
-      // Cache for exactly 5 seconds — smooth sleigh movement
+      // Cache for exactly 5 seconds
       response.headers.set("Cache-Control", "s-maxage=5");
       response.headers.set("Access-Control-Allow-Origin", "*");
 
@@ -1527,7 +1507,6 @@
       </div>
     </section>
 
-    <!-- ── 12 — SAT-NAV ── -->
     <section id="satnav" class="section">
       <div class="section-header">
         <div class="section-num">12</div>
@@ -1567,24 +1546,18 @@
 
     <hr class="divider">
 
-    <!-- ── YOU'RE READY ── -->
     <div style="text-align:center; padding: 32px 0 16px;">
       <div style="font-size: 64px; margin-bottom: 16px;">🎅⚡</div>
       <div style="font-family:'Bebas Neue',sans-serif; font-size:36px; letter-spacing:2px; color:#fff; margin-bottom:10px;">YOU'RE READY TO FLY</div>
       <p style="color:var(--text-muted); max-width:460px; margin:0 auto; font-size:14px;">All systems armed. Share the tracker, brief your elves, and bring a little Christmas magic to your streets.</p>
     </div>
 
-  </div><!-- /content -->
-
-  <!-- FOOTER -->
-  <footer class="guide-footer">
+  </div><footer class="guide-footer">
     <div class="footer-brand">🎅 TurboSanta</div>
     <div class="footer-meta">Comprehensive Onboarding Guide · v3.2 · Updated March 2026<br>Beverley Round Table · Built with Apps Script, Firebase &amp; Cloudflare Pages</div>
   </footer>
 
-</div><!-- /main -->
-
-<script>
+</div><script>
   // Highlight active nav link on scroll
   const sections = document.querySelectorAll('section[id]');
   const navLinks = document.querySelectorAll('.nav-link');
