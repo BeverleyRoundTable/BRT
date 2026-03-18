@@ -401,6 +401,13 @@ https://brt-23f.pages.dev/door_hanger?api=${ensureApi()}
 `;
 
 // ================================
+// Colouring Page
+// ================================
+const colouringpageLink = `
+https://brt-23f.pages.dev/colouring_page?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -431,3 +438,4 @@ document.getElementById("elfdashboardLink").value = elfdashboardLink.trim();
 document.getElementById("satnavLink").value = satnavLink.trim();
 document.getElementById("beaconLink").value = beaconLink.trim();
 document.getElementById("doorhangerLink").value = doorhangerLink.trim();
+document.getElementById("colouringpageLink").value = colouringpageLink.trim();
