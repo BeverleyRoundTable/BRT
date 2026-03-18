@@ -5,39 +5,42 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Door Hanger Generator</title>
 <meta name="theme-color" content="#1D1D1A">
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800;900&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root {
     --bg:#1D1D1A;--surface:#262622;--surface-2:#2f2f2a;
     --border:rgba(255,255,255,0.08);
-    --gold:#FBAF33;--gold-dim:rgba(251,175,51,0.12);
-    --red:#D31C1C;--text:#f0f0f0;--dim:rgba(255,255,255,0.5);
+    --gold:#FBAF33;--gold-dim:rgba(251,175,51,0.12);--gold-glow:rgba(251,175,51,0.25);
+    --red:#D31C1C;--text:#f0f0f0;--dim:rgba(255,255,255,0.5);--muted:rgba(255,255,255,0.3);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Open Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
-  /* ── CONTROLS ── */
+  /* ── CONTROLS — God Mode style ── */
   .controls{max-width:520px;margin:0 auto;padding:32px 24px}
   .ctrl-header{text-align:center;margin-bottom:28px}
-  .ctrl-header h1{font-size:1.8em;font-weight:900;letter-spacing:-0.02em;margin-bottom:4px}
+  .ctrl-header h1{font-size:1.6em;font-weight:900;letter-spacing:-0.02em;margin-bottom:6px}
   .ctrl-header h1 span{color:var(--gold)}
-  .ctrl-header p{font-size:.85em;color:var(--dim)}
+  .ctrl-header p{font-size:.82em;color:var(--dim);line-height:1.5}
   .field{margin-bottom:16px}
-  .field label{display:block;font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:6px}
-  .field input,.field select{width:100%;padding:14px;background:var(--surface);border:1px solid var(--border);
-    border-radius:10px;color:var(--text);font-family:inherit;font-size:.95em;outline:none}
-  .field input:focus,.field select:focus{border-color:var(--gold)}
-  .field input::placeholder{color:rgba(255,255,255,0.25)}
-  .field select{cursor:pointer}
+  .field label{display:block;font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:6px}
+  .field input,.field select{width:100%;padding:14px 16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;color:var(--text);font-family:inherit;font-size:.92em;outline:none;transition:border-color .2s}
+  .field input:focus,.field select:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim)}
+  .field input::placeholder{color:rgba(255,255,255,0.2)}
+  .field select{cursor:pointer;-webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23FBAF33' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
   .field select option{background:var(--surface);color:var(--text)}
   .btn-row{display:flex;gap:10px;margin-top:24px}
-  .btn{flex:1;padding:16px;border-radius:12px;font-weight:900;font-size:.95em;font-family:inherit;
-    cursor:pointer;border:none;transition:transform .1s;letter-spacing:.3px}
+  .btn{flex:1;padding:16px;border-radius:12px;font-weight:900;font-size:.92em;font-family:inherit;
+    cursor:pointer;border:none;transition:transform .1s,box-shadow .2s;letter-spacing:.3px}
   .btn:active{transform:scale(.96)}
-  .btn-gold{background:var(--gold);color:#000;box-shadow:0 4px 16px rgba(251,175,51,.25)}
+  .btn-gold{background:var(--gold);color:#000;box-shadow:0 4px 20px var(--gold-glow)}
+  .btn-gold:hover{box-shadow:0 6px 28px rgba(251,175,51,0.35)}
   .btn-dim{background:var(--surface);color:var(--dim);border:1px solid var(--border)}
-  .info-text{font-size:.75em;color:var(--dim);text-align:center;margin-top:12px;line-height:1.5}
+  .info-text{font-size:.72em;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6}
 
   /* ── LOADER ── */
   .loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;
@@ -47,70 +50,98 @@
     border-radius:50%;animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  /* ── PREVIEW (screen) ── */
-  .preview-area{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;padding:24px;background:rgba(255,255,255,0.03);
-    border-top:1px solid var(--border);min-height:300px}
+  /* ── PREVIEW ── */
+  .preview-area{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;padding:32px 24px;
+    background:rgba(255,255,255,0.02);border-top:1px solid var(--border);min-height:300px}
 
-  /* ── DOOR HANGER CARD ── */
+  /* ══════════════════════════════════════════
+     DOOR HANGER — Brand Compliant
+     #1D1D1A  #FBAF33  #FFFFFF  #D31C1C (accent)
+     Open Sans throughout
+     ══════════════════════════════════════════ */
   .hanger{
-    width:280px;height:560px;background:#fdfbf5;border-radius:16px;position:relative;
-    display:flex;flex-direction:column;align-items:center;padding:0 20px 20px;
-    box-shadow:0 8px 40px rgba(0,0,0,0.4);overflow:hidden;flex-shrink:0;
+    width:280px;height:580px;background:#ffffff;border-radius:14px;position:relative;
+    display:flex;flex-direction:column;align-items:center;padding:0;
+    box-shadow:0 12px 48px rgba(0,0,0,0.5);overflow:hidden;flex-shrink:0;
     font-family:'Open Sans',sans-serif;color:#1D1D1A;
   }
 
-  /* Door handle cutout */
+  /* Gold header band with curved bottom */
+  .hanger-top{
+    width:100%;background:var(--gold);padding:14px 20px 38px;text-align:center;position:relative;flex-shrink:0;
+  }
+  .hanger-top::after{
+    content:'';position:absolute;bottom:-1px;left:0;right:0;height:24px;
+    background:#ffffff;border-radius:50% 50% 0 0;
+  }
+
   .hanger-hook{
-    width:64px;height:64px;border-radius:50%;border:3px dashed #ccc;margin-top:18px;margin-bottom:10px;
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(0,0,0,0.03);
+    width:54px;height:54px;border-radius:50%;border:3px dashed rgba(29,29,26,0.25);margin:0 auto 6px;
+    display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.2);
   }
-  .hanger-hook-inner{width:24px;height:24px;border-radius:50%;border:2px dashed #bbb}
+  .hanger-hook-inner{width:20px;height:20px;border-radius:50%;border:2px dashed rgba(29,29,26,0.2)}
 
-  /* Top accent stripe */
-  .hanger-stripe{
-    position:absolute;top:0;left:0;right:0;height:6px;
-    background:linear-gradient(90deg,var(--red),var(--gold),var(--red));
+  .hanger-emoji{font-size:28px;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.12))}
+
+  /* Body */
+  .hanger-body{
+    flex:1;display:flex;flex-direction:column;align-items:center;
+    padding:4px 22px 14px;width:100%;position:relative;z-index:1;
   }
-
-  .hanger-emoji{font-size:42px;margin:6px 0 2px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.1))}
 
   .hanger-headline{
-    font-family:'Mountains of Christmas',cursive;font-size:26px;font-weight:700;
-    color:var(--red);text-align:center;line-height:1.15;margin-bottom:2px;
+    font-size:21px;font-weight:900;text-transform:uppercase;letter-spacing:-0.01em;
+    color:#1D1D1A;text-align:center;line-height:1.15;margin-bottom:4px;
   }
+  .hanger-headline em{color:var(--red);font-style:normal}
 
   .hanger-family{
-    font-size:18px;font-weight:900;color:#1D1D1A;text-align:center;
-    margin:4px 0 2px;letter-spacing:-0.01em;min-height:24px;
-    border-bottom:2px dotted #ddd;padding-bottom:4px;width:90%;
+    font-size:15px;font-weight:800;color:var(--gold);text-align:center;
+    margin:6px 0 4px;min-height:22px;width:85%;
+    border-bottom:2px solid #eee;padding-bottom:6px;
+  }
+  .hanger-family.empty{color:#ccc;font-size:12px;font-weight:600;border-bottom-style:dashed}
+
+  .hanger-sub{
+    font-size:9.5px;font-weight:600;color:#999;text-align:center;
+    margin:8px 0 12px;line-height:1.5;letter-spacing:.2px;
   }
 
-  .hanger-sub{font-size:10.5px;font-weight:600;color:#888;text-align:center;margin:6px 0 10px;line-height:1.4;letter-spacing:.2px}
-
   .hanger-qr{
-    background:#fff;padding:8px;border-radius:10px;border:2px solid #eee;
-    display:flex;align-items:center;justify-content:center;margin:0 auto 8px;
+    background:#fff;padding:6px;border-radius:8px;border:2px solid #f0f0f0;
+    display:flex;align-items:center;justify-content:center;margin:0 auto 6px;
   }
   .hanger-qr canvas{display:block}
 
-  .hanger-scan{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--red);text-align:center;margin-bottom:10px}
+  .hanger-scan{
+    font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:2px;
+    color:var(--gold);text-align:center;margin-bottom:12px;
+  }
 
   .hanger-route{
-    background:#f5f0e6;border:1px solid #e8e0cc;border-radius:8px;padding:8px 14px;
+    background:#faf7f0;border:1px solid #ede8db;border-radius:8px;padding:8px 14px;
     text-align:center;width:100%;margin-bottom:auto;
   }
-  .hanger-route-label{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#aaa}
-  .hanger-route-value{font-size:13px;font-weight:800;color:#1D1D1A;margin-top:2px}
+  .hanger-route-label{font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#bbb}
+  .hanger-route-value{font-size:12px;font-weight:800;color:#1D1D1A;margin-top:2px}
 
   .hanger-footer{
     display:flex;align-items:center;justify-content:center;gap:8px;
-    padding-top:10px;border-top:1px solid #eee;width:100%;margin-top:10px;
+    padding:10px 16px 0;border-top:1px solid #eee;width:100%;margin-top:8px;
   }
-  .hanger-logo{height:28px;width:auto;object-fit:contain;opacity:.85}
-  .hanger-brand{font-size:9px;font-weight:700;color:#aaa;letter-spacing:.5px}
+  .hanger-logo{height:26px;width:auto;object-fit:contain}
+  .hanger-brand{font-size:8px;font-weight:700;color:#aaa;letter-spacing:.3px}
 
-  /* ── SNOWFLAKES (decorative) ── */
-  .hanger-snow{position:absolute;pointer-events:none;font-size:12px;opacity:.15;color:#1D1D1A}
+  /* Dark bottom strip — Table Grey anchor */
+  .hanger-bottom-strip{
+    width:100%;background:#1D1D1A;padding:6px 10px;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    flex-shrink:0;
+  }
+  .hanger-bottom-strip span{font-size:6.5px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold)}
+
+  /* Decorative snowflakes */
+  .hanger-snow{position:absolute;pointer-events:none;opacity:.05;color:#1D1D1A;z-index:0}
 
   /* ── PRINT ── */
   @media print {
@@ -124,14 +155,14 @@
     .hanger{
       box-shadow:none !important;border:1px solid #ddd;
       -webkit-print-color-adjust:exact;print-color-adjust:exact;
-      width:270px;height:540px;
+      width:270px;height:560px;
     }
   }
 
   @media(max-width:620px){
     .preview-area{flex-direction:column;align-items:center}
-    .hanger{width:260px;height:520px}
-    .hanger-headline{font-size:22px}
+    .hanger{width:260px;height:540px}
+    .hanger-headline{font-size:18px}
   }
 </style>
 </head>
@@ -142,19 +173,19 @@
 <div class="controls" id="controls">
   <div class="ctrl-header">
     <h1>🚪 Door <span>Hanger</span> Generator</h1>
-    <p>Printable door hangers with a QR code to your live tracker</p>
+    <p>Printable door hangers families can hang to say they're waiting — with a QR code linking straight to your live tracker.</p>
   </div>
 
   <div class="field">
     <label>Family Name</label>
-    <input type="text" id="familyName" placeholder="The Smith Family" maxlength="40">
+    <input type="text" id="familyName" placeholder="e.g. The Smith Family" maxlength="40">
   </div>
 
   <div class="field">
-    <label>Headline</label>
+    <label>Headline Style</label>
     <select id="headline">
+      <option value="Santa, Stop Here!">Santa, Stop Here!</option>
       <option value="Santa, Please Stop Here!">Santa, Please Stop Here!</option>
-      <option value="Santa Stop Here!">Santa Stop Here!</option>
       <option value="We're Waiting for Santa!">We're Waiting for Santa!</option>
       <option value="Santa, We Believe!">Santa, We Believe!</option>
       <option value="Shhh… Santa's Coming!">Shhh… Santa's Coming!</option>
@@ -162,15 +193,15 @@
   </div>
 
   <div class="field">
-    <label>Route (optional)</label>
+    <label>Route (optional — shows visit date)</label>
     <select id="routeSelect"><option value="">Loading routes…</option></select>
   </div>
 
   <div class="field">
-    <label>Number of hangers</label>
+    <label>Hangers per page</label>
     <select id="hangerCount">
       <option value="1">1 (single)</option>
-      <option value="2" selected>2 (fits A4 landscape)</option>
+      <option value="2" selected>2 (A4 landscape)</option>
     </select>
   </div>
 
@@ -179,7 +210,7 @@
     <button class="btn btn-dim" onclick="window.print()">🖨 Print</button>
   </div>
 
-  <div class="info-text">Tip: Print on thick card stock for best results. Cut along the edges and hang on your door handle.</div>
+  <div class="info-text">Print on thick card stock for best results. Cut along the edges and hang on your door handle.</div>
 </div>
 
 <div class="preview-area" id="preview"></div>
@@ -190,19 +221,14 @@ let CFG = { logo:'', sleighName:'', trackerUrl:'', routes:[] };
 
 async function init() {
   if (!API) { alert('Missing ?api= parameter'); return; }
-
   try {
     const res = await fetch(API);
     const data = await res.json();
     const s = data.settings || {};
-
     CFG.logo = s.logo_overlay_url || '';
     CFG.sleighName = s.sleigh_display_name || 'Santa Sleigh';
     CFG.trackerUrl = s.tracker_url || '';
-    CFG.donateUrl = s.donate_url || '';
     CFG.routes = (data.routes || []).filter(r => r.routeName && r.date);
-
-    // Populate route dropdown
     const sel = document.getElementById('routeSelect');
     sel.innerHTML = '<option value="">— No route shown —</option>';
     CFG.routes.forEach(r => {
@@ -210,9 +236,7 @@ async function init() {
       const label = `${r.routeName} — ${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}`;
       sel.innerHTML += `<option value="${r.routeName}" data-date="${r.date}">${label}</option>`;
     });
-
   } catch(e) { console.error('API load failed:', e); }
-
   document.getElementById('loader').classList.add('done');
   generate();
 }
@@ -222,21 +246,16 @@ function getRouteInfo() {
   const opt = sel.options[sel.selectedIndex];
   if (!sel.value) return null;
   const d = new Date((opt.dataset.date || '') + 'T00:00:00');
-  return {
-    name: sel.value,
-    dateStr: isNaN(d) ? '' : d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})
-  };
+  return { name: sel.value, dateStr: isNaN(d) ? '' : d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}) };
 }
 
 function makeSnowflakes() {
-  const flakes = ['❄','❅','❆','✦','⁕'];
+  const flakes = ['❄','❅','❆','✦'];
   let html = '';
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 10; i++) {
     const f = flakes[Math.floor(Math.random()*flakes.length)];
-    const x = Math.random()*92 + 2;
-    const y = Math.random()*85 + 8;
-    const size = Math.random()*10 + 8;
-    const rot = Math.random()*360;
+    const x = Math.random()*88 + 4, y = 18 + Math.random()*65;
+    const size = Math.random()*12 + 10, rot = Math.random()*360;
     html += `<span class="hanger-snow" style="left:${x}%;top:${y}%;font-size:${size}px;transform:rotate(${rot}deg)">${f}</span>`;
   }
   return html;
@@ -246,42 +265,37 @@ function buildHanger() {
   const family = document.getElementById('familyName').value.trim();
   const headline = document.getElementById('headline').value;
   const route = getRouteInfo();
-
+  const words = headline.split(' ');
+  const headlineHtml = `<em>${words[0]}</em> ${words.slice(1).join(' ')}`;
   const familyHtml = family
     ? `<div class="hanger-family">${family}</div>`
-    : `<div class="hanger-family" style="border-bottom-style:solid;color:#ccc;font-size:14px">Your Family Name</div>`;
-
+    : `<div class="hanger-family empty">Your Family Name</div>`;
   const routeHtml = route
-    ? `<div class="hanger-route">
-        <div class="hanger-route-label">Santa visits on</div>
-        <div class="hanger-route-value">${route.dateStr}</div>
-       </div>`
-    : `<div class="hanger-route">
-        <div class="hanger-route-label">Track Santa Live</div>
-        <div class="hanger-route-value">${CFG.sleighName}</div>
-       </div>`;
-
-  const logoHtml = CFG.logo
-    ? `<img class="hanger-logo" src="${CFG.logo}" alt="Logo">`
-    : '';
-
-  const qrTarget = CFG.trackerUrl || API;
+    ? `<div class="hanger-route"><div class="hanger-route-label">Santa visits on</div><div class="hanger-route-value">${route.dateStr}</div></div>`
+    : `<div class="hanger-route"><div class="hanger-route-label">Track Santa Live</div><div class="hanger-route-value">${CFG.sleighName}</div></div>`;
+  const logoHtml = CFG.logo ? `<img class="hanger-logo" src="${CFG.logo}" alt="Logo">` : '';
 
   return `
     <div class="hanger">
-      <div class="hanger-stripe"></div>
+      <div class="hanger-top">
+        <div class="hanger-hook"><div class="hanger-hook-inner"></div></div>
+        <div class="hanger-emoji">🎅</div>
+      </div>
       ${makeSnowflakes()}
-      <div class="hanger-hook"><div class="hanger-hook-inner"></div></div>
-      <div class="hanger-emoji">🎅</div>
-      <div class="hanger-headline">${headline}</div>
-      ${familyHtml}
-      <div class="hanger-sub">Scan the QR code to track<br>Santa's sleigh in real time!</div>
-      <div class="hanger-qr" id="qrSlot_%%IDX%%"></div>
-      <div class="hanger-scan">📱 Scan to Track Santa</div>
-      ${routeHtml}
-      <div class="hanger-footer">
-        ${logoHtml}
-        <span class="hanger-brand">${CFG.sleighName}</span>
+      <div class="hanger-body">
+        <div class="hanger-headline">${headlineHtml}</div>
+        ${familyHtml}
+        <div class="hanger-sub">Scan the QR code below to track<br>Santa's sleigh live on the map!</div>
+        <div class="hanger-qr" id="qrSlot_%%IDX%%"></div>
+        <div class="hanger-scan">📱 Scan to Track</div>
+        ${routeHtml}
+        <div class="hanger-footer">
+          ${logoHtml}
+          <span class="hanger-brand">${CFG.sleighName}</span>
+        </div>
+      </div>
+      <div class="hanger-bottom-strip">
+        <span>Powered by TurboSanta</span>
       </div>
     </div>
   `;
@@ -290,37 +304,18 @@ function buildHanger() {
 function generate() {
   const count = parseInt(document.getElementById('hangerCount').value) || 2;
   const container = document.getElementById('preview');
-
   let html = '';
-  for (let i = 0; i < count; i++) {
-    html += buildHanger().replace('%%IDX%%', String(i));
-  }
+  for (let i = 0; i < count; i++) html += buildHanger().replace('%%IDX%%', String(i));
   container.innerHTML = html;
-
-  // Render QR codes
   const qrTarget = CFG.trackerUrl || API;
   for (let i = 0; i < count; i++) {
     const slot = document.getElementById('qrSlot_' + i);
-    if (slot) {
-      slot.innerHTML = '';
-      new QRCode(slot, {
-        text: qrTarget,
-        width: 110,
-        height: 110,
-        colorDark: '#1D1D1A',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
-      });
-    }
+    if (slot) { slot.innerHTML = ''; new QRCode(slot, { text: qrTarget, width: 108, height: 108, colorDark: '#1D1D1A', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); }
   }
 }
 
-// Live preview on input change
-document.getElementById('familyName').addEventListener('input', generate);
-document.getElementById('headline').addEventListener('change', generate);
-document.getElementById('routeSelect').addEventListener('change', generate);
-document.getElementById('hangerCount').addEventListener('change', generate);
-
+['familyName'].forEach(id => document.getElementById(id).addEventListener('input', generate));
+['headline','routeSelect','hangerCount'].forEach(id => document.getElementById(id).addEventListener('change', generate));
 init();
 </script>
 </body>
