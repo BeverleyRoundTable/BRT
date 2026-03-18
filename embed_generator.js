@@ -394,6 +394,13 @@ https://brt-23f.pages.dev/beacon?api=${ensureApi()}
 `;
 
 // ================================
+// Door Hanger
+// ================================
+const doorhangerLink = `
+https://brt-23f.pages.dev/door_hanger?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -423,3 +430,4 @@ document.getElementById("suggestLink").value = suggestLink.trim();
 document.getElementById("elfdashboardLink").value = elfdashboardLink.trim();
 document.getElementById("satnavLink").value = satnavLink.trim();
 document.getElementById("beaconLink").value = beaconLink.trim();
+document.getElementById("doorhangerLink").value = doorhangerLink.trim();
