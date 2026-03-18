@@ -308,7 +308,37 @@
     .dashboard { padding: 16px; }
     .top-bar .title { font-size: 1.1em; }
   }
-  </style>
+
+    /* ⭐ GPS HEALTH — Timeline & Badge Styles */
+  .gps-health-tl {
+    display: flex; align-items: flex-end; gap: 1.5px;
+    height: 32px; margin-top: 14px;
+  }
+  .gps-health-tl .tl-bar {
+    flex: 1; min-height: 2px; border-radius: 1.5px;
+    transition: height 0.3s, background 0.3s;
+  }
+  .gps-health-tl-labels {
+    display: flex; justify-content: space-between;
+    font-size: 0.6em; font-weight: 600; letter-spacing: 0.5px;
+    color: var(--text-muted); margin-top: 4px;
+  }
+  .gps-health-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 16px;
+    font-size: 0.65em; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; transition: all 0.3s;
+  }
+  .gps-health-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    transition: all 0.3s; flex-shrink: 0;
+  }
+  @keyframes gphDotPulse {
+    0% { box-shadow: 0 0 0 0 rgba(0,230,118,0.5); }
+    70% { box-shadow: 0 0 0 5px rgba(0,230,118,0); }
+    100% { box-shadow: 0 0 0 0 rgba(0,230,118,0); }
+  }
+</style>
 </head>
 <body>
 
@@ -385,6 +415,10 @@ async function init() {
   document.getElementById('loader').classList.add('done');
   
   fetchGps();
+  // ⭐ GPS HEALTH: Start direct Firebase polling (2s interval)
+  if (STATE.tracker.firebase_url) {
+    GpsHealth.init(STATE.tracker.firebase_url.replace(/\/$/, ""));
+  }
   fetchViewers();
   fetchWeather();
   
@@ -714,15 +748,18 @@ function buildDashboard() {
     </div>
 
     <div class="stat-card">
-      <div class="label">GPS Signal</div>
+      <div class="label">GPS Health</div>
       <div class="value" id="statGpsStatus">—</div>
       <div class="sub" id="statGpsAge">Waiting...</div>
+      <div class="sub" id="statGpsRate" style="color: var(--text-muted); margin-top: 2px;"></div>
     </div>
+    
     <div class="stat-card">
       <div class="label">Raised So Far</div>
       <div class="value gold" id="statRaised">${currency}${(STATE.donations.total || 0).toLocaleString()}</div>
       <div class="sub" id="statTarget">of ${currency}${(STATE.donations.target || 0).toLocaleString()}</div>
     </div>
+    
   </div>`;
 
   h += `<div class="main-grid">
@@ -801,21 +838,31 @@ function buildDashboard() {
 </div>
 
       <div class="panel">
-        <div class="panel-header"><span class="icon">📡</span><h3>GPS Data</h3></div>
+        <div class="panel-header">
+          <span class="icon">📡</span>
+          <h3>GPS Health</h3>
+          <div class="gps-health-badge" id="gphBadge" style="margin-left:auto;">
+            <span class="gps-health-dot" id="gphDot"></span>
+            <span id="gphBadgeText">NO DATA</span>
+          </div>
+        </div>
         <div class="gps-grid">
+          <div class="gps-item"><div class="gps-label">Fix Age</div><div class="gps-value" id="gphAge" style="font-variant-numeric:tabular-nums;">—</div></div>
+          <div class="gps-item"><div class="gps-label">Fix/min</div><div class="gps-value" id="gphRate" style="font-variant-numeric:tabular-nums;">—</div></div>
           <div class="gps-item"><div class="gps-label">Latitude</div><div class="gps-value" id="gpsLat">${STATE.gps?.lat || '—'}</div></div>
           <div class="gps-item"><div class="gps-label">Longitude</div><div class="gps-value" id="gpsLng">${STATE.gps?.lng || '—'}</div></div>
-          <div class="gps-item"><div class="gps-label">Last Fix</div><div class="gps-value" id="gpsTime">—</div></div>
-          <div class="gps-item"><div class="gps-label">Signal Age</div><div class="gps-value" id="gpsAgeLive">${gpsAgeText()}</div></div>
         </div>
+        <div class="gps-health-tl" id="gphTimeline"></div>
+        <div class="gps-health-tl-labels"><span>oldest</span><span>newest</span></div>
       </div>
-      <div class="panel">
+
+<div class="panel">
         <div class="panel-header"><span class="icon">❤️</span><h3>Donations</h3></div>
         <div id="donationDetail"></div>
       </div>
     </div>
   </div>`;
-
+  
   h += '<div class="last-updated" id="lastUpdated">Connecting...</div>';
   h += '</div>';
 
@@ -943,8 +990,6 @@ function updateGpsAge() {
   const el = (id, fn) => { const e = document.getElementById(id); if (e) fn(e); };
 
   el('gpsAgeLive', e => e.textContent = age);
-  el('statGpsAge', e => e.textContent = age);
-  el('statGpsStatus', e => { e.textContent = fresh ? 'LIVE' : 'STALE'; e.className = 'value ' + (fresh ? 'green' : 'red'); });
   el('liveBadge', e => e.className = 'live-badge' + (fresh ? '' : ' stale'));
   el('liveBadgeText', e => e.textContent = fresh ? 'LIVE' : 'NO SIGNAL');
   
@@ -1289,6 +1334,145 @@ async function handleUserMsg(encodedMsg, action) {
 // Kickstart the fetch when dashboard loads
 setTimeout(fetchPendingMessages, 1500);
 
+// ═══════════════════════════════════════════════════════════════
+// ⭐ GPS HEALTH MODULE — Polls Firebase directly every 2 seconds
+// Reads /location/current.json (public read per your Firebase rules)
+// Feeds data back into the stat card and sidebar panel.
+// ═══════════════════════════════════════════════════════════════
+ 
+const GpsHealth = (() => {
+  const POLL = 2000;
+  const HIST = 40;
+  const T_GREEN = 10, T_AMBER = 30, T_RED = 60;
+  const GREEN = "#00e676", AMBER = "#ffab00", RED = "#ff1744";
+ 
+  let fbUrl = null, tmr = null;
+  const fixes = [];
+  let lastRawTs = null;
+ 
+  function clr(s) { return s <= T_GREEN ? GREEN : s <= T_AMBER ? AMBER : RED; }
+  function lbl(s) { return s <= T_GREEN ? "LIVE" : s <= T_AMBER ? "DELAYED" : s <= T_RED ? "STALE" : "LOST"; }
+  function fmtAge(s) { return s < 60 ? s + "s" : s < 3600 ? Math.floor(s / 60) + "m" : Math.floor(s / 3600) + "h"; }
+ 
+  function rate() {
+    if (fixes.length < 2) return 0;
+    const ms = fixes[fixes.length - 1].ts - fixes[0].ts;
+    return ms > 0 ? Math.round((fixes.length - 1) / (ms / 60000)) : 0;
+  }
+ 
+  function renderTimeline() {
+    const el = document.getElementById("gphTimeline");
+    if (!el) return;
+    const gaps = [];
+    for (let i = 1; i < fixes.length; i++) gaps.push((fixes[i].ts - fixes[i - 1].ts) / 1000);
+    while (gaps.length < HIST) gaps.unshift(0);
+    const show = gaps.slice(-HIST);
+    const mx = Math.max(12, ...show);
+    el.innerHTML = show.map(g => {
+      if (g === 0) return '<div class="tl-bar" style="background:rgba(255,255,255,0.03);height:2px"></div>';
+      const pct = Math.min(100, Math.max(6, (g / mx) * 100));
+      const c = g <= 4 ? GREEN : g <= 12 ? AMBER : RED;
+      return `<div class="tl-bar" style="background:${c};height:${pct}%;opacity:.75"></div>`;
+    }).join("");
+  }
+ 
+  function paint(ageSec, lat, lng) {
+    const c = clr(ageSec), l = lbl(ageSec);
+ 
+    // Sidebar badge
+    const badge = document.getElementById("gphBadge");
+    const dot = document.getElementById("gphDot");
+    const btxt = document.getElementById("gphBadgeText");
+    if (badge) {
+      badge.style.background = ageSec <= T_GREEN ? "rgba(0,230,118,.08)" : ageSec <= T_AMBER ? "rgba(255,171,0,.08)" : "rgba(255,23,68,.08)";
+      badge.style.border = "1px solid " + c;
+      badge.style.color = c;
+    }
+    if (dot) {
+      dot.style.background = c;
+      dot.style.boxShadow = ageSec <= T_GREEN ? "0 0 6px " + c : "none";
+      dot.style.animation = ageSec <= T_GREEN ? "gphDotPulse 1.4s infinite" : "none";
+    }
+    if (btxt) btxt.textContent = l;
+ 
+    // Sidebar values
+    const ageEl = document.getElementById("gphAge");
+    if (ageEl) { ageEl.textContent = fmtAge(ageSec); ageEl.style.color = c; }
+ 
+    const r = rate();
+    const rateEl = document.getElementById("gphRate");
+    if (rateEl) { rateEl.textContent = r || "—"; rateEl.style.color = r >= 20 ? GREEN : r >= 10 ? AMBER : r > 0 ? RED : ""; }
+ 
+    // Feed stat card (top row) — these IDs already exist in god mode
+    const statStatus = document.getElementById("statGpsStatus");
+    if (statStatus) { statStatus.textContent = l; statStatus.className = "value " + (ageSec <= T_GREEN ? "green" : "red"); }
+ 
+    const statAge = document.getElementById("statGpsAge");
+    if (statAge) statAge.textContent = fmtAge(ageSec) + " ago";
+ 
+    const statRate = document.getElementById("statGpsRate");
+    if (statRate) statRate.textContent = r > 0 ? r + " fix/min" : "";
+ 
+    // Feed existing GPS Data fields that other parts of god mode reference
+    if (lat !== null) {
+      const latEl = document.getElementById("gpsLat");
+      if (latEl) latEl.textContent = lat.toFixed(6);
+      const lngEl = document.getElementById("gpsLng");
+      if (lngEl && lng !== null) lngEl.textContent = lng.toFixed(6);
+    }
+ 
+    renderTimeline();
+  }
+ 
+  async function poll() {
+    try {
+      const r = await fetch(fbUrl + "/location/current.json", { cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      let d = await r.json();
+ 
+      // Unwrap nested structure (same as tracker/proxyFirebase)
+      if (d && typeof d === "object" && !d.lat) {
+        const f = Object.values(d)[0];
+        if (f && typeof f === "object") d = f;
+      }
+      if (!d || typeof d.lat !== "number" || typeof d.lng !== "number") { paint(999, null, null); return; }
+ 
+      const fts = new Date(d.ts || 0).getTime();
+      const age = Math.round((Date.now() - fts) / 1000);
+ 
+      if (d.ts !== lastRawTs && fts > 0) {
+        lastRawTs = d.ts;
+        fixes.push({ ts: fts, lat: d.lat, lng: d.lng });
+        while (fixes.length > HIST * 2) fixes.shift();
+      }
+      paint(age, d.lat, d.lng);
+    } catch {
+      const last = fixes[fixes.length - 1];
+      const age = last ? Math.round((Date.now() - last.ts) / 1000) : 999;
+      paint(age, last?.lat || null, last?.lng || null);
+    }
+  }
+ 
+  return {
+    init(url) {
+      if (!url) { console.error("GpsHealth: no Firebase URL"); return; }
+      fbUrl = url.replace(/\/$/, "");
+      if (tmr) clearInterval(tmr);
+      poll();
+      tmr = setInterval(poll, POLL);
+    },
+    destroy() { if (tmr) { clearInterval(tmr); tmr = null; } },
+    getState() {
+      const last = fixes[fixes.length - 1];
+      return {
+        ageSec: last ? Math.round((Date.now() - last.ts) / 1000) : null,
+        rate: rate(), lat: last?.lat || null, lng: last?.lng || null,
+        status: last ? lbl(Math.round((Date.now() - last.ts) / 1000)) : "NO DATA"
+      };
+    }
+  };
+})();
+  
 </script>
 </body>
 </html>
