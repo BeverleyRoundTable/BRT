@@ -307,7 +307,7 @@ function generate() {
   let html = '';
   for (let i = 0; i < count; i++) html += buildHanger().replace('%%IDX%%', String(i));
   container.innerHTML = html;
-  const qrTarget = CFG.trackerUrl || API;
+  const qrTarget = CFG.trackerUrl || ('https://brt-23f.pages.dev/santa_sleigh_tracker_dynamic?api=' + encodeURIComponent(API));
   for (let i = 0; i < count; i++) {
     const slot = document.getElementById('qrSlot_' + i);
     if (slot) { slot.innerHTML = ''; new QRCode(slot, { text: qrTarget, width: 108, height: 108, colorDark: '#1D1D1A', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); }
