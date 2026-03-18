@@ -25,23 +25,16 @@
     overflow:hidden;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
   body{display:flex;flex-direction:column}
 
-  /* ── Setup ── */
-  .setup{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;padding:32px;gap:20px;transition:opacity .4s,transform .4s}
-  .setup.out{opacity:0;transform:scale(1.03);pointer-events:none}
-  .s-icon{font-size:72px;filter:drop-shadow(0 0 24px rgba(251,175,51,0.3))}
-  .s-title{font-family:var(--mono);font-size:13px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--gold)}
-  .s-desc{font-size:14px;color:var(--dim);text-align:center;max-width:320px;line-height:1.65}
-  .s-desc strong{color:var(--text);font-weight:700}
-  .s-input{width:100%;max-width:380px;padding:16px;background:var(--card);border:2px solid var(--border);
-    border-radius:14px;color:var(--text);font-family:var(--mono);font-size:11.5px;text-align:center;word-break:break-all}
-  .s-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px var(--gold-dim)}
-  .s-input::placeholder{color:var(--dim);font-family:var(--sans);font-size:13px}
-  .s-go{width:100%;max-width:380px;padding:18px;border-radius:14px;font-weight:900;font-size:16px;
-    font-family:var(--sans);cursor:pointer;border:none;background:var(--gold);color:#000;
-    box-shadow:0 6px 24px rgba(251,175,51,0.25);letter-spacing:.5px;transition:transform .1s}
-  .s-go:active{transform:scale(.96)}
-  .s-err{font-size:12px;color:var(--red);font-weight:700;min-height:18px;text-align:center}
+  /* ── Loader ── */
+  .loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:16px;z-index:9999;transition:opacity .4s}
+  .loader.done{opacity:0;pointer-events:none}
+  .loader-spin{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);
+    border-radius:50%;animation:spin .8s linear infinite}
+  .loader-text{font-size:13px;color:var(--dim);font-weight:600}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .error-msg{text-align:center;padding:80px 24px;color:var(--red);font-size:1em;max-width:500px;margin:0 auto;line-height:1.6}
+  .error-msg code{background:var(--card);padding:4px 10px;border-radius:6px;font-size:.85em;color:var(--gold)}
 
   /* ── Header ── */
   .hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
@@ -51,7 +44,8 @@
   .hdr-dot.buf{background:var(--amber);box-shadow:0 0 6px var(--amber)}
   .hdr-dot.err{background:var(--red)}
   .hdr-lbl{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
-  .hdr-host{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.5px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hdr-right{display:flex;align-items:center;gap:8px}
+  .hdr-name{font-size:11px;color:var(--dim);font-weight:600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
   /* ── Stage ── */
   .stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:20px}
@@ -86,6 +80,12 @@
   .qt-i{font-size:16px;flex-shrink:0}.qt-t{font-size:11px;font-weight:700;color:var(--amber);flex:1;letter-spacing:.3px}
   .qt-n{font-family:var(--mono);font-size:18px;font-weight:800;color:var(--amber);min-width:28px;text-align:right}
 
+  /* ── Screen warning ── */
+  .screen-warn{width:100%;max-width:440px;background:var(--gold-dim);border:1px solid rgba(251,175,51,.18);
+    border-radius:10px;padding:10px 14px;font-size:11px;font-weight:600;color:var(--gold);text-align:center;
+    line-height:1.5;flex-shrink:0;display:none}
+  body.transmitting .screen-warn{display:block}
+
   /* ── Controls ── */
   .ctrls{padding:14px 20px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0}
   .cb{flex:1;padding:18px 10px;border-radius:14px;font-weight:900;font-size:15px;font-family:var(--sans);
@@ -94,7 +94,6 @@
   .cb-go{background:var(--green);color:#000;box-shadow:0 4px 20px rgba(0,230,118,.25)}
   .cb-stop{background:var(--red);color:#fff;box-shadow:0 4px 20px rgba(255,23,68,.25)}
   .cb-log{flex:.4;background:var(--card);color:var(--dim);border:1px solid var(--border)}
-  .cb-rst{flex:.4;background:var(--card);color:var(--red);border:1px solid rgba(255,23,68,.2)}
 
   /* ── Drawer ── */
   .dw{position:fixed;bottom:0;left:0;right:0;max-height:55vh;background:var(--raised);border-top:2px solid var(--gold);
@@ -109,389 +108,294 @@
 </head>
 <body>
 
-<div id="S" class="setup">
-  <div class="s-icon">📡</div>
-  <div class="s-title">TurboSanta Beacon</div>
-  <div class="s-desc">Paste the <strong>GPS Logger URL</strong> from your Tracker sheet cell <strong>B7</strong>.</div>
-  <input id="Si" class="s-input" placeholder="https://…firebasedatabase.app/…/SECRET.json" autocomplete="off" autocapitalize="off" spellcheck="false">
-  <div class="s-desc" style="font-size:11px;margin-top:-8px">This is the same URL the third-party GPS Logger app uses. Saved locally for next time.</div>
-  <button id="Sb" class="s-go">CONNECT BEACON</button>
-  <div id="Se" class="s-err"></div>
+<div class="loader" id="loader">
+  <div class="loader-spin"></div>
+  <div class="loader-text" id="loaderText">Connecting to API…</div>
 </div>
-
-<div class="hdr">
-  <div class="hdr-left"><div id="Hd" class="hdr-dot"></div><span class="hdr-lbl">TurboSanta Beacon</span></div>
-  <span id="Hh" class="hdr-host"></span>
-</div>
-
-<div class="stage">
-  <div id="R" class="ring idle"><div class="core"><div id="Re" class="core-e">📡</div><div id="Rs" class="core-s">idle</div></div></div>
-  <div id="St" class="stx">Tap START to begin transmitting</div>
-  <div class="stats">
-    <div class="st"><div id="Vf" class="sv">0</div><div class="sl">Fixes</div></div>
-    <div class="st"><div id="Va" class="sv">—</div><div class="sl">Acc (m)</div></div>
-    <div class="st"><div id="Vt" class="sv">—</div><div class="sl">Last Fix</div></div>
-    <div class="st"><div id="Vs" class="sv">—</div><div class="sl">km/h</div></div>
-  </div>
-  <div id="Qt" class="qt"><div class="qt-i">📦</div><div class="qt-t">Queued offline — will replay on reconnect</div><div id="Qn" class="qt-n">0</div></div>
-</div>
-
-<div class="ctrls">
-  <button id="Cl" class="cb cb-log">LOG</button>
-  <button id="Cm" class="cb cb-go" data-on="0">▶︎ START</button>
-  <button id="Cr" class="cb cb-rst">⟳</button>
-</div>
-
-<div id="D" class="dw">
-  <div id="Dh" class="dw-h"><div class="dw-bar"></div><span>Transmission Log</span></div>
-  <div id="Dl" class="log"></div>
-</div>
+<div id="app"></div>
 
 <script>
 (()=>{
 "use strict";
 
-/* ═══════════════════════════════════════
-   CONFIG
-   ═══════════════════════════════════════ */
-const CFG = {
-  RETRY_MS:    5000,
-  MAX_AGE_MS:  90*60*1000,   // 90 min — matches server-side history cleanup
-  DB:          "TurboBeacon",
-  STORE:       "q",
-  VER:         1,
-  LOG_CAP:     300
-};
+const API = new URLSearchParams(location.search).get('api') || '';
 
-/* ═══════════════════════════════════════
-   STATE
-   ═══════════════════════════════════════ */
-const X = {
-  url: null,       // Full Firebase PUT URL (cell B7 value)
-  running: false,
-  wid: null,       // geolocation watchId
-  sent: 0,
-  lastTs: null,
-  depth: 0,
-  db: null,
-  flushTmr: null,
-  ageTmr: null
-};
+const CFG = { RETRY_MS: 5000, MAX_AGE_MS: 90*60*1000, DB: "TurboBeacon", STORE: "q", VER: 1, LOG_CAP: 300 };
+
+const X = { url:null, running:false, wid:null, sent:0, lastTs:null, depth:0, db:null, flushTmr:null, ageTmr:null, sleighName:"" };
+
+// ═══════════════════════════════════════
+// BOOT — same pattern as god_mode
+// ═══════════════════════════════════════
+
+if (!API) {
+  document.getElementById('loader').classList.add('done');
+  document.getElementById('app').innerHTML = '<div class="error-msg">Missing <strong>?api=</strong> parameter.<br><br>Usage: <code>beacon?api=YOUR_API_URL</code></div>';
+} else {
+  boot();
+}
+
+async function boot() {
+  const ltxt = document.getElementById('loaderText');
+
+  // ── 1. Authenticate (same as god_mode) ──
+  let secret = sessionStorage.getItem('beaconSecret');
+
+  if (!secret) {
+    secret = prompt("📡 Beacon Authorization\n\nEnter the God Mode password:");
+    if (!secret) {
+      document.getElementById('app').innerHTML = '<div class="error-msg">Authorization required. Refresh to try again.</div>';
+      document.getElementById('loader').classList.add('done');
+      return;
+    }
+
+    ltxt.textContent = "Verifying password…";
+    try {
+      const sep = API.includes('?') ? '&' : '?';
+      const res = await fetch(`${API}${sep}function=verifyGodMode&secret=${encodeURIComponent(secret)}`);
+      const result = await res.json();
+      if (!result.valid) {
+        document.getElementById('app').innerHTML = '<div class="error-msg">❌ Access Denied. Incorrect password.</div>';
+        document.getElementById('loader').classList.add('done');
+        return;
+      }
+      sessionStorage.setItem('beaconSecret', secret);
+    } catch(e) {
+      document.getElementById('app').innerHTML = '<div class="error-msg">❌ Failed to verify password.<br>' + e.message + '</div>';
+      document.getElementById('loader').classList.add('done');
+      return;
+    }
+  }
+
+  // ── 2. Fetch beacon config (protected endpoint) ──
+  ltxt.textContent = "Fetching GPS config…";
+  try {
+    const sep = API.includes('?') ? '&' : '?';
+    const res = await fetch(`${API}${sep}function=getBeaconConfig&secret=${encodeURIComponent(secret)}`);
+    const cfg = await res.json();
+
+    if (cfg.error) {
+      document.getElementById('app').innerHTML = '<div class="error-msg">❌ ' + cfg.error + '</div>';
+      document.getElementById('loader').classList.add('done');
+      return;
+    }
+
+    X.url = cfg.gpsLoggerUrl;
+    X.sleighName = cfg.sleighName || "Santa Sleigh";
+  } catch(e) {
+    document.getElementById('app').innerHTML = '<div class="error-msg">❌ Failed to fetch beacon config.<br>' + e.message + '</div>';
+    document.getElementById('loader').classList.add('done');
+    return;
+  }
+
+  // ── 3. Build UI & start ──
+  try { X.db = await dbOpen(); } catch { /* no offline buffer */ }
+  await dbPurge(); await syncQ();
+
+  buildUI();
+  startAge();
+  document.getElementById('loader').classList.add('done');
+
+  // Network events
+  window.addEventListener("online", () => { L("🌐 Network restored","g"); flush(); });
+  window.addEventListener("offline", () => { L("📴 Network lost","a"); if(X.running) setMode("buf"); });
+  X.flushTmr = setInterval(() => { if(X.running && X.depth>0 && navigator.onLine) flush(); }, CFG.RETRY_MS);
+  document.addEventListener("visibilitychange", () => { if(!document.hidden && X.running) wakeLock(); });
+
+  L("🎅 TurboSanta Beacon v2.0 ready","g");
+  L("📡 Target: " + X.url,"g");
+}
+
+// ═══════════════════════════════════════
+// UI BUILD
+// ═══════════════════════════════════════
+
+function buildUI() {
+  document.getElementById('app').innerHTML = `
+    <div class="hdr">
+      <div class="hdr-left"><div id="Hd" class="hdr-dot"></div><span class="hdr-lbl">Beacon</span></div>
+      <div class="hdr-right"><span id="Hn" class="hdr-name">${X.sleighName}</span></div>
+    </div>
+    <div class="stage">
+      <div id="R" class="ring idle"><div class="core"><div id="Re" class="core-e">📡</div><div id="Rs" class="core-s">idle</div></div></div>
+      <div id="St" class="stx">Tap START to begin transmitting</div>
+      <div class="stats">
+        <div class="st"><div id="Vf" class="sv">0</div><div class="sl">Fixes</div></div>
+        <div class="st"><div id="Va" class="sv">—</div><div class="sl">Acc (m)</div></div>
+        <div class="st"><div id="Vt" class="sv">—</div><div class="sl">Last Fix</div></div>
+        <div class="st"><div id="Vs" class="sv">—</div><div class="sl">km/h</div></div>
+      </div>
+      <div id="Qt" class="qt"><div class="qt-i">📦</div><div class="qt-t">Queued offline — will replay on reconnect</div><div id="Qn" class="qt-n">0</div></div>
+      <div class="screen-warn">⚠️ Keep this screen open and plugged in. GPS stops if the browser is backgrounded.</div>
+    </div>
+    <div class="ctrls">
+      <button id="Cl" class="cb cb-log">LOG</button>
+      <button id="Cm" class="cb cb-go">▶︎ START</button>
+    </div>
+    <div id="D" class="dw">
+      <div id="Dh" class="dw-h"><div class="dw-bar"></div><span>Transmission Log</span></div>
+      <div id="Dl" class="log"></div>
+    </div>
+  `;
+
+  // Wire buttons
+  _("Cm").onclick = toggleBeacon;
+
+  let logOpen = false;
+  _("Cl").onclick = () => { logOpen = !logOpen; _("D").classList.toggle("open", logOpen); };
+  _("Dh").onclick = () => { logOpen = false; _("D").classList.remove("open"); };
+}
+
+function toggleBeacon() {
+  const mb = _("Cm");
+  if (!X.running) {
+    X.running = true;
+    mb.textContent = "⏹ STOP"; mb.className = "cb cb-stop";
+    setMode("tx"); wakeLock(); gpsOn();
+    L("▶ Beacon started","g");
+  } else {
+    X.running = false; gpsOff();
+    mb.textContent = "▶︎ START"; mb.className = "cb cb-go";
+    setMode("idle");
+    if(wl) try{wl.release()}catch{}
+    L("⏹ Beacon stopped","a");
+  }
+}
+
+// ═══════════════════════════════════════
+// INDEXED-DB
+// ═══════════════════════════════════════
 
 const _ = id => document.getElementById(id);
 
-/* ═══════════════════════════════════════
-   INDEXED-DB  (offline queue)
-   ═══════════════════════════════════════ */
 function dbOpen() {
-  return new Promise((ok, no) => {
-    const r = indexedDB.open(CFG.DB, CFG.VER);
-    r.onupgradeneeded = e => {
-      const d = e.target.result;
-      if (!d.objectStoreNames.contains(CFG.STORE))
-        d.createObjectStore(CFG.STORE, { keyPath: "id", autoIncrement: true });
-    };
+  return new Promise((ok,no) => {
+    const r = indexedDB.open(CFG.DB,CFG.VER);
+    r.onupgradeneeded = e => { const d=e.target.result; if(!d.objectStoreNames.contains(CFG.STORE)) d.createObjectStore(CFG.STORE,{keyPath:"id",autoIncrement:true}); };
     r.onsuccess = () => ok(r.result);
     r.onerror = () => no(r.error);
   });
 }
-
-function dbAdd(payload) {
-  if (!X.db) return Promise.resolve();
-  return new Promise((ok, no) => {
-    const tx = X.db.transaction(CFG.STORE, "readwrite");
-    tx.objectStore(CFG.STORE).add({ p: payload, t: Date.now() });
-    tx.oncomplete = () => { syncQ(); ok(); };
-    tx.onerror = () => no(tx.error);
-  });
+function dbAdd(p) {
+  if(!X.db)return Promise.resolve();
+  return new Promise((ok,no) => { const tx=X.db.transaction(CFG.STORE,"readwrite"); tx.objectStore(CFG.STORE).add({p,t:Date.now()}); tx.oncomplete=()=>{syncQ();ok()}; tx.onerror=()=>no(tx.error); });
 }
-
 function dbAll() {
-  if (!X.db) return Promise.resolve([]);
-  return new Promise((ok, no) => {
-    const tx = X.db.transaction(CFG.STORE, "readonly");
-    const r = tx.objectStore(CFG.STORE).getAll();
-    r.onsuccess = () => ok(r.result || []);
-    r.onerror = () => no(r.error);
-  });
+  if(!X.db)return Promise.resolve([]);
+  return new Promise((ok,no) => { const tx=X.db.transaction(CFG.STORE,"readonly"); const r=tx.objectStore(CFG.STORE).getAll(); r.onsuccess=()=>ok(r.result||[]); r.onerror=()=>no(r.error); });
 }
-
 function dbDel(id) {
-  if (!X.db) return Promise.resolve();
-  return new Promise(ok => {
-    const tx = X.db.transaction(CFG.STORE, "readwrite");
-    tx.objectStore(CFG.STORE).delete(id);
-    tx.oncomplete = ok; tx.onerror = ok;
-  });
+  if(!X.db)return Promise.resolve();
+  return new Promise(ok => { const tx=X.db.transaction(CFG.STORE,"readwrite"); tx.objectStore(CFG.STORE).delete(id); tx.oncomplete=ok; tx.onerror=ok; });
 }
-
 async function dbPurge() {
-  const items = await dbAll();
-  const cut = Date.now() - CFG.MAX_AGE_MS;
-  let n = 0;
-  for (const i of items) { if (i.t < cut) { await dbDel(i.id); n++; } }
-  if (n) L(`🧹 Purged ${n} stale fix(es)`, "a");
-  syncQ();
+  const items=await dbAll(); const cut=Date.now()-CFG.MAX_AGE_MS; let n=0;
+  for(const i of items){if(i.t<cut){await dbDel(i.id);n++}}
+  if(n)L(`🧹 Purged ${n} stale fix(es)`,"a"); syncQ();
 }
-
 async function syncQ() {
-  try { X.depth = (await dbAll()).length; } catch { X.depth = 0; }
-  _("Qn").textContent = X.depth;
-  _("Qt").classList.toggle("vis", X.depth > 0);
+  try{X.depth=(await dbAll()).length}catch{X.depth=0}
+  const el=_("Qn"); if(el) el.textContent=X.depth;
+  const qt=_("Qt"); if(qt) qt.classList.toggle("vis",X.depth>0);
 }
 
-/* ═══════════════════════════════════════
-   FIREBASE PUT
-   ═══════════════════════════════════════ */
+// ═══════════════════════════════════════
+// FIREBASE PUT + QUEUE FLUSH
+// ═══════════════════════════════════════
+
 async function putFix(payload) {
   try {
-    const r = await fetch(X.url, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (!r.ok) throw new Error("HTTP " + r.status);
-
-    X.sent++; X.lastTs = Date.now();
-    _("Vf").textContent = X.sent;
+    const r = await fetch(X.url, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    X.sent++; X.lastTs=Date.now();
+    _("Vf").textContent=X.sent;
     setMode("tx");
-    L(`📡 #${X.sent} → ${payload.lat.toFixed(5)}, ${payload.lng.toFixed(5)}`, "g");
+    L(`📡 #${X.sent} → ${payload.lat.toFixed(5)}, ${payload.lng.toFixed(5)}`,"g");
     return true;
-  } catch (e) {
+  } catch(e) {
     await dbAdd(payload);
     setMode("buf");
-    L(`📦 Queued (${e.message})`, "a");
+    L(`📦 Queued (${e.message})`,"a");
     return false;
   }
 }
 
-/* ═══════════════════════════════════════
-   QUEUE FLUSH  (replay on reconnect)
-   ═══════════════════════════════════════ */
 async function flush() {
-  if (X.depth === 0 || !navigator.onLine) return;
-  const items = await dbAll();
-  if (!items.length) return;
-
-  items.sort((a, b) => a.t - b.t);
-  L(`🔄 Replaying ${items.length} fix(es)…`, "a");
-  let ok = 0;
-
-  for (const it of items) {
-    if (Date.now() - it.t > CFG.MAX_AGE_MS) { await dbDel(it.id); continue; }
-    try {
-      const r = await fetch(X.url, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(it.p)
-      });
-      if (r.ok) { await dbDel(it.id); ok++; X.sent++; }
-      else break;
-    } catch { break; }
+  if(X.depth===0||!navigator.onLine)return;
+  const items=await dbAll(); if(!items.length)return;
+  items.sort((a,b)=>a.t-b.t);
+  L(`🔄 Replaying ${items.length} fix(es)…`,"a");
+  let ok=0;
+  for(const it of items){
+    if(Date.now()-it.t>CFG.MAX_AGE_MS){await dbDel(it.id);continue}
+    try{const r=await fetch(X.url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(it.p)});
+      if(r.ok){await dbDel(it.id);ok++;X.sent++}else break;
+    }catch{break}
   }
-
-  if (ok) { _("Vf").textContent = X.sent; L(`✅ Replayed ${ok} fix(es)`, "g"); }
+  if(ok){_("Vf").textContent=X.sent;L(`✅ Replayed ${ok} fix(es)`,"g")}
   syncQ();
-  if (X.depth === 0 && X.running) setMode("tx");
+  if(X.depth===0&&X.running)setMode("tx");
 }
 
-/* ═══════════════════════════════════════
-   GPS WATCH
-   ═══════════════════════════════════════ */
+// ═══════════════════════════════════════
+// GPS WATCH
+// ═══════════════════════════════════════
+
 function gpsOn() {
-  if (!("geolocation" in navigator)) {
-    _("St").textContent = "Geolocation not supported";
-    L("❌ Geolocation unavailable", "r"); return;
-  }
+  if(!("geolocation" in navigator)){_("St").textContent="Geolocation not supported";L("❌ Geolocation unavailable","r");return}
   X.wid = navigator.geolocation.watchPosition(
     pos => {
-      const c = pos.coords;
-      const payload = { lat: c.latitude, lng: c.longitude, ts: new Date().toISOString() };
-
-      // Accuracy
-      const acc = Math.round(c.accuracy);
-      const aEl = _("Va");
-      aEl.textContent = acc;
-      aEl.className = "sv " + (acc <= 10 ? "cg" : acc <= 30 ? "cw" : "ca");
-
-      // Speed
-      if (c.speed != null && c.speed >= 0) {
-        const kph = Math.round(c.speed * 3.6);
-        const sEl = _("Vs");
-        sEl.textContent = kph;
-        sEl.className = "sv " + (kph > 2 ? "cg" : "cw");
-      }
-
+      const c=pos.coords;
+      const payload={lat:c.latitude,lng:c.longitude,ts:new Date().toISOString()};
+      const acc=Math.round(c.accuracy);
+      const aEl=_("Va"); aEl.textContent=acc; aEl.className="sv "+(acc<=10?"cg":acc<=30?"cw":"ca");
+      if(c.speed!=null&&c.speed>=0){const kph=Math.round(c.speed*3.6);const sEl=_("Vs");sEl.textContent=kph;sEl.className="sv "+(kph>2?"cg":"cw")}
       putFix(payload);
     },
-    err => {
-      L(`⚠️ GPS: ${err.message} (${err.code})`, "r");
-      _("St").textContent = "GPS Error: " + err.message;
-      setMode("err");
-    },
-    { enableHighAccuracy: true, maximumAge: 0, timeout: 4000 }
+    err => { L(`⚠️ GPS: ${err.message} (${err.code})`,"r"); _("St").textContent="GPS Error: "+err.message; setMode("err"); },
+    { enableHighAccuracy:true, maximumAge:0, timeout:4000 }
   );
 }
+function gpsOff() { if(X.wid!==null){navigator.geolocation.clearWatch(X.wid);X.wid=null} }
 
-function gpsOff() {
-  if (X.wid !== null) { navigator.geolocation.clearWatch(X.wid); X.wid = null; }
-}
+// ═══════════════════════════════════════
+// VISUAL MODE
+// ═══════════════════════════════════════
 
-/* ═══════════════════════════════════════
-   VISUAL MODE
-   ═══════════════════════════════════════ */
 function setMode(m) {
-  _("R").className = "ring " + m;
-  const map = {
-    tx:   ["📡", "LIVE",   "Transmitting to Firebase",       "var(--green)"],
-    buf:  ["📦", "BUFFER", "Offline — queuing locally",      "var(--amber)"],
-    err:  ["⚠️", "ERROR",  "GPS or network error",           "var(--red)"],
-    idle: ["📡", "IDLE",   "Tap START to begin transmitting", "var(--dim)"]
-  };
-  const [emoji, label, text, clr] = map[m] || map.idle;
-  _("Re").textContent = emoji; _("Rs").textContent = label;
-  _("St").textContent = text;  _("St").style.color = clr;
-  const dot = _("Hd");
-  dot.className = "hdr-dot " + ({tx:"live",buf:"buf",err:"err"}[m] || "");
+  const ring=_("R"); if(ring) ring.className="ring "+m;
+  const map={tx:["📡","LIVE","Transmitting","var(--green)"],buf:["📦","BUFFER","Offline — queuing locally","var(--amber)"],err:["⚠️","ERROR","GPS or network error","var(--red)"],idle:["📡","IDLE","Tap START to begin transmitting","var(--dim)"]};
+  const[emoji,label,text,clr]=map[m]||map.idle;
+  const re=_("Re"),rs=_("Rs"),st=_("St"),hd=_("Hd");
+  if(re)re.textContent=emoji;if(rs)rs.textContent=label;
+  if(st){st.textContent=text;st.style.color=clr}
+  if(hd)hd.className="hdr-dot "+({tx:"live",buf:"buf",err:"err"}[m]||"");
+  document.body.classList.toggle("transmitting",m==="tx"||m==="buf");
 }
 
-/* ═══════════════════════════════════════
-   AGE TICKER
-   ═══════════════════════════════════════ */
 function startAge() {
-  if (X.ageTmr) clearInterval(X.ageTmr);
-  X.ageTmr = setInterval(() => {
-    if (!X.lastTs) { _("Vt").textContent = "—"; return; }
-    const s = Math.round((Date.now() - X.lastTs) / 1000);
-    const el = _("Vt");
-    el.textContent = s < 60 ? s + "s" : Math.floor(s / 60) + "m";
-    el.className = "sv " + (s <= 5 ? "cg" : s <= 15 ? "cw" : s <= 30 ? "ca" : "cr");
-  }, 500);
+  if(X.ageTmr)clearInterval(X.ageTmr);
+  X.ageTmr=setInterval(()=>{
+    const el=_("Vt"); if(!el)return;
+    if(!X.lastTs){el.textContent="—";return}
+    const s=Math.round((Date.now()-X.lastTs)/1000);
+    el.textContent=s<60?s+"s":Math.floor(s/60)+"m";
+    el.className="sv "+(s<=5?"cg":s<=15?"cw":s<=30?"ca":"cr");
+  },500);
 }
 
-/* ═══════════════════════════════════════
-   LOG
-   ═══════════════════════════════════════ */
-function L(msg, cls = "g") {
-  const ts = new Date().toLocaleTimeString("en-GB", { hour12: false });
-  const el = document.createElement("div");
-  el.className = cls;
-  el.textContent = `[${ts}] ${msg}`;
-  const box = _("Dl");
-  box.appendChild(el);
-  box.scrollTop = box.scrollHeight;
-  while (box.children.length > CFG.LOG_CAP) box.removeChild(box.firstChild);
+function L(msg,cls="g") {
+  const box=_("Dl"); if(!box)return;
+  const ts=new Date().toLocaleTimeString("en-GB",{hour12:false});
+  const el=document.createElement("div");el.className=cls;
+  el.textContent=`[${ts}] ${msg}`;
+  box.appendChild(el);box.scrollTop=box.scrollHeight;
+  while(box.children.length>CFG.LOG_CAP)box.removeChild(box.firstChild);
 }
 
-/* ═══════════════════════════════════════
-   WAKE LOCK
-   ═══════════════════════════════════════ */
-let wl = null;
-async function wakeLock() {
-  try {
-    if ("wakeLock" in navigator) {
-      wl = await navigator.wakeLock.request("screen");
-      wl.addEventListener("release", () => { if (X.running) setTimeout(wakeLock, 2000); });
-    }
-  } catch {}
-}
+let wl=null;
+async function wakeLock(){try{if("wakeLock" in navigator){wl=await navigator.wakeLock.request("screen");wl.addEventListener("release",()=>{if(X.running)setTimeout(wakeLock,2000)})}}catch{}}
 
-/* ═══════════════════════════════════════
-   CONFIG
-   ═══════════════════════════════════════ */
-function loadUrl() {
-  return new URLSearchParams(location.search).get("url")
-    || localStorage.getItem("TURBO_BEACON_URL")
-    || null;
-}
-function saveUrl(u) { localStorage.setItem("TURBO_BEACON_URL", u); }
-
-function validUrl(u) {
-  if (!u) return false;
-  try {
-    const p = new URL(u);
-    const isFirebase = p.hostname.includes("firebaseio.com") || p.hostname.includes("firebasedatabase.app");
-    return isFirebase && p.pathname.endsWith(".json");
-  } catch { return false; }
-}
-
-/* ═══════════════════════════════════════
-   INIT
-   ═══════════════════════════════════════ */
-async function init() {
-  try { X.db = await dbOpen(); }
-  catch { L("⚠️ IndexedDB unavailable — no offline buffer", "a"); }
-
-  const saved = loadUrl();
-  if (saved && validUrl(saved)) {
-    X.url = saved;
-    _("S").classList.add("out");
-    _("Hh").textContent = new URL(saved).hostname;
-    L("✅ Config loaded", "g");
-  }
-
-  await dbPurge(); await syncQ(); startAge();
-
-  // Network events
-  window.addEventListener("online",  () => { L("🌐 Network restored", "g"); flush(); });
-  window.addEventListener("offline", () => { L("📴 Network lost", "a"); if (X.running) setMode("buf"); });
-
-  // Periodic flush
-  X.flushTmr = setInterval(() => {
-    if (X.running && X.depth > 0 && navigator.onLine) flush();
-  }, CFG.RETRY_MS);
-
-  // Visibility
-  document.addEventListener("visibilitychange", () => { if (!document.hidden && X.running) wakeLock(); });
-
-  // Setup form
-  _("Sb").onclick = () => {
-    const u = _("Si").value.trim();
-    if (!validUrl(u)) { _("Se").textContent = "Needs a firebasedatabase.app or firebaseio.com .json URL"; return; }
-    X.url = u; saveUrl(u);
-    _("S").classList.add("out");
-    _("Hh").textContent = new URL(u).hostname;
-    L("✅ Firebase configured", "g");
-  };
-
-  // Main button
-  _("Cm").onclick = () => {
-    const mb = _("Cm");
-    if (!X.running) {
-      X.running = true;
-      mb.textContent = "⏹ STOP"; mb.className = "cb cb-stop"; mb.dataset.on = "1";
-      setMode("tx"); wakeLock(); gpsOn();
-      L("▶ Beacon started", "g");
-    } else {
-      X.running = false; gpsOff();
-      mb.textContent = "▶︎ START"; mb.className = "cb cb-go"; mb.dataset.on = "0";
-      setMode("idle");
-      if (wl) try { wl.release(); } catch {}
-      L("⏹ Beacon stopped", "a");
-    }
-  };
-
-  // Log drawer
-  let logOpen = false;
-  _("Cl").onclick = () => { logOpen = !logOpen; _("D").classList.toggle("open", logOpen); };
-  _("Dh").onclick = () => { logOpen = false; _("D").classList.remove("open"); };
-
-  // Reset
-  _("Cr").onclick = () => {
-    if (!confirm("Reset beacon? Clears saved URL and offline queue.")) return;
-    localStorage.removeItem("TURBO_BEACON_URL");
-    if (X.running) { X.running = false; gpsOff(); }
-    if (X.db) { const tx = X.db.transaction(CFG.STORE, "readwrite"); tx.objectStore(CFG.STORE).clear(); tx.oncomplete = () => syncQ(); }
-    X.url = null; X.sent = 0; X.lastTs = null;
-    _("Vf").textContent = "0"; _("Cm").textContent = "▶︎ START"; _("Cm").className = "cb cb-go";
-    setMode("idle"); _("S").classList.remove("out");
-    L("🔄 Config reset", "a");
-  };
-
-  L("🎅 TurboSanta Beacon v1.0 ready", "g");
-}
-
-init();
 })();
 </script>
 </body>
