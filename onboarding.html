@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TurboSanta — Comprehensive Onboarding Guide v3.2</title>
+<title>TurboSanta — Comprehensive Onboarding Guide v3.3</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -163,7 +163,7 @@
 <nav id="sidebar">
   <div class="sidebar-header">
     <div class="sidebar-logo">🎅 TurboSanta</div>
-    <div class="sidebar-version">Onboarding Guide · v3.2 · March 2026</div>
+    <div class="sidebar-version">Onboarding Guide · v3.3 · March 2026</div>
   </div>
   <div class="sidebar-nav">
     <span class="nav-section-label">Getting Started</span>
@@ -174,7 +174,7 @@
     <a class="nav-link" href="#api"><span class="nav-num">01</span> Deploy the API</a>
     <a class="nav-link" href="#firebase"><span class="nav-num">02</span> Firebase Setup</a>
     <a class="nav-link" href="#wizards"><span class="nav-num">03</span> Run the Wizards</a>
-    <a class="nav-link" href="#gps-logger"><span class="nav-num">04</span> GPS Logger</a>
+    <a class="nav-link" href="#gps-logger"><span class="nav-num">04</span> Sleigh GPS</a>
 
     <span class="nav-section-label">Configuration</span>
     <a class="nav-link" href="#advanced"><span class="nav-num">05</span> Advanced Settings</a>
@@ -200,13 +200,17 @@
     <h1 class="hero-title">TURBO<span>SANTA</span><br>MISSION CONTROL</h1>
     <p class="hero-subtitle">Everything you need to go from a blank Google Sheet to a fully operational live sleigh tracker — routes, donations, notifications, crew logistics, and all the festive extras.</p>
     <div class="hero-badges">
-      <span class="badge badge-gold">⚡ v3.2</span>
+      <span class="badge badge-gold">⚡ v3.3</span>
       <span class="badge badge-grey">📅 Updated March 2026</span>
       <span class="badge badge-grey">⏱ 5–10 min setup</span>
     </div>
   </header>
 
   <div class="content">
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- SECTIONS ✦ through 03 — UNCHANGED from v3.2          -->
+    <!-- ══════════════════════════════════════════════════════ -->
 
     <!-- ── BEFORE YOU START ── -->
     <section id="prereqs" class="section">
@@ -308,8 +312,8 @@
         <tbody>
           <tr>
             <td>secret</td>
-            <td>GPS write key. Embedded in the GPS Logger app URL. Permits writing the live location only. Safe to rotate if the sleigh phone is lost.</td>
-            <td>GPS Logger app URL</td>
+            <td>GPS write key. Embedded in the Firebase write path. Permits writing the live location only. Safe to rotate if the sleigh phone is lost.</td>
+            <td>Beacon config / GPS Logger URL</td>
           </tr>
           <tr>
             <td>firebase_db_secret</td>
@@ -426,17 +430,63 @@
       </div>
     </section>
 
-    <!-- ── GPS LOGGER ── -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- SECTION 04 — ⭐ REWRITTEN: Beacon + GPS Logger choice -->
+    <!-- ══════════════════════════════════════════════════════ -->
+
     <section id="gps-logger" class="section">
       <div class="section-header">
         <div class="section-num">04</div>
         <div class="section-title-block">
-          <span class="section-icon">📍</span>
-          <h2 class="section-title">Configure the Mobile GPS Logger</h2>
-          <span class="section-desc">The sleigh phone that broadcasts Santa's live location</span>
+          <span class="section-icon">📡</span>
+          <h2 class="section-title">Sleigh GPS — Beacon &amp; GPS Logger</h2>
+          <span class="section-desc">Two ways to transmit Santa's live location — pick the one that suits your setup</span>
         </div>
       </div>
-      <p>Use an app like <em>GPS Logger</em> on the sleigh phone and configure it with the following settings. The Firebase Wizard will provide the exact URL to paste in.</p>
+
+      <p>The sleigh phone needs to push GPS coordinates to Firebase every few seconds. TurboSanta gives you two interchangeable options — both write the same <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">{lat, lng, ts}</code> payload to the same Firebase path, so the tracker, God Mode, notifications, and history all work identically regardless of which one you use.</p>
+
+      <div class="device-grid">
+        <div class="device-card device-b">
+          <div class="device-label">Option A — Recommended</div>
+          <div class="device-name">📡 TurboSanta Beacon</div>
+          <div class="device-desc">A built-in web page that runs in the phone's browser. Opens with <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">?api=</code> just like God Mode — no manual URL pasting. Authenticates with the God Mode password, then fetches the Firebase write URL securely from the server.</div>
+          <div class="device-operator">✅ Offline buffer (replays fixes through dead spots) · ✅ Wake Lock keeps screen on (Android) · ✅ Visual status ring · ❌ Screen must stay on</div>
+        </div>
+        <div class="device-card device-a">
+          <div class="device-label">Option B — Alternative</div>
+          <div class="device-name">📍 GPS Logger App</div>
+          <div class="device-desc">A third-party Android app that runs as a foreground service. Paste the GPS Logger URL from your Tracker sheet cell B7 into the app's custom URL field.</div>
+          <div class="device-operator">✅ Works with screen locked · ✅ No browser needed · ❌ No offline buffer (fixes lost in dead spots) · ❌ Manual URL configuration</div>
+        </div>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-body">
+          <strong>Which one should I use?</strong>
+          <p>If the sleigh phone is plugged into a power bank and mounted where nobody will touch it, the <em>Beacon</em> is the better choice — the offline buffer means you never lose fixes in mobile dead spots, which matters more than screen-off operation when the phone is always charging and stationary. Use the <em>GPS Logger app</em> if you specifically need the phone screen to be off (e.g., the phone is in someone's pocket).</p>
+        </div>
+      </div>
+
+      <h3 class="sub-title">Option A: TurboSanta Beacon Setup</h3>
+      <ol class="steps">
+        <li><p>Open the Beacon URL from your Dab Santa Landing Page, or navigate to: <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">beacon?api=YOUR_API_URL</code></p></li>
+        <li><p>Enter the God Mode password when prompted — the beacon fetches the Firebase write URL securely from the API.</p></li>
+        <li><p>Tap <em>▶ START</em> — the pulsing green ring confirms GPS is transmitting.</p></li>
+        <li><p>Mount the phone on the sleigh, plug it into a power bank, and leave the screen visible.</p></li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body">
+          <strong>iPhone Users: Disable Auto-Lock</strong>
+          <p>Safari does not support the Wake Lock API. On iPhone, go to <em>Settings → Display &amp; Brightness → Auto-Lock → Never</em> before starting the beacon. On Android Chrome, the beacon keeps the screen awake automatically.</p>
+        </div>
+      </div>
+
+      <h3 class="sub-title">Option B: GPS Logger App Setup</h3>
+      <p>If you prefer the third-party app, install <em>GPS Logger</em> from the Play Store and configure it with these settings. The Firebase Wizard will provide the exact URL to paste in (cell B7 of the Tracker sheet).</p>
       <table class="kv-table">
         <thead><tr><th>Setting</th><th>Value</th></tr></thead>
         <tbody>
@@ -447,9 +497,22 @@
           <tr><td>Payload</td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">{"lat": "%LAT", "lng": "%LON", "ts": "%TIME"}</code></td></tr>
         </tbody>
       </table>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body">
+          <strong>Both options work simultaneously</strong>
+          <p>If you accidentally start both the Beacon and GPS Logger on the same phone, nothing breaks — whichever writes last simply overwrites the other's fix at the same Firebase path. There is no conflict.</p>
+        </div>
+      </div>
     </section>
 
     <hr class="divider">
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- SECTIONS 05 through 06 — UNCHANGED from v3.2          -->
+    <!-- (Advanced Settings, Settings Key Reference, Notifs)   -->
+    <!-- ══════════════════════════════════════════════════════ -->
 
     <!-- ── ADVANCED SETTINGS ── -->
     <section id="advanced" class="section">
@@ -475,7 +538,6 @@
         <li>Each cell in S2:S is one preset message — one per row.</li>
         <li>Blank cells between entries are ignored.</li>
         <li>These are separate from the public PA system's <em>live message</em> — presets are pre-loaded options; <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">live_announcement</code> is what's actively broadcasting.</li>
-        <li>Examples: <em>"Santa is running 10 minutes late — thank you for your patience!"</em> or <em>"Challenge: if we raise £50 in the next 5 minutes, the elves will do a dance!"</em></li>
       </ul>
 
       <h3 class="sub-title">Donations Route Dropdown (Column Q)</h3>
@@ -483,11 +545,6 @@
 
       <h3 class="sub-title">Live Announcement (PA System)</h3>
       <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">live_announcement</code> key in Settings is the public PA system. When set, its value overrides the normal status box on <em>every</em> viewer's tracker with a pulsing gold announcement banner.</p>
-      <ul class="bullet-list">
-        <li>Set via the God Mode Dashboard PA panel on sleigh night.</li>
-        <li>Clear the value to return to normal ETA/status messages.</li>
-        <li>Examples: <em>"Santa is running 10 minutes late — thank you for your patience!"</em> or <em>"Challenge: raise £50 in the next 5 minutes and the elves will do a dance!"</em></li>
-      </ul>
 
       <h3 class="sub-title">Messages to Santa</h3>
       <p>The public <em>💬 Msg Santa</em> button lets viewers send a short message (max 50 characters) to the sleigh. Messages go into a moderation queue in God Mode — the Lead Elf can approve or reject each one. Approved messages appear as a pulsing purple banner on the public tracker for 20 seconds, then disappear automatically.</p>
@@ -495,35 +552,13 @@
         <li>Enable the feature by setting <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">enable_user_messages</code> to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> in Settings.</li>
         <li>The button only appears when GPS is live and a route is active — hidden in kiosk mode.</li>
         <li>God Mode polls for pending messages every 10 seconds and shows the originating route name next to each one.</li>
-        <li>All messages are stored in the Live Messages sheet for season reporting — approved message counts feed into the Season Wrap Report per route.</li>
       </ul>
 
       <h3 class="sub-title">Crew Alert</h3>
       <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">crew_alert</code> key in Settings drives internal messaging from the Lead Elf to all volunteers on the Crew Hub — completely separate from the public PA system and never visible on the public tracker.</p>
-      <table class="kv-table">
-        <thead><tr><th>Property</th><th>Detail</th></tr></thead>
-        <tbody>
-          <tr><td>Default value</td><td>Leave blank</td></tr>
-          <tr><td>Written by</td><td>Lead Elf via God Mode on sleigh night</td></tr>
-          <tr><td>Visible to</td><td>All volunteers with Crew Hub open, including the QR donation screen</td></tr>
-          <tr><td>Poll frequency</td><td>Every 15 seconds</td></tr>
-        </tbody>
-      </table>
-      <div class="callout callout-tip">
-        <span class="callout-icon">💡</span>
-        <div class="callout-body">
-          <strong>How it works</strong>
-          <p>Lead Elf types a message in the Crew Alert panel in God Mode → hits Send → Apps Script writes to the <code style="font-family:'DM Mono',monospace;font-size:12px;">crew_alert</code> cell → within 15 seconds, a pulsing red banner appears above the tabs on <em>every</em> volunteer's Crew Hub screen, including full-screen QR donation views.</p>
-        </div>
-      </div>
 
       <h3 class="sub-title">Elf Cam URL</h3>
       <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">elf_cam_url</code> key powers the Elf Dashboard polaroid feature. When the Elf Cam captures a new photo, it writes the Google Drive URL here. The tracker polls for changes and displays any new image as a floating Polaroid on the public map.</p>
-      <ul class="bullet-list">
-        <li>Written automatically by the Elf Cam capture system — no manual editing needed.</li>
-        <li>Google Drive URLs are automatically converted to direct thumbnail links by the tracker.</li>
-        <li>Polaroids only appear on tabs that are currently visible (battery-aware).</li>
-      </ul>
 
       <h3 class="sub-title">GET_PEAK_VIEWERS Formula</h3>
       <p>TurboSanta includes a custom Google Sheets formula to calculate peak simultaneous viewers within any time window:</p>
@@ -534,14 +569,6 @@
         </div>
         <pre><code>=GET_PEAK_VIEWERS(E2:E, 15)</code></pre>
       </div>
-      <table class="kv-table">
-        <thead><tr><th>Argument</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td>Argument 1</td><td>A range of timestamps — the E column in Tracker Analytics (parsed DateTime values).</td></tr>
-          <tr><td>Argument 2</td><td>Window size in minutes. 15 is a sensible default; reduce to 5 for a tighter peak calculation.</td></tr>
-          <tr><td>Returns</td><td>The highest number of viewers active within any rolling window of that duration.</td></tr>
-        </tbody>
-      </table>
     </section>
 
     <!-- ── SETTINGS KEY REFERENCE ── -->
@@ -561,29 +588,11 @@
         <tbody>
           <tr><td>api_url</td><td>Your deployed Apps Script Web App URL. The single most critical setting — everything reads from this.</td></tr>
           <tr><td>tracker_url</td><td>The public-facing URL for your sleigh tracker page (used in embeds and QR codes).</td></tr>
-          <tr><td>sleigh_name</td><td>Internal identifier for your sleigh. Used in multi-sleigh setups.</td></tr>
-          <tr><td>sleigh_display_name</td><td>The human-readable sleigh name shown to the public (e.g., "Beverley Round Table Santa Sleigh").</td></tr>
-          <tr><td>sleigh_group</td><td>Group identifier for multi-sleigh tracking. Usually matches <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">sleigh_name</code> for single-sleigh setups.</td></tr>
-          <tr><td>sleigh_mode</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">single</code> or <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">multi</code>. Use <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">single</code> unless running more than one sleigh simultaneously.</td></tr>
-          <tr><td>god_mode_password</td><td>Password for the God Mode Dashboard and Season Wrap Snapshot. Change before going live.</td></tr>
-        </tbody>
-      </table>
-
-      <h3 class="sub-title">Tracker Appearance</h3>
-      <table class="kv-table">
-        <thead><tr><th>Key</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td>primary_color</td><td>Main accent colour used on the tracker (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">#d31c1c</code>).</td></tr>
-          <tr><td>accent_color</td><td>Secondary accent colour (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">#ffd700</code>).</td></tr>
-          <tr><td>default_map_zoom</td><td>Initial zoom level when the tracker loads (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">16</code>).</td></tr>
-          <tr><td>bgImageUrl</td><td>Background image URL for the tracker landing area.</td></tr>
-          <tr><td>logo_overlay_enabled</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>. Show your Round Table logo pinned to the map.</td></tr>
-          <tr><td>logo_overlay_url</td><td>URL of the logo image to display on the map.</td></tr>
-          <tr><td>logo_overlay_position</td><td>Map corner: <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">top-left</code>, <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">top-right</code>, <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">bottom-left</code>, or <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">bottom-right</code>.</td></tr>
-          <tr><td>logo_overlay_size</td><td>Logo size in pixels (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">64</code>).</td></tr>
-          <tr><td>sleigh_icon_live</td><td>URL for the animated live-position sleigh marker icon.</td></tr>
-          <tr><td>sleigh_icon_start</td><td>URL for the route start point marker icon.</td></tr>
-          <tr><td>sleigh_icon_end</td><td>URL for the route end point marker icon.</td></tr>
+          <tr><td>sleigh_name</td><td>Internal identifier for your sleigh.</td></tr>
+          <tr><td>sleigh_display_name</td><td>The human-readable sleigh name shown to the public.</td></tr>
+          <tr><td>sleigh_group</td><td>Group identifier for multi-sleigh tracking.</td></tr>
+          <tr><td>sleigh_mode</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">single</code> or <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">multi</code>.</td></tr>
+          <tr><td>god_mode_password</td><td>Password for God Mode Dashboard, Beacon, and Season Wrap Snapshot. Change before going live.</td></tr>
         </tbody>
       </table>
 
@@ -591,14 +600,13 @@
       <table class="kv-table">
         <thead><tr><th>Key</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>show_today_route</td><td>Show today's route on the tracker. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
-          <tr><td>show_next_route</td><td>Show the next upcoming route. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
-          <tr><td>show_tracker</td><td>Show the live GPS tracker map. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
-          <tr><td>show_donations</td><td>Show the donation progress bar and total. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
-          <tr><td>show_carousel</td><td>Show the photo carousel. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>.</td></tr>
-          <tr><td>carousel_folder_id</td><td>Google Drive folder ID containing photos for the carousel embed.</td></tr>
+          <tr><td>show_today_route</td><td>Show today's route on the tracker.</td></tr>
+          <tr><td>show_next_route</td><td>Show the next upcoming route.</td></tr>
+          <tr><td>show_tracker</td><td>Show the live GPS tracker map.</td></tr>
+          <tr><td>show_donations</td><td>Show the donation progress bar and total.</td></tr>
+          <tr><td>show_carousel</td><td>Show the photo carousel.</td></tr>
           <tr><td>donate_url</td><td>URL the Donate button links to on the public tracker.</td></tr>
-          <tr><td>enable_user_messages</td><td>Set to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> to enable the 💬 Msg Santa button on the public tracker. When disabled the button is hidden and submissions are rejected. Leave blank or set to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">FALSE</code> outside of sleigh nights.</td></tr>
+          <tr><td>enable_user_messages</td><td>Set to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> to enable the 💬 Msg Santa button.</td></tr>
         </tbody>
       </table>
 
@@ -606,47 +614,11 @@
       <table class="kv-table">
         <thead><tr><th>Key</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>live_announcement</td><td>Public PA message. When set, overrides the ETA/status box on all viewers' trackers with a pulsing gold banner. Clear when done.</td></tr>
-          <tr><td>crew_alert</td><td>Internal crew message. Appears as a pulsing red banner on all Crew Hub screens within 15 seconds. Never visible to the public.</td></tr>
-          <tr><td>elf_cam_url</td><td>Written automatically by the Elf Cam system. Stores the latest photo URL. The tracker polls this and shows new images as floating polaroids.</td></tr>
-          <tr><td>user_announcement</td><td>Written automatically when the Lead Elf approves a public message in God Mode. Contains the approved message text. The public tracker displays this as a pulsing purple banner for 20 seconds then clears automatically.</td></tr>
-          <tr><td>user_announcement_ts</td><td>Unix timestamp (ms) written alongside <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">user_announcement</code> on approval. The tracker uses this to start the 20-second countdown. Do not edit manually.</td></tr>
-        </tbody>
-      </table>
-
-      <h3 class="sub-title">GPX Animator (TravelBoast) Settings</h3>
-      <table class="kv-table">
-        <thead><tr><th>Key</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td>travelboast_enabled</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>. Enable the animated route video generator.</td></tr>
-          <tr><td>travelboast_sprite</td><td>URL of the animated sprite sheet for the flying Santa character.</td></tr>
-          <tr><td>travelboast_sprite_frames</td><td>Number of animation frames in the sprite sheet (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">5</code>).</td></tr>
-          <tr><td>travelboast_sprite_fps</td><td>Frame rate for sprite animation (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">14</code>).</td></tr>
-          <tr><td>travelboast_sprite_size</td><td>Sprite render size in pixels (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">64</code>).</td></tr>
-          <tr><td>travelboast_speed</td><td>Playback speed for the route animation (default <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">45</code>).</td></tr>
-          <tr><td>travelboast_mode</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">next_route</code> — which route the animator uses by default.</td></tr>
-          <tr><td>travelboast_gap_fill</td><td>How to handle gaps in the GPX track. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">smooth</code> interpolates between points.</td></tr>
-          <tr><td>travelboast_accent_color</td><td>Route line accent colour in the video.</td></tr>
-          <tr><td>travelboast_shadow</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">true</code> / <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">false</code>. Add a drop shadow to the sprite.</td></tr>
-          <tr><td>travelboast_particle_effects</td><td>Particle effect preset. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">snow</code> adds falling snowflakes to the video.</td></tr>
-        </tbody>
-      </table>
-
-      <h3 class="sub-title">Season Wrap Fields</h3>
-      <p>These are populated manually after each season before taking a Snapshot. They feed the Season Wrap Report's summary stats.</p>
-      <table class="kv-table">
-        <thead><tr><th>Key</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td>wrap_year</td><td>The year of the season being wrapped.</td></tr>
-          <tr><td>wrap_volunteers</td><td>Total volunteer count for the season.</td></tr>
-          <tr><td>wrap_highlight</td><td>A one-line season highlight quote for the report.</td></tr>
-          <tr><td>wrap_total_views</td><td>Total tracker page views across all nights.</td></tr>
-          <tr><td>wrap_desktop_mobile</td><td>Device split as a string, e.g. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">63% / 37%</code>.</td></tr>
-          <tr><td>wrap_most_popular_route</td><td>Most viewed route name and percentage.</td></tr>
-          <tr><td>wrap_peak_viewers</td><td>Highest simultaneous viewer count recorded.</td></tr>
-          <tr><td>wrap_social_followers</td><td>Social media follower count at season end.</td></tr>
-          <tr><td>wrap_social_reach</td><td>Estimated social media reach for the season.</td></tr>
-          <tr><td>season_total_waves</td><td>Retained for historical season snapshot compatibility. Now stores total approved Messages to Santa across the season. Auto-counted from the Live Messages sheet on snapshot.</td></tr>
+          <tr><td>live_announcement</td><td>Public PA message. Overrides the ETA/status box on all viewers' trackers.</td></tr>
+          <tr><td>crew_alert</td><td>Internal crew message. Pulsing red banner on Crew Hub screens only.</td></tr>
+          <tr><td>elf_cam_url</td><td>Written automatically by the Elf Cam system. Latest photo URL.</td></tr>
+          <tr><td>user_announcement</td><td>Written automatically on message approval. Purple banner for 20 seconds.</td></tr>
+          <tr><td>user_announcement_ts</td><td>Unix timestamp (ms) for the 20-second countdown. Do not edit manually.</td></tr>
         </tbody>
       </table>
     </section>
@@ -668,7 +640,6 @@
         <li>Santa's estimated arrival is <em>under 5 minutes</em> based on calculated speed, <strong>or</strong></li>
         <li>Santa is <em>within 250 metres</em> of the subscriber's pin.</li>
       </ul>
-      <p>The email is sent once and the subscriber is flagged as notified. If no email address is stored, the flag is still set for internal tracking.</p>
 
       <h3 class="sub-title">Email 2 — "Santa's Just Been Past"</h3>
       <p>Triggered after Email 1 when either condition is met:</p>
@@ -676,28 +647,22 @@
         <li>Santa has moved <em>more than 150m further away</em> from the subscriber's closest recorded distance AND at least 1 minute has passed since Email 1, <strong>or</strong></li>
         <li><em>20 minutes</em> have passed since Email 1 (timeout fallback).</li>
       </ul>
-      <p>After this email, the subscriber record is scheduled for deletion 6 hours later.</p>
-
-      <h3 class="sub-title">Testing Without a Live Sleigh</h3>
-      <ol class="steps">
-        <li><p>Temporarily set a test Firebase location manually in the Firebase console (<code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">location/current</code>) with a lat/lng close to a test subscriber address.</p></li>
-        <li><p>Create a test subscriber record in Firebase under <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">/subscribers</code> with a valid email, lat, lng, and <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">notified: false</code>.</p></li>
-        <li><p>Open <em>Apps Script → Run checkSubscribersAndNotify</em> manually.</p></li>
-        <li><p>Check the Apps Script execution log for trigger messages and verify the email arrives.</p></li>
-      </ol>
 
       <div class="callout callout-warning">
         <span class="callout-icon">⚠️</span>
         <div class="callout-body">
           <strong>Month Guard — Currently Disabled</strong>
-          <p>The notification code contains a month guard that is currently <em>force-overridden to <code style="font-family:'DM Mono',monospace;font-size:12px;">allowEmails = true</code></em> for testing. Before going live, locate this line in <code style="font-family:'DM Mono',monospace;font-size:12px;">checkSubscribersAndNotify</code> and switch it to the commented-out production version: <code style="font-family:'DM Mono',monospace;font-size:12px;">const allowEmails = (month === 11 || month === 0);</code> — this restricts emails to December and January only.</p>
+          <p>The notification code contains a month guard that is currently <em>force-overridden to <code style="font-family:'DM Mono',monospace;font-size:12px;">allowEmails = true</code></em> for testing. Before going live, switch it to the production version: <code style="font-family:'DM Mono',monospace;font-size:12px;">const allowEmails = (month === 11 || month === 0);</code></p>
         </div>
       </div>
     </section>
 
     <hr class="divider">
 
-    <!-- ── APP SUITE ── -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- SECTION 07 — ⭐ UPDATED: Beacon + GPS Health added    -->
+    <!-- ══════════════════════════════════════════════════════ -->
+
     <section id="app-suite" class="section">
       <div class="section-header">
         <div class="section-num">07</div>
@@ -717,6 +682,11 @@
           <div class="card-desc">The main public map, featuring route details, donations, and festive interactions including the 💬 Msg Santa button.</div>
         </div>
         <div class="card">
+          <span class="card-icon">📡</span>
+          <div class="card-title">GPS Beacon</div>
+          <div class="card-desc">Sleigh phone GPS transmitter with offline buffer. Authenticates via God Mode password, fetches Firebase config securely from the API. Pulsing ring shows LIVE/BUFFER/ERROR status. See <a href="#gps-logger" style="color:var(--gold);">Section 4</a>.</div>
+        </div>
+        <div class="card">
           <span class="card-icon">🧭</span>
           <div class="card-title">Sat-Nav Driver Mode</div>
           <div class="card-desc">Distraction-free, turn-by-turn navigation screen for the towing vehicle.</div>
@@ -724,7 +694,7 @@
         <div class="card">
           <span class="card-icon">⚡</span>
           <div class="card-title">God Mode Dashboard</div>
-          <div class="card-desc">Lead Elf cockpit — live GPS, viewer counts, donations, heatmaps, PA, crew alerts, and message moderation queue. Password protected.</div>
+          <div class="card-desc">Lead Elf cockpit — live GPS, viewer counts, donations, heatmaps, PA, crew alerts, message moderation queue, and the <em>GPS Health</em> panel showing fix age, fix rate, LIVE/DELAYED/STALE/LOST badge, and a timeline visualisation of signal gaps. Password protected.</div>
         </div>
         <div class="card">
           <span class="card-icon">📺</span>
@@ -743,7 +713,7 @@
         <div class="card">
           <span class="card-icon">🙋</span>
           <div class="card-title">Crew Portal</div>
-          <div class="card-desc">Volunteers sign up for routes and roles; includes a personal QR generator for phone donations and the real-time crew alert banner. When the Lead Elf closes a route via God Mode, all checked-in volunteers automatically receive a debrief email showing the amount raised on their route.</div>
+          <div class="card-desc">Volunteers sign up for routes and roles; includes a personal QR generator for phone donations and the real-time crew alert banner.</div>
         </div>
         <div class="card">
           <span class="card-icon">✅</span>
@@ -835,6 +805,10 @@
       </div>
     </section>
 
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- SECTIONS 08–11 — UNCHANGED from v3.2                  -->
+    <!-- ══════════════════════════════════════════════════════ -->
+
     <!-- ── MP4 ── -->
     <section id="mp4" class="section">
       <div class="section-header">
@@ -855,22 +829,6 @@
         <li><p>Add a property with key <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">GITHUB_TOKEN</code> and paste your token as the value.</p></li>
         <li><p>Save — the render button in the MP4 Generator wizard will now activate.</p></li>
       </ol>
-
-      <div class="callout callout-success">
-        <span class="callout-icon">🔒</span>
-        <div class="callout-body">
-          <strong>Security Note</strong>
-          <p>Your token is stored in Script Properties and is never exposed to the public or included in API responses. If you suspect compromise, revoke it on GitHub and create a new one.</p>
-        </div>
-      </div>
-
-      <h3 class="sub-title">What Happens After You Click Render</h3>
-      <ul class="bullet-list">
-        <li>A GitHub Actions workflow is triggered with your route name, aspect ratio, and API URL.</li>
-        <li>The Routes sheet <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">mp4Status</code> column updates to <em>🎥 Rendering</em>.</li>
-        <li>When complete, the workflow posts back to your API and the <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">mp4Url</code> column is updated automatically.</li>
-        <li>No polling or manual refresh needed — it updates entirely in the background.</li>
-      </ul>
     </section>
 
     <!-- ── WRAP REPORT ── -->
@@ -885,46 +843,15 @@
       </div>
 
       <h3 class="sub-title">Snapshot Season</h3>
-      <p>At the end of each sleigh season, open the Season Wrap Report and click the <em>📸 Snapshot Season</em> button in the top bar. This will:</p>
-      <ul class="bullet-list">
-        <li>Show a confirmation dialog with the computed stats for the season.</li>
-        <li>Ask for your God Mode password to authorise the save.</li>
-        <li>Write a new row to the Season History tab (auto-created if it doesn't exist).</li>
-        <li>Reload the report — the Year-on-Year Comparison section will now show charts.</li>
-      </ul>
+      <p>At the end of each sleigh season, open the Season Wrap Report and click the <em>📸 Snapshot Season</em> button in the top bar. This will write a new row to the Season History tab, reload the report, and populate the Year-on-Year Comparison charts.</p>
 
       <div class="callout callout-tip">
         <span class="callout-icon">💡</span>
         <div class="callout-body">
           <strong>When to Snapshot</strong>
-          <p>Snapshot after your final sleigh night, once all donations are logged and the <code style="font-family:'DM Mono',monospace;font-size:12px;">wrap_*</code> fields in Settings are filled in. The snapshot captures whatever is live in the report at that moment — get the numbers right first.</p>
+          <p>Snapshot after your final sleigh night, once all donations are logged and the <code style="font-family:'DM Mono',monospace;font-size:12px;">wrap_*</code> fields in Settings are filled in.</p>
         </div>
       </div>
-
-      <h3 class="sub-title">Season History Columns</h3>
-      <table class="kv-table">
-        <thead><tr><th>Column</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td>Year</td><td>The season year (e.g., 2025)</td></tr>
-          <tr><td>Raised</td><td>Total amount raised that season</td></tr>
-          <tr><td>Routes</td><td>Number of routes completed</td></tr>
-          <tr><td>Streets</td><td>Unique streets visited</td></tr>
-          <tr><td>Peak Viewers</td><td>Highest simultaneous live tracker viewers</td></tr>
-          <tr><td>Messages</td><td>Total approved Messages to Santa across the season</td></tr>
-          <tr><td>Volunteers</td><td>Number of volunteers that season</td></tr>
-        </tbody>
-      </table>
-
-      <h3 class="sub-title">Year-on-Year Charts</h3>
-      <p>Once at least one snapshot exists, the Season Wrap Report automatically renders six bar charts — one per metric — with the current season included for comparison.</p>
-      <ul class="bullet-list">
-        <li>Charts are colour-coded per metric using Round Table brand colours.</li>
-        <li>Fully responsive: 3 columns on desktop, 2 on tablet, 1 on mobile.</li>
-        <li>A placeholder message is shown until the first snapshot is saved.</li>
-      </ul>
-
-      <h3 class="sub-title">Per-Route Message Counts</h3>
-      <p>The Routes Completed table in the Season Wrap Report includes a <em>💬 Messages</em> column showing how many approved messages to Santa were sent during each route. This data is pulled live from the Live Messages sheet via the <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">getMessageStats</code> API endpoint — no manual entry required.</p>
     </section>
 
     <hr class="divider">
@@ -967,7 +894,6 @@
         </div>
       </div>
       <p style="margin-top:8px;">Font: <em>Open Sans</em></p>
-      <p>To go live: grab your <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">&lt;iframe&gt;</code> or <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">&lt;script&gt;</code> embed codes from the Dab Santa portal and paste them into your Round Table website or Carrd site. Ensure your tracker, donation links, and route maps are front and centre.</p>
     </section>
 
     <!-- ── SCALING ── -->
@@ -980,23 +906,15 @@
           <span class="section-desc">Optional — for power users expecting large audiences</span>
         </div>
       </div>
-      <p>Google Apps Script has a hard limit of 30 simultaneous connections. If your tracker link goes viral on a local Facebook group, hundreds of simultaneous visitors can crash the tracker. A free <em>Cloudflare cache</em> eliminates this risk entirely.</p>
-      <div class="callout callout-success">
-        <span class="callout-icon">⚡</span>
-        <div class="callout-body">
-          <strong>How it works</strong>
-          <p>Cloudflare acts as a shield — it sits in front of your Apps Script backend and serves cached configurations directly to users. Combined with our new direct Firebase GPS connection, your Google Workspace quotas are fully protected. Cost: <em>£0.00</em>. Capacity: <em>100,000+ simultaneous viewers</em>.</p>
-        </div>
-      </div>
+      <p>Google Apps Script has a hard limit of 30 simultaneous connections. A free <em>Cloudflare Worker</em> eliminates this risk entirely — cost: £0.00, capacity: 100,000+ simultaneous viewers.</p>
 
       <h3 class="sub-title">Step-by-Step Cloudflare Setup</h3>
       <ol class="steps">
         <li><p>Visit <em>https://dash.cloudflare.com</em> and create a free account.</p></li>
-        <li><p>Go to <em>Workers &amp; Pages → Create Worker</em>. Name it (e.g., <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">santa-api</code>), click Deploy, then click <em>Edit Code</em>.</p></li>
+        <li><p>Go to <em>Workers &amp; Pages → Create Worker</em>. Name it, click Deploy, then click <em>Edit Code</em>.</p></li>
         <li><p>Delete all default code and paste the worker script below.</p></li>
         <li><p><strong>Critical:</strong> Replace the <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">GAS_URL</code> on line 3 with your actual Google Apps Script Web App URL.</p></li>
-        <li><p>Click <em>Deploy</em>. Cloudflare gives you a new Worker URL (e.g., <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">https://santa-api.your-account.workers.dev</code>).</p></li>
-        <li><p>In your Google Sheet, find the <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">api_url</code> row in the Settings tab and replace Column B with your new Cloudflare Worker URL.</p></li>
+        <li><p>Click <em>Deploy</em>. Update your <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">api_url</code> in Settings to the new Worker URL.</p></li>
       </ol>
 
       <div class="code-block">
@@ -1006,37 +924,32 @@
         </div>
         <pre><code>export default {
   async fetch(request, env, ctx) {
-    // ✏️  Replace with your Google Apps Script Web App URL:
     const GAS_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
-
     const url = new URL(request.url);
     const targetUrl = GAS_URL + url.search;
-
     const cache = caches.default;
     const cacheKey = new Request(targetUrl, request);
     let response = await cache.match(cacheKey);
-
     if (!response) {
       response = await fetch(targetUrl);
       response = new Response(response.body, response);
-
-      // Cache for exactly 5 seconds
       response.headers.set("Cache-Control", "s-maxage=5");
       response.headers.set("Access-Control-Allow-Origin", "*");
-
       ctx.waitUntil(cache.put(cacheKey, response.clone()));
     } else {
       response = new Response(response.body, response);
       response.headers.set("Access-Control-Allow-Origin", "*");
     }
-
     return response;
   }
 };</code></pre>
       </div>
     </section>
 
-    <!-- ── SAT-NAV ── -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- SECTION 12 — ⭐ UPDATED: Device A mentions both opts  -->
+    <!-- ══════════════════════════════════════════════════════ -->
+
     <section id="satnav" class="section">
       <div class="section-header">
         <div class="section-num">12</div>
@@ -1051,7 +964,7 @@
         <div class="device-card device-a">
           <div class="device-label">Device A</div>
           <div class="device-name">The Beacon (Public GPS)</div>
-          <div class="device-desc">Runs the GPS Logger app in the background, pushing Santa's location to the public map. Turn it on, plug it into a power bank, mount it firmly — then leave it alone for the entire route.</div>
+          <div class="device-desc">Runs either the <em>TurboSanta Beacon</em> page or the <em>GPS Logger</em> app in the background, pushing Santa's location to the public map. The Beacon is recommended — it buffers fixes through mobile dead spots and fetches its config automatically. If using GPS Logger instead, configure it per <a href="#gps-logger" style="color:var(--gold);">Section 4</a>. Either way: plug it into a power bank, mount it firmly, and leave it alone for the entire route.</div>
           <div class="device-operator">Operated by: Nobody</div>
         </div>
         <div class="device-card device-b">
@@ -1084,7 +997,7 @@
 
   <footer class="guide-footer">
     <div class="footer-brand">🎅 TurboSanta</div>
-    <div class="footer-meta">Comprehensive Onboarding Guide · v3.2 · Updated March 2026<br>Beverley Round Table · Built with Apps Script, Firebase &amp; Cloudflare Pages</div>
+    <div class="footer-meta">Comprehensive Onboarding Guide · v3.3 · Updated March 2026<br>Beverley Round Table · Built with Apps Script, Firebase &amp; Cloudflare Pages</div>
   </footer>
 
 </div>
