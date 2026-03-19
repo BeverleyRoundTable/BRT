@@ -422,6 +422,13 @@ https://brt-23f.pages.dev/bingo?api=${ensureApi()}
 `;
 
 // ================================
+// Route Planner
+// ================================
+const routeplannerLink = `
+https://brt-23f.pages.dev/route_planner?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -455,3 +462,4 @@ document.getElementById("doorhangerLink").value = doorhangerLink.trim();
 document.getElementById("colouringpageLink").value = colouringpageLink.trim();
 document.getElementById("volunteercertLink").value = vlounteercerLink.trim();
 document.getElementById("bingoLink").value = bingoLink.trim();
+document.getElementById("routeplannerLink").value = routeplannerLink.trim();
