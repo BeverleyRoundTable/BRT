@@ -460,6 +460,6 @@ document.getElementById("satnavLink").value = satnavLink.trim();
 document.getElementById("beaconLink").value = beaconLink.trim();
 document.getElementById("doorhangerLink").value = doorhangerLink.trim();
 document.getElementById("colouringpageLink").value = colouringpageLink.trim();
-document.getElementById("volunteercertLink").value = vlounteercerLink.trim();
+document.getElementById("volunteercertLink").value = volunteercertLink.trim(); 
 document.getElementById("bingoLink").value = bingoLink.trim();
 document.getElementById("routeplannerLink").value = routeplannerLink.trim();
