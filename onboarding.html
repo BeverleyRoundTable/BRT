@@ -239,7 +239,7 @@
         <thead><tr><th>Tab</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td>Landing Page</td><td>Your starting point. Click the Dab Santa image to access all generated links, embeds, and tools.</td></tr>
-          <tr><td>Settings</td><td>Master configuration with three data areas: <strong>Col A/B</strong> = key-value store (all named settings), <strong>Col Q</strong> = route name list for the Donations Wizard dropdown, <strong>Col S</strong> = PA preset messages for God Mode. See the <a href="#settings-ref" style="color:var(--gold);">Settings Key Reference</a>.</td></tr>
+          <tr><td>Settings</td><td>Master configuration with four data areas: <strong>Col A/B</strong> = key-value store (all named settings), <strong>Col Q</strong> = route name list for the Donations Wizard dropdown, <strong>Col S</strong> = PA preset messages for God Mode, <strong>Col U</strong> = volunteer roles for the Crew Hub and Certificate Generator. See the <a href="#settings-ref" style="color:var(--gold);">Settings Key Reference</a>.</td></tr>
           <tr><td>Analytics Dashboard</td><td>Visualises viewer behaviour, device types, and route popularity.</td></tr>
           <tr><td>Routes</td><td>Define nightly routes, dates, map images, GPX links, sponsor logos, and street lists. Also tracks <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">mp4Status</code> and <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">mp4Url</code> for the GPX Animator.</td></tr>
           <tr><td>Donations</td><td>Log offline cash/card donations. Tallying here drives automated crew emails.</td></tr>
@@ -509,7 +509,7 @@
         <span class="callout-icon">ℹ️</span>
         <div class="callout-body">
           <strong>How the Settings Tab Works</strong>
-          <p>The Settings tab has <em>three separate data areas</em>, not just one. Column A/B is the key-value store. Column Q and Column S hold additional list data used by specific features — do not delete or move these columns.</p>
+          <p>The Settings tab has <em>four separate data areas</em>, not just one. Column A/B is the key-value store. Column Q, S, and U hold additional list data used by specific features — do not delete or move these columns.</p>
         </div>
       </div>
 
@@ -524,6 +524,13 @@
       <h3 class="sub-title">Donations Route Dropdown (Column Q)</h3>
       <p>Column Q of the Settings sheet (from Q2 downwards) holds the list of route names that appear in the <em>Donations Wizard</em> dropdown when logging cash/card totals. Keep this in sync with your Routes tab.</p>
 
+      <h3 class="sub-title">Volunteer Roles (Column U)</h3>
+      <p>Column U of the Settings sheet (from U2 downwards) holds the list of volunteer roles that appear in the <em>Crew Hub</em> sign-up form and the <em>Volunteer Certificate Generator</em>. Both tools read this list dynamically from the API — add, remove, or reorder roles in the sheet and they update automatically.</p>
+      <ul class="bullet-list">
+        <li>One role per row — e.g. Driver, Collections, Lead Elf, Santa, Tech/GPS, Safety Walkers.</li>
+        <li>If Column U is empty, both tools fall back to a sensible default list.</li>
+      </ul>
+      
       <h3 class="sub-title">Live Announcement (PA System)</h3>
       <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">live_announcement</code> key in Settings is the public PA system. When set, its value overrides the normal status box on <em>every</em> viewer's tracker with a pulsing gold announcement banner.</p>
 
@@ -695,8 +702,12 @@
           <div class="card-title">Operations Tab</div>
           <div class="card-desc">Unlock on sleigh night for pre-flight safety checklists (syncs to Checklist tab) and crew check-in. Password protected.</div>
         </div>
+      <div class="card">
+          <span class="card-icon">🏅</span>
+          <div class="card-title">Volunteer Certificate Generator</div>
+          <div class="card-desc">Personalised certificates for each elf with their name, role, route, date, and amount raised. Downloadable as a PNG for WhatsApp or printable at A4 landscape.</div>
+        </div>
       </div>
-
       <h3 class="sub-title">📣 Marketing &amp; Socials</h3>
       <div class="cards-grid">
         <div class="card">
@@ -757,6 +768,11 @@
           <span class="card-icon">🖍️</span>
           <div class="card-title">Colouring Page Generator</div>
           <div class="card-desc">Kids pick a festive scene, type their name, and print a personalised A4 colouring page. Six scenes included with swappable artwork.</div>
+        </div>
+        <div class="card">
+          <span class="card-icon">🎯</span>
+          <div class="card-title">Sleigh Spotter Bingo</div>
+          <div class="card-desc">Randomised printable bingo cards with things to spot when Santa passes. Every print is unique — 40 items in the pool, 24 per card plus a free space.</div>
         </div>
         <div class="card" style="grid-column: 1 / -1;">
           <span class="card-icon">✉️</span>
