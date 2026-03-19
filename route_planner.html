@@ -627,7 +627,7 @@ async function detectStreets() {
   streetList.innerHTML = ''; detectedStreets = [];
   document.getElementById('streetActions').style.display = 'none';
 
-  const samples = sampleRoute(pts, 80);
+  const samples = sampleRoute(pts, 40);
   const seen = new Set();
 
   for (let i = 0; i < samples.length; i++) {
@@ -642,12 +642,13 @@ async function detectStreets() {
       console.log(`Sample ${i}:`, samples[i], data?.address);
       const addr = data?.address || {};
       const road = addr.road || addr.residential || addr.pedestrian || addr.footway || addr.cycleway || addr.path || addr.street;
-      if (road && !seen.has(road.toLowerCase())) {
-        seen.add(road.toLowerCase());
-        detectedStreets.push(road);
+      const cleanRoad = road.trim();
+      if (cleanRoad && !seen.has(cleanRoad.toLowerCase())) {
+        seen.add(cleanRoad.toLowerCase());
+        detectedStreets.push(cleanRoad);
         const div = document.createElement('div');
         div.className = 'street-item';
-        div.innerHTML = `<span class="street-num">${detectedStreets.length}</span><span class="street-name">${road}</span>`;
+        div.innerHTML = `<span class="street-num">${detectedStreets.length}</span><span class="street-name">${cleanRoad}</span>`;
         streetList.appendChild(div);
       }
     } catch(e) {}
