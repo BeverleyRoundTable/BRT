@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sleigh Spotter Bingo</title>
+<meta name="theme-color" content="#1D1D1A">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800;900&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#1D1D1A;--surface:#262622;--surface-2:#2f2f2a;
+    --border:rgba(255,255,255,0.08);
+    --gold:#FBAF33;--gold-dim:rgba(251,175,51,0.12);--gold-glow:rgba(251,175,51,0.25);
+    --red:#D31C1C;--text:#f0f0f0;--dim:rgba(255,255,255,0.5);--muted:rgba(255,255,255,0.3);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Open Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  .controls{max-width:540px;margin:0 auto;padding:32px 24px}
+  .ctrl-header{text-align:center;margin-bottom:28px}
+  .ctrl-header h1{font-size:1.6em;font-weight:900;letter-spacing:-0.02em;margin-bottom:6px}
+  .ctrl-header h1 span{color:var(--gold)}
+  .ctrl-header p{font-size:.82em;color:var(--dim);line-height:1.5}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:6px}
+  .field input{width:100%;padding:14px 16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;color:var(--text);font-family:inherit;font-size:.95em;outline:none;transition:border-color .2s}
+  .field input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim)}
+  .field input::placeholder{color:rgba(255,255,255,0.2)}
+
+  .btn-row{display:flex;gap:10px;margin-top:24px}
+  .btn{flex:1;padding:16px;border-radius:12px;font-weight:900;font-size:.92em;font-family:inherit;
+    cursor:pointer;border:none;transition:transform .1s;letter-spacing:.3px}
+  .btn:active{transform:scale(.96)}
+  .btn-gold{background:var(--gold);color:#000;box-shadow:0 4px 20px var(--gold-glow)}
+  .btn-dim{background:var(--surface);color:var(--dim);border:1px solid var(--border)}
+  .info-text{font-size:.72em;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6}
+
+  .loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:16px;z-index:9999;transition:opacity .4s}
+  .loader.done{opacity:0;pointer-events:none}
+  .loader-spin{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);
+    border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── BINGO CARD ── */
+  .page-wrap{display:flex;justify-content:center;padding:24px;background:rgba(255,255,255,0.02);border-top:1px solid var(--border)}
+
+  .bingo-page{
+    width:595px;background:#fff;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,0.4);
+    overflow:hidden;position:relative;font-family:'Open Sans',sans-serif;color:#1D1D1A;
+  }
+
+  .bp-header{
+    width:100%;background:var(--gold);padding:20px 24px 16px;text-align:center;position:relative;
+  }
+  .bp-header::after{
+    content:'';position:absolute;bottom:-1px;left:0;right:0;height:20px;
+    background:#fff;border-radius:50% 50% 0 0;
+  }
+  .bp-title{
+    font-family:'Mountains of Christmas',cursive;font-size:34px;font-weight:700;
+    color:#1D1D1A;line-height:1.1;
+  }
+  .bp-subtitle{font-size:11px;font-weight:700;color:rgba(29,29,26,0.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+  .bp-name{
+    text-align:center;padding:8px 20px 14px;
+    font-size:18px;font-weight:900;color:var(--red);
+  }
+  .bp-name.empty{color:#ccc;font-size:14px;font-weight:600}
+
+  .bp-grid{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:0;
+    margin:0 20px 16px;border:3px solid #1D1D1A;border-radius:8px;overflow:hidden;
+  }
+  .bp-cell{
+    aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border:1px solid #ddd;padding:6px 4px;text-align:center;background:#fff;
+    transition:background .2s;position:relative;
+  }
+  .bp-cell:hover{background:#fef9ee}
+  .bp-cell-emoji{font-size:28px;line-height:1;margin-bottom:4px}
+  .bp-cell-text{font-size:8.5px;font-weight:700;color:#1D1D1A;letter-spacing:.2px;line-height:1.2;text-transform:uppercase}
+
+  /* Free space */
+  .bp-cell.free{background:var(--gold)}
+  .bp-cell.free .bp-cell-emoji{font-size:32px}
+  .bp-cell.free .bp-cell-text{color:#1D1D1A;font-size:9px;font-weight:900}
+
+  /* Checkbox circle */
+  .bp-check{
+    position:absolute;top:4px;right:4px;width:14px;height:14px;
+    border:2px solid #ddd;border-radius:50%;
+  }
+  .bp-cell.free .bp-check{border-color:rgba(29,29,26,0.3)}
+
+  .bp-footer{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 24px 16px;border-top:2px solid #eee;
+  }
+  .bp-footer-left{display:flex;align-items:center;gap:8px;margin-left:16px}
+  .bp-footer-logo{height:22px;width:auto;object-fit:contain}
+  .bp-footer-brand{font-size:9px;font-weight:700;color:#999}
+  .bp-footer-right{font-size:7.5px;color:#bbb;font-weight:700;letter-spacing:.5px;margin-right:16px}
+
+  .bp-instructions{
+    text-align:center;padding:0 28px 14px;font-size:9px;color:#aaa;font-weight:600;line-height:1.5;
+  }
+
+  @media print{
+    body{background:#fff !important}
+    .controls,.loader,.info-text{display:none !important}
+    .page-wrap{padding:0;background:none !important;border:none !important}
+    .bingo-page{box-shadow:none !important;border-radius:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @page{margin:10mm;size:A4 portrait}
+  }
+
+  @media(max-width:640px){
+    .bingo-page{width:100%}
+    .bp-title{font-size:26px}
+    .bp-cell-emoji{font-size:22px}
+    .bp-cell-text{font-size:7px}
+  }
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader"><div class="loader-spin"></div></div>
+
+<div class="controls" id="controls">
+  <div class="ctrl-header">
+    <h1>🎯 Sleigh Spotter <span>Bingo</span></h1>
+    <p>Randomised bingo cards for kids waiting at the window — every print is different!</p>
+  </div>
+
+  <div class="field">
+    <label>Child's Name (optional)</label>
+    <input type="text" id="childName" placeholder="e.g. Sophie" maxlength="30">
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-gold" onclick="generate()">🔀 New Card</button>
+    <button class="btn btn-dim" onclick="window.print()">🖨 Print</button>
+  </div>
+
+  <div class="info-text">Every card is unique — print a different one for each child! Spot it, tick the circle, shout BINGO!</div>
+</div>
+
+<div class="page-wrap" id="pageWrap"></div>
+
+<script>
+const API = new URLSearchParams(location.search).get('api') || '';
+let CFG = { logo:'', sleighName:'Santa Sleigh' };
+
+/* ══════════════════════════════════════════════════════════════
+   BINGO ITEMS — Each has an emoji and a label.
+   The grid picks 24 random items + 1 free space = 25 cells.
+   Add or remove items here to customise what can appear.
+   ══════════════════════════════════════════════════════════════ */
+
+const ITEMS = [
+  { emoji:'🎅', text:'Santa Waving' },
+  { emoji:'🦌', text:'Reindeer Antlers' },
+  { emoji:'🛷', text:'The Sleigh' },
+  { emoji:'💡', text:'Flashing Lights' },
+  { emoji:'🎵', text:'Christmas Music' },
+  { emoji:'🔔', text:'Sleigh Bells' },
+  { emoji:'🧝', text:'An Elf' },
+  { emoji:'🪣', text:'Bucket Collector' },
+  { emoji:'🎁', text:'Presents on Sleigh' },
+  { emoji:'⭐', text:'A Star' },
+  { emoji:'🎄', text:'Christmas Tree' },
+  { emoji:'❄️', text:'Snowflakes' },
+  { emoji:'📸', text:'Someone Taking a Photo' },
+  { emoji:'🧣', text:'A Scarf' },
+  { emoji:'🎶', text:'Singing Along' },
+  { emoji:'👋', text:'Wave at Santa' },
+  { emoji:'🏠', text:'Decorated House' },
+  { emoji:'🕯️', text:'Candle in a Window' },
+  { emoji:'🧤', text:'Gloves or Mittens' },
+  { emoji:'🌟', text:'Something Sparkly' },
+  { emoji:'📣', text:'PA Announcement' },
+  { emoji:'🐕', text:'A Dog Watching' },
+  { emoji:'👶', text:'A Baby in a Pram' },
+  { emoji:'🍬', text:'Candy Cane' },
+  { emoji:'☕', text:'Hot Chocolate' },
+  { emoji:'🎀', text:'A Red Ribbon' },
+  { emoji:'🧸', text:'A Teddy Bear' },
+  { emoji:'🌙', text:'The Moon' },
+  { emoji:'🔦', text:'A Torch or Light' },
+  { emoji:'🧥', text:'A Big Winter Coat' },
+  { emoji:'🎉', text:'Someone Cheering' },
+  { emoji:'📱', text:'Phone Torch Waving' },
+  { emoji:'🪟', text:'Face in a Window' },
+  { emoji:'🚗', text:'Car Following Sleigh' },
+  { emoji:'🎿', text:'Something Red' },
+  { emoji:'⛄', text:'A Snowman' },
+  { emoji:'🦺', text:'A Hi-Vis Jacket' },
+  { emoji:'🔊', text:'Jingle Bells Song' },
+  { emoji:'🫣', text:'Someone Peeking Out' },
+  { emoji:'🥕', text:'Rudolph\'s Red Nose' }
+];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function init() {
+  if (API) {
+    try {
+      const res = await fetch(API);
+      const data = await res.json();
+      const s = data.settings || {};
+      CFG.logo = s.logo_overlay_url || '';
+      CFG.sleighName = s.sleigh_display_name || 'Santa Sleigh';
+    } catch(e) {}
+  }
+  document.getElementById('loader').classList.add('done');
+  generate();
+}
+
+function generate() {
+  const name = document.getElementById('childName').value.trim();
+  const logoHtml = CFG.logo ? `<img class="bp-footer-logo" src="${CFG.logo}" alt="">` : '';
+
+  const nameHtml = name
+    ? `<div class="bp-name">${name}'s Bingo Card</div>`
+    : `<div class="bp-name empty">My Bingo Card</div>`;
+
+  // Pick 24 random items
+  const picked = shuffle(ITEMS).slice(0, 24);
+
+  // Insert free space at center (index 12 in a 5x5 grid)
+  picked.splice(12, 0, { emoji:'⭐', text:'Free Space', free: true });
+
+  // Build grid cells
+  const cellsHtml = picked.map(item => {
+    const freeClass = item.free ? ' free' : '';
+    return `<div class="bp-cell${freeClass}">
+      <div class="bp-check"></div>
+      <div class="bp-cell-emoji">${item.emoji}</div>
+      <div class="bp-cell-text">${item.text}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('pageWrap').innerHTML = `
+    <div class="bingo-page">
+      <div class="bp-header">
+        <div class="bp-title">Sleigh Spotter Bingo!</div>
+        <div class="bp-subtitle">Can you spot them all?</div>
+      </div>
+      ${nameHtml}
+      <div class="bp-grid">${cellsHtml}</div>
+      <div class="bp-instructions">Spot each item as Santa passes — tick the circle when you see it. Five in a row = BINGO!</div>
+      <div class="bp-footer">
+        <div class="bp-footer-left">
+          ${logoHtml}
+          <span class="bp-footer-brand">${CFG.sleighName}</span>
+        </div>
+        <div class="bp-footer-right">Every card is unique!</div>
+      </div>
+    </div>
+  `;
+}
+
+document.getElementById('childName').addEventListener('input', generate);
+init();
+</script>
+</body>
+</html>
