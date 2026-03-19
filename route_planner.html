@@ -642,7 +642,7 @@ async function detectStreets() {
       console.log(`Sample ${i}:`, samples[i], data?.address);
       const addr = data?.address || {};
       const road = addr.road || addr.residential || addr.pedestrian || addr.footway || addr.cycleway || addr.path || addr.street;
-      const cleanRoad = road.trim();
+      const cleanRoad = road ? road.trim() : '';
       if (cleanRoad && !seen.has(cleanRoad.toLowerCase())) {
         seen.add(cleanRoad.toLowerCase());
         detectedStreets.push(cleanRoad);
