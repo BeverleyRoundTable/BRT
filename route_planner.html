@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Route Planner</title>
+<meta name="theme-color" content="#1D1D1A">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --bg:#1D1D1A;--surface:#262622;--surface-2:#2f2f2a;
+    --border:rgba(255,255,255,0.08);
+    --gold:#FBAF33;--gold-dim:rgba(251,175,51,0.12);--gold-glow:rgba(251,175,51,0.25);
+    --red:#D31C1C;--green:#2ecc71;--blue:#4a9eff;
+    --text:#f0f0f0;--dim:rgba(255,255,255,0.5);--muted:rgba(255,255,255,0.3);
+    --mono:'JetBrains Mono',monospace;--sans:'Open Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
+
+  .app{display:flex;flex-direction:column;height:100vh}
+  .top-bar{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .top-bar h1{font-size:1.1em;font-weight:900;letter-spacing:-0.02em}
+  .top-bar h1 span{color:var(--gold)}
+  .top-bar-right{display:flex;align-items:center;gap:10px}
+  .mode-toggle{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .mode-btn{padding:6px 14px;font-size:.72em;font-weight:700;font-family:var(--sans);cursor:pointer;border:none;
+    background:var(--surface);color:var(--muted);transition:all .15s}
+  .mode-btn.active{background:var(--gold-dim);color:var(--gold)}
+
+  .main{display:flex;flex:1;min-height:0}
+  .sidebar{width:350px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+  .map-area{flex:1;position:relative}
+  #map{width:100%;height:100%;background:#111}
+
+  .sb-section{padding:16px 20px;border-bottom:1px solid var(--border)}
+  .sb-label{font-size:.6em;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+
+  .dropzone{border:2px dashed var(--border);border-radius:10px;padding:20px 14px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+  .dropzone:hover,.dropzone.dragover{border-color:var(--gold);background:var(--gold-dim)}
+  .dropzone-icon{font-size:24px;margin-bottom:4px;display:block}
+  .dropzone-text{font-size:.75em;font-weight:600;color:var(--dim)}
+  .dropzone-text em{color:var(--gold);font-style:normal}
+  .dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+  .file-badge{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:8px}
+  .file-badge-icon{font-size:16px}
+  .file-badge-info{flex:1}
+  .file-badge-name{font-size:.75em;font-weight:700;color:var(--text)}
+  .file-badge-meta{font-size:.62em;color:var(--muted)}
+  .file-badge-clear{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px}
+
+  .place-info{background:var(--gold-dim);border:1px solid rgba(251,175,51,0.2);border-radius:8px;padding:10px 12px;font-size:.72em;color:#f0d49a;line-height:1.5}
+  .place-info strong{color:var(--gold)}
+
+  .profile-row{display:flex;gap:4px;margin-top:8px}
+  .profile-btn{flex:1;padding:6px 8px;border-radius:6px;font-size:.68em;font-weight:700;font-family:var(--sans);
+    cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all .15s;text-align:center}
+  .profile-btn.active{background:var(--gold-dim);color:var(--gold);border-color:rgba(251,175,51,0.3)}
+
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .stat{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+  .stat-value{font-family:var(--mono);font-size:1.2em;font-weight:800;color:var(--text);line-height:1;margin-bottom:2px}
+  .stat-label{font-size:.58em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .stat-value.gold{color:var(--gold)}
+
+  .speed-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .speed-row label{font-size:.68em;font-weight:700;color:var(--dim);white-space:nowrap}
+  .speed-row input[type=range]{flex:1;accent-color:var(--gold)}
+  .speed-val{font-family:var(--mono);font-size:.75em;font-weight:700;color:var(--gold);min-width:44px;text-align:right}
+
+  .density-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .density-row label{font-size:.68em;font-weight:700;color:var(--dim);white-space:nowrap}
+  .density-row select{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;
+    color:var(--text);font-family:var(--sans);font-size:.75em;outline:none}
+
+  .street-list{max-height:220px;overflow-y:auto;margin-top:6px}
+  .street-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:.75em}
+  .street-item:last-child{border-bottom:none}
+  .street-num{font-family:var(--mono);font-size:.62em;color:var(--muted);min-width:20px;text-align:right}
+  .street-name{font-weight:600;color:var(--text);flex:1}
+  .street-loading{text-align:center;padding:14px;color:var(--dim);font-size:.75em}
+
+  .btn{padding:9px 14px;border-radius:8px;font-weight:800;font-size:.76em;font-family:var(--sans);
+    cursor:pointer;border:none;transition:transform .1s;letter-spacing:.3px;width:100%}
+  .btn:active{transform:scale(.96)}
+  .btn-gold{background:var(--gold);color:#000;box-shadow:0 3px 12px var(--gold-glow)}
+  .btn-dim{background:var(--surface-2);color:var(--dim);border:1px solid var(--border)}
+  .btn-green{background:var(--green);color:#000}
+  .btn-red{background:var(--red);color:#fff}
+  .btn-sm{padding:6px 10px;font-size:.7em;width:auto}
+  .btn-row{display:flex;gap:5px;margin-top:8px}
+
+  .progress{height:3px;background:var(--surface-2);border-radius:2px;margin-top:6px;overflow:hidden}
+  .progress-bar{height:100%;background:var(--gold);transition:width .3s;border-radius:2px}
+
+  .map-legend{position:absolute;bottom:14px;left:14px;z-index:1000;background:rgba(29,29,26,0.92);
+    border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.65em;color:var(--dim);backdrop-filter:blur(8px)}
+  .map-legend strong{color:var(--gold);display:block;margin-bottom:2px;font-size:.85em;letter-spacing:.5px;text-transform:uppercase}
+
+  .map-toast{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1000;
+    background:rgba(251,175,51,0.95);color:#000;padding:7px 16px;border-radius:8px;
+    font-size:.75em;font-weight:700;pointer-events:none;display:none;white-space:nowrap}
+
+  .routing-spinner{position:absolute;top:14px;right:14px;z-index:1000;background:rgba(29,29,26,0.9);
+    border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:.7em;color:var(--gold);
+    font-weight:700;display:none;align-items:center;gap:8px;backdrop-filter:blur(8px)}
+  .mini-spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--gold);
+    border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .wp-count{font-family:var(--mono);font-size:.75em;color:var(--gold);font-weight:700}
+
+  /* Waypoint list */
+  .wp-list{max-height:180px;overflow-y:auto;margin-top:6px}
+  .wp-item{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:.72em}
+  .wp-item:last-child{border-bottom:none}
+  .wp-idx{font-family:var(--mono);font-size:.7em;color:var(--gold);min-width:18px;text-align:right;font-weight:700}
+  .wp-coords{color:var(--muted);font-family:var(--mono);font-size:.85em;flex:1}
+  .wp-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:2px 4px;opacity:0.6}
+  .wp-del:hover{opacity:1}
+
+  @media(max-width:900px){
+    .main{flex-direction:column}
+    .sidebar{width:100%;max-height:50vh;border-right:none;border-bottom:1px solid var(--border)}
+    .map-area{min-height:50vh}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="top-bar">
+    <h1>🗺️ Route <span>Planner</span></h1>
+    <div class="top-bar-right">
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="modeUpload" onclick="setMode('upload')">📂 Upload GPX</button>
+        <button class="mode-btn" id="modePlace" onclick="setMode('place')">📍 Build Route</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="sidebar">
+
+      <!-- UPLOAD MODE -->
+      <div class="sb-section" id="uploadSection">
+        <div class="sb-label">Load Existing GPX</div>
+        <div class="dropzone" id="dropzone">
+          <input type="file" accept=".gpx" id="fileInput">
+          <span class="dropzone-icon">📂</span>
+          <div class="dropzone-text">Drag &amp; drop <em>.gpx</em> or tap to browse</div>
+        </div>
+        <div id="fileBadge" style="display:none"></div>
+      </div>
+
+      <!-- PLACE MODE -->
+      <div class="sb-section" id="placeSection" style="display:none">
+        <div class="sb-label">Build Route <span class="wp-count" id="wpCount">0 pts</span></div>
+        <div class="place-info">
+          <strong>Click the map</strong> to place waypoints. The route auto-snaps to real roads between each point.<br>
+          <strong>Drag</strong> markers to adjust. <strong>Right-click</strong> to delete.
+        </div>
+        <div class="profile-row">
+          <button class="profile-btn active" data-profile="foot" onclick="setProfile(this)">🚶 Walking</button>
+          <button class="profile-btn" data-profile="driving" onclick="setProfile(this)">🚗 Driving</button>
+          <button class="profile-btn" data-profile="bike" onclick="setProfile(this)">🚴 Cycling</button>
+        </div>
+        <div class="wp-list" id="wpList"></div>
+        <div class="btn-row">
+          <button class="btn btn-dim btn-sm" onclick="undoWaypoint()">↩ Undo</button>
+          <button class="btn btn-red btn-sm" onclick="clearAllWaypoints()">✕ Clear All</button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="sb-section" id="statsSection" style="display:none">
+        <div class="sb-label">Route Stats</div>
+        <div class="stats-grid">
+          <div class="stat"><div class="stat-value gold" id="statDist">—</div><div class="stat-label">Distance</div></div>
+          <div class="stat"><div class="stat-value" id="statWaypoints">—</div><div class="stat-label">Waypoints</div></div>
+          <div class="stat"><div class="stat-value gold" id="statTime">—</div><div class="stat-label">Est. Time</div></div>
+          <div class="stat"><div class="stat-value" id="statDense">—</div><div class="stat-label">Export Points</div></div>
+        </div>
+        <div class="speed-row">
+          <label>Speed</label>
+          <input type="range" id="speedSlider" min="1" max="10" step="0.5" value="3">
+          <span class="speed-val" id="speedVal">3 mph</span>
+        </div>
+        <div class="density-row">
+          <label>Density</label>
+          <select id="densitySelect">
+            <option value="5">5m (ultra-dense)</option>
+            <option value="10" selected>10m (recommended)</option>
+            <option value="15">15m</option>
+            <option value="20">20m</option>
+            <option value="50">50m (sparse)</option>
+          </select>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-gold" onclick="exportDenseGPX()">⬇ Export Dense GPX</button>
+        </div>
+      </div>
+
+      <!-- STREETS -->
+      <div class="sb-section" id="streetsSection" style="display:none">
+        <div class="sb-label">Detected Streets <span class="wp-count" id="streetCountLabel">0</span></div>
+        <div id="streetStatus" class="street-loading">Waiting for route…</div>
+        <div id="progressWrap" style="display:none"><div class="progress"><div class="progress-bar" id="progressBar" style="width:0%"></div></div></div>
+        <div class="street-list" id="streetList"></div>
+        <div class="btn-row" id="streetActions" style="display:none">
+          <button class="btn btn-gold btn-sm" onclick="copyStreets()">📋 Copy for Sheet</button>
+          <button class="btn btn-dim btn-sm" onclick="copyCSV()">📄 CSV</button>
+          <button class="btn btn-dim btn-sm" onclick="detectStreets()">🔄 Re-scan</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="map-area">
+      <div id="map"></div>
+      <div class="map-toast" id="mapToast">Click the map to place waypoints</div>
+      <div class="routing-spinner" id="routingSpinner"><div class="mini-spin"></div>Snapping to roads…</div>
+      <div class="map-legend" id="mapLegend" style="display:none">
+        <strong>Route Preview</strong>
+        <span id="legendText">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let mode = 'upload';
+let routingProfile = 'foot';
+let waypoints = [];        // user-placed points [{lat, lng}]
+let snappedGeometry = [];  // road-snapped full geometry [[lat,lng],...]
+let uploadedPoints = [];   // from GPX upload (already dense or sparse)
+let detectedStreets = [];
+let geocodeAbort = false;
+let routingInProgress = false;
+
+// Layers
+let snappedLayer = null;
+let uploadLayer = null;
+let waypointMarkers = [];
+let existingRouteLayers = [];
+
+const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
+
+// ═══════════════════════════════════════
+// MAP
+// ═══════════════════════════════════════
+const map = L.map('map', { zoomControl: true }).setView([53.84, -0.43], 14);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO', maxZoom: 19
+}).addTo(map);
+
+// ═══════════════════════════════════════
+// MODE SWITCH
+// ═══════════════════════════════════════
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeUpload').classList.toggle('active', m === 'upload');
+  document.getElementById('modePlace').classList.toggle('active', m === 'place');
+  document.getElementById('uploadSection').style.display = m === 'upload' ? 'block' : 'none';
+  document.getElementById('placeSection').style.display = m === 'place' ? 'block' : 'none';
+  document.getElementById('mapToast').style.display = m === 'place' ? 'block' : 'none';
+  map.getContainer().style.cursor = m === 'place' ? 'crosshair' : '';
+}
+
+// ═══════════════════════════════════════
+// ROUTING PROFILE
+// ═══════════════════════════════════════
+function setProfile(btn) {
+  document.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  routingProfile = btn.dataset.profile;
+  if (waypoints.length >= 2) routeAllWaypoints();
+}
+
+// ═══════════════════════════════════════
+// MAP CLICK — Place waypoints
+// ═══════════════════════════════════════
+map.on('click', async e => {
+  if (mode !== 'place') return;
+  const { lat, lng } = e.latlng;
+  addWaypointMarker(lat, lng);
+  waypoints.push({ lat, lng });
+  updateWpUI();
+  if (waypoints.length >= 2) await routeAllWaypoints();
+  updateStats();
+});
+
+function addWaypointMarker(lat, lng) {
+  const idx = waypointMarkers.length;
+  const isFirst = idx === 0;
+  const color = isFirst ? '#2ecc71' : '#FBAF33';
+
+  const marker = L.marker([lat, lng], {
+    draggable: true,
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="background:${color};width:${isFirst ? 14 : 11}px;height:${isFirst ? 14 : 11}px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);position:relative;z-index:${1000-idx}"></div>`,
+      iconSize: [14, 14], iconAnchor: [7, 7]
+    }),
+    zIndexOffset: isFirst ? 1000 : 500 - idx
+  }).addTo(map);
+
+  marker.bindTooltip(`Waypoint ${idx + 1}`, { direction: 'top', offset: [0, -8] });
+
+  marker.on('dragend', async () => {
+    const pos = marker.getLatLng();
+    const i = waypointMarkers.indexOf(marker);
+    if (i >= 0) {
+      waypoints[i] = { lat: pos.lat, lng: pos.lng };
+      updateWpUI();
+      if (waypoints.length >= 2) await routeAllWaypoints();
+      updateStats();
+    }
+  });
+
+  marker.on('contextmenu', async e => {
+    L.DomEvent.preventDefault(e);
+    const i = waypointMarkers.indexOf(marker);
+    if (i >= 0) {
+      map.removeLayer(marker);
+      waypointMarkers.splice(i, 1);
+      waypoints.splice(i, 1);
+      updateWpUI();
+      if (waypoints.length >= 2) await routeAllWaypoints();
+      else clearSnappedRoute();
+      updateStats();
+    }
+  });
+
+  waypointMarkers.push(marker);
+}
+
+function undoWaypoint() {
+  if (waypointMarkers.length === 0) return;
+  const m = waypointMarkers.pop();
+  map.removeLayer(m);
+  waypoints.pop();
+  updateWpUI();
+  if (waypoints.length >= 2) routeAllWaypoints();
+  else clearSnappedRoute();
+  updateStats();
+}
+
+function clearAllWaypoints() {
+  waypointMarkers.forEach(m => map.removeLayer(m));
+  waypointMarkers = [];
+  waypoints = [];
+  clearSnappedRoute();
+  updateWpUI();
+  updateStats();
+}
+
+function updateWpUI() {
+  document.getElementById('wpCount').textContent = waypoints.length + ' pts';
+  const list = document.getElementById('wpList');
+  list.innerHTML = waypoints.map((w, i) =>
+    `<div class="wp-item"><span class="wp-idx">${i + 1}</span><span class="wp-coords">${w.lat.toFixed(5)}, ${w.lng.toFixed(5)}</span></div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════
+// OSRM ROUTING
+// ═══════════════════════════════════════
+async function routeAllWaypoints() {
+  if (waypoints.length < 2) return;
+  if (routingInProgress) return;
+  routingInProgress = true;
+
+  const spinner = document.getElementById('routingSpinner');
+  spinner.style.display = 'flex';
+
+  try {
+    // Build coordinate string: lng,lat;lng,lat;...
+    const coords = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
+    const url = `${OSRM_BASE}/${routingProfile}/${coords}?overview=full&geometries=geojson&steps=false`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.code !== 'Ok' || !data.routes || !data.routes[0]) {
+      console.warn('OSRM routing failed:', data);
+      // Fallback to straight lines
+      snappedGeometry = waypoints.map(w => [w.lat, w.lng]);
+      drawSnappedRoute();
+      return;
+    }
+
+    // GeoJSON coordinates are [lng, lat] — flip to [lat, lng]
+    const geojsonCoords = data.routes[0].geometry.coordinates;
+    snappedGeometry = geojsonCoords.map(c => [c[1], c[0]]);
+    drawSnappedRoute();
+
+  } catch (e) {
+    console.error('Routing error:', e);
+    // Fallback
+    snappedGeometry = waypoints.map(w => [w.lat, w.lng]);
+    drawSnappedRoute();
+  } finally {
+    routingInProgress = false;
+    spinner.style.display = 'none';
+  }
+}
+
+function drawSnappedRoute() {
+  if (snappedLayer) map.removeLayer(snappedLayer);
+
+  if (snappedGeometry.length < 2) return;
+
+  snappedLayer = L.polyline(snappedGeometry, {
+    color: '#D31C1C', weight: 4, opacity: 0.9
+  }).addTo(map);
+
+  updateStats();
+}
+
+function clearSnappedRoute() {
+  if (snappedLayer) { map.removeLayer(snappedLayer); snappedLayer = null; }
+  snappedGeometry = [];
+  document.getElementById('statsSection').style.display = 'none';
+  document.getElementById('streetsSection').style.display = 'none';
+  document.getElementById('mapLegend').style.display = 'none';
+}
+
+// ═══════════════════════════════════════
+// GPX UPLOAD
+// ═══════════════════════════════════════
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('dragover'); if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files.length) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  if (!file.name.toLowerCase().endsWith('.gpx')) { alert('Please upload a .gpx file'); return; }
+  const reader = new FileReader();
+  reader.onload = e => parseGPX(e.target.result, file.name, file.size);
+  reader.readAsText(file);
+}
+
+function parseGPX(text, name, size) {
+  abortGeocode();
+  const parser = new DOMParser();
+  const gpx = parser.parseFromString(text, 'text/xml');
+  const pts = [];
+  const nodes = gpx.querySelectorAll('trkpt');
+  const fallback = nodes.length ? nodes : gpx.querySelectorAll('rtept').length ? gpx.querySelectorAll('rtept') : gpx.querySelectorAll('wpt');
+  fallback.forEach(pt => {
+    const lat = parseFloat(pt.getAttribute('lat'));
+    const lon = parseFloat(pt.getAttribute('lon'));
+    if (!isNaN(lat) && !isNaN(lon)) pts.push([lat, lon]);
+  });
+  if (pts.length < 2) { alert('GPX needs at least 2 points.'); return; }
+
+  uploadedPoints = pts;
+  snappedGeometry = []; // Clear any build-mode data
+
+  if (uploadLayer) map.removeLayer(uploadLayer);
+  uploadLayer = L.polyline(pts, { color: '#D31C1C', weight: 4, opacity: 0.9 }).addTo(map);
+  map.fitBounds(uploadLayer.getBounds(), { padding: [40, 40] });
+
+  document.getElementById('fileBadge').style.display = 'block';
+  document.getElementById('fileBadge').innerHTML = `<div class="file-badge">
+    <span class="file-badge-icon">📍</span>
+    <div class="file-badge-info"><div class="file-badge-name">${name}</div><div class="file-badge-meta">${pts.length} pts · ${(size/1024).toFixed(1)} KB</div></div>
+    <button class="file-badge-clear" onclick="clearUpload()">✕</button>
+  </div>`;
+
+  updateStats();
+  detectStreets();
+}
+
+function clearUpload() {
+  abortGeocode();
+  if (uploadLayer) { map.removeLayer(uploadLayer); uploadLayer = null; }
+  uploadedPoints = [];
+  document.getElementById('fileBadge').style.display = 'none';
+  document.getElementById('statsSection').style.display = 'none';
+  document.getElementById('streetsSection').style.display = 'none';
+  document.getElementById('mapLegend').style.display = 'none';
+  fileInput.value = '';
+}
+
+// ═══════════════════════════════════════
+// GET ACTIVE POINTS (whichever mode)
+// ═══════════════════════════════════════
+function getActivePoints() {
+  if (mode === 'upload' && uploadedPoints.length > 0) return uploadedPoints;
+  if (snappedGeometry.length > 0) return snappedGeometry;
+  return [];
+}
+
+// ═══════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════
+function updateStats() {
+  const pts = getActivePoints();
+  if (pts.length < 2) {
+    document.getElementById('statsSection').style.display = 'none';
+    document.getElementById('streetsSection').style.display = 'none';
+    document.getElementById('mapLegend').style.display = 'none';
+    return;
+  }
+
+  const distKm = calcDist(pts);
+  const distMi = distKm * 0.621371;
+  const density = parseInt(document.getElementById('densitySelect').value);
+  const dense = densifyPoints(pts, density);
+
+  document.getElementById('statDist').textContent = distMi < 0.1 ? `${Math.round(distKm * 1000)}m` : `${distMi.toFixed(2)} mi`;
+  document.getElementById('statWaypoints').textContent = mode === 'place' ? waypoints.length : uploadedPoints.length;
+  document.getElementById('statDense').textContent = dense.length.toLocaleString();
+  updateTime(distMi);
+
+  document.getElementById('statsSection').style.display = 'block';
+  document.getElementById('streetsSection').style.display = 'block';
+  document.getElementById('mapLegend').style.display = 'block';
+  document.getElementById('legendText').textContent = `${distMi.toFixed(2)} mi · ${dense.length} export pts`;
+}
+
+const speedSlider = document.getElementById('speedSlider');
+const speedVal = document.getElementById('speedVal');
+speedSlider.addEventListener('input', () => {
+  speedVal.textContent = `${speedSlider.value} mph`;
+  const pts = getActivePoints();
+  if (pts.length > 1) updateTime(calcDist(pts) * 0.621371);
+});
+document.getElementById('densitySelect').addEventListener('change', updateStats);
+
+function updateTime(distMi) {
+  const mins = Math.round((distMi / parseFloat(speedSlider.value)) * 60);
+  document.getElementById('statTime').textContent = mins < 60 ? `${mins} min` : `${Math.floor(mins/60)}h ${mins%60}m`;
+}
+
+// ═══════════════════════════════════════
+// MATH
+// ═══════════════════════════════════════
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371; const dLat = (lat2-lat1)*Math.PI/180; const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function calcDist(pts) { let t=0; for(let i=1;i<pts.length;i++) t+=haversine(pts[i-1][0],pts[i-1][1],pts[i][0],pts[i][1]); return t; }
+
+// ═══════════════════════════════════════
+// DENSIFY
+// ═══════════════════════════════════════
+function densifyPoints(points, intervalM) {
+  if (points.length < 2) return [...points];
+  const dense = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    const [lat1, lon1] = points[i-1];
+    const [lat2, lon2] = points[i];
+    const seg = haversine(lat1, lon1, lat2, lon2) * 1000;
+    if (seg <= intervalM) { dense.push(points[i]); continue; }
+    const n = Math.ceil(seg / intervalM);
+    for (let s = 1; s <= n; s++) {
+      const t = s / n;
+      dense.push([lat1+(lat2-lat1)*t, lon1+(lon2-lon1)*t]);
+    }
+  }
+  return dense;
+}
+
+// ═══════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════
+function exportDenseGPX() {
+  const pts = getActivePoints();
+  if (pts.length < 2) { alert('Build or upload a route first.'); return; }
+
+  const density = parseInt(document.getElementById('densitySelect').value);
+  const dense = densifyPoints(pts, density);
+
+  const trkpts = dense.map(p => `      <trkpt lat="${p[0].toFixed(7)}" lon="${p[1].toFixed(7)}"></trkpt>`).join('\n');
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TurboSanta Route Planner">
+  <trk>
+    <name>TurboSanta Route (${density}m density)</name>
+    <trkseg>
+${trkpts}
+    </trkseg>
+  </trk>
+</gpx>`;
+
+  const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `route_${density}m_dense.gpx`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════
+// STREET DETECTION
+// ═══════════════════════════════════════
+function abortGeocode() { geocodeAbort = true; setTimeout(() => geocodeAbort = false, 100); }
+
+async function detectStreets() {
+  const pts = getActivePoints();
+  if (pts.length < 2) return;
+
+  abortGeocode();
+  await new Promise(r => setTimeout(r, 150));
+  geocodeAbort = false;
+
+  const status = document.getElementById('streetStatus');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const streetList = document.getElementById('streetList');
+
+  status.textContent = 'Detecting streets…'; status.style.display = 'block';
+  progressWrap.style.display = 'block'; progressBar.style.width = '0%';
+  streetList.innerHTML = ''; detectedStreets = [];
+  document.getElementById('streetActions').style.display = 'none';
+
+  const samples = sampleRoute(pts, 80);
+  const seen = new Set();
+
+  for (let i = 0; i < samples.length; i++) {
+    if (geocodeAbort) return;
+    const pct = Math.round((i / samples.length) * 100);
+    progressBar.style.width = pct + '%';
+    status.textContent = `Detecting… ${pct}% (${detectedStreets.length} found)`;
+
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${samples[i][0]}&lon=${samples[i][1]}&zoom=17&addressdetails=1`, { headers: { 'Accept-Language': 'en' } });
+      const data = await res.json();
+      const road = data?.address?.road;
+      if (road && !seen.has(road.toLowerCase())) {
+        seen.add(road.toLowerCase());
+        detectedStreets.push(road);
+        const div = document.createElement('div');
+        div.className = 'street-item';
+        div.innerHTML = `<span class="street-num">${detectedStreets.length}</span><span class="street-name">${road}</span>`;
+        streetList.appendChild(div);
+      }
+    } catch(e) {}
+    if (i < samples.length - 1) await new Promise(r => setTimeout(r, 1050));
+  }
+
+  progressBar.style.width = '100%';
+  status.textContent = `Done — ${detectedStreets.length} street${detectedStreets.length !== 1 ? 's' : ''} detected`;
+  document.getElementById('streetCountLabel').textContent = detectedStreets.length;
+  if (detectedStreets.length > 0) document.getElementById('streetActions').style.display = 'flex';
+}
+
+function sampleRoute(pts, intervalM) {
+  const s = [pts[0]]; let a = 0;
+  for (let i = 1; i < pts.length; i++) {
+    a += haversine(pts[i-1][0], pts[i-1][1], pts[i][0], pts[i][1]) * 1000;
+    if (a >= intervalM) { s.push(pts[i]); a = 0; }
+  }
+  if (s[s.length-1] !== pts[pts.length-1]) s.push(pts[pts.length-1]);
+  return s;
+}
+
+function copyStreets() {
+  if (!detectedStreets.length) return;
+  navigator.clipboard.writeText(detectedStreets.join(', ')).then(() =>
+    alert(`Copied ${detectedStreets.length} streets — paste into Routes sheet Column H.`));
+}
+function copyCSV() {
+  if (!detectedStreets.length) return;
+  navigator.clipboard.writeText(`#,Street\n${detectedStreets.map((s,i)=>`${i+1},"${s}"`).join('\n')}`).then(() => alert('Copied as CSV.'));
+}
+
+// ═══════════════════════════════════════
+// EXISTING ROUTE OVERLAY FROM API
+// ═══════════════════════════════════════
+const API = new URLSearchParams(location.search).get('api') || '';
+
+async function loadExistingRoutes() {
+  if (!API) return;
+  try {
+    const res = await fetch(API);
+    const data = await res.json();
+    const routes = (data.routes || []).filter(r => r.gpx);
+
+    for (const route of routes) {
+      try {
+        const gpxRes = await fetch(route.gpx);
+        const gpxText = await gpxRes.text();
+        const parser = new DOMParser();
+        const gpx = parser.parseFromString(gpxText, 'text/xml');
+        const pts = [];
+        gpx.querySelectorAll('trkpt').forEach(pt => {
+          const lat = parseFloat(pt.getAttribute('lat'));
+          const lon = parseFloat(pt.getAttribute('lon'));
+          if (!isNaN(lat) && !isNaN(lon)) pts.push([lat, lon]);
+        });
+        if (pts.length > 1) {
+          const layer = L.polyline(pts, { color: '#555', weight: 3, opacity: 0.35, dashArray: '8 5' }).addTo(map);
+          layer.bindTooltip(route.routeName || 'Existing route', { sticky: true });
+          existingRouteLayers.push(layer);
+        }
+      } catch(e) {}
+    }
+
+    if (existingRouteLayers.length > 0) {
+      map.fitBounds(L.featureGroup(existingRouteLayers).getBounds(), { padding: [40, 40] });
+    }
+  } catch(e) {}
+}
+
+loadExistingRoutes();
+</script>
+</body>
+</html>
