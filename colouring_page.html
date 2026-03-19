@@ -185,7 +185,7 @@ const SCENES = [
     id: 'sleigh',
     icon: '🛷',
     name: "Santa's Sleigh",
-    url: 'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/colouring/sleigh.svg'  // ← Paste your custom image URL here, e.g.: https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/colouring/sleigh.png
+    url: ''  // ← Paste your custom image URL here, e.g.: https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/colouring/sleigh.png
   },
   {
     id: 'tree',
@@ -218,15 +218,6 @@ const SCENES = [
     url: ''
   }
 ];
-
-// Cache for fetched SVGs so we don't re-download on every generate
-const svgCache = {};
-
-// Detect if URL points to a raster image vs SVG
-function isImageUrl(url) {
-  const lower = url.toLowerCase().split('?')[0];
-  return /\.(png|jpg|jpeg|webp|gif|bmp)$/.test(lower);
-}
 
 let selectedScene = 'sleigh';
 
@@ -263,26 +254,6 @@ function pickScene(id) {
   generate();
 }
 
-async function fetchSceneSvg(scene) {
-  if (!scene.url) return null;
-  if (svgCache[scene.id]) return svgCache[scene.id];
-
-  try {
-    const res = await fetch(scene.url, { cache: 'force-cache' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-
-    // Basic validation — must contain <svg
-    if (!text.includes('<svg')) throw new Error('Not an SVG');
-
-    svgCache[scene.id] = text;
-    return text;
-  } catch(e) {
-    console.warn(`Failed to load custom SVG for "${scene.name}":`, e.message);
-    return null;
-  }
-}
-
 async function generate() {
   const name = document.getElementById('childName').value.trim();
   const scene = SCENES.find(s => s.id === selectedScene);
@@ -301,11 +272,11 @@ async function generate() {
       </div>
       <div class="cp-scene" id="sceneArea"><span class="scene-loading">Loading scene…</span></div>
       <div class="cp-footer">
+        <div class="cp-footer-right">COLOUR ME IN!</div>
         <div class="cp-footer-left">
           ${logoHtml}
           <span class="cp-footer-brand">${CFG.sleighName}</span>
         </div>
-        <div class="cp-footer-right">COLOUR ME IN!</div>
       </div>
     </div>
   `;
@@ -313,19 +284,9 @@ async function generate() {
   const area = document.getElementById('sceneArea');
 
   if (scene.url) {
-    if (isImageUrl(scene.url)) {
-      // Raster image (PNG, JPG, etc) — render as <img>
-      area.innerHTML = `<img src="${scene.url}" alt="${scene.name}" style="max-width:100%;max-height:100%;object-fit:contain;" crossorigin="anonymous">`;
-      return;
-    } else {
-      // SVG — fetch and inject markup
-      const customSvg = await fetchSceneSvg(scene);
-      if (customSvg) {
-        area.innerHTML = customSvg;
-        return;
-      }
-      // Fall through to built-in if fetch failed
-    }
+    // Custom artwork — use <img> which handles PNG, JPG, SVG, WebP, etc
+    area.innerHTML = `<img src="${scene.url}" alt="${scene.name}" style="max-width:100%;max-height:100%;object-fit:contain;">`;
+    return;
   }
 
   // Built-in fallback
