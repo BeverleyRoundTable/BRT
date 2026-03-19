@@ -213,13 +213,7 @@
           <div class="field">
             <label>Preferred Role</label>
             <select id="volRole" required>
-              <option value="">Select a role...</option>
-              <option value="Driver">Driver</option>
-              <option value="Collections">Collections</option>
-              <option value="Lead Elf">Lead Elf</option>
-              <option value="Santa">Santa</option>
-              <option value="Tech/GPS">Tech/GPS</option>
-              <option value="Safety Walkers">Safety Walkers</option>
+              <option value="">Loading roles…</option>
             </select>
           </div>
           
@@ -346,6 +340,17 @@ async function init() {
     setInterval(pollCrewAlert, 15000);
 
     populateRouteDropdowns(data.routes);
+
+    // Populate roles from API (dynamic from Settings Column U)
+    const roles = data.settings?.roles || [];
+    const roleSel = document.getElementById('volRole');
+    roleSel.innerHTML = '<option value="">Select a role…</option>';
+    if (roles.length > 0) {
+      roles.forEach(r => { roleSel.innerHTML += `<option value="${r}">${r}</option>`; });
+    } else {
+      ['Driver','Collections','Lead Elf','Santa','Tech/GPS','Safety Walkers']
+        .forEach(r => { roleSel.innerHTML += `<option value="${r}">${r}</option>`; });
+    }
     
     document.getElementById('initArea').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
