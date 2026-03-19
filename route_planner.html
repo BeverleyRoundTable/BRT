@@ -422,6 +422,7 @@ function drawSnappedRoute() {
   }).addTo(map);
 
   updateStats();
+  detectStreets();
 }
 
 function clearSnappedRoute() {
@@ -687,11 +688,11 @@ async function loadExistingRoutes() {
   try {
     const res = await fetch(API);
     const data = await res.json();
-    const routes = (data.routes || []).filter(r => r.gpx);
+    const routes = (data.routes || []).filter(r => r.gpxUrl);
 
     for (const route of routes) {
       try {
-        const gpxRes = await fetch(route.gpx);
+        const gpxRes = await fetch(route.gpxUrl);
         const gpxText = await gpxRes.text();
         const parser = new DOMParser();
         const gpx = parser.parseFromString(gpxText, 'text/xml');
