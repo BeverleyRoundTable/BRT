@@ -383,7 +383,7 @@ async function routeAllWaypoints() {
   try {
     // Build coordinate string: lng,lat;lng,lat;...
     const coords = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
-    const url = `${OSRM_BASE}/${routingProfile}/${coords}?overview=full&geometries=geojson&steps=false`;
+    const url = `${OSRM_BASE}/${routingProfile}/${coords}?overview=full&geometries=geojson&steps=true`;
 
     const res = await fetch(url);
     const data = await res.json();
@@ -399,6 +399,33 @@ async function routeAllWaypoints() {
     // GeoJSON coordinates are [lng, lat] — flip to [lat, lng]
     const geojsonCoords = data.routes[0].geometry.coordinates;
     snappedGeometry = geojsonCoords.map(c => [c[1], c[0]]);
+
+    // Extract street names from OSRM steps (instant, no Nominatim needed)
+    const osrmStreets = [];
+    const seenOsrm = new Set();
+    (data.routes[0].legs || []).forEach(leg => {
+      (leg.steps || []).forEach(step => {
+        const name = (step.name || '').trim();
+        if (name && name !== '' && !seenOsrm.has(name.toLowerCase())) {
+          seenOsrm.add(name.toLowerCase());
+          osrmStreets.push(name);
+        }
+      });
+    });
+
+    if (osrmStreets.length > 0) {
+      detectedStreets = osrmStreets;
+      const streetList = document.getElementById('streetList');
+      streetList.innerHTML = osrmStreets.map((s, i) =>
+        `<div class="street-item"><span class="street-num">${i + 1}</span><span class="street-name">${s}</span></div>`
+      ).join('');
+      document.getElementById('streetCountLabel').textContent = osrmStreets.length;
+      document.getElementById('streetStatus').textContent = `Done — ${osrmStreets.length} street${osrmStreets.length !== 1 ? 's' : ''} detected (via routing)`;
+      document.getElementById('streetStatus').style.display = 'block';
+      document.getElementById('progressWrap').style.display = 'none';
+      document.getElementById('streetActions').style.display = 'flex';
+    }
+
     drawSnappedRoute();
 
   } catch (e) {
@@ -422,7 +449,8 @@ function drawSnappedRoute() {
   }).addTo(map);
 
   updateStats();
-  detectStreets();
+  // Only run Nominatim if OSRM didn't already populate streets
+  if (detectedStreets.length === 0) detectStreets();
 }
 
 function clearSnappedRoute() {
