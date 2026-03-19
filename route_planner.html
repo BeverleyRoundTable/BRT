@@ -637,9 +637,11 @@ async function detectStreets() {
     status.textContent = `Detecting… ${pct}% (${detectedStreets.length} found)`;
 
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${samples[i][0]}&lon=${samples[i][1]}&zoom=17&addressdetails=1`, { headers: { 'Accept-Language': 'en' } });
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${samples[i][0]}&lon=${samples[i][1]}&zoom=17&addressdetails=1&email=turbosanta@beverleyroundtable.co.uk`, { headers: { 'Accept-Language': 'en' } });
       const data = await res.json();
-      const road = data?.address?.road;
+      console.log(`Sample ${i}:`, samples[i], data?.address);
+      const addr = data?.address || {};
+      const road = addr.road || addr.residential || addr.pedestrian || addr.footway || addr.cycleway || addr.path || addr.street;
       if (road && !seen.has(road.toLowerCase())) {
         seen.add(road.toLowerCase());
         detectedStreets.push(road);
