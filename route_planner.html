@@ -637,7 +637,7 @@ async function detectStreets() {
     status.textContent = `Detecting… ${pct}% (${detectedStreets.length} found)`;
 
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${samples[i][0]}&lon=${samples[i][1]}&zoom=17&addressdetails=1&email=turbosanta@beverleyroundtable.co.uk`, { headers: { 'Accept-Language': 'en' } });
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${samples[i][0]}&lon=${samples[i][1]}&zoom=17&addressdetails=1&countrycodes=gb,ie&email=turbosanta@beverleyroundtable.co.uk`, { headers: { 'Accept-Language': 'en' } });
       const data = await res.json();
       console.log(`Sample ${i}:`, samples[i], data?.address);
       const addr = data?.address || {};
