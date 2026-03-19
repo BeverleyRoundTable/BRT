@@ -118,26 +118,26 @@ const easeInOutCubic = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3
 
    Sprite sheet layout (5 rows × N frames):
      Row 0: North      (walking away from camera)
-     Row 1: NE         (diagonal away-right)
-     Row 2: East       (side view, facing right)
-     Row 3: SE         (diagonal toward-right)
+     Row 1: NW         (diagonal away-left)      — flip H → NE
+     Row 2: West       (side view, facing left)   — flip H → East
+     Row 3: SW         (diagonal toward-left)     — flip H → SE
      Row 4: South      (walking toward camera)
 
    Mirror directions (horizontal flip of the sprite):
-     NW = flip of Row 1 (NE)
-     W  = flip of Row 2 (E)
-     SW = flip of Row 3 (SE)
+     NE = flip of Row 1 (NW)
+     E  = flip of Row 2 (W)
+     SE = flip of Row 3 (SW)
    ═══════════════════════════════════════════════════════════════ */
 
 const DIRS = [
   { name: "N",  center:   0, row: 0, flip: false },
-  { name: "NE", center:  45, row: 1, flip: false },
-  { name: "E",  center:  90, row: 2, flip: false },
-  { name: "SE", center: 135, row: 3, flip: false },
+  { name: "NE", center:  45, row: 1, flip: true  },  // sprite faces NW natively → flip for NE
+  { name: "E",  center:  90, row: 2, flip: true  },  // sprite faces W natively  → flip for E
+  { name: "SE", center: 135, row: 3, flip: true  },  // sprite faces SW natively → flip for SE
   { name: "S",  center: 180, row: 4, flip: false },
-  { name: "SW", center: 225, row: 3, flip: true  },
-  { name: "W",  center: 270, row: 2, flip: true  },
-  { name: "NW", center: 315, row: 1, flip: true  },
+  { name: "SW", center: 225, row: 3, flip: false },  // native direction
+  { name: "W",  center: 270, row: 2, flip: false },  // native direction
+  { name: "NW", center: 315, row: 1, flip: false },  // native direction
 ];
 
 const DIR_HYSTERESIS = 15; // degrees beyond sector boundary before switching
