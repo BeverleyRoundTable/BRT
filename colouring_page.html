@@ -163,23 +163,21 @@ let CFG = { logo:'', sleighName:'Santa Sleigh' };
      id    — unique key
      icon  — emoji for the picker card
      name  — display label
-     url   — (optional) URL to an external SVG file
-             If set, fetches from this URL (e.g. GitHub raw)
+     url   — (optional) URL to custom artwork (PNG, JPG, SVG, or WebP)
+             If set, loads from this URL (e.g. GitHub raw)
              If empty/null, uses the built-in fallback SVG
 
    To add your own artwork:
-   1. Source or create an SVG colouring page (black outlines, no fill, white bg)
-   2. Upload to your GitHub repo, e.g.:
-      https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/colouring/sleigh.svg
-   3. Paste the raw URL into the 'url' field below
-   4. Deploy — the generator loads your custom art automatically
+   1. Design in Canva at 2000×2500px — black outlines, no fills, white bg
+   2. Export as PNG (most reliable) or SVG
+   3. Upload to your GitHub repo, e.g.:
+      https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/colouring/sleigh.png
+   4. Paste the raw URL into the 'url' field below
+   5. Deploy — the generator loads your custom art automatically
 
-   Tips for good colouring SVGs:
-   - Pure line art: stroke only, no fills (or fill="none")
-   - Stroke colour: #000000 or #1D1D1A
-   - Stroke width: 2-4px works best for colouring
-   - ViewBox: aim for roughly 500x400 for landscape or 400x500 for portrait
-   - Test at A4 print scale — lines should be clear and not too thin
+   Supports: .png, .jpg, .jpeg, .webp, .svg
+   Recommended canvas size: 2000×2500px (4:5 portrait)
+   Subject should fill ~60-65% of canvas, leaving space for kids to doodle
    ══════════════════════════════════════════════════════════════ */
 
 const SCENES = [
@@ -187,7 +185,7 @@ const SCENES = [
     id: 'sleigh',
     icon: '🛷',
     name: "Santa's Sleigh",
-    url: ''  // ← Paste your custom SVG URL here, e.g.: https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/colouring/sleigh.svg
+    url: ''  // ← Paste your custom image URL here, e.g.: https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/colouring/sleigh.png
   },
   {
     id: 'tree',
@@ -223,6 +221,12 @@ const SCENES = [
 
 // Cache for fetched SVGs so we don't re-download on every generate
 const svgCache = {};
+
+// Detect if URL points to a raster image vs SVG
+function isImageUrl(url) {
+  const lower = url.toLowerCase().split('?')[0];
+  return /\.(png|jpg|jpeg|webp|gif|bmp)$/.test(lower);
+}
 
 let selectedScene = 'sleigh';
 
@@ -308,14 +312,20 @@ async function generate() {
 
   const area = document.getElementById('sceneArea');
 
-  // Try external SVG first
   if (scene.url) {
-    const customSvg = await fetchSceneSvg(scene);
-    if (customSvg) {
-      area.innerHTML = customSvg;
+    if (isImageUrl(scene.url)) {
+      // Raster image (PNG, JPG, etc) — render as <img>
+      area.innerHTML = `<img src="${scene.url}" alt="${scene.name}" style="max-width:100%;max-height:100%;object-fit:contain;" crossorigin="anonymous">`;
       return;
+    } else {
+      // SVG — fetch and inject markup
+      const customSvg = await fetchSceneSvg(scene);
+      if (customSvg) {
+        area.innerHTML = customSvg;
+        return;
+      }
+      // Fall through to built-in if fetch failed
     }
-    // Fall through to built-in if fetch failed
   }
 
   // Built-in fallback
@@ -328,7 +338,7 @@ document.getElementById('childName').addEventListener('input', generate);
 /* ══════════════════════════════════════════════════════════════
    BUILT-IN FALLBACK SVGs
    These are simple line-art placeholders. Replace with custom
-   URLs in the SCENES config above for production quality.
+   PNG or SVG URLs in the SCENES config above for production quality.
    ══════════════════════════════════════════════════════════════ */
 
 const FALLBACKS = {
