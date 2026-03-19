@@ -636,23 +636,55 @@ async function detectStreets() {
     progressBar.style.width = pct + '%';
     status.textContent = `Detecting… ${pct}% (${detectedStreets.length} found)`;
 
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${samples[i][0]}&lon=${samples[i][1]}&zoom=17&addressdetails=1&countrycodes=gb,ie&email=turbosanta@beverleyroundtable.co.uk`, { headers: { 'Accept-Language': 'en' } });
-      const data = await res.json();
-      console.log(`Sample ${i}:`, samples[i], data?.address);
-      const addr = data?.address || {};
-      const road = addr.road || addr.residential || addr.pedestrian || addr.footway || addr.cycleway || addr.path || addr.street;
-      const cleanRoad = road ? road.trim() : '';
-      if (cleanRoad && !seen.has(cleanRoad.toLowerCase())) {
-        seen.add(cleanRoad.toLowerCase());
-        detectedStreets.push(cleanRoad);
-        const div = document.createElement('div');
-        div.className = 'street-item';
-        div.innerHTML = `<span class="street-num">${detectedStreets.length}</span><span class="street-name">${cleanRoad}</span>`;
-        streetList.appendChild(div);
+    let attempts = 0;
+    const maxAttempts = 3;
+    let success = false;
+
+    while (attempts < maxAttempts && !success && !geocodeAbort) {
+      attempts++;
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${samples[i][0]}&lon=${samples[i][1]}&zoom=17&addressdetails=1&countrycodes=gb,ie&email=turbosanta@beverleyroundtable.co.uk`,
+          { headers: { 'Accept-Language': 'en' }, signal: controller.signal }
+        );
+        clearTimeout(timeout);
+
+        if (res.status === 429) {
+          // Rate limited — back off and retry
+          await new Promise(r => setTimeout(r, 2000 * attempts));
+          continue;
+        }
+
+        if (!res.ok) continue;
+
+        const data = await res.json();
+        if (data.error) continue;
+
+        const addr = data?.address || {};
+        const road = addr.road || addr.residential || addr.pedestrian || addr.footway || addr.cycleway || addr.path || addr.street;
+        const cleanRoad = road ? road.trim() : '';
+        if (cleanRoad && !seen.has(cleanRoad.toLowerCase())) {
+          seen.add(cleanRoad.toLowerCase());
+          detectedStreets.push(cleanRoad);
+          const div = document.createElement('div');
+          div.className = 'street-item';
+          div.innerHTML = `<span class="street-num">${detectedStreets.length}</span><span class="street-name">${cleanRoad}</span>`;
+          streetList.appendChild(div);
+        }
+        success = true;
+
+      } catch(e) {
+        if (attempts < maxAttempts) {
+          await new Promise(r => setTimeout(r, 1500 * attempts));
+        }
       }
-    } catch(e) {}
-    if (i < samples.length - 1) await new Promise(r => setTimeout(r, 1050));
+    }
+
+    // Always respect rate limit between samples
+    if (i < samples.length - 1) await new Promise(r => setTimeout(r, 1100));
   }
 
   progressBar.style.width = '100%';
