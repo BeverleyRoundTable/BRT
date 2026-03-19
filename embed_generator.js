@@ -408,6 +408,20 @@ https://brt-23f.pages.dev/colouring_page?api=${ensureApi()}
 `;
 
 // ================================
+// Volunteer Certificate
+// ================================
+const volunteercertLink = `
+https://brt-23f.pages.dev/volunteer_cert?api=${ensureApi()}
+`;
+
+// ================================
+// Santa Bingo
+// ================================
+const bingoLink = `
+https://brt-23f.pages.dev/bingo?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -439,3 +453,5 @@ document.getElementById("satnavLink").value = satnavLink.trim();
 document.getElementById("beaconLink").value = beaconLink.trim();
 document.getElementById("doorhangerLink").value = doorhangerLink.trim();
 document.getElementById("colouringpageLink").value = colouringpageLink.trim();
+document.getElementById("volunteercertLink").value = vlounteercerLink.trim();
+document.getElementById("bingoLink").value = bingoLink.trim();
