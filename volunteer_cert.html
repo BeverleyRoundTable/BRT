@@ -232,6 +232,17 @@ async function init() {
         });
       }
 
+      // Populate roles from API (dynamic from Settings Column U)
+      const roles = s.roles || [];
+      const roleSel = document.getElementById('volRole');
+      roleSel.innerHTML = '<option value="">Select a role…</option>';
+      if (roles.length > 0) {
+        roles.forEach(r => { roleSel.innerHTML += `<option value="${r}">${r}</option>`; });
+      } else {
+        ['Driver','Collections','Lead Elf','Santa','Tech/GPS','Safety Walkers']
+          .forEach(r => { roleSel.innerHTML += `<option value="${r}">${r}</option>`; });
+      }
+      
       // Populate route dropdown
       const sel = document.getElementById('volRoute');
       sel.innerHTML = '<option value="">— All Routes / General —</option>';
