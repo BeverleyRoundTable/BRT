@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Volunteer Certificate Generator</title>
+<meta name="theme-color" content="#1D1D1A">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg:#1D1D1A;--surface:#262622;--surface-2:#2f2f2a;
+    --border:rgba(255,255,255,0.08);
+    --gold:#FBAF33;--gold-dim:rgba(251,175,51,0.12);--gold-glow:rgba(251,175,51,0.25);
+    --red:#D31C1C;--text:#f0f0f0;--dim:rgba(255,255,255,0.5);--muted:rgba(255,255,255,0.3);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Open Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  /* ── CONTROLS ── */
+  .controls{max-width:540px;margin:0 auto;padding:32px 24px}
+  .ctrl-header{text-align:center;margin-bottom:28px}
+  .ctrl-header h1{font-size:1.6em;font-weight:900;letter-spacing:-0.02em;margin-bottom:6px}
+  .ctrl-header h1 span{color:var(--gold)}
+  .ctrl-header p{font-size:.82em;color:var(--dim);line-height:1.5}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:6px}
+  .field input,.field select{width:100%;padding:14px 16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;color:var(--text);font-family:inherit;font-size:.92em;outline:none;transition:border-color .2s}
+  .field input:focus,.field select:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim)}
+  .field input::placeholder{color:rgba(255,255,255,0.2)}
+  .field select{cursor:pointer;-webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23FBAF33' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+  .field select option{background:var(--surface);color:var(--text)}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  .btn-row{display:flex;gap:10px;margin-top:24px}
+  .btn{flex:1;padding:16px;border-radius:12px;font-weight:900;font-size:.92em;font-family:inherit;
+    cursor:pointer;border:none;transition:transform .1s;letter-spacing:.3px}
+  .btn:active{transform:scale(.96)}
+  .btn-gold{background:var(--gold);color:#000;box-shadow:0 4px 20px var(--gold-glow)}
+  .btn-dim{background:var(--surface);color:var(--dim);border:1px solid var(--border)}
+  .info-text{font-size:.72em;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6}
+
+  .loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:16px;z-index:9999;transition:opacity .4s}
+  .loader.done{opacity:0;pointer-events:none}
+  .loader-spin{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);
+    border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── CERTIFICATE PREVIEW ── */
+  .preview-area{display:flex;justify-content:center;padding:24px;background:rgba(255,255,255,0.02);
+    border-top:1px solid var(--border);overflow-x:auto}
+
+  /* ══════════════════════════════════════════
+     CERTIFICATE — Landscape, brand compliant
+     ══════════════════════════════════════════ */
+  .cert{
+    width:842px;height:595px;
+    background:#fff;position:relative;overflow:hidden;
+    font-family:'Open Sans',sans-serif;color:#1D1D1A;
+    box-shadow:0 8px 40px rgba(0,0,0,0.4);flex-shrink:0;
+  }
+
+  /* Gold border frame */
+  .cert-frame{
+    position:absolute;inset:12px;border:3px solid var(--gold);border-radius:4px;pointer-events:none;
+  }
+  .cert-frame-inner{
+    position:absolute;inset:4px;border:1px solid rgba(251,175,51,0.3);border-radius:2px;
+  }
+
+  /* Corner ornaments */
+  .cert-ornament{position:absolute;font-size:28px;opacity:0.15;pointer-events:none;color:#1D1D1A}
+  .cert-ornament.tl{top:22px;left:24px}.cert-ornament.tr{top:22px;right:24px}
+  .cert-ornament.bl{bottom:22px;left:24px}.cert-ornament.br{bottom:22px;right:24px}
+
+  /* Content */
+  .cert-content{
+    position:relative;z-index:1;height:100%;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:40px 60px;text-align:center;
+  }
+
+  .cert-eyebrow{
+    font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;
+    color:var(--gold);margin-bottom:6px;
+  }
+  .cert-heading{
+    font-family:'Playfair Display',serif;font-size:42px;font-weight:900;
+    color:#1D1D1A;line-height:1.1;margin-bottom:4px;letter-spacing:1px;
+  }
+  .cert-subheading{
+    font-size:13px;font-weight:600;color:#888;margin-bottom:24px;letter-spacing:1px;
+  }
+
+  .cert-presented{font-size:12px;font-weight:600;color:#999;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+
+  .cert-name{
+    font-family:'Playfair Display',serif;font-size:36px;font-weight:900;
+    color:var(--gold);line-height:1.2;margin-bottom:4px;
+    border-bottom:2px solid rgba(251,175,51,0.3);padding-bottom:6px;
+    min-width:300px;display:inline-block;
+  }
+  .cert-name.empty{color:#ccc;font-size:24px;font-weight:600}
+
+  .cert-role{
+    font-size:16px;font-weight:800;color:#1D1D1A;margin:8px 0 20px;letter-spacing:0.5px;
+  }
+
+  .cert-details{
+    display:flex;gap:32px;align-items:center;justify-content:center;margin-bottom:20px;
+  }
+  .cert-detail{text-align:center}
+  .cert-detail-label{font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#bbb;margin-bottom:2px}
+  .cert-detail-value{font-size:14px;font-weight:800;color:#1D1D1A}
+  .cert-detail-divider{width:1px;height:32px;background:#ddd;flex-shrink:0}
+
+  .cert-message{
+    font-size:12px;font-weight:500;color:#888;font-style:italic;
+    max-width:500px;line-height:1.5;margin-bottom:16px;
+  }
+
+  .cert-footer{
+    display:flex;align-items:center;justify-content:center;gap:12px;
+    margin-top:auto;
+  }
+  .cert-footer-logo{height:28px;width:auto;object-fit:contain}
+  .cert-footer-brand{font-size:10px;font-weight:700;color:#aaa;letter-spacing:0.5px}
+  .cert-footer-year{font-size:10px;font-weight:600;color:#ccc;margin-left:8px}
+
+  /* Background watermark */
+  .cert-watermark{
+    position:absolute;bottom:60px;right:40px;font-size:120px;opacity:0.03;
+    pointer-events:none;line-height:1;
+  }
+
+  /* ── PRINT ── */
+  @media print{
+    body{background:#fff !important}
+    .controls,.loader,.info-text{display:none !important}
+    .preview-area{padding:0;background:none !important;border:none !important}
+    .cert{box-shadow:none !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @page{margin:0;size:A4 landscape}
+  }
+
+  @media(max-width:900px){
+    .cert{transform:scale(0.6);transform-origin:top center}
+    .preview-area{min-height:400px}
+    .field-row{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader"><div class="loader-spin"></div></div>
+
+<div class="controls" id="controls">
+  <div class="ctrl-header">
+    <h1>🏅 Volunteer <span>Certificate</span> Generator</h1>
+    <p>Personalised certificates for your amazing elves — downloadable for WhatsApp or printable for the debrief.</p>
+  </div>
+
+  <div class="field">
+    <label>Volunteer Name</label>
+    <input type="text" id="volName" placeholder="e.g. Dave Thompson" maxlength="40">
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Role</label>
+      <select id="volRole">
+        <option value="Volunteer Elf">Volunteer Elf</option>
+        <option value="Lead Elf">Lead Elf</option>
+        <option value="Sleigh Driver">Sleigh Driver</option>
+        <option value="Navigator">Navigator</option>
+        <option value="Bucket Collector">Bucket Collector</option>
+        <option value="Elf Cam Operator">Elf Cam Operator</option>
+        <option value="PA Announcer">PA Announcer</option>
+        <option value="Safety Marshal">Safety Marshal</option>
+        <option value="Crew Coordinator">Crew Coordinator</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Route</label>
+      <select id="volRoute"><option value="">Loading…</option></select>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Season Year</label>
+      <input type="text" id="volYear" placeholder="e.g. 2026" maxlength="4">
+    </div>
+    <div class="field">
+      <label>Custom Message (optional)</label>
+      <input type="text" id="volMsg" placeholder="e.g. Thank you for braving the rain!" maxlength="80">
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-gold" onclick="generate()">Generate Certificate</button>
+    <button class="btn btn-dim" onclick="downloadImage()">📥 Download Image</button>
+    <button class="btn btn-dim" onclick="window.print()">🖨 Print</button>
+  </div>
+
+  <div class="info-text">Downloads as a high-quality PNG — perfect for WhatsApp groups or printing at A4 landscape.</div>
+</div>
+
+<div class="preview-area" id="previewArea"></div>
+
+<script>
+const API = new URLSearchParams(location.search).get('api') || '';
+let CFG = { logo:'', sleighName:'Santa Sleigh', routes:[], donations:{} };
+
+async function init() {
+  if (API) {
+    try {
+      const res = await fetch(API);
+      const data = await res.json();
+      const s = data.settings || {};
+      CFG.logo = s.logo_overlay_url || '';
+      CFG.sleighName = s.sleigh_display_name || 'Santa Sleigh';
+      CFG.routes = (data.routes || []).filter(r => r.routeName && r.date);
+
+      // Build donations lookup from routes if available
+      CFG.routes.forEach(r => {
+        if (r.raised || r.donations) {
+          CFG.donations[r.routeName] = r.raised || r.donations || 0;
+        }
+      });
+
+      // Try to get donation totals from donations data if present
+      if (data.donations && Array.isArray(data.donations)) {
+        data.donations.forEach(d => {
+          if (d.routeName && d.total) {
+            CFG.donations[d.routeName] = (CFG.donations[d.routeName] || 0) + parseFloat(d.total || 0);
+          }
+        });
+      }
+
+      // Populate route dropdown
+      const sel = document.getElementById('volRoute');
+      sel.innerHTML = '<option value="">— All Routes / General —</option>';
+      CFG.routes.forEach(r => {
+        const d = new Date(r.date + 'T00:00:00');
+        const label = `${r.routeName} — ${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}`;
+        sel.innerHTML += `<option value="${r.routeName}" data-date="${r.date}">${label}</option>`;
+      });
+    } catch(e) { console.error('API load failed:', e); }
+  }
+
+  // Default year
+  document.getElementById('volYear').value = new Date().getFullYear().toString();
+
+  document.getElementById('loader').classList.add('done');
+  generate();
+}
+
+function getRouteInfo() {
+  const sel = document.getElementById('volRoute');
+  const opt = sel.options[sel.selectedIndex];
+  if (!sel.value) return null;
+  const d = new Date((opt.dataset.date || '') + 'T00:00:00');
+  return {
+    name: sel.value,
+    dateStr: isNaN(d) ? '' : d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),
+    raised: CFG.donations[sel.value] || null
+  };
+}
+
+function generate() {
+  const name = document.getElementById('volName').value.trim();
+  const role = document.getElementById('volRole').value;
+  const route = getRouteInfo();
+  const year = document.getElementById('volYear').value.trim() || new Date().getFullYear();
+  const msg = document.getElementById('volMsg').value.trim();
+  const logoHtml = CFG.logo ? `<img class="cert-footer-logo" src="${CFG.logo}" alt="">` : '';
+
+  const nameHtml = name
+    ? `<div class="cert-name">${name}</div>`
+    : `<div class="cert-name empty">Volunteer Name</div>`;
+
+  // Build details row
+  let detailsHtml = '';
+  const details = [];
+
+  if (route) {
+    details.push({ label:'Route', value: route.name });
+    if (route.dateStr) details.push({ label:'Date', value: route.dateStr });
+    if (route.raised) details.push({ label:'Route Raised', value: '£' + Number(route.raised).toLocaleString('en-GB') });
+  }
+
+  if (details.length > 0) {
+    detailsHtml = '<div class="cert-details">' +
+      details.map((d, i) => {
+        const divider = i < details.length - 1 ? '<div class="cert-detail-divider"></div>' : '';
+        return `<div class="cert-detail"><div class="cert-detail-label">${d.label}</div><div class="cert-detail-value">${d.value}</div></div>${divider}`;
+      }).join('') +
+    '</div>';
+  }
+
+  const msgHtml = msg
+    ? `<div class="cert-message">"${msg}"</div>`
+    : `<div class="cert-message">Thank you for giving up your time to spread Christmas magic across our community.</div>`;
+
+  document.getElementById('previewArea').innerHTML = `
+    <div class="cert" id="cert">
+      <div class="cert-frame"><div class="cert-frame-inner"></div></div>
+      <span class="cert-ornament tl">❄</span><span class="cert-ornament tr">⭐</span>
+      <span class="cert-ornament bl">🎄</span><span class="cert-ornament br">❄</span>
+      <div class="cert-watermark">🎅</div>
+      <div class="cert-content">
+        <div class="cert-eyebrow">${CFG.sleighName}</div>
+        <div class="cert-heading">Certificate of Appreciation</div>
+        <div class="cert-subheading">Christmas ${year}</div>
+        <div class="cert-presented">This certificate is proudly presented to</div>
+        ${nameHtml}
+        <div class="cert-role">${role}</div>
+        ${detailsHtml}
+        ${msgHtml}
+        <div class="cert-footer">
+          ${logoHtml}
+          <span class="cert-footer-brand">${CFG.sleighName}</span>
+          <span class="cert-footer-year">Christmas ${year}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function downloadImage() {
+  const cert = document.getElementById('cert');
+  if (!cert) return;
+
+  const name = document.getElementById('volName').value.trim() || 'Volunteer';
+  const btn = document.querySelector('.btn-dim');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Generating…';
+
+  try {
+    const canvas = await html2canvas(cert, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+
+    const link = document.createElement('a');
+    link.download = `${name.replace(/\s+/g,'_')}_Certificate.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    console.error('Download failed:', e);
+    alert('Download failed — try printing instead.');
+  }
+
+  btn.textContent = origText;
+}
+
+// Live preview on any input change
+['volName','volYear','volMsg'].forEach(id => document.getElementById(id).addEventListener('input', generate));
+['volRole','volRoute'].forEach(id => document.getElementById(id).addEventListener('change', generate));
+
+init();
+</script>
+</body>
+</html>
