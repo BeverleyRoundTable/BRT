@@ -183,8 +183,9 @@
 
     <span class="nav-section-label">App Ecosystem</span>
     <a class="nav-link" href="#app-suite"><span class="nav-num">07</span> The Dab Santa Suite</a>
-    <a class="nav-link" href="#mp4"><span class="nav-num">08</span> MP4 Generator</a>
-    <a class="nav-link" href="#wrap-report"><span class="nav-num">09</span> Season Wrap Report</a>
+    <a class="nav-link" href="#route-planner"><span class="nav-num">08</span> Route Planner</a> 
+    <a class="nav-link" href="#mp4"><span class="nav-num">09</span> MP4 Generator</a>
+    <a class="nav-link" href="#wrap-report"><span class="nav-num">10</span> Season Wrap Report</a>
 
     <span class="nav-section-label">Launch</span>
     <a class="nav-link" href="#brand"><span class="nav-num">10</span> Brand &amp; Launch</a>
@@ -656,6 +657,15 @@
       </div>
       <p>Once setup is complete, click the <em>Dab Santa image</em> on your Landing Page to open your master directory of tools.</p>
 
+      <h3 class="sub-title">🗺️ Pre-Season Planning</h3>
+      <div class="cards-grid">
+        <div class="card" style="grid-column: 1 / -1;">
+          <span class="card-icon">📍</span>
+          <div class="card-title">Route Planner</div>
+          <div class="card-desc">Design custom routes with auto-road snapping, estimate completion times, automatically extract visited street names for the Address Lookup tool, and export highly dense GPX files required by the Sat-Nav and Animator.</div>
+        </div>
+      </div>
+      
       <h3 class="sub-title">📍 Tracking &amp; Operations</h3>
       <div class="cards-grid">
         <div class="card">
@@ -806,9 +816,53 @@
       </div>
     </section>
 
-    <section id="mp4" class="section">
+    <section id="route-planner" class="section">
       <div class="section-header">
         <div class="section-num">08</div>
+        <div class="section-title-block">
+          <span class="section-icon">🗺️</span>
+          <h2 class="section-title">Route Planner</h2>
+          <span class="section-desc">Design custom routes, auto-detect streets, and export dense GPX files</span>
+        </div>
+      </div>
+
+      <p>The Route Planner is a standalone pre-season tool. It replaces generic tools like Google My Maps, solving the two biggest headaches of Santa logistics: generating dense GPX files and compiling street lists.</p>
+
+      <h3 class="sub-title">📍 Building & Snapping</h3>
+      <ul class="bullet-list">
+        <li><strong>Build Route Mode:</strong> Click the map to drop waypoints. The tool automatically snaps the path to valid roads (using Walking, Driving, or Cycling profiles).</li>
+        <li><strong>Adjusting:</strong> Drag waypoints to tweak the route, or right-click a marker to delete it.</li>
+        <li><strong>Existing Routes:</strong> If opened via the Landing Page (with the <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">?api=</code> parameter), the planner overlays your already-saved routes in faint blue so you avoid overlapping territories.</li>
+      </ul>
+
+      <h3 class="sub-title">🏘️ Automatic Street Detection</h3>
+      <p>Once your route is drawn (or a GPX is uploaded), the planner samples the geometry and reverse-geocodes it via OpenStreetMap to detect every street name along the path.</p>
+      <ul class="bullet-list">
+        <li>Wait for the <em>Detecting streets...</em> progress bar to finish scanning.</li>
+        <li>Click <strong>📋 Copy for Sheet</strong> to copy the comma-separated list.</li>
+        <li>Paste this directly into <strong>Column H (Streets)</strong> of your <em>Routes</em> tab. This instantly populates the public Address Lookup tool!</li>
+      </ul>
+
+      <h3 class="sub-title">⚙️ Densification & Export</h3>
+      <p>Standard routing tools create "sparse" GPX files (only dropping points at corners). TurboSanta's Sat-Nav, GPX Animator, and GPS bounding boxes rely on "dense" GPX files to work flawlessly.</p>
+      
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-body">
+          <strong>Recommended Settings</strong>
+          <p>Leave Density at <strong>10m</strong>. This ensures the Sat-Nav arrow tracks smoothly between junctions and the Animator sprite doesn't jump through buildings.</p>
+        </div>
+      </div>
+
+      <ul class="bullet-list">
+        <li><strong>Speed Slider:</strong> Adjust Santa's crawling speed (e.g., 3 mph) to get an accurate <em>Est. Time</em> for the night.</li>
+        <li>Click <strong>⬇ Export Dense GPX</strong> to download the file. Upload this to Google Drive and paste the link into the <em>Routes</em> tab.</li>
+      </ul>
+    </section>
+
+    <section id="mp4" class="section">
+      <div class="section-header">
+        <div class="section-num">09</div>
         <div class="section-title-block">
           <span class="section-icon">🎬</span>
           <h2 class="section-title">MP4 Generator</h2>
@@ -829,7 +883,7 @@
 
     <section id="wrap-report" class="section">
       <div class="section-header">
-        <div class="section-num">09</div>
+        <div class="section-num">10</div>
         <div class="section-title-block">
           <span class="section-icon">📋</span>
           <h2 class="section-title">Season Wrap Report</h2>
@@ -853,7 +907,7 @@
 
     <section id="brand" class="section">
       <div class="section-header">
-        <div class="section-num">10</div>
+        <div class="section-num">11</div>
         <div class="section-title-block">
           <span class="section-icon">🎨</span>
           <h2 class="section-title">Brand &amp; Launch</h2>
@@ -892,7 +946,7 @@
 
     <section id="scaling" class="section">
       <div class="section-header">
-        <div class="section-num">11</div>
+        <div class="section-num">12</div>
         <div class="section-title-block">
           <span class="section-icon">🛡️</span>
           <h2 class="section-title">Viral Protection &amp; Scaling</h2>
@@ -941,7 +995,7 @@
 
     <section id="satnav" class="section">
       <div class="section-header">
-        <div class="section-num">12</div>
+        <div class="section-num">13</div>
         <div class="section-title-block">
           <span class="section-icon">🧭</span>
           <h2 class="section-title">Sat-Nav Driver Mode</h2>
