@@ -1046,7 +1046,6 @@ function updateGps() {
     let bestIndex = 0;
     let bestDist = Infinity;
     
-    // Global search to find the mathematically closest point
     for (let i = 0; i < STATE.gpxRoute.length; i++) {
       const d = haversineMeters(STATE.gps, STATE.gpxRoute[i]);
       if (d < bestDist) { bestDist = d; bestIndex = i; }
@@ -1055,22 +1054,22 @@ function updateGps() {
     const bar = document.getElementById("godProgressBar");
     const txt = document.getElementById("godProgressText");
     
-    // 🛑 THE FIX: Tighten threshold to 50m and ensure UI clears fully
-if (bestDist > 50) {
-  if (bar) bar.style.width = "0%";
-  if (txt) {
-    txt.textContent = "Off Route";
-    txt.style.color = "var(--red)"; // Optional: make it red so God Mode notice it
+    // 🛑 STRICT FIX: If Santa is > 50m from the line, show Off Route
+    if (bestDist > 50) { 
+      if (bar) bar.style.width = "0%";
+      if (txt) {
+        txt.textContent = "Off Route";
+        txt.style.color = "#ff6b6b"; // Red
+      }
+    } else {
+      const pct = Math.min(100, Math.round((bestIndex / (STATE.gpxRoute.length - 1)) * 100));
+      if (bar) bar.style.width = pct + "%";
+      if (txt) {
+        txt.textContent = pct + "% Complete";
+        txt.style.color = "var(--gold)"; 
+      }
+    }
   }
-} else {
-  const pct = Math.min(100, Math.round((bestIndex / (STATE.gpxRoute.length - 1)) * 100));
-  if (bar) bar.style.width = pct + "%";
-  if (txt) {
-    txt.textContent = pct + "% Complete";
-    txt.style.color = "var(--gold)"; 
-  }
-}
-}
 
 function updateViewers() {
   const vEl = document.getElementById('statViewers');
