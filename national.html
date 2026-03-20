@@ -290,7 +290,7 @@
 
     .lb-header {
       display: grid;
-      grid-template-columns: 48px 1fr 120px 100px 100px 100px;
+      grid-template-columns: 48px 1fr 110px 80px 80px 80px 80px;
       padding: 12px 20px;
       background: var(--surface-2);
       border-bottom: 1px solid var(--border);
@@ -303,7 +303,7 @@
 
     .lb-row {
       display: grid;
-      grid-template-columns: 48px 1fr 120px 100px 100px 100px;
+      grid-template-columns: 48px 1fr 110px 80px 80px 80px 80px;
       padding: 14px 20px;
       align-items: center;
       border-bottom: 1px solid var(--border);
@@ -362,6 +362,10 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 24px;
+    }
+
+    .chart-card.full-width {
+      grid-column: 1 / -1;
     }
 
     .chart-title {
@@ -490,10 +494,12 @@
       .container { padding: 24px 16px 48px; }
       .charts-grid { grid-template-columns: 1fr; }
       .lb-header, .lb-row {
-        grid-template-columns: 36px 1fr 90px 80px;
+        grid-template-columns: 36px 1fr 90px 70px;
       }
       .lb-header span:nth-child(5),
       .lb-header span:nth-child(6),
+      .lb-header span:nth-child(7),
+      .lb-row .lb-val:nth-child(4),
       .lb-row .lb-val:nth-child(5),
       .lb-row .lb-val:nth-child(6) { display: none; }
       .footer { flex-direction: column; text-align: center; }
@@ -509,6 +515,7 @@
     .delay-2 { animation-delay: 0.2s; }
     .delay-3 { animation-delay: 0.3s; }
     .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
   </style>
 </head>
 <body>
@@ -539,14 +546,18 @@
           <div class="stat-value" id="totalRaised">—</div>
         </div>
         <div class="stat-card animate-in delay-2">
+          <div class="stat-label">Total Views</div>
+          <div class="stat-value" id="totalViews">—</div>
+        </div>
+        <div class="stat-card animate-in delay-3">
           <div class="stat-label">Routes</div>
           <div class="stat-value" id="totalRoutes">—</div>
         </div>
-        <div class="stat-card animate-in delay-3">
+        <div class="stat-card animate-in delay-4">
           <div class="stat-label">Streets</div>
           <div class="stat-value" id="totalStreets">—</div>
         </div>
-        <div class="stat-card animate-in delay-4">
+        <div class="stat-card animate-in delay-5">
           <div class="stat-label">Messages</div>
           <div class="stat-value" id="totalMessages">—</div>
         </div>
@@ -572,6 +583,7 @@
             <span>#</span>
             <span>Table</span>
             <span>Raised</span>
+            <span>Views</span>
             <span>Routes</span>
             <span>Streets</span>
             <span>Messages</span>
@@ -585,12 +597,16 @@
         </div>
 
         <div class="charts-grid">
-          <div class="chart-card">
+          <div class="chart-card full-width">
             <div class="chart-title">Donations by Table (£)</div>
             <div class="chart-container"><canvas id="donationsChart"></canvas></div>
           </div>
           <div class="chart-card">
-            <div class="chart-title">Streets Visited by Table</div>
+            <div class="chart-title">Tracker Views</div>
+            <div class="chart-container"><canvas id="viewsChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Streets Visited</div>
             <div class="chart-container"><canvas id="streetsChart"></canvas></div>
           </div>
           <div class="chart-card">
@@ -611,7 +627,7 @@
     <footer class="footer">
       <div class="footer-brand">🎅 TurboSanta National</div>
       <div>
-        <span class="refresh-pill" onclick="loadAll()">🔄 Refresh Now</span>
+        <span class="refresh-pill" onclick="loadAll(true)">🔄 Refresh Now</span>
       </div>
       <div class="footer-meta">
         Last updated: <span id="lastUpdated">—</span><br>
@@ -677,7 +693,7 @@ async function checkPassword() {
 
 // Auto-check on load if they already unlocked it this session
 window.onload = async () => {
-  // ⭐ SMART SEASON BADGE: Handles January roll-overs perfectly
+  // ⭐ SMART SEASON BADGE
   const now = new Date();
   const m = now.getMonth(); // 0 is Jan, 11 is Dec
   const y = now.getFullYear();
@@ -734,6 +750,7 @@ function extractTableData(table, apiData) {
 
   let streetCount = 0;
   let seasonRaised = 0;
+  let totalViews = 0;
   const pastRoutes = [];
 
   // ⭐ USE YOUR SMART SEASON LOGIC FOR FILTERING
@@ -754,7 +771,7 @@ function extractTableData(table, apiData) {
     return false;
   }
 
-  // 1. FILTER ROUTES AND STREETS BY SEASON
+  // 1. FILTER ROUTES, STREETS, AND VIEWS BY SEASON
   routes.forEach(r => {
     if (isThisSeason(r.date)) {
       pastRoutes.push(r);
@@ -762,19 +779,20 @@ function extractTableData(table, apiData) {
         const streets = String(r.streets).split(',').map(s => s.trim()).filter(Boolean);
         streetCount += streets.length;
       }
+      if (r.views) {
+        totalViews += (parseInt(r.views) || 0);
+      }
     }
   });
 
   // 2. FILTER DONATIONS BY SEASON
   if (ledger.length > 0) {
-    // Rely strictly on the raw ledger dates
     ledger.forEach(entry => {
       if (isThisSeason(entry.date)) {
         seasonRaised += (parseFloat(entry.total) || 0);
       }
     });
   } else {
-    // Fallback: If ledger is missing, sum the filtered route totals
     pastRoutes.forEach(r => {
        seasonRaised += (parseFloat(r.raised) || 0);
     });
@@ -787,6 +805,7 @@ function extractTableData(table, apiData) {
     name: displayName,
     api: table.api,
     raised: seasonRaised,      // Only counts cash/card logged THIS season
+    views: totalViews,         // Only counts tracker views THIS season
     routes: pastRoutes.length, // Only counts routes happening THIS season
     streets: streetCount,      // Only counts streets driven THIS season
     messages: messageStats.total || 0,
@@ -801,14 +820,12 @@ async function loadAll(fetchRegistry = true) {
   document.getElementById('loadingState').style.display = 'block';
   document.getElementById('mainContent').style.display = 'none';
 
-  // For background refreshes, we need to grab the latest list of tables from the Registry
   if (fetchRegistry) {
     const savedPass = sessionStorage.getItem('national_auth');
     try {
       const authUrl = `${REGISTRY_URL}?secret=${encodeURIComponent(savedPass)}`;
       const regData = await fetchWithTimeout(authUrl, 8000);
       if (regData.error) {
-        // Password was changed or revoked on the server
         sessionStorage.removeItem('national_auth');
         location.reload(); 
         return;
@@ -822,7 +839,6 @@ async function loadAll(fetchRegistry = true) {
   results = [];
   const errors = [];
 
-  // Fetch all local APIs in parallel
   const promises = tables.map(async (table) => {
     try {
       const data = await fetchWithTimeout(table.api, FETCH_TIMEOUT_MS);
@@ -833,7 +849,7 @@ async function loadAll(fetchRegistry = true) {
       return {
         id: table.id,
         name: table.name,
-        raised: 0, routes: 0, streets: 0, messages: 0,
+        raised: 0, views: 0, routes: 0, streets: 0, messages: 0,
         ok: false,
         errorMsg: err.message
       };
@@ -865,12 +881,14 @@ function render(data, errors) {
 function renderHeroStats(data) {
   const liveTables = data.filter(d => d.ok).length;
   const totalRaised = data.reduce((s, d) => s + d.raised, 0);
+  const totalViews = data.reduce((s, d) => s + d.views, 0);
   const totalRoutes = data.reduce((s, d) => s + d.routes, 0);
   const totalStreets = data.reduce((s, d) => s + d.streets, 0);
   const totalMessages = data.reduce((s, d) => s + d.messages, 0);
 
   animateCounter('totalTables', liveTables, false);
   animateCounter('totalRaised', totalRaised, true);
+  animateCounter('totalViews', totalViews, false);
   animateCounter('totalRoutes', totalRoutes, false);
   animateCounter('totalStreets', totalStreets, false);
   animateCounter('totalMessages', totalMessages, false);
@@ -916,7 +934,8 @@ function renderLeaderboard(data) {
         <div class="lb-rank">${i + 1}</div>
         <div class="lb-name">${escHtml(d.name)} ${statusHtml}</div>
         <div class="lb-val gold">£${d.raised.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</div>
-        <div class="lb-val">${d.routes}</div>
+        <div class="lb-val">${d.views.toLocaleString()}</div>
+        <div class="lb-val">${d.routes.toLocaleString()}</div>
         <div class="lb-val">${d.streets.toLocaleString()}</div>
         <div class="lb-val">${d.messages.toLocaleString()}</div>
       </div>
@@ -926,11 +945,13 @@ function renderLeaderboard(data) {
 
 function renderCharts(data) {
   const labels = data.map(d => shortenName(d.name));
-  const goldPalette = data.map((_, i) => {
-    const base = [251, 175, 51];
-    const factor = 1 - (i * 0.12);
-    return `rgba(${base[0]}, ${base[1]}, ${base[2]}, ${Math.max(factor, 0.3)})`;
-  });
+  
+  const getColors = (baseRgb, arr) => {
+    return arr.map((_, i) => {
+      const factor = 1 - (i * 0.12);
+      return `rgba(${baseRgb}, ${Math.max(factor, 0.3)})`;
+    });
+  };
 
   const chartDefaults = {
     indexAxis: 'y',
@@ -960,13 +981,28 @@ function renderCharts(data) {
     type: 'bar',
     data: {
       labels,
-      datasets: [{ data: data.map(d => d.raised), backgroundColor: goldPalette, borderRadius: 6, barThickness: 24 }]
+      datasets: [{ data: data.map(d => d.raised), backgroundColor: getColors('251, 175, 51', data), borderRadius: 6, barThickness: 24 }]
     },
     options: {
       ...chartDefaults,
       scales: {
-        x: { ticks: { color: 'rgba(255,255,255,0.3)', callback: v => '£' + v.toLocaleString() } },
-        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 }, callback: v => '£' + v.toLocaleString() } },
+        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } }
+      }
+    }
+  });
+
+  charts.views = new Chart(document.getElementById('viewsChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: data.map(d => d.views), backgroundColor: getColors('156, 39, 176', data), borderRadius: 6, barThickness: 24 }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } }
       }
     }
   });
@@ -975,27 +1011,45 @@ function renderCharts(data) {
     type: 'bar',
     data: {
       labels,
-      datasets: [{ data: data.map(d => d.streets), backgroundColor: data.map((_, i) => `rgba(46,204,113,${Math.max(1 - i * 0.12, 0.3)})`), borderRadius: 6, barThickness: 24 }]
+      datasets: [{ data: data.map(d => d.streets), backgroundColor: getColors('46, 204, 113', data), borderRadius: 6, barThickness: 24 }]
     },
-    options: chartDefaults
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } }
+      }
+    }
   });
 
   charts.routes = new Chart(document.getElementById('routesChart'), {
     type: 'bar',
     data: {
       labels,
-      datasets: [{ data: data.map(d => d.routes), backgroundColor: data.map((_, i) => `rgba(74,158,255,${Math.max(1 - i * 0.12, 0.3)})`), borderRadius: 6, barThickness: 24 }]
+      datasets: [{ data: data.map(d => d.routes), backgroundColor: getColors('74, 158, 255', data), borderRadius: 6, barThickness: 24 }]
     },
-    options: chartDefaults
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } }
+      }
+    }
   });
 
   charts.messages = new Chart(document.getElementById('messagesChart'), {
     type: 'bar',
     data: {
       labels,
-      datasets: [{ data: data.map(d => d.messages), backgroundColor: data.map((_, i) => `rgba(211,28,28,${Math.max(1 - i * 0.15, 0.3)})`), borderRadius: 6, barThickness: 24 }]
+      datasets: [{ data: data.map(d => d.messages), backgroundColor: getColors('211, 28, 28', data), borderRadius: 6, barThickness: 24 }]
     },
-    options: chartDefaults
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } }
+      }
+    }
   });
 }
 
