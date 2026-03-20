@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TurboSanta National — Round Table Leaderboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --gold: #FBAF33;
+      --gold-dim: rgba(251,175,51,0.12);
+      --gold-glow: rgba(251,175,51,0.25);
+      --dark: #0d0d0b;
+      --surface: #161614;
+      --surface-2: #1e1e1b;
+      --surface-3: #252522;
+      --border: rgba(255,255,255,0.08);
+      --border-gold: rgba(251,175,51,0.2);
+      --red: #D31C1C;
+      --red-dim: rgba(211,28,28,0.15);
+      --green: #2ecc71;
+      --green-dim: rgba(46,204,113,0.12);
+      --blue: #4a9eff;
+      --text: #eaeae5;
+      --text-dim: rgba(255,255,255,0.55);
+      --text-muted: rgba(255,255,255,0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════ */
+    /* HERO */
+    /* ═══════════════════════════════════════ */
+    .hero {
+      position: relative;
+      padding: 64px 32px 48px;
+      text-align: center;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+      background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(251,175,51,0.06) 0%, transparent 70%);
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(251,175,51,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: var(--gold-dim);
+      color: var(--gold);
+      border: 1px solid var(--border-gold);
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 8vw, 88px);
+      letter-spacing: 4px;
+      line-height: 0.9;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .hero h1 span { color: var(--gold); }
+
+    .hero-sub {
+      font-size: 16px;
+      color: var(--text-dim);
+      max-width: 520px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    /* ═══════════════════════════════════════ */
+    /* STAT CARDS (top-level totals) */
+    /* ═══════════════════════════════════════ */
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 28px;
+      text-align: center;
+      min-width: 140px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0.4;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      color: var(--gold);
+      line-height: 1;
+      letter-spacing: 1px;
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ═══════════════════════════════════════ */
+    /* CONTAINER */
+    /* ═══════════════════════════════════════ */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 24px 60px;
+    }
+
+    /* ═══════════════════════════════════════ */
+    /* SECTION HEADERS */
+    /* ═══════════════════════════════════════ */
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 48px 0 24px;
+    }
+
+    .section-head::before {
+      content: '';
+      width: 4px;
+      height: 28px;
+      background: var(--gold);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .section-head h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    .section-head .section-icon {
+      font-size: 24px;
+    }
+
+    /* ═══════════════════════════════════════ */
+    /* LEADERBOARD TABLE */
+    /* ═══════════════════════════════════════ */
+    .lb-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .lb-header {
+      display: grid;
+      grid-template-columns: 48px 1fr 120px 100px 100px 100px;
+      padding: 12px 20px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .lb-row {
+      display: grid;
+      grid-template-columns: 48px 1fr 120px 100px 100px 100px;
+      padding: 14px 20px;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    .lb-row:last-child { border-bottom: none; }
+    .lb-row:hover { background: rgba(251,175,51,0.03); }
+
+    .lb-rank {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      color: var(--text-muted);
+    }
+
+    .lb-row:nth-child(1) .lb-rank { color: var(--gold); }
+    .lb-row:nth-child(2) .lb-rank { color: #c0c0c0; }
+    .lb-row:nth-child(3) .lb-rank { color: #cd7f32; }
+
+    .lb-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .lb-region {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .lb-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+      text-align: right;
+    }
+
+    .lb-val.gold { color: var(--gold); font-weight: 700; }
+
+    .lb-header span:nth-child(n+3),
+    .lb-row .lb-val { text-align: right; }
+
+    /* ═══════════════════════════════════════ */
+    /* CHARTS */
+    /* ═══════════════════════════════════════ */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .chart-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 260px;
+    }
+
+    /* ═══════════════════════════════════════ */
+    /* LOADING / ERROR STATES */
+    /* ═══════════════════════════════════════ */
+    .loading-wrap {
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+
+    .error-card {
+      background: var(--red-dim);
+      border: 1px solid rgba(211,28,28,0.3);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #f5a5a5;
+    }
+
+    .table-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 10px;
+    }
+
+    .status-live {
+      background: var(--green-dim);
+      color: var(--green);
+    }
+
+    .status-off {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
+    }
+
+    /* ═══════════════════════════════════════ */
+    /* FOOTER */
+    /* ═══════════════════════════════════════ */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 2px;
+      color: var(--gold);
+    }
+
+    .footer-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    .refresh-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .refresh-pill:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ═══════════════════════════════════════ */
+    /* RESPONSIVE */
+    /* ═══════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .hero { padding: 40px 20px 32px; }
+      .hero-stats { gap: 8px; }
+      .stat-card { min-width: 100px; padding: 14px 16px; }
+      .stat-value { font-size: 28px; }
+      .container { padding: 24px 16px 48px; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .lb-header, .lb-row {
+        grid-template-columns: 36px 1fr 90px 80px;
+      }
+      .lb-header span:nth-child(5),
+      .lb-header span:nth-child(6),
+      .lb-row .lb-val:nth-child(5),
+      .lb-row .lb-val:nth-child(6) { display: none; }
+      .footer { flex-direction: column; text-align: center; }
+    }
+
+    /* Animate in */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in { animation: fadeUp 0.5s ease both; }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════ HERO ═══════════════════════════════════ -->
+  <header class="hero">
+    <div class="hero-badge">🎅 Season 2026</div>
+    <h1>TURBO<span>SANTA</span><br>NATIONAL</h1>
+    <p class="hero-sub">Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds during the season.</p>
+
+    <div class="hero-stats" id="heroStats">
+      <div class="stat-card animate-in">
+        <div class="stat-label">Tables Live</div>
+        <div class="stat-value" id="totalTables">—</div>
+      </div>
+      <div class="stat-card animate-in delay-1">
+        <div class="stat-label">Total Raised</div>
+        <div class="stat-value" id="totalRaised">—</div>
+      </div>
+      <div class="stat-card animate-in delay-2">
+        <div class="stat-label">Routes</div>
+        <div class="stat-value" id="totalRoutes">—</div>
+      </div>
+      <div class="stat-card animate-in delay-3">
+        <div class="stat-label">Streets</div>
+        <div class="stat-value" id="totalStreets">—</div>
+      </div>
+      <div class="stat-card animate-in delay-4">
+        <div class="stat-label">Messages</div>
+        <div class="stat-value" id="totalMessages">—</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════ MAIN ═══════════════════════════════════ -->
+  <div class="container">
+
+    <div id="loadingState" class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-text">Fetching data from all Round Tables…</div>
+    </div>
+
+    <div id="mainContent" style="display:none;">
+
+      <!-- LEADERBOARD -->
+      <div class="section-head">
+        <span class="section-icon">🏆</span>
+        <h2>Donations Leaderboard</h2>
+      </div>
+
+      <div class="lb-wrap">
+        <div class="lb-header">
+          <span>#</span>
+          <span>Table</span>
+          <span>Raised</span>
+          <span>Routes</span>
+          <span>Streets</span>
+          <span>Messages</span>
+        </div>
+        <div id="leaderboardBody"></div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="section-head">
+        <span class="section-icon">📊</span>
+        <h2>Breakdown</h2>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Donations by Table (£)</div>
+          <div class="chart-container"><canvas id="donationsChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Streets Visited by Table</div>
+          <div class="chart-container"><canvas id="streetsChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Routes Completed</div>
+          <div class="chart-container"><canvas id="routesChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Messages to Santa</div>
+          <div class="chart-container"><canvas id="messagesChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ERRORS -->
+      <div id="errorList"></div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ FOOTER ═══════════════════════════════════ -->
+  <footer class="footer">
+    <div class="footer-brand">🎅 TurboSanta National</div>
+    <div>
+      <span class="refresh-pill" onclick="loadAll()">🔄 Refresh Now</span>
+    </div>
+    <div class="footer-meta">
+      Last updated: <span id="lastUpdated">—</span><br>
+      Auto-refreshes every 60s during season
+    </div>
+  </footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════════════════
+
+// Option 1: Inline registry (simplest — edit this array directly)
+// Option 2: Fetch from a hosted registry.json URL
+const REGISTRY_URL = null; // Set to a URL like 'https://brt-23f.pages.dev/registry.json' to use external registry
+
+const INLINE_REGISTRY = [
+  {
+    id: 'beverley',
+    name: 'Beverley Round Table',
+    region: 'East Yorkshire',
+    api: 'PASTE_YOUR_BEVERLEY_API_URL_HERE'
+  }
+  // Add more tables here:
+  // {
+  //   id: 'cannock',
+  //   name: 'Cannock Round Table',
+  //   region: 'Staffordshire',
+  //   api: 'https://script.google.com/macros/s/.../exec'
+  // }
+];
+
+const REFRESH_INTERVAL_MS = 60000;
+const FETCH_TIMEOUT_MS = 12000;
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let tables = [];
+let results = [];
+let charts = {};
+let refreshTimer = null;
+
+// ═══════════════════════════════════════════════════════════
+// FETCH WITH TIMEOUT
+// ═══════════════════════════════════════════════════════════
+async function fetchWithTimeout(url, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOAD REGISTRY
+// ═══════════════════════════════════════════════════════════
+async function loadRegistry() {
+  if (REGISTRY_URL) {
+    try {
+      const data = await fetchWithTimeout(REGISTRY_URL, 8000);
+      return data.tables || data;
+    } catch (err) {
+      console.warn('Registry fetch failed, using inline:', err);
+      return INLINE_REGISTRY;
+    }
+  }
+  return INLINE_REGISTRY;
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXTRACT TABLE DATA FROM API RESPONSE
+// ═══════════════════════════════════════════════════════════
+function extractTableData(table, apiData) {
+  const d = apiData.donations || {};
+  const routes = apiData.routes || [];
+  const settings = apiData.settings || {};
+  const messageStats = apiData.messageStats || {};
+
+  // Count streets across all routes
+  let streetCount = 0;
+  const pastRoutes = [];
+
+  routes.forEach(r => {
+    if (r.streets) {
+      const streets = String(r.streets).split(',').map(s => s.trim()).filter(Boolean);
+      streetCount += streets.length;
+    }
+    // Count routes with a date
+    if (r.date) pastRoutes.push(r);
+  });
+
+  // Use display name from API if available
+  const displayName = settings.sleigh_display_name || table.name;
+
+  return {
+    id: table.id,
+    name: displayName,
+    region: table.region,
+    api: table.api,
+    raised: parseFloat(d.total) || 0,
+    target: parseFloat(d.target) || 0,
+    currency: d.currency || '£',
+    routes: pastRoutes.length,
+    streets: streetCount,
+    messages: messageStats.total || 0,
+    ok: true
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOAD ALL TABLE DATA
+// ═══════════════════════════════════════════════════════════
+async function loadAll() {
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('mainContent').style.display = 'none';
+
+  tables = await loadRegistry();
+  results = [];
+  const errors = [];
+
+  // Fetch all in parallel
+  const promises = tables.map(async (table) => {
+    try {
+      const data = await fetchWithTimeout(table.api, FETCH_TIMEOUT_MS);
+      if (data.error) throw new Error(data.message || data.error);
+      return extractTableData(table, data);
+    } catch (err) {
+      errors.push({ name: table.name, error: err.message || 'Timeout' });
+      return {
+        id: table.id,
+        name: table.name,
+        region: table.region,
+        raised: 0, routes: 0, streets: 0, messages: 0,
+        ok: false,
+        errorMsg: err.message
+      };
+    }
+  });
+
+  results = await Promise.all(promises);
+
+  // Sort by raised descending
+  results.sort((a, b) => b.raised - a.raised);
+
+  render(results, errors);
+
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('en-GB');
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════
+function render(data, errors) {
+  renderHeroStats(data);
+  renderLeaderboard(data);
+  renderCharts(data);
+  renderErrors(errors);
+}
+
+function renderHeroStats(data) {
+  const liveTables = data.filter(d => d.ok).length;
+  const totalRaised = data.reduce((s, d) => s + d.raised, 0);
+  const totalRoutes = data.reduce((s, d) => s + d.routes, 0);
+  const totalStreets = data.reduce((s, d) => s + d.streets, 0);
+  const totalMessages = data.reduce((s, d) => s + d.messages, 0);
+
+  animateCounter('totalTables', liveTables, false);
+  animateCounter('totalRaised', totalRaised, true);
+  animateCounter('totalRoutes', totalRoutes, false);
+  animateCounter('totalStreets', totalStreets, false);
+  animateCounter('totalMessages', totalMessages, false);
+}
+
+function animateCounter(elId, target, isCurrency) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+
+  const duration = 1200;
+  const start = performance.now();
+  const startVal = 0;
+
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    const current = Math.round(startVal + (target - startVal) * eased);
+
+    if (isCurrency) {
+      el.textContent = '£' + current.toLocaleString('en-GB');
+    } else {
+      el.textContent = current.toLocaleString('en-GB');
+    }
+
+    if (progress < 1) requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
+}
+
+function renderLeaderboard(data) {
+  const body = document.getElementById('leaderboardBody');
+  body.innerHTML = '';
+
+  data.forEach((d, i) => {
+    const statusHtml = d.ok
+      ? '<span class="table-status status-live">● Connected</span>'
+      : '<span class="table-status status-off">● Offline</span>';
+
+    body.innerHTML += `
+      <div class="lb-row">
+        <div class="lb-rank">${i + 1}</div>
+        <div>
+          <div class="lb-name">${escHtml(d.name)} ${statusHtml}</div>
+          <div class="lb-region">${escHtml(d.region || '')}</div>
+        </div>
+        <div class="lb-val gold">£${d.raised.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</div>
+        <div class="lb-val">${d.routes}</div>
+        <div class="lb-val">${d.streets.toLocaleString()}</div>
+        <div class="lb-val">${d.messages.toLocaleString()}</div>
+      </div>
+    `;
+  });
+}
+
+function renderCharts(data) {
+  const labels = data.map(d => shortenName(d.name));
+  const goldPalette = data.map((_, i) => {
+    const base = [251, 175, 51];
+    const factor = 1 - (i * 0.12);
+    return `rgba(${base[0]}, ${base[1]}, ${base[2]}, ${Math.max(factor, 0.3)})`;
+  });
+
+  const chartDefaults = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1e1e1b',
+        borderColor: 'rgba(251,175,51,0.3)',
+        borderWidth: 1,
+        titleFont: { family: 'DM Sans', weight: '700' },
+        bodyFont: { family: 'DM Mono' },
+        titleColor: '#FBAF33',
+        bodyColor: '#eaeae5',
+        padding: 10,
+        cornerRadius: 8
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } }
+      },
+      y: {
+        grid: { display: false },
+        ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } }
+      }
+    }
+  };
+
+  // Destroy existing charts
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  charts.donations = new Chart(document.getElementById('donationsChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: data.map(d => d.raised), backgroundColor: goldPalette, borderRadius: 6, barThickness: 24 }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        ...chartDefaults.scales,
+        x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, callback: v => '£' + v.toLocaleString() } }
+      }
+    }
+  });
+
+  charts.streets = new Chart(document.getElementById('streetsChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: data.map(d => d.streets), backgroundColor: data.map((_, i) => `rgba(46,204,113,${Math.max(1 - i * 0.12, 0.3)})`), borderRadius: 6, barThickness: 24 }]
+    },
+    options: chartDefaults
+  });
+
+  charts.routes = new Chart(document.getElementById('routesChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: data.map(d => d.routes), backgroundColor: data.map((_, i) => `rgba(74,158,255,${Math.max(1 - i * 0.12, 0.3)})`), borderRadius: 6, barThickness: 24 }]
+    },
+    options: chartDefaults
+  });
+
+  charts.messages = new Chart(document.getElementById('messagesChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: data.map(d => d.messages), backgroundColor: data.map((_, i) => `rgba(211,28,28,${Math.max(1 - i * 0.15, 0.3)})`), borderRadius: 6, barThickness: 24 }]
+    },
+    options: chartDefaults
+  });
+}
+
+function renderErrors(errors) {
+  const el = document.getElementById('errorList');
+  if (errors.length === 0) { el.innerHTML = ''; return; }
+
+  el.innerHTML = `
+    <div class="section-head" style="margin-top:32px;">
+      <span class="section-icon">⚠️</span>
+      <h2>Connection Issues</h2>
+    </div>
+    ${errors.map(e => `<div class="error-card"><strong>${escHtml(e.name)}</strong> — ${escHtml(e.error)}</div>`).join('')}
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function escHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function shortenName(name) {
+  // "Beverley Round Table" → "Beverley"
+  return name.replace(/\s*Round\s*Table\s*/i, '').replace(/\s*Santa\s*Sleigh\s*/i, '').trim() || name;
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+loadAll();
+
+// Auto-refresh
+refreshTimer = setInterval(loadAll, REFRESH_INTERVAL_MS);
+</script>
+
+</body>
+</html>
