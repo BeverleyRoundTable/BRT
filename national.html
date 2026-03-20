@@ -39,6 +39,93 @@
     }
 
     /* ═══════════════════════════════════════ */
+    /* GATEKEEPER / LOGIN SCREEN */
+    /* ═══════════════════════════════════════ */
+    #gatekeeper {
+      position: fixed;
+      inset: 0;
+      background: var(--dark);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .gate-box {
+      background: var(--surface);
+      border: 1px solid var(--border-gold);
+      padding: 48px 40px;
+      border-radius: 16px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+    }
+
+    .gate-box h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 2px;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .gate-box h2 span { color: var(--gold); }
+    
+    .gate-box p {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+    }
+
+    .gate-box input {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 14px 16px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: 'DM Mono', monospace;
+      text-align: center;
+      outline: none;
+      transition: border 0.2s;
+      margin-bottom: 12px;
+    }
+
+    .gate-box input:focus {
+      border-color: var(--gold);
+    }
+
+    .gate-box button {
+      width: 100%;
+      background: var(--gold);
+      color: #000;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    .gate-box button:hover {
+      background: #e59d28;
+      transform: translateY(-1px);
+    }
+
+    .gate-error {
+      color: var(--red);
+      font-size: 12px;
+      margin-bottom: 12px;
+      display: none;
+      font-weight: 600;
+    }
+
+    /* ═══════════════════════════════════════ */
     /* HERO */
     /* ═══════════════════════════════════════ */
     .hero {
@@ -426,131 +513,119 @@
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════ HERO ═══════════════════════════════════ -->
-  <header class="hero">
-    <div class="hero-badge">🎅 Season 2026</div>
-    <h1>TURBO<span>SANTA</span><br>NATIONAL</h1>
-    <p class="hero-sub">Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds during the season.</p>
-
-    <div class="hero-stats" id="heroStats">
-      <div class="stat-card animate-in">
-        <div class="stat-label">Tables Live</div>
-        <div class="stat-value" id="totalTables">—</div>
-      </div>
-      <div class="stat-card animate-in delay-1">
-        <div class="stat-label">Total Raised</div>
-        <div class="stat-value" id="totalRaised">—</div>
-      </div>
-      <div class="stat-card animate-in delay-2">
-        <div class="stat-label">Routes</div>
-        <div class="stat-value" id="totalRoutes">—</div>
-      </div>
-      <div class="stat-card animate-in delay-3">
-        <div class="stat-label">Streets</div>
-        <div class="stat-value" id="totalStreets">—</div>
-      </div>
-      <div class="stat-card animate-in delay-4">
-        <div class="stat-label">Messages</div>
-        <div class="stat-value" id="totalMessages">—</div>
-      </div>
-    </div>
-  </header>
-
-  <!-- ═══════════════════════════════════ MAIN ═══════════════════════════════════ -->
-  <div class="container">
-
-    <div id="loadingState" class="loading-wrap">
-      <div class="spinner"></div>
-      <div class="loading-text">Fetching data from all Round Tables…</div>
-    </div>
-
-    <div id="mainContent" style="display:none;">
-
-      <!-- LEADERBOARD -->
-      <div class="section-head">
-        <span class="section-icon">🏆</span>
-        <h2>Donations Leaderboard</h2>
-      </div>
-
-      <div class="lb-wrap">
-        <div class="lb-header">
-          <span>#</span>
-          <span>Table</span>
-          <span>Raised</span>
-          <span>Routes</span>
-          <span>Streets</span>
-          <span>Messages</span>
-        </div>
-        <div id="leaderboardBody"></div>
-      </div>
-
-      <!-- CHARTS -->
-      <div class="section-head">
-        <span class="section-icon">📊</span>
-        <h2>Breakdown</h2>
-      </div>
-
-      <div class="charts-grid">
-        <div class="chart-card">
-          <div class="chart-title">Donations by Table (£)</div>
-          <div class="chart-container"><canvas id="donationsChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Streets Visited by Table</div>
-          <div class="chart-container"><canvas id="streetsChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Routes Completed</div>
-          <div class="chart-container"><canvas id="routesChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Messages to Santa</div>
-          <div class="chart-container"><canvas id="messagesChart"></canvas></div>
-        </div>
-      </div>
-
-      <!-- ERRORS -->
-      <div id="errorList"></div>
-
+  <div id="gatekeeper">
+    <div class="gate-box">
+      <h2>TURBO<span>SANTA</span><br>NATIONAL</h2>
+      <p>Authorized access required.</p>
+      <div id="passError" class="gate-error">Incorrect password. Please try again.</div>
+      <input type="password" id="passInput" placeholder="Enter Master Password" onkeypress="if(event.key === 'Enter') checkPassword()">
+      <button onclick="checkPassword()">UNLOCK LEADERBOARD</button>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════ FOOTER ═══════════════════════════════════ -->
-  <footer class="footer">
-    <div class="footer-brand">🎅 TurboSanta National</div>
-    <div>
-      <span class="refresh-pill" onclick="loadAll()">🔄 Refresh Now</span>
+  <div id="appContainer" style="display: none;">
+    <header class="hero">
+      <div class="hero-badge">🎅 Season 2026</div>
+      <h1>TURBO<span>SANTA</span><br>NATIONAL</h1>
+      <p class="hero-sub">Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds during the season.</p>
+
+      <div class="hero-stats" id="heroStats">
+        <div class="stat-card animate-in">
+          <div class="stat-label">Tables Live</div>
+          <div class="stat-value" id="totalTables">—</div>
+        </div>
+        <div class="stat-card animate-in delay-1">
+          <div class="stat-label">Total Raised</div>
+          <div class="stat-value" id="totalRaised">—</div>
+        </div>
+        <div class="stat-card animate-in delay-2">
+          <div class="stat-label">Routes</div>
+          <div class="stat-value" id="totalRoutes">—</div>
+        </div>
+        <div class="stat-card animate-in delay-3">
+          <div class="stat-label">Streets</div>
+          <div class="stat-value" id="totalStreets">—</div>
+        </div>
+        <div class="stat-card animate-in delay-4">
+          <div class="stat-label">Messages</div>
+          <div class="stat-value" id="totalMessages">—</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="container">
+
+      <div id="loadingState" class="loading-wrap">
+        <div class="spinner"></div>
+        <div class="loading-text">Fetching data from all Round Tables…</div>
+      </div>
+
+      <div id="mainContent" style="display:none;">
+
+        <div class="section-head">
+          <span class="section-icon">🏆</span>
+          <h2>Donations Leaderboard</h2>
+        </div>
+
+        <div class="lb-wrap">
+          <div class="lb-header">
+            <span>#</span>
+            <span>Table</span>
+            <span>Raised</span>
+            <span>Routes</span>
+            <span>Streets</span>
+            <span>Messages</span>
+          </div>
+          <div id="leaderboardBody"></div>
+        </div>
+
+        <div class="section-head">
+          <span class="section-icon">📊</span>
+          <h2>Breakdown</h2>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-title">Donations by Table (£)</div>
+            <div class="chart-container"><canvas id="donationsChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Streets Visited by Table</div>
+            <div class="chart-container"><canvas id="streetsChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Routes Completed</div>
+            <div class="chart-container"><canvas id="routesChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Messages to Santa</div>
+            <div class="chart-container"><canvas id="messagesChart"></canvas></div>
+          </div>
+        </div>
+
+        <div id="errorList"></div>
+
+      </div>
     </div>
-    <div class="footer-meta">
-      Last updated: <span id="lastUpdated">—</span><br>
-      Auto-refreshes every 60s during season
-    </div>
-  </footer>
+
+    <footer class="footer">
+      <div class="footer-brand">🎅 TurboSanta National</div>
+      <div>
+        <span class="refresh-pill" onclick="loadAll()">🔄 Refresh Now</span>
+      </div>
+      <div class="footer-meta">
+        Last updated: <span id="lastUpdated">—</span><br>
+        Auto-refreshes every 60s during season
+      </div>
+    </footer>
+  </div>
 
 <script>
 // ═══════════════════════════════════════════════════════════
 // CONFIGURATION
 // ═══════════════════════════════════════════════════════════
 
-// Fetching directly from the live Google Sheet Master Registry API!
 const REGISTRY_URL = "https://script.google.com/macros/s/AKfycbydqxlwWkD7Kh7IJisZSiweBBbsXDy7smUxpOvT5eLVQxsDO2PqwrJyQI_3y4kwnJB6/exec";
-
-const INLINE_REGISTRY = [
-  {
-    id: 'beverley',
-    name: 'Beverley Round Table',
-    region: 'East Yorkshire',
-    api: 'PASTE_YOUR_BEVERLEY_API_URL_HERE'
-  }
-  // Add more tables here:
-  // {
-  //   id: 'cannock',
-  //   name: 'Cannock Round Table',
-  //   region: 'Staffordshire',
-  //   api: 'https://script.google.com/macros/s/.../exec'
-  // }
-];
-
 const REFRESH_INTERVAL_MS = 60000;
 const FETCH_TIMEOUT_MS = 12000;
 
@@ -561,6 +636,64 @@ let tables = [];
 let results = [];
 let charts = {};
 let refreshTimer = null;
+
+// ═══════════════════════════════════════════════════════════
+// AUTHENTICATION LOGIC (GATEKEEPER)
+// ═══════════════════════════════════════════════════════════
+async function checkPassword() {
+  const input = document.getElementById('passInput').value.trim();
+  if (!input) return;
+
+  const authUrl = `${REGISTRY_URL}?secret=${encodeURIComponent(input)}`;
+  
+  document.getElementById('passInput').disabled = true;
+  document.getElementById('passError').style.display = 'none';
+  
+  try {
+    const res = await fetch(authUrl);
+    const data = await res.json();
+    
+    if (data.error === "Access Denied") {
+      document.getElementById('passError').textContent = "Incorrect password. Please try again.";
+      document.getElementById('passError').style.display = 'block';
+      document.getElementById('passInput').value = '';
+      document.getElementById('passInput').disabled = false;
+      document.getElementById('passInput').focus();
+    } else {
+      // Password Accepted!
+      sessionStorage.setItem('national_auth', input);
+      document.getElementById('gatekeeper').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'block';
+      
+      // Start the app with the data we already fetched
+      startApp(data.tables || data);
+    }
+  } catch (err) {
+    document.getElementById('passError').textContent = "Network error. Check your connection.";
+    document.getElementById('passError').style.display = 'block';
+    document.getElementById('passInput').disabled = false;
+  }
+}
+
+// Auto-check on load if they already unlocked it this session
+window.onload = async () => {
+  const savedPass = sessionStorage.getItem('national_auth');
+  if (savedPass) {
+    document.getElementById('passInput').value = savedPass;
+    await checkPassword();
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// APP START
+// ═══════════════════════════════════════════════════════════
+async function startApp(initialTables) {
+  tables = initialTables;
+  await loadAll(false); // Do the first load using the tables we just got
+  
+  // Set up the background refresh loop
+  refreshTimer = setInterval(() => loadAll(true), REFRESH_INTERVAL_MS);
+}
 
 // ═══════════════════════════════════════════════════════════
 // FETCH WITH TIMEOUT
@@ -580,22 +713,6 @@ async function fetchWithTimeout(url, timeoutMs) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// LOAD REGISTRY
-// ═══════════════════════════════════════════════════════════
-async function loadRegistry() {
-  if (REGISTRY_URL) {
-    try {
-      const data = await fetchWithTimeout(REGISTRY_URL, 8000);
-      return data.tables || data;
-    } catch (err) {
-      console.warn('Registry fetch failed, using inline:', err);
-      return INLINE_REGISTRY;
-    }
-  }
-  return INLINE_REGISTRY;
-}
-
-// ═══════════════════════════════════════════════════════════
 // EXTRACT TABLE DATA FROM API RESPONSE
 // ═══════════════════════════════════════════════════════════
 function extractTableData(table, apiData) {
@@ -604,7 +721,6 @@ function extractTableData(table, apiData) {
   const settings = apiData.settings || {};
   const messageStats = apiData.messageStats || {};
 
-  // Count streets across all routes
   let streetCount = 0;
   const pastRoutes = [];
 
@@ -613,11 +729,9 @@ function extractTableData(table, apiData) {
       const streets = String(r.streets).split(',').map(s => s.trim()).filter(Boolean);
       streetCount += streets.length;
     }
-    // Count routes with a date
     if (r.date) pastRoutes.push(r);
   });
 
-  // Use display name from API if available
   const displayName = settings.sleigh_display_name || table.name;
 
  return {
@@ -637,15 +751,32 @@ function extractTableData(table, apiData) {
 // ═══════════════════════════════════════════════════════════
 // LOAD ALL TABLE DATA
 // ═══════════════════════════════════════════════════════════
-async function loadAll() {
+async function loadAll(fetchRegistry = true) {
   document.getElementById('loadingState').style.display = 'block';
   document.getElementById('mainContent').style.display = 'none';
 
-  tables = await loadRegistry();
+  // For background refreshes, we need to grab the latest list of tables from the Registry
+  if (fetchRegistry) {
+    const savedPass = sessionStorage.getItem('national_auth');
+    try {
+      const authUrl = `${REGISTRY_URL}?secret=${encodeURIComponent(savedPass)}`;
+      const regData = await fetchWithTimeout(authUrl, 8000);
+      if (regData.error) {
+        // Password was changed or revoked on the server
+        sessionStorage.removeItem('national_auth');
+        location.reload(); 
+        return;
+      }
+      tables = regData.tables || regData;
+    } catch (e) {
+      console.warn("Failed to update registry list, using cached list.", e);
+    }
+  }
+
   results = [];
   const errors = [];
 
-  // Fetch all in parallel
+  // Fetch all local APIs in parallel
   const promises = tables.map(async (table) => {
     try {
       const data = await fetchWithTimeout(table.api, FETCH_TIMEOUT_MS);
@@ -656,7 +787,6 @@ async function loadAll() {
       return {
         id: table.id,
         name: table.name,
-        region: table.region,
         raised: 0, routes: 0, streets: 0, messages: 0,
         ok: false,
         errorMsg: err.message
@@ -773,16 +903,6 @@ function renderCharts(data) {
         padding: 10,
         cornerRadius: 8
       }
-    },
-    scales: {
-      x: {
-        grid: { color: 'rgba(255,255,255,0.04)' },
-        ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } }
-      },
-      y: {
-        grid: { display: false },
-        ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } }
-      }
     }
   };
 
@@ -799,8 +919,8 @@ function renderCharts(data) {
     options: {
       ...chartDefaults,
       scales: {
-        ...chartDefaults.scales,
-        x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, callback: v => '£' + v.toLocaleString() } }
+        x: { ticks: { color: 'rgba(255,255,255,0.3)', callback: v => '£' + v.toLocaleString() } },
+        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
       }
     }
   });
@@ -854,17 +974,8 @@ function escHtml(str) {
 }
 
 function shortenName(name) {
-  // "Beverley Round Table" → "Beverley"
   return name.replace(/\s*Round\s*Table\s*/i, '').replace(/\s*Santa\s*Sleigh\s*/i, '').trim() || name;
 }
-
-// ═══════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════
-loadAll();
-
-// Auto-refresh
-refreshTimer = setInterval(loadAll, REFRESH_INTERVAL_MS);
 </script>
 
 </body>
