@@ -1018,10 +1018,8 @@ function updateGps() {
     const ll = L.latLng(STATE.gps.lat, STATE.gps.lng);
     STATE.marker.setLatLng(ll);
     
-    // Check how far the map center is from the live sleigh
     const distance = STATE.map.getCenter().distanceTo(ll);
 
-    // If we are more than 5km away (e.g. sitting at HQ), do the big cloaked flight!
     if (distance > 5000) {
       if (STATE.routeGlowLayer) STATE.map.removeLayer(STATE.routeGlowLayer);
       if (STATE.routeMainLayer) STATE.map.removeLayer(STATE.routeMainLayer);
@@ -1033,7 +1031,6 @@ function updateGps() {
         if (!heatmapMode && STATE.routeMainLayer) STATE.routeMainLayer.addTo(STATE.map);
       });
       
-    // ONLY pan the camera if Santa has moved more than 10 meters from the center
     } else if (distance > 10) {
       STATE.map.panTo(ll, { animate: true, duration: 0.8 });
     }
@@ -1054,12 +1051,11 @@ function updateGps() {
     const bar = document.getElementById("godProgressBar");
     const txt = document.getElementById("godProgressText");
     
-    // 🛑 STRICT FIX: If Santa is > 50m from the line, show Off Route
     if (bestDist > 50) { 
       if (bar) bar.style.width = "0%";
       if (txt) {
         txt.textContent = "Off Route";
-        txt.style.color = "#ff6b6b"; // Red
+        txt.style.color = "#ff6b6b"; 
       }
     } else {
       const pct = Math.min(100, Math.round((bestIndex / (STATE.gpxRoute.length - 1)) * 100));
@@ -1070,6 +1066,7 @@ function updateGps() {
       }
     }
   }
+}
 
 function updateViewers() {
   const vEl = document.getElementById('statViewers');
