@@ -724,24 +724,61 @@ async function fetchWithTimeout(url, timeoutMs) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// EXTRACT TABLE DATA FROM API RESPONSE
+// EXTRACT & FILTER TABLE DATA
 // ═══════════════════════════════════════════════════════════
 function extractTableData(table, apiData) {
-  const d = apiData.donations || {};
+  const ledger = apiData.donationsLedger || [];
   const routes = apiData.routes || [];
   const settings = apiData.settings || {};
   const messageStats = apiData.messageStats || {};
 
   let streetCount = 0;
+  let seasonRaised = 0;
   const pastRoutes = [];
 
+  // ⭐ USE YOUR SMART SEASON LOGIC FOR FILTERING
+  const now = new Date();
+  const m = now.getMonth(); // 0 = Jan, 11 = Dec
+  const y = now.getFullYear();
+  const activeSeasonYear = m < 6 ? y - 1 : y; // e.g., 2026
+
+  // Helper to check if a date belongs to the current "Season" (July -> June)
+  function isThisSeason(dateString) {
+    if (!dateString) return false;
+    const d = new Date(dateString);
+    const dateY = d.getFullYear();
+    const dateM = d.getMonth();
+    
+    if (dateY === activeSeasonYear && dateM >= 6) return true; // July to Dec of start year
+    if (dateY === activeSeasonYear + 1 && dateM < 6) return true; // Jan to June of end year
+    return false;
+  }
+
+  // 1. FILTER ROUTES AND STREETS BY SEASON
   routes.forEach(r => {
-    if (r.streets) {
-      const streets = String(r.streets).split(',').map(s => s.trim()).filter(Boolean);
-      streetCount += streets.length;
+    if (isThisSeason(r.date)) {
+      pastRoutes.push(r);
+      if (r.streets) {
+        const streets = String(r.streets).split(',').map(s => s.trim()).filter(Boolean);
+        streetCount += streets.length;
+      }
     }
-    if (r.date) pastRoutes.push(r);
   });
+
+  // 2. FILTER DONATIONS BY SEASON
+  if (ledger.length > 0) {
+    // Rely strictly on the raw ledger dates
+    ledger.forEach(entry => {
+      if (isThisSeason(entry.date)) {
+        seasonRaised += (parseFloat(entry.total) || 0);
+      }
+    });
+  } else {
+    // Fallback: If ledger is missing, sum the filtered route totals
+    pastRoutes.forEach(r => {
+       seasonRaised += (parseFloat(r.raised) || 0);
+    });
+  }
 
   const displayName = settings.sleigh_display_name || table.name;
 
@@ -749,11 +786,9 @@ function extractTableData(table, apiData) {
     id: table.id,
     name: displayName,
     api: table.api,
-    raised: parseFloat(d.total) || 0,
-    target: parseFloat(d.target) || 0,
-    currency: d.currency || '£',
-    routes: pastRoutes.length,
-    streets: streetCount,
+    raised: seasonRaised,      // Only counts cash/card logged THIS season
+    routes: pastRoutes.length, // Only counts routes happening THIS season
+    streets: streetCount,      // Only counts streets driven THIS season
     messages: messageStats.total || 0,
     ok: true
   };
