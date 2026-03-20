@@ -525,7 +525,7 @@
 
   <div id="appContainer" style="display: none;">
     <header class="hero">
-      <div class="hero-badge">🎅 Season 2026</div>
+      <div class="hero-badge" id="seasonBadge">🎅 Season...</div>
       <h1>TURBO<span>SANTA</span><br>NATIONAL</h1>
       <p class="hero-sub">Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds during the season.</p>
 
@@ -677,6 +677,17 @@ async function checkPassword() {
 
 // Auto-check on load if they already unlocked it this session
 window.onload = async () => {
+  // ⭐ SMART SEASON BADGE: Handles January roll-overs perfectly
+  const now = new Date();
+  const m = now.getMonth(); // 0 is Jan, 11 is Dec
+  const y = now.getFullYear();
+  
+  // If we are in Jan-Jun, the season started last year. Otherwise, it starts this year.
+  const startYear = m < 6 ? y - 1 : y;
+  const endYear = String(startYear + 1).slice(-2); // Gets just the last two digits (e.g., '26')
+  
+  document.getElementById('seasonBadge').innerText = `🎅 Season ${startYear}/${endYear}`;
+
   const savedPass = sessionStorage.getItem('national_auth');
   if (savedPass) {
     document.getElementById('passInput').value = savedPass;
