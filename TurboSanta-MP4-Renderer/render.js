@@ -98,14 +98,22 @@ while (frame < maxFrames) {
   }, frame);
 
   // =====================================================
-  // 🔒 PATCH START: WebGL + tile settle (2× rAF)
+  // 🔒 PATCH START: Wait for Map tiles to physically download
   // =====================================================
   await page.evaluate(() =>
-    new Promise(r =>
-      requestAnimationFrame(() =>
-        requestAnimationFrame(r)
-      )
-    )
+    new Promise(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const m = window._map;
+          if (!m) return resolve(); 
+          if (m.loaded()) {
+            resolve();
+          } else {
+            m.once("idle", resolve);
+          }
+        });
+      });
+    })
   );
   // =====================================================
   // 🔒 PATCH END
