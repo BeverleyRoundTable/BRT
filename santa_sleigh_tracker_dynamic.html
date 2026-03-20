@@ -1218,83 +1218,156 @@ if (liveMsg && liveMsg.trim() !== "") {
         if (AppState.flags.isKiosk) document.body.classList.add("kiosk");
 
         // ---------------------------------------------------------
-        // 🧭 SAT-NAV DRIVER MODE
+        // 🧭 SAT-NAV DRIVER + SECURE BEACON MODE
         // ---------------------------------------------------------
         AppState.flags.isDriver = params.get("driver") === "1";
 
         if (AppState.flags.isDriver) {
-          // Trigger the CSS to narrow the screen and hide all popups
           document.body.classList.add("driver-mode");
           
-          // Create the massive "Start Navigation" overlay button
           const navBtn = document.createElement("button");
-          navBtn.innerHTML = "🧭 START SAT-NAV MODE";
-          // Changed to position:absolute so it stays constrained to the mobile-sized container on desktop!
+          navBtn.innerHTML = "🧭 START SAT-NAV & BEACON";
           navBtn.style.cssText = "position:absolute; bottom:80px; left:10%; width:80%; padding:20px; font-size:20px; font-weight:900; background:#d31c1c; color:#fff; border-radius:16px; z-index:9999; border:none; box-shadow:0 10px 40px rgba(0,0,0,0.6); cursor:pointer;";
           document.body.appendChild(navBtn);
 
-          navBtn.onclick = () => {
+          // --- BEACON OFFLINE QUEUE (IndexedDB) ---
+          const BeaconDB = {
+            db: null, sent: 0, depth: 0,
+            init: () => new Promise((resolve) => {
+              const req = indexedDB.open("TurboBeacon", 1);
+              req.onupgradeneeded = e => { if(!e.target.result.objectStoreNames.contains("q")) e.target.result.createObjectStore("q", {keyPath:"id", autoIncrement:true}); };
+              req.onsuccess = () => { BeaconDB.db = req.result; resolve(); };
+              req.onerror = () => resolve(); // Fail gracefully
+            }),
+            add: (p) => new Promise(res => { if(!BeaconDB.db) return res(); const tx = BeaconDB.db.transaction("q","readwrite"); tx.objectStore("q").add({p, t:Date.now()}); tx.oncomplete=()=>{ BeaconDB.updateUI(); res(); }; }),
+            getAll: () => new Promise(res => { if(!BeaconDB.db) return res([]); const tx = BeaconDB.db.transaction("q","readonly"); const req = tx.objectStore("q").getAll(); req.onsuccess=()=>res(req.result||[]); }),
+            del: (id) => new Promise(res => { if(!BeaconDB.db) return res(); const tx = BeaconDB.db.transaction("q","readwrite"); tx.objectStore("q").delete(id); tx.oncomplete=res; }),
+            updateUI: async () => {
+              if(!BeaconDB.db) return;
+              BeaconDB.depth = (await BeaconDB.getAll()).length;
+              const qEl = document.getElementById('txQueued');
+              if(qEl) qEl.textContent = BeaconDB.depth;
+              const pill = document.getElementById('txPill');
+              if(pill) {
+                 if (BeaconDB.depth > 0) { pill.style.borderColor = "#ffab00"; pill.style.color = "#ffab00"; document.getElementById('txState').textContent = "📦 BUFFERING"; }
+                 else { pill.style.borderColor = "#00e676"; pill.style.color = "#00e676"; document.getElementById('txState').textContent = "📡 LIVE"; }
+              }
+            },
+            flush: async (url) => {
+              if (BeaconDB.depth === 0 || !navigator.onLine) return;
+              const items = await BeaconDB.getAll();
+              if (!items.length) return;
+              items.sort((a,b) => a.t - b.t);
+              for (const it of items) {
+                if (Date.now() - it.t > 90*60*1000) { await BeaconDB.del(it.id); continue; } // Purge > 90 mins old
+                try {
+                  const r = await fetch(url, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(it.p) });
+                  if (r.ok) { await BeaconDB.del(it.id); BeaconDB.sent++; document.getElementById('txSent').textContent = BeaconDB.sent; } 
+                  else break;
+                } catch { break; }
+              }
+              BeaconDB.updateUI();
+            }
+          };
+
+          navBtn.onclick = async () => {
+            // 1. 🔒 AUTHENTICATE & FETCH SECURE CONFIG
+            let secret = sessionStorage.getItem('beaconSecret');
+            if (!secret) {
+              secret = prompt("📡 Beacon Authorization\nEnter the God Mode password:");
+              if (!secret) return;
+            }
+
+            navBtn.textContent = "⏳ Verifying...";
+            let gpsLoggerUrl = null;
+
+            try {
+              const sep = AppState.vars.apiUrl.includes('?') ? '&' : '?';
+              const res = await fetch(`${AppState.vars.apiUrl}${sep}function=verifyGodMode&secret=${encodeURIComponent(secret)}`);
+              const result = await res.json();
+              
+              if (!result.valid) { alert("❌ Access Denied."); navBtn.textContent = "🧭 START SAT-NAV & BEACON"; sessionStorage.removeItem('beaconSecret'); return; }
+              
+              sessionStorage.setItem('beaconSecret', secret);
+              navBtn.textContent = "⏳ Fetching Config...";
+
+              const cfgRes = await fetch(`${AppState.vars.apiUrl}${sep}function=getBeaconConfig&secret=${encodeURIComponent(secret)}`);
+              const cfg = await cfgRes.json();
+              if (cfg.error || !cfg.gpsLoggerUrl) throw new Error(cfg.error || "Missing URL");
+              gpsLoggerUrl = cfg.gpsLoggerUrl;
+
+            } catch (e) {
+              alert("❌ Setup failed: " + e.message);
+              navBtn.textContent = "🧭 START SAT-NAV & BEACON";
+              return;
+            }
+
+            // 2. 🗄️ SETUP OFFLINE QUEUE
+            await BeaconDB.init();
+            await BeaconDB.updateUI();
+            setInterval(() => BeaconDB.flush(gpsLoggerUrl), 5000);
+
+            // 3. 🗺️ START SAT-NAV UI
             navBtn.style.display = "none";
             document.body.classList.add("nav-active");
-            
-            // 🔒 Force the screen to stay awake
             requestWakeLock();
             
-            // Change status box to show it's active
-            AppState.dom.statusBox.textContent = "🧭 Sat-Nav Active. Drive the Red Line.";
-            AppState.dom.statusBox.style.color = "#2cff4e"; // Green text
-            
-            // Lock the map zoom to street-level
+            AppState.dom.statusBox.textContent = "🧭 Sat-Nav & Beacon Active.";
+            AppState.dom.statusBox.style.color = "#00e676";
             AppState.map.setZoom(18);
+
+            // Add Mini Status Pill for the Driver
+            const txPill = document.createElement("div");
+            txPill.id = "txPill";
+            txPill.style.cssText = "position:absolute; top:80px; left:50%; transform:translateX(-50%); background:rgba(29, 29, 26, 0.95); border:1px solid #00e676; color:#00e676; padding:6px 14px; border-radius:12px; font-weight:900; font-size:0.85em; z-index:4500; box-shadow:0 4px 12px rgba(0,0,0,0.5); display:flex; gap:10px; pointer-events:none;";
+            txPill.innerHTML = `<span id="txState">📡 LIVE</span> <span>Tx: <span id="txSent">0</span></span> <span>Q: <span id="txQueued">0</span></span>`;
+            document.body.appendChild(txPill);
             
-            // Create the blue Driver Arrow
             const driverMarker = L.marker([0,0], {
               icon: L.divIcon({
                 className: 'driver-arrow',
                 html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 100%;"></div>',
-                iconSize: [28, 34],
-                iconAnchor: [14, 17]
+                iconSize: [28, 34], iconAnchor: [14, 17]
               }),
-              zIndexOffset: 1000 // Keep it on top of the route
+              zIndexOffset: 1000
             }).addTo(AppState.map);
 
-            // Watch the Navigator's highly-accurate Phone GPS
-            navigator.geolocation.watchPosition((pos) => {
+            // 4. 📍 GPS WATCH & TRANSMIT
+            navigator.geolocation.watchPosition(async (pos) => {
               const lat = pos.coords.latitude;
               const lng = pos.coords.longitude;
               const heading = pos.coords.heading || 0; 
               
               let visualPos = { lat, lng };
 
-              // 🧲 SNAP-TO-ROUTE LOGIC FOR DRIVERS
+              // Snap-to-route for the map UI
               if (AppState.flags.gpxLoaded && AppState.gpxRoute) {
-                // Pass 'null' to force a global search across the whole route
                 const snap = snapToGpxIndex(visualPos, null); 
-                
-                // 20 meters is perfect for pavement walking vs side-street detour
-                if (snap && snap.distance < 20) { 
-                  visualPos = snap.point; 
-                }
+                if (snap && snap.distance < 20) { visualPos = snap.point; }
               }
 
               const ll = L.latLng(visualPos.lat, visualPos.lng);
               driverMarker.setLatLng(ll);
-              
-              // Pan the map to keep the car perfectly centered
               AppState.map.panTo(ll, { animate: true, duration: 1 });
               
-              // Rotate the arrow icon to face the direction of travel
               const arrowDiv = driverMarker.getElement().querySelector('div');
-              if (arrowDiv && pos.coords.speed > 1) { // Only rotate if actually moving
-                arrowDiv.style.transform = `rotate(${heading}deg)`;
+              if (arrowDiv && pos.coords.speed > 1) { arrowDiv.style.transform = `rotate(${heading}deg)`; }
+
+              // --- 📡 FIREBASE TRANSMISSION ---
+              const payload = { lat, lng, ts: new Date().toISOString() };
+              try {
+                const r = await fetch(gpsLoggerUrl, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+                if (!r.ok) throw new Error("HTTP " + r.status);
+                BeaconDB.sent++;
+                document.getElementById('txSent').textContent = BeaconDB.sent;
+                if(BeaconDB.depth === 0) { txPill.style.borderColor = "#00e676"; txPill.style.color = "#00e676"; document.getElementById('txState').textContent = "📡 LIVE"; }
+              } catch(e) {
+                await BeaconDB.add(payload); // Push to offline queue
               }
+
             }, (err) => {
-              alert("GPS Error: Please ensure Location Services are turned on for your browser.");
-            }, { 
-              enableHighAccuracy: true, 
-              maximumAge: 0, 
-              timeout: 5000 
-            });
+              alert("GPS Error: Please ensure Location Services are turned on.");
+            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
           };
         }
         // ---------------------------------------------------------
