@@ -17,9 +17,12 @@ on:
         description: "Apps Script Web App URL for progress callbacks (optional)"
         required: false
 
+permissions:
+  contents: write
+  
 jobs:
   render:
-    runs-on: ubuntu-22.04 # 👈 FIXED: Pinned to 22.04 to prevent apt-get Exit Code 100
+    runs-on: ubuntu-22.04 #
     timeout-minutes: 60
 
     steps:
@@ -114,7 +117,7 @@ jobs:
           files: TurboSanta-MP4-Renderer/${{ env.FINAL_MP4 }}
           fail_on_unmatched_files: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify TurboSanta Sheet (final MP4)
         if: env.SHEET_WEBHOOK_URL != ''
