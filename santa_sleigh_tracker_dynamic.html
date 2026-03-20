@@ -752,11 +752,11 @@
           if (pts.length < 2) throw new Error("GPX too short");
           let dist = 0; let route = [];
           for (let i = 0; i < pts.length; i++) {
-            const lat = parseFloat(pts[i].getAttribute("lat"));
-            const lng = parseFloat(pts[i].getAttribute("lon"));
-            if (i > 0) dist += Utils.haversineMeters(route[i - 1], { lat, lng });
-            route.push({ lat, lng, dist });
-          }
+          const lat = parseFloat(pts[i].getAttribute("lat"));
+          const lng = parseFloat(pts[i].getAttribute("lon"));
+          if (i > 0) dist += Utils.haversineMeters(route[i - 1], { lat, lng });
+          route.push({ lat, lng, dist, index: i }); 
+        }
           AppState.gpxRoute = route;
           AppState.flags.gpxLoaded = true;
           AppState.vars.lastSnapIndex = 0;
