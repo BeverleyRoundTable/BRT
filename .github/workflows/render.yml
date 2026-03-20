@@ -29,7 +29,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Cache npm
         uses: actions/cache@v4
@@ -39,18 +39,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Install dependencies
+      - name: Install dependencies & system libraries
         working-directory: TurboSanta-MP4-Renderer
         run: |
           npm install
-
-          if ! command -v ffmpeg >/dev/null 2>&1; then
-            echo "FFmpeg not found, installing..."
-            sudo apt-get update
-            sudo apt-get install -y ffmpeg
-          else
-            echo "FFmpeg already available"
-          fi
+          
+          echo "Installing FFmpeg and Chrome system dependencies..."
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libnss3 libgbm1 libasound2
 
       - name: Set aspect ratio
         run: |
@@ -83,7 +79,7 @@ jobs:
           RENDER_URL: ${{ github.event.inputs.render_url }}
           WIDTH: ${{ env.WIDTH }}
           HEIGHT: ${{ env.HEIGHT }}
-          DURATION: 300000
+          SAFETY_SECONDS: 300
           FPS: 24
           RUN_ID: ${{ github.event.inputs.slug }}
           SHEET_WEBHOOK_URL: ${{ env.SHEET_WEBHOOK_URL }}
@@ -120,7 +116,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_RELEASE_TOKEN }}
 
-      # ✅ FINAL FIX — notify Google Sheets with MP4 download URL
       - name: Notify TurboSanta Sheet (final MP4)
         if: env.SHEET_WEBHOOK_URL != ''
         env:
