@@ -131,13 +131,13 @@ const easeInOutCubic = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3
 
 const DIRS = [
   { name: "N",  center:   0, row: 0, flip: false },
-  { name: "NE", center:  45, row: 1, flip: true  },  // sprite faces NW natively → flip for NE
-  { name: "E",  center:  90, row: 2, flip: true  },  // sprite faces W natively  → flip for E
-  { name: "SE", center: 135, row: 3, flip: true  },  // sprite faces SW natively → flip for SE
+  { name: "NE", center:  45, row: 1, flip: false },  // Uses your native NE sprite
+  { name: "E",  center:  90, row: 2, flip: false },  // Uses your native East sprite
+  { name: "SE", center: 135, row: 3, flip: true  },  // Flips your SW sprite to get SE
   { name: "S",  center: 180, row: 4, flip: false },
-  { name: "SW", center: 225, row: 3, flip: false },  // native direction
-  { name: "W",  center: 270, row: 2, flip: false },  // native direction
-  { name: "NW", center: 315, row: 1, flip: false },  // native direction
+  { name: "SW", center: 225, row: 3, flip: false },  // Uses your native SW sprite
+  { name: "W",  center: 270, row: 2, flip: true  },  // Flips your East sprite to get West
+  { name: "NW", center: 315, row: 1, flip: true  },  // Flips your NE sprite to get NW
 ];
 
 const DIR_HYSTERESIS = 15; // degrees beyond sector boundary before switching
