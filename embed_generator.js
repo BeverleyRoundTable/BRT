@@ -429,6 +429,13 @@ https://brt-23f.pages.dev/route_planner?api=${ensureApi()}
 `;
 
 // ================================
+// Countdown
+// ================================
+const countdownLink = `
+https://brt-23f.pages.dev/countdown?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -463,3 +470,4 @@ document.getElementById("colouringpageLink").value = colouringpageLink.trim();
 document.getElementById("volunteercertLink").value = volunteercertLink.trim(); 
 document.getElementById("bingoLink").value = bingoLink.trim();
 document.getElementById("routeplannerLink").value = routeplannerLink.trim();
+document.getElementById("countdownLink").value = countdownLink.trim();
