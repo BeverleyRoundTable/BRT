@@ -1007,31 +1007,34 @@ if (AppState.flags.gpxLoaded) {
   if (snap && snap.distance < 50) { visualPos = snap.point; }
 
   // ⭐ NEW: ROUTE PROGRESS BAR CALCULATION
-  if (AppState.gpxRoute && AppState.gpxRoute.length > 1) {
-    // Snap to the closest point globally (null forces a full search, just like God Mode)
-    const bestPoint = snapToGpxIndex(visualPos, null);
+if (AppState.gpxRoute && AppState.gpxRoute.length > 1) {
+  // 1. Perform a global search to find the mathematically closest point on the route
+  const bestPoint = snapToGpxIndex(visualPos, null); 
 
-    // 🛑 THE FIX: Only update percentage if actually near the route (e.g., within 150 meters)
-    if (bestPoint && bestPoint.distance <= 150) {
-      const percentComplete = Math.min(100, Math.round((AppState.vars.lastSnapIndex / (AppState.gpxRoute.length - 1)) * 100));
-      
-      // Update the public top-edge CSS bar!
-      AppState.dom.statusBox.style.setProperty('--progress', `${percentComplete}%`);
-      
-      // Driver Mode Override: Giant overlay text
-      if (AppState.flags.isDriver) {
-        const bigBox = document.getElementById("driverProgressBox");
-        if (bigBox) bigBox.textContent = `${percentComplete}%`;
-      }
-    } else {
-      // Off-route state
-      AppState.dom.statusBox.style.setProperty('--progress', `0%`);
-      if (AppState.flags.isDriver) {
-        const bigBox = document.getElementById("driverProgressBox");
-        if (bigBox) bigBox.textContent = `OFF ROUTE`;
-      }
+  // 2. 🛑 THE FIX: Tighten threshold to 50m (standard for neighborhood tracking)
+  // If Santa is more than 50m from the red line, he is "Off Route"
+  if (bestPoint && bestPoint.distance <= 50) {
+    // We use the index found by the global search to calculate progress
+    const percentComplete = Math.min(100, Math.round((bestPoint.point.index || AppState.vars.lastSnapIndex) / (AppState.gpxRoute.length - 1) * 100));
+    
+    // Update the top-edge CSS progress bar
+    AppState.dom.statusBox.style.setProperty('--progress', `${percentComplete}%`);
+    
+    // Update Driver Mode Overlay if active
+    if (AppState.flags.isDriver) {
+      const bigBox = document.getElementById("driverProgressBox");
+      if (bigBox) bigBox.textContent = `${percentComplete}%`;
+    }
+  } else {
+    // Santa is > 50m away: Reset progress bar to 0
+    AppState.dom.statusBox.style.setProperty('--progress', `0%`);
+    
+    if (AppState.flags.isDriver) {
+      const bigBox = document.getElementById("driverProgressBox");
+      if (bigBox) bigBox.textContent = `OFF ROUTE`;
     }
   }
+}
 
   // ⭐ PAC-MAN ROUTE ERASER
   if (AppState.dynamicRouteRemainingMain) {
