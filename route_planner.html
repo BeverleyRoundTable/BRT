@@ -356,6 +356,12 @@ function clearAllWaypoints() {
   waypointMarkers.forEach(m => map.removeLayer(m));
   waypointMarkers = [];
   waypoints = [];
+  detectedStreets = [];
+  document.getElementById('streetList').innerHTML = '';
+  document.getElementById('streetCountLabel').textContent = '0';
+  document.getElementById('streetActions').style.display = 'none';
+  document.getElementById('streetStatus').textContent = 'Waiting for route…';
+  document.getElementById('progressWrap').style.display = 'none';
   clearSnappedRoute();
   updateWpUI();
   updateStats();
