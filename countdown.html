@@ -189,7 +189,12 @@ async function init() {
     const res = await fetch(API);
     const data = await res.json();
     const routes = data.routes || [];
-    trackerUrl = data.settings?.tracker_url || `${location.origin}/santa_sleigh_tracker_dynamic?api=${encodeURIComponent(API)}`;
+    const rawTracker = (data.settings?.tracker_url || '').trim();
+    if (rawTracker) {
+      trackerUrl = rawTracker.startsWith('http') ? rawTracker : `https://${rawTracker}`;
+    } else {
+      trackerUrl = `${location.origin}/santa_sleigh_tracker_dynamic?api=${encodeURIComponent(API)}`;
+    }
     const sleighName = data.settings?.sleigh_display_name || '';
     if (sleighName) {
       document.querySelector('.header p').textContent = `Find out when ${sleighName} visits your street!`;
