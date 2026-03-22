@@ -126,6 +126,39 @@
     }
 
     /* ═══════════════════════════════════════ */
+    /* HEADER CONTROLS (TIME MACHINE) */
+    /* ═══════════════════════════════════════ */
+    .top-controls {
+      position: absolute;
+      top: 24px;
+      right: 32px;
+      z-index: 10;
+    }
+
+    .season-select {
+      background: var(--surface-2);
+      color: var(--gold);
+      border: 1px solid var(--border-gold);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23FBAF33' viewBox='0 0 16 16'%3E%3Cpath d='M4.2 6l3.8 4 3.8-4z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    .season-select:hover {
+      background-color: var(--surface-3);
+    }
+
+    /* ═══════════════════════════════════════ */
     /* HERO */
     /* ═══════════════════════════════════════ */
     .hero {
@@ -233,12 +266,6 @@
       letter-spacing: 1px;
     }
 
-    .stat-sub {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
     /* ═══════════════════════════════════════ */
     /* CONTAINER */
     /* ═══════════════════════════════════════ */
@@ -327,12 +354,6 @@
       font-weight: 700;
       font-size: 14px;
       color: #fff;
-    }
-
-    .lb-region {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 2px;
     }
 
     .lb-val {
@@ -433,6 +454,11 @@
       color: var(--green);
     }
 
+    .status-hist {
+      background: var(--blue);
+      color: #fff;
+    }
+
     .status-off {
       background: rgba(255,255,255,0.05);
       color: var(--text-muted);
@@ -487,7 +513,8 @@
     /* RESPONSIVE */
     /* ═══════════════════════════════════════ */
     @media (max-width: 768px) {
-      .hero { padding: 40px 20px 32px; }
+      .top-controls { top: 16px; right: 16px; }
+      .hero { padding: 80px 20px 32px; }
       .hero-stats { gap: 8px; }
       .stat-card { min-width: 100px; padding: 14px 16px; }
       .stat-value { font-size: 28px; }
@@ -531,10 +558,21 @@
   </div>
 
   <div id="appContainer" style="display: none;">
+    
+    <div class="top-controls">
+      <select id="seasonSelect" class="season-select" onchange="changeSeason()">
+        <option value="live">Live Season</option>
+        <option value="2026">Season 2026</option>
+        <option value="2025">Season 2025</option>
+        <option value="2024">Season 2024</option>
+        <option value="2023">Season 2023</option>
+      </select>
+    </div>
+
     <header class="hero">
       <div class="hero-badge" id="seasonBadge">🎅 Season...</div>
       <h1>TURBO<span>SANTA</span><br>NATIONAL</h1>
-      <p class="hero-sub">Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds during the season.</p>
+      <p class="hero-sub" id="heroSubText">Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds.</p>
 
       <div class="hero-stats" id="heroStats">
         <div class="stat-card animate-in">
@@ -568,7 +606,7 @@
 
       <div id="loadingState" class="loading-wrap">
         <div class="spinner"></div>
-        <div class="loading-text">Fetching data from all Round Tables…</div>
+        <div class="loading-text" id="loadingText">Fetching data from all Round Tables…</div>
       </div>
 
       <div id="mainContent" style="display:none;">
@@ -629,9 +667,9 @@
       <div>
         <span class="refresh-pill" onclick="loadAll(true)">🔄 Refresh Now</span>
       </div>
-      <div class="footer-meta">
+      <div class="footer-meta" id="footerMeta">
         Last updated: <span id="lastUpdated">—</span><br>
-        Auto-refreshes every 60s during season
+        Auto-refreshes every 60s during live season
       </div>
     </footer>
   </div>
@@ -652,6 +690,7 @@ let tables = [];
 let results = [];
 let charts = {};
 let refreshTimer = null;
+let currentMode = "live"; // Tracks if we are looking at live data or a historical year
 
 // ═══════════════════════════════════════════════════════════
 // AUTHENTICATION LOGIC (GATEKEEPER)
@@ -681,7 +720,6 @@ async function checkPassword() {
       document.getElementById('gatekeeper').style.display = 'none';
       document.getElementById('appContainer').style.display = 'block';
       
-      // Start the app with the data we already fetched
       startApp(data.tables || data);
     }
   } catch (err) {
@@ -693,17 +731,8 @@ async function checkPassword() {
 
 // Auto-check on load if they already unlocked it this session
 window.onload = async () => {
-  // ⭐ SMART SEASON BADGE
-  const now = new Date();
-  const m = now.getMonth(); // 0 is Jan, 11 is Dec
-  const y = now.getFullYear();
+  updateSeasonBadge("live"); 
   
-  // If we are in Jan-Jun, the season started last year. Otherwise, it starts this year.
-  const startYear = m < 6 ? y - 1 : y;
-  const endYear = String(startYear + 1).slice(-2); // Gets just the last two digits (e.g., '26')
-  
-  document.getElementById('seasonBadge').innerText = `🎅 Season ${startYear}/${endYear}`;
-
   const savedPass = sessionStorage.getItem('national_auth');
   if (savedPass) {
     document.getElementById('passInput').value = savedPass;
@@ -712,14 +741,47 @@ window.onload = async () => {
 };
 
 // ═══════════════════════════════════════════════════════════
+// UI UPDATES FOR TIME MACHINE
+// ═══════════════════════════════════════════════════════════
+function updateSeasonBadge(mode) {
+  if (mode === "live") {
+    const now = new Date();
+    const m = now.getMonth();
+    const y = now.getFullYear();
+    const startYear = m < 6 ? y - 1 : y;
+    const endYear = String(startYear + 1).slice(-2);
+    document.getElementById('seasonBadge').innerText = `🎅 Season ${startYear}/${endYear}`;
+    document.getElementById('heroSubText').innerText = "Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds.";
+    document.getElementById('footerMeta').innerHTML = `Last updated: <span id="lastUpdated">—</span><br>Auto-refreshes every 60s during live season`;
+  } else {
+    document.getElementById('seasonBadge').innerText = `🕰️ Historical: ${mode}`;
+    document.getElementById('heroSubText').innerText = `Viewing frozen snapshot data for the ${mode} Christmas Season.`;
+    document.getElementById('footerMeta').innerHTML = `Historical Data View<br>Auto-refresh disabled`;
+  }
+}
+
+function changeSeason() {
+  currentMode = document.getElementById('seasonSelect').value;
+  updateSeasonBadge(currentMode);
+  
+  // Clear charts instantly to feel snappy
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+  
+  loadAll(false); 
+}
+
+// ═══════════════════════════════════════════════════════════
 // APP START
 // ═══════════════════════════════════════════════════════════
 async function startApp(initialTables) {
   tables = initialTables;
-  await loadAll(false); // Do the first load using the tables we just got
+  await loadAll(false); 
   
-  // Set up the background refresh loop
-  refreshTimer = setInterval(() => loadAll(true), REFRESH_INTERVAL_MS);
+  // Set up the background refresh loop (only fires if mode is live)
+  refreshTimer = setInterval(() => {
+    if (currentMode === "live") loadAll(true);
+  }, REFRESH_INTERVAL_MS);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -740,9 +802,9 @@ async function fetchWithTimeout(url, timeoutMs) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// EXTRACT & FILTER TABLE DATA
+// EXTRACT LIVE TABLE DATA
 // ═══════════════════════════════════════════════════════════
-function extractTableData(table, apiData) {
+function extractLiveTableData(table, apiData) {
   const ledger = apiData.donationsLedger || [];
   const routes = apiData.routes || [];
   const settings = apiData.settings || {};
@@ -753,25 +815,22 @@ function extractTableData(table, apiData) {
   let totalViews = 0;
   const pastRoutes = [];
 
-  // ⭐ USE YOUR SMART SEASON LOGIC FOR FILTERING
   const now = new Date();
-  const m = now.getMonth(); // 0 = Jan, 11 = Dec
+  const m = now.getMonth(); 
   const y = now.getFullYear();
-  const activeSeasonYear = m < 6 ? y - 1 : y; // e.g., 2026
+  const activeSeasonYear = m < 6 ? y - 1 : y; 
 
-  // Helper to check if a date belongs to the current "Season" (July -> June)
   function isThisSeason(dateString) {
     if (!dateString) return false;
     const d = new Date(dateString);
     const dateY = d.getFullYear();
     const dateM = d.getMonth();
     
-    if (dateY === activeSeasonYear && dateM >= 6) return true; // July to Dec of start year
-    if (dateY === activeSeasonYear + 1 && dateM < 6) return true; // Jan to June of end year
+    if (dateY === activeSeasonYear && dateM >= 6) return true; 
+    if (dateY === activeSeasonYear + 1 && dateM < 6) return true; 
     return false;
   }
 
-  // 1. FILTER ROUTES, STREETS, AND VIEWS BY SEASON
   routes.forEach(r => {
     if (isThisSeason(r.date)) {
       pastRoutes.push(r);
@@ -785,7 +844,6 @@ function extractTableData(table, apiData) {
     }
   });
 
-  // 2. FILTER DONATIONS BY SEASON
   if (ledger.length > 0) {
     ledger.forEach(entry => {
       if (isThisSeason(entry.date)) {
@@ -803,13 +861,39 @@ function extractTableData(table, apiData) {
  return {
     id: table.id,
     name: displayName,
-    api: table.api,
-    raised: seasonRaised,      // Only counts cash/card logged THIS season
-    views: totalViews,         // Only counts tracker views THIS season
-    routes: pastRoutes.length, // Only counts routes happening THIS season
-    streets: streetCount,      // Only counts streets driven THIS season
+    raised: seasonRaised,      
+    views: totalViews,         
+    routes: pastRoutes.length, 
+    streets: streetCount,      
     messages: messageStats.total || 0,
     ok: true
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXTRACT HISTORICAL TABLE DATA
+// ═══════════════════════════════════════════════════════════
+function extractHistoricalTableData(table, historyArray, targetYear) {
+  const seasonData = historyArray.find(h => String(h.year) === String(targetYear));
+  
+  if (!seasonData) {
+     return {
+        id: table.id, name: table.name,
+        raised: 0, views: 0, routes: 0, streets: 0, messages: 0,
+        ok: true
+     };
+  }
+  
+  return {
+     id: table.id,
+     name: table.name,
+     raised: parseFloat(seasonData.raised) || 0,
+     // This correctly handles your update to "totalViews" in the code.gs
+     views: parseInt(seasonData.totalViews) || parseInt(seasonData.peakViewers) || 0, 
+     routes: parseInt(seasonData.routes) || 0,
+     streets: parseInt(seasonData.streets) || 0,
+     messages: parseInt(seasonData.messages) || 0,
+     ok: true
   };
 }
 
@@ -820,7 +904,13 @@ async function loadAll(fetchRegistry = true) {
   document.getElementById('loadingState').style.display = 'block';
   document.getElementById('mainContent').style.display = 'none';
 
-  if (fetchRegistry) {
+  if (currentMode === "live") {
+     document.getElementById('loadingText').innerText = "Fetching live data from all Round Tables…";
+  } else {
+     document.getElementById('loadingText').innerText = `Digging up historical archives for ${currentMode}…`;
+  }
+
+  if (fetchRegistry && currentMode === "live") {
     const savedPass = sessionStorage.getItem('national_auth');
     try {
       const authUrl = `${REGISTRY_URL}?secret=${encodeURIComponent(savedPass)}`;
@@ -841,17 +931,22 @@ async function loadAll(fetchRegistry = true) {
 
   const promises = tables.map(async (table) => {
     try {
-      const data = await fetchWithTimeout(table.api, FETCH_TIMEOUT_MS);
-      if (data.error) throw new Error(data.message || data.error);
-      return extractTableData(table, data);
+      if (currentMode === "live") {
+         const data = await fetchWithTimeout(table.api, FETCH_TIMEOUT_MS);
+         if (data.error) throw new Error(data.message || data.error);
+         return extractLiveTableData(table, data);
+      } else {
+         const histUrl = table.api + "?function=getSeasonHistory";
+         const data = await fetchWithTimeout(histUrl, FETCH_TIMEOUT_MS);
+         if (data.error) throw new Error(data.message || data.error);
+         return extractHistoricalTableData(table, data.history || [], currentMode);
+      }
     } catch (err) {
       errors.push({ name: table.name, error: err.message || 'Timeout' });
       return {
-        id: table.id,
-        name: table.name,
+        id: table.id, name: table.name,
         raised: 0, views: 0, routes: 0, streets: 0, messages: 0,
-        ok: false,
-        errorMsg: err.message
+        ok: false
       };
     }
   });
@@ -865,7 +960,10 @@ async function loadAll(fetchRegistry = true) {
 
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('mainContent').style.display = 'block';
-  document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('en-GB');
+  
+  if(currentMode === "live") {
+     document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('en-GB');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -879,7 +977,11 @@ function render(data, errors) {
 }
 
 function renderHeroStats(data) {
-  const liveTables = data.filter(d => d.ok).length;
+  // If historical, any table that had data > 0 counts as "Live/Active" for that year
+  const liveTables = currentMode === "live" 
+      ? data.filter(d => d.ok).length 
+      : data.filter(d => d.raised > 0 || d.routes > 0).length;
+
   const totalRaised = data.reduce((s, d) => s + d.raised, 0);
   const totalViews = data.reduce((s, d) => s + d.views, 0);
   const totalRoutes = data.reduce((s, d) => s + d.routes, 0);
@@ -925,9 +1027,16 @@ function renderLeaderboard(data) {
   body.innerHTML = '';
 
   data.forEach((d, i) => {
-    const statusHtml = d.ok
-      ? '<span class="table-status status-live">● Connected</span>'
-      : '<span class="table-status status-off">● Offline</span>';
+    let statusHtml = '';
+    if (currentMode === "live") {
+       statusHtml = d.ok ? '<span class="table-status status-live">● Connected</span>' : '<span class="table-status status-off">● Offline</span>';
+    } else {
+       if (d.raised > 0 || d.routes > 0) {
+          statusHtml = '<span class="table-status status-hist">✔ Archived</span>';
+       } else {
+          statusHtml = '<span class="table-status status-off">No Data</span>';
+       }
+    }
 
     body.innerHTML += `
       <div class="lb-row">
@@ -973,7 +1082,6 @@ function renderCharts(data) {
     }
   };
 
-  // Destroy existing charts
   Object.values(charts).forEach(c => c.destroy());
   charts = {};
 
@@ -983,13 +1091,7 @@ function renderCharts(data) {
       labels,
       datasets: [{ data: data.map(d => d.raised), backgroundColor: getColors('251, 175, 51', data), borderRadius: 6, barThickness: 24 }]
     },
-    options: {
-      ...chartDefaults,
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 }, callback: v => '£' + v.toLocaleString() } },
-        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } }
-      }
-    }
+    options: { ...chartDefaults, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 }, callback: v => '£' + v.toLocaleString() } }, y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } } } }
   });
 
   charts.views = new Chart(document.getElementById('viewsChart'), {
@@ -998,13 +1100,7 @@ function renderCharts(data) {
       labels,
       datasets: [{ data: data.map(d => d.views), backgroundColor: getColors('156, 39, 176', data), borderRadius: 6, barThickness: 24 }]
     },
-    options: {
-      ...chartDefaults,
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } },
-        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } }
-      }
-    }
+    options: { ...chartDefaults, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } }, y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } } } }
   });
 
   charts.streets = new Chart(document.getElementById('streetsChart'), {
@@ -1013,13 +1109,7 @@ function renderCharts(data) {
       labels,
       datasets: [{ data: data.map(d => d.streets), backgroundColor: getColors('46, 204, 113', data), borderRadius: 6, barThickness: 24 }]
     },
-    options: {
-      ...chartDefaults,
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } },
-        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } }
-      }
-    }
+    options: { ...chartDefaults, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } }, y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } } } }
   });
 
   charts.routes = new Chart(document.getElementById('routesChart'), {
@@ -1028,13 +1118,7 @@ function renderCharts(data) {
       labels,
       datasets: [{ data: data.map(d => d.routes), backgroundColor: getColors('74, 158, 255', data), borderRadius: 6, barThickness: 24 }]
     },
-    options: {
-      ...chartDefaults,
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } },
-        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } }
-      }
-    }
+    options: { ...chartDefaults, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } }, y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } } } }
   });
 
   charts.messages = new Chart(document.getElementById('messagesChart'), {
@@ -1043,19 +1127,17 @@ function renderCharts(data) {
       labels,
       datasets: [{ data: data.map(d => d.messages), backgroundColor: getColors('211, 28, 28', data), borderRadius: 6, barThickness: 24 }]
     },
-    options: {
-      ...chartDefaults,
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } },
-        y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } }
-      }
-    }
+    options: { ...chartDefaults, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } }, y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } } } }
   });
 }
 
 function renderErrors(errors) {
   const el = document.getElementById('errorList');
-  if (errors.length === 0) { el.innerHTML = ''; return; }
+  if (errors.length === 0 || currentMode !== "live") { 
+      // Don't show "Connection Issues" on Historical view, just silently skip them
+      el.innerHTML = ''; 
+      return; 
+  }
 
   el.innerHTML = `
     <div class="section-head" style="margin-top:32px;">
