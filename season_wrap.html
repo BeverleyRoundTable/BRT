@@ -74,7 +74,7 @@
 
   .print-bar-title {
     font-size: 0.85em;
-    font-weight: 700;
+    fontWeight: 700;
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -550,8 +550,8 @@ function render(data) {
   const webViews = s.wrap_website_views || s.sponsor_pack_website_views || '';
   const peakViewers = s.wrap_peak_viewers || '';
   const totalWaves = s.season_total_waves || '';
-const messageStats = data.messageStats || { total: 0, byRoute: {} };
-const totalMessages = messageStats.total || 0;
+  const messageStats = data.messageStats || { total: 0, byRoute: {} };
+  const totalMessages = messageStats.total || 0;
   const highlight = s.wrap_highlight || '';
 
   // Sorted completed routes by date
@@ -824,8 +824,8 @@ const totalMessages = messageStats.total || 0;
         raised: totalRaised,
         routes: routeCount,
         streets: uniqueStreets,
-        peakViewers: peakViewers || 0,
-        waves: totalWaves || 0,
+        totalViews: totalViews || 0, // ⭐ Updated mapping
+        messages: totalMessages || 0, // ⭐ Updated mapping
         volunteers: volunteers || 0
       });
     }
@@ -843,8 +843,8 @@ const totalMessages = messageStats.total || 0;
       { id: 'chartRaised',    label: '💰 Raised (£)',       data: allSeasons.map(s => Number(s.raised) || 0),      color: gold },
       { id: 'chartRoutes',    label: '✅ Routes Completed', data: allSeasons.map(s => Number(s.routes) || 0),      color: red },
       { id: 'chartStreets',   label: '🏘️ Streets Visited',  data: allSeasons.map(s => Number(s.streets) || 0),     color: green },
-      { id: 'chartViewers',   label: '🔥 Peak Viewers',     data: allSeasons.map(s => Number(s.peakViewers) || 0), color: blue },
-      { id: 'chartMessages', label: '💬 Messages to Santa', data: allSeasons.map(s => Number(s.waves) || 0), color: purple },
+      { id: 'chartViewers',   label: '👁️ Total Views',     data: allSeasons.map(s => Number(s.totalViews) || 0), color: blue }, // ⭐ Updated chart
+      { id: 'chartMessages',  label: '💬 Messages to Santa', data: allSeasons.map(s => Number(s.messages) || 0), color: purple }, // ⭐ Updated chart
       { id: 'chartVolunteers',label: '🙋 Volunteers',       data: allSeasons.map(s => Number(s.volunteers) || 0),  color: teal }
     ];
 
@@ -869,16 +869,16 @@ const totalMessages = messageStats.total || 0;
 
   document.getElementById('app').innerHTML = h;
 
-  // Populate snapshot data
+  // Populate snapshot data for the button click
   _snapshotData = {
-  year,
-  raised: totalRaised,
-  routes: routeCount,
-  streets: uniqueStreets,
-  peakViewers: peakViewers || '',
-  waves: totalMessages || '',
-  volunteers: volunteers || ''
-};
+    year,
+    raised: totalRaised,
+    routes: routeCount,
+    streets: uniqueStreets,
+    totalViews: totalViews || '', // ⭐ Updated 
+    messages: totalMessages || '', // ⭐ Updated 
+    volunteers: volunteers || ''
+  };
 
   // Render charts if history exists
   const configEl = document.getElementById('chartConfig');
@@ -928,6 +928,7 @@ const totalMessages = messageStats.total || 0;
     document.getElementById('loader').classList.add('done');
   }, 300);
 }
+
 async function snapshotSeason() {
   const api = getApiUrl();
   if (!api) { alert('No API URL found.'); return; }
@@ -942,8 +943,8 @@ async function snapshotSeason() {
     `Raised: £${Number(_snapshotData.raised).toLocaleString()}\n` +
     `Routes: ${_snapshotData.routes}\n` +
     `Streets: ${_snapshotData.streets}\n` +
-    `Peak Viewers: ${_snapshotData.peakViewers || '—'}\n` +
-    `Messages to Santa: ${_snapshotData.waves || '—'}\n` +
+    `Total Views: ${_snapshotData.totalViews || '—'}\n` + // ⭐ Updated confirmation
+    `Messages to Santa: ${_snapshotData.messages || '—'}\n` + // ⭐ Updated confirmation
     `Volunteers: ${_snapshotData.volunteers || '—'}\n\n` +
     `This cannot be undone. Continue?`
   );
@@ -979,3 +980,5 @@ async function snapshotSeason() {
   }
 }
 </script>
+</body>
+</html>
