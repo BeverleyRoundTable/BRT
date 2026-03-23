@@ -561,12 +561,7 @@
     
     <div class="top-controls">
       <select id="seasonSelect" class="season-select" onchange="changeSeason()">
-        <option value="live">Live Season</option>
-        <option value="2026">Season 2026</option>
-        <option value="2025">Season 2025</option>
-        <option value="2024">Season 2024</option>
-        <option value="2023">Season 2023</option>
-      </select>
+        </select>
     </div>
 
     <header class="hero">
@@ -730,7 +725,10 @@ async function checkPassword() {
 }
 
 // Auto-check on load if they already unlocked it this session
+const SYSTEM_START_YEAR = 2024; // ⭐ The earliest year to show in the dropdown
+
 window.onload = async () => {
+  buildSeasonDropdown(); // ⭐ Build the dynamic dropdown first!
   updateSeasonBadge("live"); 
   
   const savedPass = sessionStorage.getItem('national_auth');
@@ -743,14 +741,30 @@ window.onload = async () => {
 // ═══════════════════════════════════════════════════════════
 // UI UPDATES FOR TIME MACHINE
 // ═══════════════════════════════════════════════════════════
+function getActiveSeasonYear() {
+  const now = new Date();
+  const m = now.getMonth();
+  const y = now.getFullYear();
+  // If it's Jan-Jun, the active season was the previous year's Christmas.
+  return m < 6 ? y - 1 : y; 
+}
+
+function buildSeasonDropdown() {
+  const select = document.getElementById('seasonSelect');
+  select.innerHTML = '<option value="live">Live Season</option>';
+  
+  const activeYear = getActiveSeasonYear();
+  
+  // Auto-generate years from the current active year down to 2024
+  for (let yr = activeYear; yr >= SYSTEM_START_YEAR; yr--) {
+    select.innerHTML += `<option value="${yr}">${yr} Season</option>`;
+  }
+}
+
 function updateSeasonBadge(mode) {
   if (mode === "live") {
-    const now = new Date();
-    const m = now.getMonth();
-    const y = now.getFullYear();
-    const startYear = m < 6 ? y - 1 : y;
-    const endYear = String(startYear + 1).slice(-2);
-    document.getElementById('seasonBadge').innerText = `🎅 Season ${startYear}/${endYear}`;
+    const activeYear = getActiveSeasonYear();
+    document.getElementById('seasonBadge').innerText = `🎅 ${activeYear} Sleigh`;
     document.getElementById('heroSubText').innerText = "Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds.";
     document.getElementById('footerMeta').innerHTML = `Last updated: <span id="lastUpdated">—</span><br>Auto-refreshes every 60s during live season`;
   } else {
@@ -758,17 +772,6 @@ function updateSeasonBadge(mode) {
     document.getElementById('heroSubText').innerText = `Viewing frozen snapshot data for the ${mode} Christmas Season.`;
     document.getElementById('footerMeta').innerHTML = `Historical Data View<br>Auto-refresh disabled`;
   }
-}
-
-function changeSeason() {
-  currentMode = document.getElementById('seasonSelect').value;
-  updateSeasonBadge(currentMode);
-  
-  // Clear charts instantly to feel snappy
-  Object.values(charts).forEach(c => c.destroy());
-  charts = {};
-  
-  loadAll(false); 
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -815,10 +818,7 @@ function extractLiveTableData(table, apiData) {
   let totalViews = 0;
   const pastRoutes = [];
 
-  const now = new Date();
-  const m = now.getMonth(); 
-  const y = now.getFullYear();
-  const activeSeasonYear = m < 6 ? y - 1 : y; 
+  const activeSeasonYear = getActiveSeasonYear();
 
   function isThisSeason(dateString) {
     if (!dateString) return false;
