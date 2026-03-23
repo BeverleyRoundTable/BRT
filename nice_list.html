@@ -1,130 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Santa’s Nice List</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Santa’s Nice List — TurboSanta</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-<style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   
-  *,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&family=Mountains+of+Christmas:wght@400;700&display=swap" rel="stylesheet">
 
-  /* 🔧 IMPORTANT: prevent iframe forcing viewport height */
-  html, body {
-    height: auto;
-    min-height: 0;
-  }
-
-  body {
-    margin: 0;
-    padding: 16px 12px;
-    background: transparent;
-    color: #FFFFFF;
-    font-family: 'Open Sans', sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .santa-checker {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 24px 20px 28px;
-    text-align: center;
-    background: rgba(29, 29, 26, 0.95); /* Brand Table Grey */
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-radius: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow:
-      0 6px 20px rgba(0,0,0,0.35),
-      inset 0 1px 0 rgba(255,255,255,0.05);
-  }
-
-  h2 {
-    margin: 0 0 16px 0;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-  }
-
-  input {
-    width: 100%;
-    max-width: 420px;
-    padding: 14px 18px;
-    border-radius: 999px; /* Pill shape to match buttons */
-    background: #2f2f2a; /* God Mode Surface-2 */
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #FFFFFF;
-    font-size: 1rem;
-    font-family: inherit;
-    display: block;
-    margin: 0 auto;
-    transition: all 0.2s ease;
-  }
-
-  input::placeholder { color: rgba(255, 255, 255, 0.5); }
+  <style>
+    /* ═══════════════════════════════════════ */
+    /* TURBOSANTA DESIGN SYSTEM */
+    /* ═══════════════════════════════════════ */
+    :root {
+      --gold: #FBAF33;
+      --gold-dim: rgba(251,175,51,0.12);
+      --gold-glow: rgba(251,175,51,0.25);
+      --dark: #0d0d0b;
+      --surface: #161614;
+      --surface-2: #1e1e1b;
+      --surface-3: #252522;
+      --border: rgba(255,255,255,0.08);
+      --text: #eaeae5;
+      --text-dim: rgba(255,255,255,0.55);
+      --text-muted: rgba(255,255,255,0.3);
+    }
   
-  input:focus {
-    outline: none;
-    border-color: #FBAF33; /* Brand Golden Yellow */
-    box-shadow: 0 0 0 3px rgba(251, 175, 51, 0.2);
-  }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
 
-  button {
-    margin-top: 16px;
-    padding: 14px 28px;
-    border-radius: 999px;
-    border: none;
-    background: #FBAF33; /* Brand Golden Yellow */
-    color: #000000;
-    font-weight: 800;
-    font-family: inherit;
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    transition: all 0.2s ease;
-  }
+    /* 🔧 IMPORTANT: prevent iframe forcing viewport height */
+    html, body {
+      height: auto;
+      min-height: 0;
+    }
 
-  button:active {
-    transform: scale(0.96);
-  }
+    body {
+      margin: 0;
+      padding: 16px 12px;
+      background: transparent; /* Keep transparent for iframe embedding */
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
 
-  #status {
-    margin: 18px 0 10px;
-    min-height: 1.4em;
-    font-weight: 600;
-    color: #FBAF33;
-  }
+    .santa-checker {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 24px 40px;
+      text-align: center;
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+    }
 
-  a#download {
-    display: none;
-    margin: 10px auto 0;
-    padding: 12px 24px;
-    border-radius: 999px;
-    background: #2f2f2a;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #FFFFFF;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 0.9em;
-    transition: all 0.2s ease;
-    width: fit-content;
-  }
-  
-  a#download:active {
-    transform: scale(0.96);
-  }
-</style>
+    h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 42px;
+      letter-spacing: 2px;
+      color: #fff;
+      margin: 0 0 24px 0;
+      line-height: 1;
+    }
+    
+    h2 span {
+      color: var(--gold);
+    }
+
+    input {
+      width: 100%;
+      max-width: 420px;
+      padding: 16px 20px;
+      border-radius: 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: #fff;
+      font-family: 'DM Mono', monospace;
+      font-size: 16px;
+      display: block;
+      margin: 0 auto;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    input::placeholder { 
+      color: var(--text-muted); 
+      font-family: 'DM Sans', sans-serif;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 16px 32px;
+      border-radius: 8px;
+      border: none;
+      background: var(--gold);
+      color: #000;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      cursor: pointer;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    button:hover {
+      background: #e59d28;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    #status {
+      margin: 24px 0 16px;
+      min-height: 1.5em;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    a#download {
+      display: none;
+      margin: 16px auto 0;
+      padding: 14px 28px;
+      border-radius: 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      width: fit-content;
+    }
+    
+    a#download:hover {
+      background: var(--surface-3);
+    }
+    
+    a#download:active {
+      transform: scale(0.97);
+    }
+    
+    @media (max-width: 600px) {
+      .santa-checker { padding: 32px 20px; }
+      h2 { font-size: 36px; }
+    }
+  </style>
 
 </head>
 
@@ -132,10 +174,10 @@
 
 <div class="santa-checker" id="niceRoot">
 
-  <h2>🎅 Naughty or Nice?</h2>
+  <h2>🎅 NAUGHTY OR <span>NICE?</span></h2>
 
-  <input id="childName" placeholder="Enter name" />
-  <br>
+  <input id="childName" placeholder="Enter a name..." autocomplete="off" />
+  
   <button onclick="startCheck()">Check Santa’s List</button>
 
   <p id="status"></p>
@@ -143,7 +185,7 @@
   <canvas id="canvas" width="1600" height="1131" style="display:none;"></canvas>
 
   <a id="download" download="Santa_Nice_List_Certificate.pdf">
-    🎄 Download Certificate (PDF)
+    ⬇ Download PDF Certificate
   </a>
 </div>
 
@@ -170,14 +212,14 @@ function startCheck(){
   let i = 0;
 
   const interval = setInterval(() => {
-  status.innerText = phases[i % phases.length];
-  sendHeight(20);
-  i++;
-}, 400);
+    status.innerText = phases[i % phases.length];
+    sendHeight(20);
+    i++;
+  }, 400);
 
   setTimeout(() => {
     clearInterval(interval);
-    status.innerText = "✅ Nice list confirmed! 🎄";
+    status.innerText = "✅ NICE LIST CONFIRMED!";
     generatePDF(name);
   }, 2200);
 }
@@ -191,9 +233,9 @@ function generatePDF(name){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
 
-  // Script name only
+  // We use Mountains of Christmas if it's loaded, otherwise fallback to DM Sans
   ctx.fillStyle = "#000";
-  ctx.font = "bold 64px 'Open Sans', sans-serif";
+  ctx.font = "bold 80px 'Mountains of Christmas', 'DM Sans', sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(name, canvas.width / 2, 620);
 
