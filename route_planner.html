@@ -250,7 +250,11 @@ let uploadLayer = null;
 let waypointMarkers = [];
 let existingRouteLayers = [];
 
-const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
+const routingServers = {
+  driving: 'https://routing.openstreetmap.de/routed-car/route/v1/driving',
+  foot: 'https://routing.openstreetmap.de/routed-foot/route/v1/driving',
+  bike: 'https://routing.openstreetmap.de/routed-bike/route/v1/driving'
+};
 
 // ═══════════════════════════════════════
 // MAP
@@ -389,7 +393,8 @@ async function routeAllWaypoints() {
   try {
     // Build coordinate string: lng,lat;lng,lat;...
     const coords = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
-    const url = `${OSRM_BASE}/${routingProfile}/${coords}?overview=full&geometries=geojson&steps=true`;
+    const baseUrl = routingServers[routingProfile];
+const url = `${baseUrl}/${coords}?overview=full&geometries=geojson&steps=true`;
 
     const res = await fetch(url);
     const data = await res.json();
