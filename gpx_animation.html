@@ -5,14 +5,36 @@
 <title>TurboSanta GPX Animation</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0d12; }
+  /* ═══════════════════════════════════════ */
+  /* TURBOSANTA DESIGN SYSTEM */
+  /* ═══════════════════════════════════════ */
+  :root {
+    --gold: #FBAF33;
+    --dark: #0d0d0b;
+    --red: #D31C1C;
+  }
+
+  html, body { 
+    margin: 0; height: 100%; overflow: hidden; 
+    background: var(--dark); 
+    font-family: 'DM Sans', sans-serif;
+  }
+  
   #map { position: absolute; inset: 0; }
   #overlay { position: absolute; inset: 0; pointer-events: none; }
+  
   #debug {
     display: none; position: absolute; top: 10px; left: 10px; z-index: 999;
-    background: rgba(0,0,0,0.75); color: #0f0; font: 12px monospace;
+    background: rgba(13, 13, 11, 0.85); color: var(--gold); 
+    font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700;
     padding: 8px 12px; border-radius: 6px; pointer-events: none;
+    border: 1px solid rgba(251, 175, 51, 0.3);
   }
 </style>
 </head>
@@ -118,7 +140,7 @@ const easeInOutCubic = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3
 
    Sprite sheet layout (5 rows × N frames):
      Row 0: North      (walking away from camera)
-     Row 1: NW         (diagonal away-left)      — flip H → NE
+     Row 1: NW         (diagonal away-left)       — flip H → NE
      Row 2: West       (side view, facing left)   — flip H → East
      Row 3: SW         (diagonal toward-left)     — flip H → SE
      Row 4: South      (walking toward camera)
@@ -273,7 +295,7 @@ function initAnimation(pts, sprite, logo, sponsor, s) {
   const SPRITE_FRAMES  = Math.max(1, +s.travelboast_sprite_frames || 5);
   const SPRITE_SIZE    = +s.travelboast_sprite_size || 72;
   const TRAVEL_SECS    = Math.max(1, +s.travelboast_speed || 45);
-  const PRIMARY_COLOR  = s.primary_color || "#d31c1c";
+  const PRIMARY_COLOR  = s.primary_color || "#D31C1C";
   const INIT_ZOOM      = +s.default_map_zoom || 16;
 
   const FOLLOW_ZOOM    = IS_RENDER ? 18.3 : 18.1;
@@ -306,7 +328,7 @@ function initAnimation(pts, sprite, logo, sponsor, s) {
 
   /* ── Phase tracking ── */
   let phase        = "travel"; // "travel" | "panout" | "done"
-  let panOutStart  = 0;       // simTime when pan-out began
+  let panOutStart  = 0;        // simTime when pan-out began
   let panFromCenter = null;
   let panFromZoom   = FOLLOW_ZOOM;
   let panFromPitch  = FOLLOW_PITCH;
@@ -560,7 +582,7 @@ function initAnimation(pts, sprite, logo, sponsor, s) {
     // Red circle body
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fillStyle = "#d31c1c";
+    ctx.fillStyle = "#D31C1C";
     ctx.fill();
     ctx.strokeStyle = "#fff";
     ctx.lineWidth = 2;
