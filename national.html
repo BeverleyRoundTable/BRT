@@ -763,8 +763,9 @@ function buildSeasonDropdown() {
 
 function updateSeasonBadge(mode) {
   if (mode === "live") {
-    const activeYear = getActiveSeasonYear();
-    document.getElementById('seasonBadge').innerText = `🎅 ${activeYear} Sleigh`;
+    // ⭐ ALWAYS SHOW THE CURRENT CALENDAR YEAR TO STOP CONFUSION
+    const displayYear = new Date().getFullYear();
+    document.getElementById('seasonBadge').innerText = `🎅 ${displayYear} Sleigh`;
     document.getElementById('heroSubText').innerText = "Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds.";
     document.getElementById('footerMeta').innerHTML = `Last updated: <span id="lastUpdated">—</span><br>Auto-refreshes every 60s during live season`;
   } else {
@@ -772,6 +773,21 @@ function updateSeasonBadge(mode) {
     document.getElementById('heroSubText').innerText = `Viewing frozen snapshot data for the ${mode} Christmas Season.`;
     document.getElementById('footerMeta').innerHTML = `Historical Data View<br>Auto-refresh disabled`;
   }
+}
+
+function changeSeason() {
+  currentMode = document.getElementById('seasonSelect').value;
+  updateSeasonBadge(currentMode);
+  
+  // Clear charts safely to prevent script crashes
+  try {
+    Object.values(charts).forEach(c => {
+      if (c && typeof c.destroy === 'function') c.destroy();
+    });
+  } catch (e) {}
+  charts = {};
+  
+  loadAll(false); 
 }
 
 // ═══════════════════════════════════════════════════════════
