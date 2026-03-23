@@ -3,32 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Address Lookup</title>
+  <title>Address Lookup — TurboSanta</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
+    /* ═══════════════════════════════════════ */
+    /* TURBOSANTA DESIGN SYSTEM */
+    /* ═══════════════════════════════════════ */
+    :root {
+      --gold: #FBAF33;
+      --gold-dim: rgba(251,175,51,0.12);
+      --gold-glow: rgba(251,175,51,0.25);
+      --dark: #0d0d0b;
+      --surface: #161614;
+      --surface-2: #1e1e1b;
+      --surface-3: #252522;
+      --border: rgba(255,255,255,0.08);
+      --border-gold: rgba(251,175,51,0.2);
+      --text: #eaeae5;
+      --text-dim: rgba(255,255,255,0.55);
+      --text-muted: rgba(255,255,255,0.3);
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
       padding: 14px 12px 0;
-      background: transparent;
-      color: #FFFFFF;
-      font-family: 'Open Sans', sans-serif;
+      background: transparent; /* Keep transparent for iframe embedding, or change to var(--dark) if standalone */
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
       -webkit-font-smoothing: antialiased;
     }
 
     #address-root {
       max-width: 960px;
       margin: 0 auto;
-      padding: 20px 18px 22px;
-      background: rgba(29, 29, 26, 0.95); /* Brand Table Grey */
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border-radius: 22px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow:
-        0 6px 20px rgba(0,0,0,0.35),
-        inset 0 1px 0 rgba(255,255,255,0.05);
+      padding: 24px 20px;
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
     }
 
     /* ── Search box ── */
@@ -37,70 +55,78 @@
       flex-direction: column;
       gap: 12px;
       align-items: center;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
     }
 
     .address-search-input {
       width: 100%;
       max-width: 900px;
-      padding: 14px 18px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: #2f2f2a; /* God Mode Surface-2 */
+      padding: 16px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
       color: #FFFFFF;
-      font-family: inherit;
+      font-family: 'DM Mono', monospace;
       font-size: 1rem;
       box-sizing: border-box;
       appearance: none;
       -webkit-appearance: none;
-      background-clip: padding-box;
       transition: all 0.2s ease;
+      text-align: center;
     }
 
     .address-search-input::placeholder {
-      color: rgba(255, 255, 255, 0.5);
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
     }
 
     .address-search-input:focus {
       outline: none;
-      border-color: #FBAF33; /* Brand Golden Yellow */
-      box-shadow: 0 0 0 3px rgba(251, 175, 51, 0.2);
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px var(--gold-glow);
     }
 
     .address-search-input:-webkit-autofill,
     .address-search-input:-webkit-autofill:hover,
     .address-search-input:-webkit-autofill:focus {
       -webkit-text-fill-color: #FFFFFF;
-      box-shadow: 0 0 0px 1000px #2f2f2a inset;
+      box-shadow: 0 0 0px 1000px var(--surface-2) inset;
       transition: background-color 9999s ease-out;
     }
 
     .address-search button {
-      height: 42px;
+      height: 48px;
+      width: 100%;
+      max-width: 900px;
       padding: 0 28px;
-      border-radius: 999px;
+      border-radius: 8px;
       border: none;
-      background: #FBAF33; /* Brand Golden Yellow */
+      background: var(--gold);
       color: #000000;
-      font-weight: 800;
-      font-family: inherit;
-      font-size: 0.95em;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s ease;
+      transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
+    }
+
+    .address-search button:hover {
+      background: #e59d28;
+      transform: translateY(-1px);
     }
 
     .address-search button:active {
-      transform: scale(0.96);
+      transform: scale(0.98);
     }
 
     @keyframes searchPulse {
       0%   { box-shadow: 0 0 0 rgba(251, 175, 51, 0); }
-      50%  { box-shadow: 0 0 14px rgba(251, 175, 51, 0.6); }
+      50%  { box-shadow: 0 0 14px var(--gold-glow); }
       100% { box-shadow: 0 0 0 rgba(251, 175, 51, 0); }
     }
 
@@ -115,12 +141,16 @@
 
     /* ── Cards ── */
     .addr-route-card {
-      background: #2f2f2a;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 18px 20px 16px;
-      margin: 16px 0;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+      background: var(--surface-2);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 20px 24px;
+      margin: 20px 0;
+      transition: background 0.15s;
+    }
+    
+    .addr-route-card:hover {
+      background: rgba(251,175,51,0.03);
     }
 
     /* Header row: title + countdown badge */
@@ -128,8 +158,8 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 6px;
+      gap: 16px;
+      margin-bottom: 12px;
     }
 
     .addr-card-titles {
@@ -139,75 +169,76 @@
 
     .addr-route-title {
       margin: 0 0 4px;
-      font-size: 1.35rem;
-      font-weight: 800;
-      letter-spacing: -0.01em;
-      line-height: 1.2;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 1.5px;
+      color: #fff;
+      line-height: 1.1;
     }
 
     .addr-route-date {
       margin: 0;
-      opacity: 0.8;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #FBAF33;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gold);
     }
 
     /* ── Countdown badge ── */
     .addr-countdown {
       flex-shrink: 0;
-      padding: 5px 12px;
-      border-radius: 999px;
-      font-size: 0.82rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
       white-space: nowrap;
       text-transform: uppercase;
     }
 
     .countdown-imminent {
-      background: #FBAF33;
+      background: var(--gold);
       color: #000000;
-      box-shadow: 0 0 10px rgba(251, 175, 51, 0.4);
+      box-shadow: 0 0 12px var(--gold-glow);
       animation: badgePulse 2s ease-in-out infinite;
     }
 
     .countdown-soon {
-      background: rgba(251, 175, 51, 0.15);
-      color: #FBAF33;
-      border: 1px solid rgba(251, 175, 51, 0.3);
+      background: var(--gold-dim);
+      color: var(--gold);
+      border: 1px solid var(--border-gold);
     }
 
     .countdown-future {
-      background: rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.8);
-      border: 1px solid rgba(255,255,255,0.12);
+      background: var(--surface-3);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
     }
 
     .countdown-past {
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.4);
-      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.04);
     }
 
     @keyframes badgePulse {
       0%, 100% { box-shadow: 0 0 6px rgba(251, 175, 51, 0.3); }
-      50%      { box-shadow: 0 0 16px rgba(251, 175, 51, 0.7); }
+      50%      { box-shadow: 0 0 16px rgba(251, 175, 51, 0.6); }
     }
 
     /* ── Map thumbnail ── */
     .addr-route-map {
-      margin: 12px 0;
-      border-radius: 12px;
+      margin: 16px 0;
+      border-radius: 10px;
       overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
     }
 
     .addr-route-map img {
       display: block;
       width: 100%;
       height: auto;
-      max-height: 180px;
+      max-height: 200px;
       object-fit: cover;
     }
 
@@ -215,53 +246,54 @@
     .addr-streets-list {
       list-style: none;
       padding: 0;
-      margin: 10px 0 0;
-      font-size: 0.95rem;
+      margin: 16px 0 0;
+      font-size: 14px;
     }
 
     .addr-streets-list li {
-      margin: 4px 0;
+      margin: 6px 0;
       display: flex;
       align-items: baseline;
-      gap: 6px;
-      color: rgba(255, 255, 255, 0.85);
+      gap: 8px;
+      color: var(--text);
     }
 
     .addr-streets-list li .pin {
       flex-shrink: 0;
       font-size: 0.9em;
+      color: var(--text-dim);
     }
 
     /* Highlighted match text */
     .addr-streets-list mark {
-      background: rgba(251, 175, 51, 0.2);
-      color: #FBAF33;
+      background: var(--gold-dim);
+      color: var(--gold);
       border-radius: 4px;
-      padding: 0 4px;
+      padding: 2px 6px;
       font-weight: 700;
     }
 
     /* ── Sponsor bar ── */
     .addr-sponsor {
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid rgba(255,255,255,0.08);
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
     }
 
     .addr-sponsor .sponsor-label {
-      font-size: 0.72rem;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 2px;
+      color: var(--text-muted);
       flex-shrink: 0;
     }
 
     .addr-sponsor img {
-      height: 28px;
+      height: 32px;
       width: auto;
       max-width: 140px;
       object-fit: contain;
@@ -272,22 +304,34 @@
     /* ── No results ── */
     .addr-no-results {
       text-align: center;
-      margin-top: 20px;
+      margin-top: 32px;
       font-weight: 600;
-      color: #FBAF33;
+      color: var(--gold);
+      font-size: 16px;
     }
 
     .addr-no-results small {
       display: block;
-      margin-top: 6px;
+      margin-top: 8px;
       font-weight: 400;
-      color: rgba(255, 255, 255, 0.6);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text-dim);
     }
 
     /* ── Desktop breathing room ── */
     @media (min-width: 700px) {
       body {
         padding-top: 24px;
+      }
+      .address-search {
+        flex-direction: row;
+      }
+      .address-search-input {
+        text-align: left;
+      }
+      .address-search button {
+        width: auto;
       }
     }
   </style>
@@ -300,7 +344,7 @@
         id="searchInput"
         class="address-search-input"
         type="text"
-        placeholder="Type your street name..."
+        placeholder="Enter your street name..."
       />
       <button id="searchBtn">Search Route</button>
     </div>
