@@ -936,6 +936,7 @@ async function loadAll(fetchRegistry = true) {
 
   const promises = tables.map(async (table) => {
     try {
+      // Clean up the API URL to prevent formatting errors
       const cleanApi = String(table.api).trim();
       
       if (currentMode === "live") {
@@ -964,6 +965,8 @@ async function loadAll(fetchRegistry = true) {
   });
 
   results = await Promise.all(promises);
+
+  // Sort by raised descending
   results.sort((a, b) => b.raised - a.raised);
 
   render(results, errors);
