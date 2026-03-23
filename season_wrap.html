@@ -542,7 +542,8 @@ function render(data) {
   const volunteers = s.wrap_volunteers || s.sponsor_pack_volunteers || '—';
 
   // Analytics
-  const totalViews = s.wrap_total_views || '';
+  const computedViews = completedRoutes.reduce((sum, r) => sum + (parseInt(r.views) || 0), 0);
+  const totalViews = computedViews > 0 ? computedViews : (s.wrap_total_views || '');
   const desktopMobile = s.wrap_desktop_mobile || '';
   const popularRoute = s.wrap_most_popular_route || '';
   const socialFollowers = s.wrap_social_followers || s.wrap_facebook_followers || s.sponsor_pack_facebook_followers || '';
