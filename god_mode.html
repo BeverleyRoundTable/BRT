@@ -3,342 +3,294 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>God Mode</title>
+  <title>God Mode — TurboSanta National</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
   <style>
-  :root {
-    --bg: #1D1D1A;         /* Official Table Grey */
-    --surface: #262622;
-    --surface-2: #2f2f2a;
-    --border: rgba(255,255,255,0.08);
-    --text: #f0f0f0;
-    --text-dim: rgba(255,255,255,0.5);
-    --text-muted: rgba(255,255,255,0.3);
-    --gold: #FBAF33;       /* Official Golden Yellow */
-    --gold-dim: rgba(251,175,51,0.12);
+    /* ═══════════════════════════════════════ */
+    /* TURBOSANTA DESIGN SYSTEM */
+    /* ═══════════════════════════════════════ */
+    :root {
+      --gold: #FBAF33;
+      --gold-dim: rgba(251,175,51,0.12);
+      --gold-glow: rgba(251,175,51,0.25);
+      --dark: #0d0d0b;
+      --surface: #161614;
+      --surface-2: #1e1e1b;
+      --surface-3: #252522;
+      --border: rgba(255,255,255,0.08);
+      --border-gold: rgba(251,175,51,0.2);
+      --red: #D31C1C;
+      --green: #2ecc71;
+      --text: #eaeae5;
+      --text-dim: rgba(255,255,255,0.55);
+      --text-muted: rgba(255,255,255,0.3);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── LOADER ── */
+    .loader {
+      position: fixed; inset: 0; background: var(--dark);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px; z-index: 9999;
+      transition: opacity 0.4s;
+    }
+    .loader.done { opacity: 0; pointer-events: none; }
+    .loader-spin {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── ERROR DISPLAY ── */
+    .error-msg {
+      text-align: center; padding: 80px 24px; color: var(--red);
+      font-size: 1.1em; max-width: 600px; margin: 0 auto;
+    }
+    .error-msg code {
+      background: var(--surface-2); padding: 4px 10px; border-radius: 6px; 
+      font-size: 0.85em; font-family: 'DM Mono', monospace;
+    }
+
+    .dashboard { max-width: 1440px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── TOP BAR ── */
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 32px; flex-wrap: wrap; gap: 16px;
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 16px; }
+    .top-bar .logo {
+      width: 54px; height: 54px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border); padding: 4px;
+    }
+    .top-bar .title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; }
+    .top-bar .title span { color: var(--gold); }
+
+    .top-bar-right { display: flex; align-items: center; gap: 20px; }
+
+    .live-badge {
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; 
+      text-transform: uppercase; letter-spacing: 1.5px; 
+      color: var(--green); background: rgba(46,204,113,0.1);
+      padding: 8px 16px; border-radius: 100px; border: 1px solid rgba(46,204,113,0.2);
+    }
+    .live-dot {
+      width: 8px; height: 8px; background: var(--green);
+      border-radius: 50%; animation: pulseBadge 1.5s ease-in-out infinite;
+    }
+    .live-badge.stale { color: var(--red); background: rgba(211,28,28,0.1); border-color: rgba(211,28,28,0.2); }
+    .live-badge.stale .live-dot { background: var(--red); animation: none; }
+    @keyframes pulseBadge {
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0px var(--green); }
+      50% { opacity: 0.5; transform: scale(0.8); box-shadow: 0 0 8px var(--green); }
+    }
+
+    .clock {
+      font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 600; color: var(--text-dim);
+    }
+
+    /* ── STAT CARDS ── */
+    .stats-row {
+      display: grid; 
+      grid-template-columns: repeat(5, 1fr); 
+      gap: 16px; margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px 20px; text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .stat-card .label {
+      font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700; 
+      text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 8px;
+    }
+    .stat-card .value {
+      font-family: 'Bebas Neue', sans-serif; font-size: 42px; font-weight: 400; line-height: 1;
+      letter-spacing: 1px;
+    }
+    .stat-card .sub { font-size: 12px; color: var(--text-dim); margin-top: 8px; font-weight: 500; }
+    .stat-card .value.gold { color: var(--gold); }
+    .stat-card .value.green { color: var(--green); }
+    .stat-card .value.red { color: var(--red); }
+
+    /* ── MAIN GRID ── */
+    .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+
+    .map-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden; position: relative; min-height: 500px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    }
+    #godMap { width: 100%; height: 100%; min-height: 500px; z-index: 1; }
+    .map-overlay-label {
+      position: absolute; top: 16px; left: 16px;
+      background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+      font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700; 
+      text-transform: uppercase; letter-spacing: 1.5px; padding: 8px 14px; 
+      border-radius: 8px; z-index: 1000; pointer-events: none;
+    }
+
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px;
+    }
+    .panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .panel-header .icon { font-size: 20px; }
+    .panel-header h3 {
+      font-family: 'Bebas Neue', sans-serif; font-size: 24px;
+      letter-spacing: 1.5px; color: #fff; line-height: 1;
+    }
+
+    /* ── INPUTS & SELECTS ── */
+    .pa-input {
+      width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+      color: #fff; padding: 14px; border-radius: 8px; font-family: 'DM Sans', sans-serif; 
+      font-size: 14px; margin-bottom: 12px; outline: none; transition: border-color 0.2s;
+    }
+    .pa-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
     
-    /* Replaced non-brand Red and Green with Brand Compliant versions */
-    --red: #d31c1c;        /* Kept for emergency but subdued */
-    --green: #FBAF33;      /* Swapped green for Gold  */
-    --green-dim: rgba(251,175,51,0.15);
-    --red-dim: rgba(211,28,28,0.12);
-  }
+    select.pa-input { font-family: 'DM Sans', sans-serif; font-weight: 600; cursor: pointer; }
+    select.pa-input option { background: var(--surface-2); color: #fff; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+    .pa-btns { display: flex; gap: 10px; }
+    .pa-btns button {
+      flex: 1; padding: 12px; font-family: 'DM Sans', sans-serif; font-weight: 700; 
+      border-radius: 8px; cursor: pointer; border: none; transition: 0.2s; font-size: 13px;
+    }
+    .pa-btns button:active { transform: scale(0.96); }
+    
+    .btn-broadcast { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    .btn-broadcast.live-active { 
+      background: var(--gold) !important; color: #000 !important;
+      font-weight: 800 !important; text-transform: uppercase;
+      animation: pulseBroadcast 1.5s infinite; 
+    }
+    @keyframes pulseBroadcast {
+      0% { box-shadow: 0 0 0 0 rgba(251, 175, 51, 0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(251, 175, 51, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(251, 175, 51, 0); }
+    }
 
-  body {
-    font-family: 'Open Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-  }
+    .btn-clear { background: var(--surface-3); color: var(--text-dim); border: 1px solid var(--border); }
 
-  .loader {
-    position: fixed; inset: 0; background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 16px; z-index: 9999;
-    transition: opacity 0.4s;
-  }
-  .loader.done { opacity: 0; pointer-events: none; }
-  .loader-spin {
-    width: 40px; height: 40px;
-    border: 3px solid var(--border);
-    border-top-color: var(--gold);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+    /* ── CREW ALERT ── */
+    .crew-alert-panel { border-color: rgba(211,28,28,0.2) !important; }
+    .crew-alert-badge {
+      font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 700; 
+      text-transform: uppercase; letter-spacing: 1px; color: var(--red);
+      background: rgba(211,28,28,0.08); border: 1px solid rgba(211,28,28,0.2);
+      padding: 4px 10px; border-radius: 4px; margin-left: auto;
+    }
+    .btn-crew-send { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    .btn-crew-send.crew-active {
+      background: var(--red) !important; color: #fff !important;
+      animation: pulseCrew 1.5s infinite;
+    }
+    @keyframes pulseCrew {
+      0% { box-shadow: 0 0 0 0 rgba(211,28,28,0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(211,28,28,0); }
+      100% { box-shadow: 0 0 0 0 rgba(211,28,28,0); }
+    }
 
-  .error-msg {
-    text-align: center; padding: 80px 24px; color: #ff6b6b;
-    font-size: 1.1em; max-width: 600px; margin: 0 auto;
-  }
-  .error-msg code {
-    background: var(--surface); padding: 4px 10px; border-radius: 6px; font-size: 0.85em;
-  }
+    /* ── MESSAGES ── */
+    .msg-item { background: var(--surface-2); padding: 16px; border-radius: 10px; margin-bottom: 12px; border-left: 4px solid #c88bff; }
+    .msg-text { font-size: 14px; margin-bottom: 14px; color: #fff; font-style: italic; line-height: 1.5; }
+    .msg-actions { display: flex; gap: 8px; }
+    .btn-approve { background: #c88bff; color: #000; border: none; padding: 10px; border-radius: 6px; cursor: pointer; flex: 2; font-weight: 700; font-size: 13px; }
+    .btn-reject { background: var(--surface-3); color: var(--red); border: 1px solid var(--border); padding: 10px; border-radius: 6px; cursor: pointer; flex: 1; font-weight: 700; font-size: 13px; }
 
-  .dashboard { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .active-user-msg { 
+      background: rgba(200, 139, 255, 0.1); border: 1px solid rgba(200, 139, 255, 0.3); 
+      color: #e6c2ff; padding: 16px; border-radius: 10px; margin-bottom: 16px; 
+      font-size: 14px; font-weight: 700; display: none; text-align: center;
+    }
 
-  /* ── TOP BAR ── */
-  .top-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
-  }
-  .top-bar-left { display: flex; align-items: center; gap: 14px; }
-  .top-bar .logo {
-    width: 48px; height: 48px; border-radius: 12px;
-    object-fit: contain; background: rgba(255,255,255,0.06); padding: 2px;
-  }
-  .top-bar .title { font-size: 1.4em; font-weight: 800; letter-spacing: -0.02em; }
-  .top-bar .title span { color: var(--gold); }
-  .top-bar-right { display: flex; align-items: center; gap: 16px; }
+    /* ── GPS INFO ── */
+    .gps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .gps-item { background: var(--surface-2); border-radius: 8px; border: 1px solid var(--border); padding: 14px; }
+    .gps-label {
+      font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 700; 
+      text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px;
+    }
+    .gps-value { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 700; color: #fff; }
 
-  .live-badge {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 0.78em; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--green); background: var(--green-dim);
-    padding: 6px 14px; border-radius: 100px;
-  }
-  .live-dot {
-    width: 8px; height: 8px; background: var(--green);
-    border-radius: 50%; animation: pulse 1.5s ease-in-out infinite;
-  }
-  .live-badge.stale { color: var(--red); background: var(--red-dim); }
-  .live-badge.stale .live-dot { background: var(--red); animation: none; }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.8); }
-  }
+    /* ── ROUTE PROGRESS ── */
+    .route-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px; background: var(--surface-2); border-radius: 8px; margin-bottom: 8px;
+    }
+    .route-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; }
+    .route-value { font-size: 14px; font-weight: 700; color: #fff; }
+    .route-value.gold { color: var(--gold); }
+    .streets-scroll {
+      max-height: 160px; overflow-y: auto; font-family: 'DM Mono', monospace; font-size: 11px;
+      color: var(--text-dim); line-height: 2; padding: 12px; background: var(--surface-3); border-radius: 8px; margin-top: 10px;
+    }
 
-  .clock {
-    font-size: 1.4em; font-weight: 700; color: var(--text-dim);
-    font-variant-numeric: tabular-nums;
-  }
+    /* ── HEATMAP UI ── */
+    .heatmap-controls { display: none; margin-top: 15px; background: var(--surface-3); padding: 16px; border-radius: 10px; border: 1px solid var(--border); }
+    .heatmap-controls.active { display: block; }
+    .heatmap-controls select { 
+      width: 100%; margin-bottom: 10px; padding: 12px; background: var(--surface-2); color: var(--gold); 
+      font-weight: 700; border: 1px solid var(--border); border-radius: 8px; outline: none; font-family: 'DM Sans', sans-serif;
+    }
+    .btn-heat { 
+      background: var(--surface-2); color: var(--red); border: 1px solid var(--border); 
+      margin-top: 16px; width: 100%; padding: 14px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s;
+    }
+    .btn-heat.active { background: var(--red); color: #fff; border-color: var(--red); box-shadow: 0 0 20px rgba(211, 28, 28, 0.3); }
 
-  /* ── STAT CARDS ── */
-  .stats-row {
-    display: grid; 
-    grid-template-columns: repeat(5, 1fr); 
-    gap: 16px; margin-bottom: 24px;
-  }
-  .stat-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 24px 20px; text-align: center;
-    position: relative; overflow: hidden;
-  }
-  .stat-card .label {
-    font-size: 0.7em; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;
-  }
-  .stat-card .value {
-    font-size: 2.2em; font-weight: 800; line-height: 1;
-    letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
-  }
-  .stat-card .sub { font-size: 0.75em; color: var(--text-muted); margin-top: 6px; }
-  .stat-card .value.gold { color: var(--gold); }
-  .stat-card .value.green { color: var(--green); }
-  .stat-card .value.red { color: var(--red); }
+    /* ── DONATIONS ── */
+    .donation-mini { display: flex; flex-direction: column; gap: 12px; }
+    .donation-labels { display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; }
+    .donation-bar-outer { height: 12px; background: var(--surface-2); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+    .donation-bar-inner {
+      height: 100%; background: linear-gradient(90deg, var(--red), var(--gold));
+      border-radius: 10px; transition: width 1s ease;
+    }
 
-  /* ── MAIN GRID ── */
-  .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
+    /* ── FOOTER ── */
+    .last-updated {
+      text-align: center; font-family: 'DM Mono', monospace; font-size: 11px; 
+      color: var(--text-muted); margin-top: 40px; padding-bottom: 24px; text-transform: uppercase; letter-spacing: 1px;
+    }
 
-  .map-panel {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; overflow: hidden; position: relative; min-height: 500px;
-  }
-  #godMap { width: 100%; height: 100%; min-height: 500px; z-index: 1; }
-  .map-overlay-label {
-    position: absolute; top: 12px; left: 12px;
-    background: rgba(29,29,26,0.85); color: var(--text);
-    font-size: 0.72em; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.08em; padding: 6px 12px; border-radius: 8px;
-    z-index: 1000; pointer-events: none;
-  }
+    /* ⭐ GPS HEALTH VISUALS */
+    .gps-health-tl { display: flex; align-items: flex-end; gap: 2px; height: 40px; margin-top: 16px; background: var(--surface-3); padding: 4px; border-radius: 6px; }
+    .tl-bar { flex: 1; min-height: 2px; border-radius: 2px; transition: height 0.3s, background 0.3s; }
+    .gps-health-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 100px;
+      font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    }
+    .gps-health-dot { width: 8px; height: 8px; border-radius: 50%; }
 
-  .sidebar { display: flex; flex-direction: column; gap: 16px; }
-  .panel {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 20px;
-  }
-  .panel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-  .panel-header .icon { font-size: 1.2em; }
-  .panel-header h3 {
-    font-size: 0.85em; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.06em; color: var(--text-dim);
-  }
-
-  /* ── PA SYSTEM ── */
-  .pa-input {
-    width: 100%; background: var(--surface-2); border: 1px solid var(--border);
-    color: white; padding: 12px; border-radius: 8px; font-family: inherit; font-size: 0.9em;
-    margin-bottom: 10px; outline: none; box-sizing: border-box;
-  }
-  .pa-input:focus { border-color: var(--gold); }
-  
-  select.pa-input { cursor: pointer; }
-  select.pa-input option { background: var(--surface); color: var(--text); }
-
-  .pa-btns { display: flex; gap: 8px; }
-  .pa-btns button {
-    flex: 1; padding: 10px; font-weight: bold; border-radius: 8px; cursor: pointer;
-    border: none; transition: 0.2s; font-family: inherit; font-size: 0.85em;
-  }
-  .pa-btns button:active { transform: scale(0.96); }
-  
-  .btn-broadcast { 
-    background: var(--surface-2); 
-    color: var(--text-dim); 
-    border: 1px solid var(--border);
-  }
-  
-  .btn-broadcast.live-active { 
-    background: var(--gold) !important; 
-    color: #000000 !important; 
-    font-weight: 900 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border: 2px solid #ffffff !important;
-    animation: pulse-broadcast 1.5s infinite; 
-  }
-  
-  @keyframes pulse-broadcast {
-    0% { box-shadow: 0 0 0 0 rgba(251, 175, 51, 0.9); transform: scale(1); }
-    50% { box-shadow: 0 0 0 15px rgba(251, 175, 51, 0); transform: scale(1.02); }
-    100% { box-shadow: 0 0 0 0 rgba(251, 175, 51, 0); transform: scale(1); }
-  }
-
-  .btn-clear { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
-
-  /* ── CREW ALERT PANEL ── */
-  .crew-alert-panel { border-color: rgba(211,28,28,0.25) !important; }
-  .crew-alert-panel .panel-header h3 { color: var(--red) !important; }
-  .crew-alert-badge {
-    font-size: 0.65em; font-weight: 800; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--text-muted);
-    background: var(--surface-2); border: 1px solid var(--border);
-    padding: 3px 8px; border-radius: 4px; margin-left: auto;
-  }
-  .btn-crew-send { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
-  .btn-crew-send.crew-active {
-    background: var(--red) !important; color: #ffffff !important;
-    font-weight: 900 !important; text-transform: uppercase; letter-spacing: 0.05em;
-    border: 2px solid rgba(255,255,255,0.3) !important;
-    animation: pulse-crew 1.5s infinite;
-  }
-  @keyframes pulse-crew {
-    0% { box-shadow: 0 0 0 0 rgba(211,28,28,0.8); transform: scale(1); }
-    50% { box-shadow: 0 0 0 12px rgba(211,28,28,0); transform: scale(1.02); }
-    100% { box-shadow: 0 0 0 0 rgba(211,28,28,0); transform: scale(1); }
-  }
-
-  /* ── USER MESSAGES ── */
-  .msg-item { background: var(--surface-2); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #c88bff; }
-  .msg-text { font-size: 0.95em; margin-bottom: 10px; color: var(--text); font-style: italic; }
-  .msg-actions { display: flex; gap: 8px; }
-  .btn-approve { background: #c88bff; color: #000; border: none; padding: 6px; border-radius: 6px; cursor: pointer; flex: 1; font-weight: bold; }
-  .btn-reject { background: var(--surface); color: #ff6b6b; border: 1px solid var(--border); padding: 6px; border-radius: 6px; cursor: pointer; flex: 1; }
-
-  /* ⭐ NEW: Active User Message Display */
-  .active-user-msg { 
-    background: rgba(200, 139, 255, 0.15); border: 1px solid #c88bff; 
-    color: #e6c2ff; padding: 12px; border-radius: 8px; margin-bottom: 12px; 
-    font-size: 0.9em; font-weight: bold; display: none; 
-    animation: userPulseDash 1.5s infinite; text-align: center;
-  }
-  .active-user-msg span { font-style: italic; color: #fff; font-weight: normal; }
-  @keyframes userPulseDash {
-    0% { box-shadow: 0 0 0 0 rgba(200, 139, 255, 0.4); }
-    50% { box-shadow: 0 0 0 10px rgba(200, 139, 255, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(200, 139, 255, 0); }
-  }
-
-  /* ── GPS INFO ── */
-  .gps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .gps-item { background: var(--surface-2); border-radius: 10px; padding: 12px; }
-  .gps-item .gps-label {
-    font-size: 0.68em; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 4px;
-  }
-  .gps-item .gps-value { font-size: 1.05em; font-weight: 700; font-variant-numeric: tabular-nums; }
-
-  /* ── ROUTE INFO ── */
-  .route-info { display: flex; flex-direction: column; gap: 10px; }
-  .route-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 14px; background: var(--surface-2); border-radius: 10px;
-  }
-  .route-row .route-label { font-size: 0.78em; color: var(--text-dim); font-weight: 600; }
-  .route-row .route-value { font-size: 0.9em; font-weight: 700; }
-  .route-row .route-value.gold { color: var(--gold); }
-  .no-route { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.85em; }
-
-  /* ── HEATMAP CONTROLS UI ── */
-  .heatmap-controls { display: none; margin-top: 15px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; }
-  .heatmap-controls.active { display: block; animation: slideDown 0.3s ease-out; }
-  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-  .heatmap-controls select { width: 100%; margin-bottom: 8px; padding: 10px; background: var(--surface-2); color: var(--gold); font-weight: bold; border: 1px solid var(--border); border-radius: 8px; outline: none; cursor: pointer; }
-  .btn-heat { background: var(--surface-2); color: #ff6b6b; border: 1px solid var(--border); margin-top: 12px; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: inherit;}
-  .btn-heat:active { transform: scale(0.96); }
-  .btn-heat.active { background: #ff6b6b; color: #000; border-color: #ff6b6b; box-shadow: 0 0 15px rgba(255, 107, 107, 0.4); }
-
-  /* ── DONATIONS ── */
-  .donation-mini { display: flex; flex-direction: column; gap: 8px; }
-  .donation-labels { display: flex; justify-content: space-between; font-size: 0.8em; font-weight: 700; }
-  .donation-labels .raised { color: var(--gold); }
-  .donation-labels .target { color: var(--text-muted); }
-  .donation-bar-outer { height: 16px; background: var(--surface-2); border-radius: 8px; overflow: hidden; }
-  .donation-bar-inner {
-    height: 100%; background: linear-gradient(90deg, var(--red), var(--gold));
-    border-radius: 8px; transition: width 1s ease; min-width: 8px;
-  }
-  .donation-pct { text-align: center; font-size: 0.75em; font-weight: 700; color: var(--text-muted); }
-
-  /* ── STREETS ── */
-  .streets-scroll {
-    max-height: 180px; overflow-y: auto; font-size: 0.82em;
-    color: var(--text-dim); line-height: 1.8; padding-right: 8px; margin-top: 8px;
-  }
-  .streets-scroll::-webkit-scrollbar { width: 4px; }
-  .streets-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .last-updated {
-    text-align: center; font-size: 0.7em; color: var(--text-muted);
-    margin-top: 20px; font-variant-numeric: tabular-nums;
-  }
-
-  /* Leaflet dark tiles filter */
-  .leaflet-tile-pane { filter: brightness(0.85) saturate(0.9); }
-
-  /* Fix Leaflet controls z-index inside panel */
-  .leaflet-top, .leaflet-bottom { z-index: 500 !important; }
-
-  @media (max-width: 900px) {
-    .stats-row { grid-template-columns: repeat(3, 1fr); } 
-    .main-grid { grid-template-columns: 1fr; }
-    .map-panel { min-height: 400px; }
-  }
-  @media (max-width: 500px) {
-    .stats-row { grid-template-columns: 1fr 1fr; } 
-    .dashboard { padding: 16px; }
-    .top-bar .title { font-size: 1.1em; }
-  }
-
-    /* ⭐ GPS HEALTH — Timeline & Badge Styles */
-  .gps-health-tl {
-    display: flex; align-items: flex-end; gap: 1.5px;
-    height: 32px; margin-top: 14px;
-  }
-  .gps-health-tl .tl-bar {
-    flex: 1; min-height: 2px; border-radius: 1.5px;
-    transition: height 0.3s, background 0.3s;
-  }
-  .gps-health-tl-labels {
-    display: flex; justify-content: space-between;
-    font-size: 0.6em; font-weight: 600; letter-spacing: 0.5px;
-    color: var(--text-muted); margin-top: 4px;
-  }
-  .gps-health-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 3px 10px; border-radius: 16px;
-    font-size: 0.65em; font-weight: 800; letter-spacing: 1px;
-    text-transform: uppercase; transition: all 0.3s;
-  }
-  .gps-health-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    transition: all 0.3s; flex-shrink: 0;
-  }
-  @keyframes gphDotPulse {
-    0% { box-shadow: 0 0 0 0 rgba(0,230,118,0.5); }
-    70% { box-shadow: 0 0 0 5px rgba(0,230,118,0); }
-    100% { box-shadow: 0 0 0 0 rgba(0,230,118,0); }
-  }
-</style>
+    /* Leaflet Night Overlays */
+    .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.4) contrast(0.9); }
+    .leaflet-container { background: #000 !important; }
+  </style>
 </head>
 <body>
 
@@ -352,11 +304,10 @@ const STATE = {
   settings: {}, routes: [], donations: {}, tracker: {}, streets: [],
   gps: null, activeViewers: 0, totalWaves: 0, 
   lastApiUpdate: null, lastGpsUpdate: null, lastViewerUpdate: null,
-  // Leaflet state
   map: null, marker: null, routeGlowLayer: null, routeMainLayer: null, gpxLoaded: false
 };
 
-  function haversineMeters(a, b) {
+function haversineMeters(a, b) {
   const R = 6371000;
   const dLat = (b.lat - a.lat) * Math.PI / 180;
   const dLng = (b.lng - a.lng) * Math.PI / 180;
@@ -415,7 +366,6 @@ async function init() {
   document.getElementById('loader').classList.add('done');
   
   fetchGps();
-  // ⭐ GPS HEALTH: Start direct Firebase polling (2s interval)
   if (STATE.tracker.firebase_url) {
     GpsHealth.init(STATE.tracker.firebase_url.replace(/\/$/, ""));
   }
@@ -425,11 +375,9 @@ async function init() {
   setInterval(fetchApiData, 30000);
   setInterval(fetchGps, 5000);
   setInterval(fetchViewers, 10000);
-  setInterval(fetchWeather, 900000); // 15 mins
+  setInterval(fetchWeather, 900000);
   setInterval(updateClock, 1000);
   setInterval(updateGpsAge, 1000);
-  
-  // ⭐ NEW: Keep the active user message UI synced perfectly with the clock
   setInterval(updateUserMsgState, 1000);
 }
 
@@ -456,7 +404,7 @@ async function fetchApiData() {
 
     updateDashboard();
     updateCrewAlertButtonState();
-    updateUserMsgState(); // Ensure the active message display updates
+    updateUserMsgState();
   } catch(e) { console.error('API:', e); }
 }
 
@@ -467,10 +415,7 @@ async function fetchGps() {
     if (data && data.lat) { 
       STATE.gps = data; 
       STATE.lastGpsUpdate = new Date(); 
-      
-      if (!STATE.weather) {
-        fetchWeather();
-      }
+      if (!STATE.weather) fetchWeather();
     }
     updateGps();
   } catch(e) { console.error('GPS:', e); }
@@ -502,15 +447,7 @@ function getWeatherEmoji(code) {
 async function fetchWeather() {
   const lat = STATE.gps?.lat; 
   const lng = STATE.gps?.lng;
-
-  if (!lat || !lng) {
-    const container = document.getElementById('weatherDetail');
-    if (container) {
-      container.innerHTML = '<div class="no-route">Waiting for location data...</div>';
-    }
-    return;
-  }
-
+  if (!lat || !lng) return;
   try {
     const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&windspeed_unit=mph`);
     const data = await res.json();
@@ -524,25 +461,14 @@ async function fetchWeather() {
 function updateWeather() {
   const container = document.getElementById('weatherDetail');
   if (!container || !STATE.weather) return;
-  
   const w = STATE.weather;
   const condition = getWeatherEmoji(w.weathercode);
   const conditionColor = w.weathercode > 50 ? 'color: var(--red);' : '';
-  
   container.innerHTML = `
     <div class="gps-grid">
-      <div class="gps-item" style="grid-column: span 2;">
-        <div class="gps-label">Condition</div>
-        <div class="gps-value" style="${conditionColor}">${condition}</div>
-      </div>
-      <div class="gps-item">
-        <div class="gps-label">Temp</div>
-        <div class="gps-value">${w.temperature}°C</div>
-      </div>
-      <div class="gps-item">
-        <div class="gps-label">Wind</div>
-        <div class="gps-value">${w.windspeed} mph</div>
-      </div>
+      <div class="gps-item" style="grid-column: span 2;"><div class="gps-label">Condition</div><div class="gps-value" style="${conditionColor}">${condition}</div></div>
+      <div class="gps-item"><div class="gps-label">Temp</div><div class="gps-value">${w.temperature}°C</div></div>
+      <div class="gps-item"><div class="gps-label">Wind</div><div class="gps-value">${w.windspeed} mph</div></div>
     </div>`;
 }
   
@@ -584,33 +510,21 @@ async function sendAnnouncement() {
   const msg = document.getElementById('paInput').value.trim();
   const btn = document.getElementById('broadcastBtn');
   const secret = sessionStorage.getItem('sleighSecret') || ''; 
-  
   btn.innerText = "Sending...";
-  btn.style.background = "var(--surface-2)";
-  btn.style.color = "var(--text-dim)";
-  
   try {
     const response = await fetch(API, { 
       method: "POST", 
-      body: JSON.stringify({ 
-        action: "updateAnnouncement", 
-        message: msg,
-        secret: secret 
-      }) 
+      body: JSON.stringify({ action: "updateAnnouncement", message: msg, secret: secret }) 
     });
-    
     const result = await response.json();
-    
     if (result.ok) {
       STATE.settings.live_announcement = msg;
     } else {
       alert("Action Blocked: " + result.error); 
     }
-    
     updatePaButtonState();
-    
   } catch(e) { 
-    alert('Failed to update announcement. Check connection.'); 
+    alert('Failed to update announcement.'); 
     updatePaButtonState(); 
   }
 }
@@ -624,11 +538,7 @@ function updatePaButtonState() {
   const btn = document.getElementById('broadcastBtn');
   const paInput = document.getElementById("paInput");
   const msg = STATE.settings.live_announcement || '';
-  
-  if (paInput && document.activeElement !== paInput) {
-    paInput.value = msg;
-  }
-
+  if (paInput && document.activeElement !== paInput) paInput.value = msg;
   if (msg.trim() !== '') {
     btn.innerText = "ACTIVE ON TRACKER";
     btn.className = "btn-broadcast live-active";
@@ -643,24 +553,15 @@ async function sendCrewAlert() {
   const btn = document.getElementById('crewAlertBtn');
   const secret = sessionStorage.getItem('sleighSecret') || '';
   btn.innerText = "Sending...";
-  btn.style.background = "var(--surface-2)";
-  btn.style.color = "var(--text-dim)";
   try {
     const response = await fetch(API, {
       method: "POST",
       body: JSON.stringify({ action: "updateCrewAlert", message: msg, secret })
     });
     const result = await response.json();
-    if (result.ok) {
-      STATE.settings.crew_alert = msg;
-    } else {
-      alert("Action Blocked: " + result.error);
-    }
+    if (result.ok) STATE.settings.crew_alert = msg;
     updateCrewAlertButtonState();
-  } catch(e) {
-    alert('Failed to send crew alert. Check connection.');
-    updateCrewAlertButtonState();
-  }
+  } catch(e) { alert('Failed alert.'); updateCrewAlertButtonState(); }
 }
 
 async function clearCrewAlert() {
@@ -691,257 +592,129 @@ function buildDashboard() {
 
   const presetList = Array.isArray(s.presets) ? s.presets : [];
   let presetOptionsHTML = '<select class="pa-input" id="paSelect" onchange="if(this.value){ document.getElementById(\'paInput\').value = this.value; this.value=\'\'; }">';
-  
   if (presetList.length > 0) {
-    presetOptionsHTML += '<option value="">-- Quick select a preset message --</option>';
+    presetOptionsHTML += '<option value="">Quick select preset...</option>';
     presetList.forEach(p => {
-      if (p && String(p).trim() !== '') {
-        const cleanStr = String(p).trim();
-        const safeVal = cleanStr.replace(/"/g, '&quot;');
-        presetOptionsHTML += `<option value="${safeVal}" title="${safeVal}">${cleanStr}</option>`;
-      }
+      const cleanStr = String(p).trim();
+      presetOptionsHTML += `<option value="${cleanStr.replace(/"/g, '&quot;')}">${cleanStr}</option>`;
     });
-  }
-  else {
-    presetOptionsHTML += '<option value="" disabled selected>No presets loaded from settings</option>';
+  } else {
+    presetOptionsHTML += '<option value="" disabled selected>No presets found</option>';
   }
   presetOptionsHTML += '</select>';
 
-  let h = '<div class="dashboard">';
-
-  h += `<div class="top-bar">
+  let h = `<div class="dashboard">
+  <div class="top-bar">
     <div class="top-bar-left">
       ${logo ? `<img class="logo" src="${logo}">` : ''}
-      <div class="title"><span>God</span> Mode</div>
+      <div class="title">GOD <span>MODE</span></div>
     </div>
     <div class="top-bar-right">
       <div class="live-badge" id="liveBadge"><div class="live-dot"></div><span id="liveBadgeText">CONNECTING</span></div>
       <div class="clock" id="clock">${fmtTime(new Date())}</div>
     </div>
-  </div>`;
+  </div>
 
-  h += `<div class="stats-row">
+  <div class="stats-row">
     <div class="stat-card">
       <div class="label">Active Route</div>
-      <div class="value gold" id="statRoute" style="font-size:1.6em">${todayRoute?.routeName || '—'}</div>
-      
-      <div class="sub" id="statRouteDate" style="display: none;">${todayRoute ? 'Tonight' : 'No route today'}</div>
-      
-      <div class="sub" id="godProgressWrapper" style="margin-top: 10px; display: ${todayRoute ? 'block' : 'none'};">
-        <div style="background: var(--surface-2); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 4px;">
-          <div id="godProgressBar" style="background: var(--gold); width: 0%; height: 100%; transition: width 1s ease-in-out;"></div>
-        </div>
-        <div id="godProgressText" style="font-weight: bold; color: var(--gold);">0% Complete</div>
+      <div class="value gold" id="statRoute">${todayRoute?.routeName || '—'}</div>
+      <div class="sub" id="statRouteDate" style="display: none;">Tonight</div>
+      <div id="godProgressWrapper" style="margin-top: 14px; display: ${todayRoute ? 'block' : 'none'};">
+        <div class="donation-bar-outer"><div id="godProgressBar" class="donation-bar-inner" style="width: 0%"></div></div>
+        <div id="godProgressText" style="font-family:'DM Mono', monospace; font-size:10px; font-weight:700; margin-top:6px; color:var(--gold);">0% COMPLETE</div>
       </div>
     </div>
-    
-    <div class="stat-card">
-      <div class="label">Live Viewers</div>
-      <div class="value green" id="statViewers">—</div>
-      <div class="sub">Last 5 minutes</div>
-    </div>
-    
-    <div class="stat-card">
-    <div class="label">Messages Sent</div>
-    <div class="value gold" id="statWaves">—</div>
-    <div class="sub">Pending approval</div>
-    </div>
+    <div class="stat-card"><div class="label">Live Viewers</div><div class="value green" id="statViewers">—</div><div class="sub">Current active</div></div>
+    <div class="stat-card"><div class="label">Messages</div><div class="value gold" id="statWaves">0</div><div class="sub">Pending approval</div></div>
+    <div class="stat-card"><div class="label">GPS Health</div><div class="value" id="statGpsStatus">—</div><div class="sub" id="statGpsAge">Waiting...</div><div class="sub" id="statGpsRate" style="color:var(--text-muted);font-size:9px;margin-top:2px;"></div></div>
+    <div class="stat-card"><div class="label">Raised</div><div class="value gold" id="statRaised">${currency}0</div><div class="sub" id="statTarget">of target</div></div>
+  </div>
 
-    <div class="stat-card">
-      <div class="label">GPS Health</div>
-      <div class="value" id="statGpsStatus">—</div>
-      <div class="sub" id="statGpsAge">Waiting...</div>
-      <div class="sub" id="statGpsRate" style="color: var(--text-muted); margin-top: 2px;"></div>
-    </div>
-    
-    <div class="stat-card">
-      <div class="label">Raised So Far</div>
-      <div class="value gold" id="statRaised">${currency}${(STATE.donations.total || 0).toLocaleString()}</div>
-      <div class="sub" id="statTarget">of ${currency}${(STATE.donations.target || 0).toLocaleString()}</div>
-    </div>
-    
-  </div>`;
-
-  h += `<div class="main-grid">
-    <div class="map-panel">
-      <div class="map-overlay-label" id="mapLabel">Live Position</div>
-      <div id="godMap"></div>
-    </div>
+  <div class="main-grid">
+    <div class="map-panel"><div class="map-overlay-label" id="mapLabel">Live Position</div><div id="godMap"></div></div>
     <div class="sidebar">
-
       <div class="panel">
         <div class="panel-header"><span class="icon">📢</span><h3>Live PA System</h3></div>
-        
         ${presetOptionsHTML}
-        
-        <input type="text" id="paInput" class="pa-input" placeholder="Type a custom alert or select above..." value="${s.live_announcement || ''}" />
+        <input type="text" id="paInput" class="pa-input" placeholder="Custom alert..." value="${s.live_announcement || ''}" />
         <div class="pa-btns">
-          <button id="broadcastBtn" class="btn-broadcast" onclick="sendAnnouncement()">Broadcast Live</button>
+          <button id="broadcastBtn" class="btn-broadcast" onclick="sendAnnouncement()">Broadcast</button>
           <button class="btn-clear" onclick="clearAnnouncement()">Clear</button>
         </div>
       </div>
 
       <div class="panel crew-alert-panel">
-        <div class="panel-header">
-          <span class="icon">🔔</span>
-          <h3>Crew Alert</h3>
-          <span class="crew-alert-badge">Crew Hub Only</span>
-        </div>
-        <input type="text" id="crewAlertInput" class="pa-input" placeholder="e.g. Route 2 — delay 10 mins, stand by..." value="${s.crew_alert || ''}" />
+        <div class="panel-header"><span class="icon">🔔</span><h3>Crew Alert</h3><span class="crew-alert-badge">Hub Only</span></div>
+        <input type="text" id="crewAlertInput" class="pa-input" placeholder="Internal alert..." value="${s.crew_alert || ''}" />
         <div class="pa-btns">
-          <button id="crewAlertBtn" class="btn-crew-send" onclick="sendCrewAlert()">Send to Crew</button>
+          <button id="crewAlertBtn" class="btn-crew-send" onclick="sendCrewAlert()">Update Hub</button>
           <button class="btn-clear" onclick="clearCrewAlert()">Clear</button>
         </div>
       </div>
 
       <div class="panel" id="userMessagesPanel" style="display: none;">
-        <div class="panel-header">
-          <span class="icon">💌</span>
-          <h3>User Messages</h3>
-        </div>
-        <div id="activeUserMsgBox" class="active-user-msg">
-          Live Now: <br><span id="activeUserMsgText"></span>
-        </div>
-        <div id="pendingMessagesQueue">
-           <div class="no-route">No pending messages</div>
-        </div>
+        <div class="panel-header"><span class="icon">💌</span><h3>User Messages</h3></div>
+        <div id="activeUserMsgBox" class="active-user-msg">Live: <br><span id="activeUserMsgText"></span></div>
+        <div id="pendingMessagesQueue"><div class="no-route">No pending messages</div></div>
       </div>
 
       <div class="panel">
-        <div class="panel-header"><span class="icon">🗺️</span><h3>Route & Planning</h3></div>
+        <div class="panel-header"><span class="icon">🗺️</span><h3>Route Info</h3></div>
         <div id="routeDetail"></div>
-        <button id="toggleHeatmapBtn" class="btn-heat" onclick="toggleHeatmap()">🔥Heatmap Mode</button>
+        <button id="toggleHeatmapBtn" class="btn-heat" onclick="toggleHeatmap()">🔥 Heatmap Mode</button>
         <div id="heatmapControls" class="heatmap-controls">
-          <select id="heatType" onchange="drawHeatmap()">
-            <option value="subscribers">📍 Live Subscribers (Waited)</option>
-            <option value="suggestions">✉️ Route Requests (Asked)</option>
-          </select>
-          <select id="heatYear" onchange="drawHeatmap()">
-            <option value="All">All Time</option>
-          </select>
+          <select id="heatType" onchange="drawHeatmap()"><option value="subscribers">📍 Subscribers</option><option value="suggestions">✉️ Requests</option></select>
+          <select id="heatYear" onchange="drawHeatmap()"><option value="All">All Time</option></select>
         </div>
       </div>
 
-      <div class="panel">
-  <div class="panel-header"><span class="icon">☁️</span><h3>Live Weather</h3></div>
-  <div id="weatherDetail">
-    <div class="no-route">Fetching atmosphere data...</div>
-  </div>
-</div>
+      <div class="panel"><div class="panel-header"><span class="icon">☁️</span><h3>Atmosphere</h3></div><div id="weatherDetail"></div></div>
 
       <div class="panel" id="elfCamPanel">
-  <div class="panel-header"><span class="icon">📸</span><h3>Elf Cam</h3></div>
-  <div id="elfCamPreview">
-    <div class="no-route">Waiting for first image...</div>
-  </div>
-  <div style="font-size:0.7em; color:var(--text-muted); margin-top:8px; text-align:center;" id="elfCamAge">No image received</div>
-</div>
+        <div class="panel-header"><span class="icon">📸</span><h3>Elf Cam</h3></div>
+        <div id="elfCamPreview"></div><div id="elfCamAge" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text-muted);text-align:center;margin-top:8px;"></div>
+      </div>
 
       <div class="panel">
-        <div class="panel-header">
-          <span class="icon">📡</span>
-          <h3>GPS Health</h3>
-          <div class="gps-health-badge" id="gphBadge" style="margin-left:auto;">
-            <span class="gps-health-dot" id="gphDot"></span>
-            <span id="gphBadgeText">NO DATA</span>
-          </div>
-        </div>
+        <div class="panel-header"><span class="icon">📡</span><h3>Signal</h3><div class="gps-health-badge" id="gphBadge" style="margin-left:auto;"><span class="gps-health-dot" id="gphDot"></span><span id="gphBadgeText">NO DATA</span></div></div>
         <div class="gps-grid">
-          <div class="gps-item"><div class="gps-label">Fix Age</div><div class="gps-value" id="gphAge" style="font-variant-numeric:tabular-nums;">—</div></div>
-          <div class="gps-item"><div class="gps-label">Fix/min</div><div class="gps-value" id="gphRate" style="font-variant-numeric:tabular-nums;">—</div></div>
-          <div class="gps-item"><div class="gps-label">Latitude</div><div class="gps-value" id="gpsLat">${STATE.gps?.lat || '—'}</div></div>
-          <div class="gps-item"><div class="gps-label">Longitude</div><div class="gps-value" id="gpsLng">${STATE.gps?.lng || '—'}</div></div>
+          <div class="gps-item"><div class="gps-label">Fix Age</div><div class="gps-value" id="gphAge">—</div></div>
+          <div class="gps-item"><div class="gps-label">Rate</div><div class="gps-value" id="gphRate">—</div></div>
+          <div class="gps-item"><div class="gps-label">Lat</div><div class="gps-value" id="gpsLat">—</div></div>
+          <div class="gps-item"><div class="gps-label">Lng</div><div class="gps-value" id="gpsLng">—</div></div>
         </div>
         <div class="gps-health-tl" id="gphTimeline"></div>
-        <div class="gps-health-tl-labels"><span>oldest</span><span>newest</span></div>
       </div>
 
-<div class="panel">
-        <div class="panel-header"><span class="icon">❤️</span><h3>Donations</h3></div>
-        <div id="donationDetail"></div>
-      </div>
+      <div class="panel"><div class="panel-header"><span class="icon">❤️</span><h3>Funds</h3></div><div id="donationDetail"></div></div>
     </div>
+  </div>
+  <div class="last-updated" id="lastUpdated">Connecting...</div>
   </div>`;
-  
-  h += '<div class="last-updated" id="lastUpdated">Connecting...</div>';
-  h += '</div>';
-
-  if (document.getElementById('app').innerHTML === "") {
-    document.getElementById('app').innerHTML = h;
-  }
-  
+  document.getElementById('app').innerHTML = h;
   updateDashboard();
-  updatePaButtonState(); 
-  updateCrewAlertButtonState();
 }
 
 function initMap() {
-  const s = STATE.settings;
-  
-  const startLat = STATE.gps?.lat || 52.47080954243374;
-  const startLng = STATE.gps?.lng || -1.9206740193920633;
-  const startZoom = 15;
-
-  // Added preferCanvas: true right here 👇
-  STATE.map = L.map('godMap', { zoomControl: true }).setView([startLat, startLng], startZoom);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap'
-  }).addTo(STATE.map);
-
-  const iconUrl = s.sleigh_icon_live || 'https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png';
-  STATE.marker = L.marker([startLat, startLng], {
-    icon: L.icon({ iconUrl, iconSize: [64, 64], iconAnchor: [32, 60] })
-  }).addTo(STATE.map);
-
-  const todayRoute = getTodayRoute();
-  const nextRoute = getNextRoute();
-  const route = todayRoute || nextRoute;
-
-  if (route && route.gpxUrl) {
-    loadGpxRoute(route, s);
-  }
+  const startLat = STATE.gps?.lat || 52.4708;
+  const startLng = STATE.gps?.lng || -1.9206;
+  STATE.map = L.map('godMap', { zoomControl: true }).setView([startLat, startLng], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(STATE.map);
+  const iconUrl = STATE.settings.sleigh_icon_live || 'https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png';
+  STATE.marker = L.marker([startLat, startLng], { icon: L.icon({ iconUrl, iconSize: [64, 64], iconAnchor: [32, 60] }) }).addTo(STATE.map);
+  const route = getTodayRoute() || getNextRoute();
+  if (route?.gpxUrl) loadGpxRoute(route, STATE.settings);
 }
 
 function loadGpxRoute(route, settings) {
-  const startIconUrl = settings.sleigh_icon_start || 'https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png';
-  const endIconUrl = settings.sleigh_icon_end || 'https://i.ibb.co/39WF0kBd/Santa-Marker-5.png';
-
-  // ⭐ NEW: Fetch raw points for the progress bar calculation
   fetch(route.gpxUrl).then(r => r.text()).then(text => {
     const xml = new DOMParser().parseFromString(text, "text/xml");
-    const pts = [...xml.getElementsByTagName("trkpt")];
-    STATE.gpxRoute = pts.map(p => ({
-      lat: parseFloat(p.getAttribute("lat")),
-      lng: parseFloat(p.getAttribute("lon"))
-    }));
-  }).catch(e => console.error("Error parsing raw GPX for progress:", e));
-  
-  STATE.routeGlowLayer = new L.GPX(route.gpxUrl, {
-    async: true,
-    // Fix: Added lineCap and lineJoin to prevent massive SVG rendering spikes
-    polyline_options: { color: '#ffd700', weight: 7, opacity: 0.45, lineCap: 'round', lineJoin: 'round' },
-    marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
-  }).addTo(STATE.map);
-
-  STATE.routeMainLayer = new L.GPX(route.gpxUrl, {
-    async: true,
-    // Fix: Added lineCap and lineJoin here as well
-    polyline_options: { color: '#d31c1c', weight: 4, opacity: 0.95, lineCap: 'round', lineJoin: 'round' },
-    marker_options: {
-      startIcon: L.icon({ iconUrl: startIconUrl, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
-      endIcon: L.icon({ iconUrl: endIconUrl, iconSize: [48, 48], iconAnchor: [24, 48], shadowUrl: null }),
-      shadowUrl: null
-    }
-  }).addTo(STATE.map);
-
-  STATE.routeMainLayer.on('loaded', (e) => {
-    STATE.gpxLoaded = true;
-    if (!STATE.gps && !heatmapMode) {
-      STATE.map.fitBounds(e.target.getBounds(), { padding: [30, 30] });
-    }
+    STATE.gpxRoute = [...xml.getElementsByTagName("trkpt")].map(p => ({ lat: parseFloat(p.getAttribute("lat")), lng: parseFloat(p.getAttribute("lon")) }));
   });
+  STATE.routeGlowLayer = new L.GPX(route.gpxUrl, { async: true, polyline_options: { color: '#ffd700', weight: 7, opacity: 0.3, lineCap: 'round' }, marker_options: { startIconUrl: null, endIconUrl: null } }).addTo(STATE.map);
+  STATE.routeMainLayer = new L.GPX(route.gpxUrl, { async: true, polyline_options: { color: '#d31c1c', weight: 4, opacity: 0.9, lineCap: 'round' }, marker_options: { startIcon: L.icon({ iconUrl: settings.sleigh_icon_start || 'https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png', iconSize: [48, 48], iconAnchor: [24, 48] }), endIcon: L.icon({ iconUrl: settings.sleigh_icon_end || 'https://i.ibb.co/39WF0kBd/Santa-Marker-5.png', iconSize: [48, 48], iconAnchor: [24, 48] }) } }).addTo(STATE.map);
+  STATE.routeMainLayer.on('loaded', e => { STATE.gpxLoaded = true; if (!STATE.gps) STATE.map.fitBounds(e.target.getBounds()); });
 }
 
 function updateDashboard() { 
@@ -949,32 +722,18 @@ function updateDashboard() {
   updateDonationDetail(); 
   updateRaisedStat(); 
   updateElfCam();
-  
-  // Hide or Show the User Messages Panel based on the Setting toggle
   const panel = document.getElementById('userMessagesPanel');
-  if (panel) {
-    const isEnabled = String(STATE.settings?.enable_user_messages).toUpperCase() === 'TRUE';
-    panel.style.display = isEnabled ? 'block' : 'none';
-  }
+  if (panel) panel.style.display = String(STATE.settings?.enable_user_messages).toUpperCase() === 'TRUE' ? 'block' : 'none';
 }
 
-// ⭐ NEW: Checks if a user message is currently active and updates the UI
 function updateUserMsgState() {
   const activeMsgBox = document.getElementById('activeUserMsgBox');
-  const activeMsgText = document.getElementById('activeUserMsgText');
-  if (!activeMsgBox || !activeMsgText) return;
-
   const uMsg = STATE.settings?.user_announcement;
   const uTs = Number(STATE.settings?.user_announcement_ts) || 0;
-  
-  // Is it active? (Less than 20 seconds old)
   const isActive = uMsg && (Date.now() - uTs < 20000);
-
-  if (isActive) {
-    activeMsgText.textContent = `"${uMsg}"`;
-    activeMsgBox.style.display = 'block';
-  } else {
-    activeMsgBox.style.display = 'none';
+  if (activeMsgBox) {
+    activeMsgBox.style.display = isActive ? 'block' : 'none';
+    if (isActive) document.getElementById('activeUserMsgText').textContent = `"${uMsg}"`;
   }
 }
 
@@ -985,495 +744,125 @@ function updateClock() {
 
 function updateGpsAge() {
   const fresh = isGpsFresh();
-  const age = gpsAgeText();
-
-  const el = (id, fn) => { const e = document.getElementById(id); if (e) fn(e); };
-
-  el('gpsAgeLive', e => e.textContent = age);
-  el('liveBadge', e => e.className = 'live-badge' + (fresh ? '' : ' stale'));
-  el('liveBadgeText', e => e.textContent = fresh ? 'LIVE' : 'NO SIGNAL');
-  
-  if (!heatmapMode) {
-    el('mapLabel', e => e.textContent = fresh ? 'Live Position' : 'Last Known Position');
-  }
-
-  el('lastUpdated', e => {
-    const p = [];
-    if (STATE.lastGpsUpdate) p.push('GPS ' + fmtTime(STATE.lastGpsUpdate));
-    if (STATE.lastViewerUpdate) p.push('Viewers ' + fmtTime(STATE.lastViewerUpdate));
-    if (STATE.lastApiUpdate) p.push('API ' + fmtTime(STATE.lastApiUpdate));
-    e.textContent = p.join('  ·  ');
-  });
+  document.getElementById('liveBadge').className = 'live-badge' + (fresh ? '' : ' stale');
+  document.getElementById('liveBadgeText').textContent = fresh ? 'LIVE' : 'NO SIGNAL';
+  document.getElementById('lastUpdated').textContent = `GPS ${fmtTime(STATE.lastGpsUpdate)} · Viewers ${fmtTime(STATE.lastViewerUpdate)} · API ${fmtTime(STATE.lastApiUpdate)}`;
 }
 
 function updateGps() {
-  if (!STATE.gps) return;
-  const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-
-  el('gpsLat', parseFloat(STATE.gps.lat).toFixed(6));
-  el('gpsLng', parseFloat(STATE.gps.lng).toFixed(6));
-  if (STATE.gps.ts) el('gpsTime', fmtTime(new Date(STATE.gps.ts)));
-
-  if (STATE.map && STATE.marker && !heatmapMode) {
-    const ll = L.latLng(STATE.gps.lat, STATE.gps.lng);
-    STATE.marker.setLatLng(ll);
-    
-    const distance = STATE.map.getCenter().distanceTo(ll);
-
-    if (distance > 5000) {
-      if (STATE.routeGlowLayer) STATE.map.removeLayer(STATE.routeGlowLayer);
-      if (STATE.routeMainLayer) STATE.map.removeLayer(STATE.routeMainLayer);
-      
-      STATE.map.flyTo(ll, 15, { animate: true, duration: 2.0 });
-      
-      STATE.map.once('moveend', () => {
-        if (!heatmapMode && STATE.routeGlowLayer) STATE.routeGlowLayer.addTo(STATE.map);
-        if (!heatmapMode && STATE.routeMainLayer) STATE.routeMainLayer.addTo(STATE.map);
-      });
-      
-    } else if (distance > 10) {
-      STATE.map.panTo(ll, { animate: true, duration: 0.8 });
-    }
-  }
-
-  updateGpsAge();
-
-  // ⭐ Calculate Progress Percentage
-  if (STATE.gpxRoute && STATE.gpxRoute.length > 1 && STATE.gps) {
-    let bestIndex = 0;
-    let bestDist = Infinity;
-    
-    for (let i = 0; i < STATE.gpxRoute.length; i++) {
-      const d = haversineMeters(STATE.gps, STATE.gpxRoute[i]);
-      if (d < bestDist) { bestDist = d; bestIndex = i; }
-    }
-    
-    const bar = document.getElementById("godProgressBar");
-    const txt = document.getElementById("godProgressText");
-    
-    if (bestDist > 50) { 
-      if (bar) bar.style.width = "0%";
-      if (txt) {
-        txt.textContent = "Off Route";
-        txt.style.color = "#ff6b6b"; 
-      }
-    } else {
-      const pct = Math.min(100, Math.round((bestIndex / (STATE.gpxRoute.length - 1)) * 100));
-      if (bar) bar.style.width = pct + "%";
-      if (txt) {
-        txt.textContent = pct + "% Complete";
-        txt.style.color = "var(--gold)"; 
-      }
-    }
+  if (!STATE.gps || !STATE.marker || heatmapMode) return;
+  const ll = L.latLng(STATE.gps.lat, STATE.gps.lng);
+  STATE.marker.setLatLng(ll);
+  if (STATE.map.getCenter().distanceTo(ll) > 50) STATE.map.panTo(ll);
+  
+  if (STATE.gpxRoute?.length > 1) {
+    let bestIndex = 0, bestDist = Infinity;
+    STATE.gpxRoute.forEach((p, i) => { const d = haversineMeters(STATE.gps, p); if (d < bestDist) { bestDist = d; bestIndex = i; } });
+    const pct = Math.min(100, Math.round((bestIndex / (STATE.gpxRoute.length - 1)) * 100));
+    const bar = document.getElementById("godProgressBar"), txt = document.getElementById("godProgressText");
+    if (bar) bar.style.width = pct + "%";
+    if (txt) txt.textContent = bestDist > 100 ? "OFF ROUTE" : pct + "% COMPLETE";
   }
 }
 
-function updateViewers() {
-  const vEl = document.getElementById('statViewers');
-  if (vEl) vEl.textContent = STATE.activeViewers;
-}
-
-function updatePendingCount(count) {
-  const wEl = document.getElementById('statWaves');
-  if (wEl) wEl.textContent = count > 0 ? count : '0';
-}
+function updateViewers() { const vEl = document.getElementById('statViewers'); if (vEl) vEl.textContent = STATE.activeViewers; }
 
 function updateRouteDetail() {
-  const c = document.getElementById('routeDetail');
-  if (!c) return;
-
-  const today = getTodayRoute();
-  const next = getNextRoute();
-  const route = today || next;
-  const isToday = !!today;
-
+  const c = document.getElementById('routeDetail'); if (!c) return;
+  const route = getTodayRoute() || getNextRoute();
   if (!route) { c.innerHTML = '<div class="no-route">No routes scheduled</div>'; return; }
-
   const streets = (route.streets || '').split(',').map(s => s.trim()).filter(Boolean);
-
   c.innerHTML = `<div class="route-info">
-    <div class="route-row"><span class="route-label">Route</span><span class="route-value">${route.routeName || '—'}</span></div>
-    <div class="route-row"><span class="route-label">${isToday ? 'Tonight' : 'Next'}</span><span class="route-value gold">${fmtDate(route.date)}</span></div>
-    <div class="route-row"><span class="route-label">Streets</span><span class="route-value">${streets.length}</span></div>
-    ${streets.length ? `<div class="streets-scroll">${streets.join(' · ')}</div>` : ''}
+    <div class="route-row"><span class="route-label">Route</span><span class="route-value">${route.routeName}</span></div>
+    <div class="route-row"><span class="route-label">Schedule</span><span class="route-value gold">${fmtDate(route.date)}</span></div>
+    <div class="streets-scroll">${streets.join(' · ')}</div>
   </div>`;
-
-  const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  el('statRoute', route.routeName || '—');
-  
-  const dateEl = document.getElementById('statRouteDate');
-  const progWrap = document.getElementById('godProgressWrapper');
-  
-  if (isToday) {
-    if (dateEl) dateEl.style.display = 'none';
-    if (progWrap) progWrap.style.display = 'block';
-  } else {
-    if (dateEl) {
-      dateEl.style.display = 'block';
-      dateEl.textContent = 'Next: ' + fmtDate(route.date);
-    }
-    if (progWrap) progWrap.style.display = 'none';
-  }
 }
-  
+
 function updateDonationDetail() {
-  const c = document.getElementById('donationDetail');
+  const c = document.getElementById('donationDetail'), d = STATE.donations;
   if (!c) return;
-  const d = STATE.donations;
-  const cur = d.currency || '£';
-  const total = d.total || 0;
-  const target = d.target || 0;
-  const pct = target > 0 ? Math.min(100, Math.round((total / target) * 100)) : 0;
-
+  const pct = d.target > 0 ? Math.min(100, Math.round((d.total / d.target) * 100)) : 0;
   c.innerHTML = `<div class="donation-mini">
-    <div class="donation-labels"><span class="raised">${cur}${total.toLocaleString()}</span><span class="target">${cur}${target.toLocaleString()}</span></div>
+    <div class="donation-labels"><span style="color:var(--gold)">${d.currency}${d.total.toLocaleString()}</span><span style="color:var(--text-muted)">Goal: ${d.currency}${d.target.toLocaleString()}</span></div>
     <div class="donation-bar-outer"><div class="donation-bar-inner" style="width:${pct}%"></div></div>
-    <div class="donation-pct">${pct}% of target</div>
   </div>`;
 }
 
-function updateRaisedStat() {
-  const d = STATE.donations;
-  const cur = d.currency || '£';
-  const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  el('statRaised', `${cur}${(d.total || 0).toLocaleString()}`);
-  el('statTarget', `of ${cur}${(d.target || 0).toLocaleString()}`);
-}
+function updateRaisedStat() { const d = STATE.donations; document.getElementById('statRaised').textContent = `${d.currency}${(d.total || 0).toLocaleString()}`; document.getElementById('statTarget').textContent = `of ${d.currency}${(d.target || 0).toLocaleString()}`; }
 
-// ⭐ NEW: HEATMAP LOGIC
-let heatmapMode = false;
-let heatLayer = null;
-let allHeatData = null;
-let allGpxLayers = [];
+let heatmapMode = false, heatLayer = null, allHeatData = null, allGpxLayers = [];
 
 async function toggleHeatmap() {
-  const btn = document.getElementById('toggleHeatmapBtn');
-  const controls = document.getElementById('heatmapControls');
-
+  const btn = document.getElementById('toggleHeatmapBtn'), controls = document.getElementById('heatmapControls');
   if (heatmapMode) {
-    heatmapMode = false;
-    btn.innerText = "🔥Heatmap Mode"; 
-    btn.className = "btn-heat";
-    controls.classList.remove('active');
-    document.getElementById('mapLabel').textContent = isGpsFresh() ? 'Live Position' : 'Last Known Position';
-    
+    heatmapMode = false; btn.innerText = "🔥 Heatmap Mode"; btn.className = "btn-heat"; controls.classList.remove('active');
     if (heatLayer) STATE.map.removeLayer(heatLayer);
-    allGpxLayers.forEach(layer => STATE.map.removeLayer(layer));
-    allGpxLayers = [];
-    
-    if (STATE.marker && STATE.gps) {
-      STATE.marker.addTo(STATE.map);
-      STATE.map.panTo([STATE.gps.lat, STATE.gps.lng]);
-    }
-    
-    if (STATE.routeGlowLayer) STATE.routeGlowLayer.addTo(STATE.map);
+    allGpxLayers.forEach(l => STATE.map.removeLayer(l));
+    if (STATE.marker) STATE.marker.addTo(STATE.map);
     if (STATE.routeMainLayer) STATE.routeMainLayer.addTo(STATE.map);
-    
   } else {
-    btn.innerText = "Loading Data...";
-    try {
-      const res = await fetch(getApiUrl('function=getHeatmapData'));
-      allHeatData = await res.json();
-      
-      if (allHeatData.error) throw new Error(allHeatData.error);
-      
-      heatmapMode = true;
-      btn.innerText = "Exit Heatmap Mode";
-      btn.className = "btn-heat active";
-      controls.classList.add('active');
-      document.getElementById('mapLabel').textContent = 'Planning Map';
-
-      if (STATE.marker) STATE.map.removeLayer(STATE.marker);
-      if (STATE.routeGlowLayer) STATE.map.removeLayer(STATE.routeGlowLayer);
-      if (STATE.routeMainLayer) STATE.map.removeLayer(STATE.routeMainLayer);
-      
-      STATE.routes.forEach(route => {
-        if (route.gpxUrl) {
-          const l = new L.GPX(route.gpxUrl, {
-            async: true,
-            // Fix: Also added to the ghost routes just in case!
-            polyline_options: { color: "#1D1D1A", weight: 4, opacity: 0.35, lineCap: 'round', lineJoin: 'round' }, 
-            marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null }
-          }).addTo(STATE.map);
-          allGpxLayers.push(l);
-        }
-      });
-
-      const allYears = [...(allHeatData.subscribers||[]).map(d=>d.year), ...(allHeatData.suggestions||[]).map(d=>d.year)];
-      const uniqueYears = [...new Set(allYears)].filter(y => y !== "Unknown").sort().reverse();
-      const yearSelect = document.getElementById('heatYear');
-      yearSelect.innerHTML = '<option value="All">All Time</option>';
-      uniqueYears.forEach(y => {
-        yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
-      });
-      if (uniqueYears.length > 0) yearSelect.value = uniqueYears[0];
-
-      drawHeatmap();
-
-    } catch (e) {
-      alert("Failed to load Heatmap data. " + e.message);
-      btn.innerText = "🔥Heatmap Mode";
-    }
+    btn.innerText = "Loading...";
+    const res = await fetch(getApiUrl('function=getHeatmapData'));
+    allHeatData = await res.json();
+    heatmapMode = true; btn.innerText = "Exit Heatmap"; btn.className = "btn-heat active"; controls.classList.add('active');
+    if (STATE.marker) STATE.map.removeLayer(STATE.marker);
+    if (STATE.routeMainLayer) STATE.map.removeLayer(STATE.routeMainLayer);
+    drawHeatmap();
   }
 }
 
 function drawHeatmap() {
-  if (!heatmapMode || !allHeatData) return;
   if (heatLayer) STATE.map.removeLayer(heatLayer);
-  
-  const type = document.getElementById('heatType').value; 
-  const year = document.getElementById('heatYear').value;
-  
-  const activeDataset = allHeatData[type] || [];
-  const filtered = activeDataset.filter(d => year === "All" || d.year === year);
-  const leafletFormat = filtered.map(d => [d.lat, d.lng, 1]);
-
-  if (leafletFormat.length === 0) return; 
-
-  heatLayer = L.heatLayer(leafletFormat, {
-    radius: 25, blur: 15, maxZoom: 15,
-    gradient: {0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red'}
-  }).addTo(STATE.map);
+  const type = document.getElementById('heatType').value, data = allHeatData[type] || [];
+  heatLayer = L.heatLayer(data.map(d => [d.lat, d.lng, 1]), { radius: 25, blur: 15, gradient: {0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red'} }).addTo(STATE.map);
 }
 
-  function updateElfCam() {
-  const url = STATE.settings?.elf_cam_url;
-  const container = document.getElementById('elfCamPreview');
-  const ageEl = document.getElementById('elfCamAge');
-  const panel = document.getElementById('elfCamPanel');
-  if (!container) return;
-
-  if (!url) {
-    if (panel) panel.style.display = 'none';  // hide entirely if not configured
-    return;
-  }
-
-  if (panel) panel.style.display = '';  // restore when a URL arrives mid-session
-
-  // Convert to thumbnail URL the same way the tracker does
-  let finalUrl = url;
-  if (url.includes('drive.google.com')) {
-    try {
-      const urlObj = new URL(url);
-      const fileId = urlObj.searchParams.get('id');
-      if (fileId) finalUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
-    } catch(e) {}
-  }
-
-  container.innerHTML = `
-  <img src="${finalUrl}" 
-    style="width:100%; max-height:120px; object-fit:cover; object-position:center top; border-radius:8px; border:2px solid var(--border); background:#111;"
-    onerror="this.style.border='2px solid var(--red)'; this.alt='⚠️ Image failed to load — check Drive sharing';"
-    alt="Elf Cam">`;
-  
-  if (ageEl) ageEl.textContent = 'Last updated: ' + fmtTime(new Date());
+function updateElfCam() {
+  const url = STATE.settings?.elf_cam_url, c = document.getElementById('elfCamPreview');
+  if (!url || !c) return;
+  const finalUrl = url.includes('drive.google.com') ? `https://drive.google.com/thumbnail?id=${new URL(url).searchParams.get('id')}&sz=w400` : url;
+  c.innerHTML = `<img src="${finalUrl}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">`;
+  document.getElementById('elfCamAge').textContent = 'UPDATED: ' + fmtTime(new Date());
 }
-
-// ⭐ NEW: Poll for pending User Messages
-setInterval(fetchPendingMessages, 10000);
 
 async function fetchPendingMessages() {
-  const secret = sessionStorage.getItem('sleighSecret') || '';
-  try {
-    const res = await fetch(`${API}${API.includes('?')?'&':'?'}function=getPendingMessages&secret=${encodeURIComponent(secret)}`);
-    const msgs = await res.json();
-    const container = document.getElementById('pendingMessagesQueue');
-    
-    if(msgs.length === 0) {
-       container.innerHTML = '<div class="no-route">No pending messages</div>';
-       updatePendingCount(0);
-       return;
-    }
-    
-    let html = '';
-    msgs.forEach(m => {
-       const safeMsg = encodeURIComponent(m.msg);
-       const routeLabel = m.route ? `<div style="font-size:0.7em;color:var(--gold);margin-bottom:6px;font-weight:700;">📍 ${m.route}</div>` : '';
-       html += `
-         <div class="msg-item">
-           ${routeLabel}
-           <div class="msg-text">"${m.msg}"</div>
-           <div class="msg-actions">
-             <button class="btn-approve" onclick="handleUserMsg('${safeMsg}', 'approveUserMessage')">Approve (20s)</button>
-             <button class="btn-reject" onclick="handleUserMsg('${safeMsg}', 'rejectUserMessage')">Reject</button>
-           </div>
-         </div>
-       `;
-    });
-    container.innerHTML = html;
-    updatePendingCount(msgs.length);
-  } catch(e){}
-  
+  const res = await fetch(getApiUrl('function=getPendingMessages'));
+  const msgs = await res.json(), c = document.getElementById('pendingMessagesQueue');
+  document.getElementById('statWaves').textContent = msgs.length;
+  if (!msgs.length) { c.innerHTML = '<div class="no-route">No pending messages</div>'; return; }
+  c.innerHTML = msgs.map(m => `<div class="msg-item"><div class="msg-text">"${m.msg}"</div><div class="msg-actions"><button class="btn-approve" onclick="handleUserMsg('${encodeURIComponent(m.msg)}', 'approveUserMessage')">Approve</button><button class="btn-reject" onclick="handleUserMsg('${encodeURIComponent(m.msg)}', 'rejectUserMessage')">Reject</button></div></div>`).join('');
 }
 
 async function handleUserMsg(encodedMsg, action) {
-  const secret = sessionStorage.getItem('sleighSecret') || '';
-  const msg = decodeURIComponent(encodedMsg);
-  
-  // Optimistically set the active state instantly so God Mode feels fast
-  if (action === 'approveUserMessage') {
-    STATE.settings.user_announcement = msg;
-    STATE.settings.user_announcement_ts = Date.now();
-    updateUserMsgState();
-  }
-
-  // Optimistically remove it from UI to feel fast
-  fetchPendingMessages(); 
-  
-  try {
-    await fetch(API, {
-      method: 'POST',
-      body: JSON.stringify({ action: action, message: msg, secret: secret })
-    });
-    // Force immediate tracker setting refresh
-    fetchApiData(); 
-  } catch(e) {
-    alert("Failed to process message.");
-  }
+  await fetch(API, { method: 'POST', body: JSON.stringify({ action, message: decodeURIComponent(encodedMsg), secret: sessionStorage.getItem('sleighSecret') }) });
+  fetchPendingMessages();
 }
 
-// Kickstart the fetch when dashboard loads
-setTimeout(fetchPendingMessages, 1500);
-
-// ═══════════════════════════════════════════════════════════════
-// ⭐ GPS HEALTH MODULE — Polls Firebase directly every 2 seconds
-// Reads /location/current.json (public read per your Firebase rules)
-// Feeds data back into the stat card and sidebar panel.
-// ═══════════════════════════════════════════════════════════════
- 
 const GpsHealth = (() => {
-  const POLL = 2000;
-  const HIST = 40;
-  const T_GREEN = 10, T_AMBER = 30, T_RED = 60;
-  const GREEN = "#00e676", AMBER = "#ffab00", RED = "#ff1744";
- 
-  let fbUrl = null, tmr = null;
-  const fixes = [];
-  let lastRawTs = null;
- 
-  function clr(s) { return s <= T_GREEN ? GREEN : s <= T_AMBER ? AMBER : RED; }
-  function lbl(s) { return s <= T_GREEN ? "LIVE" : s <= T_AMBER ? "DELAYED" : s <= T_RED ? "STALE" : "LOST"; }
-  function fmtAge(s) { return s < 60 ? s + "s" : s < 3600 ? Math.floor(s / 60) + "m" : Math.floor(s / 3600) + "h"; }
- 
-  function rate() {
-    if (fixes.length < 2) return 0;
-    const ms = fixes[fixes.length - 1].ts - fixes[0].ts;
-    return ms > 0 ? Math.round((fixes.length - 1) / (ms / 60000)) : 0;
-  }
- 
-  function renderTimeline() {
-    const el = document.getElementById("gphTimeline");
-    if (!el) return;
-    const gaps = [];
-    for (let i = 1; i < fixes.length; i++) gaps.push((fixes[i].ts - fixes[i - 1].ts) / 1000);
-    while (gaps.length < HIST) gaps.unshift(0);
-    const show = gaps.slice(-HIST);
-    const mx = Math.max(12, ...show);
-    el.innerHTML = show.map(g => {
-      if (g === 0) return '<div class="tl-bar" style="background:rgba(255,255,255,0.03);height:2px"></div>';
-      const pct = Math.min(100, Math.max(6, (g / mx) * 100));
-      const c = g <= 4 ? GREEN : g <= 12 ? AMBER : RED;
-      return `<div class="tl-bar" style="background:${c};height:${pct}%;opacity:.75"></div>`;
-    }).join("");
-  }
- 
-  function paint(ageSec, lat, lng) {
-    const c = clr(ageSec), l = lbl(ageSec);
- 
-    // Sidebar badge
-    const badge = document.getElementById("gphBadge");
-    const dot = document.getElementById("gphDot");
-    const btxt = document.getElementById("gphBadgeText");
-    if (badge) {
-      badge.style.background = ageSec <= T_GREEN ? "rgba(0,230,118,.08)" : ageSec <= T_AMBER ? "rgba(255,171,0,.08)" : "rgba(255,23,68,.08)";
-      badge.style.border = "1px solid " + c;
-      badge.style.color = c;
-    }
-    if (dot) {
-      dot.style.background = c;
-      dot.style.boxShadow = ageSec <= T_GREEN ? "0 0 6px " + c : "none";
-      dot.style.animation = ageSec <= T_GREEN ? "gphDotPulse 1.4s infinite" : "none";
-    }
-    if (btxt) btxt.textContent = l;
- 
-    // Sidebar values
-    const ageEl = document.getElementById("gphAge");
-    if (ageEl) { ageEl.textContent = fmtAge(ageSec); ageEl.style.color = c; }
- 
-    const r = rate();
-    const rateEl = document.getElementById("gphRate");
-    if (rateEl) { rateEl.textContent = r || "—"; rateEl.style.color = r >= 20 ? GREEN : r >= 10 ? AMBER : r > 0 ? RED : ""; }
- 
-    // Feed stat card (top row) — these IDs already exist in god mode
-    const statStatus = document.getElementById("statGpsStatus");
-    if (statStatus) { statStatus.textContent = l; statStatus.className = "value " + (ageSec <= T_GREEN ? "green" : "red"); }
- 
-    const statAge = document.getElementById("statGpsAge");
-    if (statAge) statAge.textContent = fmtAge(ageSec) + " ago";
- 
-    const statRate = document.getElementById("statGpsRate");
-    if (statRate) statRate.textContent = r > 0 ? r + " fix/min" : "";
- 
-    // Feed existing GPS Data fields that other parts of god mode reference
-    if (lat !== null) {
-      const latEl = document.getElementById("gpsLat");
-      if (latEl) latEl.textContent = lat.toFixed(6);
-      const lngEl = document.getElementById("gpsLng");
-      if (lngEl && lng !== null) lngEl.textContent = lng.toFixed(6);
-    }
- 
-    renderTimeline();
-  }
- 
-  async function poll() {
-    try {
-      const r = await fetch(fbUrl + "/location/current.json", { cache: "no-store" });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      let d = await r.json();
- 
-      // Unwrap nested structure (same as tracker/proxyFirebase)
-      if (d && typeof d === "object" && !d.lat) {
-        const f = Object.values(d)[0];
-        if (f && typeof f === "object") d = f;
-      }
-      if (!d || typeof d.lat !== "number" || typeof d.lng !== "number") { paint(999, null, null); return; }
- 
-      const fts = new Date(d.ts || 0).getTime();
-      const age = Math.round((Date.now() - fts) / 1000);
- 
-      if (d.ts !== lastRawTs && fts > 0) {
-        lastRawTs = d.ts;
-        fixes.push({ ts: fts, lat: d.lat, lng: d.lng });
-        while (fixes.length > HIST * 2) fixes.shift();
-      }
-      paint(age, d.lat, d.lng);
-    } catch {
-      const last = fixes[fixes.length - 1];
-      const age = last ? Math.round((Date.now() - last.ts) / 1000) : 999;
-      paint(age, last?.lat || null, last?.lng || null);
-    }
-  }
- 
+  let fbUrl = null, fixes = [], lastRawTs = null;
   return {
-    init(url) {
-      if (!url) { console.error("GpsHealth: no Firebase URL"); return; }
-      fbUrl = url.replace(/\/$/, "");
-      if (tmr) clearInterval(tmr);
-      poll();
-      tmr = setInterval(poll, POLL);
-    },
-    destroy() { if (tmr) { clearInterval(tmr); tmr = null; } },
-    getState() {
-      const last = fixes[fixes.length - 1];
-      return {
-        ageSec: last ? Math.round((Date.now() - last.ts) / 1000) : null,
-        rate: rate(), lat: last?.lat || null, lng: last?.lng || null,
-        status: last ? lbl(Math.round((Date.now() - last.ts) / 1000)) : "NO DATA"
-      };
+    init(url) { fbUrl = url; setInterval(() => this.poll(), 2000); },
+    async poll() {
+      const r = await fetch(fbUrl + "/location/current.json");
+      let d = await r.json();
+      if (!d.lat) d = Object.values(d)[0];
+      const age = Math.round((Date.now() - new Date(d.ts).getTime())/1000);
+      document.getElementById("statGpsStatus").textContent = age < 15 ? "LIVE" : "STALE";
+      document.getElementById("statGpsStatus").className = "value " + (age < 15 ? "green" : "red");
+      document.getElementById("statGpsAge").textContent = age + "s ago";
+      document.getElementById("gphAge").textContent = age + "s";
+      document.getElementById("gphBadgeText").textContent = age < 15 ? "LIVE" : "STALE";
+      document.getElementById("gphBadge").style.color = age < 15 ? "var(--green)" : "var(--red)";
+      document.getElementById("gphDot").style.background = age < 15 ? "var(--green)" : "var(--red)";
+      if (fixes.length > 40) fixes.shift(); fixes.push(age);
+      document.getElementById("gphTimeline").innerHTML = fixes.map(f => `<div class="tl-bar" style="background:${f < 15 ? 'var(--green)' : 'var(--red)'}; height:${Math.min(100, (1/f)*200)}%"></div>`).join('');
     }
   };
 })();
-  
+
+setTimeout(fetchPendingMessages, 1000);
+setInterval(fetchPendingMessages, 10000);
 </script>
 </body>
 </html>
