@@ -4,34 +4,41 @@
   <meta charset="UTF-8" />
   <title>TurboSanta — Embed Code Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
   <style>
+    /* ═══════════════════════════════════════ */
+    /* TURBOSANTA DESIGN SYSTEM */
+    /* ═══════════════════════════════════════ */
     :root {
-      --bg: #1D1D1A;
-      --surface: #262622;
-      --surface-2: #2f2f2a;
+      --gold: #FBAF33;
+      --gold-dim: rgba(251,175,51,0.12);
+      --gold-glow: rgba(251,175,51,0.25);
+      --dark: #0d0d0b;
+      --surface: #161614;
+      --surface-2: #1e1e1b;
+      --surface-3: #252522;
       --border: rgba(255,255,255,0.08);
       --border-hover: rgba(255,255,255,0.15);
-      --text: #f0f0f0;
+      --text: #eaeae5;
       --text-dim: rgba(255,255,255,0.55);
-      --text-muted: rgba(255,255,255,0.35);
-      --red: #d31c1c;
-      --gold: #FBAF33;
-      --gold-dim: rgba(251,175,51,0.15);
-      --green: #22c55e;
+      --text-muted: rgba(255,255,255,0.3);
+      --red: #D31C1C;
+      --green: #2ecc71;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Open Sans', sans-serif;
-      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      background: var(--dark);
       color: var(--text);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
-      padding: 40px 20px;
+      padding: 64px 20px 80px;
       max-width: 900px;
       margin: 0 auto;
     }
@@ -39,98 +46,119 @@
     /* ── HEADER ── */
     .header-wrap {
       text-align: center;
-      margin-bottom: 48px;
+      margin-bottom: 56px;
     }
 
     h1 {
-      font-size: 2.2em;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.2;
-      margin-bottom: 12px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 56px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      line-height: 1;
+      margin-bottom: 16px;
+      color: #fff;
     }
 
     .api-display-wrap {
       display: inline-block;
-      background: var(--surface);
+      background: var(--surface-2);
       border: 1px solid var(--border);
-      padding: 6px 20px;
+      padding: 8px 24px;
       border-radius: 100px;
-      font-size: 0.85em;
-      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
       color: var(--text-dim);
-      letter-spacing: 0.04em;
+      letter-spacing: 1px;
+      text-transform: uppercase;
     }
 
     .api-display-wrap span {
       color: var(--gold);
+      font-weight: 700;
     }
 
     /* ── BLOCKS / CARDS ── */
     .block {
       background: var(--surface);
       border: 1px solid var(--border);
-      padding: 28px 32px;
+      padding: 32px 40px;
       border-radius: 16px;
       margin-bottom: 24px;
-      transition: border-color 0.2s ease;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
 
     .block:hover {
-      border-color: var(--border-hover);
+      border-color: rgba(251,175,51,0.2);
+      transform: translateY(-2px);
     }
 
     .block h2 {
-      font-size: 1.25em;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      margin-bottom: 16px;
-      color: var(--text);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      letter-spacing: 1px;
+      color: #fff;
+      margin-bottom: 12px;
+      line-height: 1;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+    }
+
+    .block p {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .block p strong {
+      color: #fff;
     }
 
     /* ── TEXTAREAS ── */
     textarea {
       width: 100%;
       height: 120px;
-      background: #151513; /* Slightly darker than base bg for inset depth */
-      color: var(--text-dim);
-      padding: 16px;
-      border-radius: 12px;
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 16px 20px;
+      border-radius: 10px;
       border: 1px solid var(--border);
-      font-family: monospace;
-      font-size: 0.85rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
       resize: vertical;
-      transition: border-color 0.2s, color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
       outline: none;
+      line-height: 1.5;
     }
 
     textarea:focus {
       border-color: var(--gold);
-      color: var(--text);
+      box-shadow: 0 0 0 3px var(--gold-glow);
     }
 
     /* ── BUTTONS ── */
     button.copy {
-      font-family: 'Open Sans', sans-serif;
+      font-family: 'DM Sans', sans-serif;
       font-weight: 700;
-      font-size: 0.82em;
-      margin-top: 16px;
-      padding: 10px 24px;
+      font-size: 14px;
+      margin-top: 20px;
+      padding: 12px 28px;
       border: none;
-      border-radius: 100px;
-      background: var(--surface-2);
-      color: var(--text);
+      border-radius: 8px;
+      background: var(--surface-3);
+      color: #fff;
       cursor: pointer;
       transition: all 0.15s ease;
+      border: 1px solid var(--border);
     }
 
     button.copy:hover {
-      background: linear-gradient(135deg, var(--gold), #ffaa00);
-      color: #1a1000;
-      transform: translateY(-1px);
+      background: var(--gold);
+      color: #000;
+      border-color: var(--gold);
     }
 
     button.copy:active {
@@ -140,8 +168,10 @@
     /* Responsive adjustments */
     @media (max-width: 600px) {
       .block {
-        padding: 20px 24px;
+        padding: 24px 20px;
       }
+      h1 { font-size: 42px; }
+      .api-display-wrap { font-size: 11px; }
     }
   </style>
 
@@ -151,9 +181,9 @@
 <body>
 
   <div class="header-wrap">
-    <h1>🎅 Santa Sleigh – Embed Generator</h1>
+    <h1>🎅 TURBOSANTA EMBED GENERATOR</h1>
     <div class="api-display-wrap">
-      Detected API: <span id="apiDisplay"></span>
+      Detected API: <span id="apiDisplay">Loading...</span>
     </div>
   </div>
 
@@ -165,7 +195,7 @@
 
   <div class="block">
     <h2>Beacon Standalone (Glovebox / Spare Phone)</h2>
-    <p style="font-size: 0.85em; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+    <p>
       <strong>Bulletproof Setup:</strong> Use this on a dedicated, plugged-in spare phone to transmit GPS reliably without being disturbed.
     </p>
     <textarea id="beaconLink"></textarea>
@@ -306,7 +336,7 @@
 
   <div class="block">
     <h2>Sat-Nav & Transmit (Solo Driver Link)</h2>
-    <p style="font-size: 0.85em; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+    <p>
       <strong>All-in-One Setup:</strong> Turn-by-turn routing arrow + background GPS transmitting in one app. <em>Warning: Driver must keep the screen on and not switch apps!</em>
     </p>
     <textarea id="satnavLink"></textarea>
@@ -373,11 +403,17 @@
       el.select();
       navigator.clipboard.writeText(el.value);
       
-      // Optional: Give quick feedback that it copied
       const btn = el.nextElementSibling;
       const originalText = btn.innerText;
       btn.innerText = "Copied! ✨";
-      setTimeout(() => { btn.innerText = originalText; }, 1500);
+      btn.style.background = "var(--gold)";
+      btn.style.color = "#000";
+      
+      setTimeout(() => { 
+        btn.innerText = originalText; 
+        btn.style.background = "";
+        btn.style.color = "";
+      }, 1500);
     }
   </script>
 
