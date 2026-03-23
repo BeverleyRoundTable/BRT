@@ -3,37 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Poster Generator | Round Table</title>
+<title>QR Poster Generator — TurboSanta</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
 <style>
+  /* ═══════════════════════════════════════ */
+  /* TURBOSANTA DESIGN SYSTEM */
+  /* ═══════════════════════════════════════ */
   :root {
-    --bg: #1D1D1A; /* Official Table Grey */
-    --surface: #262622;
-    --surface-2: #2f2f2a;
+    --gold: #FBAF33;
+    --gold-dim: rgba(251,175,51,0.12);
+    --gold-glow: rgba(251,175,51,0.25);
+    --dark: #0d0d0b;
+    --surface: #161614;
+    --surface-2: #1e1e1b;
+    --surface-3: #252522;
     --border: rgba(255,255,255,0.08);
-    --text: #FFFFFF; /* Official White */
-    --text-dim: rgba(255,255,255,0.6);
-    --gold: #FBAF33; /* Official Golden Yellow */
-    --gold-dim: rgba(251,175,51,0.15);
+    --text: #eaeae5;
+    --text-dim: rgba(255,255,255,0.55);
+    --text-muted: rgba(255,255,255,0.3);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: 'Open Sans', sans-serif;
-    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    background: var(--dark);
     color: var(--text);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
 
   /* ── CONTROLS (screen only) ── */
+  .controls-wrapper {
+    padding: 48px 24px 32px;
+  }
+
   .controls {
-    max-width: 800px;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 32px 24px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 32px 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   }
 
   .controls header {
@@ -42,25 +59,28 @@
   }
 
   .controls h1 {
-    font-size: 2.2em;
-    font-weight: 800;
-    color: var(--gold); /* Fixed: Solid Gold to prevent cream look */
-    margin-bottom: 4px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 2px;
+    color: #fff;
+    margin-bottom: 8px;
+    line-height: 1;
   }
+  
+  .controls h1 span { color: var(--gold); }
 
   .controls header p {
-    color: var(--text);
-    opacity: 0.8;
-    margin-top: 6px;
-    font-size: 0.95em;
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1.5;
   }
 
   .control-row {
     display: flex;
-    gap: 12px;
+    gap: 16px;
     align-items: end;
     flex-wrap: wrap;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
 
   .control-group {
@@ -70,68 +90,87 @@
 
   .control-group label {
     display: block;
-    font-size: 0.75em;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
     font-weight: 700;
-    color: var(--text-dim);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 6px;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
   }
 
   .control-group select,
   .control-group input {
     width: 100%;
-    background: var(--surface);
+    background: var(--surface-2);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    color: var(--text);
-    font-family: 'Open Sans', sans-serif;
-    font-size: 0.9em;
+    border-radius: 8px;
+    padding: 14px 16px;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
     outline: none;
+    transition: all 0.2s;
   }
+  
+  .control-group select {
+    cursor: pointer; -webkit-appearance: none; appearance: none; font-weight: 600;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23FBAF33' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px;
+  }
+  
+  .control-group select option { background: var(--surface-2); color: #fff; }
 
   .control-group select:focus,
-  .control-group input:focus { border-color: var(--gold); }
+  .control-group input:focus { 
+    border-color: var(--gold); 
+    box-shadow: 0 0 0 3px var(--gold-glow);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
 
   .btn {
-    font-family: 'Open Sans', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-weight: 700;
-    font-size: 0.88em;
+    font-size: 15px;
     border: none;
-    border-radius: 10px;
-    padding: 12px 24px;
+    border-radius: 8px;
+    padding: 16px 24px;
     cursor: pointer;
-    transition: transform 0.1s;
+    transition: transform 0.1s, background 0.2s;
     white-space: nowrap;
+    flex: 1;
+    text-align: center;
   }
 
   .btn:active { transform: scale(0.97); }
 
   .btn-gold {
     background: var(--gold);
-    color: #1a1000;
+    color: #000;
   }
+  
+  .btn-gold:hover { background: #e59d28; }
 
   .btn-ghost {
     background: var(--surface-2);
-    color: var(--text);
+    color: #fff;
     border: 1px solid var(--border);
   }
-
-  .btn-row {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 20px;
-    flex-wrap: wrap;
-  }
+  
+  .btn-ghost:hover { background: var(--surface-3); }
 
   /* ── POSTER PREVIEW (screen) ── */
   .poster-preview-wrap {
-    max-width: 700px;
+    max-width: 800px;
     margin: 0 auto;
-    padding: 0 24px 60px;
+    padding: 0 24px 80px;
   }
 
   /* ── THE POSTER (A4) ── */
@@ -139,22 +178,25 @@
     width: 210mm;
     min-height: 297mm;
     background: #ffffff;
-    color: #1D1D1A;
-    font-family: 'Open Sans', sans-serif;
+    color: #0d0d0b;
+    font-family: 'DM Sans', sans-serif;
     margin: 0 auto;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
-    border-radius: 4px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
   }
 
   .poster-accent-top {
-    height: 10px;
-    background: var(--gold); /* Fixed: Brand Gold */
+    height: 16px;
+    background: var(--gold);
   }
 
   .poster-content {
-    padding: 48px 48px 36px;
+    flex: 1;
+    padding: 48px 48px 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -162,137 +204,166 @@
   }
 
   .poster-logo {
-    width: 90px;
-    height: 90px;
+    width: 96px;
+    height: 96px;
     object-fit: contain;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
   }
 
   .poster-sleigh-name {
+    font-family: 'DM Mono', monospace;
     font-size: 14px;
     font-weight: 700;
-    color: #555;
+    color: #888;
     text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 24px;
+    letter-spacing: 2px;
+    margin-bottom: 32px;
   }
 
   .poster-headline {
-    font-size: 48px;
-    font-weight: 900;
-    line-height: 1.1;
-    color: var(--gold); /* Fixed: Brand Gold Headline */
-    margin-bottom: 8px;
-    letter-spacing: -0.02em;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    line-height: 0.95;
+    color: #0d0d0b;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
   }
 
   .poster-subline {
-    font-size: 22px;
-    font-weight: 700;
-    color: #1D1D1A;
-    margin-bottom: 28px;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold);
+    margin-bottom: 40px;
     text-transform: uppercase;
+    letter-spacing: 1px;
   }
 
   .poster-date-block {
-    background: #1D1D1A; /* Fixed: Brand Grey */
+    background: #0d0d0b;
     color: white;
-    padding: 20px 60px;
-    border-radius: 14px;
-    margin-bottom: 24px;
+    padding: 24px 64px;
+    border-radius: 16px;
+    margin-bottom: 40px;
+    width: 100%;
+    max-width: 500px;
   }
 
   .poster-date-block .day-name {
-    font-size: 18px;
-    font-weight: 600;
-    opacity: 0.9;
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 2px;
+    color: var(--gold);
+    margin-bottom: 4px;
   }
 
   .poster-date-block .date-main {
-    font-size: 42px;
-    font-weight: 900;
-    line-height: 1.1;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    letter-spacing: 1px;
+    line-height: 1;
   }
 
   .poster-streets {
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
+    font-size: 20px;
+    font-weight: 500;
+    color: #444;
     line-height: 1.6;
-    margin-bottom: 32px;
-    max-width: 550px;
+    margin-bottom: 48px;
+    max-width: 600px;
   }
 
   .poster-streets .separator {
-    color: var(--gold);
-    margin: 0 8px;
-    font-weight: 900;
+    color: #ccc;
+    margin: 0 10px;
+    font-weight: 700;
   }
 
   .poster-divider {
-    width: 100px;
+    width: 120px;
     height: 4px;
-    background: var(--gold);
+    background: #0d0d0b;
     border-radius: 2px;
-    margin: 0 auto 32px;
+    margin: 0 auto 48px;
   }
 
   .poster-qr-section {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 32px;
+    margin-bottom: 16px;
   }
 
   .poster-qr-box {
-    padding: 16px;
-    border: 4px solid #1D1D1A;
-    border-radius: 20px;
+    padding: 20px;
+    border: 6px solid #0d0d0b;
+    border-radius: 24px;
     display: inline-block;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
     background: white;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.1);
   }
 
   .poster-scan-text {
-    font-size: 24px;
-    font-weight: 800;
-    color: #1D1D1A;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    color: #0d0d0b;
+    letter-spacing: 1px;
+  }
+  
+  .poster-scan-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 2px;
+    margin-top: 4px;
   }
 
   .poster-footer {
-    margin-top: auto;
     padding: 24px 48px;
-    background: #1D1D1A;
+    background: #0d0d0b;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
+    gap: 16px;
+    margin-top: auto;
   }
 
   .poster-footer img {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
     object-fit: contain;
+    background: #fff;
+    border-radius: 8px;
+    padding: 4px;
   }
 
   .poster-footer .footer-text {
-    font-size: 14px;
-    font-weight: 600;
-    opacity: 0.9;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: #ccc;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  
+  .poster-footer .footer-text span {
+    color: var(--gold);
+    font-weight: 700;
   }
 
   /* ── PRINT ── */
   @media print {
-    body { background: white; }
-    .controls { display: none !important; }
+    body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .controls-wrapper { display: none !important; }
     .poster-preview-wrap { padding: 0; max-width: none; }
     .poster {
       width: 100%;
+      min-height: 100vh;
       box-shadow: none;
       border-radius: 0;
     }
@@ -302,13 +373,15 @@
 </head>
 <body>
 
-<div class="controls" id="controls">
-  <header>
-    <h1>📌 QR Poster Generator</h1>
-    <p>Generate brand-compliant route posters for your sleigh</p>
-  </header>
-  <div id="controlsInner">
-    <div style="text-align:center; padding:40px; opacity:0.5;">Loading routes…</div>
+<div class="controls-wrapper" id="controls">
+  <div class="controls">
+    <header>
+      <h1>📌 QR POSTER <span>GENERATOR</span></h1>
+      <p>Generate brand-compliant route posters for your sleigh</p>
+    </header>
+    <div id="controlsInner">
+      <div style="text-align:center; font-family:'DM Mono', monospace; font-size:12px; padding:40px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Loading routes…</div>
+    </div>
   </div>
 </div>
 
@@ -327,7 +400,7 @@ const STATE = {
 
 if (!API) {
   document.getElementById('controlsInner').innerHTML = 
-    '<div style="text-align:center; color:#ff6b6b; padding:40px;">Missing <strong>?api=</strong> parameter.</div>';
+    '<div style="text-align:center; font-family:\'DM Mono\',monospace; font-size:12px; color:var(--red); padding:40px; text-transform:uppercase; letter-spacing:1px;">Missing ?api= parameter</div>';
 } else {
   init();
 }
@@ -340,14 +413,14 @@ async function init() {
     STATE.routes = data.routes || [];
 
     if (!STATE.routes.length) {
-      document.getElementById('controlsInner').innerHTML = '<div style="text-align:center; padding:40px;">No routes found.</div>';
+      document.getElementById('controlsInner').innerHTML = '<div style="text-align:center; font-family:\'DM Mono\',monospace; font-size:12px; color:var(--text-muted); padding:40px; text-transform:uppercase; letter-spacing:1px;">No routes found.</div>';
       return;
     }
 
     renderControls();
     generatePoster();
   } catch(e) {
-    document.getElementById('controlsInner').innerHTML = `<div style="text-align:center; padding:40px; color:#ff6b6b;">Failed to load: ${e.message}</div>`;
+    document.getElementById('controlsInner').innerHTML = `<div style="text-align:center; padding:40px; color:var(--red); font-family:'DM Mono',monospace; font-size:12px;">Failed to load: ${e.message}</div>`;
   }
 }
 
@@ -396,7 +469,7 @@ function generatePoster(idx) {
   if (!route) return;
 
   const s = STATE.settings;
-  const headline = document.getElementById('customHeadline')?.value || "Santa's Coming to YOUR Street!";
+  const headline = document.getElementById('customHeadline')?.value || "SANTA'S COMING TO YOUR STREET!";
   const trackerUrl = s.tracker_url || `https://track.sleigh.com/?api=${encodeURIComponent(API)}`;
 
   const streets = (route.streets || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -420,12 +493,13 @@ function generatePoster(idx) {
 
       <div class="poster-qr-section">
         <div class="poster-qr-box" id="qrTarget"></div>
-        <div class="poster-scan-text">Scan to Track Santa LIVE</div>
+        <div class="poster-scan-text">SCAN TO TRACK SANTA LIVE</div>
+        <div class="poster-scan-sub">Follow the sleigh on the map</div>
       </div>
     </div>
     <div class="poster-footer">
       ${s.logo_overlay_url ? `<img src="${s.logo_overlay_url}">` : ''}
-      <span class="footer-text">${s.sleigh_display_name || 'Round Table'} · Powered by TurboSanta</span>
+      <span class="footer-text">${s.sleigh_display_name || 'Round Table'} · <span>TurboSanta</span></span>
     </div>
   `;
 
@@ -434,9 +508,10 @@ function generatePoster(idx) {
 
   new QRCode(document.getElementById('qrTarget'), {
     text: trackerUrl,
-    width: 220,
-    height: 220,
-    colorDark: "#1D1D1A",
+    width: 240,
+    height: 240,
+    colorDark: "#0d0d0b",
+    colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.H
   });
 }
@@ -448,13 +523,15 @@ async function printAll() {
 
   for (let i = 0; i < STATE.routes.length; i++) {
     generatePoster(i);
-    await new Promise(r => setTimeout(r, 400));
-    allHtml += `<div class="poster" style="page-break-after: always;">${poster.innerHTML}</div>`;
+    await new Promise(r => setTimeout(r, 400)); // allow QR code to render
+    allHtml += `<div class="poster" style="page-break-after: always; margin-bottom: 20px;">${poster.innerHTML}</div>`;
   }
 
   poster.outerHTML = allHtml;
   window.print();
-  location.reload(); // Reset after print
+  
+  // A tiny delay before reload prevents some browsers from canceling the print dialog
+  setTimeout(() => location.reload(), 500); 
 }
 </script>
 </body>
