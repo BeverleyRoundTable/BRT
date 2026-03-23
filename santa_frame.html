@@ -3,106 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Santa’s Been Generator</title>
+<title>Santa’s Been Generator — TurboSanta</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
 <style>
+  /* ═══════════════════════════════════════ */
+  /* TURBOSANTA DESIGN SYSTEM */
+  /* ═══════════════════════════════════════ */
+  :root {
+    --gold: #FBAF33;
+    --gold-dim: rgba(251,175,51,0.12);
+    --gold-glow: rgba(251,175,51,0.25);
+    --dark: #0d0d0b;
+    --surface: #161614;
+    --surface-2: #1e1e1b;
+    --surface-3: #252522;
+    --border: rgba(255,255,255,0.08);
+    --border-gold: rgba(251,175,51,0.3);
+    --text: #eaeae5;
+    --text-dim: rgba(255,255,255,0.55);
+    --text-muted: rgba(255,255,255,0.3);
+  }
+
   body {
     margin: 0;
-    padding: 16px;
-    font-family: 'Open Sans', sans-serif;
-    background: transparent;
+    padding: 24px 16px;
+    font-family: 'DM Sans', sans-serif;
+    background: transparent; /* Keep transparent for iframe embedding */
     text-align: center;
     -webkit-font-smoothing: antialiased;
   }
 
   .card {
-    background: rgba(29, 29, 26, 0.95);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-radius: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 24px 20px 28px;
-    box-shadow:
-      0 6px 20px rgba(0,0,0,0.35),
-      inset 0 1px 0 rgba(255,255,255,0.05);
-    max-width: 720px;
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    padding: 40px 32px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    max-width: 600px;
     margin: 0 auto;
+    transition: box-shadow 0.3s ease;
   }
   
   .card h2 {
-    color: #FFFFFF;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 2px;
+    color: #fff;
     margin-top: 0;
     margin-bottom: 8px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .card h2 span {
+    color: var(--gold);
   }
 
   .helper-text {
-    font-size: 0.85rem;
-    color: #FFFFFF;
-    opacity: 0.85;
-    margin-top: 6px;
+    font-size: 15px;
+    color: var(--text-dim);
+    margin-top: 0;
+    margin-bottom: 32px;
+    font-weight: 500;
   }
 
+  /* ── UPLOAD AREA ── */
   .upload-label {
     display: inline-block;
-    margin: 12px auto;
-    padding: 12px 24px;
-    border-radius: 999px;
-    background: #2f2f2a;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 0 auto 16px;
+    padding: 16px 32px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px dashed var(--border-gold);
     cursor: pointer;
+    font-family: 'DM Mono', monospace;
     font-weight: 700;
-    color: #FFFFFF;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gold);
     transition: all 0.2s ease;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .upload-label:hover, .upload-label:focus-within {
+    background: var(--gold-dim);
+    border-style: solid;
   }
 
   .upload-label:active {
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
 
   .upload-label input {
     display: none;
   }
-  
-  .upload-label:focus-within {
-    border-color: #FBAF33;
-    box-shadow: 0 0 0 3px rgba(251, 175, 51, 0.2);
-  }
 
-  button {
-    height: 42px;
-    padding: 0 26px;
-    border-radius: 999px;
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
     border: none;
-    background: #FBAF33;
-    color: #000000;
-    font-weight: 800;
-    font-family: inherit;
-    font-size: 0.95em;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    border-radius: 8px;
+    padding: 16px 24px;
     cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    white-space: nowrap;
   }
 
-  button:active:not(:disabled) {
-    transform: scale(0.96);
+  .btn:active:not(:disabled) { transform: scale(0.97); }
+  .btn:disabled { 
+    opacity: 0.4; 
+    cursor: not-allowed; 
+    background: var(--surface-3);
+    color: var(--text-muted);
   }
 
-  button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    background: #2f2f2a;
-    color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: none;
+  .btn-gold { background: var(--gold); color: #000; }
+  .btn-gold:hover:not(:disabled) { background: #e59d28; }
+
+  .btn-ghost {
+    background: var(--surface-2);
+    color: #fff;
+    border: 1px solid var(--border);
+    text-decoration: none;
   }
+  .btn-ghost:hover { background: var(--surface-3); }
 
   /* Actions row */
   .actions {
@@ -110,58 +144,23 @@
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-    gap: 14px;
-    margin-top: 20px;
+    gap: 12px;
+    margin-top: 24px;
   }
 
   #download {
     display: none;
   }
 
-  .actions a {
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    height: 42px;
-    padding: 0 24px;
-    border-radius: 999px;
-    background: #2f2f2a;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #FFFFFF;
-    font-weight: 700;
-    font-size: 0.9em;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    cursor: pointer;
-  }
-
-  .actions a:active {
-    transform: scale(0.96);
-  }
-
   canvas {
     display: none;
   }
 
+  /* ── ANIMATIONS ── */
   @keyframes santaGlow {
-    0% {
-      box-shadow:
-        0 6px 20px rgba(0,0,0,0.35),
-        inset 0 1px 0 rgba(255,255,255,0.05),
-        0 0 0 rgba(251, 175, 51, 0);
-    }
-    50% {
-      box-shadow:
-        0 6px 20px rgba(0,0,0,0.35),
-        inset 0 1px 0 rgba(255,255,255,0.05),
-        0 0 28px rgba(251, 175, 51, 0.35);
-    }
-    100% {
-      box-shadow:
-        0 6px 20px rgba(0,0,0,0.35),
-        inset 0 1px 0 rgba(255,255,255,0.05),
-        0 0 0 rgba(251, 175, 51, 0);
-    }
+    0%   { box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 rgba(251, 175, 51, 0); }
+    50%  { box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 30px var(--gold-glow); }
+    100% { box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 rgba(251, 175, 51, 0); }
   }
 
   .card.success {
@@ -170,7 +169,7 @@
 
   @keyframes buttonPulse {
     0%   { transform: scale(1); box-shadow: 0 0 0 rgba(251, 175, 51, 0.0); }
-    50%  { transform: scale(1.04); box-shadow: 0 0 22px rgba(251, 175, 51, 0.6); }
+    50%  { transform: scale(1.04); box-shadow: 0 0 20px rgba(251, 175, 51, 0.4); }
     100% { transform: scale(1); box-shadow: 0 0 0 rgba(251, 175, 51, 0.0); }
   }
 
@@ -178,32 +177,37 @@
     animation: buttonPulse 0.9s ease-out;
   }
 
+  @media (max-width: 600px) {
+    .card { padding: 32px 20px; }
+    .card h2 { font-size: 40px; }
+  }
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <h2>🎅 Santa’s Been!</h2>
+  <h2>SANTA'S <span>BEEN!</span></h2>
+  
+  <p class="helper-text">
+    Stand in the middle — Santa will do the rest 🎄
+  </p>
 
   <label class="upload-label">
-  📸 Upload your photo
-  <input id="photoInput" type="file" accept="image/*">
-</label>
+    📸 Upload your photo
+    <input id="photoInput" type="file" accept="image/*">
+  </label>
 
-<p class="helper-text">
-  Stand in the middle — Santa will do the rest 🎄
-</p>
+  <div class="actions">
+    <button class="btn btn-gold" id="generateBtn" onclick="generate()" disabled>
+      Create Image
+    </button>
 
-<div class="actions">
-  <button id="generateBtn" onclick="generate()" disabled>
-    Create Image
-  </button>
+    <a class="btn btn-ghost" id="download" download="santas_been.png">⬇ Download image</a>
+  </div>
 
-  <a id="download" download="santas_been.png">⬇ Download image</a>
+  <canvas id="canvas" width="1000" height="1000"></canvas>
 </div>
-
-<canvas id="canvas" width="1000" height="1000"></canvas>
 
 <script>
 const FRAME_SRC = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/santa_frame.png";
@@ -240,24 +244,26 @@ function generate(){
 function drawTimestamp() {
   const date = new Date();
   const label =
-    "Santa visited • " +
+    "SANTA VISITED • " +
     date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short"
-    });
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    }).toUpperCase();
 
   ctx.save();
 
-  // Ensuring Open Sans is used on the canvas export
-  ctx.font = "600 22px 'Open Sans', sans-serif";
+  // Using DM Mono for a modern, camera-stamp aesthetic
+  ctx.font = "700 20px 'DM Mono', monospace";
   ctx.textAlign = "right";
   ctx.textBaseline = "bottom";
 
   // subtle shadow for legibility
-  ctx.shadowColor = "rgba(0,0,0,0.35)";
-  ctx.shadowBlur = 4;
+  ctx.shadowColor = "rgba(0,0,0,0.5)";
+  ctx.shadowBlur = 6;
+  ctx.shadowOffsetY = 2;
 
-  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
   ctx.fillText(label, 960, 960);
 
   ctx.restore();
@@ -279,9 +285,9 @@ function draw(photo){
 
   // Soft printed-photo shadow
   ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.18)";
-  ctx.shadowBlur = 14;
-  ctx.shadowOffsetY = 6;
+  ctx.shadowColor = "rgba(0,0,0,0.2)";
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 8;
 
   ctx.drawImage(
     photo,
@@ -293,39 +299,43 @@ function draw(photo){
 
   // Frame on top
   ctx.drawImage(frameImg, 0, 0, 1000, 1000);
-  drawTimestamp();
+  
+  // Wait a tiny bit to ensure the custom fonts have loaded before stamping text
+  document.fonts.ready.then(() => {
+    drawTimestamp();
 
     // Export
-  downloadLink.href = canvas.toDataURL("image/png");
+    downloadLink.href = canvas.toDataURL("image/png");
 
-  // ⭐ Auto filename with date
-  downloadLink.download =
-    "santas_been_" +
-    new Date().toISOString().slice(0, 10) +
-    ".png";
+    // ⭐ Auto filename with date
+    downloadLink.download =
+      "santas_been_" +
+      new Date().toISOString().slice(0, 10) +
+      ".png";
 
-  setTimeout(() => {
-  downloadLink.style.display = "inline-flex";
-  }, 150);
+    setTimeout(() => {
+      downloadLink.style.display = "inline-flex";
+    }, 150);
 
-  generateBtn.disabled = false;
-  generateBtn.textContent = "Create another image";
+    generateBtn.disabled = false;
+    generateBtn.textContent = "Create another image";
 
     // ✨ Success pulse
-  const card = document.querySelector(".card");
-  const btn  = document.getElementById("generateBtn");
+    const card = document.querySelector(".card");
+    const btn  = document.getElementById("generateBtn");
 
-  if (card) {
-    card.classList.add("success");
-    setTimeout(() => card.classList.remove("success"), 1500);
-  }
+    if (card) {
+      card.classList.add("success");
+      setTimeout(() => card.classList.remove("success"), 1500);
+    }
 
-  if (btn) {
-    btn.classList.add("success");
-    setTimeout(() => btn.classList.remove("success"), 900);
-  }
+    if (btn) {
+      btn.classList.add("success");
+      setTimeout(() => btn.classList.remove("success"), 900);
+    }
 
-  sendHeight(40); // 🔑 FORCE iframe resize after content change
+    sendHeight(40); // 🔑 FORCE iframe resize after content change
+  });
 }
   
 /* ---------- iframe auto-height ---------- */
