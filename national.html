@@ -874,7 +874,13 @@ function extractLiveTableData(table, apiData) {
 // EXTRACT HISTORICAL TABLE DATA
 // ═══════════════════════════════════════════════════════════
 function extractHistoricalTableData(table, historyArray, targetYear) {
-  const seasonData = historyArray.find(h => String(h.year) === String(targetYear));
+  // Relax the search to ignore trailing spaces or slight mismatches
+  const seasonData = historyArray.find(h => {
+     const hYear = String(h.year).trim();
+     const tYear = String(targetYear).trim();
+     // If they entered "Season 2025/26" in the past, let's just look for "2025"
+     return hYear === tYear || hYear.includes(tYear); 
+  });
   
   if (!seasonData) {
      return {
