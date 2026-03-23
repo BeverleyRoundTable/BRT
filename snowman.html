@@ -3,205 +3,287 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snowman Maker</title>
+<title>Snowman Maker — TurboSanta</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-body {
-  margin: 0;
-  font-family: 'Open Sans', sans-serif;
-  background: transparent;
-  color: #ffffff;
-  -webkit-font-smoothing: antialiased;
-}
-.wrapper {
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 20px 18px 22px;
-  background: rgba(29, 29, 26, 0.95); /* Brand Table Grey */
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 6px 20px rgba(0,0,0,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.05);
-}
-h1 {
-  text-align: center;
-  margin-bottom: 20px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-.group {
-  background: #262622; /* God Mode Surface */
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 14px;
-  margin-bottom: 14px;
-}
-.group h3 {
-  margin: 0 0 10px 0;
-  font-size: 0.85em;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.5);
-}
-.options {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.options button {
-  background: #2f2f2a; /* God Mode Surface-2 */
-  color: #f0f0f0;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-weight: 600;
-  font-family: inherit;
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.options button:active {
-  transform: scale(0.96);
-}
-.options button.active {
-  background: #FBAF33; /* Brand Golden Yellow */
-  color: #000000;
-  border-color: #FBAF33;
-}
-.builder {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-  align-items: center;
-}
-canvas {
-  display: block;
-  margin: auto;
-  max-width: 100%;
-  height: auto;
-}
-.download {
-  text-align: center;
-  margin-top: 20px;
-}
-.download button {
-  background: #FBAF33; /* Brand Golden Yellow */
-  color: #000000;
-  border: none;
-  padding: 14px 22px;
-  border-radius: 999px;
-  font-size: 16px;
-  font-weight: 800;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.download button:active {
-  transform: scale(0.96);
-}
+  :root {
+    --gold: #FBAF33;
+    --gold-dim: rgba(251,175,51,0.12);
+    --gold-glow: rgba(251,175,51,0.25);
+    --dark: #0d0d0b;
+    --surface: #161614;
+    --surface-2: #1e1e1b;
+    --surface-3: #252522;
+    --border: rgba(255,255,255,0.08);
+    --border-gold: rgba(251,175,51,0.2);
+    --text: #eaeae5;
+    --text-dim: rgba(255,255,255,0.55);
+    --text-muted: rgba(255,255,255,0.3);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  .wrapper {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 32px;
+    background: var(--surface);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(251,175,51,0.06) 0%, transparent 70%);
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: var(--gold-dim);
+    color: var(--gold);
+    border: 1px solid var(--border-gold);
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 6vw, 64px);
+    letter-spacing: 3px;
+    line-height: 0.9;
+    color: #fff;
+    margin: 0 0 12px 0;
+  }
+
+  h1 span {
+    color: var(--gold);
+  }
+
+  .builder {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 32px;
+    align-items: start;
+  }
+
+  .group {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .group h3 {
+    margin: 0 0 12px 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+  }
+
+  .options {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .options button {
+    background: var(--surface-3);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .options button:hover {
+    border-color: var(--gold);
+    color: #fff;
+  }
+
+  .options button:active {
+    transform: scale(0.96);
+  }
+
+  .options button.active {
+    background: var(--gold);
+    color: #000;
+    border-color: var(--gold);
+  }
+
+  .canvas-wrap {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .download {
+    text-align: center;
+    margin-top: 32px;
+  }
+
+  .download button {
+    background: var(--gold);
+    color: #000;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .download button:hover {
+    background: #e59d28;
+    transform: translateY(-2px);
+  }
+
+  .download button:active {
+    transform: translateY(0);
+  }
   
-body.embed {
-  width: 100%;
-  overflow-x: hidden;
-}
+  /* Iframe / Embed Overrides */
+  body.embed {
+    width: 100%;
+    overflow-x: hidden;
+    background: transparent;
+  }
 
-body.embed .wrapper {
-  width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
+  body.embed .wrapper {
+    margin: 0 auto;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 16px 0;
+  }
 </style>
 </head>
 
 <body>
 <div class="wrapper">
-<h1>☃️ Build Your Snowman</h1>
+  
+  <header class="hero">
+    <div class="hero-badge">☃️ Workshop</div>
+    <h1>BUILD YOUR <span>SNOWMAN</span></h1>
+  </header>
 
-<div class="builder">
-<div>
+  <div class="builder">
+    <div>
 
-<div class="group">
-<h3>🎩 Hat</h3>
-<div class="options" data-key="hat">
-<button class="active" data-value="top">Top Hat</button>
-<button data-value="beanie">Beanie</button>
-<button data-value="santa">Santa Hat</button>
-<button data-value="none">None</button>
-</div>
-</div>
+      <div class="group">
+        <h3>🎩 Hat</h3>
+        <div class="options" data-key="hat">
+          <button class="active" data-value="top">Top Hat</button>
+          <button data-value="beanie">Beanie</button>
+          <button data-value="santa">Santa Hat</button>
+          <button data-value="none">None</button>
+        </div>
+      </div>
 
-<div class="group">
-<h3>👀 Eyes</h3>
-<div class="options" data-key="eyes">
-<button class="active" data-value="coal">Coal</button>
-<button data-value="hearts">❤️ Hearts</button>
-<button data-value="stars">⭐ Stars</button>
-</div>
-</div>
+      <div class="group">
+        <h3>👀 Eyes</h3>
+        <div class="options" data-key="eyes">
+          <button class="active" data-value="coal">Coal</button>
+          <button data-value="hearts">❤️ Hearts</button>
+          <button data-value="stars">⭐ Stars</button>
+        </div>
+      </div>
 
-<div class="group">
-<h3>🥕 Nose</h3>
-<div class="options" data-key="nose">
-<button class="active" data-value="carrot">Carrot</button>
-<button data-value="candy">🍬 Sweet</button>
-<button data-value="button">🔴 Button</button>
-</div>
-</div>
+      <div class="group">
+        <h3>🥕 Nose</h3>
+        <div class="options" data-key="nose">
+          <button class="active" data-value="carrot">Carrot</button>
+          <button data-value="candy">🍬 Sweet</button>
+          <button data-value="button">🔴 Button</button>
+        </div>
+      </div>
 
-<div class="group">
-<h3>🧣 Scarf</h3>
-<div class="options" data-key="scarf">
-<button class="active" data-value="red">Red</button>
-<button data-value="blue">Blue</button>
-<button data-value="green">Green</button>
-<button data-value="purple">Purple</button>
-</div>
-</div>
+      <div class="group">
+        <h3>🧣 Scarf</h3>
+        <div class="options" data-key="scarf">
+          <button class="active" data-value="red">Red</button>
+          <button data-value="blue">Blue</button>
+          <button data-value="green">Green</button>
+          <button data-value="purple">Purple</button>
+        </div>
+      </div>
 
-<div class="group">
-<h3>🎽 Body</h3>
-<div class="options" data-key="body">
-<button class="active" data-value="buttons">Buttons</button>
-<button data-value="jumper">Jumper</button>
-<button data-value="badge">Badge</button>
-<button data-value="none">None</button>
-</div>
-</div>
+      <div class="group">
+        <h3>🎽 Body</h3>
+        <div class="options" data-key="body">
+          <button class="active" data-value="buttons">Buttons</button>
+          <button data-value="jumper">Jumper</button>
+          <button data-value="badge">Badge</button>
+          <button data-value="none">None</button>
+        </div>
+      </div>
 
-<div class="group">
-<h3>🧤 Hands</h3>
-<div class="options" data-key="hands">
-<button class="active" data-value="none">None</button>
-<button data-value="mittens">Mittens</button>
-<button data-value="present">🎁 Present</button>
-<button data-value="broom">🧹 Broom</button>
-</div>
-</div>
+      <div class="group">
+        <h3>🧤 Hands</h3>
+        <div class="options" data-key="hands">
+          <button class="active" data-value="none">None</button>
+          <button data-value="mittens">Mittens</button>
+          <button data-value="present">🎁 Present</button>
+          <button data-value="broom">🧹 Broom</button>
+        </div>
+      </div>
 
-</div>
+    </div>
 
-<canvas id="canvas" width="600" height="800"></canvas>
-</div>
+    <div class="canvas-wrap">
+      <canvas id="canvas" width="600" height="800"></canvas>
+    </div>
+  </div>
 
-<div class="download">
-  <br><br>
-  <button onclick="goToFrame()">➡️ Step 2: Add your face</button>
-</div>
+  <div class="download">
+    <button onclick="goToFrame()">➡️ Step 2: Add your face</button>
+  </div>
 
 </div>
 
 <script>
-  const isEmbedded = window.self !== window.top;
+const isEmbedded = window.self !== window.top;
 if (isEmbedded) {
   document.body.classList.add("embed");
 }
@@ -227,26 +309,27 @@ document.querySelectorAll(".options button").forEach(btn=>{
 });
 
 function draw(){
-ctx.clearRect(0,0,600,800);
+  ctx.clearRect(0,0,600,800);
 
-// body
-ball(300,560,140); ball(300,360,110); ball(300,HEAD_Y,90);
-arms(); bodyAccessory(); handAccessory();
+  // body
+  ball(300,560,140); ball(300,360,110); ball(300,HEAD_Y,90);
+  arms(); bodyAccessory(); handAccessory();
 
-// face
-if(snowman.eyes==="coal"){ eye(L,EYE_Y); eye(R,EYE_Y); }
-else{ emoji(snowman.eyes==="hearts"?"❤️":"⭐",L-12,EYE_Y+12); emoji(snowman.eyes==="hearts"?"❤️":"⭐",R-12,EYE_Y+12); }
+  // face
+  if(snowman.eyes==="coal"){ eye(L,EYE_Y); eye(R,EYE_Y); }
+  else{ emoji(snowman.eyes==="hearts"?"❤️":"⭐",L-12,EYE_Y+12); emoji(snowman.eyes==="hearts"?"❤️":"⭐",R-12,EYE_Y+12); }
 
-snowman.nose==="carrot"?carrot():emoji(snowman.nose==="candy"?"🍬":"🔴",288,215);
+  snowman.nose==="carrot"?carrot():emoji(snowman.nose==="candy"?"🍬":"🔴",288,215);
 
-// scarf
-ctx.fillStyle={red:"#d31c1c",blue:"#2563eb",green:"#16a34a",purple:"#7c3aed"}[snowman.scarf];
-ctx.fillRect(190,260,220,28);
+  // scarf
+  ctx.fillStyle={red:"#d31c1c",blue:"#2563eb",green:"#16a34a",purple:"#7c3aed"}[snowman.scarf];
+  ctx.fillRect(190,260,220,28);
 
-// hat
-if(snowman.hat==="top") topHat();
-if(snowman.hat==="beanie") beanie();
-if(snowman.hat==="santa") santaHat();
+  // hat
+  if(snowman.hat==="top") topHat();
+  if(snowman.hat==="beanie") beanie();
+  if(snowman.hat==="santa") santaHat();
+  
   sendHeight(20);
 }
 
@@ -259,16 +342,16 @@ function carrot(){ ctx.fillStyle="#ff7a00"; ctx.beginPath(); ctx.moveTo(300,HEAD
 function topHat(){ ctx.fillStyle="#000"; ctx.fillRect(240,60,120,70); ctx.fillRect(220,130,160,12); }
 function beanie(){ ctx.fillStyle="#3b82f6"; ctx.beginPath(); ctx.arc(300,110,60,Math.PI,0); ctx.fill(); }
 function santaHat(){
-ctx.fillStyle="#d31c1c";
-ctx.beginPath(); ctx.moveTo(220,120); ctx.quadraticCurveTo(300,40,380,120); ctx.fill();
-ctx.fillStyle="#fff"; ctx.fillRect(220,120,160,16);
-ctx.beginPath(); ctx.arc(380,120,10,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#d31c1c";
+  ctx.beginPath(); ctx.moveTo(220,120); ctx.quadraticCurveTo(300,40,380,120); ctx.fill();
+  ctx.fillStyle="#fff"; ctx.fillRect(220,120,160,16);
+  ctx.beginPath(); ctx.arc(380,120,10,0,Math.PI*2); ctx.fill();
 }
 
 function arms(){
-ctx.strokeStyle="#5b3a1e"; ctx.lineWidth=6;
-ctx.beginPath(); ctx.moveTo(180,320); ctx.lineTo(120,280); ctx.stroke();
-ctx.beginPath(); ctx.moveTo(420,320); ctx.lineTo(480,280); ctx.stroke();
+  ctx.strokeStyle="#5b3a1e"; ctx.lineWidth=6;
+  ctx.beginPath(); ctx.moveTo(180,320); ctx.lineTo(120,280); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(420,320); ctx.lineTo(480,280); ctx.stroke();
 }
 
 function bodyAccessory(){
@@ -290,7 +373,7 @@ function bodyAccessory(){
   }
 }
 
-  function jumper(){
+function jumper(){
   const cx = 300;
   const cy = 360;
   const r  = 110;
@@ -336,26 +419,26 @@ function bodyAccessory(){
 }
 
 function handAccessory(){
-if(snowman.hands==="mittens"){ mitten(120,280); mitten(480,280); }
-if(snowman.hands==="present"){ ctx.fillStyle="#16a34a"; ctx.fillRect(460,260,30,30); ctx.strokeStyle="#fff"; ctx.strokeRect(460,260,30,30); }
-if(snowman.hands==="broom"){
-ctx.strokeStyle="#8b5a2b"; ctx.lineWidth=6;
-ctx.beginPath(); ctx.moveTo(120,280); ctx.lineTo(120,220); ctx.stroke();
-ctx.fillStyle="#facc15"; ctx.fillRect(110,210,20,12);
-}
+  if(snowman.hands==="mittens"){ mitten(120,280); mitten(480,280); }
+  if(snowman.hands==="present"){ ctx.fillStyle="#16a34a"; ctx.fillRect(460,260,30,30); ctx.strokeStyle="#fff"; ctx.strokeRect(460,260,30,30); }
+  if(snowman.hands==="broom"){
+    ctx.strokeStyle="#8b5a2b"; ctx.lineWidth=6;
+    ctx.beginPath(); ctx.moveTo(120,280); ctx.lineTo(120,220); ctx.stroke();
+    ctx.fillStyle="#facc15"; ctx.fillRect(110,210,20,12);
+  }
 }
 
 function dot(x,y){ ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle="#000"; ctx.fill(); }
 function mitten(x,y){ ctx.beginPath(); ctx.arc(x,y,14,0,Math.PI*2); ctx.fillStyle="#d31c1c"; ctx.fill(); }
 
 function downloadPNG(){
-const a=document.createElement("a");
-a.download="my-snowman.png";
-a.href=canvas.toDataURL("image/png");
-a.click();
+  const a=document.createElement("a");
+  a.download="my-snowman.png";
+  a.href=canvas.toDataURL("image/png");
+  a.click();
 }
 
-  function goToFrame(){
+function goToFrame(){
   // export the snowman canvas as transparent PNG
   const png = canvas.toDataURL("image/png");
 
@@ -370,7 +453,7 @@ draw();
   
 </script>
 
-  <script>
+<script>
 function sendHeight(extra = 20) {
   const wrapper = document.querySelector(".wrapper");
   if (!wrapper) return;
