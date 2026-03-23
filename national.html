@@ -936,21 +936,21 @@ async function loadAll(fetchRegistry = true) {
 
   const promises = tables.map(async (table) => {
     try {
-      // Clean up the API URL to prevent formatting errors
       const cleanApi = String(table.api).trim();
       
       if (currentMode === "live") {
-         const data = await fetchWithTimeout(cleanApi, FETCH_TIMEOUT_MS);
+         // ⭐ CACHE BUSTER FOR LIVE (Forces fresh payload)
+         const sep = cleanApi.includes('?') ? '&' : '?';
+         const liveUrl = cleanApi + sep + "cb=" + Date.now();
+         const data = await fetchWithTimeout(liveUrl, FETCH_TIMEOUT_MS);
          if (data.error) throw new Error(data.message || data.error);
          return extractLiveTableData(table, data);
       } else {
-         // ⭐ THE CACHE-BUSTER: Forces the browser to fetch fresh history data
+         // ⭐ CACHE BUSTER FOR HISTORY (Fixes the toggle being stuck)
          const sep = cleanApi.includes('?') ? '&' : '?';
          const histUrl = cleanApi + sep + "function=getSeasonHistory&cb=" + Date.now();
-         
          const data = await fetchWithTimeout(histUrl, FETCH_TIMEOUT_MS);
          if (data.error) throw new Error(data.message || data.error);
-         
          return extractHistoricalTableData(table, data.history || [], currentMode);
       }
     } catch (err) {
@@ -964,8 +964,6 @@ async function loadAll(fetchRegistry = true) {
   });
 
   results = await Promise.all(promises);
-
-  // Sort by raised descending
   results.sort((a, b) => b.raised - a.raised);
 
   render(results, errors);
