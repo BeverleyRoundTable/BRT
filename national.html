@@ -936,14 +936,21 @@ async function loadAll(fetchRegistry = true) {
 
   const promises = tables.map(async (table) => {
     try {
+      // Clean up the API URL to prevent formatting errors
+      const cleanApi = String(table.api).trim();
+      
       if (currentMode === "live") {
-         const data = await fetchWithTimeout(table.api, FETCH_TIMEOUT_MS);
+         const data = await fetchWithTimeout(cleanApi, FETCH_TIMEOUT_MS);
          if (data.error) throw new Error(data.message || data.error);
          return extractLiveTableData(table, data);
       } else {
-         const histUrl = table.api + "?function=getSeasonHistory";
+         // ⭐ THE CACHE-BUSTER: Forces the browser to fetch fresh history data
+         const sep = cleanApi.includes('?') ? '&' : '?';
+         const histUrl = cleanApi + sep + "function=getSeasonHistory&cb=" + Date.now();
+         
          const data = await fetchWithTimeout(histUrl, FETCH_TIMEOUT_MS);
          if (data.error) throw new Error(data.message || data.error);
+         
          return extractHistoricalTableData(table, data.history || [], currentMode);
       }
     } catch (err) {
@@ -970,7 +977,7 @@ async function loadAll(fetchRegistry = true) {
      document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('en-GB');
   }
 }
-
+  
 // ═══════════════════════════════════════════════════════════
 // RENDER
 // ═══════════════════════════════════════════════════════════
