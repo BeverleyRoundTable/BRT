@@ -404,7 +404,45 @@
     body.driver-mode .ios-install-prompt {
       display: none !important;
     }
-    
+
+    /* ── TWITCH PLAYER OVERLAY ── */
+    .twitch-container {
+      position: fixed;
+      bottom: calc(var(--info-bottom) + 60px); /* Sits just above the control bar */
+      right: 16px;
+      width: 320px;
+      height: 180px;
+      background: var(--surface-2);
+      border: 2px solid var(--rt-gold);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      z-index: 3000;
+      overflow: hidden;
+      transform: translateY(150%);
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .twitch-container.visible {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .twitch-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    /* Mobile adjustments for the player */
+    @media (max-width: 600px) {
+      .twitch-container {
+        width: calc(100vw - 32px); /* Full width minus padding */
+        right: 16px;
+        left: 16px;
+        height: 200px;
+        bottom: calc(var(--info-bottom) + 50px);
+      }
+    }
   </style>
 </head>
 
@@ -430,8 +468,17 @@
     <button class="btn" id="followBtn">Follow: ON</button>
     <button class="btn" id="recenterBtn">Re-centre</button>
     <button class="btn" id="notifyBtn">🔔 Notify Me</button>
+    
+    <button class="btn" id="twitchBtn" style="display: none; border-color: var(--rt-gold); color: var(--rt-gold);">📺 Cam: OFF</button>
+    
     <button class="btn" id="msgBtn" style="display: none;">💬 Msg Santa</button>
     <div id="toast" class="toast-box"></div>
+  </div>
+
+  <div id="twitchBox" class="twitch-container">
+    <div style="padding: 10px; text-align: center; color: var(--text-dim); font-size: 12px; height: 100%; display: flex; align-items: center; justify-content: center;">
+      Loading Sleigh Cam...
+    </div>
   </div>
 
   <div id="emailModal" class="modal-overlay">
@@ -1411,6 +1458,54 @@ if (liveMsg && liveMsg.trim() !== "") {
         
         const settings = apiData.settings || {};
         AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
+
+        const apiData = await Utils.loadJSON(AppState.vars.apiUrl);
+        // Save the Firebase URL so we can query it directly!
+        AppState.vars.firebaseUrl = apiData.tracker?.firebase_url ? apiData.tracker.firebase_url.replace(/\/$/, "") : null;
+        
+        const settings = apiData.settings || {};
+        AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
+
+        const today = new Date().toISOString().slice(0, 10);
+        const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
+        AppState.vars.todayRoute = route;
+
+        // ── NEW: TWITCH LOGIC ──
+        const twitchChannel = settings.twitch_channel;
+        if (twitchChannel && twitchChannel.trim() !== "" && !AppState.flags.isKiosk && !AppState.flags.isDriver) {
+          const twitchBtn = document.getElementById('twitchBtn');
+          const twitchBox = document.getElementById('twitchBox');
+          let twitchLoaded = false;
+          
+          twitchBtn.style.display = "inline-block"; // Show the button
+          
+          twitchBtn.addEventListener('click', () => {
+            const isVisible = twitchBox.classList.contains('visible');
+            
+            if (isVisible) {
+              // Hide it
+              twitchBox.classList.remove('visible');
+              twitchBtn.textContent = "📺 Cam: OFF";
+              twitchBtn.style.background = "var(--surface-2)";
+              twitchBtn.style.color = "var(--rt-gold)";
+            } else {
+              // Show it
+              twitchBox.classList.add('visible');
+              twitchBtn.textContent = "📺 Cam: LIVE";
+              twitchBtn.style.background = "var(--gold-glow)";
+              twitchBtn.style.color = "var(--rt-gold)";
+              
+              // Only inject the iframe the first time they open it (saves data)
+              if (!twitchLoaded) {
+                // Determine the parent domain to satisfy Twitch's embed security rules
+                const parentDomain = window.location.hostname || "localhost";
+                twitchBox.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(twitchChannel)}&parent=${parentDomain}&muted=false" allowfullscreen="true"></iframe>`;
+                twitchLoaded = true;
+              }
+            }
+          });
+        }
+        // ────────────────────────
 
         const today = new Date().toISOString().slice(0, 10);
         const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
