@@ -6,25 +6,35 @@
   <title>TurboSanta — Tracker</title>
   
   <link id="dynamic-manifest" rel="manifest" href="">
-  <meta name="theme-color" content="#1D1D1A">
+  <meta name="theme-color" content="#0d0d0b">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png">
   
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
   <style>
-    /* ── ROUND TABLE BRAND VARIABLES ── */
+    /* ── ROUND TABLE BRAND VARIABLES (NATIONAL SYNC) ── */
     :root {
-      --rt-grey: #1D1D1A;
-      --rt-gold: #FBAF33;
-      --surface: #262622;
-      --surface-2: #2f2f2a;
+      /* National Colors */
+      --gold: #FBAF33;
+      --gold-dim: rgba(251,175,51,0.12);
+      --gold-glow: rgba(251,175,51,0.25);
+      --dark: #0d0d0b;
+      --surface: #161614;
+      --surface-2: #1e1e1b;
+      --surface-3: #252522;
       --border: rgba(255,255,255,0.08);
-      --text: #f0f0f0;
-      --text-dim: rgba(255,255,255,0.8);
-      
+      --border-gold: rgba(251,175,51,0.2);
+      --text: #eaeae5;
+      --text-dim: rgba(255,255,255,0.55);
+
+      /* Legacy Tracker Mappings (prevents your CSS from breaking) */
+      --rt-gold: var(--gold);
+      --rt-grey: var(--dark);
+
+      /* Tracker UI Layout */
       --ui-bottom-safe: 72px;
       --donate-bottom: calc(var(--ui-bottom-safe) + 120px);
       --info-bottom: var(--ui-bottom-safe);
@@ -37,12 +47,12 @@
       } 
     }
 
-    /* ── BASE STYLES ── */
+   /* ── BASE STYLES ── */
     html, body { 
       margin: 0; padding: 0; height: 100%; 
-      background: var(--rt-grey); 
+      background: var(--dark); 
       color: var(--text); 
-      font-family: 'Open Sans', sans-serif; 
+      font-family: 'DM Sans', sans-serif; 
       overflow: hidden; 
       -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
     }
@@ -133,6 +143,9 @@
       width: 70%; max-width: 420px; z-index: 2000; transition: opacity 600ms ease; 
     }
     .donate-btn { 
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 1.5px;
       background: var(--rt-gold); color: #000000; border: 2px solid var(--rt-gold); 
       padding: 14px 0; display: block; text-align: center; border-radius: 16px; 
       font-weight: 900; text-decoration: none; box-shadow: 0 4px 16px rgba(0,0,0,.4); 
@@ -180,7 +193,10 @@
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
     .modal-box { background: var(--surface); padding: 24px; border-radius: 20px; width: 100%; max-width: 340px; text-align: center; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.6); animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-title { font-size: 1.2em; font-weight: 800; margin: 0 0 8px 0; color: var(--rt-gold); }
+    .modal-title { 
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 1.5px; { font-size: 1.2em; font-weight: 800; margin: 0 0 8px 0; color: var(--rt-gold); }
     .modal-desc { font-size: 0.9em; color: var(--text-dim); margin-bottom: 20px; line-height: 1.4; }
     .modal-input { width: 100%; padding: 14px; margin-bottom: 20px; background: var(--surface-2); border: 2px solid var(--border); border-radius: 12px; color: var(--text); font-size: 16px; box-sizing: border-box; text-align: center; font-family: inherit; }
     .modal-input:focus { outline: none; border-color: var(--rt-gold); }
@@ -353,6 +369,8 @@
 
     /* ⭐ BIG DRIVER PROGRESS OVERLAY */
     .driver-progress-box {
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 2px;
       display: none; /* Hidden by default */
       position: absolute;
       bottom: 40px;
