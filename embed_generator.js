@@ -375,8 +375,8 @@ https://brt-23f.pages.dev/suggest?api=${ensureApi()}
 // ================================
 // Elf Dashcam
 // ================================
-const elfdashboardLink = `
-https://brt-23f.pages.dev/elf_dashboard?api=${ensureApi()}
+const elfcamdLink = `
+https://brt-23f.pages.dev/elf_cam?api=${ensureApi()}
 `;
 
 // ================================
