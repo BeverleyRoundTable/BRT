@@ -362,7 +362,7 @@
     }
     
     /* ── DRIVER MODE (SAT NAV) ── */
-    body.driver-mode {
+    .driver-mode {
       max-width: 500px;
       margin: 0 auto;
       position: relative;
@@ -1459,13 +1459,6 @@ if (liveMsg && liveMsg.trim() !== "") {
         const settings = apiData.settings || {};
         AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
 
-        const apiData = await Utils.loadJSON(AppState.vars.apiUrl);
-        // Save the Firebase URL so we can query it directly!
-        AppState.vars.firebaseUrl = apiData.tracker?.firebase_url ? apiData.tracker.firebase_url.replace(/\/$/, "") : null;
-        
-        const settings = apiData.settings || {};
-        AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
-
         const today = new Date().toISOString().slice(0, 10);
         const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
         AppState.vars.todayRoute = route;
@@ -1506,10 +1499,6 @@ if (liveMsg && liveMsg.trim() !== "") {
           });
         }
         // ────────────────────────
-
-        const today = new Date().toISOString().slice(0, 10);
-        const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
-        AppState.vars.todayRoute = route;
 
         const don = apiData.donations || {};
         if (settings.donate_url && !AppState.flags.isKiosk) {
