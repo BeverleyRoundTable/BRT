@@ -545,6 +545,14 @@
       <h3 class="sub-title">Elf Cam URL</h3>
       <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">elf_cam_url</code> key powers the Elf Cam polaroid feature. When the Elf Cam captures a new photo, it writes the Google Drive URL here. The tracker polls for changes and displays any new image as a floating Polaroid on the public map.</p>
 
+      <h3 class="sub-title">Sleigh Cam (Twitch Stream)</h3>
+      <p>The <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">enable_twitch</code> toggle controls visibility of the 📺 Sleigh Cam button on the public tracker. When enabled and <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">twitch_channel</code> is set to your Twitch channel name, viewers see a Cam button in the control bar. Tapping it opens a Twitch player overlay on the map. The stream starts muted due to browser autoplay policy — viewers tap unmute within the player for audio.</p>
+      <ul class="bullet-list">
+        <li>Enable by setting <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">enable_twitch</code> to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> and <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">twitch_channel</code> to your channel name (e.g. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">beverleyroundtable</code>) in Settings.</li>
+        <li>Set <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">enable_twitch</code> to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">FALSE</code> or blank to hide the button — useful when you're not streaming.</li>
+        <li>Hidden automatically in kiosk and driver modes.</li>
+        <li>The Twitch embed dynamically reads the hosting domain, so it works on any table's Cloudflare Pages URL or custom domain without configuration.</li>
+      </ul>
       <h3 class="sub-title">GET_PEAK_VIEWERS Formula</h3>
       <p>TurboSanta includes a custom Google Sheets formula to calculate peak simultaneous viewers within any time window:</p>
       <div class="code-block">
@@ -591,6 +599,8 @@
           <tr><td>show_carousel</td><td>Show the photo carousel.</td></tr>
           <tr><td>donate_url</td><td>URL the Donate button links to on the public tracker.</td></tr>
           <tr><td>enable_user_messages</td><td>Set to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> to enable the 💬 Msg Santa button.</td></tr>
+          <tr><td>enable_twitch</td><td>Set to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> to show the 📺 Cam button on the public tracker.</td></tr>
+          <tr><td>twitch_channel</td><td>Your Twitch channel name (e.g. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">beverleyroundtable</code>). The embed uses this directly.</td></tr>
         </tbody>
       </table>
 
