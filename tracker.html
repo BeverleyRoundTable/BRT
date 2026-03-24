@@ -1464,8 +1464,9 @@ if (liveMsg && liveMsg.trim() !== "") {
         AppState.vars.todayRoute = route;
 
         // ── NEW: TWITCH LOGIC ──
-        const twitchChannel = settings.twitch_channel;
-        if (twitchChannel && twitchChannel.trim() !== "" && !AppState.flags.isKiosk && !AppState.flags.isDriver) {
+        const twitchEnabled = String(settings.enable_twitch || "").toUpperCase() === "TRUE";
+const twitchChannel = settings.twitch_channel;
+if (twitchEnabled && twitchChannel && twitchChannel.trim() !== "" && !AppState.flags.isKiosk && !AppState.flags.isDriver) {
           const twitchBtn = document.getElementById('twitchBtn');
           const twitchBox = document.getElementById('twitchBox');
           let twitchLoaded = false;
@@ -1492,7 +1493,7 @@ if (liveMsg && liveMsg.trim() !== "") {
               if (!twitchLoaded) {
                 // Determine the parent domain to satisfy Twitch's embed security rules
                 const parentDomain = window.location.hostname || "localhost";
-                twitchBox.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(twitchChannel)}&parent=${parentDomain}&muted=false" frameborder="0" allowfullscreen="true" scrolling="no" allow="autoplay; fullscreen" sandbox="allow-modals allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`;
+                twitchBox.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(twitchChannel)}&parent=${parentDomain}&muted=true" frameborder="0" allowfullscreen="true" scrolling="no" allow="autoplay; fullscreen" sandbox="allow-modals allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`;
                 twitchLoaded = true;
               }
             }
