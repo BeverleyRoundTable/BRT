@@ -47,6 +47,7 @@
     .header-wrap {
       text-align: center;
       margin-bottom: 56px;
+      width: 100%;
     }
 
     h1 {
@@ -54,7 +55,7 @@
       font-size: 56px;
       font-weight: 400;
       letter-spacing: 2px;
-      line-height: 1;
+      line-height: 1.1;
       margin-bottom: 16px;
       color: #fff;
     }
@@ -71,11 +72,16 @@
       color: var(--text-dim);
       letter-spacing: 1px;
       text-transform: uppercase;
+      /* FIX: Prevent wide strings from breaking the layout */
+      max-width: 100%; 
+      overflow-wrap: break-word;
     }
 
     .api-display-wrap span {
       color: var(--gold);
       font-weight: 700;
+      /* FIX: Force long API strings to break to the next line */
+      word-break: break-all;
     }
 
     /* ── BLOCKS / CARDS ── */
@@ -100,7 +106,7 @@
       letter-spacing: 1px;
       color: #fff;
       margin-bottom: 12px;
-      line-height: 1;
+      line-height: 1.2;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -167,11 +173,28 @@
 
     /* Responsive adjustments */
     @media (max-width: 600px) {
+      body {
+        padding: 32px 16px 60px; /* Reduced top padding on mobile */
+      }
+      .header-wrap {
+        margin-bottom: 40px;
+      }
+      h1 { 
+        font-size: 38px; /* Slightly smaller to fit nicely */
+      }
+      .api-display-wrap { 
+        font-size: 11px;
+        padding: 10px 16px;
+        border-radius: 16px; /* Switch from pill to rounded box for multiline */
+        display: block; /* Allows it to expand downward naturally */
+        width: 100%;
+      }
       .block {
         padding: 24px 20px;
       }
-      h1 { font-size: 42px; }
-      .api-display-wrap { font-size: 11px; }
+      .block h2 {
+        font-size: 28px;
+      }
     }
   </style>
 
