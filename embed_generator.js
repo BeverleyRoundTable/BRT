@@ -373,9 +373,9 @@ https://brt-23f.pages.dev/suggest?api=${ensureApi()}
 `;
 
 // ================================
-// Elf Dashcam
+// Elf Cam
 // ================================
-const elfcamdLink = `
+const elfcamLink = `
 https://brt-23f.pages.dev/elf_cam?api=${ensureApi()}
 `;
 
@@ -462,7 +462,7 @@ document.getElementById("crewLink").value = crewLink.trim();
 document.getElementById("letterLink").value = letterLink.trim();
 document.getElementById("recommendedLetter").value = recommendedLetter.trim();
 document.getElementById("suggestLink").value = suggestLink.trim();
-document.getElementById("elfdashboardLink").value = elfdashboardLink.trim();
+document.getElementById("elfcamLink").value = elfcamLink.trim();
 document.getElementById("satnavLink").value = satnavLink.trim();
 document.getElementById("beaconLink").value = beaconLink.trim();
 document.getElementById("doorhangerLink").value = doorhangerLink.trim();
