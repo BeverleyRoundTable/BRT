@@ -237,7 +237,6 @@
     }
     
     @media(max-width: 480px) { 
-      /* INCREASED from 165px to 195px to clear the 2-row info-popup */
       .donate-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 195px) !important; } 
       
       .info-popup { 
@@ -249,6 +248,7 @@
         bottom: calc(env(safe-area-inset-bottom, 0px) + 85px) !important; 
       }
       
+      /* 22% flex-basis ensures max 4 buttons per row */
       .info-popup .btn { 
         flex: 1 0 22%; 
         padding: 8px 2px; 
@@ -261,27 +261,8 @@
 
       .status-dot { width: 10px; flex: 0 0 10px; margin-right: 2px; }
 
-      /* INCREASED from 250px to 270px so toasts clear the newly raised donate box */
+      /* Toast must clear the potentially taller 2-row bar and the raised donate box */
       .toast-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 270px) !important; } 
-    }
-
-      /* 22% flex-basis ensures max 4 buttons per row (dot eats ~3%, leaving room for 4 × 22% = 88%) */
-      /* Row 2 with 3 buttons: each grows to ~33% — visually balanced and centred */
-      .info-popup .btn { 
-        flex: 1 0 22%; 
-        padding: 8px 2px; 
-        font-size: 0.9em; 
-        white-space: nowrap; 
-        text-align: center; 
-        overflow: hidden; 
-        text-overflow: ellipsis; 
-      }
-
-      /* Status dot stays compact on row 1, never triggers a wrap */
-      .status-dot { width: 10px; flex: 0 0 10px; margin-right: 2px; }
-
-      /* Toast must clear the potentially taller 2-row bar */
-      .toast-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 250px) !important; }
     }
     
     .ios-install-prompt { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(29, 29, 26, 0.95); border: 1px solid var(--rt-gold); color: #fff; padding: 16px; border-radius: 16px; font-size: 0.9em; font-weight: 700; text-align: center; z-index: 9999; width: 85%; max-width: 340px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); opacity: 0; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
