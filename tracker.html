@@ -1209,7 +1209,12 @@ const userMsgTs = Number(String(latestApiData.settings?.user_announcement_ts).re
 if (userMsg && userMsgTs !== AppState.vars.lastSeenMsgTs) {
   AppState.vars.lastSeenMsgTs = userMsgTs;
   sessionStorage.setItem('SANTA_LAST_MSG_TS', String(userMsgTs));
-  AppState.vars.localMsgStartTime = Date.now();
+
+  // Only trigger the 20s display if the message was approved within the last 30 mins
+  const MSG_MAX_AGE_MS = 30 * 60 * 1000;
+  if (userMsgTs && (Date.now() - userMsgTs) < MSG_MAX_AGE_MS) {
+    AppState.vars.localMsgStartTime = Date.now();
+  }
 }
 
 const isUserMsgActive = userMsg && AppState.vars.localMsgStartTime && (Date.now() - AppState.vars.localMsgStartTime < 20000);
