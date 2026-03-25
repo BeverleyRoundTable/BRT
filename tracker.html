@@ -237,16 +237,33 @@
     }
     
     @media(max-width: 480px) { 
-      .donate-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 165px) !important; }
+      /* INCREASED from 165px to 195px to clear the 2-row info-popup */
+      .donate-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 195px) !important; } 
+      
       .info-popup { 
         width: calc(100vw - 16px); 
         padding: 8px 6px; 
         gap: 4px; 
-        row-gap: 6px;  /* Breathing room between rows */
-        flex-wrap: wrap; /* Allow buttons to flow to a second row */
+        row-gap: 6px;  
+        flex-wrap: wrap; 
         bottom: calc(env(safe-area-inset-bottom, 0px) + 85px) !important; 
       }
-      .toast-box { font-size: 0.9em; padding: 12px 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 235px) !important; } 
+      
+      .info-popup .btn { 
+        flex: 1 0 22%; 
+        padding: 8px 2px; 
+        font-size: 0.9em; 
+        white-space: nowrap; 
+        text-align: center; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+      }
+
+      .status-dot { width: 10px; flex: 0 0 10px; margin-right: 2px; }
+
+      /* INCREASED from 250px to 270px so toasts clear the newly raised donate box */
+      .toast-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 270px) !important; } 
+    }
 
       /* 22% flex-basis ensures max 4 buttons per row (dot eats ~3%, leaving room for 4 × 22% = 88%) */
       /* Row 2 with 3 buttons: each grows to ~33% — visually balanced and centred */
