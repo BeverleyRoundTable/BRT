@@ -137,28 +137,42 @@
     .btn:active { transform: scale(0.96); border-color: var(--rt-gold); color: var(--rt-gold); }
     .btn.locked { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
 
-    /* ── DONATE BUTTON & INSTALL OVERLAY ── */
-    .donate-box { 
-      position: fixed; bottom: var(--donate-bottom); left: 50%; transform: translateX(-50%); 
-      width: 70%; max-width: 420px; z-index: 2000; transition: opacity 600ms ease; 
-    }
-    .donate-btn { 
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
-      letter-spacing: 1.5px;
-      background: var(--rt-gold); color: #000000; border: 2px solid var(--rt-gold); 
-      padding: 14px 0; display: block; text-align: center; border-radius: 16px; 
-      font-weight: 900; text-decoration: none; box-shadow: 0 4px 16px rgba(0,0,0,.4); 
-      transition: background 0.5s ease; position: relative; z-index: 1; 
-    }
+    //* ── DONATE BUTTON & INSTALL OVERLAY ── */
+.donate-box { 
+  position: fixed; bottom: var(--donate-bottom); left: 50%; transform: translateX(-50%); 
+  width: 70%; max-width: 420px; z-index: 2000; transition: opacity 600ms ease; 
+}
 
-    /* PWA overlay covers the donate box, then fades out */
-    .install-overlay {
-      position: fixed; bottom: var(--donate-bottom); left: 50%; transform: translateX(-50%); 
-      width: 70%; max-width: 420px; z-index: 2005; /* Sits right on top */
-      opacity: 0; pointer-events: none; transition: opacity 0.8s ease;
-    }
-    .install-overlay.visible { opacity: 1; pointer-events: auto; }
+.donate-btn { 
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 1.5px;
+  background: var(--rt-gold); color: #000000; border: 2px solid var(--rt-gold); 
+  /* Use flex and fixed height for mathematically identical geometry */
+  display: flex; align-items: center; justify-content: center;
+  height: 58px; padding: 0; box-sizing: border-box; width: 100%;
+  border-radius: 16px; 
+  font-weight: 900; text-decoration: none; box-shadow: 0 4px 16px rgba(0,0,0,.4); 
+  transition: background 0.5s ease; position: relative; z-index: 1; 
+}
+
+/* Position the overlay INSIDE the donate box to guarantee a 100% size match */
+.install-overlay {
+  position: absolute; top: 0; left: 0; bottom: 0; right: 0; 
+  width: 100%; z-index: 2005; 
+  opacity: 0; pointer-events: none; transition: opacity 0.8s ease;
+}
+.install-overlay.visible { opacity: 1; pointer-events: auto; }
+
+/* Target the install button specifically for the white border and clean text */
+.override-install-btn {
+  font-family: 'DM Sans', sans-serif; 
+  font-size: 1.05em;
+  letter-spacing: 0;
+  border: 2px solid #fff;
+  box-shadow: none; /* Let the underlying donate button provide the shadow to prevent stacking */
+  cursor: pointer;
+}
 
     /* ── WAVE ANIMATION ── */
     .wave-emoji {
@@ -242,9 +256,9 @@
     
         @media(max-width: 480px) { 
       /* 1. Explicitly position the Donate box to make room (Original narrow width) */
-      .donate-box, .install-overlay {
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 165px) !important;
-      }
+      .donate-box {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 165px) !important;
+    }
 
       /* 2. Position the Grey Bar perfectly between the logo and donate box */
       .info-popup { 
@@ -450,7 +464,13 @@
   <div id="loadingCover"><div id="loadingSpinner"></div></div>
   <div class="status-popup" id="statusBox">🔍 Searching for Santa…</div>
   
-  <div class="donate-box" id="donateBox"><a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a></div>
+  <div class="donate-box" id="donateBox">
+  <a id="donateLink" class="donate-btn" target="_blank">🎁 DONATE & SUPPORT US</a>
+  
+  <div class="install-overlay" id="installOverlayBox">
+    <button id="installAppBtn" class="donate-btn override-install-btn">📲 Add App to Home Screen</button>
+  </div>
+</div>
   
   <div class="install-overlay" id="installOverlayBox">
     <button id="installAppBtn" class="donate-btn" style="width: 100%; border: 2px solid #fff; cursor: pointer; font-family: inherit; font-size: 1.05em;">📲 Add App to Home Screen</button>
