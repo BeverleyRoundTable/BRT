@@ -422,23 +422,25 @@
     /* ── TWITCH PLAYER OVERLAY ── */
     .twitch-container {
       position: fixed;
-      bottom: calc(var(--info-bottom) + 120px);
-      right: 16px;
-      width: 320px;
-      height: 180px;
+      /* Desktop Position: Bottom Right, above the map controls */
+      bottom: calc(var(--info-bottom) + 30px); 
+      right: 24px;
+      width: 340px; /* Slightly wider for a better 16:9 feel on desktop */
+      height: 191px;
       background: var(--surface-2);
       border: 2px solid var(--rt-gold);
       border-radius: 12px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.8);
       z-index: 3000;
       overflow: hidden;
-      transform: translateY(150%);
+      /* Animation states */
+      transform: translateX(120%); /* Slide in from the right edge on desktop */
       opacity: 0;
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
       pointer-events: none;
     }
     .twitch-container.visible {
-      transform: translateY(0);
+      transform: translateX(0); /* Settle into position */
       opacity: 1;
       pointer-events: auto;
     }
@@ -447,14 +449,21 @@
       height: 100%;
       border: none;
     }
+    
     /* Mobile adjustments for the player */
-    @media (max-width: 600px) {
+    @media (max-width: 768px) { /* Widened the breakpoint slightly to catch tablets */
       .twitch-container {
         width: calc(100vw - 32px); /* Full width minus padding */
         right: 16px;
         left: 16px;
         height: 200px;
-         bottom: calc(var(--info-bottom) + 110px);
+        /* Positioned above the info bar on mobile */
+        bottom: calc(var(--info-bottom) + 110px);
+        /* Revert animation to slide UP from bottom on mobile */
+        transform: translateY(150%);
+      }
+      .twitch-container.visible {
+        transform: translateY(0);
       }
     }
   </style>
