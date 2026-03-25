@@ -425,22 +425,22 @@
       /* Desktop Position: Bottom Right, above the map controls */
       bottom: calc(var(--info-bottom) + 30px); 
       right: 24px;
-      width: 340px; /* Slightly wider for a better 16:9 feel on desktop */
-      height: 191px;
+      width: 640px;  /* Double the width! */
+      height: 360px; /* Double the height! */
       background: var(--surface-2);
       border: 2px solid var(--rt-gold);
       border-radius: 12px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.8);
       z-index: 3000;
       overflow: hidden;
-      /* Animation states */
-      transform: translateX(120%); /* Slide in from the right edge on desktop */
+      /* Slide in smoothly from the right edge on desktop */
+      transform: translateX(120%); 
       opacity: 0;
       transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
       pointer-events: none;
     }
     .twitch-container.visible {
-      transform: translateX(0); /* Settle into position */
+      transform: translateX(0); /* Lock into position */
       opacity: 1;
       pointer-events: auto;
     }
@@ -450,17 +450,15 @@
       border: none;
     }
     
-    /* Mobile adjustments for the player */
-    @media (max-width: 768px) { /* Widened the breakpoint slightly to catch tablets */
+    /* Mobile & Tablet adjustments for the player */
+    @media (max-width: 768px) {
       .twitch-container {
-        width: calc(100vw - 32px); /* Full width minus padding */
+        width: calc(100vw - 32px); /* Full width minus screen edge padding */
         right: 16px;
         left: 16px;
-        height: 200px;
-        /* Positioned above the info bar on mobile */
-        bottom: calc(var(--info-bottom) + 110px);
-        /* Revert animation to slide UP from bottom on mobile */
-        transform: translateY(150%);
+        height: 200px; /* Revert to mobile-friendly height */
+        bottom: calc(var(--info-bottom) + 110px); /* Lift above the mobile donate box */
+        transform: translateY(150%); /* Revert to slide-up animation */
       }
       .twitch-container.visible {
         transform: translateY(0);
