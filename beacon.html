@@ -142,7 +142,7 @@ async function boot() {
   let secret = sessionStorage.getItem('beaconSecret');
 
   if (!secret) {
-    secret = prompt("📡 Beacon Authorization\n\nEnter the God Mode password:");
+    secret = prompt("📡 Beacon Authorization\n\nEnter the Beacon password:");
     if (!secret) {
       document.getElementById('app').innerHTML = '<div class="error-msg">Authorization required. Refresh to try again.</div>';
       document.getElementById('loader').classList.add('done');
@@ -152,7 +152,7 @@ async function boot() {
     ltxt.textContent = "Verifying password…";
     try {
       const sep = API.includes('?') ? '&' : '?';
-      const res = await fetch(`${API}${sep}function=verifyGodMode&secret=${encodeURIComponent(secret)}`);
+      const res = await fetch(`${API}${sep}function=verifyBeaconAuth&secret=${encodeURIComponent(secret)}`);
       const result = await res.json();
       if (!result.valid) {
         document.getElementById('app').innerHTML = '<div class="error-msg">❌ Access Denied. Incorrect password.</div>';
