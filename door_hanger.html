@@ -370,15 +370,14 @@ async function init() {
     const sel = document.getElementById('routeSelect');
     sel.innerHTML = '<option value="">— No route shown —</option>';
 
-    const startTime = r["Start Time"] || "";
-    const endTime = r["End Time"] || "";
-    const timeStr = startTime ? ` (${startTime}–${endTime})` : "";
-    const label = `${r.routeName} — ${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}${timeStr}`;
     CFG.routes.forEach(r => {
-      const d = new Date(r.date + 'T00:00:00');
-      const label = `${r.routeName} — ${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}`;
-      sel.innerHTML += `<option value="${r.routeName}" data-date="${r.date}" data-start="${startTime}" data-end="${endTime}">${label}</option>`;
-    });
+  const d = new Date(r.date + 'T00:00:00');
+  const startTime = r["Start Time"] || "";
+  const endTime = r["End Time"] || "";
+  const timeStr = startTime ? ` (${startTime}–${endTime})` : "";
+  const label = `${r.routeName} — ${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}${timeStr}`;
+  sel.innerHTML += `<option value="${r.routeName}" data-date="${r.date}" data-start="${startTime}" data-end="${endTime}">${label}</option>`;
+});
   } catch(e) { console.error('API load failed:', e); }
   
   document.getElementById('loader').classList.add('done');
