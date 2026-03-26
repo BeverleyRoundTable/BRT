@@ -319,18 +319,15 @@ async function init() {
 
     // Build street → route+date lookup
     routes.forEach(route => {
-      if (!route.date) return;
-      const streets = (route.streets || '').split(',').map(s => s.trim()).filter(Boolean);
-      const dateObj = parseRouteDate(route.date);
-      streets.forEach(street => {
-        streetMap.push({
-          street,
-          routeName: route.routeName || 'Unknown Route',
-          date: route.date,
-          dateObj
-        });
-      });
-    });
+  if (!route.date) return;
+  const startTime = route["Start Time"] || "";
+  const endTime = route["End Time"] || "";
+  const dateObj = parseRouteDate(route.date, startTime);
+  const streets = (route.streets || '').split(',').map(s => s.trim()).filter(Boolean);
+  streets.forEach(street => {
+    streetMap.push({ street, routeName: route.routeName || 'Unknown Route', date: route.date, dateObj, startTime, endTime });
+  });
+});
 
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('searchState').style.display = 'block';
@@ -353,13 +350,19 @@ async function init() {
   }
 }
 
-function parseRouteDate(dateStr) {
-  // Handle dd/mm/yyyy or yyyy-mm-dd
+function parseRouteDate(dateStr, startTime) {
+  let hour = 17, min = 0; // default 5pm
+  if (startTime && startTime.includes(':')) {
+    const parts = startTime.split(':');
+    hour = parseInt(parts[0]) || 17;
+    min = parseInt(parts[1]) || 0;
+  }
   if (dateStr.includes('/')) {
     const [d, m, y] = dateStr.split('/');
-    return new Date(y, m - 1, d, 17, 0, 0); // Default 5pm start
+    return new Date(y, m - 1, d, hour, min, 0);
   }
-  const d = new Date(dateStr + 'T17:00:00');
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setHours(hour, min, 0);
   return d;
 }
 
@@ -393,12 +396,13 @@ function doSearch(query) {
     return true;
   });
 
-  resultsList.innerHTML = unique.slice(0, 8).map((m, i) =>
-    `<div class="result-item" tabindex="0" data-idx="${streetMap.indexOf(m)}">
-      <span>${m.street}</span>
-      <span class="result-route">${m.routeName} · ${formatDateShort(m.dateObj)}</span>
-    </div>`
-  ).join('');
+  resultsList.innerHTML = unique.slice(0, 8).map((m, i) => {
+  const timeStr = m.startTime ? ` · ${m.startTime}–${m.endTime}` : "";
+  return `<div class="result-item" tabindex="0" data-idx="${streetMap.indexOf(m)}">
+    <span>${m.street}</span>
+    <span class="result-route">${m.routeName} · ${formatDateShort(m.dateObj)}${timeStr}</span>
+  </div>`;
+}).join('');
 
   resultsList.classList.add('open');
 
@@ -430,7 +434,8 @@ function showCountdown(match) {
   card.classList.add('visible');
 
   document.getElementById('cdStreet').textContent = match.street;
-  document.getElementById('cdRoute').textContent = `${match.routeName} · ${formatDateLong(match.dateObj)}`;
+  const timeStr = match.startTime ? ` · ${match.startTime}–${match.endTime}` : "";
+document.getElementById('cdRoute').textContent = `${match.routeName} · ${formatDateLong(match.dateObj)}${timeStr}`;
 
   const liveBtn = document.getElementById('trackLiveBtn');
   liveBtn.href = trackerUrl;
