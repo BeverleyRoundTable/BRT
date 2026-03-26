@@ -116,6 +116,7 @@ function startAddressLookup() {
       const days = daysUntil(first.date);
       const cdText = countdownText(days);
       const cdClass = countdownClass(days);
+      const timeStr = meta.startTime ? ` · ${meta.startTime}–${meta.endTime}` : "";
 
       // Street list with highlighted match
       const streetsHtml = list
@@ -141,7 +142,7 @@ function startAddressLookup() {
         <div class="addr-card-header">
           <div class="addr-card-titles">
             <h2 class="addr-route-title">${routeName}</h2>
-            ${prettyDate ? `<p class="addr-route-date">📅 ${prettyDate}</p>` : ""}
+            ${prettyDate ? `<p class="addr-route-date">📅 ${prettyDate}${timeStr}</p>` : ""}
           </div>
           ${cdText ? `<span class="addr-countdown ${cdClass}">${cdText}</span>` : ""}
         </div>
@@ -190,13 +191,15 @@ function startAddressLookup() {
       // Build route metadata lookup
       if (data && Array.isArray(data.routes)) {
         data.routes.forEach((rt) => {
-          if (rt.routeName) {
-            routeMeta[rt.routeName] = {
-              mapImageUrl: rt.mapImageUrl || "",
-              sponsorUrl: rt.sponsorUrl || "",
-            };
-          }
-        });
+  if (rt.routeName) {
+    routeMeta[rt.routeName] = {
+      mapImageUrl: rt.mapImageUrl || "",
+      sponsorUrl: rt.sponsorUrl || "",
+      startTime: rt["Start Time"] || "",
+      endTime: rt["End Time"] || "",
+    };
+  }
+});
       }
     })
     .catch(() => {
