@@ -445,9 +445,10 @@
 
       <div class="device-grid">
         <div class="device-card device-b">
-          <div class="device-label">Option A — Solo Driver Setup</div>
-          <div class="device-name">🧭 Sat-Nav &amp; Beacon (Merged)</div>
-          <div class="device-desc">One phone does it all. The driver opens the Tracker in <em>Driver Mode</em>. It provides a turn-by-turn routing arrow AND securely transmits the sleigh's location in the background simultaneously. Authenticates via God Mode password.</div>
+          <<div class="device-card device-b">
+          <div class="device-label">Option A — Solo Driver Setup</div>
+          <div class="device-name">🧭 Sat-Nav &amp; Beacon (Merged)</div>
+          <div class="device-desc">One phone does it all. The driver opens the Tracker in <em>Driver Mode</em>. It provides a turn-by-turn routing arrow AND securely transmits the sleigh's location in the background simultaneously. Authenticates via God Mode password.</div>
           <div class="device-operator">✅ Visual Routing · ✅ Offline Buffering · ✅ Keeps screen awake</div>
         </div>
         <div class="device-card device-a">
@@ -470,14 +471,14 @@
       <ol class="steps">
         <li><p>Open the Tracker link and add <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">&amp;driver=1</code> to the end (or click <em>Sat Nav</em> from the Landing Page).</p></li>
         <li><p>Tap the red <strong>🧭 START SAT-NAV &amp; BEACON</strong> button.</p></li>
-        <li><p>Enter the God Mode password when prompted to authorize the GPS transmitter.</p></li>
+        <li><p>Enter the Beacon password when prompted to authorize the GPS transmitter.</p></li>
         <li><p>A status pill will appear at the top. <strong>📡 LIVE</strong> (Green) means it's transmitting successfully. <strong>📦 BUFFERING</strong> (Amber) means you've hit a dead zone and it is saving fixes locally to replay later.</p></li>
       </ol>
 
       <h3 class="sub-title">Option B: Dedicated Beacon Setup</h3>
       <ol class="steps">
         <li><p>Open the Beacon URL from your Dab Santa Landing Page, or navigate to: <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">beacon?api=YOUR_API_URL</code></p></li>
-        <li><p>Enter the God Mode password.</p></li>
+        <li><p>Enter the Beacon password.</p></li>
         <li><p>Tap <em>▶ START</em> — the pulsing green ring confirms GPS is transmitting.</p></li>
         <li><p>Mount the phone, plug it into a power bank, and leave the screen visible. (iPhone users: Set Auto-Lock to <em>Never</em> in iOS Settings).</p></li>
       </ol>
@@ -595,7 +596,8 @@
           <tr><td>sleigh_display_name</td><td>The human-readable sleigh name shown to the public.</td></tr>
           <tr><td>sleigh_group</td><td>Group identifier for multi-sleigh tracking.</td></tr>
           <tr><td>sleigh_mode</td><td><code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">single</code> or <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">multi</code>.</td></tr>
-          <tr><td>god_mode_password</td><td>Password for God Mode Dashboard, Beacon, and Season Wrap Snapshot. Change before going live.</td></tr>
+          <tr><td>god_mode_password</td><td>Master password for God Mode Dashboard and Season Wrap Snapshot. Change before going live.</td></tr>
+          <tr><td>beacon_password</td><td>Secondary password specifically for authorizing the Sleigh GPS Beacon and Sat-Nav. Give this to your drivers.</td></tr>
         </tbody>
       </table>
 
@@ -696,7 +698,7 @@
         <div class="card">
           <span class="card-icon">📡</span>
           <div class="card-title">GPS Beacon</div>
-          <div class="card-desc">Sleigh phone GPS transmitter with offline buffer. Authenticates via God Mode password, fetches Firebase config securely from the API. Pulsing ring shows LIVE/BUFFER/ERROR status.</div>
+          <div class="card-desc">Sleigh phone GPS transmitter with offline buffer. Authenticates via Beacon password, fetches Firebase config securely from the API. Pulsing ring shows LIVE/BUFFER/ERROR status.</div>
         </div>
         
         <div class="card">
@@ -1064,7 +1066,7 @@
       <ol class="steps">
         <li><p>Open your <em>Dab Santa</em> Landing Page and click <em>Sat Nav</em>. (Alternatively, open your standard tracker link and add <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">&amp;driver=1</code> to the end of the URL.)</p></li>
         <li><p>A large red <strong>🧭 START SAT-NAV &amp; BEACON</strong> button will appear. Tap it.</p></li>
-        <li><p><strong>Authorize:</strong> Enter the God Mode password when prompted. This securely fetches the Firebase API credentials needed to transmit your location.</p></li>
+        <li><p><strong>Authorize:</strong> Enter the Beacon password when prompted. This securely fetches the Firebase API credentials needed to transmit your location.</p></li>
         <li><p>If your browser requests Location Permissions, tap <em>Allow</em>.</p></li>
         <li><p>The screen zooms to street level, the blue arrow appears, and public UI buttons (Donate, Notify) vanish to prevent distractions.</p></li>
         <li><p><strong>Watch the Pill:</strong> Look at the status pill at the top of the screen. <strong>📡 LIVE</strong> (Green) means you are actively transmitting. <strong>📦 BUFFERING</strong> (Amber) means you've hit a mobile dead zone and fixes are being saved offline to push later.</p></li>
