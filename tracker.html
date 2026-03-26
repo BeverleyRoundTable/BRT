@@ -55,6 +55,11 @@
     #map { position: absolute; inset: 0; z-index: 100; }
     body.dim-ui #map { filter: brightness(0.85); transition: filter 600ms ease; }
 
+    /* MAGIC NIGHT MODE: Inverts standard OSM for a high-contrast dark map */
+    .leaflet-tile-pane {
+      filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+    }
+    
     #snow { position:fixed; inset:0; pointer-events:none; z-index:1500; opacity:0; transition:opacity 800ms ease; }
     body.snowing #snow { opacity:1; filter:drop-shadow(0 0 4px white); }
     body::after { content:''; position:fixed; inset:0; background:radial-gradient(circle,transparent 40%,rgba(0,0,0,0.6) 100%); pointer-events:none; opacity:0; transition:opacity 1.5s ease; z-index:1400; }
@@ -725,7 +730,7 @@
 
         AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk }).setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
         AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteCompleted.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); });
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(AppState.map);
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
           maxZoom: 19
