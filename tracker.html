@@ -29,14 +29,17 @@
       --text-dim: rgba(255,255,255,0.55);
       --rt-gold: var(--gold);
       --rt-grey: var(--dark);
-      --ui-bottom-safe: 72px;
-      --donate-bottom: calc(var(--ui-bottom-safe) + 120px);
+      
+      --ui-bottom-safe: 24px; 
+      
+      --donate-bottom: calc(var(--ui-bottom-safe) + 65px);
       --info-bottom: var(--ui-bottom-safe);
     }
+    
     @supports(padding:env(safe-area-inset-bottom)){ 
       :root{
-        --ui-bottom-safe: calc(88px + env(safe-area-inset-bottom));
-        --donate-bottom: calc(var(--ui-bottom-safe) + 120px);
+        --ui-bottom-safe: calc(32px + env(safe-area-inset-bottom));
+        --donate-bottom: calc(var(--ui-bottom-safe) + 65px);
         --info-bottom: var(--ui-bottom-safe);
       } 
     }
@@ -189,7 +192,6 @@
       70% { box-shadow: 0 0 0 10px rgba(44,255,78,0); } 
       100% { box-shadow: 0 0 0 0 rgba(44,255,78,0); } 
     }
-    .logo-overlay { position: relative; width: 48px; max-width: 18vw; pointer-events: none; opacity: .9; filter: drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
     
     #loadingCover { position: fixed; inset: 0; background: var(--rt-grey); display: flex; align-items: center; justify-content: center; z-index: 6000; }
     #loadingSpinner { width: 52px; height: 52px; border-radius: 50%; border: 4px solid var(--border); border-top-color: var(--rt-gold); animation: spin .9s linear infinite; }
@@ -230,14 +232,15 @@
     .kiosk-sponsor img { max-height: 34px; max-width: 160px; object-fit: contain; }
     
     @media(max-height:700px){ 
-      :root{ --ui-bottom-safe: calc(64px + env(safe-area-inset-bottom)); }
+      :root{ --ui-bottom-safe: calc(20px + env(safe-area-inset-bottom)); }
       .donate-box{ width: 85%; max-width: 360px; }
       .info-popup{ font-size: .8em; padding: 8px 12px; }
       .status-popup{ font-size: .95em; padding: 12px 16px; } 
     }
     
     @media(max-width: 480px) { 
-      .donate-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 195px) !important; } 
+      /* Pulled down significantly. Adjusts dynamically if there is a safe area */
+      .donate-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important; } 
       
       .info-popup { 
         width: calc(100vw - 16px); 
@@ -245,10 +248,9 @@
         gap: 4px; 
         row-gap: 6px;  
         flex-wrap: wrap; 
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 85px) !important; 
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 20px) !important; 
       }
       
-      /* 22% flex-basis ensures max 4 buttons per row */
       .info-popup .btn { 
         flex: 1 0 22%; 
         padding: 8px 2px; 
@@ -261,8 +263,7 @@
 
       .status-dot { width: 10px; flex: 0 0 10px; margin-right: 2px; }
 
-      /* Toast must clear the potentially taller 2-row bar and the raised donate box */
-      .toast-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 270px) !important; } 
+      .toast-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 190px) !important; } 
     }
     
     .ios-install-prompt { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(29, 29, 26, 0.95); border: 1px solid var(--rt-gold); color: #fff; padding: 16px; border-radius: 16px; font-size: 0.9em; font-weight: 700; text-align: center; z-index: 9999; width: 85%; max-width: 340px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); opacity: 0; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
@@ -731,7 +732,6 @@
         if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) { const span = document.createElement('span'); span.textContent = 'Proudly sponsored by'; const img = document.createElement('img'); img.src = route.sponsorUrl; img.alt = 'Sponsor'; AppState.dom.sponsorBox.innerHTML = ''; AppState.dom.sponsorBox.appendChild(span); AppState.dom.sponsorBox.appendChild(img); }
         if (!AppState.flags.isKiosk) { const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT"); if (savedPin) { try { const p = JSON.parse(savedPin); AppState.flags.browserNotified = false; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); AppState.vars.notifyLatLng = { lat: p.lat, lng: p.lng }; showNotifyMarker(p.lat, p.lng, true); } catch(e) {} } }
         AppState.map.on("click", e => { if (!AppState.flags.awaitingPin) return; showNotifyMarker(e.latlng.lat, e.latlng.lng, false); AppState.dom.statusBox.textContent = "📍 Pin moved — tap again to confirm"; });
-        if (settings.logo_overlay_url && Utils.isValidImageUrl(settings.logo_overlay_url)) { const posMap = { "top-left": "topleft", "top-right": "topright", "bottom-left": "bottomleft", "bottom-right": "bottomright", "center": "topright" }; const LogoControl = L.control({ position: posMap[settings.logo_overlay_position] || "bottomright" }); LogoControl.onAdd = () => { const img = L.DomUtil.create("img"); img.src = settings.logo_overlay_url; img.className = "logo-overlay"; return img; }; LogoControl.addTo(AppState.map); }
         AppState.marker = L.marker(AppConfig.LOCATIONS.LAPLAND, { icon: L.icon({ iconUrl: settings.sleigh_icon_live || AppConfig.ICONS.FALLBACK_LIVE, iconSize: [64, 64], iconAnchor: [32, 60] }) }).addTo(AppState.map);
 
         AppState.dom.followBtn.onclick = () => { AppState.flags.follow = !AppState.flags.follow; AppState.dom.followBtn.textContent = "Follow: " + (AppState.flags.follow ? "ON" : "OFF"); };
