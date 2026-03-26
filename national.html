@@ -364,7 +364,8 @@
 
     .lb-header {
       display: grid;
-      grid-template-columns: 48px 1fr 110px 80px 80px 80px 80px;
+      /* Added 2 new columns, adjusted widths */
+      grid-template-columns: 40px 1.2fr 85px 80px 85px 70px 70px 70px 75px;
       padding: 12px 20px;
       background: var(--surface-2);
       border-bottom: 1px solid var(--border);
@@ -377,7 +378,8 @@
 
     .lb-row {
       display: grid;
-      grid-template-columns: 48px 1fr 110px 80px 80px 80px 80px;
+      /* Must match header exactly */
+      grid-template-columns: 40px 1.2fr 85px 80px 85px 70px 70px 70px 75px;
       padding: 14px 20px;
       align-items: center;
       border-bottom: 1px solid var(--border);
@@ -570,14 +572,22 @@
       .lb-header, .lb-row {
         grid-template-columns: 36px 1fr 90px 70px;
       }
-      .lb-header span:nth-child(5),
+      .lb-header, .lb-row {
+        grid-template-columns: 36px 1fr 90px; /* Just Rank, Name, Net on mobile */
+      }
+      /* Hide everything except Rank, Name, and Net Raised on mobile */
+      .lb-header span:nth-child(3),
+      .lb-header span:nth-child(4),
       .lb-header span:nth-child(6),
       .lb-header span:nth-child(7),
+      .lb-header span:nth-child(8),
+      .lb-header span:nth-child(9),
+      .lb-row .lb-val:nth-child(3),
       .lb-row .lb-val:nth-child(4),
-      .lb-row .lb-val:nth-child(5),
-      .lb-row .lb-val:nth-child(6) { display: none; }
-      .footer { flex-direction: column; text-align: center; }
-    }
+      .lb-row .lb-val:nth-child(6),
+      .lb-row .lb-val:nth-child(7),
+      .lb-row .lb-val:nth-child(8),
+      .lb-row .lb-val:nth-child(9) { display: none; }
 
     /* Animate in */
     @keyframes fadeUp {
@@ -622,8 +632,16 @@
           <div class="stat-value" id="totalTables">—</div>
         </div>
         <div class="stat-card animate-in delay-1">
-          <div class="stat-label">Total Raised</div>
+          <div class="stat-label">Gross Raised</div>
           <div class="stat-value" id="totalRaised">—</div>
+        </div>
+        <div class="stat-card animate-in delay-1">
+          <div class="stat-label">Total Expenses</div>
+          <div class="stat-value" style="color: var(--red);" id="totalExpenses">—</div>
+        </div>
+        <div class="stat-card animate-in delay-1">
+          <div class="stat-label">Net for Charity</div>
+          <div class="stat-value" style="color: var(--green);" id="totalNet">—</div>
         </div>
         <div class="stat-card animate-in delay-2">
           <div class="stat-label">Total Views</div>
@@ -669,11 +687,13 @@
           <div class="lb-header">
             <span>#</span>
             <span>Table</span>
-            <span>Raised</span>
+            <span>Gross</span>
+            <span>Exp.</span>
+            <span>Net</span>
             <span>Views</span>
             <span>Routes</span>
             <span>Streets</span>
-            <span>Messages</span>
+            <span>Msgs</span>
           </div>
           <div id="leaderboardBody"></div>
         </div>
@@ -934,10 +954,14 @@ function extractLiveTableData(table, apiData) {
 
   const displayName = settings.sleigh_display_name || table.name;
 
+  const expenses = parseFloat(apiData.expenses) || 0;
+
   return {
     id: table.id,
     name: displayName,
     raised: seasonRaised,      
+    expenses: expenses,
+    netRaised: seasonRaised - expenses,
     views: totalViews,         
     routes: pastRoutes.length, 
     streets: streetCount,      
@@ -974,6 +998,8 @@ function extractHistoricalTableData(table, historyArray, targetYear) {
      id: table.id,
      name: table.name,
      raised: parseFloat(seasonData.raised) || 0,
+     expenses: parseFloat(seasonData.expenses) || 0,
+     netRaised: parseFloat(seasonData.netRaised) || 0,
      views: parseInt(seasonData.totalViews) || parseInt(seasonData.peakViewers) || 0, 
      routes: parseInt(seasonData.routes) || 0,
      streets: parseInt(seasonData.streets) || 0,
@@ -1046,8 +1072,8 @@ async function loadAll(fetchRegistry = true) {
 
   results = await Promise.all(promises);
 
-  // Sort by raised descending
-  results.sort((a, b) => b.raised - a.raised);
+  // Sort by NET raised descending
+  results.sort((a, b) => b.netRaised - a.netRaised);
 
   render(results, errors);
 
@@ -1081,6 +1107,8 @@ function renderHeroStats(data) {
       : data.filter(d => d.raised > 0 || d.routes > 0).length;
 
   const totalRaised = data.reduce((s, d) => s + d.raised, 0);
+  const totalExpenses = data.reduce((s, d) => s + d.expenses, 0);
+  const totalNet = data.reduce((s, d) => s + d.netRaised, 0);
   const totalViews = data.reduce((s, d) => s + d.views, 0);
   const totalRoutes = data.reduce((s, d) => s + d.routes, 0);
   const totalStreets = data.reduce((s, d) => s + d.streets, 0);
@@ -1088,12 +1116,14 @@ function renderHeroStats(data) {
 
   animateCounter('totalTables', liveTables, false);
   animateCounter('totalRaised', totalRaised, true);
+  animateCounter('totalExpenses', totalExpenses, true);
+  animateCounter('totalNet', totalNet, true);
   animateCounter('totalViews', totalViews, false);
   animateCounter('totalRoutes', totalRoutes, false);
   animateCounter('totalStreets', totalStreets, false);
   animateCounter('totalMessages', totalMessages, false);
 }
-
+  
 function animateCounter(elId, target, isCurrency) {
   const el = document.getElementById(elId);
   if (!el) return;
@@ -1140,7 +1170,9 @@ function renderLeaderboard(data) {
       <div class="lb-row">
         <div class="lb-rank">${i + 1}</div>
         <div class="lb-name">${escHtml(d.name)} ${statusHtml}</div>
-        <div class="lb-val gold">£${d.raised.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</div>
+        <div class="lb-val" style="color: #aaa;">£${Math.round(d.raised).toLocaleString('en-GB')}</div>
+        <div class="lb-val" style="color: var(--red);">£${Math.round(d.expenses).toLocaleString('en-GB')}</div>
+        <div class="lb-val gold" style="font-size: 15px;">£${Math.round(d.netRaised).toLocaleString('en-GB')}</div>
         <div class="lb-val">${d.views.toLocaleString()}</div>
         <div class="lb-val">${d.routes.toLocaleString()}</div>
         <div class="lb-val">${d.streets.toLocaleString()}</div>
