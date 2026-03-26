@@ -474,7 +474,10 @@ function generatePoster(idx) {
 
   const streets = (route.streets || '').split(',').map(s => s.trim()).filter(Boolean);
   const streetsHtml = streets.join('<span class="separator">·</span>');
-
+const startTime = route["Start Time"] || "";
+const endTime = route["End Time"] || "";
+const timeHtml = startTime ? `<div class="day-name" style="margin-top:8px;">${startTime} – ${endTime}</div>` : "";
+  
   let h = `
     <div class="poster-accent-top"></div>
     <div class="poster-content">
@@ -484,9 +487,10 @@ function generatePoster(idx) {
       <div class="poster-subline">${route.routeName || ''}</div>
       
       <div class="poster-date-block">
-        <div class="day-name">${getDayName(route.date)}</div>
-        <div class="date-main">${formatDateLong(route.date)}</div>
-      </div>
+  <div class="day-name">${getDayName(route.date)}</div>
+  <div class="date-main">${formatDateLong(route.date)}</div>
+  ${timeHtml}
+</div>
 
       <div class="poster-streets">${streetsHtml}</div>
       <div class="poster-divider"></div>
