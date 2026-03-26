@@ -484,7 +484,11 @@ function populateRouteDropdowns(routes) {
         
         const option = document.createElement('option');
         option.value = route.routeName;
-        option.textContent = `${route.routeName} — ${friendlyDate}`;
+        const startTime = route["Start Time"] || "";
+const endTime = route["End Time"] || "";
+const timeStr = startTime ? ` (${startTime}–${endTime})` : "";
+
+option.textContent = `${route.routeName} — ${friendlyDate}${timeStr}`;
         dropdown.appendChild(option);
       }
     });
