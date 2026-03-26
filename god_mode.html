@@ -784,6 +784,49 @@ function buildDashboard() {
         </div>
       </div>
 
+<div class="panel crew-alert-panel">
+  <div class="panel-header">
+    <span class="icon">🚨</span>
+    <h3 style="color:var(--red);">Incident Log</h3>
+    <span class="crew-alert-badge" id="incidentCount">0 logged</span>
+  </div>
+
+  <select class="pa-input" id="incidentRoute">
+    <option value="">— Select Route —</option>
+  </select>
+
+  <select class="pa-input" id="incidentType">
+    <option value="Breakdown">Breakdown</option>
+    <option value="Injury">Injury</option>
+    <option value="Near Miss">Near Miss</option>
+    <option value="Complaint">Complaint</option>
+    <option value="Property Damage">Property Damage</option>
+    <option value="Other">Other</option>
+  </select>
+
+  <select class="pa-input" id="incidentSeverity">
+    <option value="Low">Low</option>
+    <option value="Medium" selected>Medium</option>
+    <option value="High">High</option>
+  </select>
+
+  <input type="text" class="pa-input" id="incidentDesc" placeholder="What happened?" />
+  <input type="text" class="pa-input" id="incidentPersons" placeholder="Who was involved?" />
+  <input type="text" class="pa-input" id="incidentAction" placeholder="Action taken?" />
+  <input type="text" class="pa-input" id="incidentReporter" placeholder="Your name" />
+
+  <select class="pa-input" id="incidentFollowUp">
+    <option value="No">No follow-up needed</option>
+    <option value="Yes">Follow-up required</option>
+  </select>
+
+  <div class="pa-btns">
+    <button class="btn-broadcast" onclick="submitIncident()" id="incidentBtn">Log Incident</button>
+  </div>
+
+  <div id="incidentHistory" style="margin-top:16px;"></div>
+</div>
+
       <div class="panel" id="userMessagesPanel" style="display: none;">
         <div class="panel-header">
           <span class="icon">💌</span>
@@ -937,6 +980,7 @@ function updateDashboard() {
   updateDonationDetail(); 
   updateRaisedStat(); 
   updateElfCam();
+  populateIncidentRoutes();
   
   // Hide or Show the User Messages Panel based on the Setting toggle
   const panel = document.getElementById('userMessagesPanel');
@@ -1460,6 +1504,118 @@ const GpsHealth = (() => {
     }
   };
 })();
+
+  // ═══════════════════════════════════════════════════════════════
+// 🚨 INCIDENT LOGGING
+// ═══════════════════════════════════════════════════════════════
+
+function populateIncidentRoutes() {
+  const sel = document.getElementById('incidentRoute');
+  if (!sel) return;
+  
+  // Keep the default option, clear the rest
+  sel.innerHTML = '<option value="">— Select Route —</option>';
+  
+  const todayRoute = getTodayRoute();
+  
+  STATE.routes.forEach(r => {
+    if (r.routeName) {
+      const opt = document.createElement('option');
+      opt.value = r.routeName;
+      opt.textContent = r.routeName;
+      if (todayRoute && r.routeName === todayRoute.routeName) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+async function submitIncident() {
+  const btn = document.getElementById('incidentBtn');
+  const desc = document.getElementById('incidentDesc').value.trim();
+  
+  if (!desc) { alert('Please describe what happened.'); return; }
+  
+  btn.innerText = 'Logging...';
+  btn.style.background = 'var(--surface-3)';
+  btn.style.color = 'var(--text-dim)';
+
+  const payload = {
+    action: 'logIncident',
+    secret: sessionStorage.getItem('sleighSecret') || '',
+    routeName: document.getElementById('incidentRoute').value,
+    type: document.getElementById('incidentType').value,
+    severity: document.getElementById('incidentSeverity').value,
+    description: desc,
+    personsInvolved: document.getElementById('incidentPersons').value.trim(),
+    actionTaken: document.getElementById('incidentAction').value.trim(),
+    reportedBy: document.getElementById('incidentReporter').value.trim(),
+    followUpRequired: document.getElementById('incidentFollowUp').value,
+    date: new Date().toISOString().slice(0, 10)
+  };
+
+  try {
+    const res = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
+    const result = await res.json();
+    
+    if (result.ok) {
+      // Clear the form but keep route + reporter (likely logging multiple on same night)
+      document.getElementById('incidentDesc').value = '';
+      document.getElementById('incidentPersons').value = '';
+      document.getElementById('incidentAction').value = '';
+      document.getElementById('incidentType').value = 'Breakdown';
+      document.getElementById('incidentSeverity').value = 'Medium';
+      document.getElementById('incidentFollowUp').value = 'No';
+      
+      fetchIncidentHistory();
+    } else {
+      alert('Failed: ' + (result.error || 'Unknown error'));
+    }
+  } catch (e) {
+    alert('Network error logging incident.');
+  }
+  
+  btn.innerText = 'Log Incident';
+  btn.style.background = '';
+  btn.style.color = '';
+}
+
+async function fetchIncidentHistory() {
+  try {
+    const res = await fetch(getApiUrl('function=getIncidentLogs'));
+    const logs = await res.json();
+    
+    const container = document.getElementById('incidentHistory');
+    const badge = document.getElementById('incidentCount');
+    if (!container) return;
+    
+    if (badge) badge.textContent = logs.length + ' logged';
+    
+    if (logs.length === 0) {
+      container.innerHTML = '<div class="no-route">No incidents recorded</div>';
+      return;
+    }
+    
+    const sevColor = s => s === 'High' ? 'var(--red)' : s === 'Medium' ? 'var(--gold)' : 'var(--green)';
+    
+    container.innerHTML = '<div class="streets-scroll" style="max-height:200px;">' +
+      logs.map(l => 
+        `<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-weight:700;color:${sevColor(l.severity)};">${l.type}</span>
+            <span style="color:var(--text-muted);font-size:9px;">${l.date || ''}</span>
+          </div>
+          <div style="color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;margin-bottom:4px;">${l.description}</div>
+          ${l.route ? `<span style="color:var(--gold);font-size:10px;">📍 ${l.route}</span>` : ''}
+          ${l.followUp === 'Yes' ? `<span style="color:var(--red);font-size:10px;margin-left:8px;">⚠️ FOLLOW-UP</span>` : ''}
+        </div>`
+      ).join('') + '</div>';
+      
+  } catch (e) { console.error('Incidents:', e); }
+}
+
+// Kick off on load
+setTimeout(() => { populateIncidentRoutes(); fetchIncidentHistory(); }, 2000);
+setInterval(fetchIncidentHistory, 30000);
   
 </script>
 </body>
