@@ -916,6 +916,12 @@ function formatDate(dateStr) {
   return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+  function timeStr(route) {
+  const s = route["Start Time"] || "";
+  const e = route["End Time"] || "";
+  return s ? ` · ${s}–${e}` : "";
+}
+
 function shortDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T00:00:00');
@@ -936,7 +942,7 @@ function renderRouteList() {
       <div class="route-item">
         <div class="route-meta">
           <h3>${r.routeName || 'Unnamed Route'}</h3>
-          <div class="date">📅 ${formatDate(r.date)}</div>
+          <div class="date">📅 ${formatDate(r.date)}${timeStr(r)}</div>
           ${streetsPreview ? `<div class="streets">${streetsPreview}</div>` : ''}
 
           <button class="toggle-edit" onclick="toggleEdit(${i})">✏️ Customise text</button>
@@ -947,7 +953,7 @@ function renderRouteList() {
             </div>
             <div class="custom-field">
               <label>Date Text</label>
-              <input type="text" id="date-${i}" value="${formatDate(r.date).replace(/"/g, '&quot;')}">
+              <input type="text" id="date-${i}" value="${(formatDate(r.date) + timeStr(r)).replace(/"/g, '&quot;')}">
             </div>
             <div class="custom-field">
               <label>Streets / Description</label>
