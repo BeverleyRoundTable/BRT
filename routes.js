@@ -106,6 +106,9 @@ setTimeout(() => {
     function createRouteCard(route, highlight) {
         const name = route.routeName || "";
         const dateLabel = formatDate(route.date); 
+        const startTime = route["Start Time"] || "";
+        const endTime = route["End Time"] || "";
+        const timeStr = startTime ? ` · ${startTime}–${endTime}` : "";
         const notes = route.notes || "";
         const streets = route.streets || "";
         const gpx = route.gpxUrl || "";
@@ -121,7 +124,7 @@ setTimeout(() => {
     <div class="santa-route-main">
         <div class="santa-route-text">
             <h3 class="santa-route-name">${name}</h3>
-            <p class="santa-route-date">📅 ${dateLabel}</p>
+            <p class="santa-route-date">📅 ${dateLabel}${timeStr}</p>
             ${notes ? `<p>${notes}</p>` : ""}
             ${streets ? `<p><strong>Streets:</strong> ${streets}</p>` : ""}
             <div class="santa-route-actions">
