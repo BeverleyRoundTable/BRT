@@ -436,6 +436,13 @@ https://brt-23f.pages.dev/countdown?api=${ensureApi()}
 `;
 
 // ================================
+// Gift Aid
+// ================================
+const giftaidLink = `
+https://brt-23f.pages.dev/gift_aid?api=${ensureApi()}
+`;
+
+// ================================
 // Inject into UI textareas
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
@@ -471,3 +478,4 @@ document.getElementById("volunteercertLink").value = volunteercertLink.trim();
 document.getElementById("bingoLink").value = bingoLink.trim();
 document.getElementById("routeplannerLink").value = routeplannerLink.trim();
 document.getElementById("countdownLink").value = countdownLink.trim();
+document.getElementById("giftaidLink").value = giftaidLink.trim();
