@@ -1,356 +1,306 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gift Aid Declaration — Santa Sleigh</title>
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --gold: #FBAF33;
-    --dark: #1D1D1A;
-    --red: #D31C1C;
-    --cream: #fdfbf7;
-    --green: #2e8b57;
-    --border: #e0d8cc;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Open Sans', Arial, sans-serif;
-    background: var(--dark);
-    color: var(--dark);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-  }
-  .container {
-    background: var(--cream);
-    max-width: 520px;
-    width: 100%;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    align-self: flex-start;
-  }
-  .header {
-    background: var(--gold);
-    padding: 24px 28px;
-    text-align: center;
-  }
-  .header h1 {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--dark);
-    margin-bottom: 4px;
-  }
-  .header p {
-    font-size: 13px;
-    color: rgba(29,29,26,0.7);
-  }
-  .boost-banner {
-    background: #fff;
-    border: 2px dashed var(--gold);
-    border-radius: 10px;
-    margin: 20px 24px 0;
-    padding: 16px 20px;
-    text-align: center;
-  }
-  .boost-banner .big {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--green);
-  }
-  .boost-banner .sub {
-    font-size: 13px;
-    color: #666;
-    margin-top: 4px;
-    line-height: 1.4;
-  }
-  form { padding: 20px 24px 28px; }
-  .field { margin-bottom: 16px; }
-  .field label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 5px;
-    color: var(--dark);
-  }
-  .field label .req { color: var(--red); }
-  .field input, .field select, .field textarea {
-    width: 100%;
-    padding: 10px 12px;
-    font-family: inherit;
-    font-size: 14px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    background: #fff;
-    transition: border-color 0.2s;
-  }
-  .field input:focus, .field select:focus, .field textarea:focus {
-    outline: none;
-    border-color: var(--gold);
-    box-shadow: 0 0 0 3px rgba(251,175,51,0.15);
-  }
-  .row { display: flex; gap: 12px; }
-  .row .field { flex: 1; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TurboSanta — Gift Aid Declaration</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --gold: #FBAF33;
+      --gold-dim: rgba(251,175,51,0.12);
+      --gold-glow: rgba(251,175,51,0.25);
+      --dark: #0d0d0b;
+      --surface: #161614;
+      --surface-2: #1e1e1b;
+      --surface-3: #252522;
+      --border: rgba(255,255,255,0.08);
+      --text: #eaeae5;
+      --text-dim: rgba(255,255,255,0.55);
+      --text-muted: rgba(255,255,255,0.3);
+      --red: #D31C1C;
+      --green: #2ecc71;
+    }
 
-  /* Declaration checkbox */
-  .declaration {
-    background: #fff;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 20px;
-  }
-  .declaration h3 {
-    font-size: 14px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: var(--dark);
-  }
-  .declaration p {
-    font-size: 12px;
-    line-height: 1.5;
-    color: #555;
-    margin-bottom: 12px;
-  }
-  .check-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .check-row input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    margin-top: 2px;
-    accent-color: var(--green);
-    flex-shrink: 0;
-    cursor: pointer;
-  }
-  .check-row label {
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    line-height: 1.4;
-  }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  .hmrc-note {
-    font-size: 11px;
-    color: #888;
-    line-height: 1.5;
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px solid #eee;
-  }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: transparent;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 20px;
+      -webkit-font-smoothing: antialiased;
+    }
 
-  .submit-btn {
-    width: 100%;
-    padding: 14px;
-    background: var(--green);
-    color: #fff;
-    font-family: inherit;
-    font-size: 15px;
-    font-weight: 700;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-  }
-  .submit-btn:hover { background: #257a4a; }
-  .submit-btn:active { transform: scale(0.98); }
-  .submit-btn:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    transform: none;
-  }
+    .container { width: 100%; max-width: 540px; }
 
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--dark);
-    color: #fff;
-    padding: 14px 24px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    opacity: 0;
-    transition: all 0.4s ease;
-    z-index: 999;
-    text-align: center;
-    max-width: 90%;
-  }
-  .toast.show {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-  }
-  .toast.error { background: var(--red); }
-  .toast.success { background: var(--green); }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 32px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+      position: relative;
+      overflow: hidden;
+    }
 
-  /* Success state */
-  .success-screen {
-    display: none;
-    text-align: center;
-    padding: 48px 28px;
-  }
-  .success-screen .tick {
-    width: 72px;
-    height: 72px;
-    background: var(--green);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-  }
-  .success-screen .tick svg { width: 36px; height: 36px; }
-  .success-screen h2 {
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-  .success-screen p {
-    font-size: 14px;
-    color: #666;
-    line-height: 1.5;
-    max-width: 340px;
-    margin: 0 auto;
-  }
+    .header { text-align: center; margin-bottom: 32px; }
+    .header h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48px; letter-spacing: 2px;
+      color: #fff; margin-bottom: 8px; line-height: 1;
+    }
+    .header h1 span { color: var(--gold); }
+    .header p { font-size: 15px; color: var(--text-dim); line-height: 1.5; font-weight: 500; }
 
-  .sleigh-name-display {
-    font-size: 11px;
-    text-align: center;
-    padding: 12px;
-    color: #aaa;
-    border-top: 1px solid #eee;
-  }
+    /* Boost banner */
+    .boost {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 28px;
+    }
+    .boost .big {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px; color: var(--green); letter-spacing: 1px;
+    }
+    .boost .sub {
+      font-family: 'DM Mono', monospace; font-size: 11px;
+      color: var(--text-muted); margin-top: 6px; line-height: 1.5;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
 
-  @media (max-width: 480px) {
-    body { padding: 12px; }
-    .row { flex-direction: column; gap: 0; }
-    .header { padding: 20px; }
-    form { padding: 16px 18px 24px; }
-  }
-</style>
+    /* Fields */
+    .field { margin-bottom: 20px; }
+    .field label {
+      display: block; font-family: 'DM Mono', monospace;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 8px;
+    }
+    .field label .req { color: var(--red); }
+
+    .field input, .field select {
+      width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+      color: #fff; padding: 14px 16px; border-radius: 8px;
+      font-family: 'DM Mono', monospace; font-size: 15px;
+      outline: none; transition: all 0.2s;
+    }
+    .field input::placeholder { color: var(--text-muted); font-family: 'DM Sans', sans-serif; }
+    .field input:focus, .field select:focus {
+      border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+    .field select { cursor: pointer; }
+    .field select option { background: var(--surface-2); color: #fff; }
+
+    .row { display: flex; gap: 12px; }
+    .row .field { flex: 1; }
+
+    /* Declaration box */
+    .declaration {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin-bottom: 24px;
+    }
+    .declaration h3 {
+      font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+      letter-spacing: 1.5px; color: #fff; margin-bottom: 12px;
+    }
+    .declaration p {
+      font-size: 12px; line-height: 1.6; color: var(--text-dim); margin-bottom: 12px;
+    }
+    .declaration .echo { font-size: 13px; color: var(--text); margin-bottom: 16px; }
+    .declaration .echo strong { color: var(--gold); }
+
+    .check-row { display: flex; align-items: flex-start; gap: 12px; }
+    .check-row input[type="checkbox"] {
+      width: 22px; height: 22px; margin-top: 2px;
+      accent-color: var(--green); flex-shrink: 0; cursor: pointer;
+    }
+    .check-row label {
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      line-height: 1.5; color: var(--text);
+    }
+
+    .hmrc-note {
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      color: var(--text-muted); line-height: 1.6;
+      margin-top: 16px; padding-top: 12px;
+      border-top: 1px solid var(--border); letter-spacing: 0.3px;
+    }
+
+    /* Submit */
+    .btn-submit {
+      width: 100%; background: var(--green); color: #000; border: none;
+      padding: 16px; font-family: 'DM Sans', sans-serif;
+      font-size: 16px; font-weight: 800; border-radius: 8px;
+      cursor: pointer; transition: transform 0.1s, background 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .btn-submit:hover:not(:disabled) { background: #27ae60; }
+    .btn-submit:active { transform: scale(0.97); }
+    .btn-submit:disabled {
+      background: var(--surface-3); color: var(--text-muted); cursor: not-allowed;
+    }
+
+    /* Success */
+    .success-panel { display: none; text-align: center; padding: 24px 0 16px; }
+    .success-icon { font-size: 64px; margin-bottom: 20px; animation: bounce 2s infinite; line-height: 1; }
+    .success-panel h2 {
+      font-family: 'Bebas Neue', sans-serif; font-size: 42px;
+      letter-spacing: 2px; color: var(--green); margin-bottom: 16px; line-height: 1;
+    }
+    .success-panel p { color: var(--text-dim); font-size: 15px; line-height: 1.6; }
+    .success-panel p strong { color: #fff; }
+    .success-panel .boost-echo {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-top: 20px; text-align: center;
+    }
+    .success-panel .boost-echo .line {
+      display: flex; justify-content: space-between; padding: 6px 0;
+      font-family: 'DM Mono', monospace; font-size: 13px;
+    }
+    .success-panel .boost-echo .line .lbl { color: var(--text-muted); }
+    .success-panel .boost-echo .line .val { font-weight: 700; color: #fff; }
+    .success-panel .boost-echo .line .val.green { color: var(--green); }
+    .success-panel .boost-echo .line.total { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px; }
+    .success-panel .boost-echo .line.total .val { font-size: 16px; color: var(--gold); }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-20px); }
+      60% { transform: translateY(-10px); }
+    }
+
+    .sleigh-label {
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      text-align: center; color: var(--text-muted); margin-top: 20px;
+      text-transform: uppercase; letter-spacing: 1.5px;
+    }
+
+    @media (max-width: 600px) {
+      .panel { padding: 32px 24px; }
+      .header h1 { font-size: 40px; }
+      .row { flex-direction: column; gap: 0; }
+    }
+  </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header">
-    <h1>🎁 Gift Aid Declaration</h1>
-    <p>Boost your donation by 25% at no extra cost</p>
+  <div class="panel" id="formPanel">
+    <div class="header">
+      <h1>🎁 GIFT <span>AID</span></h1>
+      <p>Boost your donation by 25% at no extra cost — just confirm you're a UK taxpayer.</p>
+    </div>
+
+    <div class="boost">
+      <div class="big">£1 BECOMES £1.25</div>
+      <div class="sub">HMRC adds 25p to every £1 you donate</div>
+    </div>
+
+    <form id="giftAidForm" autocomplete="on">
+      <div class="field">
+        <label>Title</label>
+        <select id="title" autocomplete="honorific-prefix">
+          <option value="">— Select —</option>
+          <option>Mr</option><option>Mrs</option><option>Miss</option>
+          <option>Ms</option><option>Mx</option><option>Dr</option>
+          <option>Rev</option><option>Other</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>First Name <span class="req">*</span></label>
+          <input type="text" id="firstName" required autocomplete="given-name">
+        </div>
+        <div class="field">
+          <label>Last Name <span class="req">*</span></label>
+          <input type="text" id="lastName" required autocomplete="family-name">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Address Line 1 <span class="req">*</span></label>
+        <input type="text" id="address1" required autocomplete="address-line1" placeholder="House number and street">
+      </div>
+      <div class="field">
+        <label>Address Line 2</label>
+        <input type="text" id="address2" autocomplete="address-line2">
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Town / City <span class="req">*</span></label>
+          <input type="text" id="city" required autocomplete="address-level2">
+        </div>
+        <div class="field">
+          <label>Postcode <span class="req">*</span></label>
+          <input type="text" id="postcode" required autocomplete="postal-code" style="text-transform:uppercase">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Email (optional — for confirmation)</label>
+        <input type="email" id="email" autocomplete="email" placeholder="For your Gift Aid receipt">
+      </div>
+
+      <div class="field">
+        <label>Donation Amount (£) <span class="req">*</span></label>
+        <input type="number" id="amount" required min="1" step="0.01" placeholder="e.g. 10.00">
+      </div>
+
+      <div class="field">
+        <label>Route / Collection Date</label>
+        <select id="route"><option value="">— Loading routes… —</option></select>
+      </div>
+
+      <div class="declaration">
+        <h3>YOUR DECLARATION</h3>
+        <p>
+          I confirm I am a UK taxpayer and understand that if I pay less Income Tax and/or Capital Gains Tax
+          than the amount of Gift Aid claimed on all my donations in that tax year, it is my responsibility
+          to pay any difference.
+        </p>
+        <p class="echo">
+          I want to Gift Aid my donation of <strong id="amountEcho">£—</strong>
+          to <strong id="charityEcho">this Round Table charity</strong>.
+        </p>
+        <div class="check-row">
+          <input type="checkbox" id="giftAidConfirm" required>
+          <label for="giftAidConfirm">Yes, I am a UK taxpayer and I want this donation to be treated as a Gift Aid donation.</label>
+        </div>
+        <p class="hmrc-note">
+          Please notify the charity if you want to cancel this declaration, change your name or home address,
+          or no longer pay sufficient tax on your income and/or capital gains. If you pay Income Tax at the higher
+          or additional rate and want to receive the additional tax relief due to you, you must include all your
+          Gift Aid donations on your Self Assessment tax return or ask HM Revenue and Customs to adjust your tax code.
+        </p>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">Submit Declaration ✅</button>
+    </form>
   </div>
 
-  <div class="boost-banner">
-    <div class="big">£1 becomes £1.25</div>
-    <div class="sub">HMRC adds 25p to every £1 you donate — just confirm you're a UK taxpayer.</div>
+  <div class="panel success-panel" id="successPanel">
+    <div class="success-icon">🎁✨</div>
+    <h2>DECLARATION RECEIVED</h2>
+    <p>Thank you! Your Gift Aid declaration has been recorded.</p>
+    <p>This means an extra <strong>25%</strong> will be claimed from HMRC on your donation.</p>
+    <div class="boost-echo" id="boostEcho"></div>
   </div>
 
-  <form id="giftAidForm" autocomplete="on">
-    <div class="field">
-      <label>Title</label>
-      <select id="title" autocomplete="honorific-prefix">
-        <option value="">— Select —</option>
-        <option>Mr</option><option>Mrs</option><option>Miss</option>
-        <option>Ms</option><option>Mx</option><option>Dr</option>
-        <option>Rev</option><option>Other</option>
-      </select>
-    </div>
-
-    <div class="row">
-      <div class="field">
-        <label>First Name <span class="req">*</span></label>
-        <input type="text" id="firstName" required autocomplete="given-name">
-      </div>
-      <div class="field">
-        <label>Last Name <span class="req">*</span></label>
-        <input type="text" id="lastName" required autocomplete="family-name">
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Address Line 1 <span class="req">*</span></label>
-      <input type="text" id="address1" required autocomplete="address-line1" placeholder="House number and street">
-    </div>
-    <div class="field">
-      <label>Address Line 2</label>
-      <input type="text" id="address2" autocomplete="address-line2">
-    </div>
-
-    <div class="row">
-      <div class="field">
-        <label>Town / City <span class="req">*</span></label>
-        <input type="text" id="city" required autocomplete="address-level2">
-      </div>
-      <div class="field">
-        <label>Postcode <span class="req">*</span></label>
-        <input type="text" id="postcode" required autocomplete="postal-code" style="text-transform:uppercase">
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Email (optional — for confirmation)</label>
-      <input type="email" id="email" autocomplete="email">
-    </div>
-
-    <div class="field">
-      <label>Donation Amount (£) <span class="req">*</span></label>
-      <input type="number" id="amount" required min="1" step="0.01" placeholder="e.g. 10.00">
-    </div>
-
-    <div class="field">
-      <label>Route / Collection Date</label>
-      <select id="route"><option value="">— Loading routes… —</option></select>
-    </div>
-
-    <div class="declaration">
-      <h3>Your Declaration</h3>
-      <p id="declarationText">
-        I confirm I am a UK taxpayer and understand that if I pay less Income Tax and/or Capital Gains Tax
-        than the amount of Gift Aid claimed on all my donations in that tax year, it is my responsibility
-        to pay any difference.
-      </p>
-      <p>
-        I want to Gift Aid my donation of <strong id="amountEcho">£—</strong>
-        to <strong id="charityEcho">this Round Table charity</strong>.
-      </p>
-      <div class="check-row">
-        <input type="checkbox" id="giftAidConfirm" required>
-        <label for="giftAidConfirm">Yes, I am a UK taxpayer and I want this donation to be treated as a Gift Aid donation.</label>
-      </div>
-      <p class="hmrc-note">
-        Please notify the charity if you want to cancel this declaration, change your name or home address,
-        or no longer pay sufficient tax on your income and/or capital gains. If you pay Income Tax at the higher
-        or additional rate and want to receive the additional tax relief due to you, you must include all your
-        Gift Aid donations on your Self Assessment tax return or ask HM Revenue and Customs to adjust your tax code.
-      </p>
-    </div>
-
-    <button type="submit" class="submit-btn" id="submitBtn">Submit Gift Aid Declaration</button>
-  </form>
-
-  <div class="success-screen" id="successScreen">
-    <div class="tick">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-    </div>
-    <h2>Declaration Received</h2>
-    <p>Thank you! Your Gift Aid declaration has been recorded. This means an extra 25% will be claimed from HMRC on your donation.</p>
-  </div>
-
-  <div class="sleigh-name-display" id="sleighLabel"></div>
+  <div class="sleigh-label" id="sleighLabel"></div>
 </div>
-
-<div class="toast" id="toast"></div>
 
 <script>
 (function() {
-  const params = new URLSearchParams(window.location.search);
-  const API = params.get('api') || '';
+  const API = new URLSearchParams(location.search).get('api') || '';
 
   const form     = document.getElementById('giftAidForm');
   const routeSel = document.getElementById('route');
@@ -360,13 +310,11 @@
   const label    = document.getElementById('sleighLabel');
   const submitBtn = document.getElementById('submitBtn');
 
-  // Live-update the declaration echo
   amountIn.addEventListener('input', () => {
     const v = parseFloat(amountIn.value);
     echoAmt.textContent = isNaN(v) ? '£—' : '£' + v.toFixed(2);
   });
 
-  // Load routes + charity name from API
   if (API) {
     fetch(API)
       .then(r => r.json())
@@ -393,10 +341,12 @@
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!API) return toast('No API configured', true);
+    if (!API) return alert('Missing ?api= parameter');
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting…';
+    submitBtn.innerHTML = 'Submitting… 🦌💨';
+
+    const amt = parseFloat(amountIn.value) || 0;
 
     const payload = {
       action: 'submitGiftAid',
@@ -408,38 +358,39 @@
       city: document.getElementById('city').value.trim(),
       postcode: document.getElementById('postcode').value.trim().toUpperCase(),
       email: document.getElementById('email').value.trim(),
-      amount: parseFloat(amountIn.value) || 0,
+      amount: amt,
       route: routeSel.value,
       declarationDate: new Date().toISOString()
     };
 
     try {
-      const res = await fetch(API, {
+      await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        mode: 'no-cors' // GAS cross-origin
+        mode: 'no-cors'
       });
 
-      // no-cors gives opaque response, so we assume success if no network error
-      form.style.display = 'none';
-      document.querySelector('.boost-banner').style.display = 'none';
-      document.getElementById('successScreen').style.display = 'block';
-      toast('Declaration submitted!', false);
+      const giftAid = Math.round(amt * 0.25 * 100) / 100;
+      document.getElementById('boostEcho').innerHTML = `
+        <div class="line"><span class="lbl">Donation</span><span class="val">£${amt.toFixed(2)}</span></div>
+        <div class="line"><span class="lbl">Gift Aid (25%)</span><span class="val green">+ £${giftAid.toFixed(2)}</span></div>
+        <div class="line total"><span class="lbl">Total value</span><span class="val">£${(amt + giftAid).toFixed(2)}</span></div>
+      `;
+
+      document.getElementById('formPanel').style.display = 'none';
+      document.getElementById('successPanel').style.display = 'block';
 
     } catch (err) {
-      toast('Network error — please try again', true);
+      alert('Network error — please try again');
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit Gift Aid Declaration';
+      submitBtn.innerHTML = 'Submit Declaration ✅';
     }
   });
 
-  function toast(msg, isError) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast ' + (isError ? 'error' : 'success') + ' show';
-    setTimeout(() => t.classList.remove('show'), 4000);
-  }
+  function sendHeight() { window.parent.postMessage({ letterHeight: document.body.scrollHeight }, '*'); }
+  window.addEventListener('load', sendHeight);
+  new MutationObserver(sendHeight).observe(document.body, { attributes: true, childList: true, subtree: true });
 })();
 </script>
 </body>
