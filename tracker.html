@@ -176,6 +176,22 @@
       100% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 0 rgba(251, 175, 51, 0); }
     }
 
+    /* --- MAGIC SPARKLES CSS --- */
+    #magic-container {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 9999; overflow: hidden;
+    }
+    .sparkle {
+      position: absolute; width: 10px; height: 10px;
+      background: #fff; border-radius: 50%;
+      opacity: 0; pointer-events: none;
+      animation: floatUp ease-out forwards;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0.5); opacity: 1; }
+      100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+    }
+
     .install-overlay {
       position: absolute; top: 0; left: 0; bottom: 0; right: 0; 
       width: 100%; z-index: 2005; 
@@ -324,7 +340,7 @@
   <div class="status-popup" id="statusBox" role="status" aria-live="polite" aria-atomic="true">🔍 Searching for Santa…</div>
   
   <div class="donate-box" id="donateBox">
-    <a id="donateLink" class="donate-btn gamified-pulse" target="_blank" aria-label="Donate and support the Santa Sleigh">
+    <a id="donateLink" class="donate-btn gamified-pulse" href="#" aria-label="Donate and support the Santa Sleigh">
       <span id="donateText">🎁 DONATE & SUPPORT US</span>
     </a>
     <div class="install-overlay" id="installOverlayBox">
@@ -387,6 +403,8 @@
   <canvas id="snow" aria-hidden="true"></canvas>
   <canvas id="fireworks" aria-hidden="true"></canvas>
   <div id="driverProgressBox" class="driver-progress-box" aria-hidden="true">0%</div>
+  
+  <div id="magic-container"></div>
   
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -454,6 +472,45 @@
           }, 400); // Matches CSS transition duration
         }
       };
+      
+      // --- SPARKLE EFFECT ON DONATE CLICK WITH 800MS DELAY ---
+      document.getElementById('donateLink').addEventListener('click', function(e) {
+        e.preventDefault(); // 🛑 Stop the browser from opening the tab instantly
+        const targetUrl = this.href; 
+        
+        const container = document.getElementById('magic-container');
+        if (container) {
+          // Create 25 sparkles
+          for (let i = 0; i < 25; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            
+            const x = (e.clientX || window.innerWidth / 2) + (Math.random() * 80 - 40);
+            const y = (e.clientY || window.innerHeight - 100) + (Math.random() * 60 - 30);
+            
+            const colors = ['#ffd700', '#ffffff', '#ff4d4d', '#FBAF33'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            sparkle.style.background = color;
+            sparkle.style.boxShadow = `0 0 10px ${color}, 0 0 20px ${color}`;
+            
+            sparkle.style.animationDuration = (Math.random() * 1 + 0.8) + 's';
+            
+            container.appendChild(sparkle);
+            
+            setTimeout(() => { sparkle.remove(); }, 2000);
+          }
+        }
+
+        // ⏱️ Wait 800 milliseconds so they see the magic, THEN open the donation page
+        setTimeout(() => {
+          if (targetUrl && targetUrl !== "#") {
+            window.open(targetUrl, '_blank');
+          }
+        }, 800); 
+      });
       // -------------------------------
 
       const dynamicManifest = {
