@@ -893,7 +893,29 @@ function buildDashboard() {
         <div class="panel-header"><span class="icon">❤️</span><h3>Donations</h3></div>
         <div id="donationDetail"></div>
       </div>
-    </div>
+
+    <div class="panel" id="giftAidPanel">
+        <div class="panel-header">
+          <span class="icon">🎁</span>
+          <h3>Gift Aid</h3>
+          <span class="crew-alert-badge" id="giftAidBadge" style="color:var(--green); background:rgba(46,204,113,0.08); border-color:rgba(46,204,113,0.2);">0 declarations</span>
+        </div>
+        <div class="gps-grid" style="margin-bottom:16px;">
+          <div class="gps-item">
+            <div class="gps-label">Donations</div>
+            <div class="gps-value gold" id="gaTotal">£0</div>
+          </div>
+          <div class="gps-item">
+            <div class="gps-label">Gift Aid (25%)</div>
+            <div class="gps-value" id="gaBoost" style="color:var(--green);">£0</div>
+          </div>
+        </div>
+        <div id="giftAidEntries" style="max-height:240px; overflow-y:auto;"></div>
+        <div class="pa-btns" style="margin-top:16px;">
+          <button class="btn-broadcast" onclick="bulkClaimGiftAid()" id="gaBulkBtn">Mark All Pending as Claimed</button>
+        </div>
+      </div>
+      
   </div>`;
   
   h += '<div class="last-updated" id="lastUpdated">Connecting...</div>';
@@ -1616,6 +1638,101 @@ async function fetchIncidentHistory() {
 // Kick off on load
 setTimeout(() => { populateIncidentRoutes(); fetchIncidentHistory(); }, 2000);
 setInterval(fetchIncidentHistory, 30000);
+
+// ═══════════════════════════════════════════════════════════════
+// 🎁 GIFT AID PANEL
+// ═══════════════════════════════════════════════════════════════
+
+async function fetchGiftAidData() {
+  try {
+    const res = await fetch(getApiUrl('function=getGiftAidSummary'));
+    const data = await res.json();
+    if (data.error) return;
+
+    const badge = document.getElementById('giftAidBadge');
+    const totalEl = document.getElementById('gaTotal');
+    const boostEl = document.getElementById('gaBoost');
+    const container = document.getElementById('giftAidEntries');
+
+    if (badge) badge.textContent = data.declarations + ' declaration' + (data.declarations !== 1 ? 's' : '');
+    if (totalEl) totalEl.textContent = '£' + data.totalDonations.toFixed(2);
+    if (boostEl) boostEl.textContent = '+ £' + data.totalGiftAid.toFixed(2);
+
+    if (!container) return;
+
+    if (data.entries.length === 0) {
+      container.innerHTML = '<div class="no-route">No Gift Aid declarations yet</div>';
+      return;
+    }
+
+    const pending = data.entries.filter(e => e.status === 'Pending').length;
+    const bulkBtn = document.getElementById('gaBulkBtn');
+    if (bulkBtn) {
+      bulkBtn.textContent = pending > 0 ? 'Mark All ' + pending + ' Pending as Claimed' : '✅ All Claimed';
+      bulkBtn.disabled = pending === 0;
+      bulkBtn.style.opacity = pending === 0 ? '0.5' : '1';
+    }
+
+    container.innerHTML = data.entries.map(e => {
+      const statusColor = e.status === 'Claimed' ? 'var(--green)' : 'var(--gold)';
+      const statusIcon = e.status === 'Claimed' ? '✅' : '⏳';
+      const d = new Date(e.date);
+      const dateStr = isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+
+      return `<div style="background:var(--surface-2);border:1px solid var(--border);border-left:4px solid ${statusColor};border-radius:10px;padding:14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <strong style="font-size:14px;color:#fff;">${e.name}</strong>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);">${dateStr}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);font-weight:700;">£${e.amount.toFixed(2)}</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--green);margin-left:8px;">+£${e.giftAid.toFixed(2)}</span>
+            ${e.route ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-left:8px;">📍 ${e.route}</span>` : ''}
+          </div>
+          <span style="font-size:11px;color:${statusColor};font-weight:700;">${statusIcon} ${e.status}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(e) { console.error('GiftAid:', e); }
+}
+
+async function bulkClaimGiftAid() {
+  const btn = document.getElementById('gaBulkBtn');
+  if (!confirm('Mark ALL pending Gift Aid declarations as Claimed?\n\nDo this after you have submitted the claim to HMRC.')) return;
+
+  btn.textContent = 'Processing...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'updateGiftAidStatus',
+        secret: sessionStorage.getItem('sleighSecret') || '',
+        mode: 'bulkAll',
+        status: 'Claimed'
+      })
+    });
+    const result = await res.json();
+    if (result.ok) {
+      btn.textContent = '✅ ' + result.updated + ' Claimed';
+      setTimeout(fetchGiftAidData, 1500);
+    } else {
+      alert('Error: ' + (result.error || 'Unknown'));
+      btn.textContent = 'Mark All Pending as Claimed';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    alert('Network error');
+    btn.textContent = 'Mark All Pending as Claimed';
+    btn.disabled = false;
+  }
+}
+
+setTimeout(fetchGiftAidData, 2500);
+setInterval(fetchGiftAidData, 30000);
   
 </script>
 </body>
