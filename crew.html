@@ -284,13 +284,17 @@
 
     <div id="qr" class="section">
       <div class="panel" style="text-align: center;">
-        <h3>Street Collection Tool</h3>
+        <h3>Street Collection Tools</h3>
         <p style="font-size: 15px; color: var(--text-dim); margin-bottom: 24px;">
-          Use this to quickly take digital donations on the move.
+          Show these QR codes for the public to scan with their phone camera.
         </p>
         
-        <button onclick="openFullQR()" class="btn btn-gold">
-          ⚡ Open Full-Screen QR
+        <button onclick="openQR('donate')" class="btn btn-gold" style="margin-bottom: 12px;">
+          💳 Donation QR Code
+        </button>
+
+        <button onclick="openQR('giftaid')" class="btn" style="background: var(--green); color: #000; font-weight: 700;">
+          🎁 Gift Aid Declaration QR
         </button>
       </div>
     </div>
@@ -339,8 +343,8 @@
     <div id="qrCrewAlertText"></div>
   </div>
 
-  <h2 style="font-family:'Bebas Neue', sans-serif; color:#fff; font-size:56px; letter-spacing:2px; margin-bottom:8px; line-height:1;">DONATE <span>HERE</span></h2>
-  <p style="color:var(--text-dim); font-size:16px; margin-bottom:40px; font-weight:500;">Scan with your phone camera</p>
+  <h2 id="qrHeading" style="font-family:'Bebas Neue', sans-serif; color:#fff; font-size:56px; letter-spacing:2px; margin-bottom:8px; line-height:1;">DONATE <span>HERE</span></h2>
+  <p id="qrSubtitle" style="color:var(--text-dim); font-size:16px; margin-bottom:40px; font-weight:500;">Scan with your phone camera</p>
   
   <div style="background:#fff; padding:16px; border-radius:16px; margin-bottom:48px; box-shadow:0 12px 40px rgba(0,0,0,0.6);">
     <img id="qrImage" src="" style="width: 75vw; max-width: 320px; aspect-ratio: 1/1; display:block; border-radius:8px;">
@@ -422,12 +426,28 @@ async function pollCrewAlert() {
 }
 
 // ── QR LOGIC ──
-function openFullQR() {
-  if (!globalDonateUrl) {
-    alert("No donation URL is set in your Settings sheet!");
-    return;
+function openQR(type) {
+  let url, heading, subtitle;
+
+  if (type === 'giftaid') {
+    const base = location.origin + '/gift_aid';
+    url = base + '?api=' + encodeURIComponent(API);
+    heading = '🎁 GIFT <span>AID</span>';
+    subtitle = 'Boost your donation by 25% — scan to declare';
+  } else {
+    if (!globalDonateUrl) {
+      alert("No donation URL is set in your Settings sheet!");
+      return;
+    }
+    url = globalDonateUrl;
+    heading = '💳 DONATE <span>HERE</span>';
+    subtitle = 'Scan with your phone camera';
   }
-  document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(globalDonateUrl)}`;
+
+  document.getElementById('qrImage').src = 
+    'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' + encodeURIComponent(url);
+  document.getElementById('qrHeading').innerHTML = heading;
+  document.getElementById('qrSubtitle').textContent = subtitle;
   document.getElementById('qrModal').style.display = 'flex';
 }
 
