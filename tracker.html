@@ -149,10 +149,31 @@
       letter-spacing: 1.5px;
       background: var(--rt-gold); color: #000000; border: 2px solid var(--rt-gold); 
       display: flex; align-items: center; justify-content: center;
-      height: 58px; padding: 0; box-sizing: border-box; width: 100%;
+      height: 58px; padding: 0 15px; box-sizing: border-box; width: 100%;
       border-radius: 16px; 
       font-weight: 900; text-decoration: none; box-shadow: 0 4px 16px rgba(0,0,0,.4); 
       transition: background 0.5s ease; position: relative; z-index: 1; 
+      overflow: hidden;
+    }
+
+    /* --- GAMIFIED DONATION TEXT ANIMATIONS --- */
+    #donateText {
+      display: inline-block;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      text-align: center;
+      width: 100%;
+    }
+    .text-fade-out {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+    .gamified-pulse {
+      animation: magicPulse 3s infinite;
+    }
+    @keyframes magicPulse {
+      0% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 0 rgba(251, 175, 51, 0.6); }
+      70% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 12px rgba(251, 175, 51, 0); }
+      100% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 0 rgba(251, 175, 51, 0); }
     }
 
     .install-overlay {
@@ -239,7 +260,6 @@
     }
     
     @media(max-width: 480px) { 
-      /* Pulled down significantly. Adjusts dynamically if there is a safe area */
       .donate-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important; } 
       
       .info-popup { 
@@ -304,7 +324,9 @@
   <div class="status-popup" id="statusBox" role="status" aria-live="polite" aria-atomic="true">🔍 Searching for Santa…</div>
   
   <div class="donate-box" id="donateBox">
-    <a id="donateLink" class="donate-btn" target="_blank" aria-label="Donate and support the Santa Sleigh">🎁 DONATE & SUPPORT US</a>
+    <a id="donateLink" class="donate-btn gamified-pulse" target="_blank" aria-label="Donate and support the Santa Sleigh">
+      <span id="donateText">🎁 DONATE & SUPPORT US</span>
+    </a>
     <div class="install-overlay" id="installOverlayBox">
       <button id="installAppBtn" class="donate-btn override-install-btn" aria-label="Install tracker app to home screen">📲 Add App to Home Screen</button>
     </div>
@@ -327,7 +349,6 @@
     <button class="btn" id="twitchBtn" style="display: none; border-color: var(--rt-gold); color: var(--rt-gold);" aria-label="Toggle sleigh camera feed">📺 Cam: OFF</button>
     <button class="btn" id="msgBtn" style="display: none;" aria-label="Send a message to Santa">💬 Msg Santa</button>
     <button class="btn" id="shareBtn" style="display: none;" aria-label="Share this tracker link with others">📤 Share</button>
-    <!-- CHANGED: Music button (only shown if background_music_url is set in settings) -->
     <button class="btn" id="musicBtn" style="display: none;" aria-label="Play Christmas music">🔇 Music</button>
     <div id="toast" class="toast-box" role="alert" aria-live="assertive"></div>
   </nav>
@@ -369,6 +390,44 @@
   
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+
+      // --- GAMIFIED DONATION LOGIC ---
+      const GamifiedDonation = {
+        phrases: [
+          "🥧 Buy Santa a Mince Pie (£2)",
+          "🥕 Buy Rudolph a Carrot (£3)",
+          "☕ Warm up the Elves with Cocoa (£5)",
+          "🦌 Sponsor a Reindeer's Flight (£10)",
+          "✨ Fuel the Sleigh with Magic (£5)",
+          "🔔 Keep the Sleigh Bells Ringing (£3)",
+          "🎁 Support Local Charities (£2+)"
+        ],
+        currentIndex: 0,
+        textEl: null,
+        
+        init() {
+          this.textEl = document.getElementById("donateText");
+          if (!this.textEl) return;
+          
+          // Initial random phrase
+          this.currentIndex = Math.floor(Math.random() * this.phrases.length);
+          this.textEl.textContent = this.phrases[this.currentIndex];
+          
+          // Start rotation (change every 6 seconds)
+          setInterval(() => this.rotate(), 6000);
+        },
+        rotate() {
+          if (!this.textEl) return;
+          this.textEl.classList.add("text-fade-out");
+          
+          setTimeout(() => {
+            this.currentIndex = (this.currentIndex + 1) % this.phrases.length;
+            this.textEl.textContent = this.phrases[this.currentIndex];
+            this.textEl.classList.remove("text-fade-out");
+          }, 400); // Matches CSS transition duration
+        }
+      };
+      // -------------------------------
 
       const dynamicManifest = {
         "name": "Santa Sleigh Tracker", "short_name": "Santa Tracker",
@@ -445,9 +504,6 @@
 
       function setConnectionState(state) { const box = AppState.dom.statusBox; box.classList.remove("is-reconnecting"); if (state === "reconnecting") { box.classList.add("is-reconnecting"); AppState.dom.statusDot.style.display = "block"; AppState.dom.statusDot.className = "status-dot dot-reconnecting"; } }
 
-      // ═══════════════════════════════════════════════════════
-      // FIREWORKS (unchanged from v2)
-      // ═══════════════════════════════════════════════════════
       const Fireworks = {
         particles: [], canvas: null, ctx: null, rafId: null, active: false,
         init() { this.canvas = AppState.dom.fireworks; this.ctx = this.canvas.getContext("2d"); this.resize(); window.addEventListener("resize", () => this.resize()); },
@@ -458,18 +514,12 @@
         stop() { this.active = false; if (this.rafId) cancelAnimationFrame(this.rafId); this.particles = []; if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); this.canvas.classList.remove("active"); }
       };
 
-      // ═══════════════════════════════════════════════════════
-      // SLEIGH AUDIO — HTML5 Audio player driven by settings
-      // Reads: settings.background_music_url (direct MP3/OGG link)
-      // Volume scales with snow/ETA proximity levels
-      // ═══════════════════════════════════════════════════════
       const SleighAudio = {
         _audio: null,
         _targetVol: 0,
         _rampTimer: null,
         _loaded: false,
 
-        // Initialise with the URL from settings. Does NOT auto-play.
         init(url) {
           if (!url || this._audio) return;
           const a = new Audio();
@@ -477,18 +527,16 @@
           a.loop = true;
           a.volume = 0;
           a.preload = "auto";
-          // Prevent CORS issues — we don't need audio data access, just playback
           a.crossOrigin = "anonymous";
           a.addEventListener("canplaythrough", () => { this._loaded = true; }, { once: true });
           a.addEventListener("error", () => { this._loaded = false; });
           this._audio = a;
         },
 
-        // Start playback (requires user gesture context)
         play() {
           if (!this._audio) return;
           const p = this._audio.play();
-          if (p && p.catch) p.catch(() => {}); // Swallow autoplay rejection
+          if (p && p.catch) p.catch(() => {}); 
           this._startVolumeRamp();
         },
 
@@ -498,33 +546,25 @@
           this._stopVolumeRamp();
         },
 
-        // Set target volume based on proximity level
-        // 0 = baseline (user just toggled on, no ETA), plays at low ambient volume
-        // 1 = distant (~15 min), 2 = medium (~8 min), 3 = close (~3 min)
         setIntensity(level) {
           if (!AppState.flags.musicEnabled || !this._audio) return;
-
-          // Volume map: even at level 0 (no pin set), play at gentle ambient volume
           const volMap = { 0: 0.15, 1: 0.25, 2: 0.5, 3: 0.8 };
           this._targetVol = volMap[level] ?? 0.15;
           this._startVolumeRamp();
         },
 
-        // Arrival moment: spike volume to full for 3 seconds, then settle
         arrivalSurge() {
           if (!this._audio || !AppState.flags.musicEnabled) return;
           this._targetVol = 1.0;
-          this._audio.volume = 1.0; // Immediate spike
-          // After 3s, drop back to gentle
+          this._audio.volume = 1.0; 
           setTimeout(() => {
             this._targetVol = 0.3;
             this._startVolumeRamp();
           }, 3000);
         },
 
-        // Smooth volume ramp — steps toward target over ~1.5s
         _startVolumeRamp() {
-          if (this._rampTimer) return; // Already ramping
+          if (this._rampTimer) return; 
           this._rampTimer = setInterval(() => {
             if (!this._audio) { this._stopVolumeRamp(); return; }
             const current = this._audio.volume;
@@ -533,7 +573,7 @@
               this._audio.volume = this._targetVol;
               this._stopVolumeRamp();
             } else {
-              this._audio.volume = current + diff * 0.15; // Ease toward target
+              this._audio.volume = current + diff * 0.15; 
             }
           }, 50);
         },
@@ -542,7 +582,6 @@
           if (this._rampTimer) { clearInterval(this._rampTimer); this._rampTimer = null; }
         },
 
-        // Mute without stopping (preserves playback position)
         mute() {
           this._targetVol = 0;
           if (this._audio) this._audio.volume = 0;
@@ -620,7 +659,6 @@
           const { maxLevel } = function(){ if (batteryState.supported && !batteryState.charging) { if(batteryState.level <= AppConfig.BATTERY.CRITICAL) return { maxLevel: 1 }; if(batteryState.level <= AppConfig.BATTERY.LOW) return { maxLevel: 2 }; } return { maxLevel: 3 }; }();
           SnowSystem.setLevel(triggerSnow, Math.min(snowLevel, maxLevel));
 
-          // MUSIC: Volume scales with proximity — or stays at ambient baseline if no pin
           SleighAudio.setIntensity(triggerSnow ? Math.min(snowLevel, maxLevel) : 0);
 
           const moving = isSleighMoving();
@@ -666,7 +704,6 @@
           const BeaconDB = { db: null, sent: 0, depth: 0, init: () => new Promise((resolve) => { const req = indexedDB.open("TurboBeacon", 1); req.onupgradeneeded = e => { if(!e.target.result.objectStoreNames.contains("q")) e.target.result.createObjectStore("q", {keyPath:"id", autoIncrement:true}); }; req.onsuccess = () => { BeaconDB.db = req.result; resolve(); }; req.onerror = () => resolve(); }), add: (p) => new Promise(res => { if(!BeaconDB.db) return res(); const tx = BeaconDB.db.transaction("q","readwrite"); tx.objectStore("q").add({p, t:Date.now()}); tx.oncomplete=()=>{ BeaconDB.updateUI(); res(); }; }), getAll: () => new Promise(res => { if(!BeaconDB.db) return res([]); const tx = BeaconDB.db.transaction("q","readonly"); const req = tx.objectStore("q").getAll(); req.onsuccess=()=>res(req.result||[]); }), del: (id) => new Promise(res => { if(!BeaconDB.db) return res(); const tx = BeaconDB.db.transaction("q","readwrite"); tx.objectStore("q").delete(id); tx.oncomplete=res; }), updateUI: async () => { if(!BeaconDB.db) return; BeaconDB.depth = (await BeaconDB.getAll()).length; const qEl = document.getElementById('txQueued'); if(qEl) qEl.textContent = BeaconDB.depth; const pill = document.getElementById('txPill'); if(pill) { if (BeaconDB.depth > 0) { pill.style.borderColor = "#ffab00"; pill.style.color = "#ffab00"; document.getElementById('txState').textContent = "📦 BUFFERING"; } else { pill.style.borderColor = "#00e676"; pill.style.color = "#00e676"; document.getElementById('txState').textContent = "📡 LIVE"; } } }, flush: async (url) => { if (BeaconDB.depth === 0 || !navigator.onLine) return; const items = await BeaconDB.getAll(); if (!items.length) return; items.sort((a,b) => a.t - b.t); for (const it of items) { if (Date.now() - it.t > 90*60*1000) { await BeaconDB.del(it.id); continue; } try { const r = await fetch(url, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(it.p) }); if (r.ok) { await BeaconDB.del(it.id); BeaconDB.sent++; document.getElementById('txSent').textContent = BeaconDB.sent; } else break; } catch { break; } } BeaconDB.updateUI(); } };
           navBtn.onclick = async () => { let secret = sessionStorage.getItem('beaconSecret'); if (!secret) { secret = prompt("📡 Beacon Authorization\nEnter the Beacon password:"); if (!secret) return; } navBtn.textContent = "⏳ Verifying..."; let gpsLoggerUrl = null; try { const sep = AppState.vars.apiUrl.includes('?') ? '&' : '?'; const res = await fetch(`${AppState.vars.apiUrl}${sep}function=verifyBeaconAuth&secret=${encodeURIComponent(secret)}`); const result = await res.json(); if (!result.valid) { alert("❌ Access Denied."); navBtn.textContent = "🧭 START SAT-NAV & BEACON"; sessionStorage.removeItem('beaconSecret'); return; } sessionStorage.setItem('beaconSecret', secret); navBtn.textContent = "⏳ Fetching Config..."; const cfgRes = await fetch(`${AppState.vars.apiUrl}${sep}function=getBeaconConfig&secret=${encodeURIComponent(secret)}`); const cfg = await cfgRes.json(); if (cfg.error || !cfg.gpsLoggerUrl) throw new Error(cfg.error || "Missing URL"); gpsLoggerUrl = cfg.gpsLoggerUrl; } catch (e) { alert("❌ Setup failed: " + e.message); navBtn.textContent = "🧭 START SAT-NAV & BEACON"; return; } await BeaconDB.init(); await BeaconDB.updateUI(); setInterval(() => BeaconDB.flush(gpsLoggerUrl), 5000); navBtn.style.display = "none"; document.body.classList.add("nav-active"); requestWakeLock();
 
-// Silent audio — keeps GPS alive when tab is backgrounded
 try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
   gain.gain.value = 0.001; osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); 
     } catch(e) {}
@@ -687,10 +724,6 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
         const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
         AppState.vars.todayRoute = route;
 
-        // ═══════════════════════════════════════════════════════
-        // MUSIC: Read background_music_url from settings sheet
-        // Only show button if a URL is configured
-        // ═══════════════════════════════════════════════════════
         const musicUrl = settings.background_music_url;
         if (musicUrl && musicUrl.trim() !== "" && !AppState.flags.isKiosk && !AppState.flags.isDriver) {
           AppState.vars.musicUrl = musicUrl.trim();
@@ -707,11 +740,10 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
               musicBtn.classList.add("music-on");
               musicBtn.setAttribute("aria-label", "Christmas music is playing — tap to mute");
               SleighAudio.play();
-              // Set initial volume based on current snow state
               if (AppState.flags.snowActive && AppState.currentSnowLevel) {
                 SleighAudio.setIntensity(AppState.currentSnowLevel);
               } else {
-                SleighAudio.setIntensity(0); // Ambient baseline
+                SleighAudio.setIntensity(0); 
               }
             } else {
               musicBtn.textContent = "🔇 Music";
@@ -722,12 +754,26 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
           };
         }
 
-        // Twitch
         const twitchEnabled = String(settings.enable_twitch || "").toUpperCase() === "TRUE"; const twitchChannel = settings.twitch_channel;
         if (twitchEnabled && twitchChannel && twitchChannel.trim() !== "" && !AppState.flags.isKiosk && !AppState.flags.isDriver) { const twitchBtn = document.getElementById('twitchBtn'), twitchBox = document.getElementById('twitchBox'); let twitchLoaded = false; twitchBtn.style.display = "inline-block"; twitchBtn.addEventListener('click', () => { if (twitchBox.classList.contains('visible')) { twitchBox.classList.remove('visible'); twitchBtn.textContent = "📺 Cam: OFF"; twitchBtn.style.background = "var(--surface-2)"; twitchBtn.style.color = "var(--rt-gold)"; } else { twitchBox.classList.add('visible'); twitchBtn.textContent = "📺 Cam: LIVE"; twitchBtn.style.background = "var(--gold-glow)"; twitchBtn.style.color = "var(--rt-gold)"; if (!twitchLoaded) { const parentDomain = window.location.hostname || "localhost"; twitchBox.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(twitchChannel)}&parent=${parentDomain}&muted=true" frameborder="0" allowfullscreen="true" scrolling="no" allow="autoplay; fullscreen"></iframe>`; twitchLoaded = true; } } }); }
 
         const don = apiData.donations || {};
-        if (settings.donate_url && !AppState.flags.isKiosk) { AppState.dom.donateLink.href = settings.donate_url; AppState.dom.donateBox.style.display = "block"; if (don.target && don.target > 0) { const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100))); AppState.dom.donateLink.style.background = `linear-gradient(90deg, #FBAF33 ${pct}%, rgba(251, 175, 51, 0.3) ${pct}%)`; } } else { AppState.dom.donateBox.style.display = "none"; }
+        if (settings.donate_url && !AppState.flags.isKiosk) { 
+          AppState.dom.donateLink.href = settings.donate_url; 
+          AppState.dom.donateBox.style.display = "block"; 
+          
+          // INIT THE GAMIFIED TEXT HERE
+          GamifiedDonation.init();
+
+          // Apply percentage gradient logic to the button directly instead of using an internal progress bar
+          if (don.target && don.target > 0) { 
+            const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100))); 
+            AppState.dom.donateLink.style.background = `linear-gradient(90deg, #FBAF33 ${pct}%, rgba(251, 175, 51, 0.3) ${pct}%)`; 
+          } 
+        } else { 
+          AppState.dom.donateBox.style.display = "none"; 
+        }
+        
         fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { keepalive: true });
         if (AppState.flags.isKiosk && AppState.dom.kioskBanner) { const statusDiv = document.createElement('div'); statusDiv.id = 'kioskStatus'; statusDiv.textContent = '🎄 PREPARING IN LAPLAND'; const subtitleDiv = document.createElement('div'); subtitleDiv.className = 'kiosk-subtitle'; subtitleDiv.textContent = AppState.vars.sleighName; AppState.dom.kioskBanner.innerHTML = ''; AppState.dom.kioskBanner.appendChild(statusDiv); AppState.dom.kioskBanner.appendChild(subtitleDiv); AppState.dom.kioskBanner.classList.add("visible"); }
         if (!route) { AppState.dom.notifyBtn.style.display = "none"; } else { await loadGpxRoute(route.gpxUrl); }
@@ -758,7 +804,6 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
         document.getElementById("modalCancelBtn").addEventListener("click", () => { document.getElementById("emailModal").style.display = "none"; AppState.dom.statusBox.textContent = "Tap the pin to try again"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } });
         document.getElementById("modalConfirmBtn").addEventListener("click", () => { const email = document.getElementById("subEmail").value.trim(); document.getElementById("emailModal").style.display = "none"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } Utils.toggleFollowControls(true); if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") { showToast("🎅 You're already signed up!"); return; } AppState.dom.statusBox.textContent = "🔔 Saving your notification..."; if (!AppState.vars.pendingSubscription) { showToast("❌ Error: No location selected."); return; } fetch(`${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`).then(r=>r.json()).then(d => { if (d.ok) { sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1"); showToast(email ? "🎅 You're signed up! We'll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts."); AppState.dom.statusBox.textContent = ""; if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; } AppState.vars.pendingSubscription = null; } else { showToast("❌ Error saving notification."); AppState.dom.statusBox.textContent = "❌ Failed to save."; } }).catch(() => { showToast("❌ Network error."); AppState.dom.statusBox.textContent = "❌ Connection failed."; }); });
 
-        // Share button
         if (!AppState.flags.isKiosk && !AppState.flags.isDriver) { const shareBtn = AppState.dom.shareBtn; shareBtn.style.display = "inline-block"; shareBtn.onclick = async () => { const shareUrl = window.location.href; const shareText = `🎅 Track Santa's sleigh LIVE! ${AppState.vars.sleighName}`; if (navigator.share) { try { await navigator.share({ title: "Santa Sleigh Tracker", text: shareText, url: shareUrl }); showToast("🎅 Shared!"); } catch(e) {} } else { try { await navigator.clipboard.writeText(shareUrl); showToast("📋 Link copied! Share it with your street!"); } catch(e) { prompt("Copy this tracker link:", shareUrl); } } }; }
 
         Fireworks.init();
