@@ -733,7 +733,7 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
         if (!route) { AppState.dom.notifyBtn.style.display = "none"; } else { await loadGpxRoute(route.gpxUrl); }
 
         const gaLink = document.getElementById('giftAidLink');
-        if (gaLink && !AppState.flags.isKiosk && !AppState.flags.isDriver) {
+        if (gaLink && !AppState.flags.isKiosk && !AppState.flags.isDriver && String(settings.enable_gift_aid || '').toUpperCase() === 'TRUE') {
           gaLink.href = location.origin + '/gift_aid?api=' + encodeURIComponent(AppState.vars.apiUrl);
           gaLink.style.display = 'block';
         }
