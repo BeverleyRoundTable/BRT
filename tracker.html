@@ -307,6 +307,7 @@
     <a id="donateLink" class="donate-btn" target="_blank" aria-label="Donate and support the Santa Sleigh">🎁 DONATE & SUPPORT US</a>
     <div class="install-overlay" id="installOverlayBox">
       <button id="installAppBtn" class="donate-btn override-install-btn" aria-label="Install tracker app to home screen">📲 Add App to Home Screen</button>
+      <a id="giftAidLink" href="#" target="_blank" style="display:none; position:fixed; bottom:calc(var(--donate-bottom) + 70px); left:50%; transform:translateX(-50%); font-family:'DM Sans',sans-serif; font-size:12px; color:#2ecc71; text-decoration:none; font-weight:700; z-index:2000; text-align:center; padding:6px 14px; background:rgba(13,13,11,0.85); border:1px solid rgba(46,204,113,0.2); border-radius:100px;">🎁 UK taxpayer? Boost your donation by 25%</a>
     </div>
   </div>
 
@@ -762,6 +763,13 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
       }
 
       document.addEventListener("visibilitychange", () => { AppState.flags.pageVisible = !document.hidden; if (AppState.flags.pageVisible) { if (AppState.flags.isKiosk) requestWakeLock(); if (AppState.vars.lastVisualPos && AppState.marker) AppState.marker.setLatLng(AppState.vars.lastVisualPos); if (AppState.flags.snowActive) SnowSystem.draw(); if (AppState.vars.pollTimer) clearTimeout(AppState.vars.pollTimer); updateTracker(); } });
+
+      const gaLink = document.getElementById('giftAidLink');
+        if (gaLink && !AppState.flags.isKiosk && !AppState.flags.isDriver) {
+          gaLink.href = location.origin + '/gift_aid?api=' + encodeURIComponent(AppState.vars.apiUrl);
+          gaLink.style.display = 'block';
+        }
+      
       init();
     });
   </script>
