@@ -1010,8 +1010,13 @@ function updateDashboard() {
     const isEnabled = String(STATE.settings?.enable_user_messages).toUpperCase() === 'TRUE';
     panel.style.display = isEnabled ? 'block' : 'none';
   }
+  
+const gaPanel = document.getElementById('giftAidPanel');
+  if (gaPanel) {
+    const gaEnabled = String(STATE.settings?.enable_gift_aid || '').toUpperCase() === 'TRUE';
+    gaPanel.style.display = gaEnabled ? 'block' : 'none';
+  }
 }
-
 // ⭐ NEW: Checks if a user message is currently active and updates the UI
 function updateUserMsgState() {
   const activeMsgBox = document.getElementById('activeUserMsgBox');
