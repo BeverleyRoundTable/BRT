@@ -394,13 +394,40 @@
       // --- GAMIFIED DONATION LOGIC ---
       const GamifiedDonation = {
         phrases: [
+          /* Treats for Santa */
           "🥧 Buy Santa a Mince Pie (£2)",
+          "🍪 Leave out Milk & Cookies (£4)",
+          "🎅 Chip in for Santa's Dry Cleaning (£5)",
+          "🧦 Keep Santa's Toes Warm (£4)",
+          "☕ Buy Santa a Midnight Espresso (£3)",
+
+          /* Treats for Reindeer */
           "🥕 Buy Rudolph a Carrot (£3)",
-          "☕ Warm up the Elves with Cocoa (£5)",
+          "🍎 Buy a juicy Apple for Blitzen (£2)",
           "🦌 Sponsor a Reindeer's Flight (£10)",
+          "🪄 Buy a pouch of Magical Reindeer Dust (£3)",
+          "🥣 Top up Dasher's Magical Oats (£4)",
+
+          /* Perks for the Elves / Crew */
+          "☕ Warm up the Elves with Hot Cocoa (£5)",
+          "🍬 Treat the Crew to Candy Canes (£2)",
+          "🧣 Buy the Lead Elf some Earmuffs (£5)",
+          "🧤 Keep the Elves' hands warm (£3)",
+          "🍕 Buy the volunteer crew a slice of pizza (£5)",
+
+          /* Sleigh Maintenance & Magic */
           "✨ Fuel the Sleigh with Magic (£5)",
           "🔔 Keep the Sleigh Bells Ringing (£3)",
-          "🎁 Support Local Charities (£2+)"
+          "🛠️ Fix a wobbly Sleigh Runner (£5)",
+          "❄️ Buy Magical Anti-Freeze for the Sleigh (£4)",
+          "🗺️ Upgrade Santa's Sat-Nav (£10)",
+          "🕯️ Light the way for the Sleigh (£3)",
+
+          /* Community & Charity */
+          "🎁 Support Local Charities (£2+)",
+          "🌟 Spread Christmas Cheer (£5)",
+          "🧸 Help fill a local Stocking (£5)",
+          "💖 Give the gift of giving (£2+)"
         ],
         currentIndex: 0,
         textEl: null,
@@ -413,8 +440,8 @@
           this.currentIndex = Math.floor(Math.random() * this.phrases.length);
           this.textEl.textContent = this.phrases[this.currentIndex];
           
-          // Start rotation (change every 6 seconds)
-          setInterval(() => this.rotate(), 6000);
+          // Start rotation (Changed to 10 seconds / 10000ms)
+          setInterval(() => this.rotate(), 10000);
         },
         rotate() {
           if (!this.textEl) return;
