@@ -218,8 +218,19 @@
   <canvas id="compressCanvas" style="display:none;"></canvas>
 
   <script>
+    
     // --- HELPER: GET BASE URL ---
     function getApiUrl() {
+      // 1. Look for ?api= in the URL (for Cloudflare/external hosting)
+      const params = new URLSearchParams(window.location.search);
+      const apiParam = params.get("api") || localStorage.getItem("SANTA_API");
+      
+      if (apiParam) {
+        localStorage.setItem("SANTA_API", apiParam); // Cache it so it survives page reloads
+        return apiParam;
+      }
+      
+      // 2. Fallback: If deployed directly via Google Apps Script
       const url = new URL(window.location.href);
       url.search = ''; 
       return url.toString();
