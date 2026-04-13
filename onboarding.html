@@ -246,6 +246,7 @@
           <tr><td>Routes</td><td>Define nightly routes, dates, map images, GPX links, sponsor logos, and street lists. Also tracks <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">mp4Status</code> and <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">mp4Url</code> for the GPX Animator.</td></tr>
           <tr><td>Donations</td><td>Log offline cash/card donations. Tallying here drives automated crew emails.</td></tr>
           <tr><td>Expenses</td><td>Log outgoing costs (fuel, sweets, repairs, insurance, supplies) per route or as general. Column H auto-sums all expenses. Mirrors the Donations ledger layout. Use alongside Donations to calculate a true net figure for your AGM.</td></tr>
+          <tr><td>Gift Aid</td><td>Stores Gift Aid declarations submitted via the public form. Columns: Timestamp, Title, First Name, Last Name, Address Line 1, Address Line 2, City, Postcode, Email, Amount, Route, Declaration Date, Gift Aid Value, Status. Auto-created on first submission. God Mode includes a one-click HMRC R68 CSV export for Charities Online claims.</td></tr>
           <tr><td>Sponsors</td><td>Track sponsor relationships: company, contact details, amount pledged vs received, sponsorship type (Route / Season / In-Kind), logo URL, and whether thank-you and impact reports have been sent. The Logo URL column can feed into per-route <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">sponsorUrl</code> on the Routes tab.</td></tr>
           <tr><td>Tracker</td><td>Firebase connection settings — <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">firebase_url</code>, <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">firebase_path</code> (defaults to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">/location/current</code>), <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">secret</code>, and <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">firebase_db_secret</code>. Cell B7 auto-generates the GPS Logger URL via formula — do not edit B7 manually.</td></tr>
           <tr><td>RoadLookup</td><td>Powers the Address Lookup embed — maps street names to route/date combinations so families can see when Santa is visiting.</td></tr>
@@ -615,6 +616,7 @@
           <tr><td>donate_url</td><td>URL the Donate button links to on the public tracker.</td></tr>
           <tr><td>enable_user_messages</td><td>Set to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> to enable the 💬 Msg Santa button.</td></tr>
           <tr><td>enable_twitch</td><td>Set to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> to show the 📺 Cam button on the public tracker.</td></tr>
+          <tr><td>enable_gift_aid</td><td>Set to <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">TRUE</code> to show the Gift Aid panel in God Mode and enable the public declaration form.</td></tr>
           <tr><td>twitch_channel</td><td>Your Twitch channel name (e.g. <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:12px;">beverleyroundtable</code>). The embed uses this directly.</td></tr>
         <tr><td>background_music_url</td><td>Direct link to an .mp3 or .ogg file (e.g., hosted on Cloudflare Pages or GitHub). If filled, the Music button appears on the public tracker. If left blank, the feature is completely hidden.</td></tr>
         </tbody>
@@ -712,7 +714,7 @@
         <div class="card">
           <span class="card-icon">⚡</span>
           <div class="card-title">God Mode Dashboard</div>
-          <div class="card-desc">Lead Elf cockpit — live GPS, viewer counts, donations, heatmaps, PA, crew alerts, message moderation queue, and the <em>GPS Health</em> panel showing fix age, fix rate, LIVE/DELAYED/STALE/LOST badge, and a timeline visualisation of signal gaps. Password protected.</div>
+          <div class="card-desc">Lead Elf cockpit — live GPS, viewer counts, donations, heatmaps, PA, crew alerts, message moderation queue, Gift Aid declarations with HMRC R68 CSV export, and the <em>GPS Health</em> panel showing fix age, fix rate, LIVE/DELAYED/STALE/LOST badge, and a timeline visualisation of signal gaps. Password protected.</div>
         </div>
         
         <div class="card">
