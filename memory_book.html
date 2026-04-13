@@ -55,6 +55,20 @@
       margin-bottom: 32px;
     }
 
+    .time-machine {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--surface-2); padding: 6px 16px; 
+      border-radius: 999px; border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .time-machine span { color: var(--text-dim); font-size: 13px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+    .time-machine select {
+      background: transparent; color: var(--gold); border: none;
+      font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 1.5px;
+      cursor: pointer; outline: none; appearance: none; padding-right: 4px;
+    }
+    .time-machine select option { background: var(--surface); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 16px; }
+    
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--surface-2); color: #fff;
@@ -185,6 +199,12 @@
   <header>
     <h1>COMMUNITY <span>MEMORIES</span></h1>
     <p class="subtext" id="headerSubtext">Loading sleigh data...</p>
+    
+    <div class="time-machine" id="timeMachineBox" style="display: none;">
+      <span>⏳ Archive:</span>
+      <select id="yearSelect"></select>
+    </div>
+    <br>
     <button class="btn" id="openUploadBtn">📸 Submit a Photo</button>
   </header>
 
@@ -245,44 +265,83 @@
       const loader = document.getElementById('loader');
       const subtext = document.getElementById('headerSubtext');
 
-      // --- 1. LOAD GALLERY DATA ---
+      // --- 1. LOAD GALLERY DATA & YEARS ---
+      const yearSelect = document.getElementById('yearSelect');
+      const timeMachineBox = document.getElementById('timeMachineBox');
+
+      async function loadGallery(year) {
+        loader.style.display = 'flex';
+        gallery.innerHTML = '';
+        gallery.appendChild(loader);
+
+        try {
+          const res = await fetch(`${apiUrl}${sep}function=getMemoryBook&year=${year}`);
+          const images = await res.json();
+          loader.style.display = 'none';
+
+          if (!images || images.length === 0) {
+            gallery.innerHTML = `
+              <div class="state-message">
+                <span style="font-size: 40px; margin-bottom: 10px;">📸</span>
+                The memory book for ${year} is empty.<br>Click 'Submit a Photo' above to be the first!
+              </div>`;
+          } else {
+            const captions = ["Magical!", "Santa!", "Ho Ho Ho!", "Festive fun!", "Great night!", "Sleigh bells!"];
+            images.forEach((imgUrl, index) => {
+              const card = document.createElement('div');
+              card.className = 'polaroid';
+              const rot = (Math.random() * 8 - 4).toFixed(1);
+              card.style.setProperty('--rot', `${rot}deg`);
+              card.style.animation = `fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards ${index * 0.05}s`;
+              const caption = captions[Math.floor(Math.random() * captions.length)];
+              card.innerHTML = `<img src="${imgUrl}" alt="Community Photo" loading="lazy"><div class="polaroid-caption">${caption}</div>`;
+              gallery.appendChild(card);
+            });
+          }
+        } catch (err) {
+          loader.style.display = 'none';
+          gallery.innerHTML = `<div class="state-message"><span style="color: var(--red); font-size: 32px; margin-bottom: 10px;">⚠️</span>Oops! The elves couldn't load the photos right now.</div>`;
+        }
+      }
+
       try {
         // Fetch Sleigh Name
         fetch(`${apiUrl}${sep}function=getRoutes`).then(r => r.json()).then(data => {
             if(data && data.settings) {
                 const name = data.settings.sleigh_display_name || "Santa Sleigh";
-                subtext.textContent = `A collection of magical moments from the ${name} routes. Did you catch Santa on camera?`;
+                subtext.textContent = `Magical moments from the ${name} routes.`;
                 document.title = `Memories — ${name}`;
             }
-        }).catch(e => { subtext.textContent = "Magical moments captured by you on the sleigh routes!"; });
+        }).catch(e => { subtext.textContent = "Magical moments captured by you!"; });
 
-        // Fetch Photos
-        const res = await fetch(`${apiUrl}${sep}function=getMemoryBook`);
-        const images = await res.json();
-
-        loader.style.display = 'none';
-
-        if (!images || images.length === 0) {
-          gallery.innerHTML = `
-            <div class="state-message">
-              <span style="font-size: 40px; margin-bottom: 10px;">📸</span>
-              The memory book is currently empty.<br>Click 'Submit a Photo' above to be the first!
-            </div>`;
-        } else {
-          const captions = ["Magical!", "Santa!", "Ho Ho Ho!", "Festive fun!", "Great night!", "Sleigh bells!"];
-          images.forEach((imgUrl, index) => {
-            const card = document.createElement('div');
-            card.className = 'polaroid';
-            const rot = (Math.random() * 8 - 4).toFixed(1);
-            card.style.setProperty('--rot', `${rot}deg`);
-            card.style.animation = `fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards ${index * 0.05}s`;
-            const caption = captions[Math.floor(Math.random() * captions.length)];
-            card.innerHTML = `<img src="${imgUrl}" alt="Community Photo" loading="lazy"><div class="polaroid-caption">${caption}</div>`;
-            gallery.appendChild(card);
+        // Fetch Available Years
+        const yearRes = await fetch(`${apiUrl}${sep}function=getMemoryYears`);
+        const availableYears = await yearRes.json();
+        
+        if (availableYears.length > 0) {
+          availableYears.forEach(y => {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            yearSelect.appendChild(opt);
           });
+          
+          // Only show the time machine if there's more than 1 year!
+          if (availableYears.length > 1) {
+             timeMachineBox.style.display = 'inline-flex';
+          }
+          
+          // Load the newest year by default
+          loadGallery(availableYears[0]);
         }
+        
+        // Listen for year changes
+        yearSelect.addEventListener('change', (e) => {
+          loadGallery(e.target.value);
+        });
+
       } catch (err) {
-        loader.innerHTML = `<span style="color: var(--red); font-size: 32px; margin-bottom: 10px;">⚠️</span>Oops! The elves couldn't load the photos right now.`;
+        console.error("Failed to boot gallery", err);
       }
 
       // --- 2. UPLOAD LOGIC ---
