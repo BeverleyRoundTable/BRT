@@ -364,8 +364,7 @@
 
     .lb-header {
       display: grid;
-      /* Added 2 new columns, adjusted widths */
-      grid-template-columns: 40px 1.2fr 85px 80px 85px 70px 70px 70px 75px;
+      grid-template-columns: 40px 1.2fr 85px 85px 80px 85px 70px 70px 70px 75px;
       padding: 12px 20px;
       background: var(--surface-2);
       border-bottom: 1px solid var(--border);
@@ -378,8 +377,7 @@
 
     .lb-row {
       display: grid;
-      /* Must match header exactly */
-      grid-template-columns: 40px 1.2fr 85px 80px 85px 70px 70px 70px 75px;
+      grid-template-columns: 40px 1.2fr 85px 85px 80px 85px 70px 70px 70px 75px;
       padding: 14px 20px;
       align-items: center;
       border-bottom: 1px solid var(--border);
@@ -575,19 +573,21 @@
       .lb-header, .lb-row {
         grid-template-columns: 36px 1fr 90px; /* Just Rank, Name, Net on mobile */
       }
-      /* Hide everything except Rank, Name, and Net Raised on mobile */
+      /* Hide everything except Rank (1), Name (2), and Net Raised (6) on mobile */
       .lb-header span:nth-child(3),
       .lb-header span:nth-child(4),
-      .lb-header span:nth-child(6),
+      .lb-header span:nth-child(5),
       .lb-header span:nth-child(7),
       .lb-header span:nth-child(8),
       .lb-header span:nth-child(9),
+      .lb-header span:nth-child(10),
       .lb-row .lb-val:nth-child(3),
       .lb-row .lb-val:nth-child(4),
-      .lb-row .lb-val:nth-child(6),
+      .lb-row .lb-val:nth-child(5),
       .lb-row .lb-val:nth-child(7),
       .lb-row .lb-val:nth-child(8),
-      .lb-row .lb-val:nth-child(9) { display: none; }
+      .lb-row .lb-val:nth-child(9),
+      .lb-row .lb-val:nth-child(10) { display: none; }
 
     /* Animate in */
     @keyframes fadeUp {
@@ -688,6 +688,7 @@
             <span>#</span>
             <span>Table</span>
             <span>Gross</span>
+            <span>Gift Aid</span>
             <span>Exp.</span>
             <span>Net</span>
             <span>Views</span>
@@ -953,21 +954,22 @@ function extractLiveTableData(table, apiData) {
   }
 
   const displayName = settings.sleigh_display_name || table.name;
-
   const expenses = parseFloat(apiData.expenses) || 0;
+  
+  const giftAid = apiData.giftAid ? (parseFloat(apiData.giftAid.giftAid) || 0) : 0;
 
   return {
     id: table.id,
     name: displayName,
     raised: seasonRaised,      
+    giftAid: giftAid,             
     expenses: expenses,
-    netRaised: seasonRaised - expenses,
+    netRaised: (seasonRaised + giftAid) - expenses,
     views: totalViews,         
     routes: pastRoutes.length, 
     streets: streetCount,      
     messages: messageStats.total || 0,
     ok: true,
-    // THE MAP INJECTIONS
     firebaseUrl: apiData.tracker?.firebase_url ? apiData.tracker.firebase_url.replace(/\/$/, "") : null,
     todayGpx: todayRoute ? todayRoute.gpxUrl : null,
     iconUrl: settings.sleigh_icon_live || "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png"
@@ -1171,7 +1173,7 @@ function renderLeaderboard(data) {
         <div class="lb-rank">${i + 1}</div>
         <div class="lb-name">${escHtml(d.name)} ${statusHtml}</div>
         <div class="lb-val" style="color: #aaa;">£${Math.round(d.raised).toLocaleString('en-GB')}</div>
-        <div class="lb-val" style="color: var(--red);">£${Math.round(d.expenses).toLocaleString('en-GB')}</div>
+        <div class="lb-val" style="color: var(--green);">+£${Math.round(d.giftAid || 0).toLocaleString('en-GB')}</div> <div class="lb-val" style="color: var(--red);">£${Math.round(d.expenses).toLocaleString('en-GB')}</div>
         <div class="lb-val gold" style="font-size: 15px;">£${Math.round(d.netRaised).toLocaleString('en-GB')}</div>
         <div class="lb-val">${d.views.toLocaleString()}</div>
         <div class="lb-val">${d.routes.toLocaleString()}</div>
