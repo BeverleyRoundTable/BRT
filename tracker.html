@@ -332,6 +332,51 @@
 
     /* ── MUSIC BUTTON — active state ── */
     .btn.music-on { border-color: var(--rt-gold); color: var(--rt-gold); }
+
+    /* ── SANTA'S WORKSHOP OVERLAY ── */
+    #workshopOverlay {
+      position: fixed; inset: 0; background: var(--dark);
+      z-index: 8000; display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px; overflow-y: auto; text-align: center;
+    }
+    .ws-card {
+      background: var(--surface); border: 1px solid var(--border-gold);
+      padding: 40px; border-radius: 16px; max-width: 500px; width: 100%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6); position: relative; overflow: hidden;
+    }
+    .ws-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--red), var(--gold));
+    }
+    .ws-title {
+      font-family: 'Bebas Neue', sans-serif; font-size: 42px;
+      color: var(--gold); letter-spacing: 2px; margin-bottom: 10px; line-height: 1;
+    }
+    .ws-countdown {
+      font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 700;
+      margin: 24px 0; color: #fff;
+      background: var(--surface-2); padding: 16px; border-radius: 12px; border: 1px solid var(--border);
+    }
+    .ws-bar-wrap {
+      background: var(--surface-2); border-radius: 10px; height: 16px;
+      border: 1px solid var(--border); overflow: hidden; margin-top: 8px; position: relative;
+    }
+    .ws-bar-fill {
+      background: linear-gradient(90deg, var(--red), var(--gold));
+      height: 100%; width: 0%; transition: width 1s ease;
+    }
+    .ws-item { text-align: left; margin-bottom: 24px; }
+    .ws-item-label {
+      display: flex; justify-content: space-between; font-size: 13px;
+      font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;
+    }
+    .ws-status-text { color: var(--text); font-size: 12px; margin-top: 6px; font-style: italic; }
+    .ws-skip-btn {
+      background: none; border: none; color: var(--text-muted); text-decoration: underline;
+      font-family: inherit; font-size: 12px; margin-top: 20px; cursor: pointer; transition: color 0.2s;
+    }
+    .ws-skip-btn:hover { color: var(--text); }
   </style>
 </head>
 
@@ -406,8 +451,129 @@
 
   <div id="magic-container"></div>
   
+  <div id="workshopOverlay">
+    <div class="ws-card">
+      <h1 class="ws-title">🎅 Santa's Workshop</h1>
+      <p style="color: var(--text-dim); font-size: 14px;">The sleigh is currently undergoing off-season maintenance. We'll be back on the road in:</p>
+      
+      <div id="wsCountdown" class="ws-countdown">-- : -- : --</div>
+
+      <div class="ws-item">
+        <div class="ws-item-label"><span>Sleigh MOT & Waxing</span> <span id="wsMotPct">0%</span></div>
+        <div class="ws-bar-wrap"><div id="wsMotBar" class="ws-bar-fill"></div></div>
+        <div id="wsMotText" class="ws-status-text">Checking runners...</div>
+      </div>
+      
+      <div class="ws-item">
+        <div class="ws-item-label"><span>Reindeer Flight Training</span> <span id="wsDeerPct">0%</span></div>
+        <div class="ws-bar-wrap"><div id="wsDeerBar" class="ws-bar-fill"></div></div>
+        <div id="wsDeerText" class="ws-status-text">Stretching legs...</div>
+      </div>
+
+      <div class="ws-item">
+        <div class="ws-item-label"><span>Elf Recruitment</span> <span id="wsElfPct">0%</span></div>
+        <div class="ws-bar-wrap"><div id="wsElfBar" class="ws-bar-fill"></div></div>
+        <div id="wsElfText" class="ws-status-text">Reviewing CVs...</div>
+      </div>
+      
+      <button class="ws-skip-btn" onclick="document.getElementById('workshopOverlay').remove();">Bypass & view map</button>
+    </div>
+  </div>
+
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+
+      // --- SANTA'S WORKSHOP MANAGER ---
+      const WorkshopManager = {
+        timerId: null,
+        init(routes) {
+            const now = new Date();
+            let targetDate = null;
+
+            // 1. Find the very first future route
+            if (routes && routes.length > 0) {
+                const futureRoutes = routes.map(r => new Date(r.date)).filter(d => d > now).sort((a,b) => a-b);
+                if (futureRoutes.length > 0) targetDate = futureRoutes[0];
+            }
+            
+            // 2. Fallback if no routes mapped: Assume Dec 1st
+            if (!targetDate) {
+                targetDate = new Date(now.getFullYear(), 11, 1); 
+                if (now > targetDate) targetDate = new Date(now.getFullYear() + 1, 11, 1);
+            }
+
+            // 3. Set the start of the "build up" to Jan 1st of the target year
+            const startDate = new Date(targetDate.getFullYear(), 0, 1);
+            
+            // 4. Do not show workshop if a route is within 7 days (the season has effectively begun)
+            const daysUntil = (targetDate - now) / (1000 * 60 * 60 * 24);
+            if (daysUntil < 7) return false; 
+
+            document.getElementById('workshopOverlay').style.display = 'flex';
+            this.startLoop(startDate, targetDate);
+            return true;
+        },
+        
+        startLoop(start, end) {
+            const update = () => {
+                const now = new Date();
+                const totalMs = end.getTime() - start.getTime();
+                const elapsedMs = now.getTime() - start.getTime();
+                let pct = Math.max(0, Math.min(100, (elapsedMs / totalMs) * 100));
+                
+                // Countdown text
+                const diff = end.getTime() - now.getTime();
+                if (diff > 0) {
+                    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                    const m = Math.floor((diff / 1000 / 60) % 60);
+                    document.getElementById('wsCountdown').textContent = `${d}d ${h}h ${m}m`;
+                } else {
+                    document.getElementById('wsCountdown').textContent = "Ready for takeoff!";
+                }
+
+                // Fake Hype Logic
+                
+                // MOT: Linear smooth progress
+                const motPct = Math.min(100, pct * 1.05).toFixed(1);
+                document.getElementById('wsMotBar').style.width = motPct + '%';
+                document.getElementById('wsMotPct').textContent = Math.floor(motPct) + '%';
+                let motTxt = "Oiling the runners...";
+                if(motPct > 30) motTxt = "Re-painting the chassis...";
+                if(motPct > 60) motTxt = "Upgrading sat-nav software...";
+                if(motPct > 90) motTxt = "Polishing the bells...";
+                if(motPct >= 100) motTxt = "Sleigh MOT passed! ✅";
+                document.getElementById('wsMotText').textContent = motTxt;
+
+                // Reindeer: Starts slow, ramps up exponentially
+                const deerPct = Math.min(100, Math.pow(pct/100, 2) * 100).toFixed(1);
+                document.getElementById('wsDeerBar').style.width = deerPct + '%';
+                document.getElementById('wsDeerPct').textContent = Math.floor(deerPct) + '%';
+                let deerTxt = "Grazing & resting in Lapland...";
+                if(deerPct > 20) deerTxt = "Light jogging routines...";
+                if(deerPct > 50) deerTxt = "Formation hovering practice...";
+                if(deerPct > 80) deerTxt = "High-speed cornering drills...";
+                if(deerPct >= 100) deerTxt = "Ready for flight! 🦌💨";
+                document.getElementById('wsDeerText').textContent = deerTxt;
+
+                // Elves: Jumpy "recruitment" progress
+                const todayDay = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
+                const elfJumps = (todayDay % 12) * 0.8; // creates a jagged jumpy effect
+                const elfPctRaw = Math.min(100, pct + elfJumps);
+                document.getElementById('wsElfBar').style.width = elfPctRaw + '%';
+                document.getElementById('wsElfPct').textContent = Math.floor(elfPctRaw) + '%';
+                let elfTxt = "Reviewing volunteer CVs...";
+                if(elfPctRaw > 40) elfTxt = "Sizing high-vis jackets...";
+                if(elfPctRaw > 70) elfTxt = "Bucket shaking orientation...";
+                if(elfPctRaw >= 100) elfTxt = "Crew is briefed & ready! 🧝";
+                document.getElementById('wsElfText').textContent = elfTxt;
+            };
+            
+            update();
+            this.timerId = setInterval(update, 60000); 
+        }
+      };
+
 
       // --- GAMIFIED DONATION LOGIC ---
       const GamifiedDonation = {
@@ -808,6 +974,15 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
         const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
         AppState.vars.todayRoute = route;
 
+        // --- WORKSHOP CHECK ---
+        if (!AppState.flags.isDriver && !AppState.flags.isKiosk && !route) {
+            const isWorkshopActive = WorkshopManager.init(apiData.routes);
+            if (isWorkshopActive) {
+                document.getElementById('loadingCover').style.display = "none";
+                return; // 🛑 Halt map initialization so they see the workshop!
+            }
+        }
+
         const musicUrl = settings.background_music_url;
         if (musicUrl && musicUrl.trim() !== "" && !AppState.flags.isKiosk && !AppState.flags.isDriver) {
           AppState.vars.musicUrl = musicUrl.trim();
@@ -846,10 +1021,8 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
           AppState.dom.donateLink.href = settings.donate_url; 
           AppState.dom.donateBox.style.display = "block"; 
           
-          // INIT THE GAMIFIED TEXT HERE
           GamifiedDonation.init();
 
-          // Apply percentage gradient logic to the button directly instead of using an internal progress bar
           if (don.target && don.target > 0) { 
             const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100))); 
             AppState.dom.donateLink.style.background = `linear-gradient(90deg, #FBAF33 ${pct}%, rgba(251, 175, 51, 0.3) ${pct}%)`; 
@@ -868,33 +1041,41 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
           gaLink.style.display = 'block';
         }
         
-        AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk }).setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
-        AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteCompleted.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); });
-       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(AppState.map);
-        if (AppState.flags.isKiosk) { const m = AppState.map; m.dragging.disable(); m.scrollWheelZoom.disable(); m.doubleClickZoom.disable(); m.boxZoom.disable(); m.keyboard.disable(); m.touchZoom.disable(); AppState.dom.followBtn.style.display = "none"; AppState.dom.recenterBtn.style.display = "none"; AppState.dom.notifyBtn.style.display = "none"; if(AppState.dom.msgBtn) AppState.dom.msgBtn.style.display = "none"; AppState.dom.donateBox.style.display = "none"; }
-        if (route && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 0) { const allLatLngs = AppState.gpxRoute.map(p => [p.lat, p.lng]); AppState.dynamicRouteCompleted = L.polyline([], { color: "#808080", weight: 4, opacity: 0.5, dashArray: "8, 8" }).addTo(AppState.map); AppState.dynamicRouteRemainingGlow = L.polyline(allLatLngs, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(AppState.map); AppState.dynamicRouteRemainingMain = L.polyline(allLatLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(AppState.map); const startPt = AppState.gpxRoute[0], endPt = AppState.gpxRoute[AppState.gpxRoute.length - 1]; L.marker([startPt.lat, startPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); L.marker([endPt.lat, endPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); AppState.map.fire("zoomend"); }
-        if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) { const span = document.createElement('span'); span.textContent = 'Proudly sponsored by'; const img = document.createElement('img'); img.src = route.sponsorUrl; img.alt = 'Sponsor'; AppState.dom.sponsorBox.innerHTML = ''; AppState.dom.sponsorBox.appendChild(span); AppState.dom.sponsorBox.appendChild(img); }
-        if (!AppState.flags.isKiosk) { const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT"); if (savedPin) { try { const p = JSON.parse(savedPin); AppState.flags.browserNotified = false; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); AppState.vars.notifyLatLng = { lat: p.lat, lng: p.lng }; showNotifyMarker(p.lat, p.lng, true); } catch(e) {} } }
-        AppState.map.on("click", e => { if (!AppState.flags.awaitingPin) return; showNotifyMarker(e.latlng.lat, e.latlng.lng, false); AppState.dom.statusBox.textContent = "📍 Pin moved — tap again to confirm"; });
-        AppState.marker = L.marker(AppConfig.LOCATIONS.LAPLAND, { icon: L.icon({ iconUrl: settings.sleigh_icon_live || AppConfig.ICONS.FALLBACK_LIVE, iconSize: [64, 64], iconAnchor: [32, 60] }) }).addTo(AppState.map);
+        // --- PROCEED WITH NORMAL MAP LOAD ---
+        window.initTrackerMap = function() {
+            AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk }).setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
+            AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteCompleted.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); });
+           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(AppState.map);
+            if (AppState.flags.isKiosk) { const m = AppState.map; m.dragging.disable(); m.scrollWheelZoom.disable(); m.doubleClickZoom.disable(); m.boxZoom.disable(); m.keyboard.disable(); m.touchZoom.disable(); AppState.dom.followBtn.style.display = "none"; AppState.dom.recenterBtn.style.display = "none"; AppState.dom.notifyBtn.style.display = "none"; if(AppState.dom.msgBtn) AppState.dom.msgBtn.style.display = "none"; AppState.dom.donateBox.style.display = "none"; }
+            if (route && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 0) { const allLatLngs = AppState.gpxRoute.map(p => [p.lat, p.lng]); AppState.dynamicRouteCompleted = L.polyline([], { color: "#808080", weight: 4, opacity: 0.5, dashArray: "8, 8" }).addTo(AppState.map); AppState.dynamicRouteRemainingGlow = L.polyline(allLatLngs, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(AppState.map); AppState.dynamicRouteRemainingMain = L.polyline(allLatLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(AppState.map); const startPt = AppState.gpxRoute[0], endPt = AppState.gpxRoute[AppState.gpxRoute.length - 1]; L.marker([startPt.lat, startPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); L.marker([endPt.lat, endPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); AppState.map.fire("zoomend"); }
+            if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) { const span = document.createElement('span'); span.textContent = 'Proudly sponsored by'; const img = document.createElement('img'); img.src = route.sponsorUrl; img.alt = 'Sponsor'; AppState.dom.sponsorBox.innerHTML = ''; AppState.dom.sponsorBox.appendChild(span); AppState.dom.sponsorBox.appendChild(img); }
+            if (!AppState.flags.isKiosk) { const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT"); if (savedPin) { try { const p = JSON.parse(savedPin); AppState.flags.browserNotified = false; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); AppState.vars.notifyLatLng = { lat: p.lat, lng: p.lng }; showNotifyMarker(p.lat, p.lng, true); } catch(e) {} } }
+            AppState.map.on("click", e => { if (!AppState.flags.awaitingPin) return; showNotifyMarker(e.latlng.lat, e.latlng.lng, false); AppState.dom.statusBox.textContent = "📍 Pin moved — tap again to confirm"; });
+            AppState.marker = L.marker(AppConfig.LOCATIONS.LAPLAND, { icon: L.icon({ iconUrl: settings.sleigh_icon_live || AppConfig.ICONS.FALLBACK_LIVE, iconSize: [64, 64], iconAnchor: [32, 60] }) }).addTo(AppState.map);
 
-        AppState.dom.followBtn.onclick = () => { AppState.flags.follow = !AppState.flags.follow; AppState.dom.followBtn.textContent = "Follow: " + (AppState.flags.follow ? "ON" : "OFF"); };
-        AppState.dom.recenterBtn.onclick = () => { AppState.flags.follow = true; AppState.dom.followBtn.textContent = "Follow: ON"; AppState.map.panTo(AppState.marker.getLatLng()); };
-        AppState.dom.notifyBtn.onclick = () => { AppState.flags.follow = false; AppState.dom.followBtn.textContent = "Follow: OFF"; AppState.flags.browserNotified = false; AppState.flags.hasPassedSticky = false; AppState.flags.celebrationFired = false; sessionStorage.removeItem("SANTA_CELEBRATION_FIRED"); AppState.routeFixes = []; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED"); sessionStorage.removeItem("SANTA_NOTIFY_POINT"); sessionStorage.removeItem("SANTA_HAS_PASSED"); if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; AppState.vars.notifyLatLng = null; if (AppState.vars.escapeListener) document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = (e) => { if (e.key === "Escape" && AppState.flags.awaitingPin) { AppState.flags.awaitingPin = false; if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.dom.statusBox.textContent = ""; Utils.toggleFollowControls(true); document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } }; document.addEventListener("keydown", AppState.vars.escapeListener); AppState.flags.awaitingPin = true; AppState.dom.statusBox.textContent = "📍 Locating you..."; if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((position) => { AppState.map.setView([position.coords.latitude, position.coords.longitude], 17); showNotifyMarker(position.coords.latitude, position.coords.longitude, false); AppState.dom.statusBox.textContent = "📍 Is this your house? Tap the pin to confirm."; }, () => { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; }, { enableHighAccuracy: true, timeout: 5000 }); } else { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; } };
+            AppState.dom.followBtn.onclick = () => { AppState.flags.follow = !AppState.flags.follow; AppState.dom.followBtn.textContent = "Follow: " + (AppState.flags.follow ? "ON" : "OFF"); };
+            AppState.dom.recenterBtn.onclick = () => { AppState.flags.follow = true; AppState.dom.followBtn.textContent = "Follow: ON"; AppState.map.panTo(AppState.marker.getLatLng()); };
+            AppState.dom.notifyBtn.onclick = () => { AppState.flags.follow = false; AppState.dom.followBtn.textContent = "Follow: OFF"; AppState.flags.browserNotified = false; AppState.flags.hasPassedSticky = false; AppState.flags.celebrationFired = false; sessionStorage.removeItem("SANTA_CELEBRATION_FIRED"); AppState.routeFixes = []; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED"); sessionStorage.removeItem("SANTA_NOTIFY_POINT"); sessionStorage.removeItem("SANTA_HAS_PASSED"); if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; AppState.vars.notifyLatLng = null; if (AppState.vars.escapeListener) document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = (e) => { if (e.key === "Escape" && AppState.flags.awaitingPin) { AppState.flags.awaitingPin = false; if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.dom.statusBox.textContent = ""; Utils.toggleFollowControls(true); document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } }; document.addEventListener("keydown", AppState.vars.escapeListener); AppState.flags.awaitingPin = true; AppState.dom.statusBox.textContent = "📍 Locating you..."; if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((position) => { AppState.map.setView([position.coords.latitude, position.coords.longitude], 17); showNotifyMarker(position.coords.latitude, position.coords.longitude, false); AppState.dom.statusBox.textContent = "📍 Is this your house? Tap the pin to confirm."; }, () => { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; }, { enableHighAccuracy: true, timeout: 5000 }); } else { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; } };
 
-        if (AppState.dom.msgBtn) { AppState.dom.msgBtn.onclick = () => { document.getElementById('msgModal').style.display = 'flex'; document.getElementById('userMsgInput').focus(); }; }
-        document.getElementById('msgCancelBtn').onclick = () => { document.getElementById('msgModal').style.display = 'none'; };
-        document.getElementById('msgConfirmBtn').onclick = () => { const input = document.getElementById('userMsgInput'); const msg = input.value.trim(); if (!msg) return; document.getElementById('msgModal').style.display = 'none'; showToast("Sending message to the elves..."); fetch(AppState.vars.apiUrl, { method: 'POST', body: JSON.stringify({ action: "submitUserMessage", message: msg, routeName: AppState.vars.todayRoute?.routeName || '' }) }).then(r => r.json()).then(d => { if (d.ok) showToast("💬 Sent! Waiting for Elf approval..."); else showToast("❌ " + (d.error || "Failed to send.")); }).catch(() => showToast("❌ Network error.")); input.value = ''; };
-        document.getElementById("modalCancelBtn").addEventListener("click", () => { document.getElementById("emailModal").style.display = "none"; AppState.dom.statusBox.textContent = "Tap the pin to try again"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } });
-        document.getElementById("modalConfirmBtn").addEventListener("click", () => { const email = document.getElementById("subEmail").value.trim(); document.getElementById("emailModal").style.display = "none"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } Utils.toggleFollowControls(true); if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") { showToast("🎅 You're already signed up!"); return; } AppState.dom.statusBox.textContent = "🔔 Saving your notification..."; if (!AppState.vars.pendingSubscription) { showToast("❌ Error: No location selected."); return; } fetch(`${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`).then(r=>r.json()).then(d => { if (d.ok) { sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1"); showToast(email ? "🎅 You're signed up! We'll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts."); AppState.dom.statusBox.textContent = ""; if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; } AppState.vars.pendingSubscription = null; } else { showToast("❌ Error saving notification."); AppState.dom.statusBox.textContent = "❌ Failed to save."; } }).catch(() => { showToast("❌ Network error."); AppState.dom.statusBox.textContent = "❌ Connection failed."; }); });
+            if (AppState.dom.msgBtn) { AppState.dom.msgBtn.onclick = () => { document.getElementById('msgModal').style.display = 'flex'; document.getElementById('userMsgInput').focus(); }; }
+            document.getElementById('msgCancelBtn').onclick = () => { document.getElementById('msgModal').style.display = 'none'; };
+            document.getElementById('msgConfirmBtn').onclick = () => { const input = document.getElementById('userMsgInput'); const msg = input.value.trim(); if (!msg) return; document.getElementById('msgModal').style.display = 'none'; showToast("Sending message to the elves..."); fetch(AppState.vars.apiUrl, { method: 'POST', body: JSON.stringify({ action: "submitUserMessage", message: msg, routeName: AppState.vars.todayRoute?.routeName || '' }) }).then(r => r.json()).then(d => { if (d.ok) showToast("💬 Sent! Waiting for Elf approval..."); else showToast("❌ " + (d.error || "Failed to send.")); }).catch(() => showToast("❌ Network error.")); input.value = ''; };
+            document.getElementById("modalCancelBtn").addEventListener("click", () => { document.getElementById("emailModal").style.display = "none"; AppState.dom.statusBox.textContent = "Tap the pin to try again"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } });
+            document.getElementById("modalConfirmBtn").addEventListener("click", () => { const email = document.getElementById("subEmail").value.trim(); document.getElementById("emailModal").style.display = "none"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } Utils.toggleFollowControls(true); if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") { showToast("🎅 You're already signed up!"); return; } AppState.dom.statusBox.textContent = "🔔 Saving your notification..."; if (!AppState.vars.pendingSubscription) { showToast("❌ Error: No location selected."); return; } fetch(`${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`).then(r=>r.json()).then(d => { if (d.ok) { sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1"); showToast(email ? "🎅 You're signed up! We'll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts."); AppState.dom.statusBox.textContent = ""; if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; } AppState.vars.pendingSubscription = null; } else { showToast("❌ Error saving notification."); AppState.dom.statusBox.textContent = "❌ Failed to save."; } }).catch(() => { showToast("❌ Network error."); AppState.dom.statusBox.textContent = "❌ Connection failed."; }); });
 
-        if (!AppState.flags.isKiosk && !AppState.flags.isDriver) { const shareBtn = AppState.dom.shareBtn; shareBtn.style.display = "inline-block"; shareBtn.onclick = async () => { const shareUrl = window.location.href; const shareText = `🎅 Track Santa's sleigh LIVE! ${AppState.vars.sleighName}`; if (navigator.share) { try { await navigator.share({ title: "Santa Sleigh Tracker", text: shareText, url: shareUrl }); showToast("🎅 Shared!"); } catch(e) {} } else { try { await navigator.clipboard.writeText(shareUrl); showToast("📋 Link copied! Share it with your street!"); } catch(e) { prompt("Copy this tracker link:", shareUrl); } } }; }
+            if (!AppState.flags.isKiosk && !AppState.flags.isDriver) { const shareBtn = AppState.dom.shareBtn; shareBtn.style.display = "inline-block"; shareBtn.onclick = async () => { const shareUrl = window.location.href; const shareText = `🎅 Track Santa's sleigh LIVE! ${AppState.vars.sleighName}`; if (navigator.share) { try { await navigator.share({ title: "Santa Sleigh Tracker", text: shareText, url: shareUrl }); showToast("🎅 Shared!"); } catch(e) {} } else { try { await navigator.clipboard.writeText(shareUrl); showToast("📋 Link copied! Share it with your street!"); } catch(e) { prompt("Copy this tracker link:", shareUrl); } } }; }
+
+            updateTracker();
+        };
 
         Fireworks.init();
         AppState.dom.loading.style.display = "none";
         SnowSystem.resize();
         window.addEventListener("resize", SnowSystem.resize);
-        updateTracker();
+        
+        // Execute normal map init
+        window.initTrackerMap();
+        
         window.SantaDebug = { AppState, SnowSystem, Fireworks, SleighAudio, animateMarkerTo, Utils, AppConfig };
       }
 
