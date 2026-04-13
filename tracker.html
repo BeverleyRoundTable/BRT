@@ -486,18 +486,15 @@
       // --- SANTA'S WORKSHOP MANAGER ---
       const WorkshopManager = {
         timerId: null,
-        init(routes, settings) {
-            // 1. MASTER KILL SWITCH: Allow tables to turn this off explicitly
-            if (settings && String(settings.enable_workshop).toUpperCase() === "FALSE") return false;
-
-            // 2. THE FREE-ROAMER FAILSAFE: If they haven't mapped any routes, disable the workshop.
+        init(routes) {
+            // THE FREE-ROAMER FAILSAFE: If they haven't mapped any routes, disable the workshop.
             // This prevents the map from being hidden during Christmas for tables that just drive organically.
             if (!routes || routes.length === 0) return false;
 
             const now = new Date();
             let targetDate = null;
 
-            // 3. Find the very first future route
+            // Find the very first future route
             const futureRoutes = routes.map(r => new Date(r.date)).filter(d => d > now).sort((a,b) => a-b);
             if (futureRoutes.length > 0) {
                 targetDate = futureRoutes[0];
@@ -507,11 +504,10 @@
                 targetDate = new Date(now.getFullYear() + 1, 11, 1);
             }
 
-            // 4. Set the start of the "build up" to Jan 1st of the target year
+            // Set the start of the "build up" to Jan 1st of the target year
             const startDate = new Date(targetDate.getFullYear(), 0, 1);
             
-            // 5. THE HYPE HORIZON: Do not show workshop if the first route is within 7 days.
-            // (The map should be live and ready for families to check pins/ETAs)
+            // THE HYPE HORIZON: Do not show workshop if the first route is within 7 days.
             const daysUntil = (targetDate - now) / (1000 * 60 * 60 * 24);
             if (daysUntil < 7) return false; 
 
@@ -982,8 +978,7 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
 
         // --- WORKSHOP CHECK ---
         if (!AppState.flags.isDriver && !AppState.flags.isKiosk && !route) {
-            // Initialize the workshop, but DO NOT return. 
-            // Let the code continue so the map loads silently in the background!
+            // Initialize the workshop based purely on the existence of routes
             WorkshopManager.init(apiData.routes);
         }
 
