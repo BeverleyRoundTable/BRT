@@ -909,16 +909,13 @@ function render(data) {
     if (popularRoute) h += `<div class="reach-item"><div class="icon">🏆</div><div class="number" style="font-family:'DM Sans', sans-serif; font-size:24px; font-weight:800; padding-top:20px; line-height:1.2; word-wrap:break-word;">${popularRoute}</div><div class="label">Most Viewed Route</div></div>`;
     if (peakViewers) h += `<div class="reach-item"><div class="icon">🔥</div><div class="number">${peakViewers}</div><div class="label">Peak Live Trackers</div></div>`;
     if (totalMessages > 0) h += `<div class="reach-item"><div class="icon">💬</div><div class="number">${totalMessages.toLocaleString()}</div><div class="label">Messages to Santa</div></div>`;
+    if (giftAidDeclarations > 0) h += `<div class="reach-item"><div class="icon">📝</div><div class="number">${giftAidDeclarations}</div><div class="label">Gift Aid Forms</div></div>`;    
     h += '</div>';
   } else {
     h += `<div class="reach-row"><div class="reach-empty">Add analytics data to your Settings sheet to populate this section.<br>Keys: <code>wrap_total_views</code>, <code>wrap_social_followers</code>, etc.</div></div>`;
   }
 
   h += '</div>';
-
-  if (giftAidDeclarations > 0) {
-  h += `<div class="reach-item"><div class="icon">📝</div><div class="number">${giftAidDeclarations}</div><div class="label">Gift Aid Forms</div></div>`;
-}
 
   // ── SPONSORS ──
   if (sponsorUrls.length) {
