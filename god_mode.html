@@ -914,6 +914,24 @@ function buildDashboard() {
         <div class="pa-btns" style="margin-top:16px;">
           <button class="btn-broadcast" onclick="bulkClaimGiftAid()" id="gaBulkBtn">Mark All Pending as Claimed</button>
         </div>
+
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+          <span style="font-size:16px;">📄</span>
+          <span style="font-family:'Bebas Neue', sans-serif; font-size:18px; letter-spacing:1px; color:#fff;">HMRC Export</span>
+        </div>
+        <select class="pa-input" id="gaExportFilter" style="margin-bottom:10px;">
+          <option value="Pending">Pending only (not yet claimed)</option>
+          <option value="All">All declarations</option>
+          <option value="Claimed">Claimed only</option>
+        </select>
+        <div class="pa-btns">
+          <button class="btn-broadcast" onclick="downloadHmrcExport()" id="gaExportBtn">Download HMRC CSV</button>
+        </div>
+        <div style="font-family:'DM Mono', monospace; font-size:10px; color:var(--text-muted); margin-top:10px; line-height:1.6; text-transform:uppercase; letter-spacing:0.5px;">
+          R68 schedule format. Paste into HMRC ODS template.
+        </div>
+      </div>
       </div>
       
   </div>`;
@@ -1736,6 +1754,38 @@ async function bulkClaimGiftAid() {
   }
 }
 
+  async function downloadHmrcExport() {
+  const btn = document.getElementById('gaExportBtn');
+  const filter = document.getElementById('gaExportFilter').value;
+  btn.textContent = 'Generating...';
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  try {
+    const res = await fetch(getApiUrl(`function=getGiftAidExport&status=${encodeURIComponent(filter)}`));
+    const data = await res.json();
+    if (data.error) { alert('Export failed: ' + data.error); return; }
+    if (!data.ok || data.count === 0) { alert('No ' + filter + ' Gift Aid declarations to export.'); return; }
+    const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const now = new Date();
+    const dateStamp = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    link.href = url;
+    link.download = `GiftAid_HMRC_${filter}_${dateStamp}.csv`;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    btn.textContent = '✅ ' + data.count + ' rows exported';
+    if (data.truncated) alert('⚠️ HMRC limit: Only first 1,000 exported. Submit this claim, then export the rest.');
+  } catch (e) {
+    alert('Network error generating export.');
+  } finally {
+    setTimeout(() => { btn.textContent = 'Download HMRC CSV'; btn.disabled = false; btn.style.opacity = '1'; }, 3000);
+  }
+}
+  
 setTimeout(fetchGiftAidData, 2500);
 setInterval(fetchGiftAidData, 30000);
   
