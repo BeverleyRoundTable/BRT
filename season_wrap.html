@@ -642,7 +642,9 @@ function render(data) {
   const totalRaised = donations.total || 0;
   const targetAmount = donations.target || 0;
   const totalExpenses = data.expenses || 0;
-  const netRaised = totalRaised - totalExpenses;
+  const totalGiftAid = data.giftAid ? (data.giftAid.giftAid || 0) : 0;
+  const giftAidDeclarations = data.giftAid ? (data.giftAid.declarations || 0) : 0;
+  const netRaised = (totalRaised + totalGiftAid) - totalExpenses;
   const pct = targetAmount > 0 ? Math.min(100, Math.round((totalRaised / targetAmount) * 100)) : 0;
   const volunteers = s.wrap_volunteers || s.sponsor_pack_volunteers || '—';
 
@@ -746,20 +748,27 @@ function render(data) {
           <div class="donation-pct">${pct}% of target</div>`;
     }
 
-    // Always show the financial breakdown (Gross vs Net)
+    // Always show the financial breakdown
     h += `
           <div class="finance-breakdown" ${targetAmount === 0 ? 'style="border-top:none; margin-top:0; padding-top:0;"' : ''}>
             <div class="finance-item">
               <div class="label">Gross Raised</div>
               <div class="value">${currency}${totalRaised.toLocaleString()}</div>
             </div>
+            
+            <div class="finance-item">
+              <div class="label">Gift Aid (+25%)</div>
+              <div class="value green">+${currency}${totalGiftAid.toLocaleString()}</div>
+            </div>
+            
             <div class="finance-item">
               <div class="label">Operating Expenses</div>
               <div class="value red">${totalExpenses > 0 ? '-' : ''}${currency}${totalExpenses.toLocaleString()}</div>
             </div>
+            
             <div class="finance-item">
-              <div class="label">Net Available</div>
-              <div class="value green">${currency}${netRaised.toLocaleString()}</div>
+              <div class="label">True Net Impact</div>
+              <div class="value" style="color: var(--gold); font-size: 32px;">${currency}${netRaised.toLocaleString()}</div>
             </div>
           </div>
         </div>
@@ -906,6 +915,10 @@ function render(data) {
   }
 
   h += '</div>';
+
+  if (giftAidDeclarations > 0) {
+  h += `<div class="reach-item"><div class="icon">📝</div><div class="number">${giftAidDeclarations}</div><div class="label">Gift Aid Forms</div></div>`;
+}
 
   // ── SPONSORS ──
   if (sponsorUrls.length) {
