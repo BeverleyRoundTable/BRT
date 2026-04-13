@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Memory Book</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700;800&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --gold: #FBAF33;
+      --dark: #0d0d0b;
+      --surface: #161614;
+      --surface-2: #1e1e1b;
+      --border: rgba(255,255,255,0.08);
+      --text: #eaeae5;
+      --text-dim: rgba(255,255,255,0.55);
+      --red: #D31C1C;
+      --green: #2ecc71;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: radial-gradient(circle at 50% 0%, rgba(251,175,51,0.05) 0%, transparent 70%);
+    }
+
+    /* --- HEADER --- */
+    header {
+      text-align: center;
+      padding: 60px 20px 40px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 8vw, 72px);
+      letter-spacing: 2px;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+    h1 span { color: var(--gold); }
+
+    .subtext {
+      font-size: 16px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--surface-2); color: #fff;
+      padding: 14px 28px; border-radius: 12px; text-decoration: none;
+      font-weight: 800; font-size: 15px; border: 1px solid var(--border);
+      transition: all 0.2s; cursor: pointer; outline: none;
+    }
+    .btn:hover {
+      background: var(--gold); color: #000; border-color: var(--gold);
+      transform: translateY(-2px); box-shadow: 0 8px 24px rgba(251,175,51,0.2);
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* --- GALLERY GRID --- */
+    .gallery-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+    }
+
+    /* --- POLAROID CARDS --- */
+    .polaroid {
+      background: #fff;
+      padding: 16px 16px 40px 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      border-radius: 4px;
+      width: calc(33.333% - 20px);
+      max-width: 350px;
+      min-width: 260px;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    .polaroid:hover {
+      transform: scale(1.05) translateY(-10px) !important; /* Overrides inline rotation */
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      z-index: 10;
+    }
+
+    .polaroid img {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      aspect-ratio: 4/3;
+      background: #f0f0f0;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .polaroid-caption {
+      font-family: 'Kalam', cursive;
+      color: #222;
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      margin-top: 16px;
+      line-height: 1;
+    }
+
+    /* --- LOADING / EMPTY STATES --- */
+    .state-message {
+      width: 100%; text-align: center; padding: 80px 20px;
+      color: var(--text-dim); font-size: 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border); border-top-color: var(--gold);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0) rotate(var(--rot)); } }
+
+    /* --- UPLOAD MODAL --- */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      z-index: 5000; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-box {
+      background: var(--surface); padding: 32px; border-radius: 20px;
+      width: 100%; max-width: 400px; text-align: center;
+      border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
+    .modal-title {
+      font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+      letter-spacing: 1.5px; margin: 0 0 12px 0; color: var(--gold); line-height: 1;
+    }
+    .modal-desc { font-size: 14px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.5; }
+
+    /* File Input Styling */
+    .file-drop-area {
+      border: 2px dashed var(--border); border-radius: 12px;
+      padding: 30px 20px; background: var(--surface-2);
+      cursor: pointer; transition: all 0.2s; margin-bottom: 24px;
+    }
+    .file-drop-area:hover { border-color: var(--gold); background: rgba(251,175,51,0.05); }
+    .file-drop-area span { display: block; font-size: 14px; color: var(--text-dim); font-weight: 700; margin-top: 8px;}
+    .file-drop-area input[type=file] { display: none; }
+    
+    .preview-img {
+      display: none; width: 100%; max-height: 200px; object-fit: contain;
+      border-radius: 8px; margin-bottom: 24px; border: 1px solid var(--border);
+    }
+
+    .modal-btns { display: flex; gap: 12px; }
+    .btn-full { flex: 1; }
+    .btn-cancel { background: var(--surface-2); border: 1px solid var(--border); }
+    .btn-cancel:hover { background: var(--surface-3); border-color: var(--text-dim); color: #fff; box-shadow: none; transform: none;}
+
+    @media(max-width: 768px) {
+      header { padding: 40px 20px 30px; }
+      .gallery-container { gap: 16px; padding: 0 16px 60px; }
+      .polaroid { width: calc(50% - 8px); min-width: 150px; padding: 10px 10px 24px 10px; }
+      .polaroid-caption { font-size: 16px; margin-top: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>COMMUNITY <span>MEMORIES</span></h1>
+    <p class="subtext" id="headerSubtext">Loading sleigh data...</p>
+    <button class="btn" id="openUploadBtn">📸 Submit a Photo</button>
+  </header>
+
+  <div class="gallery-container" id="gallery">
+    <div class="state-message" id="loader">
+      <div class="spinner"></div>
+      Loading magical moments...
+    </div>
+  </div>
+
+  <div id="uploadModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-title">Share a Memory</div>
+      <div class="modal-desc">Send us your best photo from the night! All photos are reviewed by the elves before being added to the book.</div>
+      
+      <div class="file-drop-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
+        <span style="font-size: 32px; margin: 0;">📁</span>
+        <span id="dropText">Tap to select a photo</span>
+        <input type="file" id="fileInput" accept="image/jpeg, image/png">
+      </div>
+
+      <img id="imagePreview" class="preview-img" alt="Preview">
+
+      <div class="modal-btns">
+        <button class="btn btn-full btn-cancel" id="cancelUploadBtn">Cancel</button>
+        <button class="btn btn-full" id="confirmUploadBtn" disabled>Upload</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="compressCanvas" style="display:none;"></canvas>
+
+  <script>
+    // --- HELPER: GET BASE URL ---
+    function getApiUrl() {
+      const url = new URL(window.location.href);
+      url.search = ''; 
+      return url.toString();
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const apiUrl = getApiUrl();
+      const sep = apiUrl.includes('?') ? '&' : '?';
+
+      // Elements
+      const gallery = document.getElementById('gallery');
+      const loader = document.getElementById('loader');
+      const subtext = document.getElementById('headerSubtext');
+
+      // --- 1. LOAD GALLERY DATA ---
+      try {
+        // Fetch Sleigh Name
+        fetch(`${apiUrl}${sep}function=getRoutes`).then(r => r.json()).then(data => {
+            if(data && data.settings) {
+                const name = data.settings.sleigh_display_name || "Santa Sleigh";
+                subtext.textContent = `A collection of magical moments from the ${name} routes. Did you catch Santa on camera?`;
+                document.title = `Memories — ${name}`;
+            }
+        }).catch(e => { subtext.textContent = "Magical moments captured by you on the sleigh routes!"; });
+
+        // Fetch Photos
+        const res = await fetch(`${apiUrl}${sep}function=getMemoryBook`);
+        const images = await res.json();
+
+        loader.style.display = 'none';
+
+        if (!images || images.length === 0) {
+          gallery.innerHTML = `
+            <div class="state-message">
+              <span style="font-size: 40px; margin-bottom: 10px;">📸</span>
+              The memory book is currently empty.<br>Click 'Submit a Photo' above to be the first!
+            </div>`;
+        } else {
+          const captions = ["Magical!", "Santa!", "Ho Ho Ho!", "Festive fun!", "Great night!", "Sleigh bells!"];
+          images.forEach((imgUrl, index) => {
+            const card = document.createElement('div');
+            card.className = 'polaroid';
+            const rot = (Math.random() * 8 - 4).toFixed(1);
+            card.style.setProperty('--rot', `${rot}deg`);
+            card.style.animation = `fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards ${index * 0.05}s`;
+            const caption = captions[Math.floor(Math.random() * captions.length)];
+            card.innerHTML = `<img src="${imgUrl}" alt="Community Photo" loading="lazy"><div class="polaroid-caption">${caption}</div>`;
+            gallery.appendChild(card);
+          });
+        }
+      } catch (err) {
+        loader.innerHTML = `<span style="color: var(--red); font-size: 32px; margin-bottom: 10px;">⚠️</span>Oops! The elves couldn't load the photos right now.`;
+      }
+
+      // --- 2. UPLOAD LOGIC ---
+      const uploadModal = document.getElementById('uploadModal');
+      const fileInput = document.getElementById('fileInput');
+      const dropArea = document.getElementById('dropArea');
+      const imagePreview = document.getElementById('imagePreview');
+      const confirmUploadBtn = document.getElementById('confirmUploadBtn');
+      const compressCanvas = document.getElementById('compressCanvas');
+      
+      let base64Output = null;
+
+      document.getElementById('openUploadBtn').onclick = () => { uploadModal.style.display = 'flex'; };
+      
+      const resetModal = () => {
+        uploadModal.style.display = 'none';
+        fileInput.value = "";
+        dropArea.style.display = "block";
+        imagePreview.style.display = "none";
+        confirmUploadBtn.disabled = true;
+        confirmUploadBtn.textContent = "Upload";
+        base64Output = null;
+      };
+
+      document.getElementById('cancelUploadBtn').onclick = resetModal;
+
+      // Handle Image Selection and Local Compression
+      fileInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            // Compress logic: max 1200px wide/high
+            const MAX_DIM = 1200;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_DIM) { height *= MAX_DIM / width; width = MAX_DIM; }
+            } else {
+              if (height > MAX_DIM) { width *= MAX_DIM / height; height = MAX_DIM; }
+            }
+
+            compressCanvas.width = width;
+            compressCanvas.height = height;
+            const ctx = compressCanvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Compress to JPEG, 80% quality
+            base64Output = compressCanvas.toDataURL('image/jpeg', 0.8);
+            
+            // Show preview
+            dropArea.style.display = "none";
+            imagePreview.src = base64Output;
+            imagePreview.style.display = "block";
+            confirmUploadBtn.disabled = false;
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Submit to Google Apps Script
+      confirmUploadBtn.addEventListener('click', async () => {
+        if (!base64Output) return;
+
+        confirmUploadBtn.disabled = true;
+        confirmUploadBtn.textContent = "Sending... 🦌💨";
+
+        try {
+          const payload = {
+            action: "uploadMemoryPhoto",
+            imageData: base64Output
+          };
+
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await response.json();
+          if (data.ok) {
+            alert("✅ Thank you! Your photo has been sent to the elves for review.");
+            resetModal();
+          } else {
+            alert("❌ Upload Failed: " + data.error);
+            confirmUploadBtn.disabled = false;
+            confirmUploadBtn.textContent = "Try Again";
+          }
+        } catch (err) {
+          alert("❌ Network Error. Please check your connection.");
+          confirmUploadBtn.disabled = false;
+          confirmUploadBtn.textContent = "Try Again";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
