@@ -976,11 +976,9 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
 
         // --- WORKSHOP CHECK ---
         if (!AppState.flags.isDriver && !AppState.flags.isKiosk && !route) {
-            const isWorkshopActive = WorkshopManager.init(apiData.routes);
-            if (isWorkshopActive) {
-                document.getElementById('loadingCover').style.display = "none";
-                return; // 🛑 Halt map initialization so they see the workshop!
-            }
+            // Initialize the workshop, but DO NOT return. 
+            // Let the code continue so the map loads silently in the background!
+            WorkshopManager.init(apiData.routes);
         }
 
         const musicUrl = settings.background_music_url;
