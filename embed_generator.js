@@ -24,7 +24,6 @@ document.getElementById("apiDisplay").textContent = api;
 // Helper
 function ensureApi() { return api; }
 
-
 // ================================
 // Mini Thermometer
 // ================================
@@ -37,7 +36,6 @@ s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); 
 document.head.appendChild(s);
 </script>
 `;
-
 
 // ================================
 // Full Thermometer
@@ -52,18 +50,16 @@ document.head.appendChild(s);
 </script>
 `;
 
-
 // ================================
 // Carousel Embed
 // ================================
-const carouselCode = `
+const carouselLink = `
 <iframe
-src="${ensureApi()}?mode=carousel"
+src="https://brt-23f.pages.dev/carousel?api=${ensureApi()}"
 style="width:100%;height:450px;border:none;border-radius:12px;overflow:hidden;"
 loading="lazy">
 </iframe>
 `;
-
 
 // ================================
 // ADDRESS LOOKUP — FINAL iFrame Version
@@ -454,7 +450,7 @@ https://brt-23f.pages.dev/memory_book?api=${ensureApi()}
 // ================================
 document.getElementById("miniThermo").value = miniThermo.trim();
 document.getElementById("fullThermo").value = fullThermo.trim();
-document.getElementById("carouselCode").value = carouselCode.trim();
+document.getElementById("carouselLink").value = carouselLink.trim();
 document.getElementById("addressLookup").value = addressLookup.trim();
 document.getElementById("niceListEmbed").value = niceListEmbed.trim();
 document.getElementById("santasBeenEmbed").value = santasBeenEmbed.trim();
