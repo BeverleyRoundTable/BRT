@@ -1,50 +1,109 @@
-<div class="carousel-container" style="width:100%; height:450px; overflow:hidden; border-radius:12px; position:relative; background:#161614;">
-  <div class="carousel-track" id="santa-carousel-track" style="display:flex; height:100%; transition:transform 0.6s ease;">
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: system-ui, sans-serif;
+    }
+
+    .carousel-container {
+      width: 100%;
+      height: 450px;
+      overflow: hidden;
+      border-radius: 12px;
+      position: relative;
+      background: #161614;
+    }
+
+    .carousel-track {
+      display: flex;
+      height: 100%;
+      transition: transform 0.6s ease;
+    }
+
+    .carousel-slide {
+      min-width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      align-items: center; 
+      justify-content: center;
+    }
+
+    .carousel-slide img.bg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* PERFECTLY fits portrait & landscape photos */
+      border-radius: 12px;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    .carousel-slide img.bg.loaded {
+      opacity: 1;
+    }
+
+    /* Overlay (Logo) */
+    .carousel-overlay {
+      position: absolute;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0.95;
+    }
+
+    .pos-top-left { top: 12px; left: 12px; }
+    .pos-top-right { top: 12px; right: 12px; }
+    .pos-bottom-left { bottom: 12px; left: 12px; }
+    .pos-bottom-right { bottom: 12px; right: 12px; }
+    .pos-center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+  </style>
+</head>
+
+<body>
+
+<div class="carousel-container">
+  <div class="carousel-track" id="santa-carousel-track">
     </div>
 </div>
 
-<style>
-  .carousel-slide {
-    min-width: 100%;
-    height: 100%;
-    position: relative;
-    display: flex;
-    align-items: center; /* Centers portrait images nicely */
-    justify-content: center;
-  }
-  .carousel-slide img.bg {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* <--- THE MAGIC FIX */
-    border-radius: 12px;
-    opacity: 0;
-    transition: opacity 0.6s ease;
-  }
-  .carousel-slide img.bg.loaded {
-    opacity: 1;
-  }
-  /* Overlay (Logo) */
-  .carousel-overlay {
-    position: absolute;
-    z-index: 20;
-    pointer-events: none;
-    opacity: 0.95;
-  }
-  .pos-top-left { top: 12px; left: 12px; }
-  .pos-top-right { top: 12px; right: 12px; }
-  .pos-bottom-left { bottom: 12px; left: 12px; }
-  .pos-bottom-right { bottom: 12px; right: 12px; }
-  .pos-center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-</style>
-
 <script>
-  // 👇 PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE 👇
-  const SANTA_API_URL = "https://script.google.com/macros/s/AKfycbwl88G_1QGwp6uN1JEGV2Abd7FAwQg7Id3_ufSNW_n1e7rsPAw-ZUor5vlqL8_GBfCK/exec";
+  // --- HELPER: GET DYNAMIC API URL ---
+  function getApiUrl() {
+    // Look for ?api= in the URL (for Cloudflare/external hosting)
+    const params = new URLSearchParams(window.location.search);
+    const apiParam = params.get("api") || localStorage.getItem("SANTA_API");
+    
+    if (apiParam) {
+      localStorage.setItem("SANTA_API", apiParam); // Cache it
+      return apiParam;
+    }
+    
+    // Fallback
+    const url = new URL(window.location.href);
+    url.search = ''; 
+    return url.toString();
+  }
 
   async function loadTurboSantaCarousel() {
     try {
+      const apiUrl = getApiUrl();
+      if (!apiUrl) {
+        console.error("No API URL found!");
+        return;
+      }
+
+      // Handle URLs that might already have query parameters
+      const sep = apiUrl.includes('?') ? '&' : '?';
+      const fetchUrl = `${apiUrl}${sep}function=getCarouselData`;
+
       // 1. Ask the Google Sheet for the images and settings
-      const res = await fetch(SANTA_API_URL + "?function=getCarouselData");
+      const res = await fetch(fetchUrl);
       const data = await res.json();
       
       // Stop if there are no images in the folder
@@ -57,7 +116,7 @@
       data.images.forEach((imgUrl, i) => {
         let logoHtml = "";
         
-        // Add the logo overlay if you turned it on in the Settings tab
+        // Add the logo overlay if turned on in the Settings tab
         if (String(data.logo_overlay_enabled).toLowerCase() === "true" && data.logo_overlay_url) {
           logoHtml = `<img class="carousel-overlay ${data.logo_overlay_position}" src="${data.logo_overlay_url}" style="width: ${data.logo_overlay_size}px;">`;
         }
@@ -92,3 +151,6 @@
   // Trigger the script as soon as the page loads
   document.addEventListener("DOMContentLoaded", loadTurboSantaCarousel);
 </script>
+
+</body>
+</html>
