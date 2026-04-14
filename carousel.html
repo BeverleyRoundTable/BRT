@@ -75,7 +75,6 @@
 <script>
   // --- HELPER: GET DYNAMIC API URL ---
   function getApiUrl() {
-    // Look for ?api= in the URL (for Cloudflare/external hosting)
     const params = new URLSearchParams(window.location.search);
     const apiParam = params.get("api") || localStorage.getItem("SANTA_API");
     
@@ -84,7 +83,6 @@
       return apiParam;
     }
     
-    // Fallback
     const url = new URL(window.location.href);
     url.search = ''; 
     return url.toString();
@@ -98,7 +96,6 @@
         return;
       }
 
-      // Handle URLs that might already have query parameters
       const sep = apiUrl.includes('?') ? '&' : '?';
       const fetchUrl = `${apiUrl}${sep}function=getCarouselData`;
 
@@ -118,7 +115,12 @@
         
         // Add the logo overlay if turned on in the Settings tab
         if (String(data.logo_overlay_enabled).toLowerCase() === "true" && data.logo_overlay_url) {
-          logoHtml = `<img class="carousel-overlay ${data.logo_overlay_position}" src="${data.logo_overlay_url}" style="width: ${data.logo_overlay_size}px;">`;
+          
+          // 🐛 FIX: Safely add the 'pos-' prefix so the CSS class maps correctly
+          let pos = data.logo_overlay_position || "top-left";
+          if (!pos.startsWith("pos-")) pos = "pos-" + pos;
+
+          logoHtml = `<img class="carousel-overlay ${pos}" src="${data.logo_overlay_url}" style="width: ${data.logo_overlay_size}px;">`;
         }
 
         html += `
