@@ -27,13 +27,13 @@
       transition: transform 0.6s ease;
     }
 
-    .carousel-slide {
-      min-width: 100%;
+    .carousel-slide img.bg {
+      width: 100%;
       height: 100%;
-      position: relative;
-      display: flex;
-      align-items: center; 
-      justify-content: center;
+      object-fit: cover; /* Back to cover to remove black bars! */
+      border-radius: 12px;
+      opacity: 0;
+      transition: opacity 0.6s ease;
     }
 
     .carousel-slide img.bg {
@@ -67,7 +67,7 @@
 
 <body>
 
-<div class="carousel-container">
+<div class="carousel-container" style="width:100%; aspect-ratio: 4/3; max-height: 450px; overflow:hidden; border-radius:12px; position:relative; background:#161614;">
   <div class="carousel-track" id="santa-carousel-track">
     </div>
 </div>
