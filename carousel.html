@@ -8,11 +8,14 @@
     min-width: 100%;
     height: 100%;
     position: relative;
+    display: flex;
+    align-items: center; /* Centers portrait images nicely */
+    justify-content: center;
   }
   .carousel-slide img.bg {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain; /* <--- THE MAGIC FIX */
     border-radius: 12px;
     opacity: 0;
     transition: opacity 0.6s ease;
