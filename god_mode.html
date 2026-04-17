@@ -433,8 +433,8 @@ async function init() {
   setInterval(updateClock, 1000);
   setInterval(updateGpsAge, 1000);
   setInterval(updateUserMsgState, 1000);
-}
 
+  // Keep screen awake
   requestWakeLock();
   setInterval(() => { 
     if (document.visibilityState === "visible") requestWakeLock(); 
@@ -1806,6 +1806,12 @@ async function bulkClaimGiftAid() {
   
 setTimeout(fetchGiftAidData, 2500);
 setInterval(fetchGiftAidData, 30000);
+
+  document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    requestWakeLock();
+  }
+});
   
 </script>
 </body>
