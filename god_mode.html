@@ -356,6 +356,18 @@ function haversineMeters(a, b) {
   const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(s));
 }
+
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ("wakeLock" in navigator) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => setTimeout(requestWakeLock, 2000));
+    }
+  } catch (err) {
+    console.error("Wake Lock error:", err);
+  }
+}  
   
 function getApiUrl(params = '') {
   const secret = sessionStorage.getItem('sleighSecret') || '';
@@ -423,6 +435,12 @@ async function init() {
   setInterval(updateUserMsgState, 1000);
 }
 
+  requestWakeLock();
+  setInterval(() => { 
+    if (document.visibilityState === "visible") requestWakeLock(); 
+  }, 60000);
+}
+  
 async function fetchApiData() {
   try {
     const res = await fetch(getApiUrl());
