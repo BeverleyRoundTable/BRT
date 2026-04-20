@@ -322,6 +322,17 @@
     body.driver-mode.nav-active .driver-progress-box { display: block; }
     body.driver-mode .donate-box, body.driver-mode .info-popup, body.driver-mode .install-overlay, body.driver-mode .ios-install-prompt { display: none !important; }
 
+    /* ── TURN-BY-TURN NAV BANNER ── */
+    #navBanner { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 500px; background: rgba(29, 29, 26, 0.97); color: #fff; padding: 14px 16px; display: none; gap: 14px; align-items: center; z-index: 6000; font-family: 'Open Sans', sans-serif; border-bottom: 2px solid var(--rt-gold); box-shadow: 0 6px 20px rgba(0,0,0,0.6); box-sizing: border-box; pointer-events: none; }
+    body.driver-mode.nav-active #navBanner.ready { display: flex; }
+    #navBanner .nav-icon { font-size: 2.4em; line-height: 1; flex-shrink: 0; width: 56px; text-align: center; }
+    #navBanner .nav-body { flex: 1; min-width: 0; }
+    #navBanner .nav-dist { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; font-size: 2em; font-weight: 900; color: var(--rt-gold); line-height: 1; }
+    #navBanner .nav-text { font-size: 0.95em; margin-top: 4px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #navBanner .nav-mute { pointer-events: auto; background: transparent; border: 1px solid var(--rt-gold); color: var(--rt-gold); font-size: 1.2em; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; flex-shrink: 0; padding: 0; }
+    #navBanner.off-route { border-bottom-color: #d31c1c; }
+    #navBanner.off-route .nav-dist { color: #d31c1c; }
+
     .twitch-container { position: fixed; bottom: calc(var(--info-bottom) + 80px); right: 12px; width: 640px; height: 360px; background: var(--surface-2); border: 2px solid var(--rt-gold); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 3000; overflow: hidden; transform: translateX(120%); opacity: 0; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
     .twitch-container.visible { transform: translateX(0); opacity: 1; pointer-events: auto; }
     .twitch-container iframe { width: 100%; height: 100%; border: none; }
@@ -751,6 +762,200 @@
 
       function snapToGpxIndex(pos, searchOpts) { if (!AppState.gpxRoute) return null; const { AHEAD, BACK, EARLY_EXIT_METERS } = searchOpts || AppConfig.GPX; const isGlobalSearch = !searchOpts; const start = isGlobalSearch ? 0 : Math.max(0, AppState.vars.lastSnapIndex - BACK); const end = isGlobalSearch ? AppState.gpxRoute.length - 1 : Math.min(AppState.gpxRoute.length - 1, AppState.vars.lastSnapIndex + AHEAD); let bestIndex = isGlobalSearch ? 0 : AppState.vars.lastSnapIndex; let bestDist = Infinity; for (let i = start; i <= end; i++) { const d = Utils.haversineMeters(pos, AppState.gpxRoute[i]); if (d < bestDist) { bestDist = d; bestIndex = i; } if (!isGlobalSearch && i > AppState.vars.lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break; } if (!isGlobalSearch) AppState.vars.lastSnapIndex = bestIndex; return { point: AppState.gpxRoute[bestIndex], distance: bestDist }; }
 
+      // ══════════ TURN-BY-TURN NAVIGATION ══════════
+      // Annotates the pre-planned GPX with OSRM maneuvers, then renders them
+      // as a classic sat-nav banner with optional voice prompts.
+      const TurnByTurn = {
+        steps: null,
+        cursor: 0,
+        spoken: new Set(),
+        muted: false,
+        banner: null,
+
+        async load(gpxRoute) {
+          if (!gpxRoute || gpxRoute.length < 2) return;
+          try {
+            // Downsample to ≤100 points (OSRM match service limit)
+            const MAX = 100;
+            const stride = Math.max(1, Math.ceil(gpxRoute.length / MAX));
+            const sampled = [];
+            for (let i = 0; i < gpxRoute.length; i += stride) sampled.push(gpxRoute[i]);
+            const last = gpxRoute[gpxRoute.length - 1];
+            if (sampled[sampled.length - 1] !== last) sampled.push(last);
+            const coords = sampled.map(p => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join(';');
+            const url = `https://router.project-osrm.org/match/v1/driving/${coords}?steps=true&geometries=geojson&overview=simplified`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('OSRM HTTP ' + res.status);
+            const data = await res.json();
+            if (data.code !== 'Ok' || !data.matchings || !data.matchings.length) throw new Error('No match');
+
+            const steps = [];
+            for (const m of data.matchings) {
+              for (const leg of m.legs) {
+                for (const s of leg.steps) {
+                  steps.push({
+                    loc: { lat: s.maneuver.location[1], lng: s.maneuver.location[0] },
+                    type: s.maneuver.type,
+                    mod: s.maneuver.modifier || '',
+                    exit: s.maneuver.exit || null,
+                    name: s.name || '',
+                    instruction: TurnByTurn.buildInstruction(s),
+                    icon: TurnByTurn.iconFor(s.maneuver.type, s.maneuver.modifier)
+                  });
+                }
+              }
+            }
+
+            // Index each maneuver to its nearest GPX point so we can measure "distance to next turn" along the route
+            for (const s of steps) {
+              let bestI = 0, bestD = Infinity;
+              for (let i = 0; i < gpxRoute.length; i++) {
+                const d = Utils.haversineMeters(s.loc, gpxRoute[i]);
+                if (d < bestD) { bestD = d; bestI = i; }
+              }
+              s.gpxIdx = bestI;
+            }
+            steps.sort((a, b) => a.gpxIdx - b.gpxIdx);
+
+            TurnByTurn.steps = steps;
+            TurnByTurn.cursor = 0;
+            TurnByTurn.ensureBanner();
+            console.info(`[TBT] Loaded ${steps.length} maneuvers`);
+          } catch (e) {
+            console.warn('[TBT] Unavailable, falling back to beacon-only:', e.message);
+            TurnByTurn.steps = null;
+          }
+        },
+
+        buildInstruction(s) {
+          const m = s.maneuver;
+          const type = m.type;
+          const dir = m.modifier || '';
+          const name = s.name || '';
+          const onto = name ? ` onto ${name}` : '';
+          if (type === 'depart') return name ? `Head along ${name}` : 'Start driving';
+          if (type === 'arrive') return 'You have arrived';
+          if (type === 'turn') return `Turn ${dir}${onto}`;
+          if (type === 'new name') return name ? `Continue onto ${name}` : 'Continue ahead';
+          if (type === 'merge') return `Merge${dir ? ' ' + dir : ''}${onto}`;
+          if (type === 'on ramp') return `Take the ramp${dir ? ' on the ' + dir : ''}`;
+          if (type === 'off ramp') return `Take the exit${dir ? ' on the ' + dir : ''}`;
+          if (type === 'fork') return `Keep ${dir || 'ahead'} at the fork${onto}`;
+          if (type === 'end of road') return `Turn ${dir}${onto}`;
+          if (type === 'continue') return `Continue ${dir}${onto}`;
+          if (type === 'roundabout' || type === 'rotary') {
+            const ex = m.exit ? ` take exit ${m.exit}` : '';
+            return `At the roundabout,${ex}${onto}`;
+          }
+          if (type === 'exit roundabout' || type === 'exit rotary') return `Exit roundabout${onto}`;
+          return name ? `Continue on ${name}` : 'Continue';
+        },
+
+        iconFor(type, mod) {
+          if (type === 'arrive') return '🏁';
+          if (type === 'depart') return '🚩';
+          if (type === 'roundabout' || type === 'rotary') return '🔄';
+          if (mod === 'uturn') return '↩️';
+          if (mod === 'sharp left') return '↖️';
+          if (mod === 'sharp right') return '↗️';
+          if (mod === 'slight left') return '↖';
+          if (mod === 'slight right') return '↗';
+          if (mod === 'left') return '⬅️';
+          if (mod === 'right') return '➡️';
+          return '⬆️';
+        },
+
+        ensureBanner() {
+          if (TurnByTurn.banner) return TurnByTurn.banner;
+          const el = document.createElement('div');
+          el.id = 'navBanner';
+          el.innerHTML = `
+            <div class="nav-icon" id="navIconEl">⬆️</div>
+            <div class="nav-body">
+              <div class="nav-dist" id="navDistEl">—</div>
+              <div class="nav-text" id="navTextEl">Locating…</div>
+            </div>
+            <button class="nav-mute" id="navMuteBtn" aria-label="Toggle voice">🔊</button>`;
+          document.body.appendChild(el);
+          TurnByTurn.banner = el;
+          document.getElementById('navMuteBtn').onclick = () => {
+            TurnByTurn.muted = !TurnByTurn.muted;
+            document.getElementById('navMuteBtn').textContent = TurnByTurn.muted ? '🔇' : '🔊';
+            if (TurnByTurn.muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+          };
+          return el;
+        },
+
+        update(snapIdx, snapDistance) {
+          if (!TurnByTurn.steps || !TurnByTurn.steps.length || !AppState.gpxRoute) return;
+          const banner = TurnByTurn.ensureBanner();
+          banner.classList.add('ready');
+
+          // Advance cursor past any maneuver we've already driven past
+          while (TurnByTurn.cursor < TurnByTurn.steps.length - 1 &&
+                 TurnByTurn.steps[TurnByTurn.cursor].gpxIdx <= snapIdx - 1) {
+            TurnByTurn.cursor++;
+          }
+          const step = TurnByTurn.steps[TurnByTurn.cursor];
+          if (!step) return;
+
+          // Off-route state: driver more than ~60m from GPX
+          const offRoute = snapDistance > 60;
+          banner.classList.toggle('off-route', offRoute);
+
+          const curDist = AppState.gpxRoute[snapIdx] ? AppState.gpxRoute[snapIdx].dist : 0;
+          const tgt = AppState.gpxRoute[step.gpxIdx];
+          const metersToTurn = tgt ? Math.max(0, tgt.dist - curDist) : 0;
+
+          document.getElementById('navIconEl').textContent = step.icon;
+          document.getElementById('navTextEl').textContent = offRoute ? 'Return to route — ' + step.instruction : step.instruction;
+          document.getElementById('navDistEl').textContent = offRoute ? 'OFF ROUTE' : TurnByTurn.formatDist(metersToTurn);
+
+          if (!offRoute) TurnByTurn.maybeSpeak(step, metersToTurn);
+        },
+
+        formatDist(m) {
+          if (m < 30) return 'Now';
+          if (m < 1000) return `${Math.round(m / 10) * 10} m`;
+          return `${(m / 1000).toFixed(1)} km`;
+        },
+
+        maybeSpeak(step, meters) {
+          if (TurnByTurn.muted || !('speechSynthesis' in window)) return;
+          const k = TurnByTurn.cursor;
+          // Thresholds (outer bound, inner bound, tag, prefix)
+          const bands = [
+            { hi: 400, lo: 340, tag: 'far', prefix: 'In 400 metres, ' },
+            { hi: 150, lo:  90, tag: 'mid', prefix: 'In 150 metres, ' },
+            { hi:  30, lo:   0, tag: 'now', prefix: '' }
+          ];
+          for (const b of bands) {
+            const key = `${k}:${b.tag}`;
+            if (meters <= b.hi && meters > b.lo && !TurnByTurn.spoken.has(key)) {
+              TurnByTurn.spoken.add(key);
+              const phrase = b.prefix + (b.prefix ? step.instruction.toLowerCase() : step.instruction);
+              try {
+                const u = new SpeechSynthesisUtterance(phrase);
+                u.rate = 1.0; u.volume = 1.0; u.lang = 'en-GB';
+                speechSynthesis.cancel();
+                speechSynthesis.speak(u);
+              } catch (e) {}
+              break;
+            }
+          }
+        },
+
+        prime() {
+          // Must be called from a user gesture on iOS to unlock speechSynthesis
+          if (!('speechSynthesis' in window)) return;
+          try {
+            const u = new SpeechSynthesisUtterance('Sat nav active');
+            u.rate = 1.0; u.volume = 0.8; u.lang = 'en-GB';
+            speechSynthesis.speak(u);
+          } catch (e) {}
+        }
+      };
+
       function setDimUI(dim) { document.body.classList.toggle("dim-ui", !!dim); }
       function showToast(message) { if (AppState.flags.isKiosk) return; const t = AppState.dom.toast; t.textContent = message; t.classList.add("toast-visible"); setTimeout(() => t.classList.remove("toast-visible"), 4000); }
 
@@ -959,8 +1164,9 @@
 try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
   gain.gain.value = 0.001; osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); 
     } catch(e) {}
+TurnByTurn.prime();
                                         
-            AppState.dom.statusBox.textContent = "🧭 Sat-Nav & Beacon Active."; AppState.dom.statusBox.style.color = "#00e676"; AppState.map.setZoom(18); const txPill = document.createElement("div"); txPill.id = "txPill"; txPill.style.cssText = "position:absolute; top:120px; left:50%; transform:translateX(-50%); background:rgba(29, 29, 26, 0.95); border:1px solid #00e676; color:#00e676; padding:6px 14px; border-radius:12px; font-weight:900; font-size:0.85em; z-index:4500; box-shadow:0 4px 12px rgba(0,0,0,0.5); display:flex; gap:10px; pointer-events:none;"; txPill.innerHTML = `<span id="txState">📡 LIVE</span> <span>Tx: <span id="txSent">0</span></span> <span>Q: <span id="txQueued">0</span></span>`; document.body.appendChild(txPill); const driverMarker = L.marker([0,0], { icon: L.divIcon({ className: 'driver-arrow', html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 100%;"></div>', iconSize: [28, 34], iconAnchor: [14, 17] }), zIndexOffset: 1000 }).addTo(AppState.map); navigator.geolocation.watchPosition(async (pos) => { const lat = pos.coords.latitude, lng = pos.coords.longitude, heading = pos.coords.heading || 0; let vp = { lat, lng }; if (AppState.flags.gpxLoaded && AppState.gpxRoute) { const snap = snapToGpxIndex(vp, null); if (snap && snap.distance < 20) vp = snap.point; } driverMarker.setLatLng([vp.lat, vp.lng]); AppState.map.panTo([vp.lat, vp.lng], { animate: true, duration: 1 }); const arrowDiv = driverMarker.getElement().querySelector('div'); if (arrowDiv && pos.coords.speed > 1) arrowDiv.style.transform = `rotate(${heading}deg)`; const payload = { lat, lng, ts: new Date().toISOString() }; try { const r = await fetch(gpsLoggerUrl, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) }); if (!r.ok) throw new Error("HTTP " + r.status); BeaconDB.sent++; document.getElementById('txSent').textContent = BeaconDB.sent; if(BeaconDB.depth === 0) { txPill.style.borderColor = "#00e676"; txPill.style.color = "#00e676"; document.getElementById('txState').textContent = "📡 LIVE"; } } catch(e) { await BeaconDB.add(payload); } }, () => { alert("GPS Error: Please ensure Location Services are turned on."); }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }); };
+            AppState.dom.statusBox.textContent = "🧭 Sat-Nav & Beacon Active."; AppState.dom.statusBox.style.color = "#00e676"; AppState.map.setZoom(18); const txPill = document.createElement("div"); txPill.id = "txPill"; txPill.style.cssText = "position:absolute; top:120px; left:50%; transform:translateX(-50%); background:rgba(29, 29, 26, 0.95); border:1px solid #00e676; color:#00e676; padding:6px 14px; border-radius:12px; font-weight:900; font-size:0.85em; z-index:4500; box-shadow:0 4px 12px rgba(0,0,0,0.5); display:flex; gap:10px; pointer-events:none;"; txPill.innerHTML = `<span id="txState">📡 LIVE</span> <span>Tx: <span id="txSent">0</span></span> <span>Q: <span id="txQueued">0</span></span>`; document.body.appendChild(txPill); const driverMarker = L.marker([0,0], { icon: L.divIcon({ className: 'driver-arrow', html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 100%;"></div>', iconSize: [28, 34], iconAnchor: [14, 17] }), zIndexOffset: 1000 }).addTo(AppState.map); navigator.geolocation.watchPosition(async (pos) => { const lat = pos.coords.latitude, lng = pos.coords.longitude, heading = pos.coords.heading || 0; let vp = { lat, lng }; let snapResult = null; if (AppState.flags.gpxLoaded && AppState.gpxRoute) { snapResult = snapToGpxIndex(vp, null); if (snapResult && snapResult.distance < 20) vp = snapResult.point; } if (snapResult && snapResult.point) TurnByTurn.update(snapResult.point.index, snapResult.distance); driverMarker.setLatLng([vp.lat, vp.lng]); AppState.map.panTo([vp.lat, vp.lng], { animate: true, duration: 1 }); const arrowDiv = driverMarker.getElement().querySelector('div'); if (arrowDiv && pos.coords.speed > 1) arrowDiv.style.transform = `rotate(${heading}deg)`; const payload = { lat, lng, ts: new Date().toISOString() }; try { const r = await fetch(gpsLoggerUrl, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) }); if (!r.ok) throw new Error("HTTP " + r.status); BeaconDB.sent++; document.getElementById('txSent').textContent = BeaconDB.sent; if(BeaconDB.depth === 0) { txPill.style.borderColor = "#00e676"; txPill.style.color = "#00e676"; document.getElementById('txState').textContent = "📡 LIVE"; } } catch(e) { await BeaconDB.add(payload); } }, () => { alert("GPS Error: Please ensure Location Services are turned on."); }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }); };
         }
         
         AppState.vars.apiUrl = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
@@ -1032,7 +1238,7 @@ try {const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
         
         fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { keepalive: true });
         if (AppState.flags.isKiosk && AppState.dom.kioskBanner) { const statusDiv = document.createElement('div'); statusDiv.id = 'kioskStatus'; statusDiv.textContent = '🎄 PREPARING IN LAPLAND'; const subtitleDiv = document.createElement('div'); subtitleDiv.className = 'kiosk-subtitle'; subtitleDiv.textContent = AppState.vars.sleighName; AppState.dom.kioskBanner.innerHTML = ''; AppState.dom.kioskBanner.appendChild(statusDiv); AppState.dom.kioskBanner.appendChild(subtitleDiv); AppState.dom.kioskBanner.classList.add("visible"); }
-        if (!route) { AppState.dom.notifyBtn.style.display = "none"; } else { await loadGpxRoute(route.gpxUrl); }
+        if (!route) { AppState.dom.notifyBtn.style.display = "none"; } else { await loadGpxRoute(route.gpxUrl); if (AppState.flags.isDriver && AppState.flags.gpxLoaded) TurnByTurn.load(AppState.gpxRoute); }
 
         const gaLink = document.getElementById('giftAidLink');
         if (gaLink && !AppState.flags.isKiosk && !AppState.flags.isDriver && String(settings.enable_gift_aid || '').toUpperCase() === 'TRUE') {
