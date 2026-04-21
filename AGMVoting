@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Round Table Elections</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Round Table Brand Colours */
+        :root {
+            --golden-yellow: #FBAF33;
+            --table-grey: #1D1D1A;
+            --white: #FFFFFF;
+            --black: #000000;
+        }
+
+        body { 
+            font-family: 'Open Sans', sans-serif; 
+            max-width: 600px; 
+            margin: auto; 
+            padding: 20px; 
+            background: var(--white); 
+            color: var(--table-grey); 
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Logo styling strictly follows brand guidelines: no shadows, rotations, or opacity */
+        .logo {
+            max-width: 200px; 
+            height: auto;
+            margin: 20px auto 30px auto; /* Ensures breathing room around the logo */
+            display: block;
+        }
+
+        h2 { 
+            text-align: center; 
+            color: var(--table-grey); 
+            text-transform: uppercase; 
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .roles-link {
+            display: block;
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--table-grey);
+            font-weight: bold;
+            text-decoration: none;
+            padding: 10px;
+            border: 2px solid var(--golden-yellow);
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .roles-link:hover {
+            background: var(--golden-yellow);
+            color: var(--table-grey);
+        }
+
+        .role-card { 
+            background: #f9f9f9; 
+            padding: 20px; 
+            margin-bottom: 15px; 
+            border-left: 6px solid var(--golden-yellow); /* Brand Yellow accent */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
+
+        .role-title { 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            margin-bottom: 10px; 
+            color: var(--black); 
+            text-transform: uppercase;
+        }
+
+        select, input[type="text"] { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 8px; 
+            border: 1px solid #ccc; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        input[type="text"] { 
+            display: none; 
+            background-color: var(--white); 
+        }
+
+        button { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--table-grey); 
+            color: var(--golden-yellow); 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            border: none; 
+            cursor: pointer; 
+            transition: background 0.3s; 
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        button:hover { 
+            background: var(--black); 
+        }
+
+        #status { 
+            text-align: center; 
+            font-weight: bold; 
+            margin-bottom: 15px; 
+            color: var(--table-grey); 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png" alt="Table Logo" class="logo">
+        
+        <h2>Table Elections</h2>
+        
+        <a href="https://docs.google.com/document/d/1M3OiwitxQGFJfAbpw6CbPDEaLNji6uHT8FeXfLeeS3Y/edit?usp=sharing" target="_blank" class="roles-link">
+            📖 Click here to read the Roles Guidance
+        </a>
+    </div>
+
+    <div id="status">Loading ballot...</div>
+    <div id="ballot"></div>
+    <button id="submitBtn" style="display:none;" onclick="submitVotes()">Submit Votes</button>
+
+    <script>
+        // 3. PASTE YOUR GOOGLE SCRIPT WEB APP URL HERE
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlfcSTXCEXLOsJwfm3zxH19Xxp2DXZDQiMIo3J1bHQyMSj0OmHjaeIyuOi7z-Y8XZ7eA/exec"; 
+        
+        let globalRoles = [];
+
+        // Fetch the Members and Roles when the page loads
+        fetch(WEB_APP_URL)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('status').style.display = 'none';
+                document.getElementById('submitBtn').style.display = 'block';
+                
+                globalRoles = data.roles;
+                const container = document.getElementById('ballot');
+                
+                let memberOptions = data.members.map(m => `<option value="${m}">${m}</option>`).join('');
+                
+                data.roles.forEach((role, index) => {
+                    const safeId = "role_" + index; 
+                    
+                    container.innerHTML += `
+                        <div class="role-card">
+                            <div class="role-title">${role}</div>
+                            <select id="select_${safeId}" onchange="handleDropdownChange('${safeId}')">
+                                <option value="">-- Leave Blank --</option>
+                                ${memberOptions}
+                                <option value="OTHER">Other (Free Type)</option>
+                            </select>
+                            <input type="text" id="input_${safeId}" placeholder="Type member name here...">
+                        </div>
+                    `;
+                });
+            })
+            .catch(err => {
+                document.getElementById('status').innerText = "Error loading ballot. Please refresh.";
+                console.error(err);
+            });
+
+        function handleDropdownChange(safeId) {
+            const selectEl = document.getElementById(`select_${safeId}`);
+            const inputEl = document.getElementById(`input_${safeId}`);
+            
+            if (selectEl.value === "OTHER") {
+                inputEl.style.display = "block";
+                inputEl.focus();
+            } else {
+                inputEl.style.display = "none";
+                inputEl.value = ""; 
+            }
+        }
+
+        function submitVotes() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerText = "Submitting...";
+            submitBtn.disabled = true;
+
+            let votesToSubmit = [];
+
+            globalRoles.forEach((role, index) => {
+                const safeId = "role_" + index;
+                const selectVal = document.getElementById(`select_${safeId}`).value;
+                const inputVal = document.getElementById(`input_${safeId}`).value;
+                
+                let finalNominee = "";
+
+                if (selectVal === "OTHER") {
+                    finalNominee = inputVal.trim();
+                } else if (selectVal !== "") {
+                    finalNominee = selectVal;
+                }
+
+                if (finalNominee !== "") {
+                    votesToSubmit.push({
+                        role: role,
+                        nominee: finalNominee
+                    });
+                }
+            });
+
+            if (votesToSubmit.length === 0) {
+                alert("You haven't voted for anyone! Please make at least one selection.");
+                submitBtn.innerText = "Submit Votes";
+                submitBtn.disabled = false;
+                return;
+            }
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({ votes: votesToSubmit })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.ok) {
+                    document.getElementById('ballot').innerHTML = "<h3 style='text-align:center; color:var(--table-grey);'>Your votes have been successfully recorded! Thank you.</h3>";
+                    submitBtn.style.display = "none";
+                    document.querySelector('.roles-link').style.display = "none"; // Hide the link after submitting
+                } else {
+                    alert("Something went wrong. Please try again.");
+                    submitBtn.innerText = "Submit Votes";
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                alert("Error submitting votes.");
+                submitBtn.innerText = "Submit Votes";
+                submitBtn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
