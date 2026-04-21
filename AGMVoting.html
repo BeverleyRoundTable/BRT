@@ -46,7 +46,7 @@
         }
         .role-title { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; color: var(--black); text-transform: uppercase; }
 
-        select, input[type="text"] { 
+        select, input[type="text"], input[type="password"] { 
             width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ccc; 
             box-sizing: border-box; font-size: 16px; font-family: 'Open Sans', sans-serif;
         }
@@ -59,38 +59,58 @@
         }
         button:hover { background: var(--black); }
         #status { text-align: center; font-weight: bold; margin-bottom: 15px; color: var(--table-grey); }
+
+        /* Admin & Results Dashboard Styles */
+        .admin-trigger { text-align: center; margin-top: 50px; font-size: 0.8em; color: #ccc; cursor: pointer; }
+        #adminLogin { display: none; margin-top: 20px; padding: 20px; background: #eee; border-radius: 8px; }
+        
+        #resultsDashboard { display: none; margin-top: 20px; }
+        .result-group { background: #f9f9f9; padding: 20px; margin-bottom: 15px; border-left: 6px solid var(--table-grey); border-radius: 4px; }
+        .result-group h3 { margin-top: 0; color: var(--table-grey); text-transform: uppercase; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+        .candidate-row { display: flex; align-items: center; margin-bottom: 10px; }
+        .candidate-name { width: 40%; font-weight: bold; font-size: 0.9em; }
+        .bar-wrapper { width: 60%; background: #e0e0e0; border-radius: 4px; overflow: hidden; position: relative; height: 30px; }
+        .bar-fill { background: var(--golden-yellow); height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font-weight: bold; color: var(--table-grey); font-size: 0.9em; transition: width 0.5s ease-in-out; white-space: nowrap; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png" alt="Table Logo" class="logo">
-        
         <h2>Table Elections</h2>
-        
-        <a href="https://docs.google.com/document/d/1M3OiwitxQGFJfAbpw6CbPDEaLNji6uHT8FeXfLeeS3Y/edit?usp=sharing" target="_blank" class="roles-link">
+        <a href="https://docs.google.com/document/d/1M3OiwitxQGFJfAbpw6CbPDEaLNji6uHT8FeXfLeeS3Y/edit?usp=sharing" target="_blank" class="roles-link" id="guidanceLink">
             📖 Click here to read the Roles Guidance
         </a>
     </div>
 
     <div id="status">Loading ballot...</div>
 
-    <div id="identitySection" class="identity-card" style="display:none;">
-        <label for="voterIdentity">Who are you?</label>
-        <select id="voterIdentity">
-            <option value="">-- Please select your name --</option>
+    <div id="voterArea">
+        <div id="identitySection" class="identity-card" style="display:none;">
+            <label for="voterIdentity">Who are you?</label>
+            <select id="voterIdentity">
+                <option value="">-- Please select your name --</option>
             </select>
+        </div>
+        <div id="ballot"></div>
+        <button id="submitBtn" style="display:none;" onclick="submitVotes()">Submit Votes</button>
     </div>
 
-    <div id="ballot"></div>
-    <button id="submitBtn" style="display:none;" onclick="submitVotes()">Submit Votes</button>
+    <div id="resultsDashboard"></div>
+
+    <div class="admin-trigger" onclick="toggleAdmin()">⚙️ Admin Access</div>
+    <div id="adminLogin">
+        <label><b>Master Password:</b></label>
+        <input type="password" id="adminPwd" placeholder="Enter password...">
+        <button onclick="fetchResults()" style="background: var(--golden-yellow); color: var(--table-grey);">View Tally</button>
+    </div>
 
     <script>
-        // 3. YOUR APPS SCRIPT URL
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlfcSTXCEXLOsJwfm3zxH19Xxp2DXZDQiMIo3J1bHQyMSj0OmHjaeIyuOi7z-Y8XZ7eA/exec"; 
         
         let globalRoles = [];
 
+        // Load Ballot
         fetch(WEB_APP_URL)
             .then(res => res.json())
             .then(data => {
@@ -99,10 +119,7 @@
                 document.getElementById('submitBtn').style.display = 'block';
                 
                 globalRoles = data.roles;
-                
                 let memberOptions = data.members.map(m => `<option value="${m}">${m}</option>`).join('');
-                
-                // Populate the "Who are you?" dropdown
                 document.getElementById('voterIdentity').innerHTML += memberOptions;
 
                 const container = document.getElementById('ballot');
@@ -128,7 +145,6 @@
         function handleDropdownChange(safeId) {
             const selectEl = document.getElementById(`select_${safeId}`);
             const inputEl = document.getElementById(`input_${safeId}`);
-            
             if (selectEl.value === "OTHER") {
                 inputEl.style.display = "block";
                 inputEl.focus();
@@ -139,11 +155,10 @@
         }
 
         function submitVotes() {
-            // Check identity first!
             const voterName = document.getElementById('voterIdentity').value;
             if (!voterName) {
                 alert("Please select your name at the top before submitting your votes.");
-                window.scrollTo(0, 0); // Scroll to top so they see it
+                window.scrollTo(0, 0); 
                 return;
             }
 
@@ -152,25 +167,16 @@
             submitBtn.disabled = true;
 
             let votesToSubmit = [];
-
             globalRoles.forEach((role, index) => {
                 const safeId = "role_" + index;
                 const selectVal = document.getElementById(`select_${safeId}`).value;
                 const inputVal = document.getElementById(`input_${safeId}`).value;
                 
                 let finalNominee = "";
-                if (selectVal === "OTHER") {
-                    finalNominee = inputVal.trim();
-                } else if (selectVal !== "") {
-                    finalNominee = selectVal;
-                }
+                if (selectVal === "OTHER") finalNominee = inputVal.trim();
+                else if (selectVal !== "") finalNominee = selectVal;
 
-                if (finalNominee !== "") {
-                    votesToSubmit.push({
-                        role: role,
-                        nominee: finalNominee
-                    });
-                }
+                if (finalNominee !== "") votesToSubmit.push({ role: role, nominee: finalNominee });
             });
 
             if (votesToSubmit.length === 0) {
@@ -180,13 +186,9 @@
                 return;
             }
 
-            // Send both the voter's identity and their votes to the script
             fetch(WEB_APP_URL, {
                 method: 'POST',
-                body: JSON.stringify({ 
-                    voter: voterName,
-                    votes: votesToSubmit 
-                })
+                body: JSON.stringify({ action: "vote", voter: voterName, votes: votesToSubmit })
             })
             .then(res => res.json())
             .then(data => {
@@ -194,7 +196,7 @@
                     document.getElementById('ballot').innerHTML = "<h3 style='text-align:center; color:var(--table-grey);'>Your votes have been securely recorded! Thank you.</h3>";
                     document.getElementById('identitySection').style.display = "none";
                     submitBtn.style.display = "none";
-                    document.querySelector('.roles-link').style.display = "none"; 
+                    document.getElementById('guidanceLink').style.display = "none"; 
                 } else {
                     alert("Something went wrong. Please try again.");
                     submitBtn.innerText = "Submit Votes";
@@ -206,6 +208,92 @@
                 submitBtn.innerText = "Submit Votes";
                 submitBtn.disabled = false;
             });
+        }
+
+        // --- ADMIN DASHBOARD FUNCTIONS ---
+        function toggleAdmin() {
+            const el = document.getElementById('adminLogin');
+            el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+        }
+
+        function fetchResults() {
+            const pwd = document.getElementById('adminPwd').value;
+            if(!pwd) return alert("Enter password");
+
+            const btn = document.querySelector('#adminLogin button');
+            btn.innerText = "Loading...";
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "getResults", password: pwd })
+            })
+            .then(res => res.json())
+            .then(response => {
+                btn.innerText = "View Tally";
+                if(!response.ok) {
+                    alert(response.error);
+                    return;
+                }
+
+                renderDashboard(response.data);
+            })
+            .catch(err => {
+                alert("Error fetching results.");
+                btn.innerText = "View Tally";
+            });
+        }
+
+        function renderDashboard(data) {
+            // Hide the voting area
+            document.getElementById('voterArea').style.display = 'none';
+            document.getElementById('adminLogin').style.display = 'none';
+            document.querySelector('.admin-trigger').style.display = 'none';
+            document.getElementById('guidanceLink').style.display = 'none';
+            document.querySelector('h2').innerText = "Election Results";
+
+            const dash = document.getElementById('resultsDashboard');
+            dash.style.display = 'block';
+            dash.innerHTML = "";
+
+            if(data.length === 0) {
+                dash.innerHTML = "<p style='text-align:center;'>No votes have been cast yet.</p>";
+                return;
+            }
+
+            // Group data by role
+            const grouped = {};
+            let maxVotesGlobal = 0;
+
+            data.forEach(item => {
+                if(!grouped[item.role]) grouped[item.role] = [];
+                grouped[item.role].push(item);
+                if(item.votes > maxVotesGlobal) maxVotesGlobal = item.votes;
+            });
+
+            // Prevent dividing by zero if there are no votes
+            if(maxVotesGlobal === 0) maxVotesGlobal = 1;
+
+            // Generate HTML for each role
+            for(const [role, nominees] of Object.entries(grouped)) {
+                let html = `<div class="result-group"><h3>${role}</h3>`;
+                
+                nominees.forEach(n => {
+                    // Calculate bar width percentage relative to the highest vote count overall
+                    const pct = Math.max(5, (n.votes / maxVotesGlobal) * 100); 
+                    
+                    html += `
+                        <div class="candidate-row">
+                            <div class="candidate-name">${n.nominee}</div>
+                            <div class="bar-wrapper">
+                                <div class="bar-fill" style="width: ${pct}%;">${n.votes}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+                dash.innerHTML += html;
+            }
         }
     </script>
 </body>
