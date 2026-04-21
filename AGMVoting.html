@@ -23,100 +23,42 @@
             color: var(--table-grey); 
         }
         
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        /* Logo styling strictly follows brand guidelines: no shadows, rotations, or opacity */
-        .logo {
-            max-width: 200px; 
-            height: auto;
-            margin: 20px auto 30px auto; /* Ensures breathing room around the logo */
-            display: block;
-        }
-
-        h2 { 
-            text-align: center; 
-            color: var(--table-grey); 
-            text-transform: uppercase; 
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .logo { max-width: 200px; height: auto; margin: 20px auto 30px auto; display: block; }
+        h2 { text-align: center; color: var(--table-grey); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
 
         .roles-link {
-            display: block;
-            text-align: center;
-            margin-bottom: 25px;
-            color: var(--table-grey);
-            font-weight: bold;
-            text-decoration: none;
-            padding: 10px;
-            border: 2px solid var(--golden-yellow);
-            border-radius: 4px;
-            transition: background 0.3s;
+            display: block; text-align: center; margin-bottom: 25px; color: var(--table-grey);
+            font-weight: bold; text-decoration: none; padding: 10px; border: 2px solid var(--golden-yellow);
+            border-radius: 4px; transition: background 0.3s;
         }
+        .roles-link:hover { background: var(--golden-yellow); color: var(--table-grey); }
 
-        .roles-link:hover {
-            background: var(--golden-yellow);
-            color: var(--table-grey);
+        .identity-card {
+            background: var(--table-grey); padding: 20px; margin-bottom: 25px; 
+            border-radius: 8px; color: var(--white); box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
+        .identity-card label { font-weight: bold; font-size: 1.1em; display: block; margin-bottom: 10px; }
 
         .role-card { 
-            background: #f9f9f9; 
-            padding: 20px; 
-            margin-bottom: 15px; 
-            border-left: 6px solid var(--golden-yellow); /* Brand Yellow accent */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+            background: #f9f9f9; padding: 20px; margin-bottom: 15px; 
+            border-left: 6px solid var(--golden-yellow); box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
         }
-
-        .role-title { 
-            font-size: 1.1em; 
-            font-weight: bold; 
-            margin-bottom: 10px; 
-            color: var(--black); 
-            text-transform: uppercase;
-        }
+        .role-title { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; color: var(--black); text-transform: uppercase; }
 
         select, input[type="text"] { 
-            width: 100%; 
-            padding: 12px; 
-            margin-top: 8px; 
-            border: 1px solid #ccc; 
-            box-sizing: border-box; 
-            font-size: 16px; 
-            font-family: 'Open Sans', sans-serif;
+            width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ccc; 
+            box-sizing: border-box; font-size: 16px; font-family: 'Open Sans', sans-serif;
         }
-
-        input[type="text"] { 
-            display: none; 
-            background-color: var(--white); 
-        }
+        input[type="text"] { display: none; background-color: var(--white); }
 
         button { 
-            width: 100%; 
-            padding: 15px; 
-            background: var(--table-grey); 
-            color: var(--golden-yellow); 
-            font-size: 1.1em; 
-            font-weight: bold; 
-            border: none; 
-            cursor: pointer; 
-            transition: background 0.3s; 
-            margin-top: 10px;
-            text-transform: uppercase;
+            width: 100%; padding: 15px; background: var(--table-grey); color: var(--golden-yellow); 
+            font-size: 1.1em; font-weight: bold; border: none; cursor: pointer; 
+            transition: background 0.3s; margin-top: 10px; text-transform: uppercase;
         }
-
-        button:hover { 
-            background: var(--black); 
-        }
-
-        #status { 
-            text-align: center; 
-            font-weight: bold; 
-            margin-bottom: 15px; 
-            color: var(--table-grey); 
-        }
+        button:hover { background: var(--black); }
+        #status { text-align: center; font-weight: bold; margin-bottom: 15px; color: var(--table-grey); }
     </style>
 </head>
 <body>
@@ -132,30 +74,40 @@
     </div>
 
     <div id="status">Loading ballot...</div>
+
+    <div id="identitySection" class="identity-card" style="display:none;">
+        <label for="voterIdentity">Who are you?</label>
+        <select id="voterIdentity">
+            <option value="">-- Please select your name --</option>
+            </select>
+    </div>
+
     <div id="ballot"></div>
     <button id="submitBtn" style="display:none;" onclick="submitVotes()">Submit Votes</button>
 
     <script>
-        // 3. PASTE YOUR GOOGLE SCRIPT WEB APP URL HERE
+        // 3. YOUR APPS SCRIPT URL
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlfcSTXCEXLOsJwfm3zxH19Xxp2DXZDQiMIo3J1bHQyMSj0OmHjaeIyuOi7z-Y8XZ7eA/exec"; 
         
         let globalRoles = [];
 
-        // Fetch the Members and Roles when the page loads
         fetch(WEB_APP_URL)
             .then(res => res.json())
             .then(data => {
                 document.getElementById('status').style.display = 'none';
+                document.getElementById('identitySection').style.display = 'block';
                 document.getElementById('submitBtn').style.display = 'block';
                 
                 globalRoles = data.roles;
-                const container = document.getElementById('ballot');
                 
                 let memberOptions = data.members.map(m => `<option value="${m}">${m}</option>`).join('');
                 
+                // Populate the "Who are you?" dropdown
+                document.getElementById('voterIdentity').innerHTML += memberOptions;
+
+                const container = document.getElementById('ballot');
                 data.roles.forEach((role, index) => {
                     const safeId = "role_" + index; 
-                    
                     container.innerHTML += `
                         <div class="role-card">
                             <div class="role-title">${role}</div>
@@ -171,7 +123,6 @@
             })
             .catch(err => {
                 document.getElementById('status').innerText = "Error loading ballot. Please refresh.";
-                console.error(err);
             });
 
         function handleDropdownChange(safeId) {
@@ -188,6 +139,14 @@
         }
 
         function submitVotes() {
+            // Check identity first!
+            const voterName = document.getElementById('voterIdentity').value;
+            if (!voterName) {
+                alert("Please select your name at the top before submitting your votes.");
+                window.scrollTo(0, 0); // Scroll to top so they see it
+                return;
+            }
+
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.innerText = "Submitting...";
             submitBtn.disabled = true;
@@ -200,7 +159,6 @@
                 const inputVal = document.getElementById(`input_${safeId}`).value;
                 
                 let finalNominee = "";
-
                 if (selectVal === "OTHER") {
                     finalNominee = inputVal.trim();
                 } else if (selectVal !== "") {
@@ -222,16 +180,21 @@
                 return;
             }
 
+            // Send both the voter's identity and their votes to the script
             fetch(WEB_APP_URL, {
                 method: 'POST',
-                body: JSON.stringify({ votes: votesToSubmit })
+                body: JSON.stringify({ 
+                    voter: voterName,
+                    votes: votesToSubmit 
+                })
             })
             .then(res => res.json())
             .then(data => {
                 if(data.ok) {
-                    document.getElementById('ballot').innerHTML = "<h3 style='text-align:center; color:var(--table-grey);'>Your votes have been successfully recorded! Thank you.</h3>";
+                    document.getElementById('ballot').innerHTML = "<h3 style='text-align:center; color:var(--table-grey);'>Your votes have been securely recorded! Thank you.</h3>";
+                    document.getElementById('identitySection').style.display = "none";
                     submitBtn.style.display = "none";
-                    document.querySelector('.roles-link').style.display = "none"; // Hide the link after submitting
+                    document.querySelector('.roles-link').style.display = "none"; 
                 } else {
                     alert("Something went wrong. Please try again.");
                     submitBtn.innerText = "Submit Votes";
