@@ -178,16 +178,11 @@ function startAddressLookup() {
         "<p class='addr-no-results'>Sorry – could not load address data.</p>";
     });
 
-  // --- Pull route metadata + logo from master API ---
+  // --- Pull route metadata from master API ---
   fetch(apiBase)
     .then((r) => r.json())
     .then((data) => {
-      // Logo for input icon
-      const logo = data && data.settings && data.settings.logo_overlay_url;
-      if (logo && inputEl) {
-        inputEl.style.backgroundImage = `url('${logo}')`;
-      }
-
+      
       // Build route metadata lookup
       if (data && Array.isArray(data.routes)) {
         data.routes.forEach((rt) => {
@@ -203,7 +198,7 @@ function startAddressLookup() {
       }
     })
     .catch(() => {
-      // silent fail – just no logo/meta
+      // silent fail – just no meta
     });
 }
 
