@@ -548,64 +548,61 @@
                 }
 
                 // --- 1. Sleigh MOT (Linear Accelerated) ---
-                const motPct = Math.min(100, pct * 1.05).toFixed(1);
-                document.getElementById('wsMotBar').style.width = motPct + '%';
-                document.getElementById('wsMotPct').textContent = Math.floor(motPct) + '%';
-                
-                let motTxt = "Oiling the runners...";
-                if (pct === 0) motTxt = "Recovering from the big night..."; // Post-Christmas Limbo
-                else if(motPct > 15) motTxt = "Deep-cleaning the upholstery...";
-                else if(motPct > 30) motTxt = "Re-painting the chassis...";
-                else if(motPct > 45) motTxt = "Checking the aerodynamics...";
-                else if(motPct > 60) motTxt = "Upgrading sat-nav software...";
-                else if(motPct > 75) motTxt = "Testing the magic thrusters...";
-                else if(motPct > 90) motTxt = "Polishing the bells...";
-                if(motPct >= 100) motTxt = "Sleigh MOT passed! ✅";
-                
-                document.getElementById('wsMotText').textContent = motTxt;
+const motPct = Math.min(100, pct * 1.05).toFixed(1);
+document.getElementById('wsMotBar').style.width = motPct + '%';
+document.getElementById('wsMotPct').textContent = Math.floor(motPct) + '%';
 
-                // --- 2. Reindeer Training (Exponential Ramp-up) ---
-                const deerPct = Math.min(100, Math.pow(pct/100, 2) * 100).toFixed(1);
-                document.getElementById('wsDeerBar').style.width = deerPct + '%';
-                document.getElementById('wsDeerPct').textContent = Math.floor(deerPct) + '%';
-                
-                let deerTxt = "Deep sleep in Lapland...";
-                if (pct === 0) deerTxt = "Sleeping off the carrots..."; // Post-Christmas Limbo
-                else if(deerPct > 10) deerTxt = "Waking up and stretching...";
-                else if(deerPct > 20) deerTxt = "Grazing on magic lichen...";
-                else if(deerPct > 30) deerTxt = "Light trotting exercises...";
-                else if(deerPct > 40) deerTxt = "Antler polishing routines...";
-                else if(deerPct > 50) deerTxt = "Formation hovering practice...";
-                else if(deerPct > 60) deerTxt = "High-altitude acclimation...";
-                else if(deerPct > 75) deerTxt = "Test flights over the tundra...";
-                else if(deerPct > 90) deerTxt = "Carb-loading on magic oats...";
-                if(deerPct >= 100) deerTxt = "Ready for flight! 🦌💨";
-                
-                document.getElementById('wsDeerText').textContent = deerTxt;
+let motTxt = "Oiling the runners...";
+if (motPct > 15) motTxt = "Deep-cleaning the upholstery...";
+if (motPct > 30) motTxt = "Re-painting the chassis...";
+if (motPct > 45) motTxt = "Checking the aerodynamics...";
+if (motPct > 60) motTxt = "Upgrading sat-nav software...";
+if (motPct > 75) motTxt = "Testing the magic thrusters...";
+if (motPct > 90) motTxt = "Polishing the bells...";
+if (motPct >= 100) motTxt = "Sleigh MOT passed! ✅";
+if (pct === 0) motTxt = "Recovering from the big night..."; // Post-Christmas Override
 
-                // --- 3. Elf Recruitment (Organic Jumps) ---
-                // Using a sine wave based on the day. Math.sin returns -1 to 1. 
-                // We shift it to 0 to 2, then multiply to get a smooth +0% to +4% fluctuation that never goes negative.
-                const todayDay = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
-                const elfJumps = (Math.sin(todayDay / 2) + 1) * 2; 
-                
-                // If we are in the 0% resting phase, don't apply the jump math
-                const elfPctRaw = pct === 0 ? 0 : Math.min(100, pct + elfJumps);
-                
-                document.getElementById('wsElfBar').style.width = elfPctRaw.toFixed(1) + '%';
-                document.getElementById('wsElfPct').textContent = Math.floor(elfPctRaw) + '%';
-                
-                let elfTxt = "Reviewing volunteer CVs...";
-                if (pct === 0) elfTxt = "Taking annual leave..."; // Post-Christmas Limbo
-                else if(elfPctRaw > 15) elfTxt = "Sorting uniform sizes...";
-                else if(elfPctRaw > 30) elfTxt = "Sizing high-vis jackets...";
-                else if(elfPctRaw > 45) elfTxt = "Map reading crash-course...";
-                else if(elfPctRaw > 60) elfTxt = "Bucket shaking orientation...";
-                else if(elfPctRaw > 75) elfTxt = "Practicing friendly waves...";
-                else if(elfPctRaw > 90) elfTxt = "Final safety briefings...";
-                if(elfPctRaw >= 100) elfTxt = "Crew is briefed & ready! 🧝";
-                
-                document.getElementById('wsElfText').textContent = elfTxt;
+document.getElementById('wsMotText').textContent = motTxt;
+
+// --- 2. Reindeer Training (Exponential Ramp-up) ---
+const deerPct = Math.min(100, Math.pow(pct/100, 2) * 100).toFixed(1);
+document.getElementById('wsDeerBar').style.width = deerPct + '%';
+document.getElementById('wsDeerPct').textContent = Math.floor(deerPct) + '%';
+
+let deerTxt = "Deep sleep in Lapland...";
+if (deerPct > 10) deerTxt = "Waking up and stretching...";
+if (deerPct > 20) deerTxt = "Grazing on magic lichen...";
+if (deerPct > 30) deerTxt = "Light trotting exercises...";
+if (deerPct > 40) deerTxt = "Antler polishing routines...";
+if (deerPct > 50) deerTxt = "Formation hovering practice...";
+if (deerPct > 60) deerTxt = "High-altitude acclimation...";
+if (deerPct > 75) deerTxt = "Test flights over the tundra...";
+if (deerPct > 90) deerTxt = "Carb-loading on magic oats...";
+if (deerPct >= 100) deerTxt = "Ready for flight! 🦌💨";
+if (pct === 0) deerTxt = "Sleeping off the carrots..."; // Post-Christmas Override
+
+document.getElementById('wsDeerText').textContent = deerTxt;
+
+// --- 3. Elf Recruitment (Organic Jumps) ---
+const todayDay = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
+const elfJumps = (Math.sin(todayDay / 2) + 1) * 2; 
+
+const elfPctRaw = pct === 0 ? 0 : Math.min(100, pct + elfJumps);
+
+document.getElementById('wsElfBar').style.width = elfPctRaw.toFixed(1) + '%';
+document.getElementById('wsElfPct').textContent = Math.floor(elfPctRaw) + '%';
+
+let elfTxt = "Reviewing volunteer CVs...";
+if (elfPctRaw > 15) elfTxt = "Sorting uniform sizes...";
+if (elfPctRaw > 30) elfTxt = "Sizing high-vis jackets...";
+if (elfPctRaw > 45) elfTxt = "Map reading crash-course...";
+if (elfPctRaw > 60) elfTxt = "Bucket shaking orientation...";
+if (elfPctRaw > 75) elfTxt = "Practicing friendly waves...";
+if (elfPctRaw > 90) elfTxt = "Final safety briefings...";
+if (elfPctRaw >= 100) elfTxt = "Crew is briefed & ready! 🧝";
+if (pct === 0) elfTxt = "Taking annual leave..."; // Post-Christmas Override
+
+document.getElementById('wsElfText').textContent = elfTxt;
             };
             
             update();
