@@ -319,7 +319,7 @@
     
     .driver-mode { max-width: 500px; margin: 0 auto; position: relative; border-left: 1px solid var(--border); border-right: 1px solid var(--border); box-shadow: 0 0 40px rgba(0,0,0,0.8); }
     .driver-progress-box { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; display: none; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(29, 29, 26, 0.95); border: 3px solid var(--rt-gold); color: var(--rt-gold); padding: 14px 40px; font-size: 3em; font-weight: 900; border-radius: 24px; z-index: 5000; box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 15px rgba(251, 175, 51, 0.2); text-align: center; pointer-events: none; }
-    body.driver-mode.nav-active .driver-progress-box { display: block; }
+    body.driver-mode.nav-active .driver-progress-box { display: none; }
     body.driver-mode .donate-box, body.driver-mode .info-popup, body.driver-mode .install-overlay, body.driver-mode .ios-install-prompt { display: none !important; }
 
     /* ══════════════════════════════════════════════
@@ -1285,9 +1285,10 @@
               zIndexOffset: 1000
             }).addTo(AppState.map);
             
-            // Smoothed heading for map rotation (avoids jittery compass)
+            // Smoothed heading for map rotation (Google Maps-style stability)
             let smoothedHeading = null;
             let lastDriverPos = null;
+            let lastRotationTime = 0;
             
             function smoothAngle(current, target, factor) {
               // Shortest-path angular interpolation
@@ -1295,6 +1296,46 @@
               while (diff > 180) diff -= 360;
               while (diff < -180) diff += 360;
               return (current + diff * factor + 360) % 360;
+            }
+            
+            function angleDiff(a, b) {
+              let d = b - a;
+              while (d > 180) d -= 360;
+              while (d < -180) d += 360;
+              return Math.abs(d);
+            }
+
+            // Interpolate position onto the GPX line segment for smooth tracking
+            function snapToLineSegment(pos, snapIdx) {
+              if (!AppState.gpxRoute || snapIdx < 0) return null;
+              const route = AppState.gpxRoute;
+              // Check segment before and after the snap point, pick closest
+              let bestPt = route[snapIdx];
+              let bestDist = Utils.haversineMeters(pos, bestPt);
+              
+              const segments = [];
+              if (snapIdx > 0) segments.push([snapIdx - 1, snapIdx]);
+              if (snapIdx < route.length - 1) segments.push([snapIdx, snapIdx + 1]);
+              
+              for (const [iA, iB] of segments) {
+                const a = route[iA], b = route[iB];
+                // Project pos onto line A→B using parameterised t
+                const dx = b.lng - a.lng, dy = b.lat - a.lat;
+                const lenSq = dx * dx + dy * dy;
+                if (lenSq === 0) continue;
+                let t = ((pos.lng - a.lng) * dx + (pos.lat - a.lat) * dy) / lenSq;
+                t = Math.max(0, Math.min(1, t));
+                const projected = { lat: a.lat + t * dy, lng: a.lng + t * dx };
+                const d = Utils.haversineMeters(pos, projected);
+                if (d < bestDist) {
+                  bestDist = d;
+                  bestPt = projected;
+                  // Inherit the route distance for ETA calc
+                  bestPt.dist = a.dist + t * (b.dist - a.dist);
+                  bestPt.index = iA;
+                }
+              }
+              return { point: bestPt, distance: bestDist };
             }
 
             // ══════════════════════════════════════════════
@@ -1311,43 +1352,70 @@
               
               if (AppState.flags.gpxLoaded && AppState.gpxRoute) {
                 snapResult = snapToGpxIndex(vp, null);
-                if (snapResult && snapResult.distance < 20) vp = snapResult.point;
-              }
-              
-              // ── Calculate heading ──
-              // Use GPS heading when moving fast enough, otherwise
-              // compute bearing from last position, or use route bearing
-              let heading = gpsHeading;
-              
-              if (speed > 1.5 && typeof gpsHeading === 'number' && !isNaN(gpsHeading)) {
-                // GPS heading is reliable at speed
-                heading = gpsHeading;
-              } else if (lastDriverPos) {
-                // Calculate bearing from movement
-                const moveDist = Utils.haversineMeters(lastDriverPos, { lat, lng });
-                if (moveDist > 3) {
-                  heading = Utils.bearingBetween(lastDriverPos, { lat, lng });
-                } else if (snapResult && snapResult.point && AppState.gpxRoute) {
-                  // Use route-forward bearing when nearly stationary
-                  const idx = snapResult.point.index || 0;
-                  const lookAhead = Math.min(idx + 5, AppState.gpxRoute.length - 1);
-                  if (lookAhead > idx) {
-                    heading = Utils.bearingBetween(AppState.gpxRoute[idx], AppState.gpxRoute[lookAhead]);
+                // Interpolate onto the line segment for smooth centre-line tracking
+                if (snapResult && snapResult.distance < 40) {
+                  const interpolated = snapToLineSegment(vp, snapResult.point.index || AppState.vars.lastSnapIndex);
+                  if (interpolated && interpolated.distance < 40) {
+                    vp = interpolated.point;
+                    snapResult = interpolated;
+                  } else {
+                    vp = snapResult.point;
                   }
                 }
               }
               
-              // Smooth the heading to prevent jitter
+              // ── Calculate heading ──
+              // Speed gate: only trust heading data when actually driving
+              const MIN_SPEED_FOR_HEADING = 2.0;  // ~4.5 mph
+              const MIN_SPEED_FOR_GPS_COMPASS = 3.0;  // ~6.7 mph
+              const DEAD_ZONE_DEG = 6;  // ignore changes smaller than this
+              const MIN_ROTATION_INTERVAL_MS = 300;  // don't rotate more often than this
+              
+              let heading = null;
+              
+              if (speed >= MIN_SPEED_FOR_GPS_COMPASS && typeof gpsHeading === 'number' && !isNaN(gpsHeading)) {
+                // GPS compass is reliable at driving speed
+                heading = gpsHeading;
+              } else if (speed >= MIN_SPEED_FOR_HEADING && lastDriverPos) {
+                // Calculate bearing from movement
+                const moveDist = Utils.haversineMeters(lastDriverPos, { lat, lng });
+                if (moveDist > 5) {
+                  heading = Utils.bearingBetween(lastDriverPos, { lat, lng });
+                }
+              }
+              
+              // If not moving fast enough, use route-forward bearing (stable)
+              if (heading === null && snapResult && snapResult.point && AppState.gpxRoute) {
+                const idx = snapResult.point.index || AppState.vars.lastSnapIndex;
+                const lookAhead = Math.min(idx + 8, AppState.gpxRoute.length - 1);
+                if (lookAhead > idx) {
+                  heading = Utils.bearingBetween(AppState.gpxRoute[idx], AppState.gpxRoute[lookAhead]);
+                }
+              }
+              
+              // Smooth and apply with dead zone
               if (typeof heading === 'number' && !isNaN(heading)) {
+                const now = Date.now();
                 if (smoothedHeading === null) {
                   smoothedHeading = heading;
+                  TurnByTurn.rotateMap(smoothedHeading);
+                  lastRotationTime = now;
                 } else {
-                  const smoothFactor = speed > 3 ? 0.3 : 0.15;
-                  smoothedHeading = smoothAngle(smoothedHeading, heading, smoothFactor);
+                  // Heavier smoothing: 0.12 at speed, 0.06 when slow
+                  const smoothFactor = speed > 5 ? 0.12 : 0.06;
+                  const candidate = smoothAngle(smoothedHeading, heading, smoothFactor);
+                  
+                  // Dead zone: only rotate if change exceeds threshold
+                  const delta = angleDiff(smoothedHeading, candidate);
+                  const timeSinceLastRotation = now - lastRotationTime;
+                  
+                  if (delta > DEAD_ZONE_DEG || (delta > 2 && timeSinceLastRotation > 2000)) {
+                    smoothedHeading = candidate;
+                    // ── ROTATE THE MAP (heading-up via leaflet-rotate) ──
+                    TurnByTurn.rotateMap(smoothedHeading);
+                    lastRotationTime = now;
+                  }
                 }
-                
-                // ── ROTATE THE MAP (heading-up via leaflet-rotate) ──
-                TurnByTurn.rotateMap(smoothedHeading);
               }
               
               lastDriverPos = { lat, lng };
