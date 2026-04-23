@@ -818,6 +818,8 @@
             TurnByTurn.cursor = 0;
             TurnByTurn.ensureBanner();
             console.info(`[TBT] GPX fallback loaded ${gpxSteps.length} turns`);
+            // Enrich with road names in background (doesn't block navigation)
+            TurnByTurn._enrichWithRoadNames(gpxSteps);
           } else {
             console.warn('[TBT] No turns detected in GPX');
             TurnByTurn.steps = null;
@@ -958,6 +960,42 @@
           });
           
           return steps;
+        },
+
+        // ── ROAD NAME ENRICHMENT (via Nominatim reverse geocode) ──
+        // Runs in background after GPX turn detection.
+        // Updates step objects in-place — the banner auto-picks up names on next render.
+        // If Nominatim is down or rate-limited, turns still work with generic instructions.
+        async _enrichWithRoadNames(steps) {
+          const turnSteps = steps.filter(s => s.type === 'turn');
+          if (turnSteps.length === 0) return;
+          
+          console.info(`[TBT] Enriching ${turnSteps.length} turns with road names…`);
+          let enriched = 0;
+          
+          for (const step of turnSteps) {
+            try {
+              const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${step.loc.lat.toFixed(6)}&lon=${step.loc.lng.toFixed(6)}&format=json&zoom=18&addressdetails=1`,
+                { headers: { 'User-Agent': 'TurboSanta-SleighTracker/1.0' } }
+              );
+              if (!res.ok) continue;
+              const data = await res.json();
+              const road = data.address?.road || data.address?.pedestrian || data.address?.path;
+              if (road) {
+                step.name = road;
+                step.roadName = road;
+                step.instruction = `Turn ${step.mod} onto ${road}`;
+                enriched++;
+              }
+            } catch (e) {
+              // Silently continue — road name is cosmetic
+            }
+            // Nominatim usage policy: max 1 request per second
+            await new Promise(r => setTimeout(r, 1100));
+          }
+          
+          console.info(`[TBT] Road names: ${enriched}/${turnSteps.length} enriched`);
         },
 
         buildInstruction(s) {
