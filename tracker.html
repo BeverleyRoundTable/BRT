@@ -491,6 +491,24 @@
       font-family: inherit; font-size: 12px; margin-top: 20px; cursor: pointer; transition: color 0.2s;
     }
     .ws-skip-btn:hover { color: var(--text); }
+
+    .ws-schedule { margin-bottom: 20px; }
+    .ws-schedule-title {
+      font-size: 11px; font-weight: 700; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 10px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ws-schedule-list { text-align: left; }
+    .ws-schedule-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .ws-schedule-item:last-child { border-bottom: none; }
+    .ws-schedule-date { color: var(--text-dim); font-weight: 700; white-space: nowrap; }
+    .ws-schedule-name { color: var(--text); font-weight: 800; text-align: right; }
+    .ws-schedule-item:first-child .ws-schedule-name { color: var(--gold); }
   </style>
 </head>
 <body>
@@ -570,6 +588,12 @@
       <p style="color: var(--text-dim); font-size: 14px;">The sleigh is currently undergoing off-season maintenance. We'll be back on the road in:</p>
       
       <div id="wsCountdown" class="ws-countdown">-- : -- : --</div>
+      <div id="wsNextRoute" style="color: var(--gold); font-weight: 800; font-size: 15px; margin-bottom: 20px; display: none;"></div>
+
+      <div id="wsSchedule" class="ws-schedule" style="display: none;">
+        <div class="ws-schedule-title">🗓️ Upcoming Routes</div>
+        <div id="wsScheduleList" class="ws-schedule-list"></div>
+      </div>
 
       <div class="ws-item">
         <div class="ws-item-label"><span>Sleigh MOT & Waxing</span> <span id="wsMotPct">0%</span></div>
@@ -603,9 +627,11 @@
             if (!routes || routes.length === 0) return false;
             const now = new Date();
             let targetDate = null;
-            const futureRoutes = routes.map(r => new Date(r.date)).filter(d => d > now).sort((a,b) => a-b);
-            if (futureRoutes.length > 0) {
-                targetDate = futureRoutes[0];
+            const futureRouteObjects = routes
+                .filter(r => new Date(r.date) > now)
+                .sort((a,b) => new Date(a.date) - new Date(b.date));
+            if (futureRouteObjects.length > 0) {
+                targetDate = new Date(futureRouteObjects[0].date);
             } else {
                 targetDate = new Date(now.getFullYear() + 1, 11, 1);
             }
@@ -613,6 +639,39 @@
             const daysUntil = (targetDate - now) / (1000 * 60 * 60 * 24);
             if (daysUntil < 7) return false; 
             document.getElementById('workshopOverlay').style.display = 'flex';
+            
+            // Show next route name
+            if (futureRouteObjects.length > 0 && futureRouteObjects[0].routeName) {
+              const nextEl = document.getElementById('wsNextRoute');
+              nextEl.textContent = `Next: ${futureRouteObjects[0].routeName}`;
+              nextEl.style.display = 'block';
+            }
+            
+            // Build schedule list
+            if (futureRouteObjects.length > 0) {
+              const scheduleEl = document.getElementById('wsSchedule');
+              const listEl = document.getElementById('wsScheduleList');
+              scheduleEl.style.display = 'block';
+              
+              // Show up to 10 upcoming routes
+              const toShow = futureRouteObjects.slice(0, 10);
+              for (const r of toShow) {
+                const d = new Date(r.date);
+                const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                const item = document.createElement('div');
+                item.className = 'ws-schedule-item';
+                item.innerHTML = `<span class="ws-schedule-date">${dateStr}</span><span class="ws-schedule-name">${r.routeName || 'TBC'}</span>`;
+                listEl.appendChild(item);
+              }
+              
+              if (futureRouteObjects.length > 10) {
+                const more = document.createElement('div');
+                more.style.cssText = 'text-align:center; color:var(--text-dim); font-size:12px; margin-top:8px; font-style:italic;';
+                more.textContent = `+ ${futureRouteObjects.length - 10} more routes`;
+                listEl.appendChild(more);
+              }
+            }
+            
             this.startLoop(startDate, targetDate);
             return true;
         },
