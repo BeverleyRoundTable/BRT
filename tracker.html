@@ -1074,7 +1074,7 @@
         // ── HEADING-UP MAP ROTATION (via leaflet-rotate plugin) ──
         rotateMap(headingDeg) {
           if (!AppState.map || typeof AppState.map.setBearing !== 'function') return;
-          AppState.map.setBearing(headingDeg);
+          AppState.map.setBearing(-headingDeg);
           AppState.vars.currentMapHeading = headingDeg;
         }
       };
@@ -1365,31 +1365,34 @@
               }
               
               // ── Calculate heading ──
-              // Speed gate: only trust heading data when actually driving
-              const MIN_SPEED_FOR_HEADING = 2.0;  // ~4.5 mph
-              const MIN_SPEED_FOR_GPS_COMPASS = 3.0;  // ~6.7 mph
+              // Priority: GPX route direction (most stable for pre-planned routes)
+              // then GPS compass, then movement bearing as fallbacks when off-route
               const DEAD_ZONE_DEG = 6;  // ignore changes smaller than this
               const MIN_ROTATION_INTERVAL_MS = 300;  // don't rotate more often than this
               
               let heading = null;
+              const isOnRoute = snapResult && snapResult.distance < 40;
               
-              if (speed >= MIN_SPEED_FOR_GPS_COMPASS && typeof gpsHeading === 'number' && !isNaN(gpsHeading)) {
-                // GPS compass is reliable at driving speed
-                heading = gpsHeading;
-              } else if (speed >= MIN_SPEED_FOR_HEADING && lastDriverPos) {
-                // Calculate bearing from movement
-                const moveDist = Utils.haversineMeters(lastDriverPos, { lat, lng });
-                if (moveDist > 5) {
-                  heading = Utils.bearingBetween(lastDriverPos, { lat, lng });
+              // 1. GPX forward bearing — primary source when on-route
+              //    The route knows exactly where you're going, GPS compass doesn't at 5mph
+              if (isOnRoute && AppState.gpxRoute) {
+                const idx = snapResult.point.index || AppState.vars.lastSnapIndex;
+                const lookAhead = Math.min(idx + 10, AppState.gpxRoute.length - 1);
+                if (lookAhead > idx) {
+                  heading = Utils.bearingBetween(AppState.gpxRoute[idx], AppState.gpxRoute[lookAhead]);
                 }
               }
               
-              // If not moving fast enough, use route-forward bearing (stable)
-              if (heading === null && snapResult && snapResult.point && AppState.gpxRoute) {
-                const idx = snapResult.point.index || AppState.vars.lastSnapIndex;
-                const lookAhead = Math.min(idx + 8, AppState.gpxRoute.length - 1);
-                if (lookAhead > idx) {
-                  heading = Utils.bearingBetween(AppState.gpxRoute[idx], AppState.gpxRoute[lookAhead]);
+              // 2. Off-route fallback: GPS compass when moving
+              if (heading === null && speed >= 2.0 && typeof gpsHeading === 'number' && !isNaN(gpsHeading)) {
+                heading = gpsHeading;
+              }
+              
+              // 3. Off-route fallback: movement bearing
+              if (heading === null && lastDriverPos) {
+                const moveDist = Utils.haversineMeters(lastDriverPos, { lat, lng });
+                if (moveDist > 5) {
+                  heading = Utils.bearingBetween(lastDriverPos, { lat, lng });
                 }
               }
               
