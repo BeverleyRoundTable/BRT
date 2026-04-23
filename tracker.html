@@ -808,8 +808,14 @@
             const last = gpxRoute[gpxRoute.length - 1];
             if (sampled[sampled.length - 1] !== last) sampled.push(last);
             const coords = sampled.map(p => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join(';');
-            const url = `https://router.project-osrm.org/match/v1/driving/${coords}?steps=true&geometries=geojson&overview=simplified`;
-            const res = await fetch(url);
+            const osrmBase = `https://router.project-osrm.org/match/v1`;
+            const osrmParams = `?steps=true&geometries=geojson&overview=simplified`;
+            let res = await fetch(`${osrmBase}/driving/${coords}${osrmParams}`);
+            // Fallback: if driving profile rejects (e.g. snicket/footpath in GPX), retry with foot
+            if (!res.ok) {
+              console.warn('[TBT] Driving profile failed (' + res.status + '), retrying with foot profile…');
+              res = await fetch(`${osrmBase}/foot/${coords}${osrmParams}`);
+            }
             if (!res.ok) throw new Error('OSRM HTTP ' + res.status);
             const data = await res.json();
             if (data.code !== 'Ok' || !data.matchings || !data.matchings.length) throw new Error('No match');
@@ -1214,9 +1220,6 @@
             txPill.innerHTML = `<span id="txState">📡 LIVE</span> <span>Tx: <span id="txSent">0</span></span> <span>Q: <span id="txQueued">0</span></span>`;
             document.body.appendChild(txPill);
             
-            // ══════════════════════════════════════════════
-            //  BRANDED DRIVER BEACON (gold, always points up)
-            // ══════════════════════════════════════════════
             const driverMarker = L.marker([0,0], {
               icon: L.divIcon({
                 className: 'driver-arrow',
