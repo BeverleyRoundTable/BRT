@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+  <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
 
   <style>
     :root {
@@ -325,16 +326,12 @@
        DRIVER MODE — HEADING-UP NAV (Waze-style)
        ══════════════════════════════════════════════ */
 
-    /* Map rotation: the tile pane rotates, everything else stays fixed */
-    body.driver-mode.nav-active .leaflet-map-pane {
-      transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
+    /* Map rotation handled by leaflet-rotate plugin via map.setBearing() */
 
     /* ── BRANDED DRIVER BEACON (always points up) ── */
     .driver-beacon-wrap {
       position: relative;
       width: 48px; height: 62px;
-      transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
     .driver-beacon-chevron {
       position: absolute;
@@ -1074,29 +1071,11 @@
           } catch (e) {}
         },
 
-        // ── HEADING-UP MAP ROTATION ──
+        // ── HEADING-UP MAP ROTATION (via leaflet-rotate plugin) ──
         rotateMap(headingDeg) {
-          if (!AppState.map) return;
-          const mapPane = AppState.map.getPane('mapPane');
-          if (!mapPane) return;
-          
-          // Calculate rotation origin: center of the viewport
-          const container = AppState.map.getContainer();
-          const size = AppState.map.getSize();
-          const centerPixel = AppState.map.latLngToLayerPoint(AppState.map.getCenter());
-          
-          mapPane.style.transformOrigin = `${centerPixel.x}px ${centerPixel.y}px`;
-          mapPane.style.transform = `rotate(${-headingDeg}deg)`;
-          
+          if (!AppState.map || typeof AppState.map.setBearing !== 'function') return;
+          AppState.map.setBearing(headingDeg);
           AppState.vars.currentMapHeading = headingDeg;
-        },
-
-        counterRotateMarker(markerElement, headingDeg) {
-          if (!markerElement) return;
-          const inner = markerElement.querySelector('.driver-beacon-wrap');
-          if (inner) {
-            inner.style.transform = `rotate(${headingDeg}deg)`;
-          }
         }
       };
 
@@ -1367,14 +1346,8 @@
                   smoothedHeading = smoothAngle(smoothedHeading, heading, smoothFactor);
                 }
                 
-                // ── ROTATE THE MAP (heading-up) ──
+                // ── ROTATE THE MAP (heading-up via leaflet-rotate) ──
                 TurnByTurn.rotateMap(smoothedHeading);
-                
-                // ── COUNTER-ROTATE THE BEACON (so chevron always points up on screen) ──
-                const markerEl = driverMarker.getElement();
-                if (markerEl) {
-                  TurnByTurn.counterRotateMarker(markerEl, smoothedHeading);
-                }
               }
               
               lastDriverPos = { lat, lng };
@@ -1473,7 +1446,7 @@
         }
         
         window.initTrackerMap = function() {
-            AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk && !AppState.flags.isDriver }).setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
+            AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk && !AppState.flags.isDriver, rotate: !!AppState.flags.isDriver, touchRotate: false, shiftKeyRotate: false, rotateControl: false }).setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
             AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteCompleted.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); });
            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(AppState.map);
             if (AppState.flags.isKiosk) { const m = AppState.map; m.dragging.disable(); m.scrollWheelZoom.disable(); m.doubleClickZoom.disable(); m.boxZoom.disable(); m.keyboard.disable(); m.touchZoom.disable(); AppState.dom.followBtn.style.display = "none"; AppState.dom.recenterBtn.style.display = "none"; AppState.dom.notifyBtn.style.display = "none"; if(AppState.dom.msgBtn) AppState.dom.msgBtn.style.display = "none"; AppState.dom.donateBox.style.display = "none"; }
