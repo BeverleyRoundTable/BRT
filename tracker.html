@@ -800,6 +800,31 @@
 
         async load(gpxRoute) {
           if (!gpxRoute || gpxRoute.length < 2) return;
+          
+          // Try OSRM first (best: road names + roundabouts)
+          const osrmSteps = await TurnByTurn._loadOSRM(gpxRoute);
+          if (osrmSteps && osrmSteps.length > 0) {
+            TurnByTurn.steps = osrmSteps;
+            TurnByTurn.cursor = 0;
+            TurnByTurn.ensureBanner();
+            console.info(`[TBT] OSRM loaded ${osrmSteps.length} maneuvers`);
+            return;
+          }
+          
+          // Fallback: detect turns purely from GPX geometry (no external API)
+          const gpxSteps = TurnByTurn._loadFromGPX(gpxRoute);
+          if (gpxSteps && gpxSteps.length > 0) {
+            TurnByTurn.steps = gpxSteps;
+            TurnByTurn.cursor = 0;
+            TurnByTurn.ensureBanner();
+            console.info(`[TBT] GPX fallback loaded ${gpxSteps.length} turns`);
+          } else {
+            console.warn('[TBT] No turns detected in GPX');
+            TurnByTurn.steps = null;
+          }
+        },
+
+        async _loadOSRM(gpxRoute) {
           try {
             const MAX = 50;
             const stride = Math.max(1, Math.ceil(gpxRoute.length / MAX));
@@ -811,9 +836,8 @@
             const osrmBase = `https://router.project-osrm.org/match/v1`;
             const osrmParams = `?steps=true&geometries=geojson&overview=simplified`;
             let res = await fetch(`${osrmBase}/driving/${coords}${osrmParams}`);
-            // Fallback: if driving profile rejects (e.g. snicket/footpath in GPX), retry with foot
             if (!res.ok) {
-              console.warn('[TBT] Driving profile failed (' + res.status + '), retrying with foot profile…');
+              console.warn('[TBT] Driving profile failed (' + res.status + '), trying foot…');
               res = await fetch(`${osrmBase}/foot/${coords}${osrmParams}`);
             }
             if (!res.ok) throw new Error('OSRM HTTP ' + res.status);
@@ -847,14 +871,93 @@
               s.gpxIdx = bestI;
             }
             steps.sort((a, b) => a.gpxIdx - b.gpxIdx);
-            TurnByTurn.steps = steps;
-            TurnByTurn.cursor = 0;
-            TurnByTurn.ensureBanner();
-            console.info(`[TBT] Loaded ${steps.length} maneuvers`);
+            return steps;
           } catch (e) {
-            console.warn('[TBT] Unavailable, falling back to beacon-only:', e.message);
-            TurnByTurn.steps = null;
+            console.warn('[TBT] OSRM unavailable:', e.message);
+            return null;
           }
+        },
+
+        // ── GPX-ONLY TURN DETECTOR ──
+        // Detects turns purely from bearing changes in the GPX geometry.
+        // No external API needed — completely bulletproof.
+        _loadFromGPX(gpxRoute) {
+          const TURN_THRESHOLD = 25;      // degrees — minimum angle change to count as a turn
+          const SHARP_THRESHOLD = 70;     // degrees — sharp turn
+          const SLIGHT_THRESHOLD = 40;    // degrees — below this is "slight"
+          const MIN_DIST_BETWEEN = 30;    // metres — merge turns closer than this
+          const LOOK_WINDOW = 8;          // points ahead/behind for bearing calculation
+          
+          const steps = [];
+          
+          // Add depart
+          steps.push({
+            loc: gpxRoute[0],
+            type: 'depart', mod: '', exit: null, name: '',
+            instruction: 'Start driving',
+            icon: '🚩', roadName: '',
+            gpxIdx: 0
+          });
+          
+          // Walk the route looking for bearing changes
+          for (let i = LOOK_WINDOW; i < gpxRoute.length - LOOK_WINDOW; i++) {
+            const behind = gpxRoute[Math.max(0, i - LOOK_WINDOW)];
+            const here = gpxRoute[i];
+            const ahead = gpxRoute[Math.min(gpxRoute.length - 1, i + LOOK_WINDOW)];
+            
+            const bearingIn = Utils.bearingBetween(behind, here);
+            const bearingOut = Utils.bearingBetween(here, ahead);
+            
+            // Signed angle difference (-180 to +180, positive = right)
+            let angleDiff = bearingOut - bearingIn;
+            while (angleDiff > 180) angleDiff -= 360;
+            while (angleDiff < -180) angleDiff += 360;
+            
+            const absAngle = Math.abs(angleDiff);
+            if (absAngle < TURN_THRESHOLD) continue;
+            
+            // Skip if too close to last detected turn
+            if (steps.length > 1) {
+              const lastTurn = steps[steps.length - 1];
+              const dist = here.dist - gpxRoute[lastTurn.gpxIdx].dist;
+              if (dist < MIN_DIST_BETWEEN) continue;
+            }
+            
+            // Classify the turn
+            const isRight = angleDiff > 0;
+            let mod, icon;
+            if (absAngle >= SHARP_THRESHOLD) {
+              mod = isRight ? 'sharp right' : 'sharp left';
+              icon = isRight ? '↗️' : '↖️';
+            } else if (absAngle >= SLIGHT_THRESHOLD) {
+              mod = isRight ? 'right' : 'left';
+              icon = isRight ? '➡️' : '⬅️';
+            } else {
+              mod = isRight ? 'slight right' : 'slight left';
+              icon = isRight ? '↗' : '↖';
+            }
+            
+            const instruction = `Turn ${mod}`;
+            
+            steps.push({
+              loc: here,
+              type: 'turn', mod, exit: null, name: '',
+              instruction,
+              icon, roadName: '',
+              gpxIdx: i
+            });
+          }
+          
+          // Add arrive
+          steps.push({
+            loc: gpxRoute[gpxRoute.length - 1],
+            type: 'arrive', mod: '', exit: null, name: '',
+            instruction: 'You have arrived',
+            icon: '🏁', roadName: '',
+            gpxIdx: gpxRoute.length - 1
+          });
+          
+          return steps;
         },
 
         buildInstruction(s) {
@@ -1223,9 +1326,9 @@
             const driverMarker = L.marker([0,0], {
               icon: L.divIcon({
                 className: 'driver-arrow',
-                html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 100%;"></div>',
+                html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));"></div>',
                 iconSize: [28, 34],
-                iconAnchor: [14, 17]
+                iconAnchor: [14, 26]
               }),
               zIndexOffset: 1000
             }).addTo(AppState.map);
@@ -1372,8 +1475,18 @@
                 TurnByTurn.update(snapResult.point.index, snapResult.distance, speed);
               }
               
-              // Position the driver beacon
+              // Position the driver arrow
               driverMarker.setLatLng([vp.lat, vp.lng]);
+              
+              // Rotate arrow to align precisely with route line
+              // heading = exact route bearing, smoothedHeading = smoothed map rotation
+              // The difference compensates for smoothing lag so arrow tracks the route line exactly
+              if (heading !== null && smoothedHeading !== null && typeof driverMarker.setRotation === 'function') {
+                let arrowAngle = heading - smoothedHeading;
+                while (arrowAngle > 180) arrowAngle -= 360;
+                while (arrowAngle < -180) arrowAngle += 360;
+                driverMarker.setRotation(arrowAngle);
+              }
               AppState.map.panTo([vp.lat, vp.lng], { animate: true, duration: 1 });
               
               // ── TRANSMIT GPS TO FIREBASE ──
