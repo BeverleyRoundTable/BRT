@@ -491,24 +491,6 @@
       font-family: inherit; font-size: 12px; margin-top: 20px; cursor: pointer; transition: color 0.2s;
     }
     .ws-skip-btn:hover { color: var(--text); }
-
-    .ws-schedule { margin-bottom: 20px; }
-    .ws-schedule-title {
-      font-size: 11px; font-weight: 700; color: var(--text-dim);
-      text-transform: uppercase; letter-spacing: 1.5px;
-      margin-bottom: 10px; padding-bottom: 8px;
-      border-bottom: 1px solid var(--border);
-    }
-    .ws-schedule-list { text-align: left; }
-    .ws-schedule-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0; border-bottom: 1px solid var(--border);
-      font-size: 13px;
-    }
-    .ws-schedule-item:last-child { border-bottom: none; }
-    .ws-schedule-date { color: var(--text-dim); font-weight: 700; white-space: nowrap; }
-    .ws-schedule-name { color: var(--text); font-weight: 800; text-align: right; }
-    .ws-schedule-item:first-child .ws-schedule-name { color: var(--gold); }
   </style>
 </head>
 <body>
@@ -588,12 +570,6 @@
       <p style="color: var(--text-dim); font-size: 14px;">The sleigh is currently undergoing off-season maintenance. We'll be back on the road in:</p>
       
       <div id="wsCountdown" class="ws-countdown">-- : -- : --</div>
-      <div id="wsNextRoute" style="color: var(--gold); font-weight: 800; font-size: 15px; margin-bottom: 20px; display: none;"></div>
-
-      <div id="wsSchedule" class="ws-schedule" style="display: none;">
-        <div class="ws-schedule-title">🗓️ Upcoming Routes</div>
-        <div id="wsScheduleList" class="ws-schedule-list"></div>
-      </div>
 
       <div class="ws-item">
         <div class="ws-item-label"><span>Sleigh MOT & Waxing</span> <span id="wsMotPct">0%</span></div>
@@ -627,11 +603,9 @@
             if (!routes || routes.length === 0) return false;
             const now = new Date();
             let targetDate = null;
-            const futureRouteObjects = routes
-                .filter(r => new Date(r.date) > now)
-                .sort((a,b) => new Date(a.date) - new Date(b.date));
-            if (futureRouteObjects.length > 0) {
-                targetDate = new Date(futureRouteObjects[0].date);
+            const futureRoutes = routes.map(r => new Date(r.date)).filter(d => d > now).sort((a,b) => a-b);
+            if (futureRoutes.length > 0) {
+                targetDate = futureRoutes[0];
             } else {
                 targetDate = new Date(now.getFullYear() + 1, 11, 1);
             }
@@ -639,39 +613,6 @@
             const daysUntil = (targetDate - now) / (1000 * 60 * 60 * 24);
             if (daysUntil < 7) return false; 
             document.getElementById('workshopOverlay').style.display = 'flex';
-            
-            // Show next route name
-            if (futureRouteObjects.length > 0 && futureRouteObjects[0].routeName) {
-              const nextEl = document.getElementById('wsNextRoute');
-              nextEl.textContent = `Next: ${futureRouteObjects[0].routeName}`;
-              nextEl.style.display = 'block';
-            }
-            
-            // Build schedule list
-            if (futureRouteObjects.length > 0) {
-              const scheduleEl = document.getElementById('wsSchedule');
-              const listEl = document.getElementById('wsScheduleList');
-              scheduleEl.style.display = 'block';
-              
-              // Show up to 10 upcoming routes
-              const toShow = futureRouteObjects.slice(0, 10);
-              for (const r of toShow) {
-                const d = new Date(r.date);
-                const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-                const item = document.createElement('div');
-                item.className = 'ws-schedule-item';
-                item.innerHTML = `<span class="ws-schedule-date">${dateStr}</span><span class="ws-schedule-name">${r.routeName || 'TBC'}</span>`;
-                listEl.appendChild(item);
-              }
-              
-              if (futureRouteObjects.length > 10) {
-                const more = document.createElement('div');
-                more.style.cssText = 'text-align:center; color:var(--text-dim); font-size:12px; margin-top:8px; font-style:italic;';
-                more.textContent = `+ ${futureRouteObjects.length - 10} more routes`;
-                listEl.appendChild(more);
-              }
-            }
-            
             this.startLoop(startDate, targetDate);
             return true;
         },
@@ -842,7 +783,7 @@
       function pushRouteFix(routeDist, ts) { const fixes = AppState.routeFixes; fixes.push({ routeDist, ts }); const cutoff = ts - AppConfig.API.MOTION_WINDOW_MS; while (fixes.length && fixes[0].ts < cutoff) fixes.shift(); }
       function isSleighMoving() { if (AppState.recentFixes.length < 2) return false; const first = AppState.recentFixes[0], last = AppState.recentFixes[AppState.recentFixes.length - 1]; return (last.cumulative - first.cumulative) >= AppConfig.API.MOVE_THRESHOLD_METERS; }
 
-      async function loadGpxRoute(url) { try { const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 5000); const res = await fetch(url, { cache: "no-store", signal: controller.signal }); clearTimeout(timeoutId); if (!res.ok) throw new Error("GPX fetch failed"); const text = await res.text(); const xml = new DOMParser().parseFromString(text, "text/xml"); const pts = [...xml.getElementsByTagName("trkpt")]; if (pts.length < 2) throw new Error("GPX too short"); let dist = 0; let route = []; for (let i = 0; i < pts.length; i++) { const lat = parseFloat(pts[i].getAttribute("lat")); const lng = parseFloat(pts[i].getAttribute("lon")); if (i > 0) dist += Utils.haversineMeters(route[i - 1], { lat, lng }); route.push({ lat, lng, dist, index: i }); } AppState.gpxRoute = route; AppState.flags.gpxLoaded = true; AppState.vars.lastSnapIndex = 0; } catch (e) { AppState.flags.gpxLoaded = false; AppState.dom.notifyBtn.style.display = "none"; } }
+      async function loadGpxRoute(url) { try { const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 5000); const res = await fetch(url, { cache: "no-store", signal: controller.signal }); clearTimeout(timeoutId); if (!res.ok) throw new Error("GPX fetch failed"); const text = await res.text(); const xml = new DOMParser().parseFromString(text, "text/xml"); const pts = [...xml.getElementsByTagName("trkpt")]; if (pts.length < 2) throw new Error("GPX too short"); let dist = 0; let route = []; for (let i = 0; i < pts.length; i++) { const lat = parseFloat(pts[i].getAttribute("lat")); const lng = parseFloat(pts[i].getAttribute("lon")); const nameEl = pts[i].getElementsByTagName("name")[0]; const roadName = nameEl ? (nameEl.textContent || '').trim() : ''; if (i > 0) dist += Utils.haversineMeters(route[i - 1], { lat, lng }); route.push({ lat, lng, dist, index: i, roadName }); } AppState.gpxRoute = route; AppState.flags.gpxLoaded = true; AppState.vars.lastSnapIndex = 0; } catch (e) { AppState.flags.gpxLoaded = false; AppState.dom.notifyBtn.style.display = "none"; } }
 
       function snapToGpxIndex(pos, searchOpts) { if (!AppState.gpxRoute) return null; const { AHEAD, BACK, EARLY_EXIT_METERS } = searchOpts || AppConfig.GPX; const isGlobalSearch = !searchOpts; const start = isGlobalSearch ? 0 : Math.max(0, AppState.vars.lastSnapIndex - BACK); const end = isGlobalSearch ? AppState.gpxRoute.length - 1 : Math.min(AppState.gpxRoute.length - 1, AppState.vars.lastSnapIndex + AHEAD); let bestIndex = isGlobalSearch ? 0 : AppState.vars.lastSnapIndex; let bestDist = Infinity; for (let i = start; i <= end; i++) { const d = Utils.haversineMeters(pos, AppState.gpxRoute[i]); if (d < bestDist) { bestDist = d; bestIndex = i; } if (!isGlobalSearch && i > AppState.vars.lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break; } if (!isGlobalSearch) AppState.vars.lastSnapIndex = bestIndex; return { point: AppState.gpxRoute[bestIndex], distance: bestDist }; }
 
@@ -876,9 +817,16 @@
             TurnByTurn.steps = gpxSteps;
             TurnByTurn.cursor = 0;
             TurnByTurn.ensureBanner();
-            console.info(`[TBT] GPX fallback loaded ${gpxSteps.length} turns`);
-            // Enrich with road names in background (doesn't block navigation)
-            TurnByTurn._enrichWithRoadNames(gpxSteps);
+            // Check if GPX already has embedded road names (from Route Planner export)
+            const turnsWithNames = gpxSteps.filter(s => s.type === 'turn' && s.roadName).length;
+            const totalTurns = gpxSteps.filter(s => s.type === 'turn').length;
+            if (turnsWithNames > 0) {
+              console.info(`[TBT] GPX fallback loaded ${gpxSteps.length} turns (${turnsWithNames}/${totalTurns} with embedded road names)`);
+            } else {
+              console.info(`[TBT] GPX fallback loaded ${gpxSteps.length} turns — enriching with Nominatim…`);
+              // Only call Nominatim if GPX has no embedded names
+              TurnByTurn._enrichWithRoadNames(gpxSteps);
+            }
           } else {
             console.warn('[TBT] No turns detected in GPX');
             TurnByTurn.steps = null;
@@ -952,11 +900,12 @@
           const steps = [];
           
           // Add depart
+          const startRoad = gpxRoute[0].roadName || '';
           steps.push({
             loc: gpxRoute[0],
-            type: 'depart', mod: '', exit: null, name: '',
-            instruction: 'Start driving',
-            icon: '🚩', roadName: '',
+            type: 'depart', mod: '', exit: null, name: startRoad,
+            instruction: startRoad ? `Head along ${startRoad}` : 'Start driving',
+            icon: '🚩', roadName: startRoad,
             gpxIdx: 0
           });
           
@@ -998,23 +947,26 @@
               icon = isRight ? '↗' : '↖';
             }
             
-            const instruction = `Turn ${mod}`;
+            // Get road name from GPX — look ahead for the road being turned onto
+            const aheadName = gpxRoute[Math.min(i + LOOK_WINDOW, gpxRoute.length - 1)].roadName || '';
+            const instruction = aheadName ? `Turn ${mod} onto ${aheadName}` : `Turn ${mod}`;
             
             steps.push({
               loc: here,
-              type: 'turn', mod, exit: null, name: '',
+              type: 'turn', mod, exit: null, name: aheadName,
               instruction,
-              icon, roadName: '',
+              icon, roadName: aheadName,
               gpxIdx: i
             });
           }
           
           // Add arrive
+          const endRoad = gpxRoute[gpxRoute.length - 1].roadName || '';
           steps.push({
             loc: gpxRoute[gpxRoute.length - 1],
-            type: 'arrive', mod: '', exit: null, name: '',
+            type: 'arrive', mod: '', exit: null, name: endRoad,
             instruction: 'You have arrived',
-            icon: '🏁', roadName: '',
+            icon: '🏁', roadName: endRoad,
             gpxIdx: gpxRoute.length - 1
           });
           
