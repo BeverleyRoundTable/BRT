@@ -653,7 +653,6 @@
             if (daysUntil < 7) return false; 
             document.getElementById('workshopOverlay').style.display = 'flex';
             
-            // Build schedule list (first item highlighted in gold = "next" route)
             if (futureRouteObjects.length > 0) {
               const scheduleEl = document.getElementById('wsSchedule');
               const listEl = document.getElementById('wsScheduleList');
@@ -1308,7 +1307,7 @@
           if (!isFresh) {
             if (!AppState.vars.staleSince) AppState.vars.staleSince = ts;
             if (Date.now() - AppState.vars.staleSince > AppConfig.API.STALE_MS) { AppState.marker.setLatLng(AppConfig.LOCATIONS.LAPLAND); if (AppState.flags.follow) AppState.map.setView(AppConfig.LOCATIONS.LAPLAND, 5, { animate: true, duration: 2 }); AppState.dom.statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!"; AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg"); AppState.dom.statusDot.style.display = "none"; setDimUI(false); AppState.flags.firstFix = true; SleighAudio.setIntensity(0); scheduleNextPoll(); return; }
-            if (AppState.lastFix) { animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng); AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!"; AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg"); AppState.dom.statusDot.style.display = "block"; AppState.dom.statusDot.className = "status-dot dot-stopped"; setDimUI(false); scheduleNextPoll(); return; }
+            if (AppState.lastFix) { animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng); const staleRoad = AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; AppState.dom.statusBox.textContent = staleRoad ? `🎄 Santa has stopped on ${staleRoad}!` : "🎄 Santa has stopped to spread cheer!"; AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg"); AppState.dom.statusDot.style.display = "block"; AppState.dom.statusDot.className = "status-dot dot-stopped"; setDimUI(false); scheduleNextPoll(); return; }
           } else { AppState.vars.staleSince = null; AppState.lastFix = { lat: data.lat, lng: data.lng }; }
 
           let visualPos = { lat: data.lat, lng: data.lng };
@@ -1358,8 +1357,8 @@
             if (AppState.flags.hasPassedSticky) { AppState.dom.statusBox.textContent = "🎄 Santa has just been here! 🎉"; setDimUI(false); }
             else if (etaSeconds !== null && !moving) { AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!"; setDimUI(false); }
             else if (etaSeconds !== null) { const mins = etaSeconds / 60; let etaText; if (mins < 2) etaText = "🎅 Santa is nearly here!"; else if (mins < 4) etaText = "🎅 Santa is ~3 mins away!"; else if (mins < 7) etaText = "🎅 Santa is ~5 mins away!"; else if (mins < 12) etaText = "🎅 Santa is ~10 mins away!"; else etaText = "🎅 Santa is ~15 mins away!"; AppState.dom.statusBox.textContent = etaText; setDimUI(mins > 45); }
-            else if (moving) { AppState.dom.statusBox.textContent = "🎅 Santa is out spreading joy!"; setDimUI(false); }
-            else { AppState.dom.statusBox.textContent = "🎄 Santa has stopped to spread cheer!"; setDimUI(false); }
+            else if (moving) { const currentRoad = AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; AppState.dom.statusBox.textContent = currentRoad ? `🎅 Santa is on ${currentRoad}!` : "🎅 Santa is out spreading joy!"; setDimUI(false); }
+            else { const currentRoad = AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; AppState.dom.statusBox.textContent = currentRoad ? `🎄 Santa has stopped on ${currentRoad}!` : "🎄 Santa has stopped to spread cheer!"; setDimUI(false); }
           }
 
           if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) { const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.vars.notifyLatLng); const isSmartEta = (etaSeconds !== null && etaSeconds < 180); const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600); if (isSmartEta || isCloseFallback) { AppState.flags.browserNotified = true; sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1"); fireBrowserNotification("🎅 Santa is nearly here!", "He's approaching your location! 🎄"); } }
