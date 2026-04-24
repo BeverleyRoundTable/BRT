@@ -491,6 +491,38 @@
       font-family: inherit; font-size: 12px; margin-top: 20px; cursor: pointer; transition: color 0.2s;
     }
     .ws-skip-btn:hover { color: var(--text); }
+
+    .ws-schedule { margin-bottom: 16px; }
+    .ws-schedule-title {
+      font-size: 11px; font-weight: 700; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 8px; padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ws-schedule-list { text-align: left; }
+    .ws-schedule-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .ws-schedule-item:last-child { border-bottom: none; }
+    .ws-schedule-date { color: var(--text-dim); font-weight: 700; white-space: nowrap; }
+    .ws-schedule-name { color: var(--text); font-weight: 800; text-align: right; }
+    .ws-schedule-item:first-child .ws-schedule-name { color: var(--gold); }
+    .ws-schedule-item:first-child .ws-schedule-date { color: var(--gold); }
+
+    @media (max-height: 750px) {
+      .ws-card { padding: 20px 24px; }
+      .ws-title { font-size: 32px; margin-bottom: 4px; }
+      .ws-card > p { font-size: 12px; margin-bottom: 0; }
+      .ws-countdown { font-size: 22px; padding: 10px; margin: 14px 0; }
+      .ws-item { margin-bottom: 14px; }
+      .ws-item-label { font-size: 11px; }
+      .ws-bar-wrap { height: 10px; }
+      .ws-status-text { font-size: 11px; margin-top: 3px; }
+      .ws-schedule-item { padding: 5px 0; font-size: 12px; }
+      .ws-skip-btn { margin-top: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -571,6 +603,11 @@
       
       <div id="wsCountdown" class="ws-countdown">-- : -- : --</div>
 
+      <div id="wsSchedule" class="ws-schedule" style="display: none;">
+        <div class="ws-schedule-title">🗓️ Upcoming Routes</div>
+        <div id="wsScheduleList" class="ws-schedule-list"></div>
+      </div>
+
       <div class="ws-item">
         <div class="ws-item-label"><span>Sleigh MOT & Waxing</span> <span id="wsMotPct">0%</span></div>
         <div class="ws-bar-wrap"><div id="wsMotBar" class="ws-bar-fill"></div></div>
@@ -603,9 +640,11 @@
             if (!routes || routes.length === 0) return false;
             const now = new Date();
             let targetDate = null;
-            const futureRoutes = routes.map(r => new Date(r.date)).filter(d => d > now).sort((a,b) => a-b);
-            if (futureRoutes.length > 0) {
-                targetDate = futureRoutes[0];
+            const futureRouteObjects = routes
+                .filter(r => new Date(r.date) > now)
+                .sort((a,b) => new Date(a.date) - new Date(b.date));
+            if (futureRouteObjects.length > 0) {
+                targetDate = new Date(futureRouteObjects[0].date);
             } else {
                 targetDate = new Date(now.getFullYear() + 1, 11, 1);
             }
@@ -613,6 +652,29 @@
             const daysUntil = (targetDate - now) / (1000 * 60 * 60 * 24);
             if (daysUntil < 7) return false; 
             document.getElementById('workshopOverlay').style.display = 'flex';
+            
+            // Build schedule list (first item highlighted in gold = "next" route)
+            if (futureRouteObjects.length > 0) {
+              const scheduleEl = document.getElementById('wsSchedule');
+              const listEl = document.getElementById('wsScheduleList');
+              scheduleEl.style.display = 'block';
+              const toShow = futureRouteObjects.slice(0, 8);
+              for (const r of toShow) {
+                const d = new Date(r.date);
+                const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                const item = document.createElement('div');
+                item.className = 'ws-schedule-item';
+                item.innerHTML = `<span class="ws-schedule-date">${dateStr}</span><span class="ws-schedule-name">${r.routeName || 'TBC'}</span>`;
+                listEl.appendChild(item);
+              }
+              if (futureRouteObjects.length > 8) {
+                const more = document.createElement('div');
+                more.style.cssText = 'text-align:center; color:var(--text-dim); font-size:11px; margin-top:6px; font-style:italic;';
+                more.textContent = `+ ${futureRouteObjects.length - 8} more routes`;
+                listEl.appendChild(more);
+              }
+            }
+            
             this.startLoop(startDate, targetDate);
             return true;
         },
