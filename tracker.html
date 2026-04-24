@@ -1436,7 +1436,7 @@
             const driverMarker = L.marker([0,0], {
               icon: L.divIcon({
                 className: 'driver-arrow',
-                html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));"></div>',
+                html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 75%; transition: transform 0.3s ease;"></div>',
                 iconSize: [28, 34],
                 iconAnchor: [14, 26]
               }),
@@ -1588,14 +1588,21 @@
               // Position the driver arrow
               driverMarker.setLatLng([vp.lat, vp.lng]);
               
-              // Rotate arrow to align precisely with route line
-              // heading = exact route bearing, smoothedHeading = smoothed map rotation
-              // The difference compensates for smoothing lag so arrow tracks the route line exactly
-              if (heading !== null && smoothedHeading !== null && typeof driverMarker.setRotation === 'function') {
-                let arrowAngle = heading - smoothedHeading;
-                while (arrowAngle > 180) arrowAngle -= 360;
-                while (arrowAngle < -180) arrowAngle += 360;
-                driverMarker.setRotation(arrowAngle);
+              // Rotate arrow to track the IMMEDIATE route line (not the smoothed map heading)
+              // Uses a very short look-ahead (3 points = ~30m) so the arrow follows
+              // the road directly underneath it, like Google Maps
+              if (isOnRoute && AppState.gpxRoute && smoothedHeading !== null) {
+                const idx = snapResult.point.index || AppState.vars.lastSnapIndex;
+                const arrowLookAhead = Math.min(idx + 3, AppState.gpxRoute.length - 1);
+                if (arrowLookAhead > idx) {
+                  const immediateRouteBearing = Utils.bearingBetween(AppState.gpxRoute[idx], AppState.gpxRoute[arrowLookAhead]);
+                  // Arrow angle = route bearing minus map bearing (compensate for map rotation)
+                  let arrowAngle = immediateRouteBearing - smoothedHeading;
+                  while (arrowAngle > 180) arrowAngle -= 360;
+                  while (arrowAngle < -180) arrowAngle += 360;
+                  const arrowDiv = driverMarker.getElement()?.querySelector('div');
+                  if (arrowDiv) arrowDiv.style.transform = `rotate(${arrowAngle}deg)`;
+                }
               }
               AppState.map.panTo([vp.lat, vp.lng], { animate: true, duration: 1 });
               
