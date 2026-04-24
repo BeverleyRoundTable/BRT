@@ -414,6 +414,7 @@ let waypoints = [];        // user-placed points [{lat, lng}]
 let snappedGeometry = [];  // road-snapped full geometry [[lat,lng],...]
 let uploadedPoints = [];   // from GPX upload (already dense or sparse)
 let detectedStreets = [];
+let roadNameMap = [];      // parallel to snappedGeometry — road name per point
 let geocodeAbort = false;
 let routingInProgress = false;
 
@@ -597,6 +598,22 @@ async function routeAllWaypoints() {
     // GeoJSON coordinates are [lng, lat] — flip to [lat, lng]
     const geojsonCoords = data.routes[0].geometry.coordinates;
     snappedGeometry = geojsonCoords.map(c => [c[1], c[0]]);
+
+    // Build road name map — each OSRM step has its own geometry sub-array
+    // Walk them sequentially to map every snapped point to its road name
+    roadNameMap = new Array(snappedGeometry.length).fill('');
+    try {
+      let geomIdx = 0;
+      for (const leg of (data.routes[0].legs || [])) {
+        for (const step of (leg.steps || [])) {
+          const stepName = (step.name || '').trim();
+          const stepGeomLen = step.geometry?.coordinates?.length || 0;
+          for (let g = 0; g < stepGeomLen && geomIdx < roadNameMap.length; g++, geomIdx++) {
+            roadNameMap[geomIdx] = stepName;
+          }
+        }
+      }
+    } catch(e) { console.warn('Road name mapping failed:', e); }
 
     // Extract street names from OSRM steps (instant, no Nominatim needed)
     const osrmStreets = [];
@@ -801,6 +818,29 @@ function densifyPoints(points, intervalM) {
   return dense;
 }
 
+// Densify WITH road names — maps each dense point to its source segment's road name
+function densifyWithNames(points, intervalM, names) {
+  if (points.length < 2) return { points: [...points], names: names.length ? [names[0]] : [''] };
+  const denseP = [points[0]];
+  const denseN = [names[0] || ''];
+  for (let i = 1; i < points.length; i++) {
+    const [lat1, lon1] = points[i-1];
+    const [lat2, lon2] = points[i];
+    const roadName = names[i] || names[i-1] || '';
+    const seg = haversine(lat1, lon1, lat2, lon2) * 1000;
+    if (seg <= intervalM) { denseP.push(points[i]); denseN.push(roadName); continue; }
+    const n = Math.ceil(seg / intervalM);
+    for (let s = 1; s <= n; s++) {
+      const t = s / n;
+      denseP.push([lat1+(lat2-lat1)*t, lon1+(lon2-lon1)*t]);
+      denseN.push(roadName);
+    }
+  }
+  return { points: denseP, names: denseN };
+}
+
+function escXml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 // ═══════════════════════════════════════
 // EXPORT
 // ═══════════════════════════════════════
@@ -809,9 +849,25 @@ function exportDenseGPX() {
   if (pts.length < 2) { alert('Build or upload a route first.'); return; }
 
   const density = parseInt(document.getElementById('densitySelect').value);
-  const dense = densifyPoints(pts, density);
 
-  const trkpts = dense.map(p => `      <trkpt lat="${p[0].toFixed(7)}" lon="${p[1].toFixed(7)}"></trkpt>`).join('\n');
+  // Use road-name-aware densification if we have names from OSRM
+  const hasNames = roadNameMap.length === pts.length && roadNameMap.some(n => n);
+  let dense, denseNames;
+
+  if (hasNames) {
+    const result = densifyWithNames(pts, density, roadNameMap);
+    dense = result.points;
+    denseNames = result.names;
+  } else {
+    dense = densifyPoints(pts, density);
+    denseNames = null;
+  }
+
+  const trkpts = dense.map((p, i) => {
+    const nameTag = denseNames && denseNames[i] ? `\n        <name>${escXml(denseNames[i])}</name>` : '';
+    return `      <trkpt lat="${p[0].toFixed(7)}" lon="${p[1].toFixed(7)}">${nameTag}\n      </trkpt>`;
+  }).join('\n');
+
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="TurboSanta Route Planner">
   <trk>
