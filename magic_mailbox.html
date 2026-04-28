@@ -230,7 +230,7 @@
   </header>
 
   <div id="initArea">
-    <div class="status"><div class="spinner"></div>Connecting to the North Pole...</div>
+    <div class="status"><div class="spinner"></div>Connecting to Lapland...</div>
   </div>
 
   <!-- ── STEP 1: RECORD ────────────────────────────────────── -->
@@ -368,7 +368,7 @@ async function init() {
   try {
     const res = await fetch(`${API}?function=getRoutes`);
     const data = await res.json();
-    if (!data.settings) throw new Error("Couldn't reach the North Pole.");
+    if (!data.settings) throw new Error("Couldn't reach Lapland.");
 
     const enabled = String(data.settings.enable_magic_mailbox || '').toUpperCase() === 'TRUE';
 
@@ -535,7 +535,7 @@ async function submitMessage(e) {
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
-  btn.textContent = "📬 Sending to North Pole...";
+  btn.textContent = "📬 Sending to Lapland...";
 
   try {
     const audioData = await blobToBase64(audioBlob);
