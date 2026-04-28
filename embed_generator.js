@@ -439,10 +439,24 @@ https://brt-23f.pages.dev/gift_aid?api=${ensureApi()}
 `;
 
 // ================================
-// Gift Aid
+// Memory Book
 // ================================
 const memorybookLink = `
 https://brt-23f.pages.dev/memory_book?api=${ensureApi()}
+`;
+
+// ================================
+// Magic Mailbox
+// ================================
+const magicmailboxLink = `
+https://brt-23f.pages.dev/magic_mailbox?api=${ensureApi()}
+`;
+
+// ================================
+// Santa Studio
+// ================================
+const santastudioLink = `
+https://brt-23f.pages.dev/santa_studio?api=${ensureApi()}
 `;
 
 // ================================
@@ -483,3 +497,5 @@ document.getElementById("routeplannerLink").value = routeplannerLink.trim();
 document.getElementById("countdownLink").value = countdownLink.trim();
 document.getElementById("giftaidLink").value = giftaidLink.trim();
 document.getElementById("memorybookLink").value = memorybookLink.trim();
+document.getElementById("magicmailboxLink").value = magicmailboxLink.trim();
+document.getElementById("santastudioLink").value = santastudioLink.trim();
