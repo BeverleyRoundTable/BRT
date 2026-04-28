@@ -597,7 +597,6 @@ function buildCard(msg, mode) {
 
   const ago = timeAgo(msg.timestamp);
   const childName = msg.childName || 'A child';
-  const route = msg.route || 'no route';
 
   const claimedBy = msg.claimedBy || '';
   const isMine = claimedBy && claimedBy === volunteerName;
@@ -632,7 +631,7 @@ function buildCard(msg, mode) {
     <div class="${summaryClass}" ${summaryClick}>
       <div class="msg-meta">
         <strong>${escapeHtml(childName)}</strong>
-        <span>${escapeHtml(route)} · ${ago}</span>
+        <span>${ago}</span>
         ${claimLineHtml}
       </div>
       ${pillHtml}
