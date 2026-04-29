@@ -486,6 +486,15 @@
       font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;
     }
     .ws-status-text { color: var(--text); font-size: 12px; margin-top: 6px; font-style: italic; }
+    .ws-donate {
+      display: inline-block; margin-top: 20px; padding: 12px 24px;
+      background: var(--gold); color: #000; font-weight: 700; font-size: 14px;
+      border-radius: 8px; text-decoration: none;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .ws-donate:hover { background: #e59d28; }
+    .ws-donate:active { transform: scale(0.97); }
+
     .ws-skip-btn {
       background: none; border: none; color: var(--text-muted); text-decoration: underline;
       font-family: inherit; font-size: 12px; margin-top: 20px; cursor: pointer; transition: color 0.2s;
@@ -627,6 +636,7 @@
       </div>
       
       <button class="ws-skip-btn" onclick="document.getElementById('workshopOverlay').remove();">Bypass & view map</button>
+      <a id="wsDonate" class="ws-donate hidden" href="#" target="_blank">🎁 Donate to support good causes</a>
     </div>
   </div>
 
@@ -1669,7 +1679,9 @@
         
         const don = apiData.donations || {};
         if (settings.donate_url && !AppState.flags.isKiosk) { 
-          AppState.dom.donateLink.href = settings.donate_url; 
+          AppState.dom.donateLink.href = settings.donate_url;
+          const wsD = document.getElementById('wsDonate');
+          if (wsD) { wsD.href = settings.donate_url; wsD.classList.remove('hidden'); } 
           AppState.dom.donateBox.style.display = "block"; 
           GamifiedDonation.init();
           if (don.target && don.target > 0) { 
