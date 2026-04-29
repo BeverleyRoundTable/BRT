@@ -218,6 +218,15 @@
   }
   .closed-card p { color: var(--text-dim); font-size: 14px; line-height: 1.6; }
 
+  .closed-donate {
+    display: inline-block; margin-top: 24px; padding: 14px 28px;
+    background: var(--gold); color: #000; font-weight: 700; font-size: 15px;
+    border-radius: 8px; text-decoration: none;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .closed-donate:hover { background: #e59d28; }
+  .closed-donate:active { transform: scale(0.97); }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -327,6 +336,9 @@
       <div class="icon">📭</div>
       <h2>Mailbox Closed</h2>
       <p>Santa's mailbox is closed at the moment. It opens during sleigh nights — keep an eye on the tracker!</p>
+      <a id="closedDonate" class="closed-donate hidden" href="#" target="_blank">
+        🎁 Donate to support good causes
+      </a>
     </div>
   </div>
 
@@ -376,7 +388,14 @@ async function init() {
     document.getElementById('sleighName').textContent =
       data.settings.sleigh_display_name || 'Santa Sleigh';
 
-    // Manual override — settings kill-switch
+    // Wire up donate link on closed card if URL exists
+    const donateUrl = (data.settings.donate_url || '').trim();
+    if (donateUrl) {
+      const dBtn = document.getElementById('closedDonate');
+      dBtn.href = donateUrl;
+      dBtn.classList.remove('hidden');
+    }
+
     if (!enabled) {
       document.getElementById('initArea').classList.add('hidden');
       document.getElementById('closedStep').classList.remove('hidden');
