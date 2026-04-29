@@ -376,7 +376,24 @@ async function init() {
     document.getElementById('sleighName').textContent =
       data.settings.sleigh_display_name || 'Santa Sleigh';
 
+    // Manual override — settings kill-switch
     if (!enabled) {
+      document.getElementById('initArea').classList.add('hidden');
+      document.getElementById('closedStep').classList.remove('hidden');
+      return;
+    }
+
+    // Route-window check — open only when a route is today or within 10 days
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const routeDates = (data.routes || []).map(r => new Date(r.date));
+    const hasRouteToday = (data.routes || []).some(r => r.date === todayStr);
+    const futureRoutes = routeDates.filter(d => d > now).sort((a, b) => a - b);
+    const daysUntilNext = futureRoutes.length > 0
+      ? (futureRoutes[0] - now) / (1000 * 60 * 60 * 24)
+      : Infinity;
+
+    if (!hasRouteToday && daysUntilNext >= 10) {
       document.getElementById('initArea').classList.add('hidden');
       document.getElementById('closedStep').classList.remove('hidden');
       return;
