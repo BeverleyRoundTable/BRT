@@ -331,8 +331,15 @@
 // ============================================================================
 // CONFIG — set this to your Apps Script Web App URL
 // ============================================================================
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwoYVj5hZO83Kyb-f_HzjUqcgmJIhVjx2Uf57YCt5lYWfkwsms5uF2Bu8UyL7UO3X7j/exec';
-const ACCESS_TOKEN = null; // set to a string if you've added ACCESS_TOKEN script property
+// ============================================================================
+// CONFIG — backend URL is read from ?api=... in the page URL, falling back to
+// the hardcoded value below for direct file:// testing. Optional ?token=...
+// is appended to every backend call when an access token is configured.
+// Example URL: https://brt-23f.pages.dev/socials?api=https://script.google.com/.../exec&token=secret
+// ============================================================================
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const BACKEND_URL = URL_PARAMS.get('api') || 'https://script.google.com/macros/s/AKfycbwoYVj5hZO83Kyb-f_HzjUqcgmJIhVjx2Uf57YCt5lYWfkwsms5uF2Bu8UyL7UO3X7j/exec';
+const ACCESS_TOKEN = URL_PARAMS.get('token') || null;
 const DEFAULT_LOGO_WHITE_URL = 'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/WhiteLogo.png';
 const DEFAULT_LOGO_GREY_URL  = 'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/GreyLogo.png';
 
