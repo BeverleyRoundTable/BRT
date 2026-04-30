@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0A1828">
+  <title>RT Social — Event Post Generator</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================================ */
+    /* CONFIG — change BACKEND_URL to your Apps Script Web App URL  */
+    /* ============================================================ */
+    /* (set in <script> tag at bottom of body)                      */
+    /* ============================================================ */
+
+    :root {
+      --bg:           #0A1828;
+      --bg-elevated:  #14273D;
+      --bg-card:      #1A2F47;
+      --border:       #2A4564;
+      --text:         #F5F1E8;
+      --text-dim:     #9DB1CC;
+      --text-muted:   #5C7595;
+      --accent:       #F1B400;
+      --accent-warm:  #FFC83D;
+      --danger:       #E85D5D;
+      --success:      #6FCF97;
+
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body:    'DM Sans', system-ui, sans-serif;
+
+      --radius:       4px;
+      --radius-lg:    8px;
+      --shadow:       0 1px 0 rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    body { min-height: 100vh; padding: 24px 16px 80px; background-image: radial-gradient(circle at 20% -10%, rgba(241, 180, 0, 0.06), transparent 50%), radial-gradient(circle at 90% 20%, rgba(241, 180, 0, 0.03), transparent 40%); }
+
+    .wrap { max-width: 880px; margin: 0 auto; }
+
+    /* HEADER */
+    header { padding: 32px 0 56px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+    .eyebrow { font-family: var(--font-body); font-size: 12px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+    h1 { font-family: var(--font-display); font-size: clamp(36px, 7vw, 64px); font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variation-settings: 'opsz' 144; }
+    h1 em { font-style: italic; font-weight: 400; color: var(--accent-warm); }
+    .tagline { color: var(--text-dim); font-size: 16px; margin-top: 16px; max-width: 560px; }
+
+    /* SECTIONS */
+    section { margin-bottom: 48px; }
+    .step-label { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+    .step-num { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: 0.1em; font-feature-settings: 'tnum'; }
+    .step-title { font-family: var(--font-display); font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+
+    /* CARD */
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow); }
+
+    /* FORM */
+    .grid { display: grid; gap: 16px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 540px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--text-dim); margin-bottom: 6px; letter-spacing: 0.02em; }
+    label .hint { color: var(--text-muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
+
+    input[type=text], input[type=date], input[type=time], textarea { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; font-family: var(--font-body); font-size: 15px; transition: border-color 0.15s, box-shadow 0.15s; }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241, 180, 0, 0.15); }
+    textarea { resize: vertical; min-height: 80px; font-family: var(--font-body); }
+    input[list] { font-feature-settings: 'tnum'; }
+
+    /* BUTTONS */
+    button { font-family: var(--font-body); font-size: 14px; font-weight: 600; padding: 12px 20px; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; transition: transform 0.05s, background 0.15s, border-color 0.15s; letter-spacing: 0.01em; }
+    button:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: var(--bg); }
+    .btn-primary:hover { background: var(--accent-warm); }
+    .btn-primary:disabled { background: var(--text-muted); cursor: not-allowed; opacity: 0.6; }
+    .btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover { background: var(--bg-elevated); border-color: var(--text-dim); }
+    .btn-tab { background: transparent; color: var(--text-dim); border: 1px solid var(--border); padding: 8px 16px; font-size: 13px; }
+    .btn-tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* IMAGE PICKER */
+    .source-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .source-pane { display: none; }
+    .source-pane.active { display: block; }
+
+    .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 16px; }
+    .image-tile { position: relative; aspect-ratio: 1; background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
+    .image-tile:hover { border-color: var(--accent); transform: scale(1.02); }
+    .image-tile.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241, 180, 0, 0.25); }
+    .image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .image-tile .meta { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 8px; background: linear-gradient(transparent, rgba(0,0,0,0.85)); font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
+    .image-tile .meta .match { color: var(--accent); font-size: 9px; }
+
+    .interpretation { background: var(--bg-elevated); border-radius: var(--radius); padding: 12px 14px; margin-top: 12px; font-size: 13px; color: var(--text-dim); border-left: 3px solid var(--accent); }
+    .interpretation strong { color: var(--text); font-weight: 600; }
+
+    /* DROPZONE */
+    .dropzone { border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 40px 20px; text-align: center; transition: border-color 0.15s, background 0.15s; cursor: pointer; }
+    .dropzone:hover, .dropzone.dragging { border-color: var(--accent); background: var(--bg-elevated); }
+    .dropzone p { color: var(--text-dim); }
+    .dropzone .big { font-family: var(--font-display); font-size: 18px; color: var(--text); margin-bottom: 6px; }
+    .dropzone input { display: none; }
+
+    /* COMPOSER */
+    .composer-grid { display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
+    @media (max-width: 720px) { .composer-grid { grid-template-columns: 1fr; } }
+
+    .canvas-wrap { background: #000; border-radius: var(--radius); overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 300px; }
+    canvas { max-width: 100%; max-height: 600px; height: auto; display: block; }
+
+    .controls { display: flex; flex-direction: column; gap: 16px; }
+    .control-block { background: var(--bg-elevated); border-radius: var(--radius); padding: 14px; }
+    .control-block h4 { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+    .control-block .btn-row button { padding: 8px 12px; font-size: 12px; }
+
+    .logo-preview { width: 60px; height: 60px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); margin-top: 10px; display: flex; align-items: center; justify-content: center; padding: 6px; }
+    .logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+    /* OUTPUT */
+    .copy-block { background: var(--bg-elevated); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; position: relative; }
+    .copy-block .label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .copy-block .label span { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; }
+    .copy-block .copy-btn { background: transparent; color: var(--text-dim); border: 1px solid var(--border); padding: 4px 10px; font-size: 11px; }
+    .copy-block .copy-btn:hover { color: var(--text); border-color: var(--text-dim); }
+    .copy-block .copy-btn.copied { background: var(--success); color: var(--bg); border-color: var(--success); }
+    .copy-block .text { color: var(--text); font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+
+    /* STATUS */
+    .status { padding: 12px 16px; border-radius: var(--radius); font-size: 14px; margin-top: 16px; display: none; }
+    .status.show { display: block; }
+    .status.info { background: var(--bg-elevated); color: var(--text-dim); border-left: 3px solid var(--accent); }
+    .status.error { background: rgba(232, 93, 93, 0.1); color: var(--danger); border-left: 3px solid var(--danger); }
+    .status.success { background: rgba(111, 207, 151, 0.1); color: var(--success); border-left: 3px solid var(--success); }
+
+    /* SPINNER */
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--text-muted); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -2px; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* HIDDEN HELPER */
+    [hidden] { display: none !important; }
+
+    /* FOOTER */
+    footer { margin-top: 80px; padding: 24px 0; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="eyebrow">Round Table · Social Tools</div>
+      <h1>Make a <em>post</em> for your next event.</h1>
+      <p class="tagline">Pick an event, choose a photo, get ready-to-share images and captions in three clicks.</p>
+    </header>
+
+    <!-- STEP 1: EVENT DETAILS -->
+    <section>
+      <div class="step-label"><span class="step-num">01</span><span class="step-title">Event details</span></div>
+      <div class="card">
+        <div class="grid grid-2">
+          <div>
+            <label for="f-table">Your table <span class="hint">(typos OK)</span></label>
+            <input type="text" id="f-table" list="dl-tables" placeholder="e.g. Beverley" autocomplete="off">
+            <datalist id="dl-tables"></datalist>
+          </div>
+          <div>
+            <label for="f-event">Event <span class="hint">(typos OK)</span></label>
+            <input type="text" id="f-event" list="dl-events" placeholder="e.g. Rage Room" autocomplete="off">
+            <datalist id="dl-events"></datalist>
+          </div>
+          <div>
+            <label for="f-date">Date</label>
+            <input type="date" id="f-date">
+          </div>
+          <div>
+            <label for="f-time">Time</label>
+            <input type="time" id="f-time">
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <label for="f-location">Location</label>
+            <input type="text" id="f-location" placeholder="e.g. Hull Smash Room">
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <label for="f-notes">Anything else? <span class="hint">(charity, dress code, what to bring)</span></label>
+            <textarea id="f-notes" placeholder="e.g. Charity fundraiser for the local hospice. Bring mates."></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 2: IMAGE -->
+    <section>
+      <div class="step-label"><span class="step-num">02</span><span class="step-title">Choose an image</span></div>
+      <div class="card">
+        <div class="source-tabs">
+          <button class="btn-tab active" data-pane="library">From library</button>
+          <button class="btn-tab" data-pane="upload">Upload your own</button>
+        </div>
+
+        <!-- Library pane -->
+        <div class="source-pane active" data-pane="library">
+          <button class="btn-primary" id="btn-search">Search the library</button>
+          <div class="status info" id="search-status"></div>
+          <div class="interpretation" id="interpretation" hidden></div>
+          <div class="image-grid" id="image-grid"></div>
+        </div>
+
+        <!-- Upload pane -->
+        <div class="source-pane" data-pane="upload">
+          <label for="file-upload" class="dropzone" id="dropzone">
+            <div class="big">Drop an image here</div>
+            <p>Or click to choose a file from your device</p>
+            <input type="file" id="file-upload" accept="image/*">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 3: COMPOSE -->
+    <section id="step-compose" hidden>
+      <div class="step-label"><span class="step-num">03</span><span class="step-title">Compose</span></div>
+      <div class="card">
+        <div class="composer-grid">
+          <div>
+            <div class="btn-row" style="margin-bottom: 16px;">
+              <button class="btn-tab active" data-aspect="square">Square · IG Feed</button>
+              <button class="btn-tab" data-aspect="landscape">Landscape · FB</button>
+              <button class="btn-tab" data-aspect="portrait">Portrait · Story / TikTok</button>
+            </div>
+            <div class="canvas-wrap"><canvas id="preview"></canvas></div>
+            <div class="status info" id="compose-status"></div>
+          </div>
+          <div class="controls">
+            <div class="control-block">
+              <h4>Logo</h4>
+              <div class="btn-row">
+                <button class="btn-secondary" id="btn-logo-upload">Upload logo</button>
+                <button class="btn-secondary" id="btn-logo-clear">Use default</button>
+              </div>
+              <input type="file" id="logo-upload" accept="image/*" hidden>
+              <div class="logo-preview" id="logo-preview"><span style="color: var(--text-muted); font-size: 11px;">Default RT</span></div>
+            </div>
+            <div class="control-block">
+              <h4>Generate</h4>
+              <button class="btn-primary" id="btn-generate" style="width: 100%;">Generate post</button>
+            </div>
+            <div class="control-block" id="export-block" hidden>
+              <h4>Download</h4>
+              <button class="btn-secondary" id="btn-download" style="width: 100%;">Download PNG</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 4: COPY -->
+    <section id="step-copy" hidden>
+      <div class="step-label"><span class="step-num">04</span><span class="step-title">Copy &amp; share</span></div>
+      <div class="card" id="copy-output"></div>
+    </section>
+
+    <footer>
+      RT Social v1 · Built for Round Table GB&I
+    </footer>
+  </div>
+
+<script>
+// ============================================================================
+// CONFIG — set this to your Apps Script Web App URL
+// ============================================================================
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwoYVj5hZO83Kyb-f_HzjUqcgmJIhVjx2Uf57YCt5lYWfkwsms5uF2Bu8UyL7UO3X7j/exec';
+const ACCESS_TOKEN = null; // set to a string if you've added ACCESS_TOKEN script property
+
+// Aspect ratio dimensions (width x height)
+const ASPECTS = {
+  square:    { w: 1080, h: 1080, label: 'Square (Instagram feed)' },
+  landscape: { w: 1200, h: 630,  label: 'Landscape (Facebook)' },
+  portrait:  { w: 1080, h: 1920, label: 'Portrait (Story / TikTok)' }
+};
+
+// ============================================================================
+// STATE
+// ============================================================================
+const state = {
+  vocab: null,
+  searchInterpretation: null,
+  searchMatches: [],
+  selectedMatch: null,        // {fileId, ...} or {imageData, mimeType}
+  loadedImage: null,          // HTMLImageElement, fully loaded
+  analysis: null,             // /analyze-image response
+  copy: null,                 // /generate-text response
+  customLogo: null,           // HTMLImageElement
+  aspect: 'square'
+};
+
+// ============================================================================
+// API HELPERS
+// ============================================================================
+
+async function api(action, body, method = 'POST') {
+  const tokenSuffix = ACCESS_TOKEN ? `&token=${encodeURIComponent(ACCESS_TOKEN)}` : '';
+  const url = `${BACKEND_URL}?action=${action}${tokenSuffix}`;
+  const opts = { method };
+  if (method === 'POST' && body) {
+    opts.headers = { 'Content-Type': 'text/plain;charset=utf-8' }; // text/plain to avoid CORS preflight
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opts);
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Unknown error');
+  return json.data;
+}
+
+async function loadVocab() {
+  try {
+    state.vocab = await api('tags', null, 'GET');
+    fillDatalist('dl-tables', state.vocab.tables);
+    fillDatalist('dl-events', state.vocab.events);
+  } catch (err) {
+    console.warn('Could not load vocab:', err.message);
+  }
+}
+
+function fillDatalist(id, items) {
+  const dl = document.getElementById(id);
+  dl.innerHTML = '';
+  items.forEach(item => {
+    const opt = document.createElement('option');
+    opt.value = item;
+    dl.appendChild(opt);
+  });
+}
+
+// ============================================================================
+// STATUS HELPERS
+// ============================================================================
+
+function status(elementId, message, type = 'info') {
+  const el = document.getElementById(elementId);
+  el.className = `status ${type} show`;
+  el.innerHTML = type === 'info' && message.startsWith('Loading')
+    ? `<span class="spinner"></span>${message}`
+    : message;
+}
+
+function clearStatus(elementId) {
+  document.getElementById(elementId).className = 'status';
+}
+
+// ============================================================================
+// STEP 2 — IMAGE SOURCE
+// ============================================================================
+
+// Tabs
+document.querySelectorAll('.source-tabs .btn-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.source-tabs .btn-tab').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.source-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === btn.dataset.pane));
+  });
+});
+
+// Search
+document.getElementById('btn-search').addEventListener('click', async () => {
+  const table = document.getElementById('f-table').value.trim();
+  const event = document.getElementById('f-event').value.trim();
+  if (!event) {
+    status('search-status', 'Enter an event name first.', 'error');
+    return;
+  }
+  document.getElementById('btn-search').disabled = true;
+  status('search-status', 'Loading matches...');
+  document.getElementById('image-grid').innerHTML = '';
+  document.getElementById('interpretation').hidden = true;
+
+  try {
+    const result = await api('search', { table, event });
+    state.searchInterpretation = result.interpretation;
+    state.searchMatches = result.matches;
+
+    // Show interpretation
+    const interp = result.interpretation;
+    const interpEl = document.getElementById('interpretation');
+    const interpBits = [];
+    if (interp.table) interpBits.push(`Table: <strong>${interp.table}</strong>`);
+    if (interp.eventTags && interp.eventTags.length) interpBits.push(`Event: <strong>${interp.eventTags.join(', ')}</strong>`);
+    interpEl.innerHTML = `Interpreted as → ${interpBits.join(' · ')}`;
+    interpEl.hidden = false;
+
+    if (!result.matches.length) {
+      status('search-status', 'No matches found. Try uploading your own image instead.', 'error');
+      return;
+    }
+    clearStatus('search-status');
+    renderImageGrid(result.matches);
+  } catch (err) {
+    status('search-status', `Search failed: ${err.message}`, 'error');
+  } finally {
+    document.getElementById('btn-search').disabled = false;
+  }
+});
+
+function renderImageGrid(matches) {
+  const grid = document.getElementById('image-grid');
+  grid.innerHTML = '';
+  matches.forEach(m => {
+    const tile = document.createElement('div');
+    tile.className = 'image-tile';
+    tile.innerHTML = `
+      <img src="${m.thumbUrl}" alt="" loading="lazy" referrerpolicy="no-referrer">
+      <div class="meta">
+        <div class="match">${m.matchDescription}</div>
+        ${m.event} · ${m.table}${m.tableNumber ? ' ' + m.tableNumber : ''}
+      </div>
+    `;
+    tile.addEventListener('click', () => selectLibraryImage(m, tile));
+    grid.appendChild(tile);
+  });
+}
+
+async function selectLibraryImage(match, tileEl) {
+  document.querySelectorAll('.image-tile').forEach(t => t.classList.toggle('selected', t === tileEl));
+  state.selectedMatch = match;
+  status('search-status', 'Loading full-size image...');
+
+  try {
+    const imgData = await api('get-image-data', { fileId: match.fileId });
+    await loadImageFromData(`data:${imgData.mimeType};base64,${imgData.imageData}`);
+    clearStatus('search-status');
+    showComposer();
+  } catch (err) {
+    status('search-status', `Couldn't load image: ${err.message}`, 'error');
+  }
+}
+
+// Upload
+const fileInput = document.getElementById('file-upload');
+const dropzone = document.getElementById('dropzone');
+
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+['dragover', 'dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('dragging'); }));
+['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('dragging'); }));
+dropzone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+async function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = reader.result;
+    const base64 = dataUrl.split(',')[1];
+    state.selectedMatch = { imageData: base64, mimeType: file.type, isUpload: true };
+    await loadImageFromData(dataUrl);
+    showComposer();
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadImageFromData(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => { state.loadedImage = img; resolve(img); };
+    img.onerror = () => reject(new Error('Image failed to load'));
+    img.src = dataUrl;
+  });
+}
+
+// ============================================================================
+// STEP 3 — COMPOSER
+// ============================================================================
+
+function showComposer() {
+  document.getElementById('step-compose').hidden = false;
+  setTimeout(() => document.getElementById('step-compose').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  drawCanvas();
+}
+
+// Aspect ratio tabs
+document.querySelectorAll('[data-aspect]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-aspect]').forEach(b => b.classList.toggle('active', b === btn));
+    state.aspect = btn.dataset.aspect;
+    drawCanvas();
+  });
+});
+
+// Logo upload
+document.getElementById('btn-logo-upload').addEventListener('click', () => document.getElementById('logo-upload').click());
+document.getElementById('logo-upload').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      state.customLogo = img;
+      const preview = document.getElementById('logo-preview');
+      preview.innerHTML = '';
+      const previewImg = new Image();
+      previewImg.src = reader.result;
+      preview.appendChild(previewImg);
+      drawCanvas();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('btn-logo-clear').addEventListener('click', () => {
+  state.customLogo = null;
+  document.getElementById('logo-preview').innerHTML = '<span style="color: var(--text-muted); font-size: 11px;">Default RT</span>';
+  drawCanvas();
+});
+
+// Generate
+document.getElementById('btn-generate').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = true;
+  status('compose-status', 'Generating with AI...');
+
+  const eventName = document.getElementById('f-event').value.trim();
+  if (!eventName) {
+    status('compose-status', 'Please fill in the event name in step 1.', 'error');
+    btn.disabled = false;
+    return;
+  }
+
+  const interp = state.searchInterpretation || {};
+  const tableName = interp.table || document.getElementById('f-table').value.trim() || null;
+  const tableNumber = state.selectedMatch && state.selectedMatch.tableNumber
+    ? state.selectedMatch.tableNumber : null;
+
+  // Run analysis + text generation in parallel
+  const analyzeBody = state.selectedMatch.fileId
+    ? { fileId: state.selectedMatch.fileId }
+    : { imageData: state.selectedMatch.imageData, mimeType: state.selectedMatch.mimeType };
+
+  const textBody = {
+    table: tableName,
+    tableNumber: tableNumber,
+    eventName: eventName,
+    dateText: formatDate(),
+    timeText: document.getElementById('f-time').value || null,
+    locationText: document.getElementById('f-location').value.trim() || null,
+    userPrompt: document.getElementById('f-notes').value.trim() || null
+  };
+
+  try {
+    const [analysis, copy] = await Promise.all([
+      api('analyze-image', analyzeBody),
+      api('generate-text', textBody)
+    ]);
+    state.analysis = analysis;
+    state.copy = copy;
+    drawCanvas();
+    renderCopy();
+    document.getElementById('export-block').hidden = false;
+    document.getElementById('step-copy').hidden = false;
+    status('compose-status', 'Done. Tweak aspect ratio or download below.', 'success');
+  } catch (err) {
+    status('compose-status', `Generation failed: ${err.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function formatDate() {
+  const v = document.getElementById('f-date').value;
+  if (!v) return null;
+  const d = new Date(v + 'T12:00:00');
+  return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// ============================================================================
+// CANVAS RENDERING
+// ============================================================================
+
+function drawCanvas() {
+  if (!state.loadedImage) return;
+  const canvas = document.getElementById('preview');
+  const aspect = ASPECTS[state.aspect];
+  canvas.width = aspect.w;
+  canvas.height = aspect.h;
+  const ctx = canvas.getContext('2d');
+
+  // 1. Cover-fit the image to canvas
+  drawImageCover(ctx, state.loadedImage, 0, 0, aspect.w, aspect.h);
+
+  // 2. Determine text positioning from analysis (or sensible defaults)
+  const analysis = state.analysis || defaultAnalysis();
+
+  // 3. Draw overlay panel if needed (or always for readability)
+  const eventName = document.getElementById('f-event').value.trim();
+  const dateText = formatDate();
+  const timeText = document.getElementById('f-time').value;
+  const locationText = document.getElementById('f-location').value.trim();
+  const tableName = (state.searchInterpretation && state.searchInterpretation.table) || document.getElementById('f-table').value.trim();
+  const tableNumber = state.selectedMatch && state.selectedMatch.tableNumber;
+
+  if (!eventName) return;
+
+  // Compute text region in canvas pixels — bottom band overlay
+  const bandHeight = aspect.h * 0.32;
+  const bandY = aspect.h - bandHeight;
+  const gradient = ctx.createLinearGradient(0, bandY, 0, aspect.h);
+  gradient.addColorStop(0, 'rgba(10, 24, 40, 0)');
+  gradient.addColorStop(0.3, 'rgba(10, 24, 40, 0.7)');
+  gradient.addColorStop(1, 'rgba(10, 24, 40, 0.95)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, bandY, aspect.w, bandHeight);
+
+  // 4. Draw text
+  const padding = aspect.w * 0.05;
+  const textColor = '#F5F1E8';
+  const accentColor = '#F1B400';
+
+  // Event name (large)
+  ctx.fillStyle = textColor;
+  ctx.font = `800 ${Math.round(aspect.w * 0.07)}px Fraunces, Georgia, serif`;
+  ctx.textBaseline = 'bottom';
+  ctx.textAlign = 'left';
+  const eventLines = wrapText(ctx, eventName, aspect.w - padding * 2);
+  let cy = aspect.h - padding - (aspect.w * 0.018); // bottom anchor
+  // Draw subtitle line (date · time · location) first to compute position
+  const subParts = [];
+  if (dateText) subParts.push(dateText);
+  if (timeText) subParts.push(formatTime(timeText));
+  if (locationText) subParts.push(locationText);
+  const subText = subParts.join(' · ');
+
+  ctx.font = `500 ${Math.round(aspect.w * 0.022)}px DM Sans, sans-serif`;
+  ctx.fillStyle = '#9DB1CC';
+  if (subText) {
+    ctx.fillText(subText, padding, cy);
+    cy -= aspect.w * 0.028;
+  }
+
+  // Event title above subtitle
+  ctx.font = `800 ${Math.round(aspect.w * 0.07)}px Fraunces, Georgia, serif`;
+  ctx.fillStyle = textColor;
+  for (let i = eventLines.length - 1; i >= 0; i--) {
+    ctx.fillText(eventLines[i], padding, cy);
+    cy -= aspect.w * 0.075;
+  }
+
+  // Eyebrow (table name)
+  if (tableName) {
+    ctx.font = `700 ${Math.round(aspect.w * 0.018)}px DM Sans, sans-serif`;
+    ctx.fillStyle = accentColor;
+    const eyebrow = tableNumber ? `${tableName.toUpperCase()} ROUND TABLE · ${tableNumber}` : `${tableName.toUpperCase()} ROUND TABLE`;
+    // Letter-spacing simulation
+    drawSpacedText(ctx, eyebrow, padding, cy - aspect.w * 0.005, aspect.w * 0.0015);
+  }
+
+  // 5. Logo (top-right corner by default, or per analysis)
+  drawLogo(ctx, aspect);
+}
+
+function drawImageCover(ctx, img, x, y, w, h) {
+  const imgRatio = img.width / img.height;
+  const boxRatio = w / h;
+  let sx, sy, sw, sh;
+  if (imgRatio > boxRatio) {
+    // image is wider, crop sides
+    sh = img.height;
+    sw = img.height * boxRatio;
+    sx = (img.width - sw) / 2;
+    sy = 0;
+  } else {
+    sw = img.width;
+    sh = img.width / boxRatio;
+    sx = 0;
+    sy = (img.height - sh) / 2;
+  }
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function drawSpacedText(ctx, text, x, y, spacing) {
+  let cx = x;
+  for (const ch of text) {
+    ctx.fillText(ch, cx, y);
+    cx += ctx.measureText(ch).width + spacing;
+  }
+}
+
+function formatTime(t) {
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const h12 = h % 12 || 12;
+  return m === 0 ? `${h12}${ampm}` : `${h12}.${String(m).padStart(2, '0')}${ampm}`;
+}
+
+function drawLogo(ctx, aspect) {
+  const logoSize = aspect.w * 0.12;
+  const margin = aspect.w * 0.05;
+  const x = aspect.w - logoSize - margin;
+  const y = margin;
+
+  if (state.customLogo) {
+    const img = state.customLogo;
+    const ratio = img.width / img.height;
+    const drawW = ratio > 1 ? logoSize : logoSize * ratio;
+    const drawH = ratio > 1 ? logoSize / ratio : logoSize;
+    ctx.drawImage(img, x + (logoSize - drawW), y, drawW, drawH);
+  } else {
+    // Default RT badge: simple yellow circle with "RT" text
+    ctx.save();
+    ctx.fillStyle = '#F1B400';
+    ctx.beginPath();
+    ctx.arc(x + logoSize / 2, y + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0A1828';
+    ctx.font = `800 ${Math.round(logoSize * 0.42)}px Fraunces, Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('RT', x + logoSize / 2, y + logoSize / 2 + logoSize * 0.02);
+    ctx.restore();
+  }
+}
+
+function defaultAnalysis() {
+  return {
+    safeZones: [{ x: 0, y: 0.7, w: 1, h: 0.3 }],
+    recommendedTextColor: '#F5F1E8',
+    needsOverlay: true,
+    logoCorners: ['top-right']
+  };
+}
+
+// ============================================================================
+// COPY OUTPUT
+// ============================================================================
+
+function renderCopy() {
+  const c = state.copy;
+  const out = document.getElementById('copy-output');
+  out.innerHTML = '';
+
+  const blocks = [
+    { label: 'Short', text: c.short },
+    { label: 'Medium', text: c.medium },
+    { label: 'Long', text: c.long },
+    { label: 'Hashtags', text: (c.hashtags || []).map(h => h.startsWith('#') ? h : '#' + h).join(' ') }
+  ];
+
+  blocks.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'copy-block';
+    div.innerHTML = `
+      <div class="label">
+        <span>${b.label}</span>
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="text">${escapeHtml(b.text)}</div>
+    `;
+    div.querySelector('.copy-btn').addEventListener('click', async (e) => {
+      try {
+        await navigator.clipboard.writeText(b.text);
+        e.target.textContent = 'Copied';
+        e.target.classList.add('copied');
+        setTimeout(() => { e.target.textContent = 'Copy'; e.target.classList.remove('copied'); }, 1500);
+      } catch (err) {
+        e.target.textContent = 'Failed';
+      }
+    });
+    out.appendChild(div);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ============================================================================
+// DOWNLOAD
+// ============================================================================
+
+document.getElementById('btn-download').addEventListener('click', () => {
+  const canvas = document.getElementById('preview');
+  const event = (document.getElementById('f-event').value.trim() || 'event').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+  const link = document.createElement('a');
+  link.download = `rt-${event}-${state.aspect}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+// ============================================================================
+// LIVE REDRAW ON FORM CHANGES
+// ============================================================================
+
+['f-event', 'f-table', 'f-date', 'f-time', 'f-location'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    if (state.loadedImage) drawCanvas();
+  });
+});
+
+// ============================================================================
+// INIT
+// ============================================================================
+
+loadVocab();
+</script>
+</body>
+</html>
