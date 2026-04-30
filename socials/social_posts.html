@@ -8,7 +8,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;600;700;800;900&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     /* ============================================================ */
@@ -18,44 +18,51 @@
     /* ============================================================ */
 
     :root {
-      --bg:           #0A1828;
-      --bg-elevated:  #14273D;
-      --bg-card:      #1A2F47;
-      --border:       #2A4564;
-      --text:         #F5F1E8;
-      --text-dim:     #9DB1CC;
-      --text-muted:   #5C7595;
-      --accent:       #F1B400;
-      --accent-warm:  #FFC83D;
+      /* Official RT brand palette */
+      --rt-yellow:    #FBAF33;  /* Golden Yellow */
+      --rt-grey:      #1D1D1A;  /* Table Grey */
+      --rt-black:     #000000;
+      --rt-white:     #FFFFFF;
+
+      /* UI palette derived from brand */
+      --bg:           #0E0E0C;
+      --bg-elevated:  #1D1D1A;
+      --bg-card:      #161614;
+      --border:       #2E2E29;
+      --text:         #FFFFFF;
+      --text-dim:     #B5B5AE;
+      --text-muted:   #75756E;
+      --accent:       #FBAF33;
+      --accent-hover: #FFC358;
       --danger:       #E85D5D;
       --success:      #6FCF97;
 
-      --font-display: 'Fraunces', Georgia, serif;
-      --font-body:    'DM Sans', system-ui, sans-serif;
+      --font-display: 'Saira', system-ui, sans-serif;
+      --font-body:    'Open Sans', system-ui, sans-serif;
 
-      --radius:       4px;
-      --radius-lg:    8px;
-      --shadow:       0 1px 0 rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.4);
+      --radius:       2px;
+      --radius-lg:    4px;
+      --shadow:       0 1px 0 rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.6);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
-    body { min-height: 100vh; padding: 24px 16px 80px; background-image: radial-gradient(circle at 20% -10%, rgba(241, 180, 0, 0.06), transparent 50%), radial-gradient(circle at 90% 20%, rgba(241, 180, 0, 0.03), transparent 40%); }
+    body { min-height: 100vh; padding: 24px 16px 80px; background-image: radial-gradient(circle at 20% -10%, rgba(251, 175, 51, 0.08), transparent 50%), radial-gradient(circle at 90% 20%, rgba(251, 175, 51, 0.04), transparent 40%); }
 
     .wrap { max-width: 880px; margin: 0 auto; }
 
     /* HEADER */
     header { padding: 32px 0 56px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
-    .eyebrow { font-family: var(--font-body); font-size: 12px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
-    h1 { font-family: var(--font-display); font-size: clamp(36px, 7vw, 64px); font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variation-settings: 'opsz' 144; }
-    h1 em { font-style: italic; font-weight: 400; color: var(--accent-warm); }
-    .tagline { color: var(--text-dim); font-size: 16px; margin-top: 16px; max-width: 560px; }
+    .eyebrow { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+    h1 { font-family: var(--font-display); font-size: clamp(40px, 8vw, 72px); font-weight: 800; line-height: 0.95; letter-spacing: -0.01em; text-transform: uppercase; font-stretch: 110%; }
+    h1 .yellow { color: var(--accent); }
+    .tagline { color: var(--text-dim); font-size: 16px; margin-top: 20px; max-width: 560px; }
 
     /* SECTIONS */
     section { margin-bottom: 48px; }
-    .step-label { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
-    .step-num { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: 0.1em; font-feature-settings: 'tnum'; }
-    .step-title { font-family: var(--font-display); font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+    .step-label { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
+    .step-num { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 0.15em; font-feature-settings: 'tnum'; }
+    .step-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: 0.01em; text-transform: uppercase; font-stretch: 110%; }
 
     /* CARD */
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow); }
@@ -74,15 +81,15 @@
     input[list] { font-feature-settings: 'tnum'; }
 
     /* BUTTONS */
-    button { font-family: var(--font-body); font-size: 14px; font-weight: 600; padding: 12px 20px; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; transition: transform 0.05s, background 0.15s, border-color 0.15s; letter-spacing: 0.01em; }
+    button { font-family: var(--font-display); font-size: 13px; font-weight: 700; padding: 12px 20px; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; transition: transform 0.05s, background 0.15s, border-color 0.15s; letter-spacing: 0.06em; text-transform: uppercase; }
     button:active { transform: translateY(1px); }
-    .btn-primary { background: var(--accent); color: var(--bg); }
-    .btn-primary:hover { background: var(--accent-warm); }
+    .btn-primary { background: var(--accent); color: var(--rt-grey); }
+    .btn-primary:hover { background: var(--accent-hover); }
     .btn-primary:disabled { background: var(--text-muted); cursor: not-allowed; opacity: 0.6; }
     .btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
     .btn-secondary:hover { background: var(--bg-elevated); border-color: var(--text-dim); }
-    .btn-tab { background: transparent; color: var(--text-dim); border: 1px solid var(--border); padding: 8px 16px; font-size: 13px; }
-    .btn-tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .btn-tab { background: transparent; color: var(--text-dim); border: 1px solid var(--border); padding: 8px 16px; font-size: 12px; }
+    .btn-tab.active { background: var(--accent); color: var(--rt-grey); border-color: var(--accent); }
     .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
     /* IMAGE PICKER */
@@ -117,8 +124,8 @@
 
     .controls { display: flex; flex-direction: column; gap: 16px; }
     .control-block { background: var(--bg-elevated); border-radius: var(--radius); padding: 14px; }
-    .control-block h4 { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
-    .control-block .btn-row button { padding: 8px 12px; font-size: 12px; }
+    .control-block h4 { font-family: var(--font-display); font-size: 12px; font-weight: 700; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+    .control-block .btn-row button { padding: 8px 12px; font-size: 11px; }
 
     .logo-preview { width: 60px; height: 60px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); margin-top: 10px; display: flex; align-items: center; justify-content: center; padding: 6px; }
     .logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -126,7 +133,7 @@
     /* OUTPUT */
     .copy-block { background: var(--bg-elevated); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; position: relative; }
     .copy-block .label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .copy-block .label span { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; }
+    .copy-block .label span { font-family: var(--font-display); font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.14em; text-transform: uppercase; }
     .copy-block .copy-btn { background: transparent; color: var(--text-dim); border: 1px solid var(--border); padding: 4px 10px; font-size: 11px; }
     .copy-block .copy-btn:hover { color: var(--text); border-color: var(--text-dim); }
     .copy-block .copy-btn.copied { background: var(--success); color: var(--bg); border-color: var(--success); }
@@ -155,8 +162,8 @@
 
     <header>
       <div class="eyebrow">Round Table · Social Tools</div>
-      <h1>Make a <em>post</em> for your next event.</h1>
-      <p class="tagline">Pick an event, choose a photo, get ready-to-share images and captions in three clicks.</p>
+      <h1>Make a <span class="yellow">post</span> for your next event.</h1>
+      <p class="tagline">Pick an event. Pick a photo. Get ready-to-share images and captions in three clicks.</p>
     </header>
 
     <!-- STEP 1: EVENT DETAILS -->
@@ -478,7 +485,12 @@ function loadImageFromData(dataUrl) {
 function showComposer() {
   document.getElementById('step-compose').hidden = false;
   setTimeout(() => document.getElementById('step-compose').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-  drawCanvas();
+  // Ensure custom fonts are loaded before rendering canvas — otherwise it'll use system fallback
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => drawCanvas());
+  } else {
+    drawCanvas();
+  }
 }
 
 // Aspect ratio tabs
@@ -597,76 +609,108 @@ function drawCanvas() {
   canvas.height = aspect.h;
   const ctx = canvas.getContext('2d');
 
+  const W = aspect.w, H = aspect.h;
+
   // 1. Cover-fit the image to canvas
-  drawImageCover(ctx, state.loadedImage, 0, 0, aspect.w, aspect.h);
+  drawImageCover(ctx, state.loadedImage, 0, 0, W, H);
 
-  // 2. Determine text positioning from analysis (or sensible defaults)
-  const analysis = state.analysis || defaultAnalysis();
-
-  // 3. Draw overlay panel if needed (or always for readability)
+  // 2. Pull text content from form
   const eventName = document.getElementById('f-event').value.trim();
+  if (!eventName) return;
+
   const dateText = formatDate();
   const timeText = document.getElementById('f-time').value;
   const locationText = document.getElementById('f-location').value.trim();
   const tableName = (state.searchInterpretation && state.searchInterpretation.table) || document.getElementById('f-table').value.trim();
   const tableNumber = state.selectedMatch && state.selectedMatch.tableNumber;
 
-  if (!eventName) return;
+  // 3. Bottom darkening gradient (RT Black) — generous because template style relies on text contrast
+  const bandTop = state.aspect === 'portrait' ? H * 0.55 : H * 0.50;
+  const grad = ctx.createLinearGradient(0, bandTop, 0, H);
+  grad.addColorStop(0,   'rgba(0,0,0,0)');
+  grad.addColorStop(0.4, 'rgba(0,0,0,0.55)');
+  grad.addColorStop(1,   'rgba(0,0,0,0.92)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, bandTop, W, H - bandTop);
 
-  // Compute text region in canvas pixels — bottom band overlay
-  const bandHeight = aspect.h * 0.32;
-  const bandY = aspect.h - bandHeight;
-  const gradient = ctx.createLinearGradient(0, bandY, 0, aspect.h);
-  gradient.addColorStop(0, 'rgba(10, 24, 40, 0)');
-  gradient.addColorStop(0.3, 'rgba(10, 24, 40, 0.7)');
-  gradient.addColorStop(1, 'rgba(10, 24, 40, 0.95)');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, bandY, aspect.w, bandHeight);
+  // 4. Yellow accent bar (top-left vertical stripe) — RT brand-poster signature
+  const stripeW = Math.round(W * 0.012);
+  ctx.fillStyle = '#FBAF33';
+  ctx.fillRect(0, 0, stripeW, H);
 
-  // 4. Draw text
-  const padding = aspect.w * 0.05;
-  const textColor = '#F5F1E8';
-  const accentColor = '#F1B400';
+  // 5. Eyebrow: TABLE NAME + NUMBER
+  const padding = W * 0.055;
+  const eyebrowY = H - padding - (W * 0.005);
+  let cy = eyebrowY;
 
-  // Event name (large)
-  ctx.fillStyle = textColor;
-  ctx.font = `800 ${Math.round(aspect.w * 0.07)}px Fraunces, Georgia, serif`;
-  ctx.textBaseline = 'bottom';
+  // Bottom-anchored layout, working upward:
+  // [hashtag/CTA] -> bottom
+  // [date · time · location]
+  // [event title (with first word in yellow)]
+  // [TABLE NAME + NUMBER eyebrow]
+
+  // Bottom-most: small CTA tag
+  ctx.font = `700 ${Math.round(W * 0.018)}px Saira, system-ui, sans-serif`;
+  ctx.fillStyle = '#FBAF33';
   ctx.textAlign = 'left';
-  const eventLines = wrapText(ctx, eventName, aspect.w - padding * 2);
-  let cy = aspect.h - padding - (aspect.w * 0.018); // bottom anchor
-  // Draw subtitle line (date · time · location) first to compute position
+  ctx.textBaseline = 'bottom';
+  drawSpacedText(ctx, '#DOMORE', padding, cy, W * 0.0025);
+  cy -= W * 0.038;
+
+  // Subtitle row: date · time · location
   const subParts = [];
   if (dateText) subParts.push(dateText);
   if (timeText) subParts.push(formatTime(timeText));
   if (locationText) subParts.push(locationText);
   const subText = subParts.join(' · ');
 
-  ctx.font = `500 ${Math.round(aspect.w * 0.022)}px DM Sans, sans-serif`;
-  ctx.fillStyle = '#9DB1CC';
   if (subText) {
-    ctx.fillText(subText, padding, cy);
-    cy -= aspect.w * 0.028;
+    ctx.font = `500 ${Math.round(W * 0.024)}px 'Open Sans', system-ui, sans-serif`;
+    ctx.fillStyle = '#FFFFFF';
+    // Wrap subtitle if too long
+    const subLines = wrapText(ctx, subText, W - padding * 2);
+    for (let i = subLines.length - 1; i >= 0; i--) {
+      ctx.fillText(subLines[i], padding, cy);
+      cy -= W * 0.032;
+    }
+    cy -= W * 0.012;
   }
 
-  // Event title above subtitle
-  ctx.font = `800 ${Math.round(aspect.w * 0.07)}px Fraunces, Georgia, serif`;
-  ctx.fillStyle = textColor;
-  for (let i = eventLines.length - 1; i >= 0; i--) {
-    ctx.fillText(eventLines[i], padding, cy);
-    cy -= aspect.w * 0.075;
+  // EVENT TITLE — first word in yellow (DO MORE style), rest in white
+  const titleSize = Math.round(W * (state.aspect === 'portrait' ? 0.085 : 0.075));
+  ctx.font = `800 ${titleSize}px Saira, system-ui, sans-serif`;
+  const titleUpper = eventName.toUpperCase();
+  const words = titleUpper.split(' ');
+  const firstWord = words[0];
+  const restText = words.slice(1).join(' ');
+
+  // Wrap the rest of the title if needed (first word always sits on its own line)
+  const titleLines = [firstWord];
+  if (restText) {
+    const restLines = wrapText(ctx, restText, W - padding * 2);
+    titleLines.push(...restLines);
   }
 
-  // Eyebrow (table name)
+  const titleLineHeight = titleSize * 0.92;
+  for (let i = titleLines.length - 1; i >= 0; i--) {
+    const line = titleLines[i];
+    ctx.fillStyle = (i === 0) ? '#FBAF33' : '#FFFFFF'; // first line (first word) yellow
+    ctx.fillText(line, padding, cy);
+    cy -= titleLineHeight;
+  }
+  cy -= W * 0.012;
+
+  // EYEBROW: TABLE NAME + NUMBER (above title)
   if (tableName) {
-    ctx.font = `700 ${Math.round(aspect.w * 0.018)}px DM Sans, sans-serif`;
-    ctx.fillStyle = accentColor;
-    const eyebrow = tableNumber ? `${tableName.toUpperCase()} ROUND TABLE · ${tableNumber}` : `${tableName.toUpperCase()} ROUND TABLE`;
-    // Letter-spacing simulation
-    drawSpacedText(ctx, eyebrow, padding, cy - aspect.w * 0.005, aspect.w * 0.0015);
+    const eyebrowText = tableNumber
+      ? `${tableName.toUpperCase()} ROUND TABLE · ${tableNumber}`
+      : `${tableName.toUpperCase()} ROUND TABLE`;
+    ctx.font = `700 ${Math.round(W * 0.018)}px Saira, system-ui, sans-serif`;
+    ctx.fillStyle = '#FFFFFF';
+    drawSpacedText(ctx, eyebrowText, padding, cy, W * 0.002);
   }
 
-  // 5. Logo (top-right corner by default, or per analysis)
+  // 6. Logo — top-right, with brand-required clear space
   drawLogo(ctx, aspect);
 }
 
@@ -675,7 +719,6 @@ function drawImageCover(ctx, img, x, y, w, h) {
   const boxRatio = w / h;
   let sx, sy, sw, sh;
   if (imgRatio > boxRatio) {
-    // image is wider, crop sides
     sh = img.height;
     sw = img.height * boxRatio;
     sx = (img.width - sw) / 2;
@@ -722,7 +765,8 @@ function formatTime(t) {
 }
 
 function drawLogo(ctx, aspect) {
-  const logoSize = aspect.w * 0.12;
+  // Logo size respects brand clear-space rules — keep it modest and in top-right
+  const logoSize = aspect.w * 0.13;
   const margin = aspect.w * 0.05;
   const x = aspect.w - logoSize - margin;
   const y = margin;
@@ -738,12 +782,12 @@ function drawLogo(ctx, aspect) {
   } else {
     // Final fallback: drawn yellow RT badge
     ctx.save();
-    ctx.fillStyle = '#F1B400';
+    ctx.fillStyle = '#FBAF33';
     ctx.beginPath();
     ctx.arc(x + logoSize / 2, y + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#0A1828';
-    ctx.font = `800 ${Math.round(logoSize * 0.42)}px Fraunces, Georgia, serif`;
+    ctx.fillStyle = '#1D1D1A';
+    ctx.font = `800 ${Math.round(logoSize * 0.42)}px Saira, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('RT', x + logoSize / 2, y + logoSize / 2 + logoSize * 0.02);
@@ -753,8 +797,8 @@ function drawLogo(ctx, aspect) {
 
 function defaultAnalysis() {
   return {
-    safeZones: [{ x: 0, y: 0.7, w: 1, h: 0.3 }],
-    recommendedTextColor: '#F5F1E8',
+    safeZones: [{ x: 0, y: 0.6, w: 1, h: 0.4 }],
+    recommendedTextColor: '#FFFFFF',
     needsOverlay: true,
     logoCorners: ['top-right']
   };
