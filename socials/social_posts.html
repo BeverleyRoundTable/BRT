@@ -353,6 +353,7 @@ const state = {
   selectedMatch: null,        // {fileId, ...} or {imageData, mimeType}
   loadedImage: null,          // HTMLImageElement, fully loaded
   analysis: null,             // /analyze-image response
+  analysisInProgress: null,   // Promise<analysis> while a background analyze is running
   copy: null,                 // /generate-text response
   customLogo: null,           // HTMLImageElement (user upload)
   defaultLogoWhite: null,     // HTMLImageElement
@@ -488,6 +489,8 @@ function renderImageGrid(matches) {
 async function selectLibraryImage(match, tileEl) {
   document.querySelectorAll('.image-tile').forEach(t => t.classList.toggle('selected', t === tileEl));
   state.selectedMatch = match;
+  state.analysis = null;
+  state.analysisInProgress = null;
   status('search-status', 'Loading full-size image...');
 
   try {
@@ -495,6 +498,7 @@ async function selectLibraryImage(match, tileEl) {
     await loadImageFromData(`data:${imgData.mimeType};base64,${imgData.imageData}`);
     clearStatus('search-status');
     showComposer();
+    triggerBackgroundAnalysis();
   } catch (err) {
     status('search-status', `Couldn't load image: ${err.message}`, 'error');
   }
@@ -516,8 +520,11 @@ async function handleFile(file) {
     const dataUrl = reader.result;
     const base64 = dataUrl.split(',')[1];
     state.selectedMatch = { imageData: base64, mimeType: file.type, isUpload: true };
+    state.analysis = null;
+    state.analysisInProgress = null;
     await loadImageFromData(dataUrl);
     showComposer();
+    triggerBackgroundAnalysis();
   };
   reader.readAsDataURL(file);
 }
@@ -544,6 +551,45 @@ function showComposer() {
   } else {
     drawCanvas();
   }
+}
+
+/**
+ * Kicks off Gemini image analysis in the background as soon as an image is
+ * picked, so the preview can render with smart logo position + colour without
+ * the user having to click Generate first. Idempotent — won't double-fire.
+ */
+function triggerBackgroundAnalysis() {
+  if (!state.selectedMatch) return;
+  if (state.analysis || state.analysisInProgress) return;
+
+  status('compose-status', 'Optimising layout...');
+
+  const analyzeBody = state.selectedMatch.fileId
+    ? { fileId: state.selectedMatch.fileId }
+    : { imageData: state.selectedMatch.imageData, mimeType: state.selectedMatch.mimeType };
+
+  state.analysisInProgress = api('analyze-image', analyzeBody)
+    .then(analysis => {
+      state.analysis = analysis;
+      state.analysisInProgress = null;
+      renderLogoPreview(); // Auto-mode may now pick a different logo
+      drawCanvas();        // Re-draw with smart logo corner
+      // Only clear the status if no other status has overwritten it
+      const statusEl = document.getElementById('compose-status');
+      if (statusEl.textContent.indexOf('Optimising') !== -1) {
+        clearStatus('compose-status');
+      }
+      return analysis;
+    })
+    .catch(err => {
+      state.analysisInProgress = null;
+      console.warn('Background analysis failed:', err.message);
+      const statusEl = document.getElementById('compose-status');
+      if (statusEl.textContent.indexOf('Optimising') !== -1) {
+        clearStatus('compose-status');
+      }
+      // Not fatal — generation can still proceed and re-attempt analysis
+    });
 }
 
 // Aspect ratio tabs
@@ -670,8 +716,18 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
   };
 
   try {
+    // Reuse the background analysis if it's already done or in flight, otherwise kick off fresh.
+    let analysisPromise;
+    if (state.analysis) {
+      analysisPromise = Promise.resolve(state.analysis);
+    } else if (state.analysisInProgress) {
+      analysisPromise = state.analysisInProgress;
+    } else {
+      analysisPromise = api('analyze-image', analyzeBody);
+    }
+
     const [analysis, copy] = await Promise.all([
-      api('analyze-image', analyzeBody),
+      analysisPromise,
       api('generate-text', textBody)
     ]);
     state.analysis = analysis;
@@ -868,13 +924,9 @@ function drawLogo(ctx, aspect) {
   const logoSize = aspect.w * 0.13;
   const margin = aspect.w * 0.05;
 
-  // Pick the clearest top corner using Gemini analysis if available.
-  // Restricted to top corners since the bottom is occupied by the text band.
-  let corner = 'top-right';
-  if (state.analysis && state.analysis.logoCorners && state.analysis.logoCorners.length) {
-    const topCorner = state.analysis.logoCorners.find(c => c === 'top-left' || c === 'top-right');
-    if (topCorner) corner = topCorner;
-  }
+  // Pick the clearest top corner — Gemini analysis if available, otherwise
+  // pixel-variance fallback so positioning is smart even before AI returns.
+  const corner = pickLogoCorner(aspect);
 
   const x = (corner === 'top-left')
     ? margin + (aspect.w * 0.012) // nudge right to clear the yellow stripe
@@ -911,6 +963,75 @@ function drawLogo(ctx, aspect) {
     ctx.fillText('RT', x + logoSize / 2, y + logoSize / 2 + logoSize * 0.02);
     ctx.restore();
   }
+}
+
+/**
+ * Decide which top corner gets the logo.
+ * 1. If Gemini analysis is available and ranked top corners, trust it (it
+ *    has semantic understanding — faces, important subjects).
+ * 2. Otherwise use client-side pixel variance: pick the corner with the
+ *    most uniform colour (less busy = better logo background).
+ *    This runs instantly so positioning is smart from the very first render.
+ */
+function pickLogoCorner(aspect) {
+  if (state.analysis && state.analysis.logoCorners && state.analysis.logoCorners.length) {
+    const topCorner = state.analysis.logoCorners.find(c => c === 'top-left' || c === 'top-right');
+    if (topCorner) return topCorner;
+  }
+  if (state.loadedImage) {
+    return analyseCornersForLogo(state.loadedImage, aspect);
+  }
+  return 'top-right';
+}
+
+/**
+ * Sample top-left and top-right corners of the image (as it'll be cover-fitted
+ * to the aspect ratio) and pick whichever has lower brightness variance.
+ * Uses an offscreen canvas at quarter size to keep this fast (~5ms typical).
+ */
+function analyseCornersForLogo(img, aspect) {
+  const scale = 0.25;
+  const w = Math.round(aspect.w * scale);
+  const h = Math.round(aspect.h * scale);
+  const tmp = document.createElement('canvas');
+  tmp.width = w; tmp.height = h;
+  const tctx = tmp.getContext('2d', { willReadFrequently: true });
+  drawImageCover(tctx, img, 0, 0, w, h);
+
+  // Sample roughly the area the logo will occupy (~18% of width, square)
+  const sw = Math.round(w * 0.18);
+  const sh = sw;
+  const tlData = tctx.getImageData(0, 0, sw, sh).data;
+  const trData = tctx.getImageData(w - sw, 0, sw, sh).data;
+
+  const tl = brightnessStats(tlData);
+  const tr = brightnessStats(trData);
+
+  // Lower variance = more uniform = better logo backdrop.
+  // Add a small bias for the darker corner when variances are similar
+  // (matters when both corners are clean — pick the less-bright one so
+  // the logo stands out a touch more, regardless of white/grey).
+  const tlScore = tl.variance + (tl.mean * 0.05);
+  const trScore = tr.variance + (tr.mean * 0.05);
+  return tlScore < trScore ? 'top-left' : 'top-right';
+}
+
+function brightnessStats(data) {
+  let sum = 0;
+  const count = data.length / 4;
+  const lums = new Float32Array(count);
+  for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+    const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    lums[j] = lum;
+    sum += lum;
+  }
+  const mean = sum / count;
+  let sumSq = 0;
+  for (let j = 0; j < count; j++) {
+    const d = lums[j] - mean;
+    sumSq += d * d;
+  }
+  return { mean: mean, variance: sumSq / count };
 }
 
 function defaultAnalysis() {
