@@ -175,6 +175,8 @@
     .logs-table td.ts { color: var(--text-dim); white-space: nowrap; font-family: 'Courier New', monospace; font-size: 11px; }
     .logs-table td.error-cell { color: var(--danger); font-size: 11px; max-width: 280px; word-wrap: break-word; }
     .logs-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .logs-table td:nth-child(6) { max-width: 300px; white-space: normal; word-wrap: break-word; font-family: 'Courier New', monospace; font-size: 10px; color: var(--text-dim); }
+    
   </style>
 </head>
 <body>
@@ -1183,7 +1185,7 @@ function renderLogs(data) {
       let cls = '';
       if (i === 0) cls = 'ts';
       else if (i === 2) cls = (val === 'TRUE' || val === 'true') ? 'ok-true' : 'ok-false';
-      else if (i === 5 && val) cls = 'error-cell';
+      else if (i === 6 && val) cls = 'error-cell';
       html += `<td class="${cls}">${escapeHtml(val)}</td>`;
     });
     html += '</tr>';
