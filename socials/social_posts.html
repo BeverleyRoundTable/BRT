@@ -194,8 +194,8 @@
             <input type="text" id="f-location" placeholder="e.g. Hull Smash Room">
           </div>
           <div style="grid-column: 1 / -1;">
-            <label for="f-notes">Anything else? <span class="hint">(charity, dress code, what to bring)</span></label>
-            <textarea id="f-notes" placeholder="e.g. Charity fundraiser for the local hospice. Bring mates."></textarea>
+            <label for="f-notes">Anything else? <span class="hint">(charity, dress code, in-jokes, local landmarks, why people should care — the more colour the better)</span></label>
+            <textarea id="f-notes" placeholder="e.g. Charity night for the local hospice. Bring mates who think they're too cool for sausage-making."></textarea>
           </div>
         </div>
       </div>
@@ -765,10 +765,21 @@ function formatTime(t) {
 }
 
 function drawLogo(ctx, aspect) {
-  // Logo size respects brand clear-space rules — keep it modest and in top-right
+  // Logo size respects brand clear-space rules — keep it modest
   const logoSize = aspect.w * 0.13;
   const margin = aspect.w * 0.05;
-  const x = aspect.w - logoSize - margin;
+
+  // Pick the clearest top corner using Gemini analysis if available.
+  // Restricted to top corners since the bottom is occupied by the text band.
+  let corner = 'top-right';
+  if (state.analysis && state.analysis.logoCorners && state.analysis.logoCorners.length) {
+    const topCorner = state.analysis.logoCorners.find(c => c === 'top-left' || c === 'top-right');
+    if (topCorner) corner = topCorner;
+  }
+
+  const x = (corner === 'top-left')
+    ? margin + (aspect.w * 0.012) // nudge right to clear the yellow stripe
+    : aspect.w - logoSize - margin;
   const y = margin;
 
   // Priority: user-uploaded logo > default logo loaded from URL > drawn badge
@@ -778,7 +789,9 @@ function drawLogo(ctx, aspect) {
     const ratio = logoImg.width / logoImg.height;
     const drawW = ratio > 1 ? logoSize : logoSize * ratio;
     const drawH = ratio > 1 ? logoSize / ratio : logoSize;
-    ctx.drawImage(logoImg, x + (logoSize - drawW), y, drawW, drawH);
+    // Anchor to whichever corner we chose
+    const anchorX = (corner === 'top-left') ? x : x + (logoSize - drawW);
+    ctx.drawImage(logoImg, anchorX, y, drawW, drawH);
   } else {
     // Final fallback: drawn yellow RT badge
     ctx.save();
