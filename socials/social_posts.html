@@ -276,6 +276,7 @@
 // ============================================================================
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwoYVj5hZO83Kyb-f_HzjUqcgmJIhVjx2Uf57YCt5lYWfkwsms5uF2Bu8UyL7UO3X7j/exec';
 const ACCESS_TOKEN = null; // set to a string if you've added ACCESS_TOKEN script property
+const DEFAULT_LOGO_URL = 'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/Logo.png';
 
 // Aspect ratio dimensions (width x height)
 const ASPECTS = {
@@ -296,6 +297,7 @@ const state = {
   analysis: null,             // /analyze-image response
   copy: null,                 // /generate-text response
   customLogo: null,           // HTMLImageElement
+  defaultLogo: null,          // HTMLImageElement, loaded from DEFAULT_LOGO_URL
   aspect: 'square'
 };
 
@@ -512,7 +514,15 @@ document.getElementById('logo-upload').addEventListener('change', e => {
 
 document.getElementById('btn-logo-clear').addEventListener('click', () => {
   state.customLogo = null;
-  document.getElementById('logo-preview').innerHTML = '<span style="color: var(--text-muted); font-size: 11px;">Default RT</span>';
+  const preview = document.getElementById('logo-preview');
+  preview.innerHTML = '';
+  if (state.defaultLogo) {
+    const previewImg = document.createElement('img');
+    previewImg.src = DEFAULT_LOGO_URL;
+    preview.appendChild(previewImg);
+  } else {
+    preview.innerHTML = '<span style="color: var(--text-muted); font-size: 11px;">Default badge</span>';
+  }
   drawCanvas();
 });
 
@@ -717,14 +727,16 @@ function drawLogo(ctx, aspect) {
   const x = aspect.w - logoSize - margin;
   const y = margin;
 
-  if (state.customLogo) {
-    const img = state.customLogo;
-    const ratio = img.width / img.height;
+  // Priority: user-uploaded logo > default logo loaded from URL > drawn badge
+  const logoImg = state.customLogo || state.defaultLogo;
+
+  if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+    const ratio = logoImg.width / logoImg.height;
     const drawW = ratio > 1 ? logoSize : logoSize * ratio;
     const drawH = ratio > 1 ? logoSize / ratio : logoSize;
-    ctx.drawImage(img, x + (logoSize - drawW), y, drawW, drawH);
+    ctx.drawImage(logoImg, x + (logoSize - drawW), y, drawW, drawH);
   } else {
-    // Default RT badge: simple yellow circle with "RT" text
+    // Final fallback: drawn yellow RT badge
     ctx.save();
     ctx.fillStyle = '#F1B400';
     ctx.beginPath();
@@ -819,7 +831,30 @@ document.getElementById('btn-download').addEventListener('click', () => {
 // INIT
 // ============================================================================
 
+function loadDefaultLogo() {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    state.defaultLogo = img;
+    // Update the preview tile if user hasn't uploaded their own
+    if (!state.customLogo) {
+      const preview = document.getElementById('logo-preview');
+      preview.innerHTML = '';
+      const previewImg = document.createElement('img');
+      previewImg.src = DEFAULT_LOGO_URL;
+      preview.appendChild(previewImg);
+    }
+    // Re-render canvas if we already have an image
+    if (state.loadedImage) drawCanvas();
+  };
+  img.onerror = () => {
+    console.warn('Default logo failed to load from', DEFAULT_LOGO_URL, '— canvas will use drawn fallback badge');
+  };
+  img.src = DEFAULT_LOGO_URL;
+}
+
 loadVocab();
+loadDefaultLogo();
 </script>
 </body>
 </html>
