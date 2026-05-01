@@ -72,6 +72,7 @@ const addressLookup = `
     src="https://brt-23f.pages.dev/address.html?api=${ensureApi()}"
     style="width:100%;border:none;border-radius:12px;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
+    scrolling="no"
     loading="lazy"
   ></iframe>
 </div>
