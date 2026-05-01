@@ -31,23 +31,26 @@
     * { box-sizing: border-box; }
 
     body {
-  margin: 0;
-  padding: 14px 12px 0;
-  background: transparent; /* Changed from var(--dark) */
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
+      margin: 0;
+      /* FIXED: Added 60px bottom padding for the shadow, removed from top */
+      padding: 24px 12px 60px; 
+      background: transparent; 
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      /* FIXED: Forces the scrollbar to hide */
+      overflow-y: hidden; 
+    }
 
-   #address-root {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 24px 20px;
-  background: var(--surface);
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3); /* Softened shadow */
-}
+    #address-root {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 20px;
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
 
     /* ── Search box ── */
     .address-search {
@@ -134,10 +137,7 @@
       animation: searchPulse 0.8s ease-out;
     }
 
-    /* ── Results collapse when empty ── */
-    #results:empty {
-      margin-top: 0;
-    }
+    #results:empty { margin-top: 0; }
 
     /* ── Cards ── */
     .addr-route-card {
@@ -153,7 +153,6 @@
       background: rgba(251,175,51,0.03);
     }
 
-    /* Header row: title + countdown badge */
     .addr-card-header {
       display: flex;
       justify-content: space-between;
@@ -184,7 +183,6 @@
       color: var(--gold);
     }
 
-    /* ── Countdown badge ── */
     .addr-countdown {
       flex-shrink: 0;
       padding: 6px 14px;
@@ -226,7 +224,6 @@
       50%      { box-shadow: 0 0 16px rgba(251, 175, 51, 0.6); }
     }
 
-    /* ── Map thumbnail ── */
     .addr-route-map {
       margin: 16px 0;
       border-radius: 10px;
@@ -235,13 +232,12 @@
     }
 
     .addr-route-map img {
-  display: block;
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-}
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
 
-    /* ── Street list ── */
     .addr-streets-list {
       list-style: none;
       padding: 0;
@@ -263,7 +259,6 @@
       color: var(--text-dim);
     }
 
-    /* Highlighted match text */
     .addr-streets-list mark {
       background: var(--gold-dim);
       color: var(--gold);
@@ -272,7 +267,6 @@
       font-weight: 700;
     }
 
-    /* ── Sponsor bar ── */
     .addr-sponsor {
       margin-top: 20px;
       padding-top: 16px;
@@ -300,7 +294,6 @@
       border-radius: 4px;
     }
 
-    /* ── No results ── */
     .addr-no-results {
       text-align: center;
       margin-top: 32px;
@@ -318,20 +311,11 @@
       color: var(--text-dim);
     }
 
-    /* ── Desktop breathing room ── */
     @media (min-width: 700px) {
-      body {
-        padding-top: 24px;
-      }
-      .address-search {
-        flex-direction: row;
-      }
-      .address-search-input {
-        text-align: left;
-      }
-      .address-search button {
-        width: auto;
-      }
+      body { padding-top: 32px; }
+      .address-search { flex-direction: row; }
+      .address-search-input { text-align: left; }
+      .address-search button { width: auto; }
     }
   </style>
 </head>
@@ -361,6 +345,7 @@
 
   <script>
     function sendHeight() {
+      // Use the exact document element scroll height, which now safely includes the 60px bottom padding
       const height = document.documentElement.scrollHeight;
       parent.postMessage({ addressLookupHeight: height }, "*");
     }
