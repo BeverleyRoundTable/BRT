@@ -67,22 +67,23 @@ loading="lazy">
 // ================================
 const addressLookup = `
 <div style="width:100%;max-width:900px;margin:0 auto;">
-<iframe
-id="addressFrame"
-src="https://brt-23f.pages.dev/address.html?api=${ensureApi()}"
-style="width:100%;border:none;border-radius:12px;transition:height .25s ease;"
-loading="lazy"
-></iframe>
+  <iframe
+    id="addressFrame"
+    src="https://brt-23f.pages.dev/address.html?api=${ensureApi()}"
+    style="width:100%;border:none;border-radius:12px;transition:height .25s ease;background:transparent;"
+    allowtransparency="true"
+    loading="lazy"
+  ></iframe>
 </div>
 
 <script>
-// Receive auto-height updates from address.html
-window.addEventListener("message", (e) => {
-  if (e.data.addressLookupHeight) {
-    const frame = document.getElementById("addressFrame");
-    if (frame) frame.style.height = e.data.addressLookupHeight + "px";
-  }
-});
+  // Receive auto-height updates from address.html
+  window.addEventListener("message", (e) => {
+    if (e.data.addressLookupHeight) {
+      const frame = document.getElementById("addressFrame");
+      if (frame) frame.style.height = e.data.addressLookupHeight + "px";
+    }
+  });
 </script>
 `;
 
