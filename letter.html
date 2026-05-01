@@ -32,13 +32,16 @@
 
     body {
       font-family: 'DM Sans', sans-serif;
-      background: transparent; /* Keep transparent for easy iframe embedding */
+      background: transparent; 
       color: var(--text);
-      min-height: 100vh;
+      /* FIXED: Removed min-height: 100vh as it conflicts with auto-resizing iframes */
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px 20px;
+      /* FIXED: Increased bottom padding to 60px so the shadow doesn't get cut off */
+      padding: 24px 20px 60px;
+      /* FIXED: Banished the scrollbar */
+      overflow-y: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -298,7 +301,8 @@
 
   // Send height to parent window so the iframe can resize
   function sendHeight() {
-    const height = document.body.scrollHeight;
+    // FIXED: Switched to documentElement.scrollHeight to safely include the new bottom padding
+    const height = document.documentElement.scrollHeight;
     window.parent.postMessage({ letterHeight: height }, "*");
   }
 
