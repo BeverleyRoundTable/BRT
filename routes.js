@@ -190,7 +190,6 @@ function startRoutes() {
             }).addTo(map);
 
             // Load GPX
-            // Load GPX
             new L.GPX(gpxUrl, {
                 async: true,
                 marker_options: {
