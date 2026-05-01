@@ -116,7 +116,7 @@ function startRoutes() {
         const map = route.mapImageUrl || "";
 
         const gpxViewer = gpx
-            ? `https://raw.githack.com/BeverleyRoundTable/BRT/main/gpx_viewer.html?gpx=${encodeURIComponent(gpx)}`
+            ? `https://brt-23f.pages.dev/gpx_viewer.html?gpx=${encodeURIComponent(gpx)}`
             : "";
 
         return `
