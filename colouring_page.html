@@ -35,7 +35,7 @@
   
   body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--dark);
+    background: transparent; /* FIXED: Makes the base transparent for embeds */
     color: var(--text);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
@@ -154,7 +154,9 @@
 
   /* ── LOADER ── */
   .loader {
-    position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center;
+    position: fixed; inset: 0; 
+    background: transparent; /* FIXED: Prevents a black box flash on white websites */
+    display: flex; align-items: center;
     justify-content: center; flex-direction: column; gap: 16px; z-index: 9999; transition: opacity 0.4s;
   }
   .loader.done { opacity: 0; pointer-events: none; }
