@@ -47,12 +47,15 @@
       background: transparent; /* Keep transparent for iframe embedding */
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
+      /* FIXED: Banished the scrollbar */
+      overflow-y: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
     .santa-checker {
       max-width: 720px;
-      margin: 0 auto;
+      /* FIXED: Added 40px margin to the bottom so the shadow isn't cut off */
+      margin: 0 auto 40px;
       padding: 32px 24px 40px;
       text-align: center;
       background: var(--surface);
@@ -206,14 +209,16 @@ function startCheck(){
 
   download.style.display = "none";
   status.innerText = "Checking Santa’s list… 🤔";
-  sendHeight(20);
+  
+  // FIXED: Adjusted to dynamically read scrollHeight so it accounts for the margin
+  sendHeight();
 
   const phases = ["Naughty…", "Nice…", "Naughty…", "Nice…"];
   let i = 0;
 
   const interval = setInterval(() => {
     status.innerText = phases[i % phases.length];
-    sendHeight(20);
+    sendHeight();
     i++;
   }, 400);
 
@@ -259,29 +264,27 @@ function generatePDF(name){
   link.href = URL.createObjectURL(blob);
   link.style.display = "inline-block";
 
-  sendHeight(20);
+  sendHeight();
 }
 
-/* ---------- AUTO-HEIGHT (parity with address lookup) ---------- */
-function sendHeight(extra = 0){
-  const root = document.getElementById("niceRoot");
-  if (!root) return;
-
-  const h = root.offsetHeight + extra;
-  parent.postMessage({ niceListHeight: h }, "*");
+/* ---------- AUTO-HEIGHT ---------- */
+function sendHeight(){
+  // FIXED: Switched to documentElement.scrollHeight to safely include the 40px bottom margin
+  const height = document.documentElement.scrollHeight;
+  window.parent.postMessage({ niceListHeight: height }, "*");
 }
 
 // Fire multiple times to catch font + layout settling
 window.addEventListener("load", () => {
-  sendHeight(20);
-  setTimeout(() => sendHeight(20), 100);
-  setTimeout(() => sendHeight(20), 300);
-  setTimeout(() => sendHeight(20), 600);
+  sendHeight();
+  setTimeout(() => sendHeight(), 100);
+  setTimeout(() => sendHeight(), 300);
+  setTimeout(() => sendHeight(), 600);
 });
 
-window.addEventListener("resize", () => sendHeight(20));
+window.addEventListener("resize", () => sendHeight());
 
-const observer = new MutationObserver(() => sendHeight(20));
+const observer = new MutationObserver(() => sendHeight());
 observer.observe(document.body, { childList:true, subtree:true });
 </script>
 
