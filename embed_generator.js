@@ -55,9 +55,11 @@ document.head.appendChild(s);
 // ================================
 const carouselLink = `
 <iframe
-src="https://brt-23f.pages.dev/carousel?api=${ensureApi()}"
-style="width:100%;height:450px;border:none;border-radius:12px;overflow:hidden;"
-loading="lazy">
+  src="https://brt-23f.pages.dev/carousel?api=${ensureApi()}"
+  style="width:100%;height:450px;border:none;border-radius:12px;overflow:hidden;background:transparent;"
+  allowtransparency="true"
+  scrolling="no"
+  loading="lazy">
 </iframe>
 `;
 
@@ -96,7 +98,9 @@ const niceListEmbed = `
   <iframe
     id="niceListFrame"
     src="https://brt-23f.pages.dev/nice_list"
-    style="width:100%;border:none;border-radius:15px;transition:height .25s ease;"
+    style="width:100%;border:none;border-radius:15px;transition:height .25s ease;background:transparent;"
+    allowtransparency="true"
+    scrolling="no"
     loading="lazy"
   ></iframe>
 </div>
@@ -116,22 +120,15 @@ const niceListEmbed = `
 // ================================
 const santasBeenEmbed = `
 <div style="width:100%;max-width:420px;margin:0 auto;">
-
-  <p style="
-    text-align:center;
-    font-size:0.9rem;
-    color:#ccc;
-    margin:0 0 8px;
-  ">
-  </p>
-
+...
   <iframe
     id="santasBeenFrame"
     src="https://brt-23f.pages.dev/santa_frame.html"
-    style="width:100%;border:none;border-radius:20px;overflow:hidden;transition:height .25s ease;"
+    style="width:100%;border:none;border-radius:20px;overflow:hidden;transition:height .25s ease;background:transparent;"
+    allowtransparency="true"
+    scrolling="no"
     loading="lazy"
   ></iframe>
-
 </div>
 
 <script>
@@ -156,7 +153,8 @@ const snowmanFrameEmbed = `
   <iframe
     id="snowmanFrame"
     src="https://brt-23f.pages.dev/snowman.html"
-    style="width:100%;border:none;border-radius:20px;overflow:hidden;"
+    style="width:100%;border:none;border-radius:20px;overflow:hidden;background:transparent;"
+    allowtransparency="true"
     scrolling="no"
     loading="lazy"
   ></iframe>
@@ -186,9 +184,11 @@ https://brt-23f.pages.dev/tracker?api=${ensureApi()}
 const recommendedTracker = `
 <div style="width:90vw;max-width:1000px;margin:0 auto;padding:0 8px;">
 <iframe
-src="https://brt-23f.pages.dev/tracker.html?api=${ensureApi()}"
-style="width:100%;height:80vh;min-height:490px;border:none;border-radius:15px;overflow:hidden;box-shadow:0 4px 18px #0002;"
-loading="lazy"
+  src="https://brt-23f.pages.dev/tracker.html?api=${ensureApi()}"
+  style="width:100%;height:80vh;min-height:490px;border:none;border-radius:15px;overflow:hidden;box-shadow:0 4px 18px #0002;background:transparent;"
+  allowtransparency="true"
+  scrolling="no"
+  loading="lazy"
 ></iframe>
 </div>
 `;
@@ -204,7 +204,9 @@ const recommendedTrackerKiosk = `
 <div style="width:100vw;max-width:1200px;margin:0 auto;">
 <iframe
   src="https://brt-23f.pages.dev/tracker.html?api=${ensureApi()}&kiosk=1"
-  style="width:100%;height:85vh;min-height:600px;border:none;border-radius:15px;overflow:hidden;"
+  style="width:100%;height:85vh;min-height:600px;border:none;border-radius:15px;overflow:hidden;background:transparent;"
+  allowtransparency="true"
+  scrolling="no"
   loading="lazy"
   referrerpolicy="no-referrer"
 ></iframe>
@@ -223,7 +225,9 @@ const recommendedRoutes = `
   <iframe
     id="routesFrame"
     src="https://brt-23f.pages.dev/routes.html?api=${ensureApi()}"
-    style="width:100%;border:none;border-radius:15px;transition:height .25s ease;"
+    style="width:100%;border:none;border-radius:15px;transition:height .25s ease;background:transparent;"
+    allowtransparency="true"
+    scrolling="no"
     loading="lazy"
   ></iframe>
 </div>
@@ -251,7 +255,9 @@ const recommendedRouteCard = `
   <iframe
     id="routeCardFrame"
     src="https://brt-23f.pages.dev/route_card?api=${ensureApi()}"
-    style="width:100%;border:none;border-radius:15px;transition:height .25s ease;"
+    style="width:100%;border:none;border-radius:15px;transition:height .25s ease;background:transparent;"
+    allowtransparency="true"
+    scrolling="no"
     loading="lazy"
   ></iframe>
 </div>
@@ -347,7 +353,8 @@ const recommendedLetter = `
   <iframe
     id="letterFrame"
     src="https://brt-23f.pages.dev/letter.html?api=${ensureApi()}"
-    style="width:100%;border:none;border-radius:16px;transition:height .25s ease;"
+    style="width:100%;border:none;border-radius:16px;transition:height .25s ease;background:transparent;"
+    allowtransparency="true"
     scrolling="no"
     loading="lazy"
   ></iframe>
