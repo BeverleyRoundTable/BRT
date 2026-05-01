@@ -176,6 +176,28 @@
     .logs-table td.error-cell { color: var(--danger); font-size: 11px; max-width: 280px; word-wrap: break-word; }
     .logs-table tr:hover td { background: rgba(255,255,255,0.02); }
     .logs-table td:nth-child(6) { max-width: 300px; white-space: normal; word-wrap: break-word; font-family: 'Courier New', monospace; font-size: 10px; color: var(--text-dim); }
+
+    /* CONTRIBUTE BANNER — persistent, encourages people to feed the library */
+    .contribute-banner { display: flex; align-items: center; gap: 16px; background: linear-gradient(135deg, rgba(251,175,51,0.10), rgba(251,175,51,0.04)); border: 1px solid rgba(251,175,51,0.25); border-radius: var(--radius-lg); padding: 16px 20px; margin: 0 0 32px 0; }
+    .contribute-banner .icon { flex-shrink: 0; width: 40px; height: 40px; background: var(--accent); color: var(--rt-grey); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 800; font-size: 22px; }
+    .contribute-banner .text { flex: 1; min-width: 0; }
+    .contribute-banner .text strong { color: var(--text); font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 2px; }
+    .contribute-banner .text p { color: var(--text-dim); font-size: 13px; margin: 0; }
+    .contribute-banner .text p .format-hint { color: var(--accent); font-family: 'Courier New', monospace; font-size: 12px; }
+    .contribute-banner a.btn-contribute { flex-shrink: 0; background: var(--accent); color: var(--rt-grey); font-family: var(--font-display); font-size: 12px; font-weight: 700; padding: 10px 18px; border-radius: var(--radius); text-decoration: none; letter-spacing: 0.06em; text-transform: uppercase; transition: background 0.15s; white-space: nowrap; }
+    .contribute-banner a.btn-contribute:hover { background: var(--accent-hover); }
+    @media (max-width: 600px) { .contribute-banner { flex-direction: column; text-align: center; align-items: stretch; } .contribute-banner a.btn-contribute { text-align: center; } }
+
+    /* POST-GENERATION NUDGE — fires after a successful generate */
+    .nudge-card { background: var(--bg-card); border: 1px solid rgba(251,175,51,0.4); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: 16px 18px; margin-top: 16px; display: flex; align-items: center; gap: 14px; }
+    .nudge-card .nudge-emoji { font-size: 28px; flex-shrink: 0; }
+    .nudge-card .nudge-text { flex: 1; font-size: 13px; color: var(--text); }
+    .nudge-card .nudge-text strong { color: var(--accent); font-family: var(--font-display); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; font-size: 12px; display: block; margin-bottom: 2px; }
+    .nudge-card .nudge-text p { color: var(--text-dim); margin: 0; }
+    .nudge-card a.nudge-btn { background: transparent; color: var(--accent); border: 1px solid var(--accent); font-family: var(--font-display); font-size: 11px; font-weight: 700; padding: 8px 14px; border-radius: var(--radius); text-decoration: none; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; transition: background 0.15s; }
+    .nudge-card a.nudge-btn:hover { background: var(--accent); color: var(--rt-grey); }
+    .nudge-card .nudge-dismiss { background: transparent; color: var(--text-muted); border: none; cursor: pointer; padding: 4px 8px; font-size: 18px; line-height: 1; flex-shrink: 0; }
+    .nudge-card .nudge-dismiss:hover { color: var(--text); }
     
   </style>
 </head>
@@ -187,6 +209,16 @@
       <h1>Make a <span class="yellow">post</span> for your next event.</h1>
       <p class="tagline">Pick an event. Pick a photo. Get ready-to-share images and captions in three clicks.</p>
     </header>
+
+    <!-- CONTRIBUTE BANNER — encourages users to feed the image library -->
+    <div class="contribute-banner" id="contribute-banner" hidden>
+      <div class="icon">+</div>
+      <div class="text">
+        <strong>The library grows when you contribute</strong>
+        <p>Got photos from a recent event? Add them to the shared bin so other Tables can use them. Use folder format: <span class="format-hint">Event Name (Table Name 247)</span></p>
+      </div>
+      <a id="contribute-link" class="btn-contribute" target="_blank" rel="noopener">Open image bin</a>
+    </div>
 
     <!-- STEP 1: EVENT DETAILS -->
     <section>
@@ -394,8 +426,25 @@ async function loadVocab() {
     state.vocab = await api('tags', null, 'GET');
     fillDatalist('dl-tables', state.vocab.tables);
     fillDatalist('dl-events', state.vocab.events);
+    setupContributeBanner(state.vocab.imageBinUrl);
   } catch (err) {
     console.warn('Could not load vocab:', err.message);
+  }
+}
+
+/**
+ * Show the persistent contribute banner if an image_bin URL is configured.
+ * Hidden gracefully if the setting is missing — no broken link.
+ */
+function setupContributeBanner(imageBinUrl) {
+  const banner = document.getElementById('contribute-banner');
+  const link = document.getElementById('contribute-link');
+  if (!banner || !link) return;
+  if (imageBinUrl && imageBinUrl.trim()) {
+    link.href = imageBinUrl.trim();
+    banner.hidden = false;
+  } else {
+    banner.hidden = true;
   }
 }
 
@@ -746,6 +795,7 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
     renderCopy();
     document.getElementById('export-block').hidden = false;
     document.getElementById('step-copy').hidden = false;
+    showContributeNudge();
     status('compose-status', 'Done. Tweak aspect ratio or download below.', 'success');
   } catch (err) {
     status('compose-status', `Generation failed: ${err.message}`, 'error');
@@ -1090,6 +1140,45 @@ function renderCopy() {
     });
     out.appendChild(div);
   });
+}
+
+/**
+ * Renders a friendly nudge after a successful generation, asking the user to
+ * contribute their event photos back to the shared library. Dismissible per-session.
+ * Skipped if no image_bin URL is configured, or if the user has dismissed it this session.
+ */
+function showContributeNudge() {
+  const imageBinUrl = state.vocab && state.vocab.imageBinUrl;
+  if (!imageBinUrl) return;
+  if (sessionStorage.getItem('rt_nudge_dismissed') === '1') return;
+
+  const out = document.getElementById('copy-output');
+  if (!out || document.getElementById('contribute-nudge')) return;
+
+  const eventName = (document.getElementById('f-event').value.trim() || 'your event');
+  const tableName = (state.searchInterpretation && state.searchInterpretation.table) ||
+                    document.getElementById('f-table').value.trim() ||
+                    'your Table';
+  // Build the suggested folder name they should create when uploading
+  const suggestedFolder = `${eventName} (${tableName} ###)`;
+
+  const nudge = document.createElement('div');
+  nudge.className = 'nudge-card';
+  nudge.id = 'contribute-nudge';
+  nudge.innerHTML = `
+    <div class="nudge-emoji">📸</div>
+    <div class="nudge-text">
+      <strong>Got photos from ${escapeHtml(eventName)}?</strong>
+      <p>Drop them in the bin so other Tables can use them next time. Create a folder named <code style="color:var(--accent);font-family:'Courier New',monospace;font-size:11px;">${escapeHtml(suggestedFolder)}</code> (replace ### with your table number) and upload your shots inside.</p>
+    </div>
+    <a class="nudge-btn" href="${escapeHtml(imageBinUrl)}" target="_blank" rel="noopener">Open bin</a>
+    <button class="nudge-dismiss" title="Dismiss for this session" aria-label="Dismiss">&times;</button>
+  `;
+  nudge.querySelector('.nudge-dismiss').addEventListener('click', () => {
+    nudge.remove();
+    sessionStorage.setItem('rt_nudge_dismissed', '1');
+  });
+  out.appendChild(nudge);
 }
 
 function escapeHtml(s) {
