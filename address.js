@@ -25,6 +25,61 @@ function startAddressLookup() {
   let routeMeta = {}; // routeName → { mapImageUrl, sponsorUrl, ... }
 
   // --- Helpers ---
+
+  async function initInteractiveMap(mapId, gpxUrl) {
+  const container = document.getElementById(mapId);
+  if (!container) return;
+
+  // Initialize the Leaflet map and disable scroll zooming to prevent users getting stuck when scrolling the page
+  const map = L.map(mapId, { zoomControl: true, scrollWheelZoom: false });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+
+  try {
+    // Fetch the GPX file
+    const res = await fetch(gpxUrl, { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to fetch GPX");
+    const text = await res.text();
+
+    // Parse XML (Borrowed from Tracker logic)
+    const xml = new DOMParser().parseFromString(text, "text/xml");
+    const pts = [...xml.getElementsByTagName("trkpt")];
+    if (pts.length < 2) return;
+
+    // Extract coordinates
+    const latLngs = pts.map(p => [
+      parseFloat(p.getAttribute("lat")),
+      parseFloat(p.getAttribute("lon"))
+    ]);
+
+    // Draw the red route line
+    const routeLine = L.polyline(latLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(map);
+
+    // Auto-center and zoom the map to fit the route perfectly
+    map.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
+
+    // Define Start and End markers using Tracker assets
+    const startIcon = L.icon({ 
+      iconUrl: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png", 
+      iconSize: [48, 48], 
+      iconAnchor: [24, 48] 
+    });
+    
+    const endIcon = L.icon({ 
+      iconUrl: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png", 
+      iconSize: [48, 48], 
+      iconAnchor: [24, 48] 
+    });
+
+    // Drop the pins
+    L.marker(latLngs[0], { icon: startIcon }).addTo(map);
+    L.marker(latLngs[latLngs.length - 1], { icon: endIcon }).addTo(map);
+
+  } catch (err) {
+    console.error("Map rendering error:", err);
+    container.innerHTML = "<p style='text-align:center; padding: 20px; color:var(--text-muted);'>Interactive map currently unavailable.</p>";
+  }
+}
+  
   function normalise(str) {
     return String(str || "")
       .toLowerCase()
@@ -126,10 +181,13 @@ function startAddressLookup() {
         )
         .join("");
 
-      // Map thumbnail (if available)
-      const mapHtml = meta.mapImageUrl
-        ? `<div class="addr-route-map"><img src="${meta.mapImageUrl}" alt="${routeName} route map" loading="lazy" /></div>`
-        : "";
+      // Create a unique ID for the map container based on the route name
+      const mapId = 'map-' + routeName.replace(/\s+/g, '-').toLowerCase();
+
+      // Use the interactive map if GPX is available, otherwise fallback to the static image
+      const mapHtml = meta.gpxUrl
+        ? `<div id="${mapId}" class="addr-route-map leaflet-container" style="height: 300px; z-index: 1; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);"></div>`
+        : (meta.mapImageUrl ? `<div class="addr-route-map"><img src="${meta.mapImageUrl}" alt="${routeName} route map" loading="lazy" /></div>` : "");
 
       // Sponsor (if available)
       const sponsorHtml = meta.sponsorUrl
@@ -152,10 +210,19 @@ function startAddressLookup() {
         </ul>
         ${sponsorHtml}
       `;
+      
       resultsEl.appendChild(card);
-    });
-  }
 
+      // --- MOVED INSIDE THE LOOP ---
+      // Initialize the map if a GPX URL was found
+      if (meta.gpxUrl) {
+        // Use setTimeout to ensure the DOM has painted the new map div before Leaflet tries to bind to it
+        setTimeout(() => initInteractiveMap(mapId, meta.gpxUrl), 0);
+      }
+      
+    }); // <-- End of forEach loop
+  } // <-- End of renderResults function
+  
   // --- Wire events ---
   btnEl.addEventListener("click", doSearch);
 
@@ -184,18 +251,19 @@ function startAddressLookup() {
     .then((data) => {
       
       // Build route metadata lookup
-      if (data && Array.isArray(data.routes)) {
-        data.routes.forEach((rt) => {
-  if (rt.routeName) {
-    routeMeta[rt.routeName] = {
-      mapImageUrl: rt.mapImageUrl || "",
-      sponsorUrl: rt.sponsorUrl || "",
-      startTime: rt["Start Time"] || "",
-      endTime: rt["End Time"] || "",
-    };
-  }
-});
-      }
+if (data && Array.isArray(data.routes)) {
+  data.routes.forEach((rt) => {
+    if (rt.routeName) {
+      routeMeta[rt.routeName] = {
+        mapImageUrl: rt.mapImageUrl || "",
+        gpxUrl: rt.gpxUrl || "", // <-- ADD THIS LINE
+        sponsorUrl: rt.sponsorUrl || "",
+        startTime: rt["Start Time"] || "",
+        endTime: rt["End Time"] || "",
+      };
+    }
+  });
+}
     })
     .catch(() => {
       // silent fail – just no meta
