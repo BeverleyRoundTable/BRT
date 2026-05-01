@@ -305,6 +305,11 @@
                 <button class="btn-tab" data-logo-mode="white">White</button>
                 <button class="btn-tab" data-logo-mode="grey">Grey</button>
               </div>
+              <div class="btn-row" id="logo-pos-tabs" style="margin-top: 8px;">
+                <button class="btn-tab active" data-logo-pos="auto">Auto Pos</button>
+                <button class="btn-tab" data-logo-pos="top-left">Top Left</button>
+                <button class="btn-tab" data-logo-pos="top-right">Top Right</button>
+              </div>
               <div class="btn-row" style="margin-top: 8px;">
                 <button class="btn-secondary" id="btn-logo-upload" style="flex: 1;">Upload custom</button>
                 <button class="btn-secondary" id="btn-logo-clear" id="btn-logo-clear" hidden>Remove</button>
@@ -400,6 +405,7 @@ const state = {
   defaultLogoWhite: null,     // HTMLImageElement
   defaultLogoGrey: null,      // HTMLImageElement
   logoMode: 'auto',           // 'auto' | 'white' | 'grey' | 'custom'
+  logoPos: 'auto',            //allow swapping top left to top right
   aspect: 'square'
 };
 
@@ -916,9 +922,7 @@ function drawCanvas() {
 
   // EYEBROW: TABLE NAME + NUMBER (above title)
   if (tableName) {
-    const eyebrowText = tableNumber
-      ? `${tableName.toUpperCase()} ROUND TABLE · ${tableNumber}`
-      : `${tableName.toUpperCase()} ROUND TABLE`;
+    const eyebrowText = `${tableName.toUpperCase()} ROUND TABLE`;
     ctx.font = `700 ${Math.round(W * 0.018)}px Saira, system-ui, sans-serif`;
     ctx.fillStyle = '#FFFFFF';
     drawSpacedText(ctx, eyebrowText, padding, cy, W * 0.002);
@@ -983,9 +987,8 @@ function drawLogo(ctx, aspect) {
   const logoSize = aspect.w * 0.13;
   const margin = aspect.w * 0.05;
 
-  // Pick the clearest top corner — Gemini analysis if available, otherwise
-  // pixel-variance fallback so positioning is smart even before AI returns.
-  const corner = pickLogoCorner(aspect);
+  // CHANGE THIS LINE: Use manual override if selected, otherwise use Gemini/Auto
+  const corner = state.logoPos === 'auto' ? pickLogoCorner(aspect) : state.logoPos;
 
   const x = (corner === 'top-left')
     ? margin + (aspect.w * 0.012) // nudge right to clear the yellow stripe
