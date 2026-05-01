@@ -190,12 +190,12 @@ function startRoutes() {
             }).addTo(map);
 
             // Load GPX
+            // Load GPX
             new L.GPX(gpxUrl, {
                 async: true,
                 marker_options: {
                   startIconUrl: 'https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png',
                   endIconUrl: 'https://i.ibb.co/39WF0kBd/Santa-Marker-5.png',
-                  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
                   iconSize: [32, 32], 
                   iconAnchor: [16, 32]
                 },
