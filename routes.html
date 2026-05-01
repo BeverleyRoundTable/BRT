@@ -32,17 +32,20 @@
     * { box-sizing: border-box; }
 
     body {
-        background: transparent; /* Keep transparent for iframe embedding */
+        background: transparent; 
         color: var(--text);
         font-family: 'DM Sans', sans-serif;
         margin: 0;
         padding: 0;
+        /* FIXED: Banished the scrollbar */
+        overflow-y: hidden;
         -webkit-font-smoothing: antialiased;
     }
 
     #routes-root {
         max-width: 980px;
-        margin: 0 auto;
+        /* FIXED: Added 40px margin to the bottom to give the shadow room to render without getting chopped off by the iframe */
+        margin: 0 auto 40px;
         padding: 32px 24px 40px;
         background: var(--surface);
         border-radius: 16px;
