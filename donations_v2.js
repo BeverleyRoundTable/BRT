@@ -60,7 +60,8 @@
 
     font-family: 'DM Sans', sans-serif;
     color: var(--text);
-    margin: 1.2rem auto;
+    /* FIXED: Added 40px bottom margin so the drop-shadow doesn't overlap host site elements */
+    margin: 1.2rem auto 40px; 
     max-width: 480px;
     width: 100%;
     text-align: center;
@@ -73,6 +74,15 @@
 }
 
 /* ---------- MINI BAR ---------- */
+/* FIXED: Added a card wrapper for the mini bar so the white text is readable on white websites */
+.ts-mini-card {
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    padding: 20px 24px;
+}
+
 .ts-mini-label {
     margin-bottom: 8px;
     color: var(--text-dim);
@@ -113,7 +123,8 @@
     background: var(--surface);
     border-radius: 16px;
     border: 1px solid var(--border);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    /* FIXED: Softened the drop shadow for light backgrounds */
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
     padding: 32px 24px;
     position: relative;
     overflow: hidden;
@@ -270,11 +281,13 @@
     function injectMini(el) {
         el.innerHTML = `
             <div class="ts-donations-wrapper">
-                <div class="ts-mini-label">Together we've raised</div>
-                <div class="ts-mini-track">
-                    <div class="ts-mini-fill" id="tsMiniFill"></div>
+                <div class="ts-mini-card">
+                    <div class="ts-mini-label">Together we've raised</div>
+                    <div class="ts-mini-track">
+                        <div class="ts-mini-fill" id="tsMiniFill"></div>
+                    </div>
+                    <div class="ts-mini-val" id="tsMiniVal">Loading…</div>
                 </div>
-                <div class="ts-mini-val" id="tsMiniVal">Loading…</div>
             </div>
         `;
     }
