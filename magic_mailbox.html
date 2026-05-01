@@ -31,17 +31,24 @@
 
   body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--dark);
+    /* FIXED: Made background transparent to support varied host website colors */
+    background: transparent; 
     color: var(--text);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
-    /* Subtle festive radial behind everything */
-    background:
+    /* Optional: If you want to keep the radial glow but still be transparent, 
+       you can leave this in, but it might clash with bright host sites. 
+       Usually better to let the host site dictate the background. */
+    /* background:
       radial-gradient(ellipse 600px 400px at 50% 0%, rgba(251,175,51,0.08), transparent 60%),
-      var(--dark);
+      var(--dark); */
   }
 
-  .app { max-width: 600px; margin: 0 auto; padding: 40px 24px 64px; }
+  .app { 
+      max-width: 600px; 
+      margin: 0 auto; 
+      padding: 40px 24px 64px; 
+  }
 
   header { text-align: center; margin-bottom: 32px; }
   header h1 {
