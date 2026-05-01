@@ -11,14 +11,43 @@ function startRoutes() {
 
     const ROUTES_URL = apiBase + "?function=getRoutes";
 
-    /* ===== Inject styling if missing ===== */
+    /* ===== Inject styling and Leaflet if missing ===== */
     if (!document.getElementById("santa-routes-style")) {
         const style = document.createElement("style");
         style.id = "santa-routes-style";
         style.textContent = `
-            /* (your full CSS unchanged) */
+            /* Your full CSS unchanged */
+            .santa-route-map-container {
+                width: 100%;
+                height: 300px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+                overflow: hidden;
+            }
         `;
         document.head.appendChild(style);
+    }
+
+    // Inject Leaflet CSS
+    if (!document.querySelector('link[href*="leaflet.css"]')) {
+        const leafletCss = document.createElement('link');
+        leafletCss.rel = 'stylesheet';
+        leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(leafletCss);
+    }
+
+    // Inject Leaflet JS and GPX Plugin
+    if (!window.L) {
+        const leafletJs = document.createElement('script');
+        leafletJs.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        document.head.appendChild(leafletJs);
+        
+        leafletJs.onload = () => {
+            const gpxJs = document.createElement('script');
+            gpxJs.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js';
+            document.head.appendChild(gpxJs);
+        };
     }
 
     const tonightEl = document.getElementById("tonights-route");
@@ -49,7 +78,6 @@ function startRoutes() {
             const routes = (data.routes || []).slice();
 
             if (!routes.length) {
-                // FIXED: Added inline styling to match your theme for empty states
                 tonightEl.innerHTML =
                     '<p style="text-align:center; color: var(--text-dim); padding: 24px;">No sleigh routes added yet. 🎅</p>';
                 return;
@@ -85,14 +113,15 @@ function startRoutes() {
             }, 120);
 
             /* Divider */
-            // FIXED: Removed the hardcoded <hr> since routes.html already has <hr class="route-divider">.
-            // Just inserting the title directly before the list.
             allEl.insertAdjacentHTML("beforebegin", `
                 <h2 class="santa-section-title">📜 Full Route List</h2>
             `);
 
             /* Full route list */
             allEl.innerHTML = routes.map(r => createRouteCard(r, false)).join("");
+
+            /* Initialize Mini Maps after DOM is updated */
+            setTimeout(() => initMiniMaps(routes), 500);
 
         } catch (err) {
             console.error(err);
@@ -105,6 +134,7 @@ function startRoutes() {
     /* --- CARD BUILDER --- */
     function createRouteCard(route, highlight) {
         const name = route.routeName || "";
+        const safeNameId = name.replace(/\s+/g, '-').toLowerCase() || Math.random().toString(36).substring(7);
         const dateLabel = formatDate(route.date); 
         const startTime = route["Start Time"] || "";
         const endTime = route["End Time"] || "";
@@ -113,11 +143,6 @@ function startRoutes() {
         const streets = route.streets || "";
         const gpx = route.gpxUrl || "";
         const sponsor = route.sponsorurl || route.sponsorUrl || "";
-        const map = route.mapImageUrl || "";
-
-        const gpxViewer = gpx
-            ? `https://brt-23f.pages.dev/gpx_viewer.html?gpx=${encodeURIComponent(gpx)}`
-            : "";
 
         return `
 <article class="santa-route-card ${highlight ? "santa-route-card--highlight" : ""}">
@@ -127,12 +152,8 @@ function startRoutes() {
             <p class="santa-route-date">📅 ${dateLabel}${timeStr}</p>
             ${notes ? `<p>${notes}</p>` : ""}
             ${streets ? `<p><strong>Streets:</strong> ${streets}</p>` : ""}
-            <div class="santa-route-actions">
-                ${map ? `<a href="${map}" class="santa-btn" target="_blank">View Map</a>` : ""}
-                ${gpxViewer ? `<a href="${gpxViewer}" class="santa-btn santa-btn--ghost" target="_blank">Interactive GPX Map</a>` : ""}
-            </div>
         </div>
-        ${map ? `<div><img src="${map}" class="santa-preview"></div>` : ""}
+        ${gpx ? `<div class="santa-route-map"><div id="map-${safeNameId}" class="santa-route-map-container" data-gpx="${gpx}"></div></div>` : ""}
     </div>
 
     ${sponsor ? `
@@ -141,6 +162,53 @@ function startRoutes() {
         <img src="${sponsor}">
     </div>` : ""}
 </article>`;
+    }
+
+    /* --- MAP INITIALIZER --- */
+    function initMiniMaps(routes) {
+        // Ensure Leaflet and GPX plugin are fully loaded before firing
+        if (!window.L || !L.GPX) {
+            setTimeout(() => initMiniMaps(routes), 200);
+            return;
+        }
+
+        const mapContainers = document.querySelectorAll('.santa-route-map-container');
+        
+        mapContainers.forEach(container => {
+            const gpxUrl = container.getAttribute('data-gpx');
+            if (!gpxUrl) return;
+
+            // Initialize map
+            const map = L.map(container.id, {
+                zoomControl: true,
+                scrollWheelZoom: false // Prevent page scrolling from getting stuck on the map
+            }).setView([53.844, -0.428], 13);
+
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { 
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // Load GPX
+            new L.GPX(gpxUrl, {
+                async: true,
+                marker_options: {
+                  startIconUrl: 'https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png',
+                  endIconUrl: 'https://i.ibb.co/39WF0kBd/Santa-Marker-5.png',
+                  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                  iconSize: [32, 32], 
+                  iconAnchor: [16, 32]
+                },
+                polyline_options: {
+                  color: '#d31c1c', 
+                  opacity: 0.8,
+                  weight: 4,
+                  lineCap: 'round'
+                }
+            }).on('loaded', function(e) {
+                map.fitBounds(e.target.getBounds());
+            }).addTo(map);
+        });
     }
 }
 
