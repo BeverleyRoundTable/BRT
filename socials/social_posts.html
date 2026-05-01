@@ -710,6 +710,15 @@ document.querySelectorAll('[data-logo-mode]').forEach(btn => {
   });
 });
 
+  // Logo position tabs (Auto / Top Left / Top Right)
+document.querySelectorAll('[data-logo-pos]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.logoPos = btn.dataset.logoPos;
+    document.querySelectorAll('[data-logo-pos]').forEach(b => b.classList.toggle('active', b === btn));
+    drawCanvas();
+  });
+});
+  
 function renderLogoPreview() {
   const preview = document.getElementById('logo-preview');
   preview.innerHTML = '';
