@@ -37,17 +37,11 @@ function startRoutes() {
         document.head.appendChild(leafletCss);
     }
 
-    // Inject Leaflet JS and GPX Plugin
+    // Inject Leaflet JS
     if (!window.L) {
         const leafletJs = document.createElement('script');
         leafletJs.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
         document.head.appendChild(leafletJs);
-        
-        leafletJs.onload = () => {
-            const gpxJs = document.createElement('script');
-            gpxJs.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js';
-            document.head.appendChild(gpxJs);
-        };
     }
 
     const tonightEl = document.getElementById("tonights-route");
@@ -130,7 +124,6 @@ function startRoutes() {
         }
     })();
 
-
     /* --- CARD BUILDER --- */
     function createRouteCard(route, highlight) {
         const name = route.routeName || "";
@@ -166,30 +159,30 @@ function startRoutes() {
 
     /* --- MAP INITIALIZER --- */
     function initMiniMaps(routes) {
-        // Ensure Leaflet and GPX plugin are fully loaded before firing
-        if (!window.L || !L.GPX) {
+        // Ensure Leaflet is fully loaded before firing
+        if (!window.L) {
             setTimeout(() => initMiniMaps(routes), 200);
             return;
         }
 
         const mapContainers = document.querySelectorAll('.santa-route-map-container');
         
-        // Define custom icons once outside the loop for efficiency
-        const santaStartIcon = L.icon({
-            iconUrl: 'https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            shadowUrl: null // **CRITICAL: Disables default shadow**
+        // Define custom icons mimicking the exact logic from address.js
+        const startIcon = L.icon({ 
+            iconUrl: "https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png", 
+            iconSize: [48, 48], 
+            iconAnchor: [24, 48],
+            shadowUrl: null // Explicitly disable shadow
+        });
+        
+        const endIcon = L.icon({ 
+            iconUrl: "https://i.ibb.co/39WF0kBd/Santa-Marker-5.png", 
+            iconSize: [48, 48], 
+            iconAnchor: [24, 48],
+            shadowUrl: null // Explicitly disable shadow
         });
 
-        const santaEndIcon = L.icon({
-            iconUrl: 'https://i.ibb.co/39WF0kBd/Santa-Marker-5.png',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            shadowUrl: null // **CRITICAL: Disables default shadow**
-        });
-
-        mapContainers.forEach(container => {
+        mapContainers.forEach(async (container) => {
             const gpxUrl = container.getAttribute('data-gpx');
             if (!gpxUrl) return;
 
@@ -197,29 +190,43 @@ function startRoutes() {
             const map = L.map(container.id, {
                 zoomControl: true,
                 scrollWheelZoom: false // Prevent page scrolling from getting stuck on the map
-            }).setView([53.844, -0.428], 13);
+            });
 
             L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { 
                 maxZoom: 19,
                 attribution: '© OpenStreetMap'
             }).addTo(map);
 
-            // Load GPX
-            new L.GPX(gpxUrl, {
-                async: true,
-                marker_options: {
-                  startIcon: santaStartIcon, // Pass fully-defined icon
-                  endIcon: santaEndIcon,     // Pass fully-defined icon
-                },
-                polyline_options: {
-                  color: '#d31c1c', 
-                  opacity: 0.8,
-                  weight: 4,
-                  lineCap: 'round'
-                }
-            }).on('loaded', function(e) {
-                map.fitBounds(e.target.getBounds());
-            }).addTo(map);
+            try {
+                // Fetch the GPX file directly
+                const res = await fetch(gpxUrl, { cache: "no-store" });
+                if (!res.ok) throw new Error("Failed to fetch GPX");
+                const text = await res.text();
+
+                // Parse XML
+                const xml = new DOMParser().parseFromString(text, "text/xml");
+                const pts = [...xml.getElementsByTagName("trkpt")];
+                if (pts.length < 2) return;
+
+                // Extract coordinates
+                const latLngs = pts.map(p => [
+                    parseFloat(p.getAttribute("lat")),
+                    parseFloat(p.getAttribute("lon"))
+                ]);
+
+                // Draw the red route line
+                const routeLine = L.polyline(latLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(map);
+
+                // Auto-center and zoom the map to fit the route perfectly
+                map.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
+
+                // Drop the pins
+                L.marker(latLngs[0], { icon: startIcon }).addTo(map);
+                L.marker(latLngs[latLngs.length - 1], { icon: endIcon }).addTo(map);
+
+            } catch (err) {
+                console.error("Map rendering error:", err);
+            }
         });
     }
 }
