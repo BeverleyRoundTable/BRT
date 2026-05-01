@@ -174,6 +174,21 @@ function startRoutes() {
 
         const mapContainers = document.querySelectorAll('.santa-route-map-container');
         
+        // Define custom icons once outside the loop for efficiency
+        const santaStartIcon = L.icon({
+            iconUrl: 'https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            shadowUrl: null // **CRITICAL: Disables default shadow**
+        });
+
+        const santaEndIcon = L.icon({
+            iconUrl: 'https://i.ibb.co/39WF0kBd/Santa-Marker-5.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            shadowUrl: null // **CRITICAL: Disables default shadow**
+        });
+
         mapContainers.forEach(container => {
             const gpxUrl = container.getAttribute('data-gpx');
             if (!gpxUrl) return;
@@ -193,10 +208,8 @@ function startRoutes() {
             new L.GPX(gpxUrl, {
                 async: true,
                 marker_options: {
-                  startIconUrl: 'https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png',
-                  endIconUrl: 'https://i.ibb.co/39WF0kBd/Santa-Marker-5.png',
-                  iconSize: [32, 32], 
-                  iconAnchor: [16, 32]
+                  startIcon: santaStartIcon, // Pass fully-defined icon
+                  endIcon: santaEndIcon,     // Pass fully-defined icon
                 },
                 polyline_options: {
                   color: '#d31c1c', 
