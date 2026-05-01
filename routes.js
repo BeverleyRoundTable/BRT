@@ -128,6 +128,10 @@ function startRoutes() {
     function createRouteCard(route, highlight) {
         const name = route.routeName || "";
         const safeNameId = name.replace(/\s+/g, '-').toLowerCase() || Math.random().toString(36).substring(7);
+        
+        // Fix: Make the Map ID unique so Leaflet can render duplicates
+        const uniqueMapId = highlight ? `map-featured-${safeNameId}` : `map-list-${safeNameId}`;
+
         const dateLabel = formatDate(route.date); 
         const startTime = route["Start Time"] || "";
         const endTime = route["End Time"] || "";
@@ -146,7 +150,7 @@ function startRoutes() {
             ${notes ? `<p>${notes}</p>` : ""}
             ${streets ? `<p><strong>Streets:</strong> ${streets}</p>` : ""}
         </div>
-        ${gpx ? `<div class="santa-route-map"><div id="map-${safeNameId}" class="santa-route-map-container" data-gpx="${gpx}"></div></div>` : ""}
+        ${gpx ? `<div class="santa-route-map"><div id="${uniqueMapId}" class="santa-route-map-container" data-gpx="${gpx}"></div></div>` : ""}
     </div>
 
     ${sponsor ? `
