@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TurboSanta — Interactive Map</title>
+  
+  <meta name="theme-color" content="#0d0d0b">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+
+  <style>
+    :root {
+      --gold: #FBAF33;
+      --dark: #0d0d0b;
+      --surface: #161614;
+      --surface-2: #1e1e1b;
+      --border: rgba(255,255,255,0.08);
+      --text: #eaeae5;
+      --text-dim: rgba(255,255,255,0.55);
+      --rt-gold: var(--gold);
+      --rt-grey: var(--dark);
+    }
+
+    html, body { 
+      margin: 0; padding: 0; height: 100%; 
+      background: var(--dark); 
+      color: var(--text); 
+      font-family: 'DM Sans', sans-serif; 
+      overflow: hidden; 
+    }
+
+    #map { position: absolute; inset: 0; z-index: 100; }
+
+    #loadingCover { 
+      position: fixed; inset: 0; 
+      background: var(--rt-grey); 
+      display: flex; flex-direction: column; 
+      align-items: center; justify-content: center; 
+      z-index: 6000; 
+      transition: opacity 0.5s ease;
+    }
+    
+    #loadingSpinner { 
+      width: 52px; height: 52px; 
+      border-radius: 50%; 
+      border: 4px solid var(--border); 
+      border-top-color: var(--rt-gold); 
+      animation: spin .9s linear infinite; 
+      margin-bottom: 20px;
+    }
+    
+    #loadingText {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 2px;
+      color: var(--rt-gold);
+    }
+    
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Floating UI */
+    .header-panel {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(29, 29, 26, 0.95);
+      border: 1px solid var(--border);
+      padding: 12px 24px;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 4000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: none; /* Let clicks pass through to map */
+    }
+
+    .header-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 1px;
+      color: #fff;
+      margin: 0;
+      line-height: 1;
+    }
+    
+    .header-title span {
+      color: var(--rt-gold);
+    }
+    
+    .back-btn {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      z-index: 4000;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .back-btn:hover {
+      background: var(--surface);
+      border-color: var(--rt-gold);
+      color: var(--rt-gold);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loadingCover">
+    <div id="loadingSpinner"></div>
+    <div id="loadingText">LOADING MAP...</div>
+  </div>
+
+  <div class="header-panel">
+    <h1 class="header-title">INTERACTIVE <span>ROUTE MAP</span></h1>
+  </div>
+
+  <div id="map" role="application" aria-label="Interactive GPX Route Map"></div>
+  
+  <a href="#" class="back-btn" onclick="window.close(); return false;">Close Map</a>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      
+      // 1. Get the GPX URL from the query string
+      const params = new URLSearchParams(window.location.search);
+      const gpxUrl = params.get("gpx");
+      
+      const loadingCover = document.getElementById("loadingCover");
+      const loadingText = document.getElementById("loadingText");
+
+      if (!gpxUrl) {
+        loadingSpinner.style.display = "none";
+        loadingText.textContent = "ERROR: NO GPX PROVIDED";
+        loadingText.style.color = "var(--red)";
+        return;
+      }
+
+      // 2. Initialize the Map
+      // Defaulting to Beverley/Lapland coordinates, will auto-zoom to track shortly
+      const map = L.map("map", {
+        zoomControl: true
+      }).setView([53.844, -0.428], 13); 
+
+      // 3. Add the Map Tiles (Matching the tracker style)
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { 
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      // 4. Load the GPX using leaflet-gpx
+      new L.GPX(gpxUrl, {
+        async: true,
+        marker_options: {
+          startIconUrl: 'https://i.ibb.co/PzDYmwzZ/Santa-Marker-4.png', // TurboSanta Start Icon
+          endIconUrl: 'https://i.ibb.co/39WF0kBd/Santa-Marker-5.png',   // TurboSanta End Icon
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+          iconSize: [48, 48], 
+          iconAnchor: [24, 48]
+        },
+        polyline_options: {
+          color: '#d31c1c', // TurboSanta Red
+          opacity: 0.8,
+          weight: 5,
+          lineCap: 'round'
+        }
+      }).on('loaded', function(e) {
+        // Fit the map to the bounding box of the GPX track
+        map.fitBounds(e.target.getBounds());
+        
+        // Hide loading screen
+        loadingCover.style.opacity = '0';
+        setTimeout(() => loadingCover.style.display = 'none', 500);
+
+      }).on('error', function(e) {
+        console.error("Error loading GPX:", e);
+        loadingSpinner.style.display = "none";
+        loadingText.textContent = "ERROR: COULD NOT LOAD ROUTE";
+        loadingText.style.color = "var(--red)";
+      }).addTo(map);
+
+    });
+  </script>
+</body>
+</html>
