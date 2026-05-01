@@ -49,8 +49,9 @@ function startRoutes() {
             const routes = (data.routes || []).slice();
 
             if (!routes.length) {
+                // FIXED: Added inline styling to match your theme for empty states
                 tonightEl.innerHTML =
-                    '<p class="santa-no-route">No sleigh routes added yet. 🎅</p>';
+                    '<p style="text-align:center; color: var(--text-dim); padding: 24px;">No sleigh routes added yet. 🎅</p>';
                 return;
             }
 
@@ -75,20 +76,19 @@ function startRoutes() {
             }
 
             // subtle pulse on featured route
-setTimeout(() => {
-    const card = tonightEl.querySelector(".santa-route-card");
-    if (card) {
-        card.classList.add("pulse");
-        setTimeout(() => card.classList.remove("pulse"), 1400);
-    }
-}, 120);
+            setTimeout(() => {
+                const card = tonightEl.querySelector(".santa-route-card");
+                if (card) {
+                    card.classList.add("pulse");
+                    setTimeout(() => card.classList.remove("pulse"), 1400);
+                }
+            }, 120);
 
             /* Divider */
+            // FIXED: Removed the hardcoded <hr> since routes.html already has <hr class="route-divider">.
+            // Just inserting the title directly before the list.
             allEl.insertAdjacentHTML("beforebegin", `
-                <div style="margin: 35px 0 15px; text-align:center;">
-                    <hr style="border:0; height:2px; width:65%; background:rgba(255,255,255,0.3); border-radius:4px;">
-                    <h2 class="santa-section-title" style="margin-top:1rem;">📜 Full Route List</h2>
-                </div>
+                <h2 class="santa-section-title">📜 Full Route List</h2>
             `);
 
             /* Full route list */
@@ -97,7 +97,7 @@ setTimeout(() => {
         } catch (err) {
             console.error(err);
             tonightEl.innerHTML =
-                '<p class="santa-no-route">Sorry — could not load sleigh routes.</p>';
+                '<p style="text-align:center; color: var(--red); padding: 24px;">Sorry — could not load sleigh routes.</p>';
         }
     })();
 
