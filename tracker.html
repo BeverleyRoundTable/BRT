@@ -1263,9 +1263,11 @@
         // ── HEADING-UP MAP ROTATION ──
         // Uses MapLibre (driver mode) with smooth easeTo for Waze-style rotation,
         // or leaflet-rotate plugin (other modes) as a fallback.
+        // Skips MapLibre rotation when driverFollow is off (user has panned away).
         rotateMap(headingDeg) {
           AppState.vars.currentMapHeading = headingDeg;
           if (AppState.mlMap) {
+            if (AppState.flags.driverFollow === false) return;
             // MapLibre: bearing is degrees clockwise from north (matches heading directly).
             // easeTo gives smooth animated rotation; duration tuned to feel responsive but not jittery.
             AppState.mlMap.easeTo({ bearing: headingDeg, duration: 400, essential: true });
@@ -1670,9 +1672,12 @@
                 }
               }
               // Centre the camera on the driver — MapLibre uses easeTo for smooth animation,
-              // Leaflet uses panTo as a fallback
+              // Leaflet uses panTo as a fallback. Skip when user has panned away (driverFollow=false).
+              AppState.vars.lastDriverFix = { lat: vp.lat, lng: vp.lng };
               if (AppState.mlMap) {
-                AppState.mlMap.easeTo({ center: [vp.lng, vp.lat], duration: 800, essential: true });
+                if (AppState.flags.driverFollow !== false) {
+                  AppState.mlMap.easeTo({ center: [vp.lng, vp.lat], duration: 800, essential: true });
+                }
               } else {
                 AppState.map.panTo([vp.lat, vp.lng], { animate: true, duration: 1 });
               }
@@ -1806,10 +1811,46 @@
                 bearing: 0,
                 maxPitch: 75,
                 attributionControl: { compact: true },
-                interactive: false,    // Driver shouldn't pan/zoom while driving — camera follows GPS
                 fadeDuration: 0
               });
               AppState.mlMap = mlMap;
+
+              // Lock manual rotation — heading-up nav owns bearing.
+              // Pinch-zoom and pan stay enabled (Google-Maps-satnav style).
+              mlMap.dragRotate.disable();
+              mlMap.touchZoomRotate.disableRotation();
+              mlMap.keyboard.disable();
+
+              // Follow mode: camera tracks GPS by default. Pan exits follow,
+              // pinch-zoom does NOT (matches Google Maps satnav).
+              AppState.flags.driverFollow = true;
+
+              // Recenter button — appears when user pans away
+              const recenterBtnEl = document.createElement('button');
+              recenterBtnEl.id = 'driverRecenterBtn';
+              recenterBtnEl.innerHTML = '🎯 RECENTER';
+              recenterBtnEl.style.cssText = "position:fixed; right:16px; bottom:130px; padding:14px 18px; background:var(--rt-gold); color:#000; border:3px solid rgba(255,255,255,0.2); border-radius:24px; font-family:'Bebas Neue',sans-serif; font-size:1.1em; font-weight:900; letter-spacing:2px; box-shadow:0 8px 24px rgba(0,0,0,0.6), 0 0 20px rgba(251,175,51,0.3); z-index:5500; display:none; cursor:pointer;";
+              document.body.appendChild(recenterBtnEl);
+              recenterBtnEl.onclick = () => {
+                AppState.flags.driverFollow = true;
+                recenterBtnEl.style.display = 'none';
+                // Snap the camera back over the last known driver position with the satnav framing
+                if (AppState.vars.lastDriverFix) {
+                  mlMap.easeTo({
+                    center: [AppState.vars.lastDriverFix.lng, AppState.vars.lastDriverFix.lat],
+                    zoom: 18, pitch: 60,
+                    bearing: AppState.vars.currentMapHeading || 0,
+                    duration: 800, essential: true
+                  });
+                }
+              };
+
+              // dragstart fires only on user-initiated pan, not programmatic easeTo —
+              // so this won't be triggered by our own follow updates.
+              mlMap.on('dragstart', () => {
+                AppState.flags.driverFollow = false;
+                recenterBtnEl.style.display = 'block';
+              });
 
               mlMap.on('load', () => {
                 // Add the GPX route as a 3-layer line (glow + main + completed) to mirror the existing visual style
