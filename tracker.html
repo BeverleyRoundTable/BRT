@@ -1469,30 +1469,30 @@
             txPill.innerHTML = `<span id="txState">📡 LIVE</span> <span>Tx: <span id="txSent">0</span></span> <span>Q: <span id="txQueued">0</span></span>`;
             document.body.appendChild(txPill);
             
-            // Driver position arrow — MapLibre marker (preferred) or Leaflet fallback
-            // The arrow is a screen-aligned blue triangle that tilts slightly to indicate
-            // off-route deviation. With rotationAlignment 'viewport' the rotation we set
-            // is in screen-space, matching the existing arrowAngle calculation.
-            const arrowEl = document.createElement('div');
-            arrowEl.style.cssText = "width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 75%; transition: transform 0.3s ease;";
-            const arrowWrap = document.createElement('div');
-            arrowWrap.style.cssText = "width:28px; height:34px; display:flex; align-items:flex-end; justify-content:center; pointer-events:none;";
-            arrowWrap.appendChild(arrowEl);
-
+            // Driver position arrow.
+            // MapLibre path uses an SVG arrow because CSS-border triangles inside the
+            // MapLibre marker container don't render at a predictable fixed pixel size.
+            // Leaflet fallback uses the original inline-styled border-triangle div, unchanged.
             let driverMarker;
             if (AppState.mlMap) {
+              const arrowEl = document.createElement('div');
+              arrowEl.style.cssText = "width:28px; height:34px; pointer-events:none; transform-origin:50% 75%; transition:transform 0.3s ease; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));";
+              arrowEl.innerHTML = '<svg width="28" height="34" viewBox="0 0 28 34" xmlns="http://www.w3.org/2000/svg" style="display:block;"><polygon points="14,0 28,34 0,34" fill="#007AFF"/></svg>';
+              // Keep a reference for the rotation step further down (replaces the
+              // querySelector('div') used in the Leaflet path).
               driverMarker = new maplibregl.Marker({
-                element: arrowWrap,
+                element: arrowEl,
                 anchor: 'bottom',                 // GPS point sits at the base of the arrow
                 offset: [0, 8],                   // Nudge up by 8px so geo point ≈ original Leaflet iconAnchor [14,26]
                 rotationAlignment: 'viewport',    // Rotation in screen-space
                 pitchAlignment: 'viewport'        // Stay flat to camera, don't tilt with pitch
               }).setLngLat([0, 0]).addTo(AppState.mlMap);
+              driverMarker._arrowEl = arrowEl;    // Stash for the rotation step below
             } else {
               driverMarker = L.marker([0,0], {
                 icon: L.divIcon({
                   className: 'driver-arrow',
-                  html: arrowEl.outerHTML,
+                  html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 75%; transition: transform 0.3s ease;"></div>',
                   iconSize: [28, 34],
                   iconAnchor: [14, 26]
                 }),
@@ -1662,7 +1662,7 @@
                   while (arrowAngle > 180) arrowAngle -= 360;
                   while (arrowAngle < -180) arrowAngle += 360;
                   if (AppState.mlMap) {
-                    arrowEl.style.transform = `rotate(${arrowAngle}deg)`;
+                    if (driverMarker._arrowEl) driverMarker._arrowEl.style.transform = `rotate(${arrowAngle}deg)`;
                   } else {
                     const arrowDiv = driverMarker.getElement()?.querySelector('div');
                     if (arrowDiv) arrowDiv.style.transform = `rotate(${arrowAngle}deg)`;
