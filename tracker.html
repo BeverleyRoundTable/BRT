@@ -1348,6 +1348,7 @@
             const snap = snapToGpxIndex(visualPos, AppConfig.GPX); if (snap && snap.distance < 50) visualPos = snap.point;
             if (AppState.gpxRoute && AppState.gpxRoute.length > 1) { const bestPoint = snapToGpxIndex(visualPos, null); if (bestPoint && bestPoint.distance <= 50) { const percentComplete = Math.min(100, Math.round((bestPoint.point.index || AppState.vars.lastSnapIndex) / (AppState.gpxRoute.length - 1) * 100)); AppState.dom.statusBox.style.setProperty('--progress', `${percentComplete}%`); if (AppState.flags.isDriver) { const bigBox = document.getElementById("driverProgressBox"); if (bigBox) bigBox.textContent = `${percentComplete}%`; } } else { AppState.dom.statusBox.style.setProperty('--progress', `0%`); if (AppState.flags.isDriver) { const bigBox = document.getElementById("driverProgressBox"); if (bigBox) bigBox.textContent = `OFF ROUTE`; } } }
             if (AppState.dynamicRouteRemainingMain) { const idx = AppState.vars.lastSnapIndex; AppState.dynamicRouteCompleted.setLatLngs(AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lat, p.lng])); const remaining = AppState.gpxRoute.slice(idx).map(p => [p.lat, p.lng]); AppState.dynamicRouteRemainingMain.setLatLngs(remaining); AppState.dynamicRouteRemainingGlow.setLatLngs(remaining); }
+            if (AppState.mlMap && AppState.flags.gpxLoaded && AppState.gpxRoute) { const idx = AppState.vars.lastSnapIndex; const cCoords = AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lng, p.lat]); const rCoords = AppState.gpxRoute.slice(idx).map(p => [p.lng, p.lat]); const cSrc = AppState.mlMap.getSource('gpx-route-completed'); const rSrc = AppState.mlMap.getSource('gpx-route-remaining'); if (cSrc) cSrc.setData(cCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: cCoords } } : { type: 'FeatureCollection', features: [] }); if (rSrc) rSrc.setData(rCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: rCoords } } : { type: 'FeatureCollection', features: [] }); }
           }
 
           animateMarkerTo(visualPos.lat, visualPos.lng);
@@ -1643,6 +1644,11 @@
               if (snapResult && snapResult.point) {
                 TurnByTurn.update(snapResult.point.index, snapResult.distance, speed);
               }
+
+              // Real-time route progress on the MapLibre map — shrink the red/gold ahead,
+              // grow the grey trail behind. Mirrors the line ~1350 update but fires every
+              // GPS tick so the visual matches the driver's position immediately, like Google Maps.
+              if (AppState.mlMap && AppState.flags.gpxLoaded && AppState.gpxRoute) { const idx = AppState.vars.lastSnapIndex; const cCoords = AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lng, p.lat]); const rCoords = AppState.gpxRoute.slice(idx).map(p => [p.lng, p.lat]); const cSrc = AppState.mlMap.getSource('gpx-route-completed'); const rSrc = AppState.mlMap.getSource('gpx-route-remaining'); if (cSrc) cSrc.setData(cCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: cCoords } } : { type: 'FeatureCollection', features: [] }); if (rSrc) rSrc.setData(rCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: rCoords } } : { type: 'FeatureCollection', features: [] }); }
               
               // Position the driver arrow — MapLibre uses [lng, lat], Leaflet uses [lat, lng]
               if (AppState.mlMap) {
@@ -1853,26 +1859,38 @@
               });
 
               mlMap.on('load', () => {
-                // Add the GPX route as a 3-layer line (glow + main + completed) to mirror the existing visual style
+                // Add the GPX route as 3 layers mirroring the original Leaflet polylines:
+                // completed (grey dashed, behind driver), remaining glow (gold), remaining main (red).
+                // The two sources are updated each tick alongside the Leaflet setLatLngs calls.
                 if (AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 1) {
                   const coords = AppState.gpxRoute.map(p => [p.lng, p.lat]);
-                  mlMap.addSource('gpx-route', {
+                  mlMap.addSource('gpx-route-completed', {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: [] }
+                  });
+                  mlMap.addSource('gpx-route-remaining', {
                     type: 'geojson',
                     data: { type: 'Feature', geometry: { type: 'LineString', coordinates: coords } }
                   });
-                  // Glow underlay
+                  // Layer order: completed (bottom) → glow (middle) → main red (top)
+                  mlMap.addLayer({
+                    id: 'gpx-route-completed',
+                    type: 'line',
+                    source: 'gpx-route-completed',
+                    layout: { 'line-cap': 'round', 'line-join': 'round' },
+                    paint: { 'line-color': '#808080', 'line-width': 4, 'line-opacity': 0.5, 'line-dasharray': [2, 2] }
+                  });
                   mlMap.addLayer({
                     id: 'gpx-route-glow',
                     type: 'line',
-                    source: 'gpx-route',
+                    source: 'gpx-route-remaining',
                     layout: { 'line-cap': 'round', 'line-join': 'round' },
                     paint: { 'line-color': '#ffd700', 'line-width': 12, 'line-opacity': 0.45, 'line-blur': 4 }
                   });
-                  // Main red line
                   mlMap.addLayer({
                     id: 'gpx-route-main',
                     type: 'line',
-                    source: 'gpx-route',
+                    source: 'gpx-route-remaining',
                     layout: { 'line-cap': 'round', 'line-join': 'round' },
                     paint: { 'line-color': '#d31c1c', 'line-width': 6, 'line-opacity': 0.95 }
                   });
