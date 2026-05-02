@@ -14,6 +14,9 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
   <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
+  <!-- MapLibre GL JS — used in driver mode for Waze/Google Maps-style satnav (upright labels + 3D pitch) -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
   <style>
     :root {
@@ -56,6 +59,14 @@
     }
     #map { position: absolute; inset: 0; z-index: 100; }
     body.dim-ui #map { filter: brightness(0.85); transition: filter 600ms ease; }
+    /* MapLibre satnav map — only used in driver mode */
+    #mlmap { position: absolute; inset: 0; z-index: 100; display: none; }
+    body.driver-mode #map { display: none; }
+    body.driver-mode #mlmap { display: block; }
+    /* Hide MapLibre's default attribution control — we'll add a discreet credit elsewhere */
+    body.driver-mode .maplibregl-ctrl-bottom-right,
+    body.driver-mode .maplibregl-ctrl-bottom-left { z-index: 200; }
+    body.driver-mode .maplibregl-ctrl-attrib { font-size: 9px; opacity: 0.5; }
     
     #snow { position:fixed; inset:0; pointer-events:none; z-index:1500; opacity:0; transition:opacity 800ms ease; }
     body.snowing #snow { opacity:1; filter:drop-shadow(0 0 4px white); }
@@ -600,6 +611,7 @@
   <div id="kioskBanner" class="kiosk-banner"></div>
   <div id="kioskSponsor" class="kiosk-sponsor"></div>
   <div id="map" role="application" aria-label="Live Santa tracker map"></div>
+  <div id="mlmap" role="application" aria-label="Driver satnav map" aria-hidden="true"></div>
   <canvas id="snow" aria-hidden="true"></canvas>
   <canvas id="fireworks" aria-hidden="true"></canvas>
   <div id="driverProgressBox" class="driver-progress-box" aria-hidden="true">0%</div>
@@ -817,7 +829,7 @@
       };
 
       const AppState = {
-        map: null, marker: null, notifyMarker: null, gpxRoute: null, lastFix: null, recentFixes: [], routeFixes: [],
+        map: null, mlMap: null, marker: null, notifyMarker: null, gpxRoute: null, lastFix: null, recentFixes: [], routeFixes: [],
         flags: { follow: true, firstFix: true, isKiosk: false, gpxLoaded: false, snowActive: false, pageVisible: !document.hidden, awaitingPin: false, browserNotified: sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1", hasPassedSticky: sessionStorage.getItem("SANTA_HAS_PASSED") === "1", celebrationFired: sessionStorage.getItem("SANTA_CELEBRATION_FIRED") === "1", musicEnabled: false },
         vars: { apiUrl: null, sleighName: "Santa Sleigh", staleSince: null, lastSnapIndex: 0, snowflakes: [], animRaf: null, pendingSubscription: null, notifyLatLng: null, lastVisualPos: null, escapeListener: null, lastElfCamUrl: null, lastSeenMsgTs: Number(sessionStorage.getItem('SANTA_LAST_MSG_TS')) || 0, pollTimer: null, consecutiveErrors: 0, musicUrl: null, currentMapHeading: 0 },
         dom: { loading: document.getElementById("loadingCover"), statusBox: document.getElementById("statusBox"), followBtn: document.getElementById("followBtn"), recenterBtn: document.getElementById("recenterBtn"), notifyBtn: document.getElementById("notifyBtn"), msgBtn: document.getElementById("msgBtn"), statusDot: document.getElementById("statusDot"), donateLink: document.getElementById("donateLink"), donateBox: document.getElementById("donateBox"), kioskBanner: document.getElementById("kioskBanner"), sponsorBox: document.getElementById("kioskSponsor"), toast: document.getElementById("toast"), snowCanvas: document.getElementById("snow"), shareBtn: document.getElementById("shareBtn"), musicBtn: document.getElementById("musicBtn"), fireworks: document.getElementById("fireworks") }
@@ -850,7 +862,7 @@
       let wakeLock = null;
       async function requestWakeLock() { try { if ("wakeLock" in navigator) { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => setTimeout(requestWakeLock, 2000)); } } catch(e) {} }
 
-      function animateMarkerTo(targetLat, targetLng) { if (!AppState.marker) return; const startLL = AppState.marker.getLatLng(); const start = { lat: startLL.lat, lng: startLL.lng }; const end = { lat: targetLat, lng: targetLng }; const startTime = performance.now(); const duration = 900; let hasPanned = false; if (AppState.vars.animRaf) cancelAnimationFrame(AppState.vars.animRaf); function step(now) { const t = Math.min(1, (now - startTime) / duration); const e = Utils.easeOutCubic(t); const lat = Utils.lerp(start.lat, end.lat, e); const lng = Utils.lerp(start.lng, end.lng, e); const ll = L.latLng(lat, lng); AppState.marker.setLatLng(ll); AppState.vars.lastVisualPos = { lat: ll.lat, lng: ll.lng }; if ((AppState.flags.follow || AppState.flags.isKiosk) && !AppState.flags.firstFix && !hasPanned) { AppState.map.panTo([end.lat, end.lng], { animate: true, duration: 0.9 }); hasPanned = true; } if (t < 1) { AppState.vars.animRaf = requestAnimationFrame(step); } else { AppState.vars.animRaf = null; } } AppState.vars.animRaf = requestAnimationFrame(step); }
+      function animateMarkerTo(targetLat, targetLng) { if (!AppState.marker) return; const startLL = AppState.marker.getLatLng(); const start = { lat: startLL.lat, lng: startLL.lng }; const end = { lat: targetLat, lng: targetLng }; const startTime = performance.now(); const duration = 900; let hasPanned = false; if (AppState.vars.animRaf) cancelAnimationFrame(AppState.vars.animRaf); function step(now) { const t = Math.min(1, (now - startTime) / duration); const e = Utils.easeOutCubic(t); const lat = Utils.lerp(start.lat, end.lat, e); const lng = Utils.lerp(start.lng, end.lng, e); const ll = L.latLng(lat, lng); AppState.marker.setLatLng(ll); AppState.vars.lastVisualPos = { lat: ll.lat, lng: ll.lng }; if ((AppState.flags.follow || AppState.flags.isKiosk) && !AppState.flags.firstFix && !hasPanned && !AppState.flags.isDriver) { AppState.map.panTo([end.lat, end.lng], { animate: true, duration: 0.9 }); hasPanned = true; } if (t < 1) { AppState.vars.animRaf = requestAnimationFrame(step); } else { AppState.vars.animRaf = null; } } AppState.vars.animRaf = requestAnimationFrame(step); }
       function pushFix(lat, lng, ts) { const fixes = AppState.recentFixes; const last = fixes[fixes.length - 1]; const dist = last ? Utils.haversineMeters(last, { lat, lng }) : 0; fixes.push({ lat, lng, ts, cumulative: (last?.cumulative || 0) + dist }); const cutoff = ts - AppConfig.API.MOTION_WINDOW_MS; while (fixes.length && fixes[0].ts < cutoff) fixes.shift(); }
       function pushRouteFix(routeDist, ts) { const fixes = AppState.routeFixes; fixes.push({ routeDist, ts }); const cutoff = ts - AppConfig.API.MOTION_WINDOW_MS; while (fixes.length && fixes[0].ts < cutoff) fixes.shift(); }
       function isSleighMoving() { if (AppState.recentFixes.length < 2) return false; const first = AppState.recentFixes[0], last = AppState.recentFixes[AppState.recentFixes.length - 1]; return (last.cumulative - first.cumulative) >= AppConfig.API.MOVE_THRESHOLD_METERS; }
@@ -1248,11 +1260,19 @@
           } catch (e) {}
         },
 
-        // ── HEADING-UP MAP ROTATION (via leaflet-rotate plugin) ──
+        // ── HEADING-UP MAP ROTATION ──
+        // Uses MapLibre (driver mode) with smooth easeTo for Waze-style rotation,
+        // or leaflet-rotate plugin (other modes) as a fallback.
         rotateMap(headingDeg) {
+          AppState.vars.currentMapHeading = headingDeg;
+          if (AppState.mlMap) {
+            // MapLibre: bearing is degrees clockwise from north (matches heading directly).
+            // easeTo gives smooth animated rotation; duration tuned to feel responsive but not jittery.
+            AppState.mlMap.easeTo({ bearing: headingDeg, duration: 400, essential: true });
+            return;
+          }
           if (!AppState.map || typeof AppState.map.setBearing !== 'function') return;
           AppState.map.setBearing(-headingDeg);
-          AppState.vars.currentMapHeading = headingDeg;
         }
       };
 
@@ -1435,7 +1455,12 @@
                                         
             AppState.dom.statusBox.textContent = "🧭 Sat-Nav & Beacon Active";
             AppState.dom.statusBox.style.color = "var(--rt-gold)";
-            AppState.map.setZoom(18);
+            // Zoom in for nav — use MapLibre when available (driver mode), fallback to Leaflet
+            if (AppState.mlMap) {
+              AppState.mlMap.easeTo({ zoom: 18, pitch: 60, duration: 1200, essential: true });
+            } else {
+              AppState.map.setZoom(18);
+            }
             
             // ── BRANDED TX STATUS PILL ──
             const txPill = document.createElement("div");
@@ -1444,15 +1469,36 @@
             txPill.innerHTML = `<span id="txState">📡 LIVE</span> <span>Tx: <span id="txSent">0</span></span> <span>Q: <span id="txQueued">0</span></span>`;
             document.body.appendChild(txPill);
             
-            const driverMarker = L.marker([0,0], {
-              icon: L.divIcon({
-                className: 'driver-arrow',
-                html: '<div style="width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 75%; transition: transform 0.3s ease;"></div>',
-                iconSize: [28, 34],
-                iconAnchor: [14, 26]
-              }),
-              zIndexOffset: 1000
-            }).addTo(AppState.map);
+            // Driver position arrow — MapLibre marker (preferred) or Leaflet fallback
+            // The arrow is a screen-aligned blue triangle that tilts slightly to indicate
+            // off-route deviation. With rotationAlignment 'viewport' the rotation we set
+            // is in screen-space, matching the existing arrowAngle calculation.
+            const arrowEl = document.createElement('div');
+            arrowEl.style.cssText = "width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:34px solid #007AFF; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform-origin: 50% 75%; transition: transform 0.3s ease;";
+            const arrowWrap = document.createElement('div');
+            arrowWrap.style.cssText = "width:28px; height:34px; display:flex; align-items:flex-end; justify-content:center; pointer-events:none;";
+            arrowWrap.appendChild(arrowEl);
+
+            let driverMarker;
+            if (AppState.mlMap) {
+              driverMarker = new maplibregl.Marker({
+                element: arrowWrap,
+                anchor: 'bottom',                 // GPS point sits at the base of the arrow
+                offset: [0, 8],                   // Nudge up by 8px so geo point ≈ original Leaflet iconAnchor [14,26]
+                rotationAlignment: 'viewport',    // Rotation in screen-space
+                pitchAlignment: 'viewport'        // Stay flat to camera, don't tilt with pitch
+              }).setLngLat([0, 0]).addTo(AppState.mlMap);
+            } else {
+              driverMarker = L.marker([0,0], {
+                icon: L.divIcon({
+                  className: 'driver-arrow',
+                  html: arrowEl.outerHTML,
+                  iconSize: [28, 34],
+                  iconAnchor: [14, 26]
+                }),
+                zIndexOffset: 1000
+              }).addTo(AppState.map);
+            }
             
             // Smoothed heading for map rotation (Google Maps-style stability)
             let smoothedHeading = null;
@@ -1596,8 +1642,12 @@
                 TurnByTurn.update(snapResult.point.index, snapResult.distance, speed);
               }
               
-              // Position the driver arrow
-              driverMarker.setLatLng([vp.lat, vp.lng]);
+              // Position the driver arrow — MapLibre uses [lng, lat], Leaflet uses [lat, lng]
+              if (AppState.mlMap) {
+                driverMarker.setLngLat([vp.lng, vp.lat]);
+              } else {
+                driverMarker.setLatLng([vp.lat, vp.lng]);
+              }
               
               // Rotate arrow to track the IMMEDIATE route line (not the smoothed map heading)
               // Uses a very short look-ahead (3 points = ~30m) so the arrow follows
@@ -1611,11 +1661,21 @@
                   let arrowAngle = immediateRouteBearing - smoothedHeading;
                   while (arrowAngle > 180) arrowAngle -= 360;
                   while (arrowAngle < -180) arrowAngle += 360;
-                  const arrowDiv = driverMarker.getElement()?.querySelector('div');
-                  if (arrowDiv) arrowDiv.style.transform = `rotate(${arrowAngle}deg)`;
+                  if (AppState.mlMap) {
+                    arrowEl.style.transform = `rotate(${arrowAngle}deg)`;
+                  } else {
+                    const arrowDiv = driverMarker.getElement()?.querySelector('div');
+                    if (arrowDiv) arrowDiv.style.transform = `rotate(${arrowAngle}deg)`;
+                  }
                 }
               }
-              AppState.map.panTo([vp.lat, vp.lng], { animate: true, duration: 1 });
+              // Centre the camera on the driver — MapLibre uses easeTo for smooth animation,
+              // Leaflet uses panTo as a fallback
+              if (AppState.mlMap) {
+                AppState.mlMap.easeTo({ center: [vp.lng, vp.lat], duration: 800, essential: true });
+              } else {
+                AppState.map.panTo([vp.lat, vp.lng], { animate: true, duration: 1 });
+              }
               
               // ── TRANSMIT GPS TO FIREBASE ──
               const payload = { lat, lng, ts: new Date().toISOString() };
@@ -1726,6 +1786,70 @@
             document.getElementById("modalConfirmBtn").addEventListener("click", () => { const email = document.getElementById("subEmail").value.trim(); document.getElementById("emailModal").style.display = "none"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } Utils.toggleFollowControls(true); if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") { showToast("🎅 You're already signed up!"); return; } AppState.dom.statusBox.textContent = "🔔 Saving your notification..."; if (!AppState.vars.pendingSubscription) { showToast("❌ Error: No location selected."); return; } fetch(`${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`).then(r=>r.json()).then(d => { if (d.ok) { sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1"); showToast(email ? "🎅 You're signed up! We'll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts."); AppState.dom.statusBox.textContent = ""; if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; } AppState.vars.pendingSubscription = null; } else { showToast("❌ Error saving notification."); AppState.dom.statusBox.textContent = "❌ Failed to save."; } }).catch(() => { showToast("❌ Network error."); AppState.dom.statusBox.textContent = "❌ Connection failed."; }); });
 
             if (!AppState.flags.isKiosk && !AppState.flags.isDriver) { const shareBtn = AppState.dom.shareBtn; shareBtn.style.display = "inline-block"; shareBtn.onclick = async () => { const shareUrl = window.location.href; const shareText = `🎅 Track Santa's sleigh LIVE! ${AppState.vars.sleighName}`; if (navigator.share) { try { await navigator.share({ title: "Santa Sleigh Tracker", text: shareText, url: shareUrl }); showToast("🎅 Shared!"); } catch(e) {} } else { try { await navigator.clipboard.writeText(shareUrl); showToast("📋 Link copied! Share it with your street!"); } catch(e) { prompt("Copy this tracker link:", shareUrl); } } }; }
+
+            // ══════════════════════════════════════════════
+            //  DRIVER MODE — MapLibre GL JS satnav overlay
+            //  Vector tiles → labels stay upright when bearing rotates,
+            //  plus native pitch for Waze/Google-Maps-style 3D perspective.
+            // ══════════════════════════════════════════════
+            if (AppState.flags.isDriver && typeof maplibregl !== 'undefined') {
+              const initialCenter = (AppState.gpxRoute && AppState.gpxRoute.length)
+                ? [AppState.gpxRoute[0].lng, AppState.gpxRoute[0].lat]
+                : [AppConfig.LOCATIONS.LAPLAND[1], AppConfig.LOCATIONS.LAPLAND[0]];
+
+              const mlMap = new maplibregl.Map({
+                container: 'mlmap',
+                style: 'https://tiles.openfreemap.org/styles/liberty',
+                center: initialCenter,
+                zoom: 14,
+                pitch: 60,            // 3D tilt — Waze/Google Maps satnav perspective
+                bearing: 0,
+                maxPitch: 75,
+                attributionControl: { compact: true },
+                interactive: false,    // Driver shouldn't pan/zoom while driving — camera follows GPS
+                fadeDuration: 0
+              });
+              AppState.mlMap = mlMap;
+
+              mlMap.on('load', () => {
+                // Add the GPX route as a 3-layer line (glow + main + completed) to mirror the existing visual style
+                if (AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 1) {
+                  const coords = AppState.gpxRoute.map(p => [p.lng, p.lat]);
+                  mlMap.addSource('gpx-route', {
+                    type: 'geojson',
+                    data: { type: 'Feature', geometry: { type: 'LineString', coordinates: coords } }
+                  });
+                  // Glow underlay
+                  mlMap.addLayer({
+                    id: 'gpx-route-glow',
+                    type: 'line',
+                    source: 'gpx-route',
+                    layout: { 'line-cap': 'round', 'line-join': 'round' },
+                    paint: { 'line-color': '#ffd700', 'line-width': 12, 'line-opacity': 0.45, 'line-blur': 4 }
+                  });
+                  // Main red line
+                  mlMap.addLayer({
+                    id: 'gpx-route-main',
+                    type: 'line',
+                    source: 'gpx-route',
+                    layout: { 'line-cap': 'round', 'line-join': 'round' },
+                    paint: { 'line-color': '#d31c1c', 'line-width': 6, 'line-opacity': 0.95 }
+                  });
+                }
+
+                // Fit to route bounds so the driver can orient before navigation starts
+                if (AppState.gpxRoute && AppState.gpxRoute.length > 1) {
+                  const lats = AppState.gpxRoute.map(p => p.lat);
+                  const lngs = AppState.gpxRoute.map(p => p.lng);
+                  const bounds = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
+                  mlMap.fitBounds(bounds, { padding: 60, pitch: 0, bearing: 0, duration: 0 });
+                }
+              });
+
+              // Fix: maplibre canvas may not size correctly until layout settles
+              setTimeout(() => mlMap.resize(), 100);
+              window.addEventListener('resize', () => mlMap.resize());
+            }
 
             updateTracker();
         };
