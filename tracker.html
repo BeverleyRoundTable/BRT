@@ -1261,18 +1261,13 @@
         },
 
         // ── HEADING-UP MAP ROTATION ──
-        // Uses MapLibre (driver mode) with smooth easeTo for Waze-style rotation,
-        // or leaflet-rotate plugin (other modes) as a fallback.
-        // Skips MapLibre rotation when driverFollow is off (user has panned away).
+        // For MapLibre (driver mode), bearing is applied as part of a combined easeTo
+        // call in the GPS watch handler — that way bearing + centre animate together
+        // and don't interrupt each other every tick (the source of the "fixed map" bug).
+        // For non-driver modes, fall through to leaflet-rotate's setBearing.
         rotateMap(headingDeg) {
           AppState.vars.currentMapHeading = headingDeg;
-          if (AppState.mlMap) {
-            if (AppState.flags.driverFollow === false) return;
-            // MapLibre: bearing is degrees clockwise from north (matches heading directly).
-            // easeTo gives smooth animated rotation; duration tuned to feel responsive but not jittery.
-            AppState.mlMap.easeTo({ bearing: headingDeg, duration: 400, essential: true });
-            return;
-          }
+          if (AppState.mlMap) return; // bearing applied by GPS handler's combined easeTo
           if (!AppState.map || typeof AppState.map.setBearing !== 'function') return;
           AppState.map.setBearing(-headingDeg);
         }
@@ -1507,6 +1502,11 @@
             let smoothedHeading = null;
             let lastDriverPos = null;
             let lastRotationTime = 0;
+            // Rolling buffer of recent fixes — gives a stable bearing at slow speeds
+            // where individual fix-to-fix movement is below the noise floor (~2-5m).
+            // Bearing is computed from oldest→newest in buffer once total distance > 3m.
+            const recentFixesForHeading = [];
+            const HEADING_BUFFER_MAX = 6;
             
             function smoothAngle(current, target, factor) {
               // Shortest-path angular interpolation
@@ -1585,12 +1585,11 @@
               // ── Calculate heading ──
               // Priority: GPX route direction (most stable for pre-planned routes)
               // then GPS compass, then movement bearing as fallbacks when off-route
-              const DEAD_ZONE_DEG = 6;
-              const MIN_ROTATION_INTERVAL_MS = 300;
-              
+              const MIN_ROTATION_INTERVAL_MS = 250;
+
               let heading = null;
               const isOnRoute = snapResult && snapResult.distance < 40;
-              
+
               // 1. GPX forward bearing — primary source when on-route
               if (isOnRoute && AppState.gpxRoute) {
                 const idx = snapResult.point.index || AppState.vars.lastSnapIndex;
@@ -1599,43 +1598,55 @@
                   heading = Utils.bearingBetween(AppState.gpxRoute[idx], AppState.gpxRoute[lookAhead]);
                 }
               }
-              
-              // 2. Off-route fallback: GPS compass when moving
-              if (heading === null && speed >= 2.0 && typeof gpsHeading === 'number' && !isNaN(gpsHeading)) {
+
+              // 2. Off-route fallback: GPS compass when moving (lowered to 1 m/s ≈ slow walk)
+              if (heading === null && speed >= 1.0 && typeof gpsHeading === 'number' && !isNaN(gpsHeading)) {
                 heading = gpsHeading;
               }
-              
-              // 3. Off-route fallback: movement bearing
+
+              // 3. Off-route fallback: bearing from a rolling fix buffer.
+              // This works even when individual fix-to-fix movement is tiny (slow parade speeds,
+              // GPS jitter), because we accumulate distance across several fixes before deciding
+              // on a bearing. Old fixes (>4s) are dropped so we always reflect the latest direction.
+              if (heading === null) {
+                recentFixesForHeading.push({ lat, lng, ts: Date.now() });
+                while (recentFixesForHeading.length > HEADING_BUFFER_MAX) recentFixesForHeading.shift();
+                while (recentFixesForHeading.length > 1 && Date.now() - recentFixesForHeading[0].ts > 4000) {
+                  recentFixesForHeading.shift();
+                }
+                if (recentFixesForHeading.length >= 2) {
+                  const oldest = recentFixesForHeading[0];
+                  const newest = recentFixesForHeading[recentFixesForHeading.length - 1];
+                  const total = Utils.haversineMeters(oldest, newest);
+                  if (total > 3) heading = Utils.bearingBetween(oldest, newest);
+                }
+              }
+
+              // 4. Final fallback: simple two-fix movement bearing (lowered 5m → 2m)
               if (heading === null && lastDriverPos) {
                 const moveDist = Utils.haversineMeters(lastDriverPos, { lat, lng });
-                if (moveDist > 5) {
+                if (moveDist > 2) {
                   heading = Utils.bearingBetween(lastDriverPos, { lat, lng });
                 }
               }
-              
-              // Smooth and apply with dead zone
+
+              // Smooth and apply.
+              // KEY FIX: smoothedHeading is always updated to the new candidate (no dead zone
+              // trap). Dead zone now only gates whether we actually CALL easeTo each tick —
+              // the internal state still drifts toward target across fixes, so over a few
+              // seconds the map naturally rotates to match heading-up like Google Maps.
               if (typeof heading === 'number' && !isNaN(heading)) {
                 const now = Date.now();
                 if (smoothedHeading === null) {
                   smoothedHeading = heading;
-                  TurnByTurn.rotateMap(smoothedHeading);
                   lastRotationTime = now;
                 } else {
-                  // Heavier smoothing: 0.12 at speed, 0.06 when slow
-                  const smoothFactor = speed > 5 ? 0.12 : 0.06;
-                  const candidate = smoothAngle(smoothedHeading, heading, smoothFactor);
-                  
-                  // Dead zone: only rotate if change exceeds threshold
-                  const delta = angleDiff(smoothedHeading, candidate);
-                  const timeSinceLastRotation = now - lastRotationTime;
-                  
-                  if (delta > DEAD_ZONE_DEG || (delta > 2 && timeSinceLastRotation > 2000)) {
-                    smoothedHeading = candidate;
-                    // ── ROTATE THE MAP (heading-up via leaflet-rotate) ──
-                    TurnByTurn.rotateMap(smoothedHeading);
-                    lastRotationTime = now;
-                  }
+                  // Smoothing factor: snappier than before (was 0.06/0.12 → starved).
+                  // 0.25 at speed feels like Google Maps; 0.15 slow keeps GPS noise quiet.
+                  const smoothFactor = speed > 5 ? 0.25 : 0.15;
+                  smoothedHeading = smoothAngle(smoothedHeading, heading, smoothFactor);
                 }
+                lastRotationTime = now;
               }
               
               lastDriverPos = { lat, lng };
@@ -1677,15 +1688,23 @@
                   }
                 }
               }
-              // Centre the camera on the driver — MapLibre uses easeTo for smooth animation,
-              // Leaflet uses panTo as a fallback. Skip when user has panned away (driverFollow=false).
+              // Centre the camera on the driver — and rotate to heading-up at the same time.
+              // KEY FIX: a single easeTo({center, bearing}) call. Previously bearing and centre
+              // were two separate easeTo calls fired back-to-back, so the centre call
+              // interrupted the bearing animation every tick → the map appeared frozen.
+              // Now they animate together, like Google Maps / Waze.
               AppState.vars.lastDriverFix = { lat: vp.lat, lng: vp.lng };
               if (AppState.mlMap) {
                 if (AppState.flags.driverFollow !== false) {
-                  AppState.mlMap.easeTo({ center: [vp.lng, vp.lat], duration: 800, essential: true });
+                  const animOpts = { center: [vp.lng, vp.lat], duration: 700, essential: true };
+                  if (smoothedHeading !== null) animOpts.bearing = smoothedHeading;
+                  AppState.mlMap.easeTo(animOpts);
+                  // Keep the shared state in sync for things like the recenter button
+                  if (smoothedHeading !== null) AppState.vars.currentMapHeading = smoothedHeading;
                 }
               } else {
                 AppState.map.panTo([vp.lat, vp.lng], { animate: true, duration: 1 });
+                if (smoothedHeading !== null) TurnByTurn.rotateMap(smoothedHeading);
               }
               
               // ── TRANSMIT GPS TO FIREBASE ──
