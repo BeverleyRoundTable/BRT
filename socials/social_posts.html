@@ -108,6 +108,36 @@
     .interpretation { background: var(--bg-elevated); border-radius: var(--radius); padding: 12px 14px; margin-top: 12px; font-size: 13px; color: var(--text-dim); border-left: 3px solid var(--accent); }
     .interpretation strong { color: var(--text); font-weight: 600; }
 
+    /* Tier headers within image-grid */
+.tier-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.tier-header:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+.tier-header .tier-count {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--accent);
+  background: rgba(251, 175, 51, 0.12);
+  border: 1px solid rgba(251, 175, 51, 0.3);
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.08em;
+}
+    
     /* DROPZONE */
     .dropzone { border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 40px 20px; text-align: center; transition: border-color 0.15s, background 0.15s; cursor: pointer; }
     .dropzone:hover, .dropzone.dragging { border-color: var(--accent); background: var(--bg-elevated); }
@@ -535,70 +565,42 @@ document.getElementById('btn-search').addEventListener('click', async () => {
 function renderImageGrid(matches) {
   const grid = document.getElementById('image-grid');
   grid.innerHTML = '';
+  if (!matches.length) return;
+
+  // Display order matches backend cascade order
+  const tiers = [
+    { key: 'exact',           label: 'Your table' },
+    { key: 'event-any-table', label: 'Other tables' },
+    { key: 'table-any-event', label: 'Other events from your table' }
+  ];
+
+  // Group while preserving server order within each tier
+  const grouped = {};
   matches.forEach(m => {
-    const tile = document.createElement('div');
-    tile.className = 'image-tile';
-    tile.innerHTML = `
-      <img src="${m.thumbUrl}" alt="" loading="lazy" referrerpolicy="no-referrer">
-      <div class="meta">
-        <div class="match">${m.matchDescription}</div>
-        ${m.event} · ${m.table}${m.tableNumber ? ' ' + m.tableNumber : ''}
-      </div>
-    `;
-    tile.addEventListener('click', () => selectLibraryImage(m, tile));
-    grid.appendChild(tile);
+    (grouped[m.matchType] = grouped[m.matchType] || []).push(m);
   });
-}
 
-async function selectLibraryImage(match, tileEl) {
-  document.querySelectorAll('.image-tile').forEach(t => t.classList.toggle('selected', t === tileEl));
-  state.selectedMatch = match;
-  state.analysis = null;
-  state.analysisInProgress = null;
-  status('search-status', 'Loading full-size image...');
+  tiers.forEach(tier => {
+    const items = grouped[tier.key];
+    if (!items || !items.length) return;
 
-  try {
-    const imgData = await api('get-image-data', { fileId: match.fileId });
-    await loadImageFromData(`data:${imgData.mimeType};base64,${imgData.imageData}`);
-    clearStatus('search-status');
-    showComposer();
-    triggerBackgroundAnalysis();
-  } catch (err) {
-    status('search-status', `Couldn't load image: ${err.message}`, 'error');
-  }
-}
+    const header = document.createElement('div');
+    header.className = 'tier-header';
+    header.innerHTML = `${tier.label} <span class="tier-count">${items.length}</span>`;
+    grid.appendChild(header);
 
-// Upload
-const fileInput = document.getElementById('file-upload');
-const dropzone = document.getElementById('dropzone');
-
-fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
-['dragover', 'dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('dragging'); }));
-['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('dragging'); }));
-dropzone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
-
-async function handleFile(file) {
-  if (!file || !file.type.startsWith('image/')) return;
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const dataUrl = reader.result;
-    const base64 = dataUrl.split(',')[1];
-    state.selectedMatch = { imageData: base64, mimeType: file.type, isUpload: true };
-    state.analysis = null;
-    state.analysisInProgress = null;
-    await loadImageFromData(dataUrl);
-    showComposer();
-    triggerBackgroundAnalysis();
-  };
-  reader.readAsDataURL(file);
-}
-
-function loadImageFromData(dataUrl) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => { state.loadedImage = img; resolve(img); };
-    img.onerror = () => reject(new Error('Image failed to load'));
-    img.src = dataUrl;
+    items.forEach(m => {
+      const tile = document.createElement('div');
+      tile.className = 'image-tile';
+      tile.innerHTML = `
+        <img src="${m.thumbUrl}" alt="" loading="lazy" referrerpolicy="no-referrer">
+        <div class="meta">
+          ${m.event} · ${m.table}${m.tableNumber ? ' ' + m.tableNumber : ''}
+        </div>
+      `;
+      tile.addEventListener('click', () => selectLibraryImage(m, tile));
+      grid.appendChild(tile);
+    });
   });
 }
 
