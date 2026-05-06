@@ -604,6 +604,58 @@ function renderImageGrid(matches) {
   });
 }
 
+  async function selectLibraryImage(match, tileEl) {
+  document.querySelectorAll('.image-tile').forEach(t => t.classList.toggle('selected', t === tileEl));
+  state.selectedMatch = match;
+  state.analysis = null;
+  state.analysisInProgress = null;
+  status('search-status', 'Loading full-size image...');
+
+  try {
+    const imgData = await api('get-image-data', { fileId: match.fileId });
+    await loadImageFromData(`data:${imgData.mimeType};base64,${imgData.imageData}`);
+    clearStatus('search-status');
+    showComposer();
+    triggerBackgroundAnalysis();
+  } catch (err) {
+    status('search-status', `Couldn't load image: ${err.message}`, 'error');
+  }
+}
+
+// Upload
+const fileInput = document.getElementById('file-upload');
+const dropzone = document.getElementById('dropzone');
+
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+['dragover', 'dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('dragging'); }));
+['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('dragging'); }));
+dropzone.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+async function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = reader.result;
+    const base64 = dataUrl.split(',')[1];
+    state.selectedMatch = { imageData: base64, mimeType: file.type, isUpload: true };
+    state.analysis = null;
+    state.analysisInProgress = null;
+    await loadImageFromData(dataUrl);
+    showComposer();
+    triggerBackgroundAnalysis();
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadImageFromData(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => { state.loadedImage = img; resolve(img); };
+    img.onerror = () => reject(new Error('Image failed to load'));
+    img.src = dataUrl;
+  });
+}
+  
 // ============================================================================
 // STEP 3 — COMPOSER
 // ============================================================================
