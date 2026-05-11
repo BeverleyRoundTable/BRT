@@ -194,41 +194,56 @@
   right: 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px 6px 12px;
-  background: rgba(29, 29, 26, 0.9);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
-  z-index: 3500;        /* below status-popup (4000), above map */
+  gap: 14px;
+  padding: 10px 18px 10px 20px;
+  background: rgba(29, 29, 26, 0.92);
+  border: 1px solid var(--border-gold);
+  border-radius: 16px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.5), 0 0 0 1px rgba(251,175,51,0.06);
+  z-index: 3500;
   opacity: 0;
   transform: translateY(-6px);
   transition: opacity .5s ease, transform .5s ease;
   pointer-events: auto;
   text-decoration: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .route-sponsor.visible { opacity: 1; transform: translateY(0); }
 .route-sponsor span {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .04em;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--rt-gold);
   white-space: nowrap;
+  line-height: 1;
 }
-.route-sponsor img { max-height: 22px; max-width: 90px; object-fit: contain; display: block; }
+.route-sponsor img {
+  max-height: 44px;
+  max-width: 140px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
+}
 
 /* Hide where it would clash */
-body.kiosk .route-sponsor,        /* kiosk has its own bottom sponsor */
+body.kiosk .route-sponsor,
 body.driver-mode .route-sponsor { display: none; }
 
-/* Respect existing dim-ui behaviour */
-body.dim-ui .route-sponsor { opacity: 0.45; filter: saturate(0.85); }
-body.dim-ui .route-sponsor:hover { opacity: 0.75; }
+body.dim-ui .route-sponsor { opacity: 0.55; filter: saturate(0.85); }
+body.dim-ui .route-sponsor:hover { opacity: 0.85; }
 
-@media (max-width: 380px) {
-  .route-sponsor span { display: none; }   /* logo-only on tight screens */
-  .route-sponsor img { max-height: 24px; max-width: 80px; }
+/* Mobile — drop below the status popup to avoid collision, keep logo bold */
+@media (max-width: 480px) {
+  .route-sponsor {
+    top: calc(72px + env(safe-area-inset-top, 0px));
+    right: 10px;
+    padding: 8px 14px;
+    gap: 10px;
+  }
+  .route-sponsor span { display: none; }
+  .route-sponsor img { max-height: 36px; max-width: 110px; }
 }
     
     #magic-container {
