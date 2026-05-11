@@ -1379,7 +1379,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.75; }
           const ts = new Date(data.ts).getTime(), age = Date.now() - ts, isFresh = age <= AppConfig.API.STALE_MS;
 
           const rs = document.getElementById('routeSponsor');
-if (rs) rs.classList.toggle('visible', isFresh && !!AppState.vars.todayRoute?.sponsorUrl && !AppState.flags.isKiosk && !AppState.flags.isDriver);
+if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl && !AppState.flags.isKiosk && !AppState.flags.isDriver);
           
           if (AppState.flags.isKiosk) { AppState.dom.kioskBanner.classList.toggle("live", isFresh); const statusEl = document.getElementById("kioskStatus"); if (statusEl) statusEl.textContent = isFresh ? "🎅 LIVE TRACKING" : "🎄 PREPARING IN LAPLAND"; if (AppState.dom.sponsorBox) AppState.dom.sponsorBox.classList.toggle("visible", isFresh && !!AppState.vars.todayRoute?.sponsorUrl); }
 
