@@ -1379,9 +1379,10 @@ body.dim-ui .route-sponsor:hover { opacity: 0.75; }
           const ts = new Date(data.ts).getTime(), age = Date.now() - ts, isFresh = age <= AppConfig.API.STALE_MS;
 
           const rs = document.getElementById('routeSponsor');
-if (rs && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
-  rs.querySelector('img').src = route.sponsorUrl;
-  if (route.sponsorLink) rs.href = route.sponsorLink; else rs.removeAttribute('href');
+const todayRoute = AppState.vars.todayRoute;
+if (rs && isFresh && todayRoute?.sponsorUrl && Utils.isValidImageUrl(todayRoute.sponsorUrl)) {
+  rs.querySelector('img').src = todayRoute.sponsorUrl;
+  if (todayRoute.sponsorLink) rs.href = todayRoute.sponsorLink; else rs.removeAttribute('href');
   rs.classList.add('visible');
 } else if (rs) {
   rs.classList.remove('visible');
