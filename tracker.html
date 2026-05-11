@@ -132,12 +132,38 @@
     .dot-reconnecting { background: #ff6b35; animation: pulse 1.4s infinite; }
 
     .info-popup { 
-      position: fixed; bottom: var(--info-bottom); left: 50%; transform: translateX(-50%); 
-      background: rgba(29, 29, 26, 0.95); border: 1px solid var(--border);
-      padding: 10px 14px; border-radius: 14px; display: flex; align-items: center; gap: 12px; 
-      font-size: .85em; font-weight: 800; z-index: 2000; max-width: calc(100vw - 32px); 
-      box-sizing: border-box; box-shadow: 0 4px 24px rgba(0,0,0,0.5); transition: opacity 600ms ease;
-    }
+  position: fixed; bottom: var(--info-bottom); left: 50%; transform: translateX(-50%); 
+  background: rgba(29, 29, 26, 0.95); border: 1px solid var(--border);
+  padding: 10px 14px; border-radius: 14px; 
+  display: flex; align-items: center; gap: 10px;
+  row-gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: .85em; font-weight: 800; z-index: 2000; 
+  width: min(540px, calc(100vw - 32px));
+  box-sizing: border-box; box-shadow: 0 4px 24px rgba(0,0,0,0.5); 
+  transition: opacity 600ms ease;
+}
+
+    /* Row 1 — utility buttons (Follow / Re-centre / Share / Music) */
+.info-popup .btn {
+  flex: 1 1 calc(25% - 10px);
+  min-width: 95px;
+}
+
+/* Row 2 — priority live-event buttons, larger and pushed to the second row */
+.info-popup #msgBtn,
+.info-popup #notifyBtn,
+.info-popup #twitchBtn {
+  flex: 1 1 calc(48% - 5px);
+  padding: 11px 14px;
+  font-size: 1em;
+  min-width: 140px;
+}
+#msgBtn   { order: 10; }
+#notifyBtn { order: 11; }
+#twitchBtn { order: 12; }
+    
     .btn { 
       background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); 
       border-radius: 10px; padding: 7px 12px; cursor: pointer; font-weight: 800; 
@@ -351,31 +377,42 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     }
     
     @media(max-width: 480px) { 
-      .donate-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important; } 
-      
-      .info-popup { 
-        width: calc(100vw - 16px); 
-        padding: 8px 6px; 
-        gap: 4px; 
-        row-gap: 6px;  
-        flex-wrap: wrap; 
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 20px) !important; 
-      }
-      
-      .info-popup .btn { 
-        flex: 1 0 22%; 
-        padding: 8px 2px; 
-        font-size: 0.9em; 
-        white-space: nowrap; 
-        text-align: center; 
-        overflow: hidden; 
-        text-overflow: ellipsis; 
-      }
+  .donate-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important; } 
+  
+  .info-popup { 
+    width: calc(100vw - 16px); 
+    padding: 8px 6px; 
+    gap: 4px; 
+    row-gap: 6px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 20px) !important; 
+  }
+  
+  /* Row 1 — utility buttons compact */
+  .info-popup .btn { 
+    flex: 1 1 calc(25% - 4px); 
+    padding: 8px 2px; 
+    font-size: 0.9em; 
+    white-space: nowrap; 
+    text-align: center; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    min-width: 0;
+  }
 
-      .status-dot { width: 10px; flex: 0 0 10px; margin-right: 2px; }
+  /* Row 2 — priority buttons larger, override base min-widths */
+  .info-popup #msgBtn,
+  .info-popup #notifyBtn,
+  .info-popup #twitchBtn {
+    flex: 1 1 calc(48% - 3px);
+    padding: 12px 4px;
+    font-size: 0.95em;
+    min-width: 0;
+  }
 
-      .toast-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 190px) !important; } 
-    }
+  .status-dot { width: 10px; flex: 0 0 10px; margin-right: 2px; }
+
+  .toast-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 190px) !important; } 
+}
     
     .ios-install-prompt { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(29, 29, 26, 0.95); border: 1px solid var(--rt-gold); color: #fff; padding: 16px; border-radius: 16px; font-size: 0.9em; font-weight: 700; text-align: center; z-index: 9999; width: 85%; max-width: 340px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); opacity: 0; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
     .ios-install-prompt.visible { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
