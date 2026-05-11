@@ -188,6 +188,49 @@
       100% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 0 rgba(251, 175, 51, 0); }
     }
 
+    .route-sponsor {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 12px;
+  background: rgba(29, 29, 26, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  z-index: 3500;        /* below status-popup (4000), above map */
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity .5s ease, transform .5s ease;
+  pointer-events: auto;
+  text-decoration: none;
+}
+.route-sponsor.visible { opacity: 1; transform: translateY(0); }
+.route-sponsor span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.route-sponsor img { max-height: 22px; max-width: 90px; object-fit: contain; display: block; }
+
+/* Hide where it would clash */
+body.kiosk .route-sponsor,        /* kiosk has its own bottom sponsor */
+body.driver-mode .route-sponsor { display: none; }
+
+/* Respect existing dim-ui behaviour */
+body.dim-ui .route-sponsor { opacity: 0.45; filter: saturate(0.85); }
+body.dim-ui .route-sponsor:hover { opacity: 0.75; }
+
+@media (max-width: 380px) {
+  .route-sponsor span { display: none; }   /* logo-only on tight screens */
+  .route-sponsor img { max-height: 24px; max-width: 80px; }
+}
+    
     #magic-container {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       pointer-events: none; z-index: 9999; overflow: hidden;
@@ -552,7 +595,9 @@
   
   <div class="donate-box" id="donateBox">
     <a id="donateLink" class="donate-btn gamified-pulse" target="_blank" aria-label="Donate and support the Santa Sleigh">
-      <span id="donateText">🎁 DONATE & SUPPORT US</span>
+      <span id="donateText">🎁 DONATE & SUPPORT US</span><a id="routeSponsor" class="route-sponsor" target="_blank" rel="noopener" aria-label="Tonight's route sponsor">
+  <span>Sponsored by</span>
+  <img alt="">
     </a>
     <div class="install-overlay" id="installOverlayBox">
       <button id="installAppBtn" class="donate-btn override-install-btn" aria-label="Install tracker app to home screen">📲 Add App to Home Screen</button>
@@ -1330,6 +1375,15 @@
 
           const ts = new Date(data.ts).getTime(), age = Date.now() - ts, isFresh = age <= AppConfig.API.STALE_MS;
 
+          const rs = document.getElementById('routeSponsor');
+if (rs && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
+  rs.querySelector('img').src = route.sponsorUrl;
+  if (route.sponsorLink) rs.href = route.sponsorLink; else rs.removeAttribute('href');
+  rs.classList.add('visible');
+} else if (rs) {
+  rs.classList.remove('visible');
+}
+          
           if (AppState.flags.isKiosk) { AppState.dom.kioskBanner.classList.toggle("live", isFresh); const statusEl = document.getElementById("kioskStatus"); if (statusEl) statusEl.textContent = isFresh ? "🎅 LIVE TRACKING" : "🎄 PREPARING IN LAPLAND"; if (AppState.dom.sponsorBox) AppState.dom.sponsorBox.classList.toggle("visible", isFresh && !!AppState.vars.todayRoute?.sponsorUrl); }
 
           if (!isFresh) {
