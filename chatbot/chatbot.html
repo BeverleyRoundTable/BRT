@@ -1,0 +1,420 @@
+<!--
+  BRT Events Chatbot Widget
+  ────────────────────────────────────────────────────────────────
+  Drop this snippet into any HTML page (Cloudflare Pages, GoDaddy,
+  WordPress, anywhere). Just paste it before </body>.
+
+  STEP 1: Set APPS_SCRIPT_URL below to your deployment's /exec URL.
+  STEP 2: Save & deploy. Done.
+
+  CORS note: Apps Script Web Apps don't return CORS headers on
+  preflight, so we send the request as text/plain (a "simple" CORS
+  request that doesn't trigger preflight). The backend parses the
+  body as JSON regardless.
+-->
+
+<!-- Google Fonts (Open Sans) — skip if your site already loads it -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ─── BRT brand tokens ───────────────────────────── */
+  .brt-chat {
+    --brt-gold: #FBAF33;
+    --brt-dark: #1D1D1A;
+    --brt-red: #D31C1C;
+    --brt-bg: #ffffff;
+    --brt-bg-soft: #f5f5f3;
+    --brt-border: #e5e5e0;
+    --brt-text: #1D1D1A;
+    --brt-text-soft: #6b6b65;
+    font-family: 'Open Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  /* ─── Floating launcher button ───────────────────── */
+  .brt-chat-launcher {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--brt-gold);
+    border: 2.5px solid var(--brt-dark);
+    box-shadow: 0 6px 20px rgba(29, 29, 26, 0.25);
+    cursor: pointer;
+    z-index: 99998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 0;
+  }
+  .brt-chat-launcher:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 10px 24px rgba(29, 29, 26, 0.32);
+  }
+  .brt-chat-launcher:active { transform: translateY(0) scale(0.98); }
+  .brt-chat-launcher svg { width: 28px; height: 28px; color: var(--brt-dark); }
+  .brt-chat-launcher.open svg.icon-chat { display: none; }
+  .brt-chat-launcher:not(.open) svg.icon-close { display: none; }
+
+  /* ─── Chat panel ─────────────────────────────────── */
+  .brt-chat-panel {
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    height: 560px;
+    max-height: calc(100vh - 140px);
+    background: var(--brt-bg);
+    border: 1px solid var(--brt-border);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(29, 29, 26, 0.25);
+    z-index: 99999;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+  .brt-chat-panel.open {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  /* ─── Header ─────────────────────────────────────── */
+  .brt-chat-header {
+    background: var(--brt-dark);
+    color: var(--brt-gold);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brt-chat-header-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--brt-gold);
+    box-shadow: 0 0 8px var(--brt-gold);
+  }
+  .brt-chat-header-title {
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.3px;
+  }
+  .brt-chat-header-sub {
+    font-size: 11px;
+    color: rgba(251, 175, 51, 0.7);
+    margin-top: 2px;
+  }
+
+  /* ─── Messages area ──────────────────────────────── */
+  .brt-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: var(--brt-bg-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .brt-chat-messages::-webkit-scrollbar { width: 6px; }
+  .brt-chat-messages::-webkit-scrollbar-thumb {
+    background: var(--brt-border);
+    border-radius: 3px;
+  }
+
+  .brt-msg {
+    max-width: 82%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    animation: brt-pop 0.25s ease;
+  }
+  @keyframes brt-pop {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .brt-msg.bot {
+    background: var(--brt-bg);
+    border: 1px solid var(--brt-border);
+    color: var(--brt-text);
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+  }
+  .brt-msg.user {
+    background: var(--brt-gold);
+    color: var(--brt-dark);
+    font-weight: 600;
+    border-bottom-right-radius: 4px;
+    align-self: flex-end;
+  }
+  .brt-msg.error {
+    background: rgba(211, 28, 28, 0.08);
+    border: 1px solid rgba(211, 28, 28, 0.25);
+    color: var(--brt-red);
+  }
+
+  /* ─── Typing indicator ───────────────────────────── */
+  .brt-typing {
+    align-self: flex-start;
+    background: var(--brt-bg);
+    border: 1px solid var(--brt-border);
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 4px;
+  }
+  .brt-typing span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--brt-text-soft);
+    animation: brt-bounce 1.2s infinite;
+  }
+  .brt-typing span:nth-child(2) { animation-delay: 0.15s; }
+  .brt-typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes brt-bounce {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-4px); }
+  }
+
+  /* ─── Quick suggestion chips ─────────────────────── */
+  .brt-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .brt-chip {
+    background: var(--brt-bg);
+    border: 1px solid var(--brt-border);
+    color: var(--brt-text);
+    padding: 6px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .brt-chip:hover {
+    background: var(--brt-gold);
+    border-color: var(--brt-dark);
+  }
+
+  /* ─── Input area ─────────────────────────────────── */
+  .brt-chat-input-wrap {
+    border-top: 1px solid var(--brt-border);
+    padding: 12px;
+    background: var(--brt-bg);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .brt-chat-input {
+    flex: 1;
+    border: 1px solid var(--brt-border);
+    border-radius: 100px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--brt-text);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .brt-chat-input:focus { border-color: var(--brt-gold); }
+  .brt-chat-send {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--brt-gold);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease;
+    flex-shrink: 0;
+  }
+  .brt-chat-send:hover:not(:disabled) { transform: scale(1.06); }
+  .brt-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+  .brt-chat-send svg { width: 18px; height: 18px; color: var(--brt-dark); }
+
+  .brt-chat-footer {
+    padding: 6px 12px 8px;
+    text-align: center;
+    background: var(--brt-bg);
+    font-size: 10px;
+    color: var(--brt-text-soft);
+    letter-spacing: 0.3px;
+  }
+
+  /* ─── Mobile tweaks ──────────────────────────────── */
+  @media (max-width: 480px) {
+    .brt-chat-panel {
+      bottom: 88px;
+      right: 12px;
+      left: 12px;
+      width: auto;
+      max-width: none;
+    }
+    .brt-chat-launcher {
+      bottom: 16px;
+      right: 16px;
+    }
+  }
+</style>
+
+<div class="brt-chat">
+  <!-- Launcher -->
+  <button class="brt-chat-launcher" id="brtLauncher" aria-label="Open chat">
+    <svg class="icon-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+    </svg>
+    <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+
+  <!-- Chat panel -->
+  <div class="brt-chat-panel" id="brtPanel" role="dialog" aria-label="BRT events chatbot">
+    <div class="brt-chat-header">
+      <div class="brt-chat-header-dot"></div>
+      <div>
+        <div class="brt-chat-header-title">BRT Events Assistant</div>
+        <div class="brt-chat-header-sub">Ask about upcoming socials or past events</div>
+      </div>
+    </div>
+
+    <div class="brt-chat-messages" id="brtMessages">
+      <div class="brt-msg bot">
+        Evening! 👋 I'm here to help with anything about Beverley Round Table socials. Ask me what's coming up, or about past events we've run.
+      </div>
+      <div class="brt-suggestions">
+        <button class="brt-chip" data-q="What's coming up next?">What's coming up next?</button>
+        <button class="brt-chip" data-q="What did we do last month?">What did we do last month?</button>
+        <button class="brt-chip" data-q="What is BRT?">What is BRT?</button>
+      </div>
+    </div>
+
+    <div class="brt-chat-input-wrap">
+      <input type="text" class="brt-chat-input" id="brtInput"
+             placeholder="Ask about an event…" maxlength="500" autocomplete="off">
+      <button class="brt-chat-send" id="brtSend" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="brt-chat-footer">Powered by Beverley Round Table</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // ─── CONFIG: paste your Apps Script /exec URL here ────────────
+  const APPS_SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE';
+  // ──────────────────────────────────────────────────────────────
+
+  const launcher = document.getElementById('brtLauncher');
+  const panel    = document.getElementById('brtPanel');
+  const messages = document.getElementById('brtMessages');
+  const input    = document.getElementById('brtInput');
+  const sendBtn  = document.getElementById('brtSend');
+
+  let isWaiting = false;
+
+  function togglePanel() {
+    const isOpen = panel.classList.toggle('open');
+    launcher.classList.toggle('open', isOpen);
+    if (isOpen) setTimeout(() => input.focus(), 250);
+  }
+
+  function addMessage(text, role) {
+    const el = document.createElement('div');
+    el.className = 'brt-msg ' + role;
+    el.textContent = text;
+    messages.appendChild(el);
+    messages.scrollTop = messages.scrollHeight;
+    return el;
+  }
+
+  function showTyping() {
+    const el = document.createElement('div');
+    el.className = 'brt-typing';
+    el.id = 'brtTyping';
+    el.innerHTML = '<span></span><span></span><span></span>';
+    messages.appendChild(el);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function hideTyping() {
+    const el = document.getElementById('brtTyping');
+    if (el) el.remove();
+  }
+
+  function clearSuggestions() {
+    const chips = messages.querySelector('.brt-suggestions');
+    if (chips) chips.remove();
+  }
+
+  async function sendMessage(text) {
+    if (isWaiting || !text.trim()) return;
+    isWaiting = true;
+    sendBtn.disabled = true;
+    clearSuggestions();
+    addMessage(text, 'user');
+    input.value = '';
+    showTyping();
+
+    try {
+      // text/plain avoids CORS preflight; Apps Script JSON.parses the body.
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json();
+      hideTyping();
+      if (data.reply) {
+        addMessage(data.reply, 'bot');
+      } else {
+        addMessage('Sorry, something went wrong — please try again.', 'error');
+      }
+    } catch (err) {
+      hideTyping();
+      addMessage('Connection issue — check your internet and try again.', 'error');
+      console.error('BRT chat error:', err);
+    } finally {
+      isWaiting = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  // ─── Event wiring ─────────────────────────────────────────────
+  launcher.addEventListener('click', togglePanel);
+  sendBtn.addEventListener('click', () => sendMessage(input.value));
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(input.value);
+    }
+  });
+  messages.addEventListener('click', e => {
+    if (e.target.classList.contains('brt-chip')) {
+      sendMessage(e.target.dataset.q);
+    }
+  });
+})();
+</script>
