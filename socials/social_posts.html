@@ -109,34 +109,34 @@
     .interpretation strong { color: var(--text); font-weight: 600; }
 
     /* Tier headers within image-grid */
-.tier-header {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-.tier-header:first-child {
-  padding-top: 0;
-  border-top: none;
-}
-.tier-header .tier-count {
-  font-family: var(--font-display);
-  font-size: 11px;
-  color: var(--accent);
-  background: rgba(251, 175, 51, 0.12);
-  border: 1px solid rgba(251, 175, 51, 0.3);
-  padding: 2px 8px;
-  border-radius: 999px;
-  letter-spacing: 0.08em;
-}
+    .tier-header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .tier-header:first-child {
+      padding-top: 0;
+      border-top: none;
+    }
+    .tier-header .tier-count {
+      font-family: var(--font-display);
+      font-size: 11px;
+      color: var(--accent);
+      background: rgba(251, 175, 51, 0.12);
+      border: 1px solid rgba(251, 175, 51, 0.3);
+      padding: 2px 8px;
+      border-radius: 999px;
+      letter-spacing: 0.08em;
+    }
     
     /* DROPZONE */
     .dropzone { border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 40px 20px; text-align: center; transition: border-color 0.15s, background 0.15s; cursor: pointer; }
@@ -240,7 +240,6 @@
       <p class="tagline">Pick an event. Pick a photo. Get ready-to-share images and captions in three clicks.</p>
     </header>
 
-    <!-- CONTRIBUTE BANNER — encourages users to feed the image library -->
     <div class="contribute-banner" id="contribute-banner" hidden>
       <div class="icon">+</div>
       <div class="text">
@@ -250,7 +249,6 @@
       <a id="contribute-link" class="btn-contribute" target="_blank" rel="noopener">Open image bin</a>
     </div>
 
-    <!-- STEP 1: EVENT DETAILS -->
     <section>
       <div class="step-label"><span class="step-num">01</span><span class="step-title">Event details</span></div>
       <div class="card">
@@ -285,7 +283,6 @@
       </div>
     </section>
 
-    <!-- STEP 2: IMAGE -->
     <section>
       <div class="step-label"><span class="step-num">02</span><span class="step-title">Choose an image</span></div>
       <div class="card">
@@ -294,7 +291,6 @@
           <button class="btn-tab" data-pane="upload">Upload your own</button>
         </div>
 
-        <!-- Library pane -->
         <div class="source-pane active" data-pane="library">
           <button class="btn-primary" id="btn-search">Search the library</button>
           <div class="status info" id="search-status"></div>
@@ -302,7 +298,6 @@
           <div class="image-grid" id="image-grid"></div>
         </div>
 
-        <!-- Upload pane -->
         <div class="source-pane" data-pane="upload">
           <label for="file-upload" class="dropzone" id="dropzone">
             <div class="big">Drop an image here</div>
@@ -313,7 +308,6 @@
       </div>
     </section>
 
-    <!-- STEP 3: COMPOSE -->
     <section id="step-compose" hidden>
       <div class="step-label"><span class="step-num">03</span><span class="step-title">Compose</span></div>
       <div class="card">
@@ -352,15 +346,31 @@
               <button class="btn-primary" id="btn-generate" style="width: 100%;">Generate post</button>
             </div>
             <div class="control-block" id="export-block" hidden>
-              <h4>Download</h4>
-              <button class="btn-secondary" id="btn-download" style="width: 100%;">Download PNG</button>
+              <h4>Download (All Versions)</h4>
+              <button class="btn-secondary" id="btn-download" style="width: 100%;">Download All PNGs</button>
             </div>
+            <div class="control-block">
+  <h4>Image Adjustments</h4>
+  <div style="display: grid; gap: 8px;">
+    <label>Scale <input type="range" id="img-scale" min="0.5" max="3" step="0.05" value="1"></label>
+    <label>X Offset <input type="range" id="img-x" min="-1000" max="1000" value="0"></label>
+    <label>Y Offset <input type="range" id="img-y" min="-1000" max="1000" value="0"></label>
+  </div>
+</div>
+
+<div class="control-block">
+  <h4>Logo Adjustments</h4>
+  <div style="display: grid; gap: 8px;">
+    <label>Scale <input type="range" id="logo-scale" min="0.5" max="3" step="0.05" value="1"></label>
+    <label>X Offset <input type="range" id="logo-x" min="-500" max="500" value="0"></label>
+    <label>Y Offset <input type="range" id="logo-y" min="-500" max="500" value="0"></label>
+  </div>
+</div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- STEP 4: COPY -->
     <section id="step-copy" hidden>
       <div class="step-label"><span class="step-num">04</span><span class="step-title">Copy &amp; share</span></div>
       <div class="card" id="copy-output"></div>
@@ -371,7 +381,6 @@
     </footer>
   </div>
 
-  <!-- ADMIN / LOGS MODAL -->
   <div class="modal" id="logs-modal" hidden>
     <div class="modal-backdrop" data-close-modal></div>
     <div class="modal-card">
@@ -436,7 +445,8 @@ const state = {
   defaultLogoGrey: null,      // HTMLImageElement
   logoMode: 'auto',           // 'auto' | 'white' | 'grey' | 'custom'
   logoPos: 'auto',            //allow swapping top left to top right
-  aspect: 'square'
+  aspect: 'square',
+  timeframe: ''               // For Next Week, This Week, Tonight, Tomorrow
 };
 
 // ============================================================================
@@ -726,6 +736,7 @@ document.getElementById('logo-upload').addEventListener('change', e => {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
+    localStorage.setItem('rt_custom_logo', reader.result); // Save into storage for Feature 4
     const img = new Image();
     img.onload = () => {
       state.customLogo = img;
@@ -744,6 +755,7 @@ document.getElementById('logo-upload').addEventListener('change', e => {
 document.getElementById('btn-logo-clear').addEventListener('click', () => {
   state.customLogo = null;
   state.logoMode = 'auto';
+  localStorage.removeItem('rt_custom_logo');
   document.querySelectorAll('[data-logo-mode]').forEach(b => b.classList.toggle('active', b.dataset.logoMode === 'auto'));
   document.getElementById('btn-logo-clear').hidden = true;
   document.getElementById('logo-upload').value = '';
@@ -797,7 +809,7 @@ function renderLogoPreview() {
  * Decide which default logo to use based on mode + image brightness.
  * - Manual modes ('white' / 'grey') always win.
  * - Auto: dark image → white logo, light image → grey logo.
- *   Falls back to 'white' when no analysis is available yet.
+ * Falls back to 'white' when no analysis is available yet.
  */
 function pickAutoLogoColor() {
   if (state.logoMode === 'white') return 'white';
@@ -894,8 +906,12 @@ function drawCanvas() {
 
   const W = aspect.w, H = aspect.h;
 
+  const imgScale = parseFloat(document.getElementById('img-scale').value) || 1;
+  const imgX = parseInt(document.getElementById('img-x').value) || 0;
+  const imgY = parseInt(document.getElementById('img-y').value) || 0;
+
   // 1. Cover-fit the image to canvas
-  drawImageCover(ctx, state.loadedImage, 0, 0, W, H);
+  drawImageCover(ctx, state.loadedImage, 0, 0, W, H, imgScale, imgX, imgY);
 
   // 2. Pull text content from form
   const eventName = document.getElementById('f-event').value.trim();
@@ -942,7 +958,14 @@ function drawCanvas() {
 
   // Subtitle row: date · time · location
   const subParts = [];
-  if (dateText) subParts.push(dateText);
+  
+  // Inject timeframe override if generating bulk files
+  if (state.timeframe) {
+    subParts.push(state.timeframe.toUpperCase());
+  } else if (dateText) {
+    subParts.push(dateText);
+  }
+
   if (timeText) subParts.push(formatTime(timeText));
   if (locationText) subParts.push(locationText);
   const subText = subParts.join(' · ');
@@ -995,7 +1018,7 @@ function drawCanvas() {
   drawLogo(ctx, aspect);
 }
 
-function drawImageCover(ctx, img, x, y, w, h) {
+function drawImageCover(ctx, img, x, y, w, h, scale = 1, offsetX = 0, offsetY = 0) {
   const imgRatio = img.width / img.height;
   const boxRatio = w / h;
   let sx, sy, sw, sh;
@@ -1010,7 +1033,12 @@ function drawImageCover(ctx, img, x, y, w, h) {
     sx = 0;
     sy = (img.height - sh) / 2;
   }
-  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+
+  ctx.save();
+  ctx.translate(x + w / 2 + offsetX, y + h / 2 + offsetY);
+  ctx.scale(scale, scale);
+  ctx.drawImage(img, sx, sy, sw, sh, -w / 2, -h / 2, w, h);
+  ctx.restore();
 }
 
 function wrapText(ctx, text, maxWidth) {
@@ -1050,6 +1078,10 @@ function drawLogo(ctx, aspect) {
   const logoSize = aspect.w * 0.13;
   const margin = aspect.w * 0.05;
 
+  const logoScale = parseFloat(document.getElementById('logo-scale').value) || 1;
+  const logoX = parseInt(document.getElementById('logo-x').value) || 0;
+  const logoY = parseInt(document.getElementById('logo-y').value) || 0;
+
   // CHANGE THIS LINE: Use manual override if selected, otherwise use Gemini/Auto
   const corner = state.logoPos === 'auto' ? pickLogoCorner(aspect) : state.logoPos;
 
@@ -1073,19 +1105,26 @@ function drawLogo(ctx, aspect) {
     const drawW = ratio > 1 ? logoSize : logoSize * ratio;
     const drawH = ratio > 1 ? logoSize / ratio : logoSize;
     const anchorX = (corner === 'top-left') ? x : x + (logoSize - drawW);
-    ctx.drawImage(logoImg, anchorX, y, drawW, drawH);
+    
+    ctx.save();
+    ctx.translate(anchorX + drawW / 2 + logoX, y + drawH / 2 + logoY);
+    ctx.scale(logoScale, logoScale);
+    ctx.drawImage(logoImg, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
   } else {
     // Final fallback: drawn yellow RT badge
     ctx.save();
+    ctx.translate(x + logoSize / 2 + logoX, y + logoSize / 2 + logoY);
+    ctx.scale(logoScale, logoScale);
     ctx.fillStyle = '#FBAF33';
     ctx.beginPath();
-    ctx.arc(x + logoSize / 2, y + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
+    ctx.arc(0, 0, logoSize / 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#1D1D1A';
     ctx.font = `800 ${Math.round(logoSize * 0.42)}px Saira, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('RT', x + logoSize / 2, y + logoSize / 2 + logoSize * 0.02);
+    ctx.fillText('RT', 0, logoSize * 0.02);
     ctx.restore();
   }
 }
@@ -1093,10 +1132,10 @@ function drawLogo(ctx, aspect) {
 /**
  * Decide which top corner gets the logo.
  * 1. If Gemini analysis is available and ranked top corners, trust it (it
- *    has semantic understanding — faces, important subjects).
+ * has semantic understanding — faces, important subjects).
  * 2. Otherwise use client-side pixel variance: pick the corner with the
- *    most uniform colour (less busy = better logo background).
- *    This runs instantly so positioning is smart from the very first render.
+ * most uniform colour (less busy = better logo background).
+ * This runs instantly so positioning is smart from the very first render.
  */
 function pickLogoCorner(aspect) {
   if (state.analysis && state.analysis.logoCorners && state.analysis.logoCorners.length) {
@@ -1252,23 +1291,71 @@ function escapeHtml(s) {
 }
 
 // ============================================================================
-// DOWNLOAD
+// BATCH DOWNLOAD (ALL FORMATS + TIMEFRAMES)
 // ============================================================================
 
-document.getElementById('btn-download').addEventListener('click', () => {
-  const canvas = document.getElementById('preview');
-  const event = (document.getElementById('f-event').value.trim() || 'event').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-  const link = document.createElement('a');
-  link.download = `rt-${event}-${state.aspect}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+document.getElementById('btn-download').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-download');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generating all versions...';
+
+  const timeframes = ["", "NEXT WEEK", "THIS WEEK", "TOMORROW", "TONIGHT"]; // Empty string = standard date
+  const aspectRatios = ["square", "landscape", "portrait"];
+  
+  const originalAspect = state.aspect; 
+  const originalTimeframe = state.timeframe; 
+
+  for (const aspect of aspectRatios) {
+    for (const timeframe of timeframes) {
+      // 1. Update state
+      state.aspect = aspect;
+      state.timeframe = timeframe;
+      
+      // 2. Redraw canvas
+      drawCanvas();
+      
+      // 3. Wait briefly to ensure rendering completes
+      await new Promise(r => setTimeout(r, 150)); 
+      
+      // 4. Download
+      const canvas = document.getElementById('preview');
+      const eventName = (document.getElementById('f-event').value.trim() || 'event').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+      
+      let filename = `rt-${eventName}-${aspect}`;
+      if (timeframe) {
+        filename += `-${timeframe.replace(/ /g, '-')}`;
+      }
+      
+      const link = document.createElement('a');
+      link.download = `${filename.toLowerCase()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
+  // Restore original UI state
+  state.aspect = originalAspect;
+  state.timeframe = originalTimeframe;
+  drawCanvas();
+
+  btn.textContent = originalText;
+  btn.disabled = false;
 });
 
 // ============================================================================
-// LIVE REDRAW ON FORM CHANGES
+// LIVE REDRAW ON FORM CHANGES & SLIDERS
 // ============================================================================
 
 ['f-event', 'f-table', 'f-date', 'f-time', 'f-location'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    if (state.loadedImage) drawCanvas();
+  });
+});
+
+['img-scale', 'img-x', 'img-y', 'logo-scale', 'logo-x', 'logo-y'].forEach(id => {
   document.getElementById(id).addEventListener('input', () => {
     if (state.loadedImage) drawCanvas();
   });
@@ -1371,8 +1458,26 @@ function loadDefaultLogos() {
   loadOne(DEFAULT_LOGO_GREY_URL, 'defaultLogoGrey');
 }
 
+// Memory restore for custom logos (Feature 4 - robust version)
+function loadSavedLogo() {
+  const saved = localStorage.getItem('rt_custom_logo');
+  if (saved) {
+    const img = new Image();
+    img.onload = () => {
+      state.customLogo = img;
+      state.logoMode = 'custom';
+      document.querySelectorAll('[data-logo-mode]').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-logo-clear').hidden = false;
+      renderLogoPreview();
+      if (state.loadedImage) drawCanvas();
+    };
+    img.src = saved;
+  }
+}
+
 loadVocab();
 loadDefaultLogos();
+loadSavedLogo(); 
 renderLogoPreview();
 </script>
 </body>
