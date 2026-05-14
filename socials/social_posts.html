@@ -10,6 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;600;700;800;900&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <!-- JSZip — used to bundle batch PNG exports into a single .zip download -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
   <style>
     /* ============================================================ */
     /* CONFIG — change BACKEND_URL to your Apps Script Web App URL  */
@@ -149,13 +152,39 @@
     .composer-grid { display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
     @media (max-width: 720px) { .composer-grid { grid-template-columns: 1fr; } }
 
-    .canvas-wrap { background: #000; border-radius: var(--radius); overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 300px; }
-    canvas { max-width: 100%; max-height: 600px; height: auto; display: block; }
+    .canvas-wrap { background: #000; border-radius: var(--radius); overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 300px; position: relative; }
+    canvas { max-width: 100%; max-height: 600px; height: auto; display: block; touch-action: none; }
+    canvas.draggable { cursor: grab; }
+    canvas.dragging { cursor: grabbing; }
+
+    /* TIMEFRAME PILLS — quick preview of NEXT WEEK / THIS WEEK / TOMORROW / TONIGHT */
+    .timeframe-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+    .timeframe-row .tf-label { font-family: var(--font-display); font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; margin-right: 4px; }
 
     .controls { display: flex; flex-direction: column; gap: 16px; }
     .control-block { background: var(--bg-elevated); border-radius: var(--radius); padding: 14px; }
     .control-block h4 { font-family: var(--font-display); font-size: 12px; font-weight: 700; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
     .control-block .btn-row button { padding: 8px 12px; font-size: 11px; }
+
+    /* SLIDER ROW — label + value readout + range */
+    .slider-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; margin-bottom: 8px; }
+    .slider-row:last-child { margin-bottom: 0; }
+    .slider-row .slider-label { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+    .slider-row .slider-value { font-family: 'Courier New', monospace; font-size: 11px; color: var(--accent); font-weight: 700; min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+    .slider-row input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin: 0; }
+
+    /* RESET BUTTON inside control blocks */
+    .control-block .block-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .control-block .block-head h4 { margin: 0; }
+    .btn-reset { background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 4px 10px; font-size: 10px; font-family: var(--font-display); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: var(--radius); transition: color 0.15s, border-color 0.15s; }
+    .btn-reset:hover { color: var(--text); border-color: var(--text-dim); }
+
+    /* BATCH PROGRESS — shown while building the ZIP */
+    .batch-progress { margin-top: 10px; display: none; }
+    .batch-progress.show { display: block; }
+    .batch-progress .bar { height: 4px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+    .batch-progress .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.2s; }
+    .batch-progress .bar-label { font-family: var(--font-display); font-size: 10px; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
 
     .logo-preview { width: 60px; height: 60px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); margin-top: 10px; display: flex; align-items: center; justify-content: center; padding: 6px; }
     .logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -313,10 +342,18 @@
       <div class="card">
         <div class="composer-grid">
           <div>
-            <div class="btn-row" style="margin-bottom: 16px;">
+            <div class="btn-row" style="margin-bottom: 12px;">
               <button class="btn-tab active" data-aspect="square">Square · IG Feed</button>
               <button class="btn-tab" data-aspect="landscape">Landscape · FB</button>
               <button class="btn-tab" data-aspect="portrait">Portrait · Story / TikTok</button>
+            </div>
+            <div class="timeframe-row">
+              <span class="tf-label">Timeframe</span>
+              <button class="btn-tab active" data-timeframe="">None</button>
+              <button class="btn-tab" data-timeframe="TONIGHT">Tonight</button>
+              <button class="btn-tab" data-timeframe="TOMORROW">Tomorrow</button>
+              <button class="btn-tab" data-timeframe="THIS WEEK">This week</button>
+              <button class="btn-tab" data-timeframe="NEXT WEEK">Next week</button>
             </div>
             <div class="canvas-wrap"><canvas id="preview"></canvas></div>
             <div class="status info" id="compose-status"></div>
@@ -336,36 +373,70 @@
               </div>
               <div class="btn-row" style="margin-top: 8px;">
                 <button class="btn-secondary" id="btn-logo-upload" style="flex: 1;">Upload custom</button>
-                <button class="btn-secondary" id="btn-logo-clear" id="btn-logo-clear" hidden>Remove</button>
+                <button class="btn-secondary" id="btn-logo-clear" hidden>Remove</button>
               </div>
               <input type="file" id="logo-upload" accept="image/*" hidden>
               <div class="logo-preview" id="logo-preview"><span style="color: var(--text-muted); font-size: 11px;">Loading…</span></div>
             </div>
+
+            <div class="control-block">
+              <div class="block-head">
+                <h4>Image Crop</h4>
+                <button class="btn-reset" id="btn-img-reset" type="button">Reset</button>
+              </div>
+              <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">Drag the image on the canvas to pan, scroll to zoom — or use the sliders.</p>
+              <div class="slider-row">
+                <span class="slider-label">Scale</span>
+                <span class="slider-value" id="img-scale-val">1.00×</span>
+                <input type="range" id="img-scale" min="0.5" max="3" step="0.01" value="1">
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">X offset</span>
+                <span class="slider-value" id="img-x-val">0</span>
+                <input type="range" id="img-x" min="-1000" max="1000" step="1" value="0">
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Y offset</span>
+                <span class="slider-value" id="img-y-val">0</span>
+                <input type="range" id="img-y" min="-1000" max="1000" step="1" value="0">
+              </div>
+            </div>
+
+            <div class="control-block">
+              <div class="block-head">
+                <h4>Logo Adjustments</h4>
+                <button class="btn-reset" id="btn-logo-reset" type="button">Reset</button>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Scale</span>
+                <span class="slider-value" id="logo-scale-val">1.00×</span>
+                <input type="range" id="logo-scale" min="0.5" max="3" step="0.01" value="1">
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">X offset</span>
+                <span class="slider-value" id="logo-x-val">0</span>
+                <input type="range" id="logo-x" min="-500" max="500" step="1" value="0">
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Y offset</span>
+                <span class="slider-value" id="logo-y-val">0</span>
+                <input type="range" id="logo-y" min="-500" max="500" step="1" value="0">
+              </div>
+            </div>
+
             <div class="control-block">
               <h4>Generate</h4>
               <button class="btn-primary" id="btn-generate" style="width: 100%;">Generate post</button>
             </div>
             <div class="control-block" id="export-block" hidden>
-              <h4>Download (All Versions)</h4>
-              <button class="btn-secondary" id="btn-download" style="width: 100%;">Download All PNGs</button>
+              <h4>Download</h4>
+              <button class="btn-secondary" id="btn-download-current" style="width: 100%; margin-bottom: 8px;">Download current view</button>
+              <button class="btn-primary" id="btn-download-all" style="width: 100%;">Download all variants (ZIP)</button>
+              <div class="batch-progress" id="batch-progress">
+                <div class="bar-label" id="batch-progress-label">Rendering…</div>
+                <div class="bar"><div class="bar-fill" id="batch-progress-fill"></div></div>
+              </div>
             </div>
-            <div class="control-block">
-  <h4>Image Adjustments</h4>
-  <div style="display: grid; gap: 8px;">
-    <label>Scale <input type="range" id="img-scale" min="0.5" max="3" step="0.05" value="1"></label>
-    <label>X Offset <input type="range" id="img-x" min="-1000" max="1000" value="0"></label>
-    <label>Y Offset <input type="range" id="img-y" min="-1000" max="1000" value="0"></label>
-  </div>
-</div>
-
-<div class="control-block">
-  <h4>Logo Adjustments</h4>
-  <div style="display: grid; gap: 8px;">
-    <label>Scale <input type="range" id="logo-scale" min="0.5" max="3" step="0.05" value="1"></label>
-    <label>X Offset <input type="range" id="logo-x" min="-500" max="500" value="0"></label>
-    <label>Y Offset <input type="range" id="logo-y" min="-500" max="500" value="0"></label>
-  </div>
-</div>
           </div>
         </div>
       </div>
@@ -736,21 +807,50 @@ document.getElementById('logo-upload').addEventListener('change', e => {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
-    localStorage.setItem('rt_custom_logo', reader.result); // Save into storage for Feature 4
     const img = new Image();
     img.onload = () => {
+      // Apply the logo immediately at full quality for the active session.
       state.customLogo = img;
       state.logoMode = 'custom';
-      // Update tab UI to show none active (custom is implicit)
       document.querySelectorAll('[data-logo-mode]').forEach(b => b.classList.remove('active'));
       document.getElementById('btn-logo-clear').hidden = false;
       renderLogoPreview();
       drawCanvas();
+
+      // Downscale + persist for next session (quota-safe).
+      try {
+        const downscaledDataUrl = downscaleImageToDataUrl(img, 256);
+        localStorage.setItem('rt_custom_logo', downscaledDataUrl);
+      } catch (err) {
+        console.warn('Could not persist custom logo:', err.message);
+        // Non-fatal — the logo still works for this session.
+      }
     };
     img.src = reader.result;
   };
   reader.readAsDataURL(file);
 });
+
+/**
+ * Downscale an HTMLImageElement to fit within `maxSize` (longest edge),
+ * preserving aspect ratio and transparency. Returns a PNG data URL.
+ * Keeps localStorage payload comfortably under the ~5MB origin limit.
+ */
+function downscaleImageToDataUrl(img, maxSize) {
+  const ratio = img.naturalWidth / img.naturalHeight;
+  let w = img.naturalWidth;
+  let h = img.naturalHeight;
+  if (w > maxSize || h > maxSize) {
+    if (ratio >= 1) { w = maxSize; h = Math.round(maxSize / ratio); }
+    else            { h = maxSize; w = Math.round(maxSize * ratio); }
+  }
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, w, h);
+  return c.toDataURL('image/png');
+}
 
 document.getElementById('btn-logo-clear').addEventListener('click', () => {
   state.customLogo = null;
@@ -781,6 +881,10 @@ document.querySelectorAll('[data-logo-pos]').forEach(btn => {
   btn.addEventListener('click', () => {
     state.logoPos = btn.dataset.logoPos;
     document.querySelectorAll('[data-logo-pos]').forEach(b => b.classList.toggle('active', b === btn));
+    // Zero X/Y offsets — otherwise a previously-tweaked offset fights the new corner.
+    // Scale is preserved (sizing is independent of position intent).
+    setSliderValue('logo-x', 0);
+    setSliderValue('logo-y', 0);
     drawCanvas();
   });
 });
@@ -896,9 +1000,9 @@ function formatDate() {
 // CANVAS RENDERING
 // ============================================================================
 
-function drawCanvas() {
+function drawCanvas(targetCanvas = null) {
   if (!state.loadedImage) return;
-  const canvas = document.getElementById('preview');
+  const canvas = targetCanvas || document.getElementById('preview');
   const aspect = ASPECTS[state.aspect];
   canvas.width = aspect.w;
   canvas.height = aspect.h;
@@ -956,13 +1060,14 @@ function drawCanvas() {
   drawSpacedText(ctx, '#DOMORE', padding, cy, W * 0.0025);
   cy -= W * 0.038;
 
-  // Subtitle row: date · time · location
+  // Subtitle row: [timeframe] · date · time · location
   const subParts = [];
-  
-  // Inject timeframe override if generating bulk files
+
+  // Prepend timeframe label when set — keeps date/time visible alongside the urgency cue.
   if (state.timeframe) {
     subParts.push(state.timeframe.toUpperCase());
-  } else if (dateText) {
+  }
+  if (dateText) {
     subParts.push(dateText);
   }
 
@@ -1291,62 +1396,75 @@ function escapeHtml(s) {
 }
 
 // ============================================================================
-// BATCH DOWNLOAD (ALL FORMATS + TIMEFRAMES)
+// SLIDER VALUE READOUTS + RESET BUTTONS
 // ============================================================================
 
-document.getElementById('btn-download').addEventListener('click', async () => {
-  const btn = document.getElementById('btn-download');
-  const originalText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Generating all versions...';
+const SLIDER_DEFAULTS = {
+  'img-scale': 1,  'img-x': 0,  'img-y': 0,
+  'logo-scale': 1, 'logo-x': 0, 'logo-y': 0
+};
 
-  const timeframes = ["", "NEXT WEEK", "THIS WEEK", "TOMORROW", "TONIGHT"]; // Empty string = standard date
-  const aspectRatios = ["square", "landscape", "portrait"];
-  
-  const originalAspect = state.aspect; 
-  const originalTimeframe = state.timeframe; 
+const SLIDER_FORMAT = {
+  'img-scale':  v => `${Number(v).toFixed(2)}×`,
+  'img-x':      v => `${Math.round(v)}`,
+  'img-y':      v => `${Math.round(v)}`,
+  'logo-scale': v => `${Number(v).toFixed(2)}×`,
+  'logo-x':     v => `${Math.round(v)}`,
+  'logo-y':     v => `${Math.round(v)}`
+};
 
-  for (const aspect of aspectRatios) {
-    for (const timeframe of timeframes) {
-      // 1. Update state
-      state.aspect = aspect;
-      state.timeframe = timeframe;
-      
-      // 2. Redraw canvas
-      drawCanvas();
-      
-      // 3. Wait briefly to ensure rendering completes
-      await new Promise(r => setTimeout(r, 150)); 
-      
-      // 4. Download
-      const canvas = document.getElementById('preview');
-      const eventName = (document.getElementById('f-event').value.trim() || 'event').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-      
-      let filename = `rt-${eventName}-${aspect}`;
-      if (timeframe) {
-        filename += `-${timeframe.replace(/ /g, '-')}`;
-      }
-      
-      const link = document.createElement('a');
-      link.download = `${filename.toLowerCase()}.png`;
-      link.href = canvas.toDataURL('image/png');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  }
+function updateSliderReadout(id) {
+  const input = document.getElementById(id);
+  const out = document.getElementById(`${id}-val`);
+  if (!out || !input) return;
+  const fmt = SLIDER_FORMAT[id] || (v => v);
+  out.textContent = fmt(input.value);
+}
 
-  // Restore original UI state
-  state.aspect = originalAspect;
-  state.timeframe = originalTimeframe;
-  drawCanvas();
+function setSliderValue(id, value) {
+  const input = document.getElementById(id);
+  if (!input) return;
+  input.value = value;
+  updateSliderReadout(id);
+}
 
-  btn.textContent = originalText;
-  btn.disabled = false;
+// Wire input → readout + redraw, with one handler per slider.
+Object.keys(SLIDER_DEFAULTS).forEach(id => {
+  const input = document.getElementById(id);
+  if (!input) return;
+  input.addEventListener('input', () => {
+    updateSliderReadout(id);
+    if (state.loadedImage) drawCanvas();
+  });
+  updateSliderReadout(id); // initial paint
+});
+
+function resetSliders(ids) {
+  ids.forEach(id => setSliderValue(id, SLIDER_DEFAULTS[id]));
+  if (state.loadedImage) drawCanvas();
+}
+
+document.getElementById('btn-img-reset').addEventListener('click', () => {
+  resetSliders(['img-scale', 'img-x', 'img-y']);
+});
+document.getElementById('btn-logo-reset').addEventListener('click', () => {
+  resetSliders(['logo-scale', 'logo-x', 'logo-y']);
 });
 
 // ============================================================================
-// LIVE REDRAW ON FORM CHANGES & SLIDERS
+// TIMEFRAME PILLS (preview NEXT WEEK / THIS WEEK / TOMORROW / TONIGHT)
+// ============================================================================
+
+document.querySelectorAll('[data-timeframe]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.timeframe = btn.dataset.timeframe || '';
+    document.querySelectorAll('[data-timeframe]').forEach(b => b.classList.toggle('active', b === btn));
+    if (state.loadedImage) drawCanvas();
+  });
+});
+
+// ============================================================================
+// LIVE REDRAW ON FORM FIELD CHANGES
 // ============================================================================
 
 ['f-event', 'f-table', 'f-date', 'f-time', 'f-location'].forEach(id => {
@@ -1355,11 +1473,252 @@ document.getElementById('btn-download').addEventListener('click', async () => {
   });
 });
 
-['img-scale', 'img-x', 'img-y', 'logo-scale', 'logo-x', 'logo-y'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => {
-    if (state.loadedImage) drawCanvas();
+// ============================================================================
+// DRAG-TO-PAN + WHEEL/PINCH-TO-ZOOM ON CANVAS
+// ----------------------------------------------------------------------------
+// Translates pointer movement in CSS pixels into canvas-pixel offsets via the
+// canvas → element scale factor. Touch pinch is handled with a two-pointer
+// average + distance ratio.
+// ============================================================================
+
+(function setupCanvasInteractions() {
+  const canvas = document.getElementById('preview');
+  if (!canvas) return;
+
+  const pointers = new Map(); // pointerId → {x, y}
+  let dragStart = null;       // {sliderX, sliderY, pointerX, pointerY}
+  let pinchStart = null;      // {distance, scale}
+
+  function canvasScale() {
+    // Ratio of canvas internal pixels to on-screen CSS pixels.
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width) return 1;
+    return canvas.width / rect.width;
+  }
+
+  function getMidpoint(pts) {
+    let mx = 0, my = 0;
+    pts.forEach(p => { mx += p.x; my += p.y; });
+    return { x: mx / pts.length, y: my / pts.length };
+  }
+
+  function getPinchDistance(pts) {
+    const [a, b] = pts;
+    return Math.hypot(b.x - a.x, b.y - a.y);
+  }
+
+  canvas.classList.add('draggable');
+
+  canvas.addEventListener('pointerdown', e => {
+    if (!state.loadedImage) return;
+    canvas.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    canvas.classList.add('dragging');
+
+    if (pointers.size === 1) {
+      dragStart = {
+        sliderX: parseInt(document.getElementById('img-x').value, 10) || 0,
+        sliderY: parseInt(document.getElementById('img-y').value, 10) || 0,
+        pointerX: e.clientX,
+        pointerY: e.clientY
+      };
+      pinchStart = null;
+    } else if (pointers.size === 2) {
+      const pts = Array.from(pointers.values());
+      pinchStart = {
+        distance: getPinchDistance(pts),
+        scale: parseFloat(document.getElementById('img-scale').value) || 1
+      };
+      dragStart = null;
+    }
   });
+
+  canvas.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.size === 1 && dragStart) {
+      const scale = canvasScale();
+      const dx = (e.clientX - dragStart.pointerX) * scale;
+      const dy = (e.clientY - dragStart.pointerY) * scale;
+      setSliderValue('img-x', clamp(dragStart.sliderX + dx, -1000, 1000));
+      setSliderValue('img-y', clamp(dragStart.sliderY + dy, -1000, 1000));
+      drawCanvas();
+    } else if (pointers.size === 2 && pinchStart) {
+      const pts = Array.from(pointers.values());
+      const dist = getPinchDistance(pts);
+      const ratio = dist / pinchStart.distance;
+      const newScale = clamp(pinchStart.scale * ratio, 0.5, 3);
+      setSliderValue('img-scale', newScale);
+      drawCanvas();
+    }
+  });
+
+  function endPointer(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size === 0) {
+      dragStart = null;
+      pinchStart = null;
+      canvas.classList.remove('dragging');
+    } else if (pointers.size === 1) {
+      // Re-anchor the remaining pointer as the new drag origin.
+      const remaining = Array.from(pointers.values())[0];
+      dragStart = {
+        sliderX: parseInt(document.getElementById('img-x').value, 10) || 0,
+        sliderY: parseInt(document.getElementById('img-y').value, 10) || 0,
+        pointerX: remaining.x,
+        pointerY: remaining.y
+      };
+      pinchStart = null;
+    }
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+  canvas.addEventListener('pointerleave', endPointer);
+
+  // Wheel = zoom around the cursor, capped at slider bounds.
+  canvas.addEventListener('wheel', e => {
+    if (!state.loadedImage) return;
+    e.preventDefault();
+    const current = parseFloat(document.getElementById('img-scale').value) || 1;
+    // Smaller multiplier for trackpads (small deltaY), larger for mice.
+    const step = Math.abs(e.deltaY) > 50 ? 0.08 : 0.04;
+    const direction = e.deltaY < 0 ? 1 : -1;
+    const next = clamp(current + direction * step, 0.5, 3);
+    setSliderValue('img-scale', next);
+    drawCanvas();
+  }, { passive: false });
+
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+})();
+
+// ============================================================================
+// DOWNLOAD — CURRENT VIEW (single PNG)
+// ============================================================================
+
+document.getElementById('btn-download-current').addEventListener('click', () => {
+  const canvas = document.getElementById('preview');
+  const filename = buildFilename(state.aspect, state.timeframe);
+  canvas.toBlob(blob => {
+    if (blob) triggerDownload(blob, `${filename}.png`);
+  }, 'image/png');
 });
+
+// ============================================================================
+// DOWNLOAD — ALL VARIANTS BUNDLED INTO A SINGLE ZIP
+// ----------------------------------------------------------------------------
+// 3 aspects × 5 timeframes = 15 PNGs. Rendered to an offscreen canvas to keep
+// the visible preview stable, then packed via JSZip into one download. Avoids
+// the "this site wants to download multiple files" browser prompt entirely.
+// ============================================================================
+
+document.getElementById('btn-download-all').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-download-all');
+  const progress = document.getElementById('batch-progress');
+  const progressFill = document.getElementById('batch-progress-fill');
+  const progressLabel = document.getElementById('batch-progress-label');
+
+  if (typeof JSZip === 'undefined') {
+    status('compose-status', 'ZIP library failed to load — check your connection and reload.', 'error');
+    return;
+  }
+
+  const originalText = btn.textContent;
+  const originalAspect = state.aspect;
+  const originalTimeframe = state.timeframe;
+  btn.disabled = true;
+  btn.textContent = 'Bundling ZIP…';
+  progress.classList.add('show');
+  progressFill.style.width = '0%';
+
+  const timeframes = ['', 'TONIGHT', 'TOMORROW', 'THIS WEEK', 'NEXT WEEK'];
+  const aspects    = ['square', 'landscape', 'portrait'];
+  const total = aspects.length * timeframes.length;
+
+  // Offscreen canvas keeps the visible preview stable through the batch.
+  const offscreen = document.createElement('canvas');
+  const zip = new JSZip();
+  const eventName = (document.getElementById('f-event').value.trim() || 'event')
+    .replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+  const folderName = `rt-${eventName}-${todayStamp()}`;
+  const folder = zip.folder(folderName);
+
+  let done = 0;
+  try {
+    for (const aspect of aspects) {
+      for (const timeframe of timeframes) {
+        state.aspect = aspect;
+        state.timeframe = timeframe;
+        drawCanvas(offscreen);
+
+        // Wait one frame so the canvas paint settles before we read pixels.
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+        const blob = await canvasToBlob(offscreen, 'image/png');
+        const filename = buildFilename(aspect, timeframe);
+        folder.file(`${filename}.png`, blob);
+
+        done++;
+        const pct = Math.round((done / total) * 100);
+        progressFill.style.width = `${pct}%`;
+        progressLabel.textContent = `Rendering ${done} of ${total} · ${pct}%`;
+      }
+    }
+
+    progressLabel.textContent = 'Compressing…';
+    const zipBlob = await zip.generateAsync({ type: 'blob' }, meta => {
+      progressFill.style.width = `${Math.round(meta.percent)}%`;
+    });
+    triggerDownload(zipBlob, `${folderName}.zip`);
+    progressLabel.textContent = `Done — ${total} variants saved.`;
+  } catch (err) {
+    console.error(err);
+    status('compose-status', `Batch export failed: ${err.message}`, 'error');
+    progressLabel.textContent = 'Failed.';
+  } finally {
+    state.aspect = originalAspect;
+    state.timeframe = originalTimeframe;
+    drawCanvas();
+    btn.textContent = originalText;
+    btn.disabled = false;
+    // Auto-hide progress after a beat so users can see "Done".
+    setTimeout(() => progress.classList.remove('show'), 2000);
+  }
+});
+
+// ============================================================================
+// DOWNLOAD HELPERS
+// ============================================================================
+
+function buildFilename(aspect, timeframe) {
+  const eventName = (document.getElementById('f-event').value.trim() || 'event')
+    .replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+  const tfSlug = timeframe ? `-${timeframe.replace(/ /g, '-').toLowerCase()}` : '';
+  return `rt-${eventName}-${aspect}${tfSlug}`;
+}
+
+function todayStamp() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function canvasToBlob(canvas, mime = 'image/png') {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(b => b ? resolve(b) : reject(new Error('Canvas blob failed')), mime);
+  });
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 // ============================================================================
 // ADMIN / LOGS MODAL
