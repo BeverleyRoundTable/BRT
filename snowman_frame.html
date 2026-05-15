@@ -426,12 +426,18 @@ function draw(photo){
 
 /* ---------- iframe auto-height ---------- */
 function sendHeight(extra = 0){
-  const h = document.documentElement.scrollHeight + extra;
+  const card = document.querySelector(".card");
+  if (!card) return;
+  
+  // Measure the actual card content, independent of the iframe window size
+  const rect = card.getBoundingClientRect();
+  const h = Math.ceil(rect.height) + extra;
+  
   parent.postMessage({ snowmanFrameHeight: h }, "*");
 }
 
-window.addEventListener("load", () => sendHeight(30));
-window.addEventListener("resize", () => sendHeight(30));
+window.addEventListener("load", () => sendHeight(40));
+window.addEventListener("resize", () => sendHeight(40));
 
 // ================= FACE INTERACTION =================
 
