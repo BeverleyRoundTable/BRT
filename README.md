@@ -2,7 +2,7 @@
 
 > A live Santa sleigh tracker, fundraising platform, and Christmas Eve magic-maker — built by Beverley Round Table for charity Santa sleigh runs.
 
-TurboSanta lets families follow Santa's sleigh in real time on Christmas Eve, donate by card or cash, claim Gift Aid, snap an "Elf Cam" polaroid with Santa, and send the kids to bed believing the magic is just down the road. Behind the scenes it gives sleigh crews a driver console, gives organisers a God Mode admin dashboard, and rolls everything up into a Season Wrap Report for the AGM.
+TurboSanta lets families follow Santa's sleigh in real time, donate by card or cash, claim Gift Aid, snap an "Elf Cam" polaroid with Santa, and send the kids to bed believing the magic is just down the road. Behind the scenes it gives sleigh crews a driver console, gives organisers a God Mode admin dashboard, and rolls everything up into a Season Wrap Report for the AGM.
 
 Originally built for Beverley Round Table's annual sleigh run, the platform is being readied for a national rollout to other Round Tables across the UK.
 
