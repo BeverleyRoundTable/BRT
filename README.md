@@ -4,7 +4,7 @@
 
 TurboSanta lets families follow Santa's sleigh in real time, donate by card or cash, claim Gift Aid, snap an "Elf Cam" polaroid with Santa, and send the kids to bed believing the magic is just down the road. Behind the scenes it gives sleigh crews a driver console, gives organisers a God Mode admin dashboard, and rolls everything up into a Season Wrap Report for the AGM.
 
-Originally built for Beverley Round Table's annual sleigh run, the platform is being readied for a national rollout to other Round Tables across the UK.
+The platform has been rolled out for all tables across the UK and Ireland.
 
 ---
 
