@@ -1,10 +1,36 @@
 # 🎅 TurboSanta
 
-> A live Santa sleigh tracker, fundraising platform, and Christmas Eve magic-maker — built by Beverley Round Table for charity Santa sleigh runs.
+> A live Santa sleigh tracker, fundraising platform, and Christmas Eve magic-maker — built by Beverley Round Table for charity Santa sleigh runs across the UK and Ireland.
 
 TurboSanta lets families follow Santa's sleigh in real time, donate by card or cash, claim Gift Aid, snap an "Elf Cam" polaroid with Santa, and send the kids to bed believing the magic is just down the road. Behind the scenes it gives sleigh crews a driver console, gives organisers a God Mode admin dashboard, and rolls everything up into a Season Wrap Report for the AGM.
 
 The platform has been rolled out for all tables across the UK and Ireland.
+
+---
+
+## 🏗️ How it works
+
+TurboSanta is a **shared frontend, per-Table backend** platform:
+
+- **This repo** is the single shared frontend, deployed once to Cloudflare Pages at [brt-23f.pages.dev](https://brt-23f.pages.dev). Every Round Table in the UK and Ireland uses the same hosted pages — there is no need to fork, clone, or self-host.
+- **Each Round Table runs its own Google Apps Script web app** as their backend. This holds *their* spreadsheet, *their* config, *their* donations, *their* routes.
+- The frontend is wired to a Table's backend via an `?api=` query string parameter. The Table's Apps Script auto-generates branded links pointing at this repo with their API URL baked in.
+
+### Example
+
+A tracker link for a specific Table looks like this:
+
+```
+https://brt-23f.pages.dev/tracker?api=<their-apps-script-url>&driver=1
+```
+
+The page reads the `api` parameter, calls *that* Apps Script for settings, branding, routes, messages, and donations, and renders accordingly. Same code, different data — every Table gets their own fully-branded experience without touching this repo.
+
+This means:
+- 🚫 Tables do **not** fork this repo
+- 🚫 Tables do **not** maintain their own copy of the frontend
+- ✅ Tables only configure their own Apps Script and spreadsheet
+- ✅ Every improvement pushed here ships to every Table instantly
 
 ---
 
@@ -32,7 +58,7 @@ The platform has been rolled out for all tables across the UK and Ireland.
 - **Route planner** — OSRM road-snapping route builder with GPX export (replaces gpx.studio)
 - **Incident log** — insurance-compliant event logging
 - **Expenses & sponsors** — tracked in the master Google Sheet
-- **Onboarding guide** — for new Round Tables joining the platform
+- **Onboarding flow** — generates a Table's branded links automatically
 
 ### Post-season
 - **Season Wrap Report** — year-on-year Chart.js comparisons across donations, miles, messages, spotters
@@ -45,13 +71,14 @@ The platform has been rolled out for all tables across the UK and Ireland.
 
 | Layer | Tech |
 |---|---|
-| Hosting | Cloudflare Pages |
+| Hosting | Cloudflare Pages (single deployment, shared) |
 | Frontend | Vanilla HTML / JS / CSS, Leaflet.js, Chart.js |
-| Backend | Google Apps Script + Google Sheets (master spreadsheet) |
+| Per-Table backend | Google Apps Script + Google Sheets |
 | Realtime data | Firebase Realtime Database (GPS positions, messages) |
 | PWA | Service worker (`sw.js`) |
 | Routing engine | OSRM (road-snapped GPX generation) |
 | Routing animation | Custom 8-direction Santa sprite over GPX path |
+| Backend wiring | `?api=` query parameter on every page |
 
 ### Brand
 - Gold `#FBAF33`
@@ -122,15 +149,21 @@ The platform has been rolled out for all tables across the UK and Ireland.
 
 ---
 
-## 🚀 Getting started
+## 🚀 Joining the platform (for other Round Tables)
 
-### Prerequisites
-- A Google account with access to the master TurboSanta spreadsheet
-- A Firebase project for realtime GPS and messages
-- A Cloudflare account for Pages hosting
-- (Optional) `clasp` installed locally if editing the Apps Script backend
+If your Round Table wants to run a TurboSanta sleigh:
 
-### Local development
+1. Visit [brt-23f.pages.dev](https://brt-23f.pages.dev) and follow the onboarding flow
+2. Deploy your own Google Apps Script web app (template provided during onboarding)
+3. The onboarding flow auto-generates your branded links with your API URL embedded
+4. Share those links — your Table is live, no code required
+
+You do **not** need a GitHub account, you do **not** need to deploy anything to Cloudflare, and you do **not** touch this repo. Your Apps Script holds everything specific to your Table.
+
+---
+
+## 🧑‍💻 Local development (for contributors to this repo)
+
 This repo is plain static HTML — there's no build step.
 
 ```bash
@@ -143,27 +176,25 @@ npx serve .
 python3 -m http.server 8000
 ```
 
-Open `http://localhost:8000/TurboSanta.html` in your browser.
+Then open a page with an `api` parameter pointing at a test Apps Script:
+
+```
+http://localhost:8000/tracker.html?api=<your-test-apps-script-url>
+```
 
 ### Deploying
-Pushes to `main` deploy automatically to Cloudflare Pages via the workflow in `.github/workflows/`.
-
-### Configuration
-Firebase and Apps Script endpoints are configured per-Round Table. New deployments should:
-1. Fork this repo (or use the onboarding flow)
-2. Update the Firebase config block in the relevant pages
-3. Point the Apps Script web-app URL at the new master spreadsheet
-4. Follow `onboarding.html` for the full setup walkthrough
+Pushes to `main` deploy automatically to Cloudflare Pages via the workflow in `.github/workflows/`. Because every Table points at this single deployment, **changes ship to every Table the moment they merge** — review carefully.
 
 ---
 
 ## 🤝 Contributing
 
-This started as a Beverley Round Table project but is being opened up for other Round Tables. If your Round Table wants to use TurboSanta:
+PRs welcome from any Round Table using the platform. Bug reports and feature ideas can be raised in [Issues](https://github.com/BeverleyRoundTable/BRT/issues).
 
-1. Follow the onboarding guide (`onboarding.html`)
-2. Open an issue here with any questions
-3. PRs welcome for shared improvements
+Because this repo is the live production frontend for every Table, please:
+- Test against a sandbox Apps Script before opening a PR
+- Keep changes backwards-compatible with existing Apps Script API responses
+- Flag any breaking changes prominently
 
 ---
 
@@ -171,7 +202,7 @@ This started as a Beverley Round Table project but is being opened up for other 
 
 © Beverley Round Table. All rights reserved.
 
-If your Round Table would like to use TurboSanta for your sleigh run, please get in touch — happy to help you get set up.
+The platform is freely available to all Round Tables in the UK and Ireland via the onboarding flow at [brt-23f.pages.dev](https://brt-23f.pages.dev). Please don't redeploy this code elsewhere — instead, get in touch and we'll get your Table onboarded.
 
 ---
 
