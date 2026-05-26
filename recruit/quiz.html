@@ -8,6 +8,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Saira:wght@700;800;900&family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
+<!-- ===== Social link preview (Open Graph + Twitter) =====
+     This is what shows when someone PASTES the quiz link into WhatsApp,
+     Facebook, iMessage, LinkedIn, etc. Without it, the link unfurls blank.
+     TODO: host a 1200x630 image at the og:image path below (a frame exported
+     from the official RT social templates works perfectly). After deploying,
+     run the URL through the Facebook Sharing Debugger once to force a re-scrape. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Beverley Round Table">
+<meta property="og:title" content="Is Round Table for you? 🤟">
+<meta property="og:description" content="A 60-second quiz to find out what you'd really get out of it. Six questions, no wrong answers — which one are you?">
+<meta property="og:url" content="https://quiz.beverleyroundtable.co.uk/recruit/quiz">
+<meta property="og:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/recruit/quiz-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Is Round Table for you? 🤟">
+<meta name="twitter:description" content="A 60-second quiz — find out which one you are.">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/recruit/quiz-og.jpg">
+<!-- ====================================================== -->
+
 <style>
   :root{
     --gold:#FBAF33; --dark:#1D1D1A; 
@@ -172,6 +192,7 @@
 
     <img class="r-card-prev hidden" id="rCardPrev" alt="Your shareable result card">
     <button class="btn btn-gold" id="share">Share my result</button>
+    <button class="btn btn-ghost" id="waShare">💬 Send it to the group chat</button>
     <button class="btn btn-ghost" id="save">Save the card</button>
     <a class="btn btn-ghost" id="join" href="#">Sounds like me — say hello 👋</a>
     <span class="retake" id="retake">Take it again</span>
@@ -369,10 +390,11 @@
   }
 
   // ---- Result ----
-  var currentResult = null;
+  var currentResult = null, currentKey = null;
   function showResult(){
     $('fill').style.width = "100%";
     var key = winner();
+    currentKey = key;
     currentResult = RESULTS[key];
 
     $('quiz').classList.add('hidden');
@@ -440,15 +462,25 @@
 
     // divider
     x.strokeStyle = "rgba(255,255,255,.15)"; x.lineWidth = 2;
-    x.beginPath(); x.moveTo(160, 1170); x.lineTo(W-160, 1170); x.stroke();
+    x.beginPath(); x.moveTo(160, 1040); x.lineTo(W-160, 1040); x.stroke();
 
-    // footer - Kept Open Sans
+    // CTA pill — the part that makes a viewer want to take it themselves
+    var pillW = 760, pillH = 116, pillX = (W-pillW)/2, pillY = 1090;
     x.fillStyle = "#FBAF33";
-    x.font = "800 38px 'Open Sans', sans-serif";
-    x.fillText(CONFIG.TABLE_NAME, W/2, 1240);
+    roundRect(x, pillX, pillY, pillW, pillH, 26); x.fill();
+    x.fillStyle = "#1D1D1A";
+    x.font = "800 48px 'Saira', system-ui, sans-serif";
+    x.textBaseline = "middle";
+    x.fillText("WHICH ONE ARE YOU?", W/2, pillY + pillH/2 + 3);
+    x.textBaseline = "alphabetic";
+
+    // quiz url + table line
     x.fillStyle = "#a7a7a2";
-    x.font = "600 30px 'Open Sans', sans-serif";
-    x.fillText("Find out yours → " + stripProto(CONFIG.QUIZ_URL), W/2, 1290);
+    x.font = "600 28px 'Open Sans', sans-serif";
+    x.fillText("Free 60-second quiz → " + stripProto(CONFIG.QUIZ_URL), W/2, 1252);
+    x.fillStyle = "#FBAF33";
+    x.font = "800 30px 'Saira', system-ui, sans-serif";
+    x.fillText(CONFIG.TABLE_NAME.toUpperCase() + "  ·  #JOINROUNDTABLE", W/2, 1304);
 
     c.toBlob(function(b){ cardBlob = b; }, "image/png");
     return c.toDataURL("image/png");
@@ -466,9 +498,24 @@
   }
   function stripProto(u){ return u.replace(/^https?:\/\//,'').replace(/\/$/,''); }
 
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
   // ---- Share / Save ----
+  function buildShareUrl(){
+    var u = CONFIG.QUIZ_URL;
+    var sep = u.indexOf('?') === -1 ? '?' : '&';
+    return u + sep + 'ref=share&type=' + (currentKey || '');
+  }
   function shareText(){
-    return "I'm " + currentResult.name + "! 🎅 IS ROUND TABLE FOR YOU? Find out: " + CONFIG.QUIZ_URL;
+    return "Apparently I'm " + currentResult.name + " 😏  Reckon you know what you'd be? Is Round Table for you? Find out 👉 " + buildShareUrl() + "  #JoinRoundTable";
   }
 
   $('share').addEventListener('click', async function(){
@@ -482,12 +529,16 @@
     }
     // next best: share text/url
     if (navigator.share){
-      try { await navigator.share({ text: shareText(), url: CONFIG.QUIZ_URL }); return; } catch(e){}
+      try { await navigator.share({ text: shareText(), url: buildShareUrl() }); return; } catch(e){}
     }
     // fallback: copy the text, then nudge to save the image
     try { await navigator.clipboard.writeText(shareText()); } catch(e){}
     saveCard();
     alert("Share text copied — and your card's been saved. Pop them both on your socials!");
+  });
+
+  $('waShare').addEventListener('click', function(){
+    window.open('https://wa.me/?text=' + encodeURIComponent(shareText()), '_blank');
   });
 
   $('save').addEventListener('click', saveCard);
