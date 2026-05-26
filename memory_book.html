@@ -215,12 +215,6 @@
     .polaroid .video-play-btn svg { margin-left: 3px; } /* optical-centre the triangle */
     .polaroid .video-facade:hover .video-poster { filter: brightness(1.06); transform: scale(1.04); }
     .polaroid .video-facade:hover .video-play-btn { transform: scale(1.12); }
-    .polaroid .video-facade.is-playing { cursor: default; }
-    .polaroid .video-facade.is-playing .video-poster,
-    .polaroid .video-facade.is-playing .video-play-btn { display: none; }
-    .polaroid .video-facade iframe {
-      position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
-    }
 
     /* Video cards stay put on hover so the play button is easy to hit */
     .polaroid.is-video:hover {
@@ -228,6 +222,24 @@
       box-shadow: 0 18px 44px rgba(0,0,0,0.55);
       z-index: 10;
     }
+
+    /* --- VIDEO LIGHTBOX (full-size player, controls never clipped) --- */
+    .video-lightbox { z-index: 6000; }
+    .lightbox-player {
+      width: min(92vw, 760px); height: min(82vh, 760px);
+      background: #000; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+    }
+    .lightbox-player iframe { width: 100%; height: 100%; border: 0; }
+    .lightbox-close {
+      position: absolute; top: 20px; right: 24px;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--surface-2); color: #fff; border: 1px solid var(--border);
+      font-size: 26px; line-height: 1; cursor: pointer; z-index: 2;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .lightbox-close:hover { background: var(--gold); color: var(--dark); border-color: var(--gold); }
 
     .modal-btns { display: flex; gap: 12px; }
     .btn-full { flex: 1; }
@@ -285,6 +297,11 @@
     </div>
   </div>
 
+  <div id="videoLightbox" class="modal-overlay video-lightbox">
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close video">&times;</button>
+    <div class="lightbox-player" id="lightboxPlayer"></div>
+  </div>
+
   <canvas id="compressCanvas" style="display:none;"></canvas>
 
   <script>
@@ -314,6 +331,28 @@
       const gallery = document.getElementById('gallery');
       const loader = document.getElementById('loader');
       const subtext = document.getElementById('headerSubtext');
+
+      // --- VIDEO LIGHTBOX ---
+      const videoLightbox = document.getElementById('videoLightbox');
+      const lightboxPlayer = document.getElementById('lightboxPlayer');
+      const lightboxClose = document.getElementById('lightboxClose');
+
+      function openVideoLightbox(id) {
+        lightboxPlayer.innerHTML = `<iframe src="https://drive.google.com/file/d/${id}/preview"
+          allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+        videoLightbox.style.display = 'flex';
+      }
+      function closeVideoLightbox() {
+        videoLightbox.style.display = 'none';
+        lightboxPlayer.innerHTML = ''; // stop playback
+      }
+      lightboxClose.addEventListener('click', closeVideoLightbox);
+      videoLightbox.addEventListener('click', (e) => {
+        if (e.target === videoLightbox) closeVideoLightbox(); // backdrop click
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && videoLightbox.style.display === 'flex') closeVideoLightbox();
+      });
 
       // --- 1. LOAD GALLERY DATA & YEARS ---
       const yearSelect = document.getElementById('yearSelect');
@@ -383,15 +422,10 @@
                   <div class="polaroid-caption">${caption}</div>`;
 
                 const facade = card.querySelector('.video-facade');
-                const playVideo = () => {
-                  if (facade.classList.contains('is-playing')) return;
-                  facade.classList.add('is-playing');
-                  facade.innerHTML = `<iframe src="https://drive.google.com/file/d/${media.id}/preview"
-                    allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-                };
-                facade.addEventListener('click', playVideo);
+                const openVideo = () => openVideoLightbox(media.id);
+                facade.addEventListener('click', openVideo);
                 facade.addEventListener('keydown', (ev) => {
-                  if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); playVideo(); }
+                  if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openVideo(); }
                 });
               } else {
                 card.innerHTML = `<img src="${media.url}" alt="Community Photo" loading="lazy"><div class="polaroid-caption">${caption}</div>`;
