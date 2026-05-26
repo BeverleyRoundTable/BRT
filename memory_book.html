@@ -225,12 +225,20 @@
 
     /* --- VIDEO LIGHTBOX (full-size player, controls never clipped) --- */
     .video-lightbox { z-index: 6000; }
+    .lightbox-inner {
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
     .lightbox-player {
-      width: min(92vw, 760px); height: min(82vh, 760px);
+      width: min(86vw, 560px); height: min(72vh, 560px);
       background: #000; border-radius: 12px; overflow: hidden;
       box-shadow: 0 24px 60px rgba(0,0,0,0.7);
     }
     .lightbox-player iframe { width: 100%; height: 100%; border: 0; }
+    .lightbox-fallback {
+      color: var(--text-dim); font-size: 13px; font-weight: 700;
+      text-decoration: none; transition: color 0.2s;
+    }
+    .lightbox-fallback:hover { color: var(--gold); }
     .lightbox-close {
       position: absolute; top: 20px; right: 24px;
       width: 44px; height: 44px; border-radius: 50%;
@@ -299,7 +307,10 @@
 
   <div id="videoLightbox" class="modal-overlay video-lightbox">
     <button class="lightbox-close" id="lightboxClose" aria-label="Close video">&times;</button>
-    <div class="lightbox-player" id="lightboxPlayer"></div>
+    <div class="lightbox-inner">
+      <div class="lightbox-player" id="lightboxPlayer"></div>
+      <a class="lightbox-fallback" id="lightboxOpen" href="#" target="_blank" rel="noopener">Trouble playing? Open in Google Drive ↗</a>
+    </div>
   </div>
 
   <canvas id="compressCanvas" style="display:none;"></canvas>
@@ -336,10 +347,26 @@
       const videoLightbox = document.getElementById('videoLightbox');
       const lightboxPlayer = document.getElementById('lightboxPlayer');
       const lightboxClose = document.getElementById('lightboxClose');
+      const lightboxOpen = document.getElementById('lightboxOpen');
+
+      const driveViewUrl = (id) => `https://drive.google.com/file/d/${id}/view`;
+      const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+
+      // On mobile the page is usually embedded as an iframe on the host site,
+      // and Drive video won't play in a nested iframe — so open Drive directly.
+      // On desktop the in-page lightbox works, so use that.
+      function openVideo(id) {
+        if (isMobile()) {
+          window.open(driveViewUrl(id), '_blank', 'noopener');
+        } else {
+          openVideoLightbox(id);
+        }
+      }
 
       function openVideoLightbox(id) {
         lightboxPlayer.innerHTML = `<iframe src="https://drive.google.com/file/d/${id}/preview"
           allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+        lightboxOpen.href = driveViewUrl(id);
         videoLightbox.style.display = 'flex';
       }
       function closeVideoLightbox() {
@@ -422,10 +449,10 @@
                   <div class="polaroid-caption">${caption}</div>`;
 
                 const facade = card.querySelector('.video-facade');
-                const openVideo = () => openVideoLightbox(media.id);
-                facade.addEventListener('click', openVideo);
+                const onPlay = () => openVideo(media.id);
+                facade.addEventListener('click', onPlay);
                 facade.addEventListener('keydown', (ev) => {
-                  if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openVideo(); }
+                  if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onPlay(); }
                 });
               } else {
                 card.innerHTML = `<img src="${media.url}" alt="Community Photo" loading="lazy"><div class="polaroid-caption">${caption}</div>`;
