@@ -21,7 +21,8 @@
 
 <style>
   :root{
-    --gold:#FBAF33; --dark:#1D1D1A; --red:#D31C1C;
+    /* Removed the unapproved red variable */
+    --gold:#FBAF33; --dark:#1D1D1A; 
     --ink:#fff; --dim:#a7a7a2; --line:rgba(255,255,255,.12);
     --card:#26261f;
   }
@@ -29,9 +30,9 @@
   html,body{margin:0;min-height:100%}
   body{
     font-family:'Open Sans',system-ui,sans-serif;color:var(--ink);
+    /* Removed the red radial gradient from the background */
     background:
       radial-gradient(900px 500px at 50% -10%, rgba(251,175,51,.16), transparent 60%),
-      radial-gradient(700px 600px at 100% 110%, rgba(211,28,28,.14), transparent 55%),
       var(--dark);
     display:flex;justify-content:center;align-items:center;
     padding:24px 16px;min-height:100vh;
@@ -51,14 +52,20 @@
 
   /* ---------- start ---------- */
   .kick{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--gold);margin-bottom:14px}
-  h1{font-size:38px;line-height:1.05;font-weight:800;margin:0 0 14px}
-  h1 .em{color:var(--red)}
+    text-transform:uppercase;color:var(--gold);margin-bottom:14px;
+    font-family:'Eurostile Extended', 'Eurostile', sans-serif;} /* Added Brand Font */
+    
+  h1{font-size:38px;line-height:1.05;font-weight:800;margin:0 0 14px;
+     font-family:'Eurostile Extended', 'Eurostile', sans-serif;} /* Added Brand Font */
+     
+  h1 .em{color:var(--gold)} /* Changed from red to gold */
   .lead{font-size:16px;color:var(--dim);line-height:1.55;margin:0 0 28px}
   .meta{font-size:13px;color:var(--dim);margin-top:18px}
 
   /* ---------- questions ---------- */
-  .q{font-size:25px;font-weight:800;line-height:1.18;margin:0 0 22px}
+  .q{font-size:25px;font-weight:800;line-height:1.18;margin:0 0 22px;
+     font-family:'Eurostile Extended', 'Eurostile', sans-serif;} /* Added Brand Font */
+     
   .opts{display:flex;flex-direction:column;gap:11px}
   .opt{
     text-align:left;width:100%;padding:16px 18px;border-radius:14px;cursor:pointer;
@@ -86,8 +93,12 @@
     animation:pop .55s cubic-bezier(.2,1.5,.4,1) both}
   @keyframes pop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
   .r-pre{text-align:center;font-size:13px;font-weight:800;letter-spacing:.12em;
-    text-transform:uppercase;color:var(--gold)}
-  .r-name{text-align:center;font-size:34px;font-weight:800;margin:2px 0 4px}
+    text-transform:uppercase;color:var(--gold);
+    font-family:'Eurostile Extended', 'Eurostile', sans-serif;} /* Added Brand Font */
+    
+  .r-name{text-align:center;font-size:34px;font-weight:800;margin:2px 0 4px;
+    font-family:'Eurostile Extended', 'Eurostile', sans-serif;} /* Added Brand Font */
+    
   .r-tag{text-align:center;font-size:16px;color:var(--dim);font-style:italic;
     line-height:1.5;margin:0 0 22px}
   .r-blurb{background:var(--card);border:1px solid var(--line);border-radius:16px;
@@ -307,7 +318,7 @@
     $('start').classList.remove('hidden');
   });
 
-  // ---- Canvas share card (1080×1350 — portrait, socials-friendly) ----
+ // ---- Canvas share card (1080×1350 — portrait, socials-friendly) ----
   var cardBlob = null;
   function buildCard(res){
     var c = $('cardCanvas'), x = c.getContext('2d'), W = c.width, H = c.height;
@@ -325,7 +336,8 @@
 
     // kicker
     x.fillStyle = "#FBAF33";
-    x.font = "800 30px 'Open Sans', sans-serif";
+    /* UPDATED FONT */
+    x.font = "800 30px 'Eurostile Extended', 'Eurostile', sans-serif";
     x.fillText("IS ROUND TABLE FOR YOU?", W/2, 150);
 
     // emoji
@@ -334,15 +346,17 @@
 
     // "You're"
     x.fillStyle = "#a7a7a2";
-    x.font = "700 34px 'Open Sans', sans-serif";
+    /* UPDATED FONT */
+    x.font = "700 34px 'Eurostile Extended', 'Eurostile', sans-serif";
     x.fillText("YOU'RE", W/2, 620);
 
     // archetype name
     x.fillStyle = "#fff";
-    x.font = "800 92px 'Open Sans', sans-serif";
+    /* UPDATED FONT */
+    x.font = "800 92px 'Eurostile Extended', 'Eurostile', sans-serif";
     x.fillText(res.name, W/2, 710);
 
-    // tagline (wrapped)
+    // tagline (wrapped) - Kept as Open Sans for readability
     x.fillStyle = "#d9d9d4";
     x.font = "italic 400 40px 'Open Sans', sans-serif";
     wrapText(x, res.tag, W/2, 800, W-180, 54);
@@ -351,7 +365,7 @@
     x.strokeStyle = "rgba(255,255,255,.15)"; x.lineWidth = 2;
     x.beginPath(); x.moveTo(160, 1170); x.lineTo(W-160, 1170); x.stroke();
 
-    // footer
+    // footer - Kept as Open Sans 
     x.fillStyle = "#FBAF33";
     x.font = "800 38px 'Open Sans', sans-serif";
     x.fillText(CONFIG.TABLE_NAME, W/2, 1240);
@@ -373,6 +387,7 @@
     lines.push(line);
     for (var j=0;j<lines.length;j++) ctx.fillText(lines[j], cx, y + j*lh);
   }
+  
   function stripProto(u){ return u.replace(/^https?:\/\//,'').replace(/\/$/,''); }
 
   // ---- Share / Save ----
@@ -400,6 +415,7 @@
   });
 
   $('save').addEventListener('click', saveCard);
+  
   function saveCard(){
     var a = document.createElement('a');
     a.download = "round-table-result.png";
