@@ -215,6 +215,7 @@
   // ---- Fetch Upcoming Events ----
   var API_URL = 'https://script.google.com/macros/s/AKfycbyGXzNn8DhvLzDkqp2WkVJFbO_wWT05XhrdU9koeXD64YC2t7P3S-4GTngpDbwitIw/exec?type=upcoming';
   var preloadedEvents = [];
+  var resultShown = false;   // true once the user has reached the results screen
 
   function fetchEvents() {
     fetch(API_URL)
@@ -222,6 +223,7 @@
       .then(function(data) {
         if (data && data.length > 0) {
           preloadedEvents = data.slice(0, 2); // Grab the next 2 events
+          if (resultShown) renderEvents();    // data landed late? render it now
         }
       })
       .catch(function(err) { console.warn("Could not load events", err); });
@@ -406,7 +408,8 @@
     $('rBlurb').innerHTML   = currentResult.blurb;
     $('join').href          = CONFIG.JOIN_URL;
 
-    // NEW: Inject the pre-loaded events
+    // Inject the pre-loaded events (and allow a late fetch to render after this)
+    resultShown = true;
     renderEvents();
 
     // build the shareable card + show a preview
