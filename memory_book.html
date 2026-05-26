@@ -182,6 +182,21 @@
       display: none; width: 100%; max-height: 200px; object-fit: contain;
       border-radius: 8px; margin-bottom: 24px; border: 1px solid var(--border);
     }
+    .preview-video {
+      display: none; width: 100%; max-height: 240px;
+      border-radius: 8px; margin-bottom: 24px; border: 1px solid var(--border);
+      background: #000;
+    }
+    .upload-hint { font-size: 12px; color: var(--text-dim); margin: -12px 0 20px; }
+
+    /* --- VIDEO POLAROID --- */
+    .polaroid .video-embed {
+      position: relative; width: 100%; aspect-ratio: 4/3;
+      background: #000; border: 1px solid rgba(0,0,0,0.1); overflow: hidden;
+    }
+    .polaroid .video-embed iframe {
+      position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
+    }
 
     .modal-btns { display: flex; gap: 12px; }
     .btn-full { flex: 1; }
@@ -207,7 +222,7 @@
       <select id="yearSelect"></select>
     </div>
     <br>
-    <button class="btn" id="openUploadBtn">📸 Submit a Photo</button>
+    <button class="btn" id="openUploadBtn">📸 Submit a Photo or Video</button>
   </header>
 
   <div class="gallery-container" id="gallery">
@@ -220,15 +235,17 @@
   <div id="uploadModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-title">Share a Memory</div>
-      <div class="modal-desc">Send us your best photo from the night! All photos are reviewed by the elves before being added to the book.</div>
+      <div class="modal-desc">Send us your best photo or a short video clip from the night! Everything is reviewed by the elves before being added to the book.</div>
       
       <div class="file-drop-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
         <span style="font-size: 32px; margin: 0;">📁</span>
-        <span id="dropText">Tap to select a photo</span>
-        <input type="file" id="fileInput" accept="image/jpeg, image/png">
+        <span id="dropText">Tap to select a photo or video</span>
+        <input type="file" id="fileInput" accept="image/jpeg, image/png, video/mp4, video/quicktime, video/webm">
       </div>
 
       <img id="imagePreview" class="preview-img" alt="Preview">
+      <video id="videoPreview" class="preview-video" controls playsinline muted></video>
+      <div class="upload-hint" id="uploadHint">Videos must be under 25&nbsp;MB (roughly a 15–25 second clip).</div>
 
       <div class="modal-btns">
         <button class="btn btn-full btn-cancel" id="cancelUploadBtn">Cancel</button>
@@ -309,14 +326,30 @@
   "Reindeer ready!", "Elf spotted!", "Santa's helpers!", 
   "Caught on camera!", "Sleigh bells ringing!"
 ];
-            images.forEach((imgUrl, index) => {
+            images.forEach((item, index) => {
+              // Backward compatible: old API returned plain URL strings (all images)
+              const media = (typeof item === 'string')
+                ? { type: 'image', url: item }
+                : item;
+
               const card = document.createElement('div');
               card.className = 'polaroid';
               const rot = (Math.random() * 8 - 4).toFixed(1);
               card.style.setProperty('--rot', `${rot}deg`);
               card.style.animation = `fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards ${index * 0.05}s`;
               const caption = captions[Math.floor(Math.random() * captions.length)];
-              card.innerHTML = `<img src="${imgUrl}" alt="Community Photo" loading="lazy"><div class="polaroid-caption">${caption}</div>`;
+
+              if (media.type === 'video' && media.id) {
+                card.classList.add('is-video');
+                card.innerHTML = `
+                  <div class="video-embed">
+                    <iframe src="https://drive.google.com/file/d/${media.id}/preview"
+                            loading="lazy" allow="autoplay" allowfullscreen></iframe>
+                  </div>
+                  <div class="polaroid-caption">${caption}</div>`;
+              } else {
+                card.innerHTML = `<img src="${media.url}" alt="Community Photo" loading="lazy"><div class="polaroid-caption">${caption}</div>`;
+              }
               gallery.appendChild(card);
             });
           }
@@ -371,10 +404,17 @@
       const fileInput = document.getElementById('fileInput');
       const dropArea = document.getElementById('dropArea');
       const imagePreview = document.getElementById('imagePreview');
+      const videoPreview = document.getElementById('videoPreview');
       const confirmUploadBtn = document.getElementById('confirmUploadBtn');
       const compressCanvas = document.getElementById('compressCanvas');
-      
+
+      // Hard cap on video size. base64 inflates ~33%, and Apps Script POSTs
+      // get unreliable past ~30 MB, so keep this conservative. Tune if needed.
+      const MAX_VIDEO_MB = 25;
+      const MAX_VIDEO_BYTES = MAX_VIDEO_MB * 1024 * 1024;
+
       let base64Output = null;
+      let mediaKind = null; // 'image' | 'video'
 
       document.getElementById('openUploadBtn').onclick = () => { uploadModal.style.display = 'flex'; };
       
@@ -383,18 +423,60 @@
         fileInput.value = "";
         dropArea.style.display = "block";
         imagePreview.style.display = "none";
+        imagePreview.src = "";
+        videoPreview.style.display = "none";
+        if (videoPreview.src) { URL.revokeObjectURL(videoPreview.src); }
+        videoPreview.removeAttribute('src');
+        videoPreview.load();
         confirmUploadBtn.disabled = true;
         confirmUploadBtn.textContent = "Upload";
         base64Output = null;
+        mediaKind = null;
       };
 
       document.getElementById('cancelUploadBtn').onclick = resetModal;
 
-      // Handle Image Selection and Local Compression
+      // Handle file selection: images get compressed, videos get validated + read raw
       fileInput.addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (!file) return;
 
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+
+        if (!isVideo && !isImage) {
+          alert("❌ Please choose a photo or a video file.");
+          fileInput.value = "";
+          return;
+        }
+
+        // ---- VIDEO PATH ----
+        if (isVideo) {
+          if (file.size > MAX_VIDEO_BYTES) {
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+            alert(`❌ That clip is ${sizeMb} MB — too big to send.\n\nPlease keep videos under ${MAX_VIDEO_MB} MB (about a 15–25 second clip). On a phone you can trim it in your gallery before uploading.`);
+            fileInput.value = "";
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            base64Output = e.target.result; // data:video/...;base64,....
+            mediaKind = 'video';
+
+            // Preview using an object URL (lighter than the base64 string)
+            const objUrl = URL.createObjectURL(file);
+            dropArea.style.display = "none";
+            imagePreview.style.display = "none";
+            videoPreview.src = objUrl;
+            videoPreview.style.display = "block";
+            confirmUploadBtn.disabled = false;
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
+
+        // ---- IMAGE PATH (compress to JPEG) ----
         const reader = new FileReader();
         reader.onload = function(e) {
           const img = new Image();
@@ -417,9 +499,11 @@
 
             // Compress to JPEG, 80% quality
             base64Output = compressCanvas.toDataURL('image/jpeg', 0.8);
-            
+            mediaKind = 'image';
+
             // Show preview
             dropArea.style.display = "none";
+            videoPreview.style.display = "none";
             imagePreview.src = base64Output;
             imagePreview.style.display = "block";
             confirmUploadBtn.disabled = false;
@@ -434,12 +518,14 @@
         if (!base64Output) return;
 
         confirmUploadBtn.disabled = true;
-        confirmUploadBtn.textContent = "Sending... 🦌💨";
+        confirmUploadBtn.textContent = (mediaKind === 'video')
+          ? "Uploading clip… 🦌💨"
+          : "Sending… 🦌💨";
 
         try {
           const payload = {
             action: "uploadMemoryPhoto",
-            imageData: base64Output
+            imageData: base64Output // server reads the real MIME from this prefix
           };
 
           const response = await fetch(apiUrl, {
@@ -450,7 +536,8 @@
 
           const data = await response.json();
           if (data.ok) {
-            alert("✅ Thank you! Your photo has been sent to the elves for review.");
+            const what = (mediaKind === 'video') ? "video" : "photo";
+            alert(`✅ Thank you! Your ${what} has been sent to the elves for review.`);
             resetModal();
           } else {
             alert("❌ Upload Failed: " + data.error);
@@ -458,7 +545,7 @@
             confirmUploadBtn.textContent = "Try Again";
           }
         } catch (err) {
-          alert("❌ Network Error. Please check your connection.");
+          alert("❌ Network Error. Please check your connection. Large videos may time out — try a shorter clip.");
           confirmUploadBtn.disabled = false;
           confirmUploadBtn.textContent = "Try Again";
         }
