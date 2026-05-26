@@ -1,0 +1,410 @@
+<!--
+  "Is Round Table for you?" — shareable quiz
+  ---------------------------------------------------------------------------
+  Self-contained. Open in a browser to play; drop onto Cloudflare Pages to ship.
+  ~60-second, 6-question quiz → a personalised archetype + a branded result card
+  built on <canvas> that people can share straight to socials (the viral bit).
+  Softly funnels into your "Join the Crew" interest form.
+
+  EDIT the CONFIG block in the <script> below:
+    QUIZ_URL  – where this quiz lives (printed on the share card + share text)
+    JOIN_URL  – your Join the Crew form (the soft CTA at the end)
+    TABLE_NAME – your Table's name
+  ---------------------------------------------------------------------------
+-->
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Is Round Table for you?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --gold:#FBAF33; --dark:#1D1D1A; --red:#D31C1C;
+    --ink:#fff; --dim:#a7a7a2; --line:rgba(255,255,255,.12);
+    --card:#26261f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    font-family:'Open Sans',system-ui,sans-serif;color:var(--ink);
+    background:
+      radial-gradient(900px 500px at 50% -10%, rgba(251,175,51,.16), transparent 60%),
+      radial-gradient(700px 600px at 100% 110%, rgba(211,28,28,.14), transparent 55%),
+      var(--dark);
+    display:flex;justify-content:center;align-items:center;
+    padding:24px 16px;min-height:100vh;
+  }
+  .wrap{width:100%;max-width:460px}
+
+  /* shared screen animation */
+  .screen{animation:fade .45s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  /* ---------- progress ---------- */
+  .bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:26px}
+  .bar > i{display:block;height:100%;width:0;border-radius:99px;
+    background:linear-gradient(90deg,var(--gold),#ffd277);transition:width .4s cubic-bezier(.2,.8,.2,1)}
+  .count{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--dim);margin-bottom:10px}
+
+  /* ---------- start ---------- */
+  .kick{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  h1{font-size:38px;line-height:1.05;font-weight:800;margin:0 0 14px}
+  h1 .em{color:var(--red)}
+  .lead{font-size:16px;color:var(--dim);line-height:1.55;margin:0 0 28px}
+  .meta{font-size:13px;color:var(--dim);margin-top:18px}
+
+  /* ---------- questions ---------- */
+  .q{font-size:25px;font-weight:800;line-height:1.18;margin:0 0 22px}
+  .opts{display:flex;flex-direction:column;gap:11px}
+  .opt{
+    text-align:left;width:100%;padding:16px 18px;border-radius:14px;cursor:pointer;
+    background:var(--card);border:1.6px solid var(--line);color:var(--ink);
+    font:inherit;font-size:15.5px;font-weight:600;line-height:1.35;
+    transition:transform .12s, border-color .15s, background .15s;
+  }
+  .opt:hover{border-color:var(--gold);background:#2e2e25}
+  .opt:active{transform:scale(.985)}
+  .opt.sel{border-color:var(--gold);background:#332f1d}
+
+  /* ---------- buttons ---------- */
+  .btn{display:inline-block;width:100%;text-align:center;padding:16px;border:0;border-radius:13px;
+    cursor:pointer;font:inherit;font-weight:800;font-size:16.5px;text-decoration:none;
+    transition:transform .12s, filter .15s}
+  .btn-gold{background:var(--gold);color:var(--dark)}
+  .btn-gold:hover{filter:brightness(1.05)}
+  .btn:active{transform:scale(.985)}
+  .btn-ghost{background:transparent;color:var(--ink);border:1.6px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--gold)}
+  .btn + .btn{margin-top:10px}
+
+  /* ---------- result ---------- */
+  .r-emoji{font-size:78px;text-align:center;margin:4px 0 6px;
+    animation:pop .55s cubic-bezier(.2,1.5,.4,1) both}
+  @keyframes pop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+  .r-pre{text-align:center;font-size:13px;font-weight:800;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--gold)}
+  .r-name{text-align:center;font-size:34px;font-weight:800;margin:2px 0 4px}
+  .r-tag{text-align:center;font-size:16px;color:var(--dim);font-style:italic;
+    line-height:1.5;margin:0 0 22px}
+  .r-blurb{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:18px 20px;font-size:15.5px;line-height:1.6;margin:0 0 18px}
+  .r-blurb b{color:var(--gold)}
+  .r-card-prev{width:100%;border-radius:14px;display:block;margin:0 0 18px;
+    box-shadow:0 18px 40px rgba(0,0,0,.45)}
+  .retake{display:block;text-align:center;margin-top:16px;color:var(--dim);
+    font-size:14px;font-weight:600;text-decoration:underline;cursor:pointer}
+
+  .hidden{display:none !important}
+</style>
+
+<div class="wrap">
+
+  <!-- START -->
+  <section class="screen" id="start">
+    <span class="kick">🎅 60-second quiz</span>
+    <h1>Is Round Table <span class="em">for you?</span></h1>
+    <p class="lead">You've seen what the crew gets up to. But would you actually fit in?
+      Six quick questions. No wrong answers. Find out what you'd really get out of it.</p>
+    <button class="btn btn-gold" id="begin">Let's find out →</button>
+    <p class="meta">Takes about a minute. No sign-up to play.</p>
+  </section>
+
+  <!-- QUESTION -->
+  <section class="screen hidden" id="quiz">
+    <div class="count" id="count"></div>
+    <div class="bar"><i id="fill"></i></div>
+    <h2 class="q" id="qtext"></h2>
+    <div class="opts" id="opts"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen hidden" id="result">
+    <div class="r-emoji" id="rEmoji"></div>
+    <div class="r-pre">You're…</div>
+    <div class="r-name" id="rName"></div>
+    <p class="r-tag" id="rTag"></p>
+    <div class="r-blurb" id="rBlurb"></div>
+    <img class="r-card-prev hidden" id="rCardPrev" alt="Your shareable result card">
+    <button class="btn btn-gold" id="share">Share my result</button>
+    <button class="btn btn-ghost" id="save">Save the card</button>
+    <a class="btn btn-ghost" id="join" href="#">Sounds like me — say hello 👋</a>
+    <span class="retake" id="retake">Take it again</span>
+  </section>
+
+</div>
+
+<canvas id="cardCanvas" width="1080" height="1350" style="display:none"></canvas>
+
+<script>
+(function(){
+  // ============================ CONFIG — EDIT ME =========================
+  var CONFIG = {
+    TABLE_NAME: 'Beverley Round Table',
+    QUIZ_URL:   'https://brt-23f.pages.dev/recruit/quiz',      // where this quiz lives
+    JOIN_URL:   'https://beverleyroundtable.co.uk/#connect',      // your Join the Crew form
+  };
+  // =======================================================================
+
+  // ---- Questions. Each option scores one archetype key. ----
+  var QUESTIONS = [
+    { q: "Friday night, zero plans. The dream is…", o: [
+      ["A few pints and a proper catch-up with the lads", "connect"],
+      ["Tinkering on a project in the garage", "graft"],
+      ["Something daft you'll be retelling for years", "fun"],
+      ["Rallying everyone to actually go and do something", "lead"],
+    ]},
+    { q: "At any gathering, you're the one who…", o: [
+      ["Introduces people who should really know each other", "connect"],
+      ["Ends up sorting the speaker or manning the BBQ", "graft"],
+      ["Suggests the ridiculous idea everyone secretly loves", "fun"],
+      ["Somehow ends up running the whole show", "lead"],
+    ]},
+    { q: "Which of these would you genuinely love a crack at?", o: [
+      ["Driving a Santa sleigh through town", "fun"],
+      ["Building one out of a tuk-tuk and sheer willpower", "graft"],
+      ["Pulling off a big charity do, start to finish", "lead"],
+      ["Knowing your graft put real money into local causes", "give"],
+    ]},
+    { q: "Be honest — what's been missing lately?", o: [
+      ["A solid crew of mates outside of work", "connect"],
+      ["A project to really get stuck into", "graft"],
+      ["A proper, uncomplicated laugh", "fun"],
+      ["The feeling you're putting something back", "give"],
+    ]},
+    { q: "Your mates would describe you as…", o: [
+      ["The glue that keeps everyone together", "connect"],
+      ["The one who quietly gets things done", "graft"],
+      ["The fun one, obviously", "fun"],
+      ["The one with the biggest heart", "give"],
+    ]},
+    { q: "First thing you'd want to sink your teeth into?", o: [
+      ["Organising the next big thing", "lead"],
+      ["Getting hands-on with a build", "graft"],
+      ["Meeting the whole crew", "connect"],
+      ["Whatever raises the most for charity", "give"],
+    ]},
+  ];
+
+  // ---- Archetypes ----
+  var RESULTS = {
+    connect: {
+      emoji: "🤝", name: "The Connector",
+      tag: "You collect good people the way some folk collect odd socks — effortlessly, and everywhere.",
+      blurb: "You're wired for people, and Round Table is basically a friendship cheat code. " +
+             "<b>What you'd get out of it:</b> an instant crew of 20-odd blokes who'll have your back, " +
+             "a calendar that fills itself, and the kind of mates you only seem to make easily before about 25 — except now."
+    },
+    graft: {
+      emoji: "🔧", name: "The Grafter",
+      tag: "Hand you a problem and a toolbox and you're a happy man.",
+      blurb: "You'd rather build the thing than talk about building the thing. " +
+             "<b>What you'd get out of it:</b> actual stuff to make and fix — sleighs, events, the lot — " +
+             "alongside people who value someone that turns up and gets it done. Less meeting, more doing."
+    },
+    fun: {
+      emoji: "🎉", name: "The Big Kid",
+      tag: "Adulthood happened to you. You've quietly refused to let it stick.",
+      blurb: "You're in it for the laugh, and good on you — that's half the point. " +
+             "<b>What you'd get out of it:</b> a licence to do brilliantly daft things (go-karts, sleigh runs, " +
+             "trips that become legend) with a cracking reason behind them and a crew who are just as game."
+    },
+    lead: {
+      emoji: "📣", name: "The Ringleader",
+      tag: "You don't wait for things to happen. You make them happen.",
+      blurb: "You've got ideas and the nerve to chase them. " +
+             "<b>What you'd get out of it:</b> a whole organisation that actively needs people who make things happen — " +
+             "run an event, launch a thing, leave a real mark on the town. Proper scope to lead."
+    },
+    give: {
+      emoji: "❤️", name: "The Good Egg",
+      tag: "You've always reckoned you should do a bit more for where you live.",
+      blurb: "Your instinct is to give back — and here it actually goes somewhere. " +
+             "<b>What you'd get out of it:</b> a direct line from your effort to real money for local causes, " +
+             "the company of people who feel the same, and the quiet satisfaction of being part of something that matters."
+    },
+  };
+
+  // ---- State ----
+  var idx = 0, scores = {}, picked = null;
+  var $ = function(id){ return document.getElementById(id); };
+
+  // ---- Start ----
+  $('begin').addEventListener('click', function(){
+    idx = 0; scores = {connect:0,graft:0,fun:0,lead:0,give:0};
+    $('start').classList.add('hidden');
+    $('quiz').classList.remove('hidden');
+    renderQuestion();
+  });
+
+  // ---- Render a question ----
+  function renderQuestion(){
+    var item = QUESTIONS[idx];
+    $('count').textContent = "Question " + (idx+1) + " of " + QUESTIONS.length;
+    $('fill').style.width = (idx / QUESTIONS.length * 100) + "%";
+    $('qtext').textContent = item.q;
+
+    var box = $('opts'); box.innerHTML = "";
+    item.o.forEach(function(opt){
+      var b = document.createElement('button');
+      b.className = 'opt'; b.textContent = opt[0];
+      b.addEventListener('click', function(){
+        if (picked) return;                 // ignore double-taps mid-transition
+        picked = b;
+        b.classList.add('sel');
+        scores[opt[1]] = (scores[opt[1]]||0) + 1;
+        setTimeout(next, 230);              // brief beat so the tap registers
+      });
+      box.appendChild(b);
+    });
+
+    // re-trigger entrance animation
+    var s = $('quiz'); s.classList.remove('screen'); void s.offsetWidth; s.classList.add('screen');
+    picked = null;
+  }
+
+  function next(){
+    idx++;
+    if (idx < QUESTIONS.length) { renderQuestion(); }
+    else { showResult(); }
+  }
+
+  // ---- Work out the winner (ties broken by question order) ----
+  function winner(){
+    var best = null, bestScore = -1;
+    var order = ['connect','graft','fun','lead','give'];
+    order.forEach(function(k){ if ((scores[k]||0) > bestScore){ bestScore = scores[k]; best = k; } });
+    return best;
+  }
+
+  // ---- Result ----
+  var currentResult = null;
+  function showResult(){
+    $('fill').style.width = "100%";
+    var key = winner();
+    currentResult = RESULTS[key];
+
+    $('quiz').classList.add('hidden');
+    $('result').classList.remove('hidden');
+
+    $('rEmoji').textContent = currentResult.emoji;
+    $('rName').textContent  = currentResult.name;
+    $('rTag').textContent   = currentResult.tag;
+    $('rBlurb').innerHTML   = currentResult.blurb;
+    $('join').href          = CONFIG.JOIN_URL;
+
+    // build the shareable card + show a preview
+    var url = buildCard(currentResult);
+    var prev = $('rCardPrev');
+    prev.src = url; prev.classList.remove('hidden');
+  }
+
+  $('retake').addEventListener('click', function(){
+    $('result').classList.add('hidden');
+    $('start').classList.remove('hidden');
+  });
+
+  // ---- Canvas share card (1080×1350 — portrait, socials-friendly) ----
+  var cardBlob = null;
+  function buildCard(res){
+    var c = $('cardCanvas'), x = c.getContext('2d'), W = c.width, H = c.height;
+
+    // background
+    x.fillStyle = "#1D1D1A"; x.fillRect(0,0,W,H);
+    var g = x.createRadialGradient(W/2, 120, 60, W/2, 120, 900);
+    g.addColorStop(0, "rgba(251,175,51,.22)"); g.addColorStop(1, "rgba(251,175,51,0)");
+    x.fillStyle = g; x.fillRect(0,0,W,H);
+
+    // top gold band
+    x.fillStyle = "#FBAF33"; x.fillRect(0,0,W,16);
+
+    x.textAlign = "center";
+
+    // kicker
+    x.fillStyle = "#FBAF33";
+    x.font = "800 30px 'Open Sans', sans-serif";
+    x.fillText("IS ROUND TABLE FOR YOU?", W/2, 150);
+
+    // emoji
+    x.font = "260px sans-serif";
+    x.fillText(res.emoji, W/2, 520);
+
+    // "You're"
+    x.fillStyle = "#a7a7a2";
+    x.font = "700 34px 'Open Sans', sans-serif";
+    x.fillText("YOU'RE", W/2, 620);
+
+    // archetype name
+    x.fillStyle = "#fff";
+    x.font = "800 92px 'Open Sans', sans-serif";
+    x.fillText(res.name, W/2, 710);
+
+    // tagline (wrapped)
+    x.fillStyle = "#d9d9d4";
+    x.font = "italic 400 40px 'Open Sans', sans-serif";
+    wrapText(x, res.tag, W/2, 800, W-180, 54);
+
+    // divider
+    x.strokeStyle = "rgba(255,255,255,.15)"; x.lineWidth = 2;
+    x.beginPath(); x.moveTo(160, 1170); x.lineTo(W-160, 1170); x.stroke();
+
+    // footer
+    x.fillStyle = "#FBAF33";
+    x.font = "800 38px 'Open Sans', sans-serif";
+    x.fillText(CONFIG.TABLE_NAME, W/2, 1240);
+    x.fillStyle = "#a7a7a2";
+    x.font = "600 30px 'Open Sans', sans-serif";
+    x.fillText("Find out yours → " + stripProto(CONFIG.QUIZ_URL), W/2, 1290);
+
+    c.toBlob(function(b){ cardBlob = b; }, "image/png");
+    return c.toDataURL("image/png");
+  }
+
+  function wrapText(ctx, text, cx, y, maxW, lh){
+    var words = text.split(' '), line = '', lines = [];
+    for (var i=0;i<words.length;i++){
+      var test = line ? line+' '+words[i] : words[i];
+      if (ctx.measureText(test).width > maxW && line){ lines.push(line); line = words[i]; }
+      else { line = test; }
+    }
+    lines.push(line);
+    for (var j=0;j<lines.length;j++) ctx.fillText(lines[j], cx, y + j*lh);
+  }
+  function stripProto(u){ return u.replace(/^https?:\/\//,'').replace(/\/$/,''); }
+
+  // ---- Share / Save ----
+  function shareText(){
+    return "I'm " + currentResult.name + "! 🎅 Is Round Table for you? Find out: " + CONFIG.QUIZ_URL;
+  }
+
+  $('share').addEventListener('click', async function(){
+    var file = cardBlob ? new File([cardBlob], "round-table-result.png", {type:"image/png"}) : null;
+    // best path: native share sheet with the image (mobile)
+    if (file && navigator.canShare && navigator.canShare({files:[file]})){
+      try {
+        await navigator.share({ files:[file], text: shareText(), title:"Is Round Table for you?" });
+        return;
+      } catch(e){ /* user cancelled — fall through */ }
+    }
+    // next best: share text/url
+    if (navigator.share){
+      try { await navigator.share({ text: shareText(), url: CONFIG.QUIZ_URL }); return; } catch(e){}
+    }
+    // fallback: copy the text, then nudge to save the image
+    try { await navigator.clipboard.writeText(shareText()); } catch(e){}
+    saveCard();
+    alert("Share text copied — and your card's been saved. Pop them both on your socials!");
+  });
+
+  $('save').addEventListener('click', saveCard);
+  function saveCard(){
+    var a = document.createElement('a');
+    a.download = "round-table-result.png";
+    a.href = $('cardCanvas').toDataURL("image/png");
+    a.click();
+  }
+})();
+</script>
