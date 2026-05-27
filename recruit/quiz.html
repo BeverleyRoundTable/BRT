@@ -265,12 +265,12 @@
       ["A few cold ones and a proper laugh with a good crew", "connect"],
       ["Getting hands-on — forging your own knife at a blacksmithing night", "graft"],
       ["Strapping in for go-karts or a laser tag showdown", "fun"],
-      ["Cracking a fiendish escape room you've never tried", "explore"],
+      ["Just being out of the house and around the lads — that's enough", "quiet"],
     ]},
     { q: "You'll give up an evening a fortnight — but only if it's…", o: [
       ["Full of good people you'd actually want a beer with", "connect"],
       ["Hands-on. Less sitting about talking, more making and doing", "graft"],
-      ["An absolute laugh — if it's not fun, what's the point?", "fun"],
+      ["Easy to turn up to — no pressure, no need to be 'on'", "quiet"],
       ["Yours to shape — you'd rather help run it than just turn up", "lead"],
     ]},
     { q: "Of these actual Round Table nights, which are you signing up for first?", o: [
@@ -283,7 +283,7 @@
       ["A solid crew of mates outside of work", "connect"],
       ["A proper, uncomplicated laugh on a weeknight", "fun"],
       ["New stuff to try — you're bored of the same old routine", "explore"],
-      ["Something to get stuck into and actually run with", "lead"],
+      ["Somewhere to belong without needing to be the loud one", "quiet"],
     ]},
     { q: "When you're out with the lads, you're usually the one who…", o: [
       ["Introduces everyone and keeps the night flowing", "connect"],
@@ -294,7 +294,7 @@
     { q: "You walk into your first Round Table night. The dream is…", o: [
       ["Instantly clicking with a group of blokes over a pint", "connect"],
       ["Getting thrown straight into something daft like axe throwing", "fun"],
-      ["Finding there's a hands-on build the guys need a hand with", "graft"],
+      ["Being made to feel welcome without having to work the room", "quiet"],
       ["Discovering a whole calendar of stuff you've never done", "explore"],
     ]},
   ];
@@ -339,6 +339,14 @@
              "behind-the-scenes RAF tours, whiskey and mead tastings, astronomy nights, escape rooms, rooftop climbs — " +
              "and a crew who are just as curious. New thing, new mates, every fortnight."
     },
+    quiet: {
+      emoji: "🌿", name: "The Quiet One",
+      tag: "You don't need to be the loudest in the room to be happy in it.",
+      blurb: "You're not after centre stage — you just want to be part of something proper, with mates who'd notice if you weren't there. " +
+             "<b>What you'd get out of it:</b> a crew where nobody's expected to perform, where 'just turning up' is genuinely enough, " +
+             "and where you can ease in at your own pace. Half the best blokes here started out thinking they weren't really joiners — " +
+             "they just needed somewhere it wasn't weird to be the quiet one."
+    },
   };
 
   // ---- State ----
@@ -347,7 +355,7 @@
 
   // ---- Start ----
   $('begin').addEventListener('click', function(){
-    idx = 0; scores = {connect:0,graft:0,fun:0,lead:0,explore:0};
+    idx = 0; scores = {connect:0,graft:0,fun:0,lead:0,explore:0,quiet:0};
     $('start').classList.add('hidden');
     $('quiz').classList.remove('hidden');
     renderQuestion();
@@ -388,7 +396,7 @@
   // ---- Work out the winner (ties broken by question order) ----
   function winner(){
     var best = null, bestScore = -1;
-    var order = ['connect','graft','fun','lead','explore'];
+    var order = ['connect','graft','fun','lead','explore','quiet'];
     order.forEach(function(k){ if ((scores[k]||0) > bestScore){ bestScore = scores[k]; best = k; } });
     return best;
   }
