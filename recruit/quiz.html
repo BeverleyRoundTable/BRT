@@ -596,7 +596,25 @@
     window.open('https://wa.me/?text=' + encodeURIComponent(shareText()), '_blank');
   });
 
-  $('join').addEventListener('click', function(){ syncState('join'); });
+  $('join').addEventListener('click', async function(e){
+    e.preventDefault(); // Stop the button from navigating away instantly
+    syncState('join');  // Log the analytics
+    
+    // Draft the icebreaker using the archetype they just got
+    var introText = "Alright lads! I just took the quiz and got '" + currentResult.name + "'. Anyone about?";
+    
+    try {
+      // Secretly copy it to their phone's clipboard
+      await navigator.clipboard.writeText(introText);
+      // Give them a quick heads-up on what to do next
+      alert("We've copied an intro message to your clipboard!\n\nJust paste it into the chat when you join the group so we know you've arrived.");
+    } catch(err) {
+      // If their browser strictly blocks clipboard access, fail silently so the funnel doesn't break
+    }
+    
+    // Now fire them off to the WhatsApp group
+    window.open(CONFIG.JOIN_URL, '_blank', 'noopener');
+  });
 
   $('save').addEventListener('click', saveCard);
   $('save').addEventListener('click', function(){ syncState('save'); });
