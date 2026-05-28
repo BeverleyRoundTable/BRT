@@ -76,12 +76,22 @@
   logoImg.crossOrigin = "anonymous";
 
   function updateImages() {
+    baseImg.onerror = function () {
+      // CORS-blocked or dead link — clear canvas to a neutral panel so it's obvious, not silently black
+      ctx.fillStyle = '#131310';
+      ctx.fillRect(0, 0, el.canvas.width, el.canvas.height);
+      ctx.fillStyle = '#a7a7a2';
+      ctx.font = "600 22px 'Open Sans', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.fillText('Image source blocked (CORS) — try Swap Image Layer', el.canvas.width / 2, el.canvas.height / 2);
+      ctx.textAlign = 'left';
+      render(); // still draw text overlay on top
+    };
     if (imgArray.length > 0) {
       baseImg.src = imgArray[currentImgIdx];
     } else {
       baseImg.src = "https://img.freepik.com/free-vector/event-concept-illustration_114360-931.jpg";
     }
-    // Hardcoded to your specific BRT Logo using the raw GitHub content link
     logoImg.src = 'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png';
   }
 
@@ -168,10 +178,14 @@
   });
 
   el.download.addEventListener('click', function() {
-    var a = document.createElement('a');
-    a.download = el.title.value.toLowerCase().replace(/\s+/g, '_') + '_social.png';
-    a.href = el.canvas.toDataURL('image/png');
-    a.click();
+    try {
+      var a = document.createElement('a');
+      a.download = el.title.value.toLowerCase().replace(/\s+/g, '_') + '_social.png';
+      a.href = el.canvas.toDataURL('image/png');
+      a.click();
+    } catch (err) {
+      alert("Couldn't export — this image source blocked the download (CORS). Try 'Swap Image Layer' to use the other image, which should be safe to download.");
+    }
   });
 
   updateImages();
