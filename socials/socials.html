@@ -72,14 +72,11 @@
   var baseImg = new Image();
   var logoImg = new Image();
 
-  baseImg.crossOrigin = "anonymous";
   logoImg.crossOrigin = "anonymous";
 
   function setBaseImage(url) {
-    if (!url) {
-      baseImg.src = "https://img.freepik.com/free-vector/event-concept-illustration_114360-931.jpg";
-      return;
-    }
+    baseImg.src = url || "https://img.freepik.com/free-vector/event-concept-illustration_114360-931.jpg";
+  }
     // Proxy URLs (?img=) return a base64 data-URI as text — fetch then assign.
     if (url.indexOf('img=') !== -1 && url.indexOf('script.google') !== -1) {
       fetch(url)
