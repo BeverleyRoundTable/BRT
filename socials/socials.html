@@ -77,19 +77,6 @@
   function setBaseImage(url) {
     baseImg.src = url || "https://img.freepik.com/free-vector/event-concept-illustration_114360-931.jpg";
   }
-    // Proxy URLs (?img=) return a base64 data-URI as text — fetch then assign.
-    if (url.indexOf('img=') !== -1 && url.indexOf('script.google') !== -1) {
-      fetch(url)
-        .then(function (r) { return r.text(); })
-        .then(function (dataUri) {
-          if (dataUri && dataUri.indexOf('data:') === 0) baseImg.src = dataUri;
-          else if (baseImg.onerror) baseImg.onerror();
-        })
-        .catch(function () { if (baseImg.onerror) baseImg.onerror(); });
-    } else {
-      baseImg.src = url; // direct, CORS-safe sources like ImgBB
-    }
-  }
 
   function updateImages() {
     baseImg.onerror = function () {
