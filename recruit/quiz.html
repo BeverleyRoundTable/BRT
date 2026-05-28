@@ -220,6 +220,32 @@
   var preloadedEvents = [];
   var resultShown = false;   // true once the user has reached the results screen
 
+  // ---- Quiz analytics (logs to the same Apps Script → Quiz Logs sheet) ----
+  var TRACK_URL = API_URL.split('?')[0];                 // same /exec, query stripped
+  var SESSION   = Math.random().toString(36).slice(2, 10); // groups one person's journey
+  var QPARAMS   = new URLSearchParams(location.search);
+  function track(event, archetype){
+    try {
+      var payload = JSON.stringify({
+        type: 'quiz_event',
+        event: event,
+        archetype: archetype || '',
+        session: SESSION,
+        source: QPARAMS.get('ref') || 'direct',
+        referrer: (document.referrer || '').replace(/^https?:\/\//,'').split('/')[0],
+        device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+      });
+      // sendBeacon survives navigation (important for the 'join' tap)
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(TRACK_URL, new Blob([payload], {type:'text/plain;charset=UTF-8'}));
+      } else {
+        fetch(TRACK_URL, {method:'POST', mode:'no-cors', keepalive:true,
+          headers:{'Content-Type':'text/plain;charset=UTF-8'}, body:payload});
+      }
+    } catch(e){}
+  }
+  track('view');   // real page load — link-preview scrapers don't run JS, so they won't count
+
   function fetchEvents() {
     fetch(API_URL)
       .then(function(res) { return res.json(); })
@@ -359,6 +385,7 @@
 
   // ---- Start ----
   $('begin').addEventListener('click', function(){
+    track('start');
     idx = 0; scores = {connect:0,graft:0,fun:0,lead:0,explore:0,quiet:0};
     $('start').classList.add('hidden');
     $('quiz').classList.remove('hidden');
@@ -412,6 +439,7 @@
     var key = winner();
     currentKey = key;
     currentResult = RESULTS[key];
+    track('complete', currentKey);
 
     $('quiz').classList.add('hidden');
     $('result').classList.remove('hidden');
@@ -541,6 +569,7 @@
   }
 
   $('share').addEventListener('click', async function(){
+    track('share');
     var file = cardBlob ? new File([cardBlob], "round-table-result.png", {type:"image/png"}) : null;
     // best path: native share sheet with the image (mobile)
     if (file && navigator.canShare && navigator.canShare({files:[file]})){
@@ -560,10 +589,14 @@
   });
 
   $('waShare').addEventListener('click', function(){
+    track('challenge');
     window.open('https://wa.me/?text=' + encodeURIComponent(shareText()), '_blank');
   });
 
+  $('join').addEventListener('click', function(){ track('join'); });
+
   $('save').addEventListener('click', saveCard);
+  $('save').addEventListener('click', function(){ track('save'); });
   function saveCard(){
     var a = document.createElement('a');
     a.download = "round-table-result.png";
