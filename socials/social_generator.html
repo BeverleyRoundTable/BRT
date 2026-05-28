@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BRT Social Asset Composer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Saira:wght@700;800;900&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold:#FBAF33; --dark:#1D1D1A; --ink:#fff; --card:#26261f; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Open Sans', sans-serif; background: var(--dark); color: var(--ink); padding: 40px 20px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 900px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+    @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+    .preview-box { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+    canvas { max-width: 100%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: #000; }
+    .controls-box { background: var(--card); padding: 24px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); height: fit-content; }
+    h2 { font-family: 'Saira', sans-serif; text-transform: uppercase; margin-bottom: 20px; color: var(--gold); }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #a7a7a2; }
+    input { width: 100%; padding: 10px; background: #131310; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff; font: inherit; }
+    .btn { display: inline-block; width: 100%; padding: 14px; background: var(--gold); color: var(--dark); border: 0; border-radius: 8px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-family: 'Saira', sans-serif; letter-spacing: 0.05em; transition: transform 0.1s; }
+    .btn:active { transform: scale(0.98); }
+    .btn-secondary { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.2); margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="preview-box">
+    <canvas id="canvas" width="1080" height="1080"></canvas>
+    <button class="btn" id="downloadBtn">Download Finished Image</button>
+  </div>
+  
+  <div class="controls-box">
+    <h2>Layout Composer</h2>
+    <div class="form-group">
+      <label>Event Title</label>
+      <input type="text" id="fTitle">
+    </div>
+    <div class="form-group">
+      <label>Date & Time</label>
+      <input type="text" id="fDate">
+    </div>
+    <div class="form-group">
+      <label>Location</label>
+      <input type="text" id="fLocation">
+    </div>
+    <button class="btn btn-secondary" id="swapSourceBtn">Swap Image Layer</button>
+  </div>
+</div>
+
+<script>
+  var params = new URLSearchParams(window.location.search);
+  var imgArray = [params.get('sheetImg'), params.get('aiImg')].filter(Boolean);
+  var currentImgIdx = 0;
+
+  var el = {
+    title: document.getElementById('fTitle'),
+    date: document.getElementById('fDate'),
+    loc: document.getElementById('fLocation'),
+    canvas: document.getElementById('canvas'),
+    download: document.getElementById('downloadBtn'),
+    swap: document.getElementById('swapSourceBtn')
+  };
+
+  // Populate fields from URL parameters
+  el.title.value = params.get('title') || 'UPCOMING SOCIAL';
+  el.date.value = params.get('date') || '';
+  el.loc.value = params.get('loc') || '';
+
+  var ctx = el.canvas.getContext('2d');
+  var baseImg = new Image();
+  var logoImg = new Image();
+
+  baseImg.crossOrigin = "anonymous";
+  logoImg.crossOrigin = "anonymous";
+
+  function updateImages() {
+    if (imgArray.length > 0) {
+      baseImg.src = imgArray[currentImgIdx];
+    } else {
+      baseImg.src = "https://img.freepik.com/free-vector/event-concept-illustration_114360-931.jpg";
+    }
+    // Hardcoded to your specific BRT Logo using the raw GitHub content link
+    logoImg.src = 'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png';
+  }
+
+  function render() {
+    var W = el.canvas.width;
+    var H = el.canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // 1. Draw Background Image (Cover-fit)
+    if (baseImg.complete && baseImg.naturalWidth > 0) {
+      var imgRatio = baseImg.width / baseImg.height;
+      var canvasRatio = W / H;
+      var sx, sy, sw, sh;
+      if (imgRatio > canvasRatio) {
+        sh = baseImg.height; sw = baseImg.height * canvasRatio;
+        sx = (baseImg.width - sw) / 2; sy = 0;
+      } else {
+        sw = baseImg.width; sh = baseImg.width / canvasRatio;
+        sx = 0; sy = (baseImg.height - sh) / 2;
+      }
+      ctx.drawImage(baseImg, sx, sy, sw, sh, 0, 0, W, H);
+    }
+
+    // 2. Darkening Text Gradient
+    var grad = ctx.createLinearGradient(0, H * 0.5, 0, H);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(0.5, 'rgba(0,0,0,0.6)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.95)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, H * 0.5, W, H * 0.5);
+
+    // 3. Yellow Accent Bar Stripe
+    ctx.fillStyle = '#FBAF33';
+    ctx.fillRect(0, 0, 15, H);
+
+    // 4. Draw Typography
+    var pad = 60;
+    var cy = H - pad;
+
+    // CTA
+    ctx.font = "700 22px 'Saira', sans-serif";
+    ctx.fillStyle = '#FBAF33';
+    ctx.fillText("#DOMORE", pad, cy);
+    cy -= 45;
+
+    // Date / Location Metadata
+    var metaText = [el.date.value, el.loc.value].filter(Boolean).join('  ·  ');
+    ctx.font = "600 28px 'Open Sans', sans-serif";
+    ctx.fillStyle = '#fff';
+    ctx.fillText(metaText, pad, cy);
+    cy -= 55;
+
+    // Event Title (Split into words, first word gold)
+    var words = el.title.value.toUpperCase().split(' ');
+    ctx.font = "900 75px 'Saira', sans-serif";
+    ctx.fillStyle = '#fff';
+    
+    var titleText = words.slice(1).join(' ');
+    ctx.fillText(titleText, pad + ctx.measureText(words[0] + ' ').width, cy);
+    ctx.fillStyle = '#FBAF33';
+    ctx.fillText(words[0], pad, cy);
+    cy -= 80;
+
+    // Eyebrow
+    ctx.font = "800 24px 'Saira', sans-serif";
+    ctx.fillStyle = '#fff';
+    ctx.fillText("BEVERLEY ROUND TABLE", pad, cy);
+
+    // 5. Stamp Transparent Logo (Top Right)
+    if (logoImg.complete && logoImg.naturalWidth > 0) {
+      // Shrunk slightly from 160 to 140 for cleaner padding with the primary logo
+      ctx.drawImage(logoImg, W - 140 - pad, pad, 140, 140);
+    }
+  }
+
+  baseImg.onload = render;
+  logoImg.onload = render;
+  [el.title, el.date, el.loc].forEach(inpt => inpt.addEventListener('input', render));
+
+  el.swap.addEventListener('click', function() {
+    if (imgArray.length <= 1) return alert("Only one image source available for this event.");
+    currentImgIdx = (currentImgIdx + 1) % imgArray.length;
+    updateImages();
+  });
+
+  el.download.addEventListener('click', function() {
+    var a = document.createElement('a');
+    a.download = el.title.value.toLowerCase().replace(/\s+/g, '_') + '_social.png';
+    a.href = el.canvas.toDataURL('image/png');
+    a.click();
+  });
+
+  updateImages();
+</script>
+</body>
+</html>
