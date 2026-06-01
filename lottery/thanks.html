@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>You're in! — Beverley Round Table Monthly Draw</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#FBAF33;
+  --gold-glow:rgba(251,175,51,.14);
+  --grey-dark:#1D1D1A;
+  --grey-card:#242421;
+  --grey-border:#39393455;
+  --white:#fff;
+  --text:#ecece7;
+  --text-muted:#a3a39c;
+  --green:#2ecc71;
+  --font-display:'Eurostile Extended','Eurostile','Michroma',sans-serif;
+  --font-body:'Open Sans',-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--font-body);background:var(--grey-dark);color:var(--text);
+  line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;min-height:100vh;
+  background-image:
+    radial-gradient(900px 500px at 50% -10%, rgba(251,175,51,.12), transparent 60%),
+    linear-gradient(180deg,#1f1f1c,#1a1a17);
+  background-attachment:fixed;
+  display:flex;align-items:center;justify-content:center;padding:40px 20px;
+}
+.wrap{max-width:560px;width:100%;text-align:center}
+
+.logo-slot{display:inline-flex;align-items:center;justify-content:center;height:58px;margin-bottom:30px}
+.logo-slot img{max-height:50px;width:auto;display:block}
+
+.tick{
+  width:88px;height:88px;border-radius:50%;margin:0 auto 26px;
+  background:var(--gold-glow);border:2px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  animation:pop .5s cubic-bezier(.2,.9,.3,1.4) both;
+}
+.tick svg{width:42px;height:42px;stroke:var(--gold);stroke-width:3.5;fill:none;
+  stroke-linecap:round;stroke-linejoin:round}
+.tick path{stroke-dasharray:48;stroke-dashoffset:48;animation:draw .5s .25s ease forwards}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+h1{font-family:var(--font-display);font-size:clamp(30px,8vw,46px);color:var(--white);
+  text-transform:uppercase;letter-spacing:.5px;line-height:1.05}
+h1 .y{color:var(--gold)}
+.lede{font-size:17px;color:var(--text-muted);margin:18px auto 0;max-width:440px}
+
+.card{
+  background:var(--grey-card);border:1px solid var(--grey-border);border-radius:16px;
+  padding:26px 24px;margin:32px 0;text-align:left;
+  box-shadow:0 20px 50px -24px rgba(0,0,0,.7);
+}
+.card p{font-size:14.5px;color:var(--text);margin-bottom:12px}
+.card p:last-child{margin-bottom:0}
+.card b{color:var(--white)}
+.ref{font-family:var(--font-display);font-size:13px;color:var(--gold);
+  background:var(--gold-glow);border:1px solid rgba(251,175,51,.3);border-radius:8px;
+  padding:9px 12px;margin-top:6px;word-break:break-all;display:none}
+
+.btn{display:inline-block;background:var(--gold);color:#000;text-decoration:none;
+  border-radius:10px;padding:15px 30px;font-family:var(--font-display);font-size:15px;
+  text-transform:uppercase;letter-spacing:1px;transition:.15s}
+.btn:hover{background:#ffc04d}
+
+.responsible{margin-top:26px;font-size:12px;color:var(--text-muted);letter-spacing:.3px}
+.responsible a{color:var(--gold);text-decoration:none}
+.responsible a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="logo-slot"><img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png" alt="Round Table"></span>
+
+  <div class="tick"><svg viewBox="0 0 52 52"><path d="M14 27 l8 8 l16 -18"/></svg></div>
+
+  <h1>You're <span class="y">in!</span></h1>
+  <p class="lede">Thanks for entering the Beverley Round Table monthly draw — and for backing your community while you're at it.</p>
+
+  <div class="card">
+    <p>✅ <b>Payment received and your tickets are confirmed.</b> A confirmation email is on its way with your entry details.</p>
+    <p>🎲 The draw takes place at the <b>start of the month</b>. If your ticket comes up, we'll email you straight away with a secure link to claim your prize.</p>
+    <p>📩 Keep an eye on your inbox (and your spam folder, just in case). We'll only ever email you about this draw.</p>
+    <div class="ref" id="ref"></div>
+  </div>
+
+  <a class="btn" href="lottery.html">Back to the draw</a>
+
+  <p class="responsible">16+ · Beverley Round Table · Please play responsibly · <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a></p>
+
+</div>
+
+<script>
+// Show a short reference from Stripe's session id (helpful if someone needs to query their entry).
+(function(){
+  const id = new URLSearchParams(location.search).get('session_id');
+  if(id){
+    const ref = document.getElementById('ref');
+    ref.style.display = 'block';
+    ref.textContent = 'Reference: ' + id.slice(-12).toUpperCase();
+  }
+})();
+</script>
+</body>
+</html>
