@@ -226,11 +226,11 @@ input[type=text]:focus,input[type=email]:focus{outline:none;border-color:var(--g
   <footer class="legal fade">
     <h3>The important bits</h3>
     <dl>
-      <dt>Promoting society</dt><dd>Beverley Round Table</dd>
+      <dt>Promoting society</dt><dd id="societyName">Beverley Round Table</dd>
       <dt>Ticket price</dt><dd>£2.00 (all tickets the same price)</dd>
-      <dt>Promoter</dt><dd>Ben Watts, 5 Blossom Close, Beverley, HU17 7SW</dd>
+      <dt>Promoter</dt><dd id="promoterInfo">—</dd>
       <dt>Draw</dt><dd>Drawn at the start of each calendar month</dd>
-      <dt>Registration</dt><dd><span id="regNo">[East Riding of Yorkshire Council reg. no. — to be added]</span></dd>
+      <dt>Registration</dt><dd><span id="regNo">East Riding of Yorkshire Council reg. no. — to be added</span></dd>
     </dl>
     <p>Licensed as a Small Society Lottery, registered with East Riding of Yorkshire Council under the Gambling Act 2005. At least 20% of proceeds go to the purposes of Beverley Round Table. Read our <a href="/rules.html">rules</a> and <a href="/privacy.html">privacy policy</a>. We store only your name and email to run the draw and contact a winner.</p>
     <p class="responsible">16+ · Please play responsibly · <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a></p>
@@ -268,6 +268,11 @@ renderQty();
     $('pot').textContent     = gbp(s.pot_pence||0);
     $('tickets').textContent = (s.ticket_count||0).toLocaleString('en-GB');
     if (s.current_draw_id) $('month').textContent = monthName(s.current_draw_id);
+    if (s.society_name) $('societyName').textContent = s.society_name;
+    if (s.promoter_name) $('promoterInfo').textContent =
+      s.promoter_name + (s.promoter_address ? ', ' + s.promoter_address : '');
+    if (s.registration_no)
+      $('regNo').textContent = 'East Riding of Yorkshire Council reg. no. ' + s.registration_no;
     if (s.last_winner && s.last_winner.winner_display){
       const w = s.last_winner;
       $('winner').style.display = 'flex';
