@@ -31,7 +31,7 @@ const miniThermo = `
 <div data-santa-mini></div>
 <script>
 const s = document.createElement('script');
-s.src = 'https://brt-23f.pages.dev/donations_v2.js';
+s.src = 'https://brt-23f.pages.dev/sleigh/donations_v2.js';
 s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); };
 document.head.appendChild(s);
 </script>
@@ -44,7 +44,7 @@ const fullThermo = `
 <div data-santa-thermo></div>
 <script>
 const s = document.createElement('script');
-s.src = 'https://brt-23f.pages.dev/donations_v2.js';
+s.src = 'https://brt-23f.pages.dev/sleigh/donations_v2.js';
 s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); };
 document.head.appendChild(s);
 </script>
@@ -55,7 +55,7 @@ document.head.appendChild(s);
 // ================================
 const carouselLink = `
 <iframe
-  src="https://brt-23f.pages.dev/carousel?api=${ensureApi()}"
+  src="https://brt-23f.pages.dev/sleigh/carousel?api=${ensureApi()}"
   style="width:100%;height:450px;border:none;border-radius:12px;overflow:hidden;background:transparent;"
   allowtransparency="true"
   scrolling="no"
@@ -71,7 +71,7 @@ const addressLookup = `
 <div style="width:100%;max-width:900px;margin:0 auto;">
   <iframe
     id="addressFrame"
-    src="https://brt-23f.pages.dev/address.html?api=${ensureApi()}"
+    src="https://brt-23f.pages.dev/sleigh/address.html?api=${ensureApi()}"
     style="width:100%;border:none;border-radius:12px;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
     scrolling="no"
@@ -97,7 +97,7 @@ const niceListEmbed = `
 <div style="width:100%;max-width:720px;margin:0 auto;">
   <iframe
     id="niceListFrame"
-    src="https://brt-23f.pages.dev/nice_list"
+    src="https://brt-23f.pages.dev/sleigh/nice_list"
     style="width:100%;border:none;border-radius:15px;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
     scrolling="no"
@@ -123,7 +123,7 @@ const santasBeenEmbed = `
 ...
   <iframe
     id="santasBeenFrame"
-    src="https://brt-23f.pages.dev/santa_frame.html"
+    src="https://brt-23f.pages.dev/sleigh/santa_frame.html"
     style="width:100%;border:none;border-radius:20px;overflow:hidden;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
     scrolling="no"
@@ -152,7 +152,7 @@ const snowmanFrameEmbed = `
 <div style="width:100%;max-width:900px;margin:0 auto;">
   <iframe
     id="snowmanFrame"
-    src="https://brt-23f.pages.dev/snowman.html"
+    src="https://brt-23f.pages.dev/sleigh/snowman.html"
     style="width:100%;border:none;border-radius:20px;overflow:hidden;background:transparent;"
     allowtransparency="true"
     scrolling="no"
@@ -178,13 +178,13 @@ window.addEventListener("message", (e) => {
 // Tracker Embeds
 // ================================
 const trackerLink = `
-https://brt-23f.pages.dev/tracker?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/tracker?api=${ensureApi()}
 `;
 
 const recommendedTracker = `
 <div style="width:90vw;max-width:1000px;margin:0 auto;padding:0 8px;">
 <iframe
-  src="https://brt-23f.pages.dev/tracker.html?api=${ensureApi()}"
+  src="https://brt-23f.pages.dev/sleigh/tracker.html?api=${ensureApi()}"
   style="width:100%;height:80vh;min-height:490px;border:none;border-radius:15px;overflow:hidden;box-shadow:0 4px 18px #0002;background:transparent;"
   allowtransparency="true"
   scrolling="no"
@@ -197,13 +197,13 @@ const recommendedTracker = `
 // Tracker – Kiosk / TV Mode
 // ================================
 const trackerKioskLink = `
-https://brt-23f.pages.dev/tracker.html?api=${ensureApi()}&kiosk=1
+https://brt-23f.pages.dev/sleigh/tracker.html?api=${ensureApi()}&kiosk=1
 `;
 
 const recommendedTrackerKiosk = `
 <div style="width:100vw;max-width:1200px;margin:0 auto;">
 <iframe
-  src="https://brt-23f.pages.dev/tracker.html?api=${ensureApi()}&kiosk=1"
+  src="https://brt-23f.pages.dev/sleigh/tracker.html?api=${ensureApi()}&kiosk=1"
   style="width:100%;height:85vh;min-height:600px;border:none;border-radius:15px;overflow:hidden;background:transparent;"
   allowtransparency="true"
   scrolling="no"
@@ -217,14 +217,14 @@ const recommendedTrackerKiosk = `
 // Routes Embed
 // ================================
 const routesLink = `
-https://brt-23f.pages.dev/routes.html?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/routes.html?api=${ensureApi()}
 `;
 
 const recommendedRoutes = `
 <div style="width:100%;max-width:1000px;margin:0 auto;">
   <iframe
     id="routesFrame"
-    src="https://brt-23f.pages.dev/routes.html?api=${ensureApi()}"
+    src="https://brt-23f.pages.dev/sleigh/routes.html?api=${ensureApi()}"
     style="width:100%;border:none;border-radius:15px;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
     scrolling="no"
@@ -247,14 +247,14 @@ const recommendedRoutes = `
 // Route Card
 // ================================
 const routeCardLink = `
-https://brt-23f.pages.dev/route_card?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/route_card?api=${ensureApi()}
 `;
 
 const recommendedRouteCard = `
 <div style="width:100%;max-width:1000px;margin:0 auto;">
   <iframe
     id="routeCardFrame"
-    src="https://brt-23f.pages.dev/route_card?api=${ensureApi()}"
+    src="https://brt-23f.pages.dev/sleigh/route_card?api=${ensureApi()}"
     style="width:100%;border:none;border-radius:15px;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
     scrolling="no"
@@ -287,7 +287,7 @@ async function loadRoutes() {
 
        const output = json.routes
     .map(r =>
-        `https://brt-23f.pages.dev/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r.routeName)}`
+        `https://brt-23f.pages.dev/sleigh/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r.routeName)}`
     )
     .join("\r\n");   // ← REAL NEWLINE
 
@@ -303,56 +303,56 @@ loadRoutes();
 // Season Wrap Report
 // ================================
 const seasonWrapLink = `
-https://brt-23f.pages.dev/season_wrap?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/season_wrap?api=${ensureApi()}
 `;
 
 // ================================
 // God Mode Dashboard
 // ================================
 const godModeLink = `
-https://brt-23f.pages.dev/god_mode?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/god_mode?api=${ensureApi()}
 `;
 
 // ================================
 // QR Poster Generator
 // ================================
 const qrPosterLink = `
-https://brt-23f.pages.dev/qr_poster?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/qr_poster?api=${ensureApi()}
 `;
 
 // ================================
 // Thank You Card
 // ================================
 const thankYouLink = `
-https://brt-23f.pages.dev/thank_you?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/thank_you?api=${ensureApi()}
 `;
 
 // ================================
 // Reindeer Adoption
 // ================================
 const reindeerLink = `
-https://brt-23f.pages.dev/adopt_reindeer?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/adopt_reindeer?api=${ensureApi()}
 `;
 
 // ================================
 // Crew Signup-Check-in
 // ================================
 const crewLink = `
-https://brt-23f.pages.dev/crew?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/crew?api=${ensureApi()}
 `;
 
 // ================================
 // Letter to Santa
 // ================================
 const letterLink = `
-https://brt-23f.pages.dev/letter?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/letter?api=${ensureApi()}
 `;
 
 const recommendedLetter = `
 <div style="width:100%;max-width:600px;margin:0 auto;">
   <iframe
     id="letterFrame"
-    src="https://brt-23f.pages.dev/letter.html?api=${ensureApi()}"
+    src="https://brt-23f.pages.dev/sleigh/.html?api=${ensureApi()}"
     style="width:100%;border:none;border-radius:16px;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
     scrolling="no"
@@ -374,98 +374,98 @@ const recommendedLetter = `
 // Suggest New Routes
 // ================================
 const suggestLink = `
-https://brt-23f.pages.dev/suggest?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/suggest?api=${ensureApi()}
 `;
 
 // ================================
 // Elf Cam
 // ================================
 const elfcamLink = `
-https://brt-23f.pages.dev/elf_cam?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/lf_cam?api=${ensureApi()}
 `;
 
 // ================================
 // Sat Nav
 // ================================
 const satnavLink = `
-https://brt-23f.pages.dev/tracker.html?api=${ensureApi()}&driver=1
+https://brt-23f.pages.dev/sleigh/tracker.html?api=${ensureApi()}&driver=1
 `;
 
 // ================================
 // Beacon (GPS Logger)
 // ================================
 const beaconLink = `
-https://brt-23f.pages.dev/beacon?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/beacon?api=${ensureApi()}
 `;
 
 // ================================
 // Door Hanger
 // ================================
 const doorhangerLink = `
-https://brt-23f.pages.dev/door_hanger?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/door_hanger?api=${ensureApi()}
 `;
 
 // ================================
 // Colouring Page
 // ================================
 const colouringpageLink = `
-https://brt-23f.pages.dev/colouring_page?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/colouring_page?api=${ensureApi()}
 `;
 
 // ================================
 // Volunteer Certificate
 // ================================
 const volunteercertLink = `
-https://brt-23f.pages.dev/volunteer_cert?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/volunteer_cert?api=${ensureApi()}
 `;
 
 // ================================
 // Santa Bingo
 // ================================
 const bingoLink = `
-https://brt-23f.pages.dev/bingo?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/bingo?api=${ensureApi()}
 `;
 
 // ================================
 // Route Planner
 // ================================
 const routeplannerLink = `
-https://brt-23f.pages.dev/route_planner?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/route_planner?api=${ensureApi()}
 `;
 
 // ================================
 // Countdown
 // ================================
 const countdownLink = `
-https://brt-23f.pages.dev/countdown?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/countdown?api=${ensureApi()}
 `;
 
 // ================================
 // Gift Aid
 // ================================
 const giftaidLink = `
-https://brt-23f.pages.dev/gift_aid?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/gift_aid?api=${ensureApi()}
 `;
 
 // ================================
 // Memory Book
 // ================================
 const memorybookLink = `
-https://brt-23f.pages.dev/memory_book?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/memory_book?api=${ensureApi()}
 `;
 
 // ================================
 // Magic Mailbox
 // ================================
 const magicmailboxLink = `
-https://brt-23f.pages.dev/magic_mailbox?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/magic_mailbox?api=${ensureApi()}
 `;
 
 // ================================
 // Santa Studio
 // ================================
 const santastudioLink = `
-https://brt-23f.pages.dev/santa_studio?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/santa_studio?api=${ensureApi()}
 `;
 
 // ================================
