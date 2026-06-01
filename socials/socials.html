@@ -6,13 +6,13 @@
   <title>BRT Social Asset Composer</title>
   <link href="https://fonts.googleapis.com/css2?family=Saira:wght@700;800;900&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --gold:#FBAF33; --gold-hover:#FFC358; --dark:#1D1D1A; --ink:#fff; --card:#26261f; --bg:#131310; --border:rgba(255,255,255,0.15); --dim:#a7a7a2; --muted:#75756e; }
+    :root { --gold:#FBAF33; --gold-hover:#FFC358; --dark:#1D1D1A; --ink:#fff; --card:#26261f; --bg:#131310; --border:rgba(255,255,255,0.15); --dim:#a7a7a2; --muted:#75756e; --success:#6FCF97; --danger:#E85D5D; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Open Sans', sans-serif; background: var(--dark); color: var(--ink); padding: 40px 20px; display: flex; justify-content: center; }
-    .container { width: 100%; max-width: 940px; display: grid; grid-template-columns: 1fr 320px; gap: 30px; }
-    @media (max-width: 820px) { .container { grid-template-columns: 1fr; } }
+    .container { width: 100%; max-width: 960px; display: grid; grid-template-columns: 1fr 340px; gap: 30px; }
+    @media (max-width: 840px) { .container { grid-template-columns: 1fr; } }
     .preview-box { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-    .canvas-wrap { width: 100%; position: relative; }
+    .canvas-wrap { width: 100%; }
     canvas { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: #000; touch-action: none; cursor: grab; }
     canvas.dragging { cursor: grabbing; }
     .controls-box { background: var(--card); padding: 22px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); height: fit-content; }
@@ -22,27 +22,26 @@
     .block.flush { background: transparent; padding: 0; }
     .form-group { margin-bottom: 14px; }
     label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--dim); }
-    input[type=text] { width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: #fff; font: inherit; }
-    input[type=text]:focus { outline: none; border-color: var(--gold); }
+    input[type=text], select { width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: #fff; font: inherit; }
+    select { cursor: pointer; }
+    input[type=text]:focus, select:focus { outline: none; border-color: var(--gold); }
     .btn { display: inline-block; width: 100%; padding: 13px; background: var(--gold); color: var(--dark); border: 0; border-radius: 8px; font-weight: 800; text-transform: uppercase; cursor: pointer; font-family: 'Saira', sans-serif; letter-spacing: 0.05em; transition: transform 0.1s, background 0.15s; }
     .btn:hover { background: var(--gold-hover); }
     .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: var(--muted); cursor: not-allowed; opacity: 0.6; }
     .btn-secondary { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.2); }
     .btn-secondary:hover { background: rgba(255,255,255,0.06); }
     .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn-tab { flex: 1; background: transparent; color: var(--dim); border: 1px solid var(--border); border-radius: 6px; padding: 8px 6px; font-family: 'Saira', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; }
     .btn-tab.active { background: var(--gold); color: var(--dark); border-color: var(--gold); }
-    /* Source tabs */
     .source-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
     .source-pane { display: none; }
     .source-pane.active { display: block; }
-    /* Dropzone */
-    .dropzone { border: 2px dashed var(--border); border-radius: 8px; padding: 28px 16px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .dropzone { border: 2px dashed var(--border); border-radius: 8px; padding: 24px 14px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
     .dropzone:hover, .dropzone.dragging { border-color: var(--gold); background: rgba(255,255,255,0.03); }
     .dropzone .big { font-family: 'Saira', sans-serif; font-size: 15px; color: #fff; margin-bottom: 4px; }
     .dropzone p { color: var(--dim); font-size: 12px; }
     .dropzone input { display: none; }
-    /* Sliders */
     .slider-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; margin-bottom: 8px; }
     .slider-row .slabel { font-size: 12px; font-weight: 600; color: var(--dim); }
     .slider-row .sval { font-family: 'Courier New', monospace; font-size: 11px; color: var(--gold); font-weight: 700; min-width: 44px; text-align: right; }
@@ -51,9 +50,15 @@
     .block-head h4 { margin: 0; }
     .btn-reset { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 4px 10px; font-size: 10px; font-family: 'Saira', sans-serif; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; border-radius: 6px; }
     .btn-reset:hover { color: #fff; border-color: var(--dim); }
-    .logo-preview { width: 54px; height: 54px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; margin-top: 10px; display: flex; align-items: center; justify-content: center; padding: 5px; }
-    .logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
     .hint { color: var(--muted); font-size: 11px; line-height: 1.4; margin-bottom: 10px; }
+    .status { font-size: 12px; padding: 8px 10px; border-radius: 6px; margin-top: 8px; display: none; }
+    .status.show { display: block; }
+    .status.info { background: rgba(255,255,255,0.05); color: var(--dim); }
+    .status.ok { background: rgba(111,207,151,0.12); color: var(--success); }
+    .status.err { background: rgba(232,93,93,0.12); color: var(--danger); }
+    .draft-box { width: 100%; min-height: 120px; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: #fff; font: inherit; font-size: 13px; line-height: 1.5; resize: vertical; white-space: pre-wrap; }
+    .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--muted); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -2px; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -67,19 +72,19 @@
   <div class="controls-box">
     <h2>Layout Composer</h2>
 
+    <!-- EVENT PICKER (from sheet) -->
+    <div class="block" id="pickerBlock" hidden>
+      <h4>Load from Sheet</h4>
+      <div class="form-group" style="margin-bottom:0;">
+        <select id="eventPicker"><option value="">Loading events…</option></select>
+      </div>
+      <div class="status" id="pickerStatus"></div>
+    </div>
+
     <div class="block flush">
-      <div class="form-group">
-        <label>Event Title</label>
-        <input type="text" id="fTitle">
-      </div>
-      <div class="form-group">
-        <label>Date &amp; Time</label>
-        <input type="text" id="fDate">
-      </div>
-      <div class="form-group">
-        <label>Location</label>
-        <input type="text" id="fLocation">
-      </div>
+      <div class="form-group"><label>Event Title</label><input type="text" id="fTitle"></div>
+      <div class="form-group"><label>Date &amp; Time</label><input type="text" id="fDate"></div>
+      <div class="form-group"><label>Location</label><input type="text" id="fLocation"></div>
     </div>
 
     <!-- IMAGE SOURCE -->
@@ -110,26 +115,6 @@
       <div class="slider-row"><span class="slabel">Y offset</span><span class="sval" id="imgYVal">0</span><input type="range" id="imgY" min="-800" max="800" step="1" value="0"></div>
     </div>
 
-    <!-- LOGO -->
-    <div class="block">
-      <h4>Logo</h4>
-      <div class="btn-row" id="logoModeTabs">
-        <button class="btn-tab active" data-logo-mode="auto" title="Picks white or grey based on photo brightness">Auto</button>
-        <button class="btn-tab" data-logo-mode="white">White</button>
-        <button class="btn-tab" data-logo-mode="grey">Grey</button>
-      </div>
-      <div class="btn-row" style="margin-top:8px;">
-        <button class="btn-tab" data-logo-pos="top-right">Top Right</button>
-        <button class="btn-tab" data-logo-pos="top-left">Top Left</button>
-      </div>
-      <div class="btn-row" style="margin-top:8px;">
-        <button class="btn btn-secondary" id="logoUploadBtn" style="flex:1;">Upload custom</button>
-        <button class="btn btn-secondary" id="logoClearBtn" style="flex:1;" hidden>Remove</button>
-      </div>
-      <input type="file" id="logoUpload" accept="image/*" hidden>
-      <div class="logo-preview" id="logoPreview"><span style="color:var(--muted);font-size:10px;">Loading…</span></div>
-    </div>
-
     <!-- LOGO ADJUST -->
     <div class="block">
       <div class="block-head"><h4>Logo Adjust</h4><button class="btn-reset" id="logoReset" type="button">Reset</button></div>
@@ -138,19 +123,29 @@
       <div class="slider-row"><span class="slabel">Y offset</span><span class="sval" id="logoYVal">0</span><input type="range" id="logoY" min="-400" max="400" step="1" value="0"></div>
     </div>
 
+    <!-- TEXT GENERATION -->
+    <div class="block" id="textBlock" hidden>
+      <h4>Social Post Text</h4>
+      <button class="btn" id="genTextBtn">Generate post text</button>
+      <textarea class="draft-box" id="draftBox" placeholder="Generated text appears here — edit freely before saving." style="margin-top:10px;"></textarea>
+      <button class="btn btn-secondary" id="saveDraftBtn" style="margin-top:8px;" hidden>Save to sheet</button>
+      <div class="status" id="textStatus"></div>
+    </div>
+
   </div>
 </div>
 
 <script>
   // ============================================================
-  // CONFIG
+  // CONFIG — backend URL from ?api=, token from ?token=
   // ============================================================
-  var LOGO_WHITE_URL = 'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/WhiteLogo.png';
-  var LOGO_GREY_URL  = 'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/GreyLogo.png';
-  var FALLBACK_BG    = 'https://img.freepik.com/free-vector/event-concept-illustration_114360-931.jpg';
+  var URL_PARAMS  = new URLSearchParams(window.location.search);
+  var BACKEND_URL = URL_PARAMS.get('api') || 'https://script.google.com/macros/s/AKfycbzSNVYKw0BFib-d9ExtsMp2q_t74yeORr2XjyR947Um3Ns6nR2F0bJx2QRMhwQtah6s/exec';
+  var SAVE_TOKEN  = URL_PARAMS.get('token') || null;
+  var LOGO_URL    = 'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png';
+  var FALLBACK_BG = 'https://img.freepik.com/free-vector/event-concept-illustration_114360-931.jpg';
 
-  var params = new URLSearchParams(window.location.search);
-  var imgArray = [params.get('sheetImg'), params.get('aiImg')].filter(Boolean);
+  var imgArray = [URL_PARAMS.get('sheetImg'), URL_PARAMS.get('aiImg')].filter(Boolean);
   var currentImgIdx = 0;
 
   var canvas = document.getElementById('canvas');
@@ -161,49 +156,153 @@
     date: document.getElementById('fDate'),
     loc: document.getElementById('fLocation'),
     download: document.getElementById('downloadBtn'),
-    swap: document.getElementById('swapSourceBtn')
+    swap: document.getElementById('swapSourceBtn'),
+    picker: document.getElementById('eventPicker'),
+    draft: document.getElementById('draftBox')
   };
 
-  el.title.value = params.get('title') || 'UPCOMING SOCIAL';
-  el.date.value = params.get('date') || '';
-  el.loc.value = params.get('loc') || '';
+  // Pre-fill from pipeline link if present
+  el.title.value = URL_PARAMS.get('title') || 'UPCOMING SOCIAL';
+  el.date.value  = URL_PARAMS.get('date') || '';
+  el.loc.value   = URL_PARAMS.get('loc') || '';
 
-  // State
-  var state = {
-    logoMode: 'auto',        // auto | white | grey | custom
-    logoPos: 'auto',         // auto | top-left | top-right
-    customLogo: null,        // HTMLImageElement
-    logoWhite: null,
-    logoGrey: null,
-    isUpload: false          // true once user uploads their own bg
-  };
-
-  var baseImg = new Image();
-  // NOTE: no crossOrigin on baseImg — Workspace/Drive sources don't send CORS
-  // headers, so requiring CORS would blank the canvas. Uploaded/ImgBB images
-  // download fine; Drive AI images display but the download catch handles export.
+  var state = { logo: null, eventsByTitle: {} };
+  var baseImg = new Image(); // no crossOrigin — Drive/Workspace sources don't send CORS headers
 
   // ============================================================
-  // IMAGE SOURCE — provided (swap) vs upload
+  // BACKEND HELPERS
   // ============================================================
-  function setBaseImage(url) {
-    state.isUpload = false;
-    baseImg.src = url || FALLBACK_BG;
+  function backend(qs) {
+    var sep = BACKEND_URL.indexOf('?') === -1 ? '?' : '&';
+    return fetch(BACKEND_URL + sep + qs).then(function (r) { return r.json(); });
   }
 
-  baseImg.onload = render;
+  function setStatus(id, msg, kind, spin) {
+    var s = document.getElementById(id);
+    s.className = 'status show ' + (kind || 'info');
+    s.innerHTML = spin ? '<span class="spinner"></span>' + msg : msg;
+  }
+  function clearStatus(id) { document.getElementById(id).className = 'status'; }
+
+  // ============================================================
+  // LOAD EVENT LIST FROM SHEET
+  // ============================================================
+  function loadEvents() {
+    document.getElementById('pickerBlock').hidden = false;
+    document.getElementById('textBlock').hidden = false;
+    setStatus('pickerStatus', 'Loading events…', 'info', true);
+
+    backend('action=events')
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.error || 'Failed');
+        var events = res.events || [];
+        el.picker.innerHTML = '<option value="">— Pick an event —</option>';
+        events.forEach(function (ev, i) {
+          state.eventsByTitle[ev.title] = ev;
+          var opt = document.createElement('option');
+          opt.value = ev.title;
+          opt.textContent = ev.title + (ev.dateText ? ' · ' + ev.dateText : '');
+          el.picker.appendChild(opt);
+        });
+        clearStatus('pickerStatus');
+        if (!events.length) setStatus('pickerStatus', 'No upcoming events found in the sheet.', 'info');
+      })
+      .catch(function (err) {
+        setStatus('pickerStatus', 'Could not load events: ' + err.message + ' (CORS or backend issue)', 'err');
+      });
+  }
+
+  el.picker.addEventListener('change', function () {
+    var ev = state.eventsByTitle[el.picker.value];
+    if (!ev) return;
+    el.title.value = ev.title.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/gu, '').replace(/\s+/g, ' ').trim();
+    el.date.value = ev.dateText || '';
+    el.loc.value = ev.location || '';
+    el.draft.value = ev.draft || '';
+    document.getElementById('saveDraftBtn').hidden = !ev.draft;
+    // Load the event's image into the provided slot
+    imgArray = [ev.img].filter(Boolean);
+    currentImgIdx = 0;
+    resetImgSliders();
+    setBaseImage(imgArray.length ? imgArray[0] : '');
+    render();
+  });
+
+  // ============================================================
+  // GENERATE TEXT (from site)
+  // ============================================================
+  document.getElementById('genTextBtn').addEventListener('click', function () {
+    var title = el.title.value.trim();
+    if (!title) { setStatus('textStatus', 'Enter an event title first.', 'err'); return; }
+    var btn = document.getElementById('genTextBtn');
+    btn.disabled = true;
+    setStatus('textStatus', 'Generating with AI…', 'info', true);
+
+    var qs = 'action=generate-text'
+      + '&title=' + encodeURIComponent(title)
+      + '&date='  + encodeURIComponent(el.date.value)
+      + '&loc='   + encodeURIComponent(el.loc.value);
+
+    backend(qs)
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.error || 'Failed');
+        el.draft.value = res.text || '';
+        document.getElementById('saveDraftBtn').hidden = false;
+        clearStatus('textStatus');
+      })
+      .catch(function (err) { setStatus('textStatus', 'Generation failed: ' + err.message, 'err'); })
+      .finally(function () { btn.disabled = false; });
+  });
+
+  // ============================================================
+  // SAVE DRAFT BACK TO SHEET (token-gated)
+  // ============================================================
+  document.getElementById('saveDraftBtn').addEventListener('click', function () {
+    if (!SAVE_TOKEN) {
+      setStatus('textStatus', 'No save token — open this site with ?token=… to enable saving.', 'err');
+      return;
+    }
+    var title = el.title.value.trim();
+    var text = el.draft.value;
+    if (!title) { setStatus('textStatus', 'Need an event title to save against.', 'err'); return; }
+    var btn = document.getElementById('saveDraftBtn');
+    btn.disabled = true;
+    setStatus('textStatus', 'Saving to sheet…', 'info', true);
+
+    // Match against the original (possibly emoji'd) sheet title if we loaded from the picker
+    var sheetTitle = title;
+    Object.keys(state.eventsByTitle).forEach(function (t) {
+      var stripped = t.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/gu, '').replace(/\s+/g, ' ').trim();
+      if (stripped === title) sheetTitle = t;
+    });
+
+    var qs = 'action=save-draft'
+      + '&token=' + encodeURIComponent(SAVE_TOKEN)
+      + '&title=' + encodeURIComponent(sheetTitle)
+      + '&text='  + encodeURIComponent(text);
+
+    backend(qs)
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.error || 'Failed');
+        setStatus('textStatus', 'Saved to sheet ✓', 'ok');
+        if (state.eventsByTitle[sheetTitle]) state.eventsByTitle[sheetTitle].draft = text;
+      })
+      .catch(function (err) { setStatus('textStatus', 'Save failed: ' + err.message, 'err'); })
+      .finally(function () { btn.disabled = false; });
+  });
+
+  // ============================================================
+  // IMAGE SOURCE
+  // ============================================================
+  function setBaseImage(url) { baseImg.src = url || FALLBACK_BG; }
+  baseImg.onload = function () { render(); };
   baseImg.onerror = function () {
-    ctx.fillStyle = '#131310';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#a7a7a2';
-    ctx.font = "600 30px 'Open Sans', sans-serif";
-    ctx.textAlign = 'center';
-    ctx.fillText('Image source blocked — try Swap or Upload', canvas.width / 2, canvas.height / 2);
-    ctx.textAlign = 'left';
-    render(true); // draw overlay text on top of the notice
+    ctx.fillStyle = '#131310'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#a7a7a2'; ctx.font = "600 30px 'Open Sans', sans-serif"; ctx.textAlign = 'center';
+    ctx.fillText('Image blocked — try Swap or Upload', canvas.width / 2, canvas.height / 2);
+    ctx.textAlign = 'left'; render(true);
   };
 
-  // Source tabs
   document.querySelectorAll('.source-tabs .btn-tab').forEach(function (btn) {
     btn.addEventListener('click', function () {
       document.querySelectorAll('.source-tabs .btn-tab').forEach(function (b) { b.classList.toggle('active', b === btn); });
@@ -211,156 +310,41 @@
     });
   });
 
-  // Swap provided images
   el.swap.addEventListener('click', function () {
-    if (imgArray.length <= 1) return alert('Only one image source available for this event. Use the Upload tab to add your own.');
+    if (imgArray.length <= 1) return alert('Only one image source for this event. Use the Upload tab for your own photo.');
     currentImgIdx = (currentImgIdx + 1) % imgArray.length;
     resetImgSliders();
     setBaseImage(imgArray[currentImgIdx]);
   });
 
-  // Upload background
   var imgUpload = document.getElementById('imgUpload');
   var dropzone = document.getElementById('dropzone');
   imgUpload.addEventListener('change', function (e) { handleBgFile(e.target.files[0]); });
   ['dragover', 'dragenter'].forEach(function (ev) { dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.add('dragging'); }); });
   ['dragleave', 'drop'].forEach(function (ev) { dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.remove('dragging'); }); });
   dropzone.addEventListener('drop', function (e) { if (e.dataTransfer.files[0]) handleBgFile(e.dataTransfer.files[0]); });
-
   function handleBgFile(file) {
     if (!file || !file.type.startsWith('image/')) return;
     var reader = new FileReader();
-    reader.onload = function () {
-      resetImgSliders();
-      // Uploaded data-URLs are same-origin → never taint the canvas, always downloadable.
-      baseImg.src = reader.result;
-      state.isUpload = true;
-    };
+    reader.onload = function () { resetImgSliders(); baseImg.src = reader.result; };
     reader.readAsDataURL(file);
-  }
-
-  // ============================================================
-  // LOGO controls
-  // ============================================================
-  document.querySelectorAll('[data-logo-mode]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      state.logoMode = btn.dataset.logoMode;
-      state.customLogo = null;
-      document.querySelectorAll('[data-logo-mode]').forEach(function (b) { b.classList.toggle('active', b === btn); });
-      document.getElementById('logoClearBtn').hidden = true;
-      document.getElementById('logoUpload').value = '';
-      renderLogoPreview();
-      render();
-    });
-  });
-
-  document.querySelectorAll('[data-logo-pos]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      // Toggle: clicking the active position returns to auto
-      if (state.logoPos === btn.dataset.logoPos) {
-        state.logoPos = 'auto';
-        btn.classList.remove('active');
-      } else {
-        state.logoPos = btn.dataset.logoPos;
-        document.querySelectorAll('[data-logo-pos]').forEach(function (b) { b.classList.toggle('active', b === btn); });
-      }
-      setSlider('logoX', 0); setSlider('logoY', 0);
-      render();
-    });
-  });
-
-  document.getElementById('logoUploadBtn').addEventListener('click', function () { document.getElementById('logoUpload').click(); });
-  document.getElementById('logoUpload').addEventListener('change', function (e) {
-    var file = e.target.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function () {
-      var img = new Image();
-      img.onload = function () {
-        state.customLogo = img;
-        state.logoMode = 'custom';
-        document.querySelectorAll('[data-logo-mode]').forEach(function (b) { b.classList.remove('active'); });
-        document.getElementById('logoClearBtn').hidden = false;
-        renderLogoPreview();
-        render();
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-
-  document.getElementById('logoClearBtn').addEventListener('click', function () {
-    state.customLogo = null;
-    state.logoMode = 'auto';
-    document.querySelectorAll('[data-logo-mode]').forEach(function (b) { b.classList.toggle('active', b.dataset.logoMode === 'auto'); });
-    document.getElementById('logoClearBtn').hidden = true;
-    document.getElementById('logoUpload').value = '';
-    renderLogoPreview();
-    render();
-  });
-
-  function renderLogoPreview() {
-    var preview = document.getElementById('logoPreview');
-    preview.innerHTML = '';
-    var src = null;
-    if (state.logoMode === 'custom' && state.customLogo) {
-      src = state.customLogo.src;
-    } else {
-      src = (pickLogoColor() === 'white') ? LOGO_WHITE_URL : LOGO_GREY_URL;
-    }
-    var img = document.createElement('img');
-    img.src = src;
-    img.onerror = function () { preview.innerHTML = '<span style="color:var(--muted);font-size:10px;">Badge</span>'; };
-    preview.appendChild(img);
-  }
-
-  // Auto colour: sample the corner the logo will sit in, pick white on dark / grey on light.
-  function pickLogoColor() {
-    if (state.logoMode === 'white') return 'white';
-    if (state.logoMode === 'grey') return 'grey';
-    // auto — sample brightness of chosen corner
-    if (baseImg.complete && baseImg.naturalWidth > 0) {
-      var corner = (state.logoPos === 'auto') ? pickCorner() : state.logoPos;
-      var b = cornerBrightness(corner);
-      if (b !== null) return b > 140 ? 'grey' : 'white';
-    }
-    return 'white';
   }
 
   // ============================================================
   // SLIDERS
   // ============================================================
   var SLIDER_FMT = {
-    imgScale: function (v) { return Number(v).toFixed(2) + '×'; },
-    imgX: function (v) { return Math.round(v); },
-    imgY: function (v) { return Math.round(v); },
-    logoScale: function (v) { return Number(v).toFixed(2) + '×'; },
-    logoX: function (v) { return Math.round(v); },
-    logoY: function (v) { return Math.round(v); }
+    imgScale: function (v) { return Number(v).toFixed(2) + '×'; }, imgX: function (v) { return Math.round(v); }, imgY: function (v) { return Math.round(v); },
+    logoScale: function (v) { return Number(v).toFixed(2) + '×'; }, logoX: function (v) { return Math.round(v); }, logoY: function (v) { return Math.round(v); }
   };
   var SLIDER_DEFAULTS = { imgScale: 1, imgX: 0, imgY: 0, logoScale: 1, logoX: 0, logoY: 0 };
-
-  function readout(id) {
-    var input = document.getElementById(id);
-    var out = document.getElementById(id + 'Val');
-    if (input && out) out.textContent = (SLIDER_FMT[id] || function (v) { return v; })(input.value);
-  }
-  function setSlider(id, value) {
-    var input = document.getElementById(id);
-    if (!input) return;
-    input.value = value;
-    readout(id);
-  }
-  Object.keys(SLIDER_DEFAULTS).forEach(function (id) {
-    var input = document.getElementById(id);
-    input.addEventListener('input', function () { readout(id); render(); });
-    readout(id);
-  });
+  function readout(id) { var i = document.getElementById(id), o = document.getElementById(id + 'Val'); if (i && o) o.textContent = (SLIDER_FMT[id] || function (v) { return v; })(i.value); }
+  function setSlider(id, v) { var i = document.getElementById(id); if (i) { i.value = v; readout(id); } }
+  Object.keys(SLIDER_DEFAULTS).forEach(function (id) { var i = document.getElementById(id); i.addEventListener('input', function () { readout(id); render(); }); readout(id); });
   function resetImgSliders() { ['imgScale', 'imgX', 'imgY'].forEach(function (id) { setSlider(id, SLIDER_DEFAULTS[id]); }); }
   document.getElementById('imgReset').addEventListener('click', function () { resetImgSliders(); render(); });
   document.getElementById('logoReset').addEventListener('click', function () { ['logoScale', 'logoX', 'logoY'].forEach(function (id) { setSlider(id, SLIDER_DEFAULTS[id]); }); render(); });
 
-  // Live redraw on text fields
   [el.title, el.date, el.loc].forEach(function (inp) { inp.addEventListener('input', function () { render(); }); });
 
   // ============================================================
@@ -369,223 +353,96 @@
   function render(skipBg) {
     var W = canvas.width, H = canvas.height;
     if (!skipBg) ctx.clearRect(0, 0, W, H);
-
-    // 1. Background (cover-fit + scale/pan)
     if (!skipBg && baseImg.complete && baseImg.naturalWidth > 0) {
-      var imgScale = parseFloat(document.getElementById('imgScale').value) || 1;
-      var imgX = parseInt(document.getElementById('imgX').value) || 0;
-      var imgY = parseInt(document.getElementById('imgY').value) || 0;
-      drawImageCover(baseImg, W, H, imgScale, imgX, imgY);
+      drawImageCover(baseImg, W, H, parseFloat(document.getElementById('imgScale').value) || 1, parseInt(document.getElementById('imgX').value) || 0, parseInt(document.getElementById('imgY').value) || 0);
     }
-
-    // 2. Darkening gradient
     var grad = ctx.createLinearGradient(0, H * 0.5, 0, H);
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(0.5, 'rgba(0,0,0,0.6)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.95)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, H * 0.5, W, H * 0.5);
+    grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(0.5, 'rgba(0,0,0,0.6)'); grad.addColorStop(1, 'rgba(0,0,0,0.95)');
+    ctx.fillStyle = grad; ctx.fillRect(0, H * 0.5, W, H * 0.5);
+    ctx.fillStyle = '#FBAF33'; ctx.fillRect(0, 0, 15, H);
 
-    // 3. Yellow accent stripe
-    ctx.fillStyle = '#FBAF33';
-    ctx.fillRect(0, 0, 15, H);
-
-    // 4. Typography (bottom-anchored, working up)
-    var pad = 60;
-    var cy = H - pad;
-
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-
-    // CTA
-    ctx.font = "700 22px 'Saira', sans-serif";
-    ctx.fillStyle = '#FBAF33';
-    ctx.fillText('#DOMORE', pad, cy);
-    cy -= 45;
-
-    // Date / location
+    var pad = 60, cy = H - pad;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = "700 22px 'Saira', sans-serif"; ctx.fillStyle = '#FBAF33'; ctx.fillText('#DOMORE', pad, cy); cy -= 45;
     var metaText = [el.date.value, el.loc.value].filter(Boolean).join('  ·  ');
-    if (metaText) {
-      ctx.font = "600 28px 'Open Sans', sans-serif";
-      ctx.fillStyle = '#fff';
-      ctx.fillText(metaText, pad, cy);
-      cy -= 55;
-    }
-
-    // Title — first word gold, rest white (guards single-word titles)
+    if (metaText) { ctx.font = "600 28px 'Open Sans', sans-serif"; ctx.fillStyle = '#fff'; ctx.fillText(metaText, pad, cy); cy -= 55; }
     var words = (el.title.value || '').toUpperCase().split(' ').filter(Boolean);
     ctx.font = "900 75px 'Saira', sans-serif";
     if (words.length) {
-      var first = words[0];
-      var rest = words.slice(1).join(' ');
-      if (rest) {
-        ctx.fillStyle = '#fff';
-        ctx.fillText(rest, pad + ctx.measureText(first + ' ').width, cy);
-      }
-      ctx.fillStyle = '#FBAF33';
-      ctx.fillText(first, pad, cy);
-      cy -= 80;
+      var first = words[0], rest = words.slice(1).join(' ');
+      if (rest) { ctx.fillStyle = '#fff'; ctx.fillText(rest, pad + ctx.measureText(first + ' ').width, cy); }
+      ctx.fillStyle = '#FBAF33'; ctx.fillText(first, pad, cy); cy -= 80;
     }
-
-    // Eyebrow
-    ctx.font = "800 24px 'Saira', sans-serif";
-    ctx.fillStyle = '#fff';
-    ctx.fillText('BEVERLEY ROUND TABLE', pad, cy);
-
-    // 5. Logo
+    ctx.font = "800 24px 'Saira', sans-serif"; ctx.fillStyle = '#fff'; ctx.fillText('BEVERLEY ROUND TABLE', pad, cy);
     drawLogo(W, H);
   }
 
   function drawImageCover(img, W, H, scale, offX, offY) {
-    var imgRatio = img.naturalWidth / img.naturalHeight;
-    var canvasRatio = W / H;
-    var sx, sy, sw, sh;
-    if (imgRatio > canvasRatio) {
-      sh = img.naturalHeight; sw = img.naturalHeight * canvasRatio;
-      sx = (img.naturalWidth - sw) / 2; sy = 0;
-    } else {
-      sw = img.naturalWidth; sh = img.naturalWidth / canvasRatio;
-      sx = 0; sy = (img.naturalHeight - sh) / 2;
-    }
-    ctx.save();
-    ctx.translate(W / 2 + offX, H / 2 + offY);
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, sx, sy, sw, sh, -W / 2, -H / 2, W, H);
-    ctx.restore();
+    var ir = img.naturalWidth / img.naturalHeight, cr = W / H, sx, sy, sw, sh;
+    if (ir > cr) { sh = img.naturalHeight; sw = img.naturalHeight * cr; sx = (img.naturalWidth - sw) / 2; sy = 0; }
+    else { sw = img.naturalWidth; sh = img.naturalWidth / cr; sx = 0; sy = (img.naturalHeight - sh) / 2; }
+    ctx.save(); ctx.translate(W / 2 + offX, H / 2 + offY); ctx.scale(scale, scale);
+    ctx.drawImage(img, sx, sy, sw, sh, -W / 2, -H / 2, W, H); ctx.restore();
   }
 
   function drawLogo(W, H) {
-    var logoSize = W * 0.13;
-    var margin = W * 0.05;
-    var logoScale = parseFloat(document.getElementById('logoScale').value) || 1;
-    var logoX = parseInt(document.getElementById('logoX').value) || 0;
-    var logoY = parseInt(document.getElementById('logoY').value) || 0;
-
-    var corner = (state.logoPos === 'auto') ? pickCorner() : state.logoPos;
-    var x = (corner === 'top-left') ? margin + (W * 0.012) : W - logoSize - margin;
-    var y = margin;
-
-    var logoImg = null;
-    if (state.logoMode === 'custom' && state.customLogo) {
-      logoImg = state.customLogo;
+    var logoSize = W * 0.13, margin = W * 0.05;
+    var ls = parseFloat(document.getElementById('logoScale').value) || 1;
+    var lx = parseInt(document.getElementById('logoX').value) || 0;
+    var ly = parseInt(document.getElementById('logoY').value) || 0;
+    var x = W - logoSize - margin, y = margin;
+    var img = state.logo;
+    if (img && img.complete && img.naturalWidth > 0) {
+      var ratio = img.naturalWidth / img.naturalHeight;
+      var dW = ratio > 1 ? logoSize : logoSize * ratio;
+      var dH = ratio > 1 ? logoSize / ratio : logoSize;
+      var ax = x + (logoSize - dW);
+      ctx.save(); ctx.translate(ax + dW / 2 + lx, y + dH / 2 + ly); ctx.scale(ls, ls);
+      ctx.drawImage(img, -dW / 2, -dH / 2, dW, dH); ctx.restore();
     } else {
-      logoImg = (pickLogoColor() === 'white') ? state.logoWhite : state.logoGrey;
+      ctx.save(); ctx.translate(x + logoSize / 2 + lx, y + logoSize / 2 + ly); ctx.scale(ls, ls);
+      ctx.fillStyle = '#FBAF33'; ctx.beginPath(); ctx.arc(0, 0, logoSize / 2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1D1D1A'; ctx.font = '800 ' + Math.round(logoSize * 0.42) + "px 'Saira', sans-serif";
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('RT', 0, logoSize * 0.02); ctx.restore();
     }
-
-    if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
-      var ratio = logoImg.naturalWidth / logoImg.naturalHeight;
-      var drawW = ratio > 1 ? logoSize : logoSize * ratio;
-      var drawH = ratio > 1 ? logoSize / ratio : logoSize;
-      var anchorX = (corner === 'top-left') ? x : x + (logoSize - drawW);
-      ctx.save();
-      ctx.translate(anchorX + drawW / 2 + logoX, y + drawH / 2 + logoY);
-      ctx.scale(logoScale, logoScale);
-      ctx.drawImage(logoImg, -drawW / 2, -drawH / 2, drawW, drawH);
-      ctx.restore();
-    } else {
-      // Fallback drawn badge
-      ctx.save();
-      ctx.translate(x + logoSize / 2 + logoX, y + logoSize / 2 + logoY);
-      ctx.scale(logoScale, logoScale);
-      ctx.fillStyle = '#FBAF33';
-      ctx.beginPath(); ctx.arc(0, 0, logoSize / 2, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#1D1D1A';
-      ctx.font = '800 ' + Math.round(logoSize * 0.42) + "px 'Saira', sans-serif";
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('RT', 0, logoSize * 0.02);
-      ctx.restore();
-    }
-  }
-
-  // Pick the cleaner top corner by brightness variance (less busy = better backdrop)
-  function pickCorner() {
-    var tl = cornerStats('top-left');
-    var tr = cornerStats('top-right');
-    if (!tl || !tr) return 'top-right';
-    return (tl.variance + tl.mean * 0.05) < (tr.variance + tr.mean * 0.05) ? 'top-left' : 'top-right';
-  }
-
-  function cornerStats(corner) {
-    if (!baseImg.complete || !baseImg.naturalWidth) return null;
-    try {
-      var sw = Math.round(canvas.width * 0.18), sh = sw;
-      var sx = (corner === 'top-left') ? 0 : canvas.width - sw;
-      var data = ctx.getImageData(sx, 0, sw, sh).data;
-      var sum = 0, count = data.length / 4, lums = new Float32Array(count);
-      for (var i = 0, j = 0; i < data.length; i += 4, j++) {
-        var lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        lums[j] = lum; sum += lum;
-      }
-      var mean = sum / count, sq = 0;
-      for (var k = 0; k < count; k++) { var d = lums[k] - mean; sq += d * d; }
-      return { mean: mean, variance: sq / count };
-    } catch (e) { return null; } // tainted canvas (Drive img) — can't sample; fall back
-  }
-
-  function cornerBrightness(corner) {
-    var s = cornerStats(corner);
-    return s ? s.mean : null;
   }
 
   // ============================================================
-  // DRAG-TO-PAN + WHEEL/PINCH ZOOM
+  // DRAG / ZOOM
   // ============================================================
   (function () {
-    var pointers = new Map();
-    var dragStart = null, pinchStart = null;
-
+    var pointers = new Map(), dragStart = null, pinchStart = null;
     function cScale() { var r = canvas.getBoundingClientRect(); return r.width ? canvas.width / r.width : 1; }
     function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-    function pinchDist(pts) { var a = pts[0], b = pts[1]; return Math.hypot(b.x - a.x, b.y - a.y); }
-
+    function pd(p) { return Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y); }
     canvas.addEventListener('pointerdown', function (e) {
       if (!baseImg.complete) return;
-      canvas.setPointerCapture(e.pointerId);
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      canvas.classList.add('dragging');
-      if (pointers.size === 1) {
-        dragStart = { sx: parseInt(document.getElementById('imgX').value, 10) || 0, sy: parseInt(document.getElementById('imgY').value, 10) || 0, px: e.clientX, py: e.clientY };
-        pinchStart = null;
-      } else if (pointers.size === 2) {
-        pinchStart = { dist: pinchDist(Array.from(pointers.values())), scale: parseFloat(document.getElementById('imgScale').value) || 1 };
-        dragStart = null;
-      }
+      canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); canvas.classList.add('dragging');
+      if (pointers.size === 1) { dragStart = { sx: parseInt(document.getElementById('imgX').value, 10) || 0, sy: parseInt(document.getElementById('imgY').value, 10) || 0, px: e.clientX, py: e.clientY }; pinchStart = null; }
+      else if (pointers.size === 2) { pinchStart = { dist: pd(Array.from(pointers.values())), scale: parseFloat(document.getElementById('imgScale').value) || 1 }; dragStart = null; }
     });
-
     canvas.addEventListener('pointermove', function (e) {
       if (!pointers.has(e.pointerId)) return;
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 1 && dragStart) {
         var s = cScale();
         setSlider('imgX', clamp(dragStart.sx + (e.clientX - dragStart.px) * s, -800, 800));
-        setSlider('imgY', clamp(dragStart.sy + (e.clientY - dragStart.py) * s, -800, 800));
-        render();
+        setSlider('imgY', clamp(dragStart.sy + (e.clientY - dragStart.py) * s, -800, 800)); render();
       } else if (pointers.size === 2 && pinchStart) {
-        var ratio = pinchDist(Array.from(pointers.values())) / pinchStart.dist;
-        setSlider('imgScale', clamp(pinchStart.scale * ratio, 0.5, 3));
-        render();
+        setSlider('imgScale', clamp(pinchStart.scale * (pd(Array.from(pointers.values())) / pinchStart.dist), 0.5, 3)); render();
       }
     });
-
-    function endPointer(e) {
+    function endP(e) {
       pointers.delete(e.pointerId);
       if (pointers.size === 0) { dragStart = null; pinchStart = null; canvas.classList.remove('dragging'); }
-      else if (pointers.size === 1) {
-        var rem = Array.from(pointers.values())[0];
-        dragStart = { sx: parseInt(document.getElementById('imgX').value, 10) || 0, sy: parseInt(document.getElementById('imgY').value, 10) || 0, px: rem.x, py: rem.y };
-        pinchStart = null;
-      }
+      else if (pointers.size === 1) { var rem = Array.from(pointers.values())[0]; dragStart = { sx: parseInt(document.getElementById('imgX').value, 10) || 0, sy: parseInt(document.getElementById('imgY').value, 10) || 0, px: rem.x, py: rem.y }; pinchStart = null; }
     }
-    canvas.addEventListener('pointerup', endPointer);
-    canvas.addEventListener('pointercancel', endPointer);
-
+    canvas.addEventListener('pointerup', endP); canvas.addEventListener('pointercancel', endP);
     canvas.addEventListener('wheel', function (e) {
-      if (!baseImg.complete) return;
-      e.preventDefault();
+      if (!baseImg.complete) return; e.preventDefault();
       var cur = parseFloat(document.getElementById('imgScale').value) || 1;
       var step = Math.abs(e.deltaY) > 50 ? 0.08 : 0.04;
-      setSlider('imgScale', clamp(cur + (e.deltaY < 0 ? 1 : -1) * step, 0.5, 3));
-      render();
+      setSlider('imgScale', clamp(cur + (e.deltaY < 0 ? 1 : -1) * step, 0.5, 3)); render();
     }, { passive: false });
   })();
 
@@ -596,28 +453,23 @@
     try {
       var a = document.createElement('a');
       a.download = (el.title.value || 'brt').toLowerCase().replace(/\s+/g, '_') + '_social.png';
-      a.href = canvas.toDataURL('image/png');
-      a.click();
+      a.href = canvas.toDataURL('image/png'); a.click();
     } catch (err) {
-      alert("Couldn't export — this background source blocked the download (CORS). Use the Upload tab to add the photo from your device, or Swap to the other image, then download.");
+      alert("Couldn't export — this background blocked the download (CORS). Use the Upload tab for the photo from your device, then download.");
     }
   });
 
   // ============================================================
   // INIT
   // ============================================================
-  function loadLogo(url, key) {
-    var img = new Image();
-    img.crossOrigin = 'anonymous'; // GitHub raw sends CORS headers, so this is safe and keeps logo download-clean
-    img.onload = function () { state[key] = img; renderLogoPreview(); render(); };
-    img.onerror = function () { console.warn('Logo failed: ' + url); render(); };
-    img.src = url;
-  }
-  loadLogo(LOGO_WHITE_URL, 'logoWhite');
-  loadLogo(LOGO_GREY_URL, 'logoGrey');
+  var logo = new Image();
+  logo.crossOrigin = 'anonymous'; // GitHub sends CORS headers — keeps logo download-clean
+  logo.onload = function () { state.logo = logo; render(); };
+  logo.onerror = function () { render(); };
+  logo.src = LOGO_URL;
 
   setBaseImage(imgArray.length ? imgArray[currentImgIdx] : '');
-  renderLogoPreview();
+  loadEvents();
 </script>
 </body>
 </html>
