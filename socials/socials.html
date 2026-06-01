@@ -96,6 +96,8 @@
       </div>
       <div class="source-pane active" data-pane="provided">
         <button class="btn btn-secondary" id="swapSourceBtn">Swap Image Layer</button>
+        <button class="btn" id="genImgBtn" style="margin-top:8px;">✨ Generate AI image</button>
+        <div class="status" id="imgGenStatus"></div>
       </div>
       <div class="source-pane" data-pane="upload">
         <label for="imgUpload" class="dropzone" id="dropzone">
@@ -169,6 +171,16 @@
   var state = { logo: null, eventsByTitle: {} };
   var baseImg = new Image(); // no crossOrigin — Drive/Workspace sources don't send CORS headers
 
+  // Resolve a typed/edited title back to its original (possibly emoji'd) sheet title
+  function resolveSheetTitle(title) {
+    var sheetTitle = title;
+    Object.keys(state.eventsByTitle).forEach(function (t) {
+      var stripped = t.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/gu, '').replace(/\s+/g, ' ').trim();
+      if (stripped === title) sheetTitle = t;
+    });
+    return sheetTitle;
+  }
+
   // ============================================================
   // BACKEND HELPERS
   // ============================================================
@@ -220,8 +232,9 @@
     el.loc.value = ev.location || '';
     el.draft.value = ev.draft || '';
     document.getElementById('saveDraftBtn').hidden = !ev.draft;
-    // Load the event's image into the provided slot
-    imgArray = [ev.img].filter(Boolean);
+    clearStatus('imgGenStatus');
+    // Load the event's sheet photo AND any previously-generated AI image
+    imgArray = [ev.img, ev.aiImg].filter(Boolean);
     currentImgIdx = 0;
     resetImgSliders();
     setBaseImage(imgArray.length ? imgArray[0] : '');
@@ -255,6 +268,51 @@
   });
 
   // ============================================================
+  // GENERATE AI IMAGE (from site, token-gated)
+  // ============================================================
+  document.getElementById('genImgBtn').addEventListener('click', function () {
+    if (!SAVE_TOKEN) {
+      setStatus('imgGenStatus', 'No token — open this site with ?token=… to generate AI images.', 'err');
+      return;
+    }
+    var title = el.title.value.trim();
+    if (!title) { setStatus('imgGenStatus', 'Enter an event title first.', 'err'); return; }
+
+    var btn = document.getElementById('genImgBtn');
+    btn.disabled = true;
+    setStatus('imgGenStatus', 'Generating image with Imagen… (10–20s)', 'info', true);
+
+    var sheetTitle = resolveSheetTitle(title);
+    var qs = 'action=generate-image'
+      + '&token=' + encodeURIComponent(SAVE_TOKEN)
+      + '&title=' + encodeURIComponent(sheetTitle)
+      + '&loc='   + encodeURIComponent(el.loc.value);
+
+    backend(qs)
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.error || 'Failed');
+        // Switch to the "From event" tab so the result shows
+        document.querySelector('.source-tabs .btn-tab[data-pane="provided"]').click();
+        resetImgSliders();
+        // Render from the clean data URI (downloadable). Fall back to the Drive URL.
+        if (res.dataUri) {
+          if (imgArray.indexOf(res.dataUri) === -1) imgArray.push(res.dataUri);
+          currentImgIdx = imgArray.length - 1;
+          baseImg.src = res.dataUri;
+        } else if (res.img) {
+          if (imgArray.indexOf(res.img) === -1) imgArray.push(res.img);
+          currentImgIdx = imgArray.length - 1;
+          setBaseImage(res.img);
+        }
+        // Keep the Drive URL on the event so the picker reuses it next time
+        if (res.img && state.eventsByTitle[sheetTitle]) state.eventsByTitle[sheetTitle].aiImg = res.img;
+        setStatus('imgGenStatus', 'AI image generated ✓ (saved to sheet)', 'ok');
+      })
+      .catch(function (err) { setStatus('imgGenStatus', 'Generation failed: ' + err.message, 'err'); })
+      .finally(function () { btn.disabled = false; });
+  });
+
+  // ============================================================
   // SAVE DRAFT BACK TO SHEET (token-gated)
   // ============================================================
   document.getElementById('saveDraftBtn').addEventListener('click', function () {
@@ -270,11 +328,7 @@
     setStatus('textStatus', 'Saving to sheet…', 'info', true);
 
     // Match against the original (possibly emoji'd) sheet title if we loaded from the picker
-    var sheetTitle = title;
-    Object.keys(state.eventsByTitle).forEach(function (t) {
-      var stripped = t.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/gu, '').replace(/\s+/g, ' ').trim();
-      if (stripped === title) sheetTitle = t;
-    });
+    var sheetTitle = resolveSheetTitle(title);
 
     var qs = 'action=save-draft'
       + '&token=' + encodeURIComponent(SAVE_TOKEN)
@@ -311,7 +365,7 @@
   });
 
   el.swap.addEventListener('click', function () {
-    if (imgArray.length <= 1) return alert('Only one image source for this event. Use the Upload tab for your own photo.');
+    if (imgArray.length <= 1) return alert('Only one image source for this event. Generate an AI image, or use the Upload tab for your own photo.');
     currentImgIdx = (currentImgIdx + 1) % imgArray.length;
     resetImgSliders();
     setBaseImage(imgArray[currentImgIdx]);
