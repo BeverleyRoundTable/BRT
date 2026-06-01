@@ -14,7 +14,7 @@
   'use strict';
 
   // ─── Configuration ─────────────────────────────────────────
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzXGdWJX5uN9lGWD8SNapBIzE3mxm1w48p2j9tJFLc20v8FQTld9UQsO6CTQQsvJr7g/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJjIbq-XZ9W8owbbp0PizZ2adE-Z3SK1bAxPDEjjDjmYhqpKXMwlHEuWrOUyNeTg/exec';
   const LOGO_URL = 'https://brt-23f.pages.dev/icons/BRTLogo.png';
 
   // Guard against double-loading (e.g. script accidentally embedded twice)
