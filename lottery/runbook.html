@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operating Runbook — Beverley Round Table Monthly Draw</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#FBAF33;--gold-glow:rgba(251,175,51,.12);
+  --grey-dark:#1D1D1A;--grey-card:#242421;--grey-border:#39393455;
+  --white:#fff;--text:#ecece7;--text-muted:#a3a39c;--green:#2ecc71;--red:#e05a5a;
+  --font-display:'Eurostile Extended','Eurostile','Michroma',sans-serif;
+  --font-body:'Open Sans',-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--grey-dark);color:var(--text);
+  line-height:1.65;font-size:15px;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(900px 500px at 50% -10%, rgba(251,175,51,.07), transparent 60%),
+    linear-gradient(180deg,#1f1f1c,#1a1a17);background-attachment:fixed;min-height:100vh;}
+.wrap{max-width:820px;margin:0 auto;padding:36px 22px 80px}
+.top{text-align:center;margin-bottom:36px}
+.logo-slot{display:inline-flex;height:50px;margin-bottom:20px}
+.logo-slot img{max-height:44px;width:auto}
+.eyebrow{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px}
+h1{font-family:var(--font-display);font-size:clamp(24px,5vw,34px);color:var(--white);text-transform:uppercase;letter-spacing:.5px;line-height:1.06}
+h1 .y{color:var(--gold)}
+.sub{font-size:13px;color:var(--text-muted);margin-top:10px}
+
+h2{font-family:var(--font-display);font-size:17px;text-transform:uppercase;color:var(--white);
+  letter-spacing:.5px;margin:38px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--grey-border)}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin:18px 0 8px;font-weight:800}
+p{margin-bottom:12px}
+ul,ol{margin:0 0 14px 22px}li{margin-bottom:7px}
+b{color:var(--white)}
+code{font-family:var(--font-display);font-size:.82em;background:#1b1b18;border:1px solid var(--grey-border);
+  border-radius:5px;padding:1px 6px;color:var(--gold)}
+
+.flow{display:flex;flex-direction:column;gap:0;margin:8px 0 18px}
+.step{display:flex;gap:14px;align-items:flex-start;position:relative;padding:12px 0}
+.step:not(:last-child)::after{content:'';position:absolute;left:17px;top:42px;bottom:-6px;width:2px;background:var(--grey-border)}
+.dot{flex-shrink:0;width:36px;height:36px;border-radius:50%;background:var(--gold-glow);border:2px solid var(--gold);
+  color:var(--gold);font-family:var(--font-display);font-size:14px;display:flex;align-items:center;justify-content:center;z-index:1}
+.step .body{flex:1;padding-top:5px}
+.step .t{font-weight:700;color:var(--white)}
+.step .d{font-size:13.5px;color:var(--text-muted)}
+
+.card{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:14px;padding:20px 22px;margin-bottom:18px}
+.guard{border-left:3px solid var(--gold);background:var(--gold-glow);border-radius:8px;padding:14px 16px;margin:14px 0;font-size:13.5px}
+.guard b{color:var(--gold)}
+
+table{width:100%;border-collapse:collapse;margin:6px 0 18px;font-size:13.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--grey-border);vertical-align:top}
+th{color:var(--gold);text-transform:uppercase;font-size:11px;letter-spacing:1px}
+td b{color:var(--white)}
+.mono{font-family:var(--font-display);font-size:.82em;color:var(--gold)}
+
+.check{list-style:none;margin-left:0}
+.check li{padding-left:28px;position:relative}
+.check li::before{content:'☐';position:absolute;left:0;color:var(--gold);font-size:16px}
+
+.foot{border-top:1px solid var(--grey-border);margin-top:42px;padding-top:20px;font-size:12px;color:var(--text-muted);text-align:center}
+
+@media print{body{background:#fff;color:#000}.card,.guard{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <span class="logo-slot"><img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png" alt="Round Table"></span>
+    <div class="eyebrow">Monthly Draw</div>
+    <h1>Operating <span class="y">Runbook</span></h1>
+    <div class="sub">How the lottery works, where everything lives, and what to do each month.</div>
+  </div>
+
+  <!-- AT A GLANCE -->
+  <h2>The stack at a glance</h2>
+  <div class="card">
+    <table>
+      <tr><th>Piece</th><th>What it is</th><th>Job</th></tr>
+      <tr><td><b>The page</b></td><td>Static files on Cloudflare Pages, served at <code>draw…/lottery/</code></td><td>Shows the pot, takes entry details, sends people to pay.</td></tr>
+      <tr><td><b>The Worker</b></td><td>Cloudflare Worker</td><td>Holds the secrets. Creates Stripe checkouts, verifies webhooks, adds CORS. The only thing the page talks to.</td></tr>
+      <tr><td><b>Apps Script</b></td><td>Google Apps Script web app (<code>Code.gs</code>)</td><td>The brain. Re-checks payments with Stripe, writes entries, runs the draw, sends emails.</td></tr>
+      <tr><td><b>The Sheet</b></td><td>Google Sheet (Config, Entries, Draws, Events, Payouts)</td><td>The database and the source of truth for settings.</td></tr>
+      <tr><td><b>Stripe</b></td><td>Payment provider</td><td>Takes the card payment. We never see card details.</td></tr>
+    </table>
+  </div>
+
+  <!-- FLOW: ENTRY -->
+  <h2>What happens when someone enters</h2>
+  <div class="flow">
+    <div class="step"><div class="dot">1</div><div class="body"><div class="t">Page loads</div><div class="d">The page asks the Worker's <code>/status</code> for the live pot, count and promoter details (Worker → Apps Script → Sheet).</div></div></div>
+    <div class="step"><div class="dot">2</div><div class="body"><div class="t">They pay</div><div class="d">Form posts to the Worker's <code>/checkout</code>; the Worker builds a £2×qty Stripe session and redirects them to Stripe. Card details go only to Stripe.</div></div></div>
+    <div class="step"><div class="dot">3</div><div class="body"><div class="t">Stripe confirms</div><div class="d">On success they land on <code>thanks.html</code>. Separately, Stripe sends a <code>checkout.session.completed</code> webhook to the Worker's <code>/webhook</code> — this is the real signal, not the redirect.</div></div></div>
+    <div class="step"><div class="dot">4</div><div class="body"><div class="t">Worker verifies & forwards</div><div class="d">Checks Stripe's signature, then forwards to Apps Script with the shared secret.</div></div></div>
+    <div class="step"><div class="dot">5</div><div class="body"><div class="t">Apps Script re-checks & writes</div><div class="d">Calls back to Stripe to confirm it's genuinely paid, captures the fee, then writes one row per ticket to <b>Entries</b> (under a lock, deduped) and emails the buyer.</div></div></div>
+  </div>
+  <div class="guard"><b>Why three checks?</b> The browser is never trusted. A paid entry is only written after the Stripe <b>signature</b>, the <b>shared secret</b>, and a fresh <b>re-fetch from Stripe</b> all pass — so a faked or replayed message can't invent a payment.</div>
+
+  <!-- FLOW: DRAW -->
+  <h2>What happens at the draw</h2>
+  <div class="flow">
+    <div class="step"><div class="dot">6</div><div class="body"><div class="t">Trigger fires</div><div class="d">1st of the month, 20:00 (or run <code>runDraw</code> by hand). Picks one ticket row at random — equal odds per ticket.</div></div></div>
+    <div class="step"><div class="dot">7</div><div class="body"><div class="t">Maths</div><div class="d">Gross = tickets × £2 · Prize = 50% · Expenses = fixed costs + Stripe fees · <b>Charity = the rest</b>. Halts if charity would drop below 20%.</div></div></div>
+    <div class="step"><div class="dot">8</div><div class="body"><div class="t">Records & notifies</div><div class="d">Writes the <b>Draws</b> row, creates a one-time 30-day payout token in <b>Payouts</b>, emails the winner a secure link and you the full breakdown, then opens next month.</div></div></div>
+    <div class="step"><div class="dot">9</div><div class="body"><div class="t">Winner claims, you pay</div><div class="d">Winner enters bank details on the secure form → saved to the protected <b>Payouts</b> tab. You pay by bank transfer (manual, two organisers), then mark the row <code>paid</code>.</div></div></div>
+  </div>
+
+  <!-- SECRETS MAP -->
+  <h2>Where every secret lives</h2>
+  <div class="card">
+    <table>
+      <tr><th>Where</th><th>Name</th><th>What</th></tr>
+      <tr><td rowspan="3"><b>Cloudflare Worker</b><br>(Settings ▸ Variables)</td><td class="mono">STRIPE_SECRET_KEY</td><td>Stripe secret key — creates checkouts. <b>Encrypt.</b></td></tr>
+      <tr><td class="mono">STRIPE_WEBHOOK_SECRET</td><td>Verifies webhooks are really Stripe. <b>Encrypt.</b></td></tr>
+      <tr><td class="mono">GAS_SECRET</td><td>Authenticates the Worker to Apps Script. <b>Encrypt.</b></td></tr>
+      <tr><td><b>Cloudflare Worker</b><br>(plain vars)</td><td class="mono">APPS_SCRIPT_URL · ALLOWED_ORIGIN · SITE_URL</td><td>Apps Script <code>/exec</code> URL · the page's exact origin (no trailing slash) · base for Stripe redirects (<code>…/lottery</code>).</td></tr>
+      <tr><td rowspan="2"><b>Apps Script</b><br>(Script properties)</td><td class="mono">SHARED_SECRET</td><td>Must <b>exactly equal</b> the Worker's <code>GAS_SECRET</code>.</td></tr>
+      <tr><td class="mono">STRIPE_SECRET_KEY</td><td>Same key as the Worker — used to re-verify payments.</td></tr>
+      <tr><td><b>The page</b> (<code>index.html</code>)</td><td class="mono">WORKER_URL</td><td>Your Worker's address. Not secret.</td></tr>
+    </table>
+    <div class="guard">Two cross-checks catch 90% of "it's not working": <b>GAS_SECRET = SHARED_SECRET</b> (or every webhook is "denied"), and the <b>same Stripe key everywhere</b> — all test, or all live, never mixed.</div>
+  </div>
+
+  <!-- MONTHLY ROUTINE -->
+  <h2>The monthly routine</h2>
+  <ol>
+    <li><b>Reconcile before the draw.</b> Check the number of paid payments in Stripe for the month matches the number of rows in <b>Entries</b>. If one's short, a webhook blipped — add the missing entry by hand before drawing.</li>
+    <li><b>Let the draw run</b> (1st, 20:00) or run <code>runDraw</code> manually. You'll get the winner email with the full breakdown.</li>
+    <li><b>Pay the winner.</b> When their bank details arrive (you're emailed), confirm with a second organiser, transfer the prize, then mark the <b>Payouts</b> row <code>paid</code>.</li>
+    <li><b>Check the figures.</b> Stripe fees are captured automatically into <b>Draws</b>. Add any other running cost to Config <code>expenses_pence</code> before filing if needed.</li>
+    <li><b>File the ERYC Lottery Return</b> within <b>3 months</b> of the draw — proceeds, prizes, expenses, amount to good causes.</li>
+    <li><b>Move the good-causes share</b> to Beverley Round Table funds.</li>
+  </ol>
+
+  <!-- GO LIVE -->
+  <h2>Going live (test → real money)</h2>
+  <ul class="check">
+    <li>ERYC registration approved; <code>registration_no</code> filled in Config</li>
+    <li>Promoter <b>name + correct contact address</b> in Config (a named BRT member — <b>not</b> the national HQ)</li>
+    <li>Stripe account activated; lottery/charity raffle declared and ERYC registration uploaded</li>
+    <li>Worker secrets swapped to <b>live</b> (<code>sk_live_…</code>, and a <code>whsec_…</code> from a live webhook endpoint)</li>
+    <li>Apps Script <code>STRIPE_SECRET_KEY</code> swapped to the live key</li>
+    <li>Test data cleared from Entries / Draws / Events / Payouts (keep headers); <code>current_draw_id</code> reset to the launch month</li>
+    <li>Payouts tab protected to the promoter only</li>
+    <li>One final transaction reconciles end to end</li>
+  </ul>
+
+  <!-- TROUBLESHOOTING -->
+  <h2>If something's not working</h2>
+  <table>
+    <tr><th>Symptom</th><th>Likely cause &amp; fix</th></tr>
+    <tr><td>Page loads but pot &amp; footer stay blank (<code>—</code>)</td><td><code>/status</code> blocked. Check <b>CORS</b>: <code>ALLOWED_ORIGIN</code> must equal the page's exact origin (no trailing slash), and the page must be served from that domain. Confirm <code>WORKER_URL</code> is set.</td></tr>
+    <tr><td>Paid in Stripe but no row in Entries</td><td>Webhook problem. Confirm the Stripe webhook points at <code>…/webhook</code> and listens for <code>checkout.session.completed</code>; that test/live keys aren't mixed; and that <b>GAS_SECRET = SHARED_SECRET</b>.</td></tr>
+    <tr><td>Webhook returns "denied"</td><td><code>GAS_SECRET</code> ≠ <code>SHARED_SECRET</code>, or Apps Script <code>STRIPE_SECRET_KEY</code> missing.</td></tr>
+    <tr><td><code>fee_pence</code> always 0</td><td>The <code>fee_pence</code> header isn't in Entries column M, or (rarely) Stripe hadn't finalised the fee at that instant.</td></tr>
+    <tr><td>Draw runs but picks no winner</td><td>Check Apps Script logs for "CHARITY MINIMUM BREACH" — prize % + expenses too high vs sales. Lower them.</td></tr>
+    <tr><td>Custom domain stuck "Verifying"</td><td>Delete any pre-existing <code>draw</code>/<code>lottery</code> CNAME, then let Pages re-create it via Set up a domain.</td></tr>
+    <tr><td>Code change not taking effect</td><td>Redeploy Apps Script as <b>Manage deployments → New version</b> (same URL); redeploy the Worker; hard-refresh / purge Cloudflare cache for the page.</td></tr>
+  </table>
+
+  <!-- KEY FACTS -->
+  <h2>Key facts to remember</h2>
+  <div class="card">
+    <ul>
+      <li>£2 per ticket, <b>same price for everyone</b>, payment before entry, <b>16+</b> only.</li>
+      <li>Max <b>£20,000</b> ticket sales per draw · max prize <b>£25,000</b> · at least <b>20%</b> to good causes · no more than 80% on prizes + expenses.</li>
+      <li>Keep records: <b>≥3 years</b> (lottery) and <b>~6 years</b> (financial / Gift Aid). Winner bank details deleted once paid.</li>
+      <li>Lottery return to ERYC <b>within 3 months</b> of each draw.</li>
+      <li>Public wording: "50% to the winner, <b>the rest</b> to good causes." Rules page keeps the precise "at least 20%."</li>
+    </ul>
+  </div>
+
+  <div class="foot">Beverley Round Table — Monthly Draw · internal operating document · keep with the committee handover pack</div>
+
+</div>
+</body>
+</html>
