@@ -97,7 +97,7 @@ td b{color:var(--white)}
     <div class="step"><div class="dot">2</div><div class="body"><div class="t">They pay</div><div class="d">Form posts to the Worker's <code>/checkout</code>; the Worker builds a £2×qty Stripe session and redirects them to Stripe. Card details go only to Stripe.</div></div></div>
     <div class="step"><div class="dot">3</div><div class="body"><div class="t">Stripe confirms</div><div class="d">On success they land on <code>thanks.html</code>. Separately, Stripe sends a <code>checkout.session.completed</code> webhook to the Worker's <code>/webhook</code> — this is the real signal, not the redirect.</div></div></div>
     <div class="step"><div class="dot">4</div><div class="body"><div class="t">Worker verifies & forwards</div><div class="d">Checks Stripe's signature, then forwards to Apps Script with the shared secret.</div></div></div>
-    <div class="step"><div class="dot">5</div><div class="body"><div class="t">Apps Script re-checks & writes</div><div class="d">Calls back to Stripe to confirm it's genuinely paid, captures the fee, then writes one row per ticket to <b>Entries</b> (under a lock, deduped) and emails the buyer.</div></div></div>
+    <div class="step"><div class="dot">5</div><div class="body"><div class="t">Apps Script re-checks & writes</div><div class="d">Calls back to Stripe to confirm it's genuinely paid, captures the fee, then writes one row per ticket to <b>Entries</b> (under a lock, deduped) and emails the buyer their <b>ticket number(s) and reference</b>.</div></div></div>
   </div>
   <div class="guard"><b>Why three checks?</b> The browser is never trusted. A paid entry is only written after the Stripe <b>signature</b>, the <b>shared secret</b>, and a fresh <b>re-fetch from Stripe</b> all pass — so a faked or replayed message can't invent a payment.</div>
 
@@ -108,6 +108,42 @@ td b{color:var(--white)}
     <div class="step"><div class="dot">7</div><div class="body"><div class="t">Maths</div><div class="d">Gross = tickets × £2 · Prize = 50% · Expenses = fixed costs + Stripe fees · <b>Charity = the rest</b>. Halts if charity would drop below 20%.</div></div></div>
     <div class="step"><div class="dot">8</div><div class="body"><div class="t">Records & notifies</div><div class="d">Writes the <b>Draws</b> row, creates a one-time 30-day payout token in <b>Payouts</b>, emails the winner a secure link and you the full breakdown, then opens next month.</div></div></div>
     <div class="step"><div class="dot">9</div><div class="body"><div class="t">Winner claims, you pay</div><div class="d">Winner enters bank details on the secure form → saved to the protected <b>Payouts</b> tab. You pay by bank transfer (manual, two organisers), then mark the row <code>paid</code>.</div></div></div>
+  </div>
+
+  <!-- RESET -->
+  <h2>The reset button</h2>
+  <div class="card">
+    <p>One function clears everything for a fresh start: in the Apps Script editor, pick
+    <code>resetTestData</code> and press <b>Run</b>. It:</p>
+    <ul>
+      <li>clears all data rows from <b>Entries / Draws / Events / Payouts</b> (keeps the headers);</li>
+      <li>resets the ticket counters, so numbering restarts at <b>1</b>;</li>
+      <li>re-opens the current draw row so the engine has somewhere to write.</li>
+    </ul>
+    <p>Config and secrets are left untouched. Use it before the club test, and again as the pre-launch wipe.</p>
+    <div class="guard"><b>Built-in safety.</b> <code>resetTestData</code> <b>refuses to run once a real
+    <code>registration_no</code> is set</b> in Config — so it can never wipe the live, legally-required
+    draw records. Always do the pre-launch reset <b>before</b> you enter the ERYC number. Genuine override
+    (rarely needed): add Script Property <code>FORCE_RESET = yes</code>, then run once.</div>
+  </div>
+
+  <!-- DRY RUN -->
+  <h2>The club dry run</h2>
+  <div class="card">
+    <ol>
+      <li><b>Reset first</b> with <code>resetTestData</code> so numbers start clean at 1.</li>
+      <li><b>Brief the group</b> it's a test: use card <code>4242 4242 4242 4242</code>, any future expiry/CVC.
+      Warn them they'll get a <b>real</b> confirmation email, and the winner a real "you've won" email.</li>
+      <li><b>Share the link</b> and let them enter freely. Watch the pot tick up on the page.</li>
+      <li><b>Run the draw</b> — you don't need to wait for the 1st; run <code>runDraw</code> by hand. Check the
+      winner + promoter emails fire and the payout link works.</li>
+      <li><b>Test the payout</b>: the "winner" enters <b>dummy</b> bank details (e.g. Test / 00-00-00 / 12345678),
+      you see them land in <b>Payouts</b>, then mark the row <code>paid</code>.</li>
+      <li><b>Reset again</b> before going live, so no test data carries over.</li>
+    </ol>
+    <div class="guard"><b>Stay in one Stripe environment</b> for the whole test (don't switch sandbox ↔ test
+    mid-run, or webhook deliveries stop — see troubleshooting). Everything lands in the live Sheet, which is
+    why the reset at the end matters.</div>
   </div>
 
   <!-- SECRETS MAP -->
@@ -136,26 +172,36 @@ td b{color:var(--white)}
     <li><b>File the ERYC Lottery Return</b> within <b>3 months</b> of the draw — proceeds, prizes, expenses, amount to good causes.</li>
     <li><b>Move the good-causes share</b> to Beverley Round Table funds.</li>
   </ol>
+  <div class="guard"><b>You never change the month by hand.</b> When the draw runs, it automatically closes the
+  current month, opens the next, and updates <code>current_draw_id</code> in Config. No 1st-of-the-month scramble.</div>
 
   <!-- GO LIVE -->
   <h2>Going live (test → real money)</h2>
   <ul class="check">
-    <li>ERYC registration approved; <code>registration_no</code> filled in Config</li>
+    <li>ERYC registration approved (have the number ready)</li>
+    <li><b>Run <code>resetTestData</code> FIRST</b> to clear all test data — do this <b>before</b> entering the registration number (the reset locks itself once a registration number is set)</li>
     <li>Promoter <b>name + correct contact address</b> in Config (a named BRT member — <b>not</b> the national HQ)</li>
+    <li><code>registration_no</code> filled in Config (after the reset)</li>
     <li>Stripe account activated; lottery/charity raffle declared and ERYC registration uploaded</li>
-    <li>Worker secrets swapped to <b>live</b> (<code>sk_live_…</code>, and a <code>whsec_…</code> from a live webhook endpoint)</li>
+    <li>Worker secrets swapped to <b>live</b> (<code>sk_live_…</code>, and a <code>whsec_…</code> from a <b>live</b> webhook endpoint)</li>
     <li>Apps Script <code>STRIPE_SECRET_KEY</code> swapped to the live key</li>
-    <li>Test data cleared from Entries / Draws / Events / Payouts (keep headers); <code>current_draw_id</code> reset to the launch month</li>
+    <li><code>current_draw_id</code> set to the launch month</li>
     <li>Payouts tab protected to the promoter only</li>
+    <li><b>Run <code>installTriggers</code> once</b> so the monthly draw fires automatically</li>
     <li>One final transaction reconciles end to end</li>
   </ul>
+  <div class="guard"><b>The golden rule:</b> the <code>sk_live_</code> key, the live webhook, and the real payments
+  must all be in <b>live mode together</b>. Mixing live and test (or a sandbox) is what makes a payment
+  "succeed but never call back".</div>
 
   <!-- TROUBLESHOOTING -->
   <h2>If something's not working</h2>
   <table>
     <tr><th>Symptom</th><th>Likely cause &amp; fix</th></tr>
     <tr><td>Page loads but pot &amp; footer stay blank (<code>—</code>)</td><td><code>/status</code> blocked. Check <b>CORS</b>: <code>ALLOWED_ORIGIN</code> must equal the page's exact origin (no trailing slash), and the page must be served from that domain. Confirm <code>WORKER_URL</code> is set.</td></tr>
+    <tr><td>Payment succeeds but <b>"No event deliveries"</b> on the webhook</td><td><b>Environment mismatch</b> — the #1 gotcha. The Stripe key, the payment, and the webhook endpoint must all be in the <b>same</b> environment (all normal Test mode, or all live, or all the <b>same</b> sandbox). A webhook created in a different sandbox/mode — or created after the payment — never receives the event. Put all three together and re-test, or use the event's <b>Resend</b>.</td></tr>
     <tr><td>Paid in Stripe but no row in Entries</td><td>Webhook problem. Confirm the Stripe webhook points at <code>…/webhook</code> and listens for <code>checkout.session.completed</code>; that test/live keys aren't mixed; and that <b>GAS_SECRET = SHARED_SECRET</b>.</td></tr>
+    <tr><td>Pot shows <b>0 / £0.00</b> but the sheet is full of entries</td><td>Google Sheets auto-converted the <code>draw_id</code> cells from text to <b>dates</b>. The current code normalises this so it counts correctly anyway; if you ever hand-type a draw id, format the column as plain text first. Also check Config <code>current_draw_id</code> matches the entries' month.</td></tr>
     <tr><td>Webhook returns "denied"</td><td><code>GAS_SECRET</code> ≠ <code>SHARED_SECRET</code>, or Apps Script <code>STRIPE_SECRET_KEY</code> missing.</td></tr>
     <tr><td><code>fee_pence</code> always 0</td><td>The <code>fee_pence</code> header isn't in Entries column M, or (rarely) Stripe hadn't finalised the fee at that instant.</td></tr>
     <tr><td>Draw runs but picks no winner</td><td>Check Apps Script logs for "CHARITY MINIMUM BREACH" — prize % + expenses too high vs sales. Lower them.</td></tr>
