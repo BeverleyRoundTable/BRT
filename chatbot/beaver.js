@@ -307,20 +307,42 @@
     // Minimal, safe Markdown → HTML for Beaver's replies
     function renderMarkdown(text) {
       let html = escapeHtml(text);
-      // Bullet lines first, so the leading * isn't mistaken for italics
+
+      // Bullet lines first, so a leading * isn't mistaken for italics
       html = html.replace(/^[ \t]*[\*\-]\s+(.+)$/gm, '• $1');
-      // Markdown links [label](url)
-      html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-        '<a href="$2" target="_blank" rel="noopener">$1</a>');
-      // Bare URLs not already inside a tag
-      html = html.replace(/(^|[^"'>=])(https?:\/\/[^\s<]+)/g,
-        '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+
+      // Stash links as placeholders so later passes can't mangle their innards
+      const stash = [];
+      const keep = (href, label, newTab) => {
+        const a = newTab
+          ? '<a href="' + href + '" target="_blank" rel="noopener">' + label + '</a>'
+          : '<a href="' + href + '" rel="noopener">' + label + '</a>';
+        stash.push(a);
+        return '\u0000' + (stash.length - 1) + '\u0000';
+      };
+
+      // Markdown links [label](url) — http(s) opens a new tab, mailto does not
+      html = html.replace(/\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g,
+        (m, label, href) => keep(href, label, /^https?:/i.test(href)));
+
+      // Bare URLs in plain text
+      html = html.replace(/(^|[\s(])(https?:\/\/[^\s<]+)/g,
+        (m, pre, url) => pre + keep(url, url, true));
+
+      // Bare email addresses in plain text
+      html = html.replace(/(^|[\s(])([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g,
+        (m, pre, email) => pre + keep('mailto:' + email, email, false));
+
       // Bold **text**
       html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
       // Italic *text* (line-confined so it can't span bullets/lines)
       html = html.replace(/(^|[^*])\*([^*\n]+)\*([^*]|$)/g, '$1<em>$2</em>$3');
+
       // Newlines to <br>
       html = html.replace(/\n/g, '<br>');
+
+      // Restore stashed links
+      html = html.replace(/\u0000(\d+)\u0000/g, (m, i) => stash[+i]);
       return html;
     }
 
