@@ -127,6 +127,11 @@
       border: 1px solid rgba(211, 28, 28, 0.25);
       color: var(--brt-red);
     }
+    .brt-msg.bot a {
+      color: #C8860D; font-weight: 600;
+      text-decoration: underline; overflow-wrap: anywhere;
+    }
+    .brt-msg.bot strong { font-weight: 700; }
     .brt-typing {
       align-self: flex-start;
       background: var(--brt-bg);
@@ -294,10 +299,39 @@
       if (isOpen) setTimeout(() => input.focus(), 250);
     }
 
+    // Escape HTML first so nothing in a message can inject markup
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // Minimal, safe Markdown → HTML for Beaver's replies
+    function renderMarkdown(text) {
+      let html = escapeHtml(text);
+      // Bullet lines first, so the leading * isn't mistaken for italics
+      html = html.replace(/^[ \t]*[\*\-]\s+(.+)$/gm, '• $1');
+      // Markdown links [label](url)
+      html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      // Bare URLs not already inside a tag
+      html = html.replace(/(^|[^"'>=])(https?:\/\/[^\s<]+)/g,
+        '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+      // Bold **text**
+      html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+      // Italic *text* (line-confined so it can't span bullets/lines)
+      html = html.replace(/(^|[^*])\*([^*\n]+)\*([^*]|$)/g, '$1<em>$2</em>$3');
+      // Newlines to <br>
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }
+
     function addMessage(text, role) {
       const el = document.createElement('div');
       el.className = 'brt-msg ' + role;
-      el.textContent = text;
+      if (role === 'bot') {
+        el.innerHTML = renderMarkdown(text); // render Beaver's formatting
+      } else {
+        el.textContent = text;               // user/error stay plain — no injection risk
+      }
       messages.appendChild(el);
       messages.scrollTop = messages.scrollHeight;
     }
