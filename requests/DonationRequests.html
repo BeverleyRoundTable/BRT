@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beverley Round Table — Donation Request</title>
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png">
+<meta name="description" content="Apply for funding from Beverley Round Table. We back local causes and projects that make a positive difference in and around Beverley.">
+
+<!-- Open Sans = the official Round Table body font.
+     Michroma stands in for Eurostile Extended (the licensed RT heading font).
+     If you own Eurostile, drop it into --font-display below and it takes priority. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  /* ---- Round Table brand palette (matched to the BRT house style) ---- */
+  --gold:#FBAF33;
+  --gold-dim:#c48b20;
+  --gold-glow:rgba(251,175,51,.14);
+  --grey-dark:#1D1D1A;     /* Table Grey */
+  --grey-card:#242421;
+  --grey-mid:#2a2a27;
+  --grey-border:#39393455;
+  --black:#000;
+  --white:#fff;
+  --text:#ecece7;
+  --text-muted:#a3a39c;
+  --green:#2ecc71;
+  --red:#e05a5a;
+
+  --font-display:'Eurostile Extended','Eurostile','Michroma',sans-serif;
+  --font-body:'Open Sans',-apple-system,sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  background:var(--grey-dark);
+  color:var(--text);
+  line-height:1.65;
+  font-size:16px;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(900px 500px at 50% -10%, rgba(251,175,51,.10), transparent 60%),
+    linear-gradient(180deg,#1f1f1c,#1a1a17);
+  background-attachment:fixed;
+  min-height:100vh;
+}
+
+.wrap{max-width:680px;margin:0 auto;padding:32px 20px 64px}
+
+/* ---------- hero ---------- */
+.hero{text-align:center;padding:28px 8px 8px}
+.logo-slot{
+  /* Official white-on-dark Round Table roundel. Brand rule: don't recolour, rotate or crop it. */
+  display:inline-flex;align-items:center;justify-content:center;
+  height:64px;margin-bottom:26px;
+}
+.logo-slot img{max-height:56px;width:auto;display:block}
+
+.eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px}
+h1{
+  font-family:var(--font-display);
+  font-size:clamp(30px,7vw,50px);
+  line-height:1.02;color:var(--white);
+  text-transform:uppercase;letter-spacing:.5px;
+}
+h1 .y{color:var(--gold)}
+.brush{width:120px;height:5px;background:var(--gold);border-radius:3px;margin:18px auto 0;
+  transform:skewX(-12deg)}
+.lede{font-size:17px;color:var(--text-muted);max-width:480px;margin:22px auto 0}
+
+/* ---------- section ---------- */
+h2{font-family:var(--font-display);font-size:20px;text-transform:uppercase;color:var(--white);
+  letter-spacing:.5px;margin:0 0 16px}
+
+.how{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:34px 0}
+.how div{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:10px;padding:16px 18px}
+.how .n{font-family:var(--font-display);color:var(--gold);font-size:15px;margin-bottom:4px}
+.how p{font-size:13.5px;color:var(--text-muted)}
+
+/* ---------- form card ---------- */
+.card{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:16px;padding:28px 24px;margin-bottom:30px;
+  box-shadow:0 20px 50px -24px rgba(0,0,0,.7)}
+label{display:block;font-size:13px;font-weight:700;letter-spacing:.4px;margin:18px 0 7px;color:var(--text)}
+label:first-of-type{margin-top:0}
+label .req{color:var(--gold)}
+.hint{font-size:12px;color:var(--text-muted);font-weight:400;margin-top:-3px;margin-bottom:7px;letter-spacing:.2px}
+
+input[type=text],input[type=email],textarea{
+  width:100%;background:#1b1b18;border:1px solid var(--grey-border);border-radius:9px;
+  padding:13px 14px;color:var(--text);font-family:var(--font-body);font-size:15px;transition:border-color .15s}
+textarea{resize:vertical;min-height:54px;line-height:1.55}
+input:focus,textarea:focus{outline:none;border-color:var(--gold)}
+::placeholder{color:#6f6f68}
+
+.money{position:relative}
+.money span{position:absolute;left:14px;top:13px;color:var(--text-muted);font-size:15px}
+.money input{padding-left:28px}
+
+.wordcount{font-size:12px;color:var(--text-muted);text-align:right;margin-top:6px;font-variant-numeric:tabular-nums}
+.wordcount.over{color:var(--red)}
+
+.check{display:flex;gap:11px;align-items:flex-start;margin-top:18px;font-size:13.5px;color:var(--text-muted);line-height:1.5}
+.check input{margin-top:3px;width:18px;height:18px;accent-color:var(--gold);flex-shrink:0}
+.check b{color:var(--text)}
+.reveal{display:none;margin-top:10px}
+.reveal.show{display:block}
+
+.btn{width:100%;margin-top:26px;background:var(--gold);color:var(--black);border:none;border-radius:10px;
+  padding:17px;font-family:var(--font-display);font-size:16px;text-transform:uppercase;letter-spacing:1px;
+  cursor:pointer;transition:.15s}
+.btn:hover{background:#ffc04d}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.note{font-size:12px;color:var(--text-muted);text-align:center;margin-top:12px}
+.error{display:none;background:rgba(224,90,90,.12);border:1px solid rgba(224,90,90,.4);color:#f3b0b0;
+  border-radius:9px;padding:12px 14px;font-size:13.5px;margin-top:16px}
+
+/* ---------- success ---------- */
+.success{display:none;background:linear-gradient(160deg,var(--grey-card),#1c1c19);
+  border:1px solid rgba(251,175,51,.3);border-radius:16px;padding:34px 28px;margin-bottom:30px;text-align:center;
+  box-shadow:0 20px 50px -24px rgba(0,0,0,.7)}
+.success.show{display:block;animation:rise .5s ease forwards}
+.success .tick{width:58px;height:58px;border-radius:50%;background:var(--gold-glow);border:1px solid rgba(251,175,51,.4);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:28px;color:var(--gold)}
+.success h2{margin-bottom:10px}
+.success p{font-size:14.5px;color:var(--text-muted);max-width:420px;margin:0 auto 8px}
+.success .ref{font-family:var(--font-display);font-size:22px;color:var(--gold);letter-spacing:1px;margin:14px 0 4px}
+.success .ref-label{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted)}
+
+/* ---------- legal / data footer ---------- */
+.legal{border-top:1px solid var(--grey-border);padding-top:26px;font-size:12.5px;color:var(--text-muted);line-height:1.7}
+.legal h3{font-family:var(--font-display);font-size:13px;text-transform:uppercase;color:var(--text);letter-spacing:1px;margin-bottom:10px}
+.legal p{margin-bottom:12px}
+.legal a{color:var(--gold);text-decoration:none}
+.legal a:hover{text-decoration:underline}
+.legal .principle{color:var(--text);font-weight:600}
+
+/* ---------- honeypot (hidden from people, bait for bots) ---------- */
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+/* ---------- load-in ---------- */
+.fade{opacity:0;transform:translateY(12px);animation:rise .6s ease forwards}
+.fade:nth-child(2){animation-delay:.06s}.fade:nth-child(3){animation-delay:.12s}.fade:nth-child(4){animation-delay:.18s}
+@keyframes rise{to{opacity:1;transform:none}}
+
+@media(max-width:480px){.how{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero fade">
+    <span class="logo-slot"><img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png" alt="Round Table"></span>
+    <div class="eyebrow">Beverley Round Table · Donation Request</div>
+    <h1>Apply for<br><span class="y">Funding.</span></h1>
+    <div class="brush"></div>
+    <p class="lede">Beverley Round Table backs local causes and projects — including through the Beverley Santa Sleigh. Tell us about yours and we'll consider it at our next monthly meeting.</p>
+  </header>
+
+  <!-- WHAT WE LOOK FOR -->
+  <section class="fade">
+    <h2>What we look for</h2>
+    <div class="how">
+      <div><div class="n">Local</div><p>It benefits people in and around Beverley.</p></div>
+      <div><div class="n">Specific</div><p>You can tell us exactly who it helps.</p></div>
+      <div><div class="n">Member-decided</div><p>Our members vote on every request at our monthly meeting.</p></div>
+      <div><div class="n">Any size</div><p>From small asks to bigger projects — just tell us what you need.</p></div>
+    </div>
+  </section>
+
+  <!-- FORM -->
+  <section class="card fade" id="formCard">
+    <h2>Tell us about your request</h2>
+
+    <label for="name">Your name <span class="req">*</span></label>
+    <input type="text" id="name" autocomplete="name" placeholder="First and last name">
+
+    <label for="email">Email address <span class="req">*</span></label>
+    <input type="email" id="email" autocomplete="email" placeholder="you@example.com">
+
+    <label for="phone">Phone <span class="req">*</span></label>
+    <input type="text" id="phone" inputmode="tel" autocomplete="tel" placeholder="Mobile or landline">
+
+    <label for="org">Organisation name / company or charity number</label>
+    <div class="hint">If you're applying on behalf of a group, club, school or charity.</div>
+    <input type="text" id="org" placeholder="Optional">
+
+    <label for="postcode">Postcode of the activity <span class="req">*</span></label>
+    <div class="hint">Helps us check it's in the area we serve.</div>
+    <input type="text" id="postcode" autocomplete="postal-code" placeholder="e.g. HU17 8AB">
+
+    <label for="summary">In 20 words or fewer, what's your request for? <span class="req">*</span></label>
+    <div class="hint">A brief summary — you'll explain in more detail below.</div>
+    <textarea id="summary" rows="2" placeholder="e.g. New all-weather kit for the under-10s football team"></textarea>
+    <div class="wordcount" id="wordcount">0 / 20 words</div>
+
+    <label for="amount">Amount requested <span class="req">*</span></label>
+    <div class="money"><span>£</span><input type="text" id="amount" inputmode="numeric" placeholder="500"></div>
+
+    <label for="beneficiaries">Who will benefit? <span class="req">*</span></label>
+    <div class="hint">Be specific — avoid "the community". Tell us exactly which group, age range or individuals, and roughly how many.</div>
+    <textarea id="beneficiaries" rows="3" placeholder="e.g. Around 18 children aged 6–10 at Beverley Juniors FC…"></textarea>
+
+    <label for="cofunding">What funding do you already have, and what's the total cost?</label>
+    <div class="hint">Include the total project cost and, if relevant, how you'll cover any shortfall.</div>
+    <textarea id="cofunding" rows="2" placeholder="Optional"></textarea>
+
+    <label for="bank">Bank details for payment, if successful <span class="req">*</span></label>
+    <div class="hint">Account name, sort code and account number. Used only to pay an approved grant, then deleted.</div>
+    <textarea id="bank" rows="2" placeholder="Account name · 00-00-00 · 00000000"></textarea>
+
+    <label class="check"><input type="checkbox" id="safeguarding">
+      <span>This activity involves <b>children or vulnerable adults.</b></span></label>
+
+    <label class="check"><input type="checkbox" id="conflict">
+      <span>Someone connected to this request has a <b>link to a Beverley Round Table member.</b></span></label>
+    <div class="reveal" id="conflictReveal">
+      <input type="text" id="conflictDetail" placeholder="Briefly, who and how?">
+    </div>
+
+    <label class="check"><input type="checkbox" id="declaration">
+      <span><b>I confirm the details are correct</b> and that any funds will be used for the purpose described. This request is not for political or religious activity. If asked, I'm happy to share receipts, and I'm okay with Beverley Round Table mentioning the project in community updates or publicity. <span class="req">*</span></span></label>
+
+    <!-- honeypot: real people never see or fill this -->
+    <div class="hp" aria-hidden="true">
+      <label for="website_hp">Website</label>
+      <input type="text" id="website_hp" tabindex="-1" autocomplete="off">
+    </div>
+
+    <button class="btn" id="submit">Submit request</button>
+    <p class="note">Every funding decision is made by our members. We'll reply by email.</p>
+    <div class="error" id="err"></div>
+  </section>
+
+  <!-- SUCCESS -->
+  <section class="success" id="success">
+    <div class="tick">✓</div>
+    <h2>Request received</h2>
+    <p>Thank you. We'll consider your request at our next monthly meeting and get back to you by email.</p>
+    <div class="ref-label">Your reference</div>
+    <div class="ref" id="refOut">—</div>
+    <p>Keep this reference in case you need to get in touch about your request.</p>
+  </section>
+
+  <!-- DATA / FOOTER -->
+  <footer class="legal fade">
+    <h3>How we use your details</h3>
+    <p>We use the information you give us only to assess this request and contact you about it. Bank details are used solely to pay an approved grant and are deleted once paid. We delete applicants' personal details within 12 months of a request being closed. See our <a href="privacy.html">privacy policy</a>.</p>
+    <p class="principle">Beverley Round Table is a non-political, non-religious community group. We fund local causes that make a positive difference in and around Beverley.</p>
+  </footer>
+
+</div>
+
+<script>
+// ====== CONFIG — paste your deployed Apps Script web app URL (ends with /exec) ======
+const API_URL = 'https://script.google.com/macros/s/AKfycbyY1kgyrfHGDS_zmDVcpo386oHKP5jGBPKm_bQS4X-k0fKDVPZvsT_AzzutGI6dcXrV/exec';
+// ====================================================================================
+
+const $ = id => document.getElementById(id);
+
+// ---- summary word counter (20 words or fewer) ----
+function countWords(s){ const t = s.trim(); return t ? t.split(/\s+/).length : 0; }
+$('summary').addEventListener('input', function(){
+  const n = countWords(this.value);
+  const el = $('wordcount');
+  el.textContent = n + ' / 20 words';
+  el.classList.toggle('over', n > 20);
+});
+
+// ---- conflict detail reveal ----
+$('conflict').addEventListener('change', function(){
+  $('conflictReveal').classList.toggle('show', this.checked);
+  if(!this.checked) $('conflictDetail').value = '';
+});
+
+// ---- submit ----
+const errBox = $('err');
+function showErr(msg){ errBox.textContent = msg; errBox.style.display='block'; errBox.scrollIntoView({behavior:'smooth',block:'center'}); }
+
+$('submit').onclick = async function(){
+  errBox.style.display = 'none';
+
+  const f = {
+    contactName:  $('name').value.trim(),
+    email:        $('email').value.trim(),
+    phone:        $('phone').value.trim(),
+    organisation: $('org').value.trim(),
+    postcode:     $('postcode').value.trim(),
+    summary:      $('summary').value.trim(),
+    amount:       $('amount').value.trim(),
+    beneficiaries:$('beneficiaries').value.trim(),
+    cofunding:    $('cofunding').value.trim(),
+    bankDetails:  $('bank').value.trim(),
+    safeguarding: $('safeguarding').checked ? 'Yes — involves children or vulnerable adults' : '',
+    conflict:     $('conflict').checked ? ($('conflictDetail').value.trim() || 'Yes') : '',
+    declaration:  $('declaration').checked === true
+  };
+
+  // ---- client-side validation (the server re-checks; this is for friendliness) ----
+  if(!f.contactName || !f.email || !f.phone){ return showErr('Please give us your name, email and phone.'); }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email)){ return showErr("That email doesn't look right — please check it."); }
+  if(!f.postcode){ return showErr('Please add the postcode of the activity.'); }
+  if(!f.summary){ return showErr('Please add a short summary of your request.'); }
+  if(countWords(f.summary) > 20){ return showErr('Please keep the summary to 20 words or fewer.'); }
+  if(!/\d/.test(f.amount)){ return showErr('Please enter the amount you\u2019re requesting.'); }
+  if(!f.beneficiaries){ return showErr('Please tell us who will benefit.'); }
+  if(!f.bankDetails){ return showErr('Please add bank details for payment if your request is successful.'); }
+  if(!f.declaration){ return showErr('Please tick the declaration to confirm your details.'); }
+
+  this.disabled = true; this.textContent = 'Sending…';
+  try{
+    const r = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'}, // text/plain avoids a CORS preflight to Apps Script
+      body: JSON.stringify({ action:'intake', website_hp: $('website_hp').value, fields: f })
+    });
+    const data = await r.json();
+    if(data && data.ok){
+      $('formCard').style.display = 'none';
+      $('refOut').textContent = data.id || '—';
+      $('success').classList.add('show');
+      window.scrollTo({top:0, behavior:'smooth'});
+      return;
+    }
+    showErr(data && data.error ? data.error : 'Something went wrong submitting your request. Please try again.');
+  }catch(e){
+    showErr("Couldn't reach us just now. Please check your connection and try again.");
+  }
+  this.disabled = false; this.textContent = 'Submit request';
+};
+</script>
+</body>
+</html>
