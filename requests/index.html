@@ -205,8 +205,12 @@ input:focus,textarea:focus{outline:none;border-color:var(--gold)}
     <div class="money"><span>£</span><input type="text" id="amount" inputmode="numeric" placeholder="500"></div>
 
     <label for="beneficiaries">Who will benefit? <span class="req">*</span></label>
-    <div class="hint">Be specific — avoid "the community". Tell us exactly which group, age range or individuals, and roughly how many.</div>
+    <div class="hint">Be specific — avoid "the community". Tell us exactly which group, age range or individuals.</div>
     <textarea id="beneficiaries" rows="3" placeholder="e.g. Around 18 children aged 6–10 at Beverley Juniors FC…"></textarea>
+
+    <label for="people">Roughly how many people will this help? <span class="req">*</span></label>
+    <div class="hint">A best estimate is fine — just a number.</div>
+    <input type="text" id="people" inputmode="numeric" placeholder="e.g. 18">
 
     <label for="cofunding">What funding do you already have, and what's the total cost?</label>
     <div class="hint">Include the total project cost and, if relevant, how you'll cover any shortfall.</div>
@@ -252,7 +256,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--gold)}
   <!-- DATA / FOOTER -->
   <footer class="legal fade">
     <h3>How we use your details</h3>
-    <p>We use the information you give us only to assess this request and contact you about it. Bank details are used solely to pay an approved grant and are deleted once paid. We delete applicants' personal details within 12 months of a request being closed. See our <a href="/requests/privacy.html">privacy policy</a>.</p>
+    <p>We use the information you give us only to assess this request and contact you about it. Bank details are used solely to pay an approved grant and are deleted once paid. We delete applicants' personal details within 12 months of a request being closed. See our <a href="privacy.html">privacy policy</a>.</p>
     <p class="principle">Beverley Round Table is a non-political, non-religious community group. We fund local causes that make a positive difference in and around Beverley.</p>
   </footer>
 
@@ -296,6 +300,7 @@ $('submit').onclick = async function(){
     summary:      $('summary').value.trim(),
     amount:       $('amount').value.trim(),
     beneficiaries:$('beneficiaries').value.trim(),
+    peopleHelped: $('people').value.trim(),
     cofunding:    $('cofunding').value.trim(),
     bankDetails:  $('bank').value.trim(),
     safeguarding: $('safeguarding').checked ? 'Yes — involves children or vulnerable adults' : '',
@@ -311,6 +316,7 @@ $('submit').onclick = async function(){
   if(countWords(f.summary) > 20){ return showErr('Please keep the summary to 20 words or fewer.'); }
   if(!/\d/.test(f.amount)){ return showErr('Please enter the amount you\u2019re requesting.'); }
   if(!f.beneficiaries){ return showErr('Please tell us who will benefit.'); }
+  if(!/\d/.test(f.peopleHelped)){ return showErr('Please estimate how many people this will help (a number).'); }
   if(!f.bankDetails){ return showErr('Please add bank details for payment if your request is successful.'); }
   if(!f.declaration){ return showErr('Please tick the declaration to confirm your details.'); }
 
