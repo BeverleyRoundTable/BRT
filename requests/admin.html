@@ -122,6 +122,8 @@ textarea{resize:vertical;min-height:48px}
 .msg.err{background:rgba(224,90,90,.12);border:1px solid rgba(224,90,90,.4);color:#f3b0b0}
 
 .empty{text-align:center;color:var(--text-muted);padding:40px 20px;font-size:14px}
+.phint{font-size:12.5px;color:var(--text-muted);line-height:1.5;margin:-6px 0 16px}
+.listnote{font-size:12px;color:var(--text-muted);line-height:1.6;margin-top:18px;padding-top:14px;border-top:1px solid var(--grey-border)}
 .loading{text-align:center;color:var(--text-muted);padding:34px;font-size:14px}
 
 /* sign in */
@@ -145,7 +147,7 @@ textarea{resize:vertical;min-height:48px}
 
 <script>
 // ====== CONFIG — same deployed Apps Script /exec URL the form uses ======
-const API_URL = 'https://script.google.com/macros/s/AKfycbyY1kgyrfHGDS_zmDVcpo386oHKP5jGBPKm_bQS4X-k0fKDVPZvsT_AzzutGI6dcXrV/exec';
+const API_URL = 'https://script.google.com/macros/s/PASTE_YOUR_DEPLOYMENT_ID/exec';
 // ========================================================================
 
 const app = document.getElementById('app');
@@ -271,7 +273,8 @@ async function loadList(){
         ${flagsHtml(a)}
       </div>`).join('')
     : '<div class="empty">Nothing here.</div>';
-  body.innerHTML = navHtml(state.status) + list;
+  const note = '<div class="listnote">Decisions are recorded here for the audit trail \u2014 don\u2019t edit the sheet by hand. The sheet holds bank details until a grant is paid, so keep it shared with committee only.</div>';
+  body.innerHTML = navHtml(state.status) + list + note;
   wireNav();
   document.querySelectorAll('.appcard').forEach(c => c.onclick = () => openDetail(c.dataset.id));
 }
@@ -348,6 +351,7 @@ function actionPanel(a){
   const s = a['Status'];
   if(s==='new' || s==='screening'){
     return `<div class="section"><h3>Screen</h3>
+      <p class="phint">Check it's in our area, an eligible cause, and complete. <b>Eligible</b> tables it for the next meeting; <b>park</b> it if you need more from the applicant first.</p>
       <label for="screenReason">Reason / note (optional)</label>
       <input type="text" id="screenReason" placeholder="e.g. needs a quote before we can table it">
       <div class="btnrow" style="margin-top:14px">
@@ -359,6 +363,7 @@ function actionPanel(a){
   }
   if(s==='tabled'){
     return `<div class="section"><h3>Record the meeting's decision</h3>
+      <p class="phint">Record this <b>after the meeting</b>, from the minutes. Always add the minute reference — the for/against/abstain is the show-of-hands. Deferred sends it back to Tabled for next time.</p>
       <label for="outcome">Outcome</label>
       <select id="outcome">
         <option value="approved">Approved</option>
@@ -387,6 +392,7 @@ function actionPanel(a){
   if(s==='approved'){
     const today = new Date().toISOString().slice(0,10);
     return `<div class="section"><h3>Log payment</h3>
+      <p class="phint">Only after the money has actually left NatWest. The reference is for matching the bank statement. Logging this <b>clears the applicant's bank details</b>.</p>
       <label for="amountPaid">Amount paid</label>
       <div class="money"><span>£</span><input type="text" id="amountPaid" inputmode="numeric" value="${esc(a['Amount approved (GBP)']||'')}"></div>
       <label for="datePaid">Date paid</label>
@@ -456,6 +462,7 @@ async function loadRecon(){
     <span class="ref">${esc(p['NatWest reference']||'—')} · ${fdate(p['Date paid (ISO)'])}</span>
     <span class="amt">${gbp(p['Amount paid (GBP)'])}</span></div>`).join('') : '<div class="empty">No payments logged yet.</div>';
   body.innerHTML = navHtml('recon') + `
+    <p class="phint">The giving side of the books: grants approved but not yet paid (expected debits), and grants already paid — match these against the NatWest statement.</p>
     <div class="section"><h3>Approved · awaiting payment (expected debits)</h3><div class="recon-group">${pendHtml}</div></div>
     <div class="section"><h3>Paid (match against NatWest)</h3><div class="recon-group">${paidHtml}</div></div>`;
   wireNav();
