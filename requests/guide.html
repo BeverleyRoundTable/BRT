@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grants System — Operating Guide · Beverley Round Table</title>
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png">
+<meta name="robots" content="noindex">
+<meta name="description" content="How Beverley Round Table's donation-request system works — for the committee.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#FBAF33;--gold-glow:rgba(251,175,51,.14);--grey-dark:#1D1D1A;--grey-card:#242421;
+  --grey-border:#39393455;--black:#000;--white:#fff;--text:#ecece7;--text-muted:#a3a39c;
+  --green:#2ecc71;--red:#e05a5a;--blue:#5b9bd5;
+  --font-display:'Eurostile Extended','Eurostile','Michroma',sans-serif;--font-body:'Open Sans',-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--grey-dark);color:var(--text);line-height:1.7;font-size:16px;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(900px 500px at 50% -10%,rgba(251,175,51,.08),transparent 60%),linear-gradient(180deg,#1f1f1c,#1a1a17);background-attachment:fixed;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:32px 20px 72px}
+
+/* hero */
+.hero{text-align:center;padding:24px 8px 8px}
+.logo-slot{display:inline-flex;height:58px;margin-bottom:22px;align-items:center;justify-content:center}
+.logo-slot img{max-height:52px}
+.eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px}
+h1{font-family:var(--font-display);font-size:clamp(28px,6.5vw,46px);line-height:1.05;color:var(--white);text-transform:uppercase;letter-spacing:.5px}
+.brush{width:120px;height:5px;background:var(--gold);border-radius:3px;margin:18px auto 0;transform:skewX(-12deg)}
+.lede{font-size:16px;color:var(--text-muted);max-width:480px;margin:20px auto 0}
+
+/* contents */
+.toc{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:14px;padding:20px 22px;margin:34px 0}
+.toc h2{font-family:var(--font-display);font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+.toc ol{list-style:none;counter-reset:t;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
+.toc li{counter-increment:t;font-size:13.5px}
+.toc li:before{content:counter(t)". ";color:var(--gold);font-family:var(--font-display)}
+.toc a{color:var(--text);text-decoration:none}
+.toc a:hover{color:var(--gold)}
+
+/* sections */
+section{scroll-margin-top:18px;margin-top:36px}
+h2.sec{font-family:var(--font-display);font-size:19px;text-transform:uppercase;letter-spacing:.5px;color:var(--white);
+  padding-bottom:10px;border-bottom:1px solid var(--grey-border);margin-bottom:16px}
+h2.sec .num{color:var(--gold);margin-right:10px}
+h3{font-family:var(--font-display);font-size:13.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--gold);margin:22px 0 8px}
+p{margin-bottom:13px}
+ul,ol.steps{margin:0 0 14px;padding-left:20px}
+li{margin-bottom:7px}
+strong{color:var(--white);font-weight:600}
+a{color:var(--gold)}
+.muted{color:var(--text-muted)}
+
+/* lifecycle strip */
+.flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:6px 0 16px}
+.flow .step{background:#1b1b18;border:1px solid var(--grey-border);border-radius:20px;padding:6px 13px;font-size:12.5px;font-family:var(--font-display);letter-spacing:.4px;color:var(--text)}
+.flow .arr{color:var(--gold);font-size:13px}
+
+/* tables */
+table{width:100%;border-collapse:collapse;margin:6px 0 16px;font-size:13.5px}
+th,td{text-align:left;padding:9px 12px;border:1px solid var(--grey-border);vertical-align:top}
+th{background:#2a2a27;color:var(--white);font-family:var(--font-display);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px}
+td .code{word-break:break-all}
+
+/* callouts */
+.callout{border-radius:11px;padding:16px 18px;margin:14px 0;font-size:14px;line-height:1.65}
+.callout.gold{background:var(--gold-glow);border:1px solid rgba(251,175,51,.35)}
+.callout.warn{background:rgba(224,90,90,.10);border:1px solid rgba(224,90,90,.3)}
+.callout h3{margin-top:0;color:var(--text)}
+.callout ul{margin-bottom:0}
+
+/* code chips */
+.code{font-family:'Consolas',ui-monospace,monospace;background:#15150f;border:1px solid var(--grey-border);border-radius:5px;padding:1px 6px;font-size:13px;color:#ffd98a}
+
+.totop{display:inline-block;margin-top:10px;font-size:12px;color:var(--text-muted);text-decoration:none}
+.totop:hover{color:var(--gold)}
+.foot{border-top:1px solid var(--grey-border);margin-top:44px;padding-top:20px;font-size:12.5px;color:var(--text-muted);text-align:center}
+
+@media(max-width:520px){.toc ol{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap" id="top">
+
+  <header class="hero">
+    <span class="logo-slot"><img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png" alt="Round Table"></span>
+    <div class="eyebrow">Beverley Round Table · Internal</div>
+    <h1>Grants System<br>Operating Guide</h1>
+    <div class="brush"></div>
+    <p class="lede">How our donation-request system works — what the committee does, and how to point the public to the right place.</p>
+  </header>
+
+  <nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#overview">The system at a glance</a></li>
+      <li><a href="#lifecycle">The journey of a request</a></li>
+      <li><a href="#links">All the links</a></li>
+      <li><a href="#public">Guiding the public</a></li>
+      <li><a href="#admin">The committee process</a></li>
+      <li><a href="#emails">Emailing applicants</a></li>
+      <li><a href="#reportback">Report-back &amp; public page</a></li>
+      <li><a href="#money">Reconciliation &amp; dashboard</a></li>
+      <li><a href="#rules">Golden rules</a></li>
+      <li><a href="#data">Data protection</a></li>
+      <li><a href="#maintenance">Running it &amp; handover</a></li>
+      <li><a href="#trouble">If something's not right</a></li>
+    </ol>
+  </nav>
+
+  <section id="overview">
+    <h2 class="sec"><span class="num">1</span>The system at a glance</h2>
+    <p>Beverley Round Table gives money to local causes as well as raising it. This system runs the giving side, all on our own domain and in our own brand.</p>
+    <p>Think of it in four parts: the <strong>front door</strong> (a public form where causes apply), the <strong>filing cabinet</strong> (a private Google Sheet that stores every application), the <strong>back office</strong> (a committee-only admin page where we screen, decide and pay), and the <strong>shop window</strong> (a public page celebrating what we've funded).</p>
+    <p>There's no separate server to run. The Google Sheet that stores the applications also runs the code behind everything, and the pages are simple files served through Cloudflare. Decisions are always made by our members at the monthly meeting — the system records what was decided, it doesn't decide anything itself.</p>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="lifecycle">
+    <h2 class="sec"><span class="num">2</span>The journey of a request</h2>
+    <p>Every application moves through the same sequence. One status drives where it sits in the admin:</p>
+    <div class="flow">
+      <span class="step">Received</span><span class="arr">→</span>
+      <span class="step">Screening</span><span class="arr">→</span>
+      <span class="step">Tabled</span><span class="arr">→</span>
+      <span class="step">Decided</span><span class="arr">→</span>
+      <span class="step">Paid</span><span class="arr">→</span>
+      <span class="step">Reported</span><span class="arr">→</span>
+      <span class="step">Closed</span>
+    </div>
+    <ul>
+      <li><strong>Received</strong> — the cause has submitted the form; it's waiting to be screened.</li>
+      <li><strong>Screening</strong> — an officer checks it's local, eligible and complete (or parks it pending more detail).</li>
+      <li><strong>Tabled</strong> — it's ready to put to the members at the next meeting.</li>
+      <li><strong>Decided</strong> — the meeting has voted; we record approved, declined or deferred.</li>
+      <li><strong>Paid</strong> — the treasurer has paid an approved grant and logged it.</li>
+      <li><strong>Reported</strong> — the beneficiary has told us how the money was spent.</li>
+      <li><strong>Closed</strong> — the request is complete.</li>
+    </ul>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="links">
+    <h2 class="sec"><span class="num">3</span>All the links</h2>
+    <table>
+      <tr><th>Page</th><th>Address</th><th>For</th></tr>
+      <tr><td>Apply for funding</td><td><span class="code">donations.beverleyroundtable.co.uk</span></td><td>The public</td></tr>
+      <tr><td>Privacy notice</td><td><span class="code">…/requests/privacy</span></td><td>The public</td></tr>
+      <tr><td>Tell us how it went</td><td><span class="code">…/requests/report</span></td><td>Funded causes</td></tr>
+      <tr><td>Causes we've funded</td><td><span class="code">…/requests/causes</span></td><td>The public</td></tr>
+      <tr><td>Committee admin</td><td><span class="code">…/requests/admin</span></td><td>Committee only</td></tr>
+      <tr><td>The data</td><td>Google Sheet: <em>"Donation Requests (Responses)"</em> in our Drive</td><td>Committee only</td></tr>
+    </table>
+    <p class="muted">The admin page is protected — knowing the address doesn't grant access; only committee emails can sign in.</p>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="public">
+    <h2 class="sec"><span class="num">4</span>Guiding the public</h2>
+    <h3>Someone wants funding</h3>
+    <p>Send them to the form at <span class="code">donations.beverleyroundtable.co.uk</span>. It helps to tell them:</p>
+    <ul>
+      <li>It's for <strong>local causes</strong> in and around Beverley.</li>
+      <li>Decisions are made by our members at our <strong>monthly meeting</strong>.</li>
+      <li>They'll hear back <strong>by email</strong> — and should keep the reference the form gives them.</li>
+      <li>They'll need: who they are, the amount, what it's for, who benefits and roughly how many, and bank details for payment if successful.</li>
+    </ul>
+    <h3>After we've funded them</h3>
+    <p>Point them to <span class="code">…/requests/report</span> to tell us how it went. They sign in with their reference and the email they applied with — no account needed.</p>
+    <h3>To show what we do</h3>
+    <p>The public page at <span class="code">…/requests/causes</span> shows the causes we've chosen to feature — good for sponsors, applicants and recruitment.</p>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="admin">
+    <h2 class="sec"><span class="num">5</span>The committee process</h2>
+    <h3>Signing in</h3>
+    <p>Go to <span class="code">…/requests/admin</span>, enter your committee email, and click the link we email you. It signs you in for 30 minutes. <span class="muted">(We currently sign in with the shared committee email — see <a href="#maintenance">Running it</a> to give individuals their own logins, which makes the history clearer about who did what.)</span></p>
+
+    <h3>New → screen it</h3>
+    <p>Open a new application and check it's local, an eligible cause, and complete. Then:</p>
+    <ul>
+      <li><strong>Eligible</strong> — tables it for the next meeting.</li>
+      <li><strong>Park</strong> — if you need more from the applicant first.</li>
+      <li><strong>Ineligible</strong> — closes it (add a reason).</li>
+    </ul>
+
+    <h3>Tabled → the meeting</h3>
+    <p>Tabled requests go to the members at the monthly meeting. <strong>After the vote</strong>, open the application and use <em>Record the meeting's decision</em>: choose approved, declined or deferred, enter the amount approved, the proposer and seconder, the show-of-hands (for / against / abstain), and — always — the <strong>minute reference</strong>. Deferred sends it back to Tabled for next time.</p>
+
+    <h3>Approved → payment</h3>
+    <p>The treasurer pays the grant from the NatWest account, then opens the application and uses <em>Log payment</em> (amount, date, reference). Only do this <strong>once the money has actually left the account</strong>. Logging a payment automatically clears the applicant's bank details.</p>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="emails">
+    <h2 class="sec"><span class="num">6</span>Emailing applicants</h2>
+    <p>Every application has an <em>Email the applicant</em> panel with ready-made templates — acknowledge receipt, request more information, good news, and a kind decline. Pick one, edit it to suit, and send. Messages go out from our Beverley Round Table address, replies come back to us, and every send is recorded in the application's history.</p>
+    <p>Use the decline template to let people down gently and invite a future application — it's written for that.</p>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="reportback">
+    <h2 class="sec"><span class="num">7</span>Report-back &amp; the public page</h2>
+    <p>After a grant is paid, point the beneficiary to <span class="code">…/requests/report</span>. Their update lands on the application, which moves to <strong>Reported</strong>.</p>
+    <p>Open it and you'll see their report and whether they ticked <strong>consent to share</strong>. If you'd like to feature it, hit <strong>Publish to public page</strong> — it then appears on the causes page. To take it down again, use Remove.</p>
+    <div class="callout gold">
+      <h3>What's safe about the public page</h3>
+      <ul>
+        <li>Nothing appears until an officer hits <strong>Publish</strong> — applicant consent alone doesn't make it public.</li>
+        <li>It never shows names, emails, phone numbers or bank details — just the cause (the organisation, or "a local good cause" for an individual), what it was for, the amount, and the report-back.</li>
+        <li>The admin warns you if a beneficiary didn't tick consent — check with them before publishing.</li>
+      </ul>
+    </div>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="money">
+    <h2 class="sec"><span class="num">8</span>Reconciliation &amp; the dashboard</h2>
+    <h3>Reconciliation tab</h3>
+    <p>Shows two lists: grants <strong>approved but not yet paid</strong> (expected debits) and grants <strong>paid</strong> (with their references). It's the giving side of the books — match the paid list against the NatWest statement.</p>
+    <h3>Dashboard tab</h3>
+    <p>Headline totals — given to date, causes funded, people helped, average grant, and the share of decided requests funded — plus giving over time and by area. It's all anonymised, so it's safe to show at the AGM, in a grant bid, or to a sponsor.</p>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="rules">
+    <h2 class="sec"><span class="num">9</span>Golden rules</h2>
+    <div class="callout warn">
+      <ul>
+        <li><strong>Don't edit the sheet by hand</strong> — always act through the admin, so the audit trail stays intact.</li>
+        <li><strong>Record decisions after the meeting</strong>, always with the minute reference.</li>
+        <li><strong>Only log a payment</strong> once the money has actually left NatWest.</li>
+        <li><strong>Nothing is public</strong> until an officer hits Publish.</li>
+        <li><strong>Keep the sheet shared with the committee only</strong> — it holds bank details until a grant is paid.</li>
+      </ul>
+    </div>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="data">
+    <h2 class="sec"><span class="num">10</span>Data protection</h2>
+    <ul>
+      <li><strong>Bank details</strong> are deleted automatically the moment a grant is paid.</li>
+      <li><strong>Applicants' personal details</strong> are deleted within 12 months of a request being closed; only an anonymised financial record is kept for the accounts.</li>
+      <li>The <strong>privacy notice</strong> (<span class="code">…/requests/privacy</span>) explains all of this to applicants — keep its link on the form.</li>
+      <li>Only committee members can see applications. The dashboard and the public page never show personal data.</li>
+    </ul>
+    <div class="callout gold">
+      <h3>Worth confirming</h3>
+      <p style="margin-bottom:0">Whether Beverley Round Table needs to register with the ICO, and a short data-protection impact assessment (DPIA) — sensible because we may handle information about children or vulnerable adults. This guide is practical, not legal advice; a quick check with someone qualified is worthwhile.</p>
+    </div>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="maintenance">
+    <h2 class="sec"><span class="num">11</span>Running it &amp; handover</h2>
+    <h3>Where everything lives</h3>
+    <ul>
+      <li><strong>The pages</strong> — GitHub repo <span class="code">BeverleyRoundTable/BRT</span>, in the <span class="code">requests/</span> folder (<span class="code">index.html</span> is the form, plus <span class="code">privacy</span>, <span class="code">admin</span>, <span class="code">report</span>, <span class="code">causes</span>).</li>
+      <li><strong>The data &amp; code</strong> — the <em>"Donation Requests (Responses)"</em> Google Sheet; the code is under <strong>Extensions → Apps Script</strong> (<span class="code">Config.gs</span>, <span class="code">Setup.gs</span>, <span class="code">Api.gs</span>).</li>
+      <li><strong>Routing</strong> — a Cloudflare rule sends the bare <span class="code">donations.beverleyroundtable.co.uk</span> to the form; deeper paths serve the matching page under <span class="code">/requests/</span>.</li>
+    </ul>
+    <h3>Common tasks</h3>
+    <table>
+      <tr><th>To…</th><th>Do this</th></tr>
+      <tr><td>Add a committee member</td><td>In <span class="code">Config.gs</span>, add their email to <span class="code">ADMIN_ALLOWLIST</span>, save, then redeploy (below).</td></tr>
+      <tr><td>Make any code change live</td><td>In the Apps Script editor: <strong>Deploy → Manage deployments → edit (pencil) → Version: New version → Deploy</strong>. The web-app URL stays the same. Pages just need re-uploading to GitHub.</td></tr>
+      <tr><td>Change the rules</td><td>In <span class="code">Config.gs</span> → <span class="code">POLICY</span>, then redeploy.</td></tr>
+    </table>
+    <h3>Settings (Config.gs → POLICY)</h3>
+    <table>
+      <tr><th>Setting</th><th>What it does</th></tr>
+      <tr><td><span class="code">GRANT_CAP_GBP</span></td><td>Flags requests above this amount for attention. <span class="muted">0 = no cap.</span></td></tr>
+      <tr><td><span class="code">IN_AREA_PREFIXES</span></td><td>Flags out-of-area requests by postcode (e.g. <span class="code">['HU17','HU16']</span>). <span class="muted">Empty = don't flag.</span></td></tr>
+      <tr><td><span class="code">RETENTION_MONTHS</span></td><td>How long applicant data is kept after a request closes. <span class="muted">Default 12.</span></td></tr>
+    </table>
+    <p class="muted">Two other settings live in <span class="code">Config.gs</span>: <span class="code">ADMIN_ALLOWLIST</span> (who can sign in) and <span class="code">AUTH.ADMIN_URL</span> (where the sign-in link points — must match the admin page's address).</p>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <section id="trouble">
+    <h2 class="sec"><span class="num">12</span>If something's not right</h2>
+    <table>
+      <tr><th>Symptom</th><th>Usual cause</th></tr>
+      <tr><td>Sign-in link opens a page that won't load</td><td><span class="code">AUTH.ADMIN_URL</span> in <span class="code">Config.gs</span> is wrong, or the web app wasn't redeployed after changing it.</td></tr>
+      <tr><td>A code change isn't showing</td><td>The web app needs a <strong>New version</strong> deployed; pages need re-uploading to GitHub.</td></tr>
+      <tr><td>A page won't load on the domain</td><td>The Cloudflare rule — the form is the bare domain, other pages live under <span class="code">/requests/</span>.</td></tr>
+      <tr><td>Sign-in says "unauthorised"</td><td>That email isn't in <span class="code">ADMIN_ALLOWLIST</span>.</td></tr>
+      <tr><td>Dashboard shows £0 given</td><td>"Given" counts paid grants only — log a payment and it updates.</td></tr>
+    </table>
+    <a class="totop" href="#top">↑ top</a>
+  </section>
+
+  <div class="foot">
+    Beverley Round Table — internal operating guide · last updated 8 June 2026<br>
+    Keep this for handover. Roles rotate; the system stays.
+  </div>
+
+</div>
+</body>
+</html>
