@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beverley Round Table — Grants Admin</title>
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#FBAF33; --gold-glow:rgba(251,175,51,.14);
+  --grey-dark:#1D1D1A; --grey-card:#242421; --grey-mid:#2a2a27; --grey-border:#39393455;
+  --black:#000; --white:#fff; --text:#ecece7; --text-muted:#a3a39c;
+  --green:#2ecc71; --green-dim:#1e6b42; --red:#e05a5a; --blue:#5b9bd5;
+  --font-display:'Eurostile Extended','Eurostile','Michroma',sans-serif;
+  --font-body:'Open Sans',-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--grey-dark);color:var(--text);line-height:1.6;font-size:15px;
+  -webkit-font-smoothing:antialiased;min-height:100vh;
+  background-image:radial-gradient(900px 500px at 50% -10%, rgba(251,175,51,.08), transparent 60%),linear-gradient(180deg,#1f1f1c,#1a1a17);
+  background-attachment:fixed}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 64px}
+a{color:var(--gold)}
+button{font-family:var(--font-body);cursor:pointer}
+
+/* top bar */
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 0 18px;border-bottom:1px solid var(--grey-border);margin-bottom:18px}
+.topbar img{height:34px}
+.topbar .title{font-family:var(--font-display);font-size:15px;text-transform:uppercase;letter-spacing:.5px;color:var(--white)}
+.topbar .who{margin-left:auto;font-size:12px;color:var(--text-muted);text-align:right}
+.topbar .who b{color:var(--text);display:block;font-weight:600}
+.linkbtn{background:none;border:none;color:var(--gold);font-size:12px;padding:0;text-decoration:underline}
+
+/* nav */
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tab{background:var(--grey-card);border:1px solid var(--grey-border);color:var(--text-muted);border-radius:8px;
+  padding:7px 12px;font-size:12.5px;font-weight:600;letter-spacing:.2px;transition:.12s}
+.tab:hover{border-color:#55554d;color:var(--text)}
+.tab.active{background:var(--gold-glow);border-color:rgba(251,175,51,.5);color:var(--gold)}
+.tab .c{opacity:.7;font-variant-numeric:tabular-nums}
+
+/* list */
+.appcard{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:12px;padding:15px 16px;margin-bottom:10px;
+  cursor:pointer;transition:.12s}
+.appcard:hover{border-color:#55554d;transform:translateY(-1px)}
+.appcard .r1{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.appcard .id{font-family:var(--font-display);font-size:12.5px;color:var(--text-muted);letter-spacing:.5px}
+.appcard .amt{margin-left:auto;font-family:var(--font-display);font-size:16px;color:var(--gold)}
+.appcard .org{font-weight:600;color:var(--text)}
+.appcard .sum{font-size:13.5px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* badges + flags */
+.badge{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.badge.new{background:var(--gold-glow);color:var(--gold)}
+.badge.screening{background:#33332e;color:#c9c9c2}
+.badge.tabled{background:rgba(91,155,213,.16);color:var(--blue)}
+.badge.approved{background:rgba(46,204,113,.15);color:var(--green)}
+.badge.paid{background:var(--green-dim);color:#dffbe9}
+.badge.declined{background:rgba(224,90,90,.15);color:var(--red)}
+.badge.closed{background:#33332e;color:#8f8f88}
+.flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.flag{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;border-radius:5px;
+  background:rgba(251,175,51,.12);color:var(--gold);border:1px solid rgba(251,175,51,.3)}
+.flag.danger{background:rgba(224,90,90,.12);color:#f0a0a0;border-color:rgba(224,90,90,.35)}
+
+/* detail */
+.back{background:none;border:none;color:var(--gold);font-size:13px;font-weight:600;padding:0;margin-bottom:14px}
+.detail-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.detail-head .id{font-family:var(--font-display);font-size:15px;color:var(--white);letter-spacing:.5px}
+.detail-amt{font-family:var(--font-display);font-size:26px;color:var(--gold);margin:6px 0 2px}
+.detail-sub{color:var(--text-muted);font-size:13px;margin-bottom:18px}
+
+.alertbar{border-radius:9px;padding:10px 14px;font-size:13px;margin-bottom:16px;font-weight:600}
+.alertbar.warn{background:rgba(224,90,90,.12);border:1px solid rgba(224,90,90,.35);color:#f0b3b3}
+
+.section{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:12px;padding:18px 18px;margin-bottom:14px}
+.section h3{font-family:var(--font-display);font-size:12.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--gold);margin-bottom:14px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:8px 14px;font-size:14px}
+.kv dt{color:var(--text-muted)}
+.kv dd{color:var(--text);word-break:break-word}
+.bankbox{margin-top:14px;background:#1b1b18;border:1px solid rgba(224,90,90,.25);border-radius:8px;padding:11px 13px;font-size:13.5px}
+.bankbox .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:#e0a0a0;font-weight:700;margin-bottom:4px}
+
+/* timeline */
+.tl{position:relative;padding-left:18px}
+.tl .ev{position:relative;padding-bottom:14px}
+.tl .ev:before{content:'';position:absolute;left:-13px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.tl .ev:after{content:'';position:absolute;left:-9.5px;top:13px;bottom:-2px;width:1px;background:var(--grey-border)}
+.tl .ev:last-child:after{display:none}
+.tl .ev .when{font-size:11.5px;color:var(--text-muted)}
+.tl .ev .what{font-size:13.5px;color:var(--text);font-weight:600;margin-top:1px}
+.tl .ev .det{font-size:12.5px;color:var(--text-muted);margin-top:1px}
+
+/* forms */
+label{display:block;font-size:12.5px;font-weight:700;letter-spacing:.3px;margin:14px 0 6px;color:var(--text)}
+label:first-of-type{margin-top:0}
+input,textarea,select{width:100%;background:#1b1b18;border:1px solid var(--grey-border);border-radius:8px;
+  padding:11px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold)}
+textarea{resize:vertical;min-height:48px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.money{position:relative}.money span{position:absolute;left:12px;top:11px;color:var(--text-muted)}.money input{padding-left:24px}
+
+.btn{background:var(--gold);color:var(--black);border:none;border-radius:9px;padding:13px 16px;font-family:var(--font-display);
+  font-size:13.5px;text-transform:uppercase;letter-spacing:.8px;transition:.15s}
+.btn:hover{background:#ffc04d}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.block{width:100%;margin-top:18px}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--grey-border)}
+.btn.sec:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-glow)}
+.btn.ok{background:var(--green);color:#06280f}.btn.ok:hover{background:#46e08a}
+.btn.danger{background:transparent;color:var(--red);border:1px solid rgba(224,90,90,.4)}.btn.danger:hover{background:rgba(224,90,90,.1)}
+
+.msg{border-radius:8px;padding:10px 13px;font-size:13px;margin-top:14px;display:none}
+.msg.show{display:block}
+.msg.ok{background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.35);color:#a8e8c4}
+.msg.err{background:rgba(224,90,90,.12);border:1px solid rgba(224,90,90,.4);color:#f3b0b0}
+
+.empty{text-align:center;color:var(--text-muted);padding:40px 20px;font-size:14px}
+.loading{text-align:center;color:var(--text-muted);padding:34px;font-size:14px}
+
+/* sign in */
+.signin{max-width:400px;margin:8vh auto 0;text-align:center}
+.signin img{height:50px;margin-bottom:22px}
+.signin h1{font-family:var(--font-display);font-size:26px;text-transform:uppercase;letter-spacing:.5px;color:var(--white);margin-bottom:8px}
+.signin p{color:var(--text-muted);font-size:14px;margin-bottom:24px}
+.signin .card{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:14px;padding:24px 22px;text-align:left}
+
+/* reconciliation */
+.recon-group{margin-bottom:8px}
+.recon-row{display:flex;align-items:center;gap:10px;background:var(--grey-card);border:1px solid var(--grey-border);
+  border-radius:9px;padding:11px 14px;margin-bottom:8px;font-size:13.5px}
+.recon-row .id{font-family:var(--font-display);font-size:12px;color:var(--text-muted)}
+.recon-row .amt{margin-left:auto;font-family:var(--font-display);color:var(--gold)}
+.recon-row .ref{color:var(--text-muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">Loading…</div></div>
+
+<script>
+// ====== CONFIG — same deployed Apps Script /exec URL the form uses ======
+const API_URL = 'https://script.google.com/macros/s/PASTE_YOUR_DEPLOYMENT_ID/exec';
+// ========================================================================
+
+const app = document.getElementById('app');
+const LOGO = 'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png';
+const state = { token:null, email:null, status:'new', view:'list' };
+
+const STATUSES = [
+  {k:'new',label:'New'},{k:'screening',label:'Parked'},{k:'tabled',label:'Tabled'},
+  {k:'approved',label:'Approved'},{k:'paid',label:'Paid'},{k:'declined',label:'Declined'},
+  {k:'closed',label:'Closed'},{k:'all',label:'All'}
+];
+const STATUS_LABEL = {new:'New',screening:'Parked',tabled:'Tabled',approved:'Approved',paid:'Paid',declined:'Declined',closed:'Closed'};
+
+/* ---------- helpers ---------- */
+async function api(action, payload){
+  const body = Object.assign({action, token: state.token}, payload||{});
+  const r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(body)});
+  return r.json();
+}
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const gbp = v => { const n = parseInt(v,10); return isNaN(n) ? '—' : '£'+n.toLocaleString('en-GB'); };
+const fdate = iso => { if(!iso) return '—'; const d=new Date(iso); return isNaN(d.getTime())?'—':d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
+const fdt = iso => { if(!iso) return '—'; const d=new Date(iso); return isNaN(d.getTime())?'—':d.toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
+function badge(s){ return `<span class="badge ${esc(s)}">${esc(STATUS_LABEL[s]||s)}</span>`; }
+function flagsHtml(a){
+  const out=[];
+  if(a['Safeguarding flag']) out.push('<span class="flag danger">Safeguarding</span>');
+  if(a['Conflict flag']) out.push('<span class="flag">Conflict</span>');
+  if(a['Area flag']) out.push('<span class="flag">'+esc(a['Area flag'])+'</span>');
+  if(a['Cap flag']) out.push('<span class="flag">'+esc(a['Cap flag'])+'</span>');
+  return out.length ? '<div class="flags">'+out.join('')+'</div>' : '';
+}
+
+/* ---------- boot ---------- */
+(function boot(){
+  const m = location.hash.match(/token=([^&]+)/);
+  if(m){ state.token = decodeURIComponent(m[1]); verifyAndStart(); }
+  else renderSignIn();
+})();
+
+async function verifyAndStart(){
+  app.innerHTML = '<div class="loading">Signing you in…</div>';
+  try{
+    const res = await api('verify', {});
+    if(res && res.ok){ state.email = res.email; loadList(); }
+    else renderSignIn("That sign-in link has expired or isn't valid — request a new one.");
+  }catch(e){ renderSignIn("Couldn't reach the server. Check the link and try again."); }
+}
+
+/* ---------- sign in ---------- */
+function renderSignIn(note){
+  app.innerHTML = `
+    <div class="signin">
+      <img src="${LOGO}" alt="Round Table">
+      <h1>Grants Admin</h1>
+      <p>Committee sign-in. We'll email you a secure link.</p>
+      <div class="card">
+        <label for="em">Your committee email</label>
+        <input type="email" id="em" placeholder="you@roundtable.org.uk" autocomplete="email">
+        <button class="btn block" id="send">Email me a link</button>
+        <div class="msg ${note?'err show':''}" id="m">${note?esc(note):''}</div>
+      </div>
+    </div>`;
+  const btn = document.getElementById('send'), m = document.getElementById('m');
+  btn.onclick = async () => {
+    const email = document.getElementById('em').value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ m.className='msg err show'; m.textContent='Please enter a valid email.'; return; }
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try{ await api('requestLink', {email}); }catch(e){}
+    m.className='msg ok show';
+    m.textContent = "If that address is on the committee list, a sign-in link is on its way. It expires in 30 minutes.";
+    btn.textContent = 'Link sent';
+  };
+}
+
+/* ---------- shell + nav ---------- */
+function shell(inner){
+  return `
+    <div class="topbar">
+      <img src="${LOGO}" alt="">
+      <div class="title">Grants Admin</div>
+      <div class="who"><b>${esc(state.email||'')}</b><button class="linkbtn" id="signout">Sign out</button></div>
+    </div>
+    <div id="body">${inner}</div>`;
+}
+function wireShell(){
+  const so = document.getElementById('signout');
+  if(so) so.onclick = () => { state.token=null; state.email=null; location.hash=''; renderSignIn(); };
+}
+function navHtml(active){
+  return '<div class="nav">' + STATUSES.map(s =>
+    `<button class="tab ${active===s.k?'active':''}" data-status="${s.k}">${s.label}</button>`
+  ).join('') + `<button class="tab ${active==='recon'?'active':''}" data-status="recon">Reconciliation</button></div>`;
+}
+function wireNav(){
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+    const s = t.dataset.status;
+    if(s==='recon'){ loadRecon(); } else { state.status = s; loadList(); }
+  });
+}
+
+/* ---------- list ---------- */
+async function loadList(){
+  state.view='list';
+  app.innerHTML = shell(navHtml(state.status) + '<div class="loading">Loading applications…</div>');
+  wireShell(); wireNav();
+  const body = document.getElementById('body');
+  let res;
+  try{ res = await api('list', {status: state.status}); }
+  catch(e){ body.innerHTML = navHtml(state.status)+'<div class="empty">Couldn\'t load. Try again.</div>'; wireNav(); return; }
+  if(!res || !res.ok){ body.innerHTML = navHtml(state.status)+'<div class="empty">'+esc((res&&res.error)||'Error loading')+'</div>'; wireNav(); return; }
+  const apps = res.applications||[];
+  let list = apps.length
+    ? apps.map(a => `
+      <div class="appcard" data-id="${esc(a['Application ID'])}">
+        <div class="r1">
+          <span class="id">${esc(a['Application ID'])}</span>
+          ${badge(a['Status'])}
+          <span class="amt">${gbp(a['Status']==='approved'||a['Status']==='paid' ? (a['Amount approved (GBP)']||a['Amount requested (GBP)']) : a['Amount requested (GBP)'])}</span>
+        </div>
+        <div class="org">${esc(a['Organisation']||a['Contact name']||'—')}</div>
+        <div class="sum">${esc(a['Summary']||'')}</div>
+        ${flagsHtml(a)}
+      </div>`).join('')
+    : '<div class="empty">Nothing here.</div>';
+  body.innerHTML = navHtml(state.status) + list;
+  wireNav();
+  document.querySelectorAll('.appcard').forEach(c => c.onclick = () => openDetail(c.dataset.id));
+}
+
+/* ---------- detail ---------- */
+async function openDetail(id){
+  state.view='detail';
+  const body = document.getElementById('body');
+  if(body) body.innerHTML = '<div class="loading">Loading…</div>';
+  let res;
+  try{ res = await api('get', {id}); }catch(e){ body.innerHTML='<div class="empty">Couldn\'t load. <button class="linkbtn" onclick="loadList()">Back</button></div>'; return; }
+  if(!res || !res.ok){ body.innerHTML='<div class="empty">'+esc((res&&res.error)||'Not found')+'</div>'; return; }
+  const a = res.application, log = res.log||[], pays = res.payments||[];
+  const s = a['Status'];
+
+  let alert = '';
+  if(a['Safeguarding flag'] || a['Conflict flag']){
+    const bits=[];
+    if(a['Safeguarding flag']) bits.push('Involves children or vulnerable adults');
+    if(a['Conflict flag']) bits.push('Conflict of interest: '+esc(a['Conflict flag']));
+    alert = '<div class="alertbar warn">⚠ '+bits.join(' · ')+'</div>';
+  }
+
+  const details = `
+    <div class="section">
+      <h3>The request</h3>
+      <dl class="kv">
+        <dt>Summary</dt><dd>${esc(a['Summary']||'—')}</dd>
+        <dt>Amount requested</dt><dd>${gbp(a['Amount requested (GBP)'])}${a['Amount (raw)']&&String(a['Amount (raw)'])!==String(a['Amount requested (GBP)'])?' <span style="color:var(--text-muted)">(as entered: '+esc(a['Amount (raw)'])+')</span>':''}</dd>
+        <dt>Who benefits</dt><dd>${esc(a['Beneficiaries']||'—')}</dd>
+        <dt>Other funding / cost</dt><dd>${esc(a['Co-funding / shortfall']||'—')}</dd>
+        <dt>Postcode</dt><dd>${esc(a['Postcode']||'—')}</dd>
+        <dt>Submitted</dt><dd>${fdate(a['Submitted (ISO)'])}</dd>
+      </dl>
+    </div>
+    <div class="section">
+      <h3>Applicant</h3>
+      <dl class="kv">
+        <dt>Contact</dt><dd>${esc(a['Contact name']||'—')}</dd>
+        <dt>Email</dt><dd>${a['Email']?'<a href="mailto:'+esc(a['Email'])+'">'+esc(a['Email'])+'</a>':'—'}</dd>
+        <dt>Phone</dt><dd>${esc(a['Phone']||'—')}</dd>
+        <dt>Organisation</dt><dd>${esc(a['Organisation']||'—')}</dd>
+      </dl>
+      ${a['Bank details'] ? '<div class="bankbox"><div class="lbl">Bank details — sensitive, used only to pay an approved grant</div>'+esc(a['Bank details'])+'</div>' : ''}
+    </div>`;
+
+  const timeline = `
+    <div class="section">
+      <h3>History</h3>
+      <div class="tl">${log.length ? log.map(e=>`
+        <div class="ev"><div class="when">${fdt(e['Timestamp (ISO)'])} · ${esc(e['Officer']||'')}</div>
+        <div class="what">${esc(e['Event']||'')}</div>
+        ${e['Detail']?'<div class="det">'+esc(e['Detail'])+'</div>':''}
+        ${e['Notes']?'<div class="det">“'+esc(e['Notes'])+'”</div>':''}</div>`).join('') : '<div class="det">No history yet.</div>'}</div>
+    </div>`;
+
+  app.innerHTML = shell(`
+    <button class="back" id="back">← All applications</button>
+    <div class="detail-head"><span class="id">${esc(a['Application ID'])}</span>${badge(s)}</div>
+    <div class="detail-amt">${gbp(s==='approved'||s==='paid'?(a['Amount approved (GBP)']||a['Amount requested (GBP)']):a['Amount requested (GBP)'])}</div>
+    <div class="detail-sub">${esc(a['Organisation']||a['Contact name']||'')}</div>
+    ${alert}
+    ${actionPanel(a)}
+    ${details}
+    ${timeline}
+  `);
+  wireShell();
+  document.getElementById('back').onclick = loadList;
+  wireActions(a);
+}
+
+/* ---------- action panels by status ---------- */
+function actionPanel(a){
+  const s = a['Status'];
+  if(s==='new' || s==='screening'){
+    return `<div class="section"><h3>Screen</h3>
+      <label for="screenReason">Reason / note (optional)</label>
+      <input type="text" id="screenReason" placeholder="e.g. needs a quote before we can table it">
+      <div class="btnrow" style="margin-top:14px">
+        <button class="btn ok" data-screen="eligible">Eligible → Table it</button>
+        <button class="btn sec" data-screen="parked">Park (needs info)</button>
+        <button class="btn danger" data-screen="ineligible">Ineligible → Close</button>
+      </div>
+      <div class="msg" id="amsg"></div></div>`;
+  }
+  if(s==='tabled'){
+    return `<div class="section"><h3>Record the meeting's decision</h3>
+      <label for="outcome">Outcome</label>
+      <select id="outcome">
+        <option value="approved">Approved</option>
+        <option value="declined">Declined</option>
+        <option value="deferred">Deferred to a later meeting</option>
+      </select>
+      <div id="approvedAmt"><label for="amountApproved">Amount approved</label>
+        <div class="money"><span>£</span><input type="text" id="amountApproved" inputmode="numeric" value="${esc(a['Amount requested (GBP)']||'')}"></div></div>
+      <label for="minuteRef">Minute reference</label>
+      <input type="text" id="minuteRef" placeholder="e.g. 2026-06 item 4">
+      <div class="grid3">
+        <div><label for="proposer">Proposer</label><input type="text" id="proposer"></div>
+        <div><label for="seconder">Seconder</label><input type="text" id="seconder"></div>
+        <div></div>
+      </div>
+      <div class="grid3">
+        <div><label for="vf">Votes for</label><input type="text" id="vf" inputmode="numeric" value="0"></div>
+        <div><label for="va">Against</label><input type="text" id="va" inputmode="numeric" value="0"></div>
+        <div><label for="vab">Abstain</label><input type="text" id="vab" inputmode="numeric" value="0"></div>
+      </div>
+      <label for="notes">Notes / conditions</label>
+      <textarea id="notes" rows="2"></textarea>
+      <button class="btn block" id="recordDecision">Record decision</button>
+      <div class="msg" id="amsg"></div></div>`;
+  }
+  if(s==='approved'){
+    const today = new Date().toISOString().slice(0,10);
+    return `<div class="section"><h3>Log payment</h3>
+      <label for="amountPaid">Amount paid</label>
+      <div class="money"><span>£</span><input type="text" id="amountPaid" inputmode="numeric" value="${esc(a['Amount approved (GBP)']||'')}"></div>
+      <label for="datePaid">Date paid</label>
+      <input type="date" id="datePaid" value="${today}">
+      <label for="natwestRef">NatWest reference</label>
+      <input type="text" id="natwestRef" placeholder="Statement reference">
+      <label for="method">Method</label>
+      <input type="text" id="method" value="Bank transfer">
+      <button class="btn block ok" id="logPayment">Log payment · clears bank details</button>
+      <div class="msg" id="amsg"></div></div>`;
+  }
+  return ''; // paid / declined / closed — no further action
+}
+
+function wireActions(a){
+  const s = a['Status'], id = a['Application ID'];
+  const msg = () => document.getElementById('amsg');
+  const show = (cls,txt) => { const m=msg(); if(m){ m.className='msg show '+cls; m.textContent=txt; } };
+
+  // screen
+  document.querySelectorAll('[data-screen]').forEach(b => b.onclick = async () => {
+    const decision = b.dataset.screen;
+    b.disabled = true;
+    const res = await api('screen', {id, decision, reason: (document.getElementById('screenReason')||{}).value || ''}).catch(()=>null);
+    if(res && res.ok){ openDetail(id); } else { b.disabled=false; show('err',(res&&res.error)||'Failed'); }
+  });
+
+  // decision
+  const dec = document.getElementById('recordDecision');
+  const out = document.getElementById('outcome');
+  if(out){ const tog=()=>document.getElementById('approvedAmt').style.display = out.value==='approved'?'block':'none'; out.onchange=tog; tog(); }
+  if(dec) dec.onclick = async () => {
+    const v = id => (document.getElementById(id)||{}).value || '';
+    const payload = {id, outcome:v('outcome'), amountApproved:v('amountApproved'), minuteRef:v('minuteRef'),
+      proposer:v('proposer'), seconder:v('seconder'), votesFor:v('vf'), votesAgainst:v('va'), abstentions:v('vab'), notes:v('notes')};
+    dec.disabled = true; dec.textContent='Recording…';
+    const res = await api('decide', payload).catch(()=>null);
+    if(res && res.ok){ openDetail(id); } else { dec.disabled=false; dec.textContent='Record decision'; show('err',(res&&res.error)||'Failed'); }
+  };
+
+  // payment
+  const pay = document.getElementById('logPayment');
+  if(pay) pay.onclick = async () => {
+    const v = id => (document.getElementById(id)||{}).value || '';
+    dec_disable(pay,'Logging…');
+    const res = await api('pay', {id, amountPaid:v('amountPaid'), datePaid:v('datePaid'), natwestRef:v('natwestRef'), method:v('method')}).catch(()=>null);
+    if(res && res.ok){ openDetail(id); } else { pay.disabled=false; pay.textContent='Log payment · clears bank details'; show('err',(res&&res.error)||'Failed'); }
+  };
+}
+function dec_disable(btn,txt){ btn.disabled=true; btn.textContent=txt; }
+
+/* ---------- reconciliation ---------- */
+async function loadRecon(){
+  state.view='recon';
+  app.innerHTML = shell(navHtml('recon') + '<div class="loading">Loading…</div>');
+  wireShell(); wireNav();
+  const body = document.getElementById('body');
+  let res;
+  try{ res = await api('reconciliation', {}); }catch(e){ body.innerHTML = navHtml('recon')+'<div class="empty">Couldn\'t load.</div>'; wireNav(); return; }
+  if(!res || !res.ok){ body.innerHTML = navHtml('recon')+'<div class="empty">Error.</div>'; wireNav(); return; }
+  const pending = res.pending||[], paid = res.paid||[];
+  const pendHtml = pending.length ? pending.map(p=>`
+    <div class="recon-row"><span class="id">${esc(p.id)}</span><span>${esc(p.organisation||'')}</span>
+    <span class="amt">${gbp(p.amountApproved)}</span></div>`).join('') : '<div class="empty">None awaiting payment.</div>';
+  const paidHtml = paid.length ? paid.map(p=>`
+    <div class="recon-row"><span class="id">${esc(p['Application ID'])}</span>
+    <span class="ref">${esc(p['NatWest reference']||'—')} · ${fdate(p['Date paid (ISO)'])}</span>
+    <span class="amt">${gbp(p['Amount paid (GBP)'])}</span></div>`).join('') : '<div class="empty">No payments logged yet.</div>';
+  body.innerHTML = navHtml('recon') + `
+    <div class="section"><h3>Approved · awaiting payment (expected debits)</h3><div class="recon-group">${pendHtml}</div></div>
+    <div class="section"><h3>Paid (match against NatWest)</h3><div class="recon-group">${paidHtml}</div></div>`;
+  wireNav();
+}
+</script>
+</body>
+</html>
