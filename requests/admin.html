@@ -140,6 +140,22 @@ textarea{resize:vertical;min-height:48px}
 .recon-row .id{font-family:var(--font-display);font-size:12px;color:var(--text-muted)}
 .recon-row .amt{margin-left:auto;font-family:var(--font-display);color:var(--gold)}
 .recon-row .ref{color:var(--text-muted);font-size:12px}
+
+/* dashboard */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.stat{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:12px;padding:16px 18px}
+.stat .v{font-family:var(--font-display);font-size:25px;color:var(--gold);letter-spacing:.5px;line-height:1.1}
+.stat .l{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-top:6px}
+.bar{margin-bottom:11px}
+.bar .top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:5px}
+.bar .top .lbl{color:var(--text)}
+.bar .top .val{color:var(--gold);font-family:var(--font-display);font-size:13px}
+.bar .track{height:8px;background:#1b1b18;border-radius:5px;overflow:hidden}
+.bar .fill{height:100%;background:linear-gradient(90deg,var(--gold),#ffcf6b);border-radius:5px;min-width:3px}
+.pipeline{display:flex;flex-wrap:wrap;gap:8px}
+.pill{background:#1b1b18;border:1px solid var(--grey-border);border-radius:20px;padding:6px 12px;font-size:12.5px;color:var(--text-muted)}
+.pill b{color:var(--text);font-family:var(--font-display);margin-right:6px}
+.context{font-size:13px;color:var(--text-muted);line-height:1.65}
 </style>
 </head>
 <body>
@@ -147,7 +163,7 @@ textarea{resize:vertical;min-height:48px}
 
 <script>
 // ====== CONFIG — same deployed Apps Script /exec URL the form uses ======
-const API_URL = 'https://script.google.com/macros/s/AKfycbyY1kgyrfHGDS_zmDVcpo386oHKP5jGBPKm_bQS4X-k0fKDVPZvsT_AzzutGI6dcXrV/exec';
+const API_URL = 'https://script.google.com/macros/s/PASTE_YOUR_DEPLOYMENT_ID/exec';
 // ========================================================================
 
 const app = document.getElementById('app');
@@ -240,12 +256,12 @@ function wireShell(){
 function navHtml(active){
   return '<div class="nav">' + STATUSES.map(s =>
     `<button class="tab ${active===s.k?'active':''}" data-status="${s.k}">${s.label}</button>`
-  ).join('') + `<button class="tab ${active==='recon'?'active':''}" data-status="recon">Reconciliation</button></div>`;
+  ).join('') + `<button class="tab ${active==='recon'?'active':''}" data-status="recon">Reconciliation</button><button class="tab ${active==='dashboard'?'active':''}" data-status="dashboard">Dashboard</button></div>`;
 }
 function wireNav(){
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
     const s = t.dataset.status;
-    if(s==='recon'){ loadRecon(); } else { state.status = s; loadList(); }
+    if(s==='recon'){ loadRecon(); } else if(s==='dashboard'){ loadDashboard(); } else { state.status = s; loadList(); }
   });
 }
 
@@ -541,6 +557,55 @@ async function loadRecon(){
     <p class="phint">The giving side of the books: grants approved but not yet paid (expected debits), and grants already paid — match these against the NatWest statement.</p>
     <div class="section"><h3>Approved · awaiting payment (expected debits)</h3><div class="recon-group">${pendHtml}</div></div>
     <div class="section"><h3>Paid (match against NatWest)</h3><div class="recon-group">${paidHtml}</div></div>`;
+  wireNav();
+}
+/* ---------- dashboard ---------- */
+function bar(label, val, max){
+  const pct = Math.max(2, Math.round(val / (max||1) * 100));
+  return `<div class="bar"><div class="top"><span class="lbl">${esc(label)}</span><span class="val">${gbp(val)}</span></div>
+    <div class="track"><div class="fill" style="width:${pct}%"></div></div></div>`;
+}
+function monthLabel(key){
+  const p = String(key).split('-'); const d = new Date(parseInt(p[0],10), parseInt(p[1],10)-1, 1);
+  return isNaN(d.getTime()) ? key : d.toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+}
+async function loadDashboard(){
+  state.view='dashboard';
+  app.innerHTML = shell(navHtml('dashboard') + '<div class="loading">Crunching the numbers…</div>');
+  wireShell(); wireNav();
+  const body = document.getElementById('body');
+  let res;
+  try{ res = await api('dashboard', {}); }catch(e){ body.innerHTML = navHtml('dashboard')+'<div class="empty">Couldn\'t load.</div>'; wireNav(); return; }
+  if(!res || !res.ok){ body.innerHTML = navHtml('dashboard')+'<div class="empty">'+esc((res&&res.error)||'Error')+'</div>'; wireNav(); return; }
+  const d = res.stats;
+  const decided = (d.fundedCount||0) + (d.declinedCount||0);
+  const rate = decided ? Math.round(d.fundedCount/decided*100)+'%' : '—';
+
+  const cards = `<div class="stats">
+    <div class="stat"><div class="v">${gbp(d.totalPaid)}</div><div class="l">Given to date</div></div>
+    <div class="stat"><div class="v">${d.fundedCount}</div><div class="l">Causes funded</div></div>
+    <div class="stat"><div class="v">${gbp(d.avgGrant)}</div><div class="l">Average grant</div></div>
+    <div class="stat"><div class="v">${rate}</div><div class="l">Requests funded</div></div>
+  </div>`;
+
+  const context = `<p class="context">${gbp(d.totalRequested)} requested across ${d.totalApps} application${d.totalApps===1?'':'s'} · ${gbp(d.totalApproved)} approved · ${gbp(d.totalPaid)} paid out${d.distinctOrgs?` · ${d.distinctOrgs} organisation${d.distinctOrgs===1?'':'s'} supported`:''}.</p>`;
+
+  const months = Object.keys(d.byMonth).sort();
+  const mMax = Math.max(1, ...months.map(m=>d.byMonth[m]));
+  const monthBars = months.length ? months.map(m=>bar(monthLabel(m), d.byMonth[m], mMax)).join('') : '<div class="empty">No payments logged yet.</div>';
+
+  const areas = Object.keys(d.byArea).sort((a,b)=>d.byArea[b]-d.byArea[a]);
+  const aMax = Math.max(1, ...areas.map(a=>d.byArea[a]));
+  const areaBars = areas.length ? areas.map(a=>bar(a, d.byArea[a], aMax)).join('') : '<div class="empty">No payments logged yet.</div>';
+
+  const order = ['new','screening','tabled','approved','paid','declined','closed'];
+  const pipeline = order.filter(k=>d.statusCounts[k]).map(k=>`<span class="pill"><b>${d.statusCounts[k]}</b>${STATUS_LABEL[k]}</span>`).join('') || '<span class="pill">No applications yet</span>';
+
+  body.innerHTML = navHtml('dashboard') + cards + context
+    + `<div class="section"><h3>Giving over time</h3><div class="bars">${monthBars}</div></div>`
+    + `<div class="section"><h3>Where it's gone · by postcode area</h3><div class="bars">${areaBars}</div></div>`
+    + `<div class="section"><h3>Pipeline</h3><div class="pipeline">${pipeline}</div></div>`
+    + `<p class="context">Totals are anonymised, so this view is safe to share at an AGM or with sponsors. <b>People reached</b> isn't tracked yet — add a "how many people" number to the form and it can headline here.</p>`;
   wireNav();
 }
 </script>
