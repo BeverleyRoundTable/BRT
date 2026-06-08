@@ -321,6 +321,7 @@ async function openDetail(id){
         <dt>Summary</dt><dd>${esc(a['Summary']||'—')}</dd>
         <dt>Amount requested</dt><dd>${gbp(a['Amount requested (GBP)'])}${a['Amount (raw)']&&String(a['Amount (raw)'])!==String(a['Amount requested (GBP)'])?' <span style="color:var(--text-muted)">(as entered: '+esc(a['Amount (raw)'])+')</span>':''}</dd>
         <dt>Who benefits</dt><dd>${esc(a['Beneficiaries']||'—')}</dd>
+        <dt>People helped</dt><dd>${esc(a['People helped']||'—')}</dd>
         <dt>Other funding / cost</dt><dd>${esc(a['Co-funding / shortfall']||'—')}</dd>
         <dt>Postcode</dt><dd>${esc(a['Postcode']||'—')}</dd>
         <dt>Submitted</dt><dd>${fdate(a['Submitted (ISO)'])}</dd>
@@ -584,6 +585,7 @@ async function loadDashboard(){
   const cards = `<div class="stats">
     <div class="stat"><div class="v">${gbp(d.totalPaid)}</div><div class="l">Given to date</div></div>
     <div class="stat"><div class="v">${d.fundedCount}</div><div class="l">Causes funded</div></div>
+    <div class="stat"><div class="v">${(d.peopleHelped||0).toLocaleString('en-GB')}</div><div class="l">People helped</div></div>
     <div class="stat"><div class="v">${gbp(d.avgGrant)}</div><div class="l">Average grant</div></div>
     <div class="stat"><div class="v">${rate}</div><div class="l">Requests funded</div></div>
   </div>`;
@@ -605,7 +607,7 @@ async function loadDashboard(){
     + `<div class="section"><h3>Giving over time</h3><div class="bars">${monthBars}</div></div>`
     + `<div class="section"><h3>Where it's gone · by postcode area</h3><div class="bars">${areaBars}</div></div>`
     + `<div class="section"><h3>Pipeline</h3><div class="pipeline">${pipeline}</div></div>`
-    + `<p class="context">Totals are anonymised, so this view is safe to share at an AGM or with sponsors. <b>People reached</b> isn't tracked yet — add a "how many people" number to the form and it can headline here.</p>`;
+    + `<p class="context">Totals are anonymised, so this view is safe to share at an AGM or with sponsors. <b>People helped</b> is the applicants' own estimates, summed across funded causes — a guide, not an exact count.</p>`;
   wireNav();
 }
 </script>
