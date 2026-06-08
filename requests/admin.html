@@ -338,12 +338,14 @@ async function openDetail(id){
     <div class="detail-sub">${esc(a['Organisation']||a['Contact name']||'')}</div>
     ${alert}
     ${actionPanel(a)}
+    ${emailPanel(a)}
     ${details}
     ${timeline}
   `);
   wireShell();
   document.getElementById('back').onclick = loadList;
   wireActions(a);
+  wireEmail(a);
 }
 
 /* ---------- action panels by status ---------- */
@@ -443,6 +445,80 @@ function wireActions(a){
   };
 }
 function dec_disable(btn,txt){ btn.disabled=true; btn.textContent=txt; }
+
+/* ---------- email the applicant ---------- */
+function firstName(a){ return (String(a['Contact name']||'').trim().split(/\s+/)[0]) || 'there'; }
+
+function emailTemplate(kind, a){
+  const ref = a['Application ID'];
+  const fn = firstName(a);
+  const amt = gbp(a['Amount approved (GBP)'] || a['Amount requested (GBP)']);
+  const org = a['Organisation'] ? (' for ' + a['Organisation']) : '';
+  if(kind==='ack') return {
+    subject: 'We\u2019ve received your funding request (' + ref + ')',
+    body: 'Hi ' + fn + ',\n\nThank you for your funding request to Beverley Round Table' + org + '. We\u2019ve received it and given it the reference ' + ref + '.\n\nOur members consider requests at our monthly meeting, and we\u2019ll be in touch once yours has been looked at. If you need to add anything in the meantime, just reply to this email and quote your reference.\n\nWith best wishes,\nBeverley Round Table'
+  };
+  if(kind==='moreinfo') return {
+    subject: 'Your Beverley Round Table funding request (' + ref + ')',
+    body: 'Hi ' + fn + ',\n\nThank you for your funding request (' + ref + '). Before we can put it to our members, we\u2019d be grateful for a little more detail:\n\n- [what you need here]\n\nJust reply to this email with that and we\u2019ll take it from there.\n\nWith best wishes,\nBeverley Round Table'
+  };
+  if(kind==='approved') return {
+    subject: 'Good news about your funding request (' + ref + ')',
+    body: 'Hi ' + fn + ',\n\nI\u2019m pleased to let you know that Beverley Round Table has agreed to support your request (' + ref + ') with a grant of ' + amt + '.\n\nWe\u2019ll arrange payment to the account details you gave us \u2014 if anything has changed, just reply and let us know.\n\nWe\u2019d love to hear how it goes, and thank you for the work you do in and around Beverley.\n\nWith best wishes,\nBeverley Round Table'
+  };
+  if(kind==='declined') return {
+    subject: 'Your Beverley Round Table funding request (' + ref + ')',
+    body: 'Hi ' + fn + ',\n\nThank you for your funding request (' + ref + '), and for the work you\u2019re doing.\n\nWe\u2019re sorry to say that on this occasion our members weren\u2019t able to support it. We receive more requests than we\u2019re able to fund, so this isn\u2019t a judgement on what you\u2019re setting out to do \u2014 and you\u2019d be very welcome to apply again in future.\n\nWe wish you all the best with it.\n\nWith best wishes,\nBeverley Round Table'
+  };
+  return { subject: 'Beverley Round Table (' + ref + ')', body: 'Hi ' + fn + ',\n\n\n\nWith best wishes,\nBeverley Round Table' };
+}
+
+function emailPanel(a){
+  return `<div class="section"><h3>Email the applicant</h3>
+    <p class="phint">Pick a template, edit it to suit, then send. It goes to ${esc(a['Email']||'\u2014')} and is logged in the history below. Nothing sends until you tap Send.</p>
+    <label for="emKind">Template</label>
+    <select id="emKind">
+      <option value="ack">Acknowledge receipt</option>
+      <option value="moreinfo">More information needed</option>
+      <option value="approved">Approved \u2013 good news</option>
+      <option value="declined">Declined</option>
+      <option value="custom">Custom (blank)</option>
+    </select>
+    <label for="emSubject">Subject</label>
+    <input type="text" id="emSubject">
+    <label for="emBody">Message</label>
+    <textarea id="emBody" rows="10"></textarea>
+    <button class="btn block" id="emSend">Send email</button>
+    <div class="msg" id="emMsg"></div></div>`;
+}
+
+function wireEmail(a){
+  const sel = document.getElementById('emKind'); if(!sel) return;
+  const subj = document.getElementById('emSubject'), bodyEl = document.getElementById('emBody');
+  const fill = () => { const t = emailTemplate(sel.value, a); subj.value = t.subject; bodyEl.value = t.body; };
+  const s = a['Status'];
+  sel.value = s==='declined' ? 'declined'
+            : (s==='approved'||s==='paid') ? 'approved'
+            : s==='screening' ? 'moreinfo'
+            : s==='new' ? 'ack' : 'custom';
+  fill();
+  sel.onchange = fill;
+  const send = document.getElementById('emSend'), msg = document.getElementById('emMsg');
+  send.onclick = async () => {
+    const subject = subj.value.trim(), message = bodyEl.value.trim();
+    if(!a['Email']){ msg.className='msg err show'; msg.textContent='No applicant email on file.'; return; }
+    if(!subject || !message){ msg.className='msg err show'; msg.textContent='Add a subject and a message first.'; return; }
+    send.disabled = true; send.textContent = 'Sending…';
+    const res = await api('email', {id: a['Application ID'], kind: sel.value, subject, message}).catch(()=>null);
+    if(res && res.ok){
+      msg.className='msg ok show'; msg.textContent='Sent to ' + a['Email'] + '.'; send.textContent='Sent';
+      setTimeout(() => openDetail(a['Application ID']), 900);
+    } else {
+      send.disabled = false; send.textContent = 'Send email';
+      msg.className='msg err show'; msg.textContent = (res && res.error) || 'Failed to send.';
+    }
+  };
+}
 
 /* ---------- reconciliation ---------- */
 async function loadRecon(){
