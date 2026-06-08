@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Causes We've Funded — Beverley Round Table</title>
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png">
+<meta name="description" content="The local causes and projects Beverley Round Table has supported.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#FBAF33;--gold-glow:rgba(251,175,51,.14);--grey-dark:#1D1D1A;--grey-card:#242421;
+  --grey-border:#39393455;--white:#fff;--text:#ecece7;--text-muted:#a3a39c;
+  --font-display:'Eurostile Extended','Eurostile','Michroma',sans-serif;--font-body:'Open Sans',-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--grey-dark);color:var(--text);line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(900px 500px at 50% -10%,rgba(251,175,51,.10),transparent 60%),linear-gradient(180deg,#1f1f1c,#1a1a17);background-attachment:fixed;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:32px 20px 64px}
+.hero{text-align:center;padding:24px 8px 8px}
+.logo-slot{display:inline-flex;height:60px;margin-bottom:24px;align-items:center;justify-content:center}
+.logo-slot img{max-height:52px}
+.eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px}
+h1{font-family:var(--font-display);font-size:clamp(30px,7vw,50px);line-height:1.02;color:var(--white);text-transform:uppercase;letter-spacing:.5px}
+h1 .y{color:var(--gold)}
+.brush{width:120px;height:5px;background:var(--gold);border-radius:3px;margin:18px auto 0;transform:skewX(-12deg)}
+.lede{font-size:17px;color:var(--text-muted);max-width:480px;margin:22px auto 0}
+.grid{margin-top:36px;display:grid;gap:16px}
+.cause{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:14px;overflow:hidden;box-shadow:0 16px 40px -28px rgba(0,0,0,.7)}
+.cause img{width:100%;max-height:240px;object-fit:cover;display:block;border-bottom:1px solid var(--grey-border)}
+.cause .body{padding:20px 22px}
+.cause .top{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.cause .name{font-family:var(--font-display);font-size:17px;color:var(--white);letter-spacing:.3px;line-height:1.2}
+.cause .amt{margin-left:auto;font-family:var(--font-display);font-size:18px;color:var(--gold);white-space:nowrap}
+.cause .when{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+.cause .what{font-size:14.5px;color:var(--text);margin-bottom:10px}
+.cause .report{font-size:14px;color:var(--text-muted);line-height:1.7;border-left:2px solid var(--gold);padding-left:14px}
+.loading,.empty{text-align:center;color:var(--text-muted);padding:48px 20px;font-size:15px}
+.foot{text-align:center;margin-top:36px;font-size:13px;color:var(--text-muted)}
+.foot a{color:var(--gold);text-decoration:none}
+.fade{opacity:0;transform:translateY(12px);animation:rise .6s ease forwards}@keyframes rise{to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero fade">
+    <span class="logo-slot"><img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png" alt="Round Table"></span>
+    <div class="eyebrow">Beverley Round Table</div>
+    <h1>Causes We've<br><span class="y">Funded.</span></h1>
+    <div class="brush"></div>
+    <p class="lede">A look at the local causes and projects Beverley Round Table has been able to support — thanks to everyone who fundraises with us.</p>
+  </header>
+
+  <div id="grid" class="grid"><div class="loading">Loading…</div></div>
+
+  <div class="foot fade">Run a local cause? <a href="/requests/">Apply for funding →</a></div>
+</div>
+
+<script>
+// ====== same deployed Apps Script /exec URL the form uses ======
+const API_URL = 'https://script.google.com/macros/s/AKfycbyY1kgyrfHGDS_zmDVcpo386oHKP5jGBPKm_bQS4X-k0fKDVPZvsT_AzzutGI6dcXrV/exec';
+// ================================================================
+const grid = document.getElementById('grid');
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const gbp = v => { const n=parseInt(v,10); return isNaN(n)?'':'£'+n.toLocaleString('en-GB'); };
+const whenLabel = iso => { const d=new Date(iso); return isNaN(d.getTime())?'':d.toLocaleDateString('en-GB',{month:'long',year:'numeric'}); };
+const isImg = u => /^https?:\/\/\S+\.(?:jpg|jpeg|png|webp|gif)(?:\?\S*)?$/i.test(String(u||''));
+
+(async function(){
+  try{
+    const r = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'public'}) });
+    const data = await r.json();
+    const causes = (data && data.ok && data.causes) || [];
+    if(!causes.length){ grid.className=''; grid.innerHTML = '<div class="empty">We\u2019ll be sharing the causes we\u2019ve funded here soon.</div>'; return; }
+    grid.innerHTML = causes.map(c => `
+      <article class="cause fade">
+        ${isImg(c.photo) ? `<img src="${esc(c.photo)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+        <div class="body">
+          <div class="top"><span class="name">${esc(c.cause)}</span>${gbp(c.amount)?`<span class="amt">${gbp(c.amount)}</span>`:''}</div>
+          ${whenLabel(c.when)?`<div class="when">${esc(whenLabel(c.when))}</div>`:''}
+          ${c.summary?`<div class="what">${esc(c.summary)}</div>`:''}
+          ${c.report?`<div class="report">${esc(c.report)}</div>`:''}
+        </div>
+      </article>`).join('');
+  }catch(e){
+    grid.className=''; grid.innerHTML = '<div class="empty">Couldn\u2019t load right now — please check back shortly.</div>';
+  }
+})();
+</script>
+</body>
+</html>
