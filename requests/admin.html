@@ -60,6 +60,7 @@ button{font-family:var(--font-body);cursor:pointer}
 .badge.tabled{background:rgba(91,155,213,.16);color:var(--blue)}
 .badge.approved{background:rgba(46,204,113,.15);color:var(--green)}
 .badge.paid{background:var(--green-dim);color:#dffbe9}
+.badge.reported{background:rgba(91,155,213,.16);color:var(--blue)}
 .badge.declined{background:rgba(224,90,90,.15);color:var(--red)}
 .badge.closed{background:#33332e;color:#8f8f88}
 .flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
@@ -172,10 +173,10 @@ const state = { token:null, email:null, status:'new', view:'list' };
 
 const STATUSES = [
   {k:'new',label:'New'},{k:'screening',label:'Parked'},{k:'tabled',label:'Tabled'},
-  {k:'approved',label:'Approved'},{k:'paid',label:'Paid'},{k:'declined',label:'Declined'},
+  {k:'approved',label:'Approved'},{k:'paid',label:'Paid'},{k:'reported',label:'Reported'},{k:'declined',label:'Declined'},
   {k:'closed',label:'Closed'},{k:'all',label:'All'}
 ];
-const STATUS_LABEL = {new:'New',screening:'Parked',tabled:'Tabled',approved:'Approved',paid:'Paid',declined:'Declined',closed:'Closed'};
+const STATUS_LABEL = {new:'New',screening:'Parked',tabled:'Tabled',approved:'Approved',paid:'Paid',reported:'Reported',declined:'Declined',closed:'Closed'};
 
 /* ---------- helpers ---------- */
 async function api(action, payload){
@@ -356,6 +357,7 @@ async function openDetail(id){
     ${alert}
     ${actionPanel(a)}
     ${emailPanel(a)}
+    ${reportPanel(a)}
     ${details}
     ${timeline}
   `);
@@ -363,6 +365,7 @@ async function openDetail(id){
   document.getElementById('back').onclick = loadList;
   wireActions(a);
   wireEmail(a);
+  wireReport(a);
 }
 
 /* ---------- action panels by status ---------- */
@@ -560,6 +563,42 @@ async function loadRecon(){
     <div class="section"><h3>Paid (match against NatWest)</h3><div class="recon-group">${paidHtml}</div></div>`;
   wireNav();
 }
+/* ---------- report-back & publishing ---------- */
+function reportPanel(a){
+  const s = a['Status'];
+  const hasReport = !!a['Report'];
+  if(!(s==='paid' || s==='reported' || String(a['Published']).toLowerCase()==='yes' || hasReport)) return '';
+  const published = String(a['Published']).toLowerCase()==='yes';
+  const reportBlock = hasReport
+    ? `<dl class="kv">
+        <dt>How it went</dt><dd>${esc(a['Report'])}</dd>
+        ${a['Report photo'] ? `<dt>Photo</dt><dd><a href="${esc(a['Report photo'])}" target="_blank" rel="noopener">view</a></dd>` : ''}
+        <dt>Reported</dt><dd>${fdate(a['Reported (ISO)'])}</dd>
+        <dt>Consent to share</dt><dd>${a['Publish consent'] ? 'Yes' : 'Not given'}</dd>
+      </dl>`
+    : `<p class="phint">No report-back yet. The beneficiary submits one at the report-back page using their reference and email. You can still publish the basics now if you'd like.</p>`;
+  const consentWarn = (!published && hasReport && !a['Publish consent'])
+    ? `<p class="phint" style="margin-top:10px">Heads-up: the beneficiary didn\u2019t tick consent to share \u2014 check with them before publishing.</p>` : '';
+  return `<div class="section"><h3>Report-back &amp; public page</h3>
+    ${reportBlock}
+    <p class="phint" style="margin-top:12px">${published ? 'This is live on the public \u201Ccauses we\u2019ve funded\u201D page.' : 'Publishing shows the cause, what it was for, the amount and any report-back \u2014 never the applicant\u2019s name or contact details.'}</p>
+    <div class="btnrow">
+      <button class="btn ${published?'sec':'ok'}" id="pubToggle" data-pub="${published?'0':'1'}">${published?'Remove from public page':'Publish to public page'}</button>
+    </div>
+    ${consentWarn}
+    <div class="msg" id="pubMsg"></div></div>`;
+}
+function wireReport(a){
+  const btn = document.getElementById('pubToggle'); if(!btn) return;
+  const msg = document.getElementById('pubMsg');
+  btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = 'Saving…';
+    const res = await api('publish', {id: a['Application ID'], publish: btn.dataset.pub==='1'}).catch(()=>null);
+    if(res && res.ok){ openDetail(a['Application ID']); }
+    else { btn.disabled = false; msg.className='msg err show'; msg.textContent = (res && res.error) || 'Failed.'; }
+  };
+}
+
 /* ---------- dashboard ---------- */
 function bar(label, val, max){
   const pct = Math.max(2, Math.round(val / (max||1) * 100));
@@ -600,7 +639,7 @@ async function loadDashboard(){
   const aMax = Math.max(1, ...areas.map(a=>d.byArea[a]));
   const areaBars = areas.length ? areas.map(a=>bar(a, d.byArea[a], aMax)).join('') : '<div class="empty">No payments logged yet.</div>';
 
-  const order = ['new','screening','tabled','approved','paid','declined','closed'];
+  const order = ['new','screening','tabled','approved','paid','reported','declined','closed'];
   const pipeline = order.filter(k=>d.statusCounts[k]).map(k=>`<span class="pill"><b>${d.statusCounts[k]}</b>${STATUS_LABEL[k]}</span>`).join('') || '<span class="pill">No applications yet</span>';
 
   body.innerHTML = navHtml('dashboard') + cards + context
