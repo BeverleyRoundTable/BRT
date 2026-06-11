@@ -9,14 +9,18 @@
   <meta name="theme-color" content="#0d0d0b">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png">
   
+  <!-- Preconnects: open connections to the hosts we hit immediately, before the requests are made -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://tile.openstreetmap.org">
+
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
-  <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
-  <!-- MapLibre GL JS — used in driver mode for Waze/Google Maps-style satnav (upright labels + 3D pitch) -->
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- leaflet-gpx removed: never used (GPX is parsed manually in loadGpxRoute).
+       leaflet-rotate + MapLibre GL JS (~800KB, driver-mode satnav only) are now
+       lazy-loaded in init() when ?driver=1 — spectators skip them entirely. -->
 
   <style>
     :root {
@@ -937,7 +941,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       const AppState = {
         map: null, mlMap: null, marker: null, notifyMarker: null, gpxRoute: null, lastFix: null, recentFixes: [], routeFixes: [],
         flags: { follow: true, firstFix: true, isKiosk: false, gpxLoaded: false, snowActive: false, pageVisible: !document.hidden, awaitingPin: false, browserNotified: sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1", hasPassedSticky: sessionStorage.getItem("SANTA_HAS_PASSED") === "1", celebrationFired: sessionStorage.getItem("SANTA_CELEBRATION_FIRED") === "1", musicEnabled: false },
-        vars: { apiUrl: null, sleighName: "Santa Sleigh", staleSince: null, lastSnapIndex: 0, snowflakes: [], animRaf: null, pendingSubscription: null, notifyLatLng: null, lastVisualPos: null, escapeListener: null, lastElfCamUrl: null, lastSeenMsgTs: Number(sessionStorage.getItem('SANTA_LAST_MSG_TS')) || 0, pollTimer: null, consecutiveErrors: 0, musicUrl: null, currentMapHeading: 0 },
+        vars: { apiUrl: null, sleighName: "Santa Sleigh", staleSince: null, lastSnapIndex: 0, snowflakes: [], animRaf: null, pendingSubscription: null, notifyLatLng: null, lastVisualPos: null, escapeListener: null, lastElfCamUrl: null, lastSeenMsgTs: Number(sessionStorage.getItem('SANTA_LAST_MSG_TS')) || 0, pollTimer: null, consecutiveErrors: 0, musicUrl: null, currentMapHeading: 0, latestApiData: null, lastSettingsFetch: 0, lastTxTime: 0, lastLeafletRouteIdx: -1, lastMlRouteIdx: -1, userSnapCache: null },
         dom: { loading: document.getElementById("loadingCover"), statusBox: document.getElementById("statusBox"), followBtn: document.getElementById("followBtn"), recenterBtn: document.getElementById("recenterBtn"), notifyBtn: document.getElementById("notifyBtn"), msgBtn: document.getElementById("msgBtn"), statusDot: document.getElementById("statusDot"), donateLink: document.getElementById("donateLink"), donateBox: document.getElementById("donateBox"), kioskBanner: document.getElementById("kioskBanner"), sponsorBox: document.getElementById("kioskSponsor"), toast: document.getElementById("toast"), snowCanvas: document.getElementById("snow"), shareBtn: document.getElementById("shareBtn"), musicBtn: document.getElementById("musicBtn"), fireworks: document.getElementById("fireworks") }
       };
 
@@ -1418,6 +1422,10 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       function triggerPolaroid(imgSrc, captionText = "Live from the Sleigh!") { if (!AppState.flags.pageVisible) return; const p = document.createElement("div"); p.className = "polaroid"; const isMobile = window.innerWidth < 600; const isLeft = Math.random() > 0.5; const TOP_SAFE = 90, BOTTOM_SAFE = isMobile ? 230 : 210, POLAROID_H = isMobile ? 180 : 300; const availableH = window.innerHeight - TOP_SAFE - BOTTOM_SAFE - POLAROID_H; const safeTop = TOP_SAFE + (availableH > 0 ? Math.random() * availableH : 0); if (isMobile) { p.style.left = isLeft ? "22px" : "auto"; p.style.right = isLeft ? "auto" : "22px"; } else { p.style.left = isLeft ? (Math.random() * 6 + 1) + "%" : "auto"; p.style.right = isLeft ? "auto" : (Math.random() * 6 + 1) + "%"; } p.style.top = safeTop + "px"; const maxRot = isMobile ? 6 : 12; const rot = Math.random() * (maxRot * 2) - maxRot; p.style.setProperty("--rotStart", (rot * 2) + "deg"); p.style.setProperty("--rotMid", rot + "deg"); p.style.setProperty("--rotEnd", (rot * 0.5) + "deg"); p.innerHTML = `<img src="${imgSrc}" alt="Elf Cam"><div class="polaroid-caption">${captionText}</div>`; document.body.appendChild(p); setTimeout(() => p.remove(), 10000); }
 
       async function updateTracker() {
+        // Hidden tab / backgrounded PWA: stop polling entirely. The visibilitychange
+        // handler restarts the loop the instant the page is visible again, so every
+        // backgrounded phone stops hitting Firebase + Apps Script for nothing.
+        if (!AppState.flags.pageVisible) return;
         try {
           const now = Date.now();
           if (!AppState.vars.lastSettingsFetch || now - AppState.vars.lastSettingsFetch > 60000) { AppState.vars.latestApiData = await Utils.loadJSON(AppState.vars.apiUrl); AppState.vars.lastSettingsFetch = now; }
@@ -1450,9 +1458,9 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
           let visualPos = { lat: data.lat, lng: data.lng };
           if (AppState.flags.gpxLoaded) {
             const snap = snapToGpxIndex(visualPos, AppConfig.GPX); if (snap && snap.distance < 50) visualPos = snap.point;
-            if (AppState.gpxRoute && AppState.gpxRoute.length > 1) { const bestPoint = snapToGpxIndex(visualPos, null); if (bestPoint && bestPoint.distance <= 50) { const percentComplete = Math.min(100, Math.round((bestPoint.point.index || AppState.vars.lastSnapIndex) / (AppState.gpxRoute.length - 1) * 100)); AppState.dom.statusBox.style.setProperty('--progress', `${percentComplete}%`); if (AppState.flags.isDriver) { const bigBox = document.getElementById("driverProgressBox"); if (bigBox) bigBox.textContent = `${percentComplete}%`; } } else { AppState.dom.statusBox.style.setProperty('--progress', `0%`); if (AppState.flags.isDriver) { const bigBox = document.getElementById("driverProgressBox"); if (bigBox) bigBox.textContent = `OFF ROUTE`; } } }
-            if (AppState.dynamicRouteRemainingMain) { const idx = AppState.vars.lastSnapIndex; AppState.dynamicRouteCompleted.setLatLngs(AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lat, p.lng])); const remaining = AppState.gpxRoute.slice(idx).map(p => [p.lat, p.lng]); AppState.dynamicRouteRemainingMain.setLatLngs(remaining); AppState.dynamicRouteRemainingGlow.setLatLngs(remaining); }
-            if (AppState.mlMap && AppState.flags.gpxLoaded && AppState.gpxRoute) { const idx = AppState.vars.lastSnapIndex; const cCoords = AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lng, p.lat]); const rCoords = AppState.gpxRoute.slice(idx).map(p => [p.lng, p.lat]); const cSrc = AppState.mlMap.getSource('gpx-route-completed'); const rSrc = AppState.mlMap.getSource('gpx-route-remaining'); if (cSrc) cSrc.setData(cCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: cCoords } } : { type: 'FeatureCollection', features: [] }); if (rSrc) rSrc.setData(rCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: rCoords } } : { type: 'FeatureCollection', features: [] }); }
+            if (AppState.gpxRoute && AppState.gpxRoute.length > 1) { const bestPoint = (snap && snap.distance < 50) ? snap : snapToGpxIndex(visualPos, null); /* reuse windowed snap when it hit — pay for a full-route scan only on a miss */ if (bestPoint && bestPoint.distance <= 50) { const percentComplete = Math.min(100, Math.round((bestPoint.point.index || AppState.vars.lastSnapIndex) / (AppState.gpxRoute.length - 1) * 100)); AppState.dom.statusBox.style.setProperty('--progress', `${percentComplete}%`); if (AppState.flags.isDriver) { const bigBox = document.getElementById("driverProgressBox"); if (bigBox) bigBox.textContent = `${percentComplete}%`; } } else { AppState.dom.statusBox.style.setProperty('--progress', `0%`); if (AppState.flags.isDriver) { const bigBox = document.getElementById("driverProgressBox"); if (bigBox) bigBox.textContent = `OFF ROUTE`; } } }
+            if (AppState.dynamicRouteRemainingMain && AppState.vars.lastLeafletRouteIdx !== AppState.vars.lastSnapIndex) { const idx = AppState.vars.lastSnapIndex; AppState.dynamicRouteCompleted.setLatLngs(AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lat, p.lng])); const remaining = AppState.gpxRoute.slice(idx).map(p => [p.lat, p.lng]); AppState.dynamicRouteRemainingMain.setLatLngs(remaining); AppState.dynamicRouteRemainingGlow.setLatLngs(remaining); AppState.vars.lastLeafletRouteIdx = idx; }
+            if (AppState.mlMap && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.vars.lastMlRouteIdx !== AppState.vars.lastSnapIndex) { const idx = AppState.vars.lastSnapIndex; const cSrc = AppState.mlMap.getSource('gpx-route-completed'); const rSrc = AppState.mlMap.getSource('gpx-route-remaining'); if (cSrc && rSrc) { const cCoords = AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lng, p.lat]); const rCoords = AppState.gpxRoute.slice(idx).map(p => [p.lng, p.lat]); cSrc.setData(cCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: cCoords } } : { type: 'FeatureCollection', features: [] }); rSrc.setData(rCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: rCoords } } : { type: 'FeatureCollection', features: [] }); AppState.vars.lastMlRouteIdx = idx; } }
           }
 
           animateMarkerTo(visualPos.lat, visualPos.lng);
@@ -1462,7 +1470,7 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
           if (AppState.flags.hasPassedSticky) { /* locked */ }
           else if (AppState.vars.notifyLatLng && AppState.flags.gpxLoaded && isFresh) {
             const santaSnap = snapToGpxIndex({ lat: data.lat, lng: data.lng }, AppConfig.GPX);
-            if (santaSnap) { const savedSnapIdx = AppState.vars.lastSnapIndex; const userSnap = snapToGpxIndex(AppState.vars.notifyLatLng, null); AppState.vars.lastSnapIndex = savedSnapIdx; pushRouteFix(santaSnap.point.dist, Date.now());
+            if (santaSnap) { let userSnap; const pinCache = AppState.vars.userSnapCache; if (pinCache && pinCache.lat === AppState.vars.notifyLatLng.lat && pinCache.lng === AppState.vars.notifyLatLng.lng) { userSnap = pinCache.snap; } else { /* pin is static — full-route snap once, then reuse every poll */ const savedSnapIdx = AppState.vars.lastSnapIndex; userSnap = snapToGpxIndex(AppState.vars.notifyLatLng, null); AppState.vars.lastSnapIndex = savedSnapIdx; AppState.vars.userSnapCache = userSnap ? { lat: AppState.vars.notifyLatLng.lat, lng: AppState.vars.notifyLatLng.lng, snap: userSnap } : null; } pushRouteFix(santaSnap.point.dist, Date.now());
               if (userSnap) { const totalRouteDist = AppState.gpxRoute[AppState.gpxRoute.length - 1].dist; const isUserNearEnd = userSnap.point.dist > (totalRouteDist - AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET); const santaReachedEnd = santaSnap.point.dist >= (totalRouteDist - 10);
                 if ((santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) || (isUserNearEnd && santaReachedEnd)) {
                   AppState.flags.hasPassedSticky = true; sessionStorage.setItem("SANTA_HAS_PASSED", "1");
@@ -1516,6 +1524,19 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
         if (params.get("kiosk") === "1") sessionStorage.setItem("SANTA_KIOSK", "1");
         if (AppState.flags.isKiosk) document.body.classList.add("kiosk");
         AppState.flags.isDriver = params.get("driver") === "1";
+
+        // ── DRIVER-ONLY LIBRARIES (lazy-loaded) ──
+        // leaflet-rotate + MapLibre GL (~800KB) are only used in ?driver=1 satnav mode.
+        // Spectators never download them; for drivers they fetch in parallel with the
+        // API + GPX requests below and are awaited just before the map is built.
+        // Loaders resolve on error too — existing typeof/feature guards handle fallback.
+        const loadScript = (src) => new Promise((res) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = res; document.head.appendChild(s); });
+        const loadCss = (href) => new Promise((res) => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; l.onload = res; l.onerror = res; document.head.appendChild(l); });
+        const driverLibsPromise = AppState.flags.isDriver ? Promise.all([
+          loadScript("https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"),
+          loadScript("https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"),
+          loadCss("https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css")
+        ]) : null;
 
         if (AppState.flags.isDriver) {
           document.body.classList.add("driver-mode");
@@ -1768,7 +1789,8 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
               // Real-time route progress on the MapLibre map — shrink the red/gold ahead,
               // grow the grey trail behind. Mirrors the line ~1350 update but fires every
               // GPS tick so the visual matches the driver's position immediately, like Google Maps.
-              if (AppState.mlMap && AppState.flags.gpxLoaded && AppState.gpxRoute) { const idx = AppState.vars.lastSnapIndex; const cCoords = AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lng, p.lat]); const rCoords = AppState.gpxRoute.slice(idx).map(p => [p.lng, p.lat]); const cSrc = AppState.mlMap.getSource('gpx-route-completed'); const rSrc = AppState.mlMap.getSource('gpx-route-remaining'); if (cSrc) cSrc.setData(cCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: cCoords } } : { type: 'FeatureCollection', features: [] }); if (rSrc) rSrc.setData(rCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: rCoords } } : { type: 'FeatureCollection', features: [] }); }
+              // Shares lastMlRouteIdx with the poll-side update — only redraws when the snap index moves.
+              if (AppState.mlMap && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.vars.lastMlRouteIdx !== AppState.vars.lastSnapIndex) { const idx = AppState.vars.lastSnapIndex; const cSrc = AppState.mlMap.getSource('gpx-route-completed'); const rSrc = AppState.mlMap.getSource('gpx-route-remaining'); if (cSrc && rSrc) { const cCoords = AppState.gpxRoute.slice(0, idx + 1).map(p => [p.lng, p.lat]); const rCoords = AppState.gpxRoute.slice(idx).map(p => [p.lng, p.lat]); cSrc.setData(cCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: cCoords } } : { type: 'FeatureCollection', features: [] }); rSrc.setData(rCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: rCoords } } : { type: 'FeatureCollection', features: [] }); AppState.vars.lastMlRouteIdx = idx; } }
               
               // Position the driver arrow — MapLibre uses [lng, lat], Leaflet uses [lat, lng]
               if (AppState.mlMap) {
@@ -1816,19 +1838,26 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
                 if (smoothedHeading !== null) TurnByTurn.rotateMap(smoothedHeading);
               }
               
-              // ── TRANSMIT GPS TO FIREBASE ──
-              const payload = { lat, lng, ts: new Date().toISOString() };
-              try {
-                const r = await fetch(gpsLoggerUrl, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
-                if (!r.ok) throw new Error("HTTP " + r.status);
-                BeaconDB.sent++;
-                document.getElementById('txSent').textContent = BeaconDB.sent;
-                if(BeaconDB.depth === 0) {
-                  txPill.style.borderColor = "#00e676"; txPill.style.color = "#00e676";
-                  document.getElementById('txState').textContent = "📡 LIVE";
+              // ── TRANSMIT GPS TO FIREBASE (throttled) ──
+              // Trackers read /location/current.json every 6s, so transmitting every GPS
+              // fix (~1/s) wastes ~5 of every 6 writes plus driver battery and data.
+              // Send at most one fix every 4s — still well inside the 6s read cadence.
+              const txNow = Date.now();
+              if (txNow - AppState.vars.lastTxTime >= 4000) {
+                AppState.vars.lastTxTime = txNow;
+                const payload = { lat, lng, ts: new Date().toISOString() };
+                try {
+                  const r = await fetch(gpsLoggerUrl, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+                  if (!r.ok) throw new Error("HTTP " + r.status);
+                  BeaconDB.sent++;
+                  document.getElementById('txSent').textContent = BeaconDB.sent;
+                  if(BeaconDB.depth === 0) {
+                    txPill.style.borderColor = "#00e676"; txPill.style.color = "#00e676";
+                    document.getElementById('txState').textContent = "📡 LIVE";
+                  }
+                } catch(e) {
+                  await BeaconDB.add(payload);
                 }
-              } catch(e) {
-                await BeaconDB.add(payload);
               }
             }, () => {
               alert("GPS Error: Please ensure Location Services are turned on.");
@@ -1842,6 +1871,11 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
         requestWakeLock(); setInterval(() => { if (document.visibilityState === "visible") requestWakeLock(); }, 60000);
 
         const apiData = await Utils.loadJSON(AppState.vars.apiUrl);
+        // Seed the settings cache so the first updateTracker doesn't immediately
+        // re-fetch the same Apps Script endpoint — removes a 1–2s roundtrip before
+        // the first live fix can appear.
+        AppState.vars.latestApiData = apiData;
+        AppState.vars.lastSettingsFetch = Date.now();
         AppState.vars.firebaseUrl = apiData.tracker?.firebase_url ? apiData.tracker.firebase_url.replace(/\/$/, "") : null;
         const settings = apiData.settings || {};
         AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
@@ -1905,7 +1939,7 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
         window.initTrackerMap = function() {
             AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk && !AppState.flags.isDriver, rotate: !!AppState.flags.isDriver, touchRotate: false, shiftKeyRotate: false, rotateControl: false }).setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
             AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteCompleted.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); });
-           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(AppState.map);
+           L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(AppState.map);
             if (AppState.flags.isKiosk) { const m = AppState.map; m.dragging.disable(); m.scrollWheelZoom.disable(); m.doubleClickZoom.disable(); m.boxZoom.disable(); m.keyboard.disable(); m.touchZoom.disable(); AppState.dom.followBtn.style.display = "none"; AppState.dom.recenterBtn.style.display = "none"; AppState.dom.notifyBtn.style.display = "none"; if(AppState.dom.msgBtn) AppState.dom.msgBtn.style.display = "none"; AppState.dom.donateBox.style.display = "none"; }
             if (route && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 0) { const allLatLngs = AppState.gpxRoute.map(p => [p.lat, p.lng]); AppState.dynamicRouteCompleted = L.polyline([], { color: "#808080", weight: 4, opacity: 0.5, dashArray: "8, 8" }).addTo(AppState.map); AppState.dynamicRouteRemainingGlow = L.polyline(allLatLngs, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(AppState.map); AppState.dynamicRouteRemainingMain = L.polyline(allLatLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(AppState.map); const startPt = AppState.gpxRoute[0], endPt = AppState.gpxRoute[AppState.gpxRoute.length - 1]; L.marker([startPt.lat, startPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); L.marker([endPt.lat, endPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); AppState.map.fire("zoomend"); }
             if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) { const span = document.createElement('span'); span.textContent = 'Proudly sponsored by'; const img = document.createElement('img'); img.src = route.sponsorUrl; img.alt = 'Sponsor'; AppState.dom.sponsorBox.innerHTML = ''; AppState.dom.sponsorBox.appendChild(span); AppState.dom.sponsorBox.appendChild(img); }
@@ -2034,10 +2068,10 @@ if (!AppState.flags.isKiosk && !AppState.flags.isDriver && route?.sponsorUrl && 
 
                 // Fit to route bounds so the driver can orient before navigation starts
                 if (AppState.gpxRoute && AppState.gpxRoute.length > 1) {
-                  const lats = AppState.gpxRoute.map(p => p.lat);
-                  const lngs = AppState.gpxRoute.map(p => p.lng);
-                  const bounds = [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]];
-                  mlMap.fitBounds(bounds, { padding: 60, pitch: 0, bearing: 0, duration: 0 });
+                  // Loop instead of Math.min(...spread) — spreading huge point arrays can blow the call stack
+                  let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+                  for (const p of AppState.gpxRoute) { if (p.lat < minLat) minLat = p.lat; if (p.lat > maxLat) maxLat = p.lat; if (p.lng < minLng) minLng = p.lng; if (p.lng > maxLng) maxLng = p.lng; }
+                  mlMap.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 60, pitch: 0, bearing: 0, duration: 0 });
                 }
               });
 
@@ -2053,6 +2087,7 @@ if (!AppState.flags.isKiosk && !AppState.flags.isDriver && route?.sponsorUrl && 
         AppState.dom.loading.style.display = "none";
         SnowSystem.resize();
         window.addEventListener("resize", SnowSystem.resize);
+        if (driverLibsPromise) await driverLibsPromise; // driver mode only — spectators skip
         window.initTrackerMap();
         window.SantaDebug = { AppState, SnowSystem, Fireworks, SleighAudio, animateMarkerTo, Utils, AppConfig, TurnByTurn };
       }
