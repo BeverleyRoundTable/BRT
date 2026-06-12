@@ -941,7 +941,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       const AppState = {
         map: null, mlMap: null, marker: null, notifyMarker: null, gpxRoute: null, lastFix: null, recentFixes: [], routeFixes: [],
         flags: { follow: true, firstFix: true, isKiosk: false, gpxLoaded: false, snowActive: false, pageVisible: !document.hidden, awaitingPin: false, browserNotified: sessionStorage.getItem("SANTA_BROWSER_NOTIFIED") === "1", hasPassedSticky: sessionStorage.getItem("SANTA_HAS_PASSED") === "1", celebrationFired: sessionStorage.getItem("SANTA_CELEBRATION_FIRED") === "1", musicEnabled: false, beaconActive: false },
-        vars: { apiUrl: null, sleighName: "Santa Sleigh", staleSince: null, lastSnapIndex: 0, snowflakes: [], animRaf: null, pendingSubscription: null, notifyLatLng: null, lastVisualPos: null, escapeListener: null, lastElfCamUrl: null, lastSeenMsgTs: Number(sessionStorage.getItem('SANTA_LAST_MSG_TS')) || 0, pollTimer: null, consecutiveErrors: 0, musicUrl: null, currentMapHeading: 0, latestApiData: null, lastSettingsFetch: 0, lastTxTime: 0, lastLeafletRouteIdx: -1, lastMlRouteIdx: -1, userSnapCache: null },
+        vars: { apiUrl: null, sleighName: "Santa Sleigh", staleSince: null, lastSnapIndex: 0, snowflakes: [], animRaf: null, pendingSubscription: null, notifyLatLng: null, lastVisualPos: null, escapeListener: null, lastElfCamUrl: null, lastSeenMsgTs: Number(sessionStorage.getItem('SANTA_LAST_MSG_TS')) || 0, pollTimer: null, consecutiveErrors: 0, musicUrl: null, currentMapHeading: 0, latestApiData: null, lastSettingsFetch: 0, lastTxTime: 0, lastLeafletRouteIdx: -1, lastMlRouteIdx: -1, userSnapCache: null, etaEmaSec: null },
         dom: { loading: document.getElementById("loadingCover"), statusBox: document.getElementById("statusBox"), followBtn: document.getElementById("followBtn"), recenterBtn: document.getElementById("recenterBtn"), notifyBtn: document.getElementById("notifyBtn"), msgBtn: document.getElementById("msgBtn"), statusDot: document.getElementById("statusDot"), donateLink: document.getElementById("donateLink"), donateBox: document.getElementById("donateBox"), kioskBanner: document.getElementById("kioskBanner"), sponsorBox: document.getElementById("kioskSponsor"), toast: document.getElementById("toast"), snowCanvas: document.getElementById("snow"), shareBtn: document.getElementById("shareBtn"), musicBtn: document.getElementById("musicBtn"), fireworks: document.getElementById("fireworks") }
       };
 
@@ -980,6 +980,59 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       async function loadGpxRoute(url) { try { const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 5000); const res = await fetch(url, { cache: "no-store", signal: controller.signal }); clearTimeout(timeoutId); if (!res.ok) throw new Error("GPX fetch failed"); const text = await res.text(); const xml = new DOMParser().parseFromString(text, "text/xml"); const pts = [...xml.getElementsByTagName("trkpt")]; if (pts.length < 2) throw new Error("GPX too short"); let dist = 0; let route = []; for (let i = 0; i < pts.length; i++) { const lat = parseFloat(pts[i].getAttribute("lat")); const lng = parseFloat(pts[i].getAttribute("lon")); const nameEl = pts[i].getElementsByTagName("name")[0]; const roadName = nameEl ? (nameEl.textContent || '').trim() : ''; if (i > 0) dist += Utils.haversineMeters(route[i - 1], { lat, lng }); route.push({ lat, lng, dist, index: i, roadName }); } AppState.gpxRoute = route; AppState.flags.gpxLoaded = true; AppState.vars.lastSnapIndex = 0; } catch (e) { AppState.flags.gpxLoaded = false; AppState.dom.notifyBtn.style.display = "none"; } }
 
       function snapToGpxIndex(pos, searchOpts) { if (!AppState.gpxRoute) return null; const { AHEAD, BACK, EARLY_EXIT_METERS } = searchOpts || AppConfig.GPX; const isGlobalSearch = !searchOpts; const start = isGlobalSearch ? 0 : Math.max(0, AppState.vars.lastSnapIndex - BACK); const end = isGlobalSearch ? AppState.gpxRoute.length - 1 : Math.min(AppState.gpxRoute.length - 1, AppState.vars.lastSnapIndex + AHEAD); let bestIndex = isGlobalSearch ? 0 : AppState.vars.lastSnapIndex; let bestDist = Infinity; for (let i = start; i <= end; i++) { const d = Utils.haversineMeters(pos, AppState.gpxRoute[i]); if (d < bestDist) { bestDist = d; bestIndex = i; } if (!isGlobalSearch && i > AppState.vars.lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break; } if (!isGlobalSearch) AppState.vars.lastSnapIndex = bestIndex; return { point: AppState.gpxRoute[bestIndex], distance: bestDist }; }
+
+      // ── PIN ETA HELPERS ──────────────────────────────────────────
+      // Snap the notify pin to the GPX once and cache it (pin is static;
+      // only re-snap if the pin actually moves).
+      function getUserPinSnap() {
+        const pin = AppState.vars.notifyLatLng;
+        if (!pin || !AppState.flags.gpxLoaded || !AppState.gpxRoute) return null;
+        const c = AppState.vars.userSnapCache;
+        if (c && c.lat === pin.lat && c.lng === pin.lng) return c.snap;
+        const saved = AppState.vars.lastSnapIndex; // full-route scan must not disturb Santa's snap window
+        const snap = snapToGpxIndex(pin, null);
+        AppState.vars.lastSnapIndex = saved;
+        AppState.vars.userSnapCache = snap ? { lat: pin.lat, lng: pin.lng, snap } : null;
+        return snap;
+      }
+
+      function formatClock(ms) {
+        const d = new Date(ms);
+        let h = d.getHours(); const m = d.getMinutes();
+        const ap = h >= 12 ? "pm" : "am"; h = h % 12 || 12;
+        return h + ":" + String(m).padStart(2, "0") + ap;
+      }
+
+      // Round to the nearest 5 minutes — stops the clock time twitching
+      // every poll when Santa's pace wobbles between houses.
+      function roundTo5Min(ms) { return Math.round(ms / 300000) * 300000; }
+
+      function parseRouteClock(hm) {
+        const m = String(hm || "").match(/^(\d{1,2}):(\d{2})/);
+        if (!m) return null;
+        const d = new Date(); d.setHours(parseInt(m[1], 10), parseInt(m[2], 10), 0, 0);
+        return d.getTime();
+      }
+
+      // PRE-ROUTE estimate: interpolate the pin's distance along the GPX
+      // against the route's scheduled Start/End times, so pinned families
+      // see "due around 7:40pm tonight" before the sleigh even moves.
+      function getScheduledPinEtaText() {
+        const route = AppState.vars.todayRoute;
+        if (!route || !AppState.vars.notifyLatLng || !AppState.flags.gpxLoaded) return null;
+        const start = parseRouteClock(route["Start Time"]);
+        let end = parseRouteClock(route["End Time"]);
+        if (!start || !end) return null;
+        if (end <= start) end += 12 * 60 * 60 * 1000;            // crossed-midnight guard
+        if (Date.now() > end + 30 * 60 * 1000) return null;      // window over — Lapland text wins
+        const userSnap = getUserPinSnap();
+        if (!userSnap) return null;
+        const total = AppState.gpxRoute[AppState.gpxRoute.length - 1].dist || 1;
+        const frac = Math.min(1, Math.max(0, userSnap.point.dist / total));
+        let due = start + frac * (end - start);
+        if (due < Date.now()) due = Date.now() + 5 * 60 * 1000;  // running late — never show a time in the past
+        return "🎅 Santa is due near your pin around " + formatClock(roundTo5Min(due)) + " tonight!";
+      }
 
       // ══════════════════════════════════════════════════════════════
       //  TURN-BY-TURN NAVIGATION — Branded Waze-style heading-up
@@ -1451,7 +1504,7 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
 
           if (!isFresh) {
             if (!AppState.vars.staleSince) AppState.vars.staleSince = ts;
-            if (Date.now() - AppState.vars.staleSince > AppConfig.API.STALE_MS) { AppState.marker.setLatLng(AppConfig.LOCATIONS.LAPLAND); if (AppState.flags.follow) AppState.map.setView(AppConfig.LOCATIONS.LAPLAND, 5, { animate: true, duration: 2 }); AppState.dom.statusBox.textContent = "🎄 Santa is in Lapland preparing for Christmas!"; AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg"); AppState.dom.statusDot.style.display = "none"; setDimUI(false); AppState.flags.firstFix = true; SleighAudio.setIntensity(0); scheduleNextPoll(); return; }
+            if (Date.now() - AppState.vars.staleSince > AppConfig.API.STALE_MS) { AppState.marker.setLatLng(AppConfig.LOCATIONS.LAPLAND); if (AppState.flags.follow) AppState.map.setView(AppConfig.LOCATIONS.LAPLAND, 5, { animate: true, duration: 2 }); AppState.dom.statusBox.textContent = getScheduledPinEtaText() || "🎄 Santa is in Lapland preparing for Christmas!"; AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg"); AppState.dom.statusDot.style.display = "none"; setDimUI(false); AppState.flags.firstFix = true; SleighAudio.setIntensity(0); scheduleNextPoll(); return; }
             if (AppState.lastFix) { animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng); const staleRoad = AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; AppState.dom.statusBox.textContent = staleRoad ? `🎄 Santa has stopped on ${staleRoad}!` : "🎄 Santa has stopped to spread cheer!"; AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg"); AppState.dom.statusDot.style.display = "block"; AppState.dom.statusDot.className = "status-dot dot-stopped"; setDimUI(false); scheduleNextPoll(); return; }
           } else { AppState.vars.staleSince = null; AppState.lastFix = { lat: data.lat, lng: data.lng }; }
 
@@ -1473,9 +1526,9 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
             if (santaSnap) { let userSnap; const pinCache = AppState.vars.userSnapCache; if (pinCache && pinCache.lat === AppState.vars.notifyLatLng.lat && pinCache.lng === AppState.vars.notifyLatLng.lng) { userSnap = pinCache.snap; } else { /* pin is static — full-route snap once, then reuse every poll */ const savedSnapIdx = AppState.vars.lastSnapIndex; userSnap = snapToGpxIndex(AppState.vars.notifyLatLng, null); AppState.vars.lastSnapIndex = savedSnapIdx; AppState.vars.userSnapCache = userSnap ? { lat: AppState.vars.notifyLatLng.lat, lng: AppState.vars.notifyLatLng.lng, snap: userSnap } : null; } pushRouteFix(santaSnap.point.dist, Date.now());
               if (userSnap) { const totalRouteDist = AppState.gpxRoute[AppState.gpxRoute.length - 1].dist; const isUserNearEnd = userSnap.point.dist > (totalRouteDist - AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET); const santaReachedEnd = santaSnap.point.dist >= (totalRouteDist - 10);
                 if ((santaSnap.point.dist > userSnap.point.dist + AppConfig.NOTIFICATIONS.PASSED_DISTANCE_OFFSET) || (isUserNearEnd && santaReachedEnd)) {
-                  AppState.flags.hasPassedSticky = true; sessionStorage.setItem("SANTA_HAS_PASSED", "1");
+                  AppState.flags.hasPassedSticky = true; AppState.vars.etaEmaSec = null; sessionStorage.setItem("SANTA_HAS_PASSED", "1");
                   if (!AppState.flags.celebrationFired) { AppState.flags.celebrationFired = true; sessionStorage.setItem("SANTA_CELEBRATION_FIRED", "1"); Fireworks.launch(); SleighAudio.arrivalSurge(); }
-                } else { const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist); const routeSpeed = Utils.calculateRouteSpeed(AppState.routeFixes); const rawSpeed = Utils.calculateSpeed(AppState.recentFixes); const effectiveSpeed = (routeSpeed && routeSpeed > 0.3) ? routeSpeed : (rawSpeed && rawSpeed > 0.5) ? rawSpeed : 1.4; etaSeconds = remaining / effectiveSpeed; }
+                } else { const remaining = Math.max(0, userSnap.point.dist - santaSnap.point.dist); const routeSpeed = Utils.calculateRouteSpeed(AppState.routeFixes); const rawSpeed = Utils.calculateSpeed(AppState.recentFixes); const effectiveSpeed = (routeSpeed && routeSpeed > 0.3) ? routeSpeed : (rawSpeed && rawSpeed > 0.5) ? rawSpeed : 1.4; const rawEta = remaining / effectiveSpeed; const prevEma = AppState.vars.etaEmaSec; AppState.vars.etaEmaSec = (prevEma === null) ? rawEta : (0.35 * rawEta + 0.65 * prevEma); etaSeconds = AppState.vars.etaEmaSec; }
               }
             }
           }
@@ -1502,7 +1555,7 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
           else { AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg");
             if (AppState.flags.hasPassedSticky) { AppState.dom.statusBox.textContent = "🎄 Santa has just been here! 🎉"; setDimUI(false); }
             else if (etaSeconds !== null && !moving) { AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!"; setDimUI(false); }
-            else if (etaSeconds !== null) { const mins = etaSeconds / 60; let etaText; if (mins < 2) etaText = "🎅 Santa is nearly here!"; else if (mins < 4) etaText = "🎅 Santa is ~3 mins away!"; else if (mins < 7) etaText = "🎅 Santa is ~5 mins away!"; else if (mins < 12) etaText = "🎅 Santa is ~10 mins away!"; else etaText = "🎅 Santa is ~15 mins away!"; AppState.dom.statusBox.textContent = etaText; setDimUI(mins > 45); }
+            else if (etaSeconds !== null) { const mins = etaSeconds / 60; const dueMs = Date.now() + etaSeconds * 1000; let etaText; if (mins < 2) { etaText = "🎅 Santa is nearly here!"; } else if (mins < 12) { const band = mins < 4 ? "~3" : mins < 7 ? "~5" : "~10"; etaText = "🎅 Santa is " + band + " mins away — about " + formatClock(dueMs) + " at your pin!"; } else { etaText = "🎅 Santa\u2019s due near your pin around " + formatClock(roundTo5Min(dueMs)) + "!"; } AppState.dom.statusBox.textContent = etaText; setDimUI(mins > 45); }
             else if (moving) { const currentRoad = AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; AppState.dom.statusBox.textContent = currentRoad ? `🎅 Santa is on ${currentRoad}!` : "🎅 Santa is out spreading joy!"; setDimUI(false); }
             else { const currentRoad = AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; AppState.dom.statusBox.textContent = currentRoad ? `🎄 Santa has stopped on ${currentRoad}!` : "🎄 Santa has stopped to spread cheer!"; setDimUI(false); }
           }
@@ -1961,7 +2014,7 @@ if (!AppState.flags.isKiosk && !AppState.flags.isDriver && route?.sponsorUrl && 
 
             AppState.dom.followBtn.onclick = () => { AppState.flags.follow = !AppState.flags.follow; AppState.dom.followBtn.textContent = "Follow: " + (AppState.flags.follow ? "ON" : "OFF"); };
             AppState.dom.recenterBtn.onclick = () => { AppState.flags.follow = true; AppState.dom.followBtn.textContent = "Follow: ON"; AppState.map.panTo(AppState.marker.getLatLng()); };
-            AppState.dom.notifyBtn.onclick = () => { AppState.flags.follow = false; AppState.dom.followBtn.textContent = "Follow: OFF"; AppState.flags.browserNotified = false; AppState.flags.hasPassedSticky = false; AppState.flags.celebrationFired = false; sessionStorage.removeItem("SANTA_CELEBRATION_FIRED"); AppState.routeFixes = []; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED"); sessionStorage.removeItem("SANTA_NOTIFY_POINT"); sessionStorage.removeItem("SANTA_HAS_PASSED"); if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; AppState.vars.notifyLatLng = null; if (AppState.vars.escapeListener) document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = (e) => { if (e.key === "Escape" && AppState.flags.awaitingPin) { AppState.flags.awaitingPin = false; if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.dom.statusBox.textContent = ""; Utils.toggleFollowControls(true); document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } }; document.addEventListener("keydown", AppState.vars.escapeListener); AppState.flags.awaitingPin = true; AppState.dom.statusBox.textContent = "📍 Locating you..."; if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((position) => { AppState.map.setView([position.coords.latitude, position.coords.longitude], 17); showNotifyMarker(position.coords.latitude, position.coords.longitude, false); AppState.dom.statusBox.textContent = "📍 Is this your house? Tap the pin to confirm."; }, () => { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; }, { enableHighAccuracy: true, timeout: 5000 }); } else { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; } };
+            AppState.dom.notifyBtn.onclick = () => { AppState.flags.follow = false; AppState.dom.followBtn.textContent = "Follow: OFF"; AppState.flags.browserNotified = false; AppState.flags.hasPassedSticky = false; AppState.flags.celebrationFired = false; sessionStorage.removeItem("SANTA_CELEBRATION_FIRED"); AppState.routeFixes = []; AppState.vars.etaEmaSec = null; AppState.vars.userSnapCache = null; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED"); sessionStorage.removeItem("SANTA_NOTIFY_POINT"); sessionStorage.removeItem("SANTA_HAS_PASSED"); if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; AppState.vars.notifyLatLng = null; if (AppState.vars.escapeListener) document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = (e) => { if (e.key === "Escape" && AppState.flags.awaitingPin) { AppState.flags.awaitingPin = false; if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.dom.statusBox.textContent = ""; Utils.toggleFollowControls(true); document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } }; document.addEventListener("keydown", AppState.vars.escapeListener); AppState.flags.awaitingPin = true; AppState.dom.statusBox.textContent = "📍 Locating you..."; if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((position) => { AppState.map.setView([position.coords.latitude, position.coords.longitude], 17); showNotifyMarker(position.coords.latitude, position.coords.longitude, false); AppState.dom.statusBox.textContent = "📍 Is this your house? Tap the pin to confirm."; }, () => { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; }, { enableHighAccuracy: true, timeout: 5000 }); } else { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; } };
 
             if (AppState.dom.msgBtn) { AppState.dom.msgBtn.onclick = () => { document.getElementById('msgModal').style.display = 'flex'; document.getElementById('userMsgInput').focus(); }; }
             document.getElementById('msgCancelBtn').onclick = () => { document.getElementById('msgModal').style.display = 'none'; };
