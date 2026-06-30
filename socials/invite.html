@@ -31,7 +31,7 @@
   margin: 0; 
   background-color: var(--table-grey); 
   /* The linear-gradient acts as a dark tint over your image */
-  background-image: linear-gradient(rgba(29, 29, 26, 0.85), rgba(29, 29, 26, 0.95)), url('YOUR_BACKGROUND_URL.png');
+  background-image: linear-gradient(rgba(29, 29, 26, 0.85), rgba(29, 29, 26, 0.95)), url('https://assets.beverleyroundtable.co.uk/images/cover.png');
   background-size: cover;
   background-position: center top;
   background-attachment: fixed;
@@ -83,20 +83,12 @@
   /* ---- Events (Light Section) ---- */
   .ev-grid { display: grid; gap: 16px; margin-top: 30px; }
   .ev-card {
-    display: flex; gap: 20px; align-items: flex-start;
-    background: var(--grey-light); border-left: 4px solid var(--gold);
-    padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  }
-  .ev-date { flex: 0 0 auto; width: 70px; text-align: center; }
-  .ev-date .d { font-family: var(--display); font-weight: 800; font-size: 32px; color: var(--table-grey); line-height: 1; }
-  .ev-date .m { font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--gold); margin-top: 5px; }
-  .ev-body { flex: 1 1 auto; }
-  .ev-title { font-family: var(--display); font-weight: 800; font-size: 20px; margin: 0 0 8px; }
-  .ev-meta { font-size: 14px; font-weight: 700; color: var(--table-grey); margin-bottom: 8px; }
-  .ev-desc { font-size: 15px; margin: 0 0 15px; }
-  .ev-book { color: var(--gold); font-weight: 700; text-decoration: none; font-family: var(--display); text-transform: uppercase; font-size: 14px; }
-  .ev-book:hover { color: var(--table-grey); }
-  .ev-empty { padding: 30px; text-align: center; border: 2px dashed var(--border); font-weight: 600; }
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--grey-light); border-left: 4px solid var(--gold);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+.ev-img { width: 100%; height: 180px; object-fit: cover; border-bottom: 1px solid var(--border); }
+.ev-layout { display: flex; gap: 20px; align-items: flex-start; padding: 20px; }
 
   /* ---- Data Capture & Forms ---- */
   .capture-box { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 30px; margin-top: 40px; }
@@ -299,23 +291,30 @@ function renderEvents(events, demo) {
     grid.innerHTML = '<div class="ev-empty">Nothing locked in this very second.<br>Jump in the WhatsApp and you\'ll be first to hear.</div>';
     return;
   }
+  
   events.forEach(ev => {
+    // Safely parse the date from your API
     const start = new Date(ev.startISO);
     const badge = dateBadge(start);
     const when = ev.allDay ? 'All day' : formatTime(start);
-    const book = (ev.spond && ev.spond.indexOf('http') === 0) ? ev.spond : (CH.spond && CH.spond.indexOf('PASTE') === -1 ? CH.spond : '');
+    
     const card = document.createElement('div');
     card.className = 'ev-card';
-    card.innerHTML = 
+    
+    // Inject the image if it exists, followed by the layout
+    let html = '';
+    if (ev.image) {
+      html += '<img src="' + escapeHtml(ev.image) + '" class="ev-img" alt="Event Image">';
+    }
+    
+    html += '<div class="ev-layout">' +
       '<div class="ev-date"><div class="d">' + badge.day + '</div><div class="m">' + badge.mon + '</div></div>' +
       '<div class="ev-body"><div class="ev-title">' + escapeHtml(ev.title) + '</div>' +
       '<div class="ev-meta">' + badge.dow + ' &middot; ' + when + (ev.location ? ' &middot; ' + escapeHtml(ev.location) : '') + '</div>' +
-      (ev.desc ? '<p class="ev-desc">' + escapeHtml(ev.desc) + '</p>' : '') +
-      (book ? '<a class="ev-book" href="' + book + '" target="_blank" data-ev>Book your spot &rarr;</a>' : '') + '</div>';
+      '</div></div>';
+      
+    card.innerHTML = html;
     grid.appendChild(card);
-  });
-  grid.querySelectorAll('[data-ev]').forEach(a => {
-    a.addEventListener('click', () => beacon('click', { target: 'event-book' }));
   });
 }
 
