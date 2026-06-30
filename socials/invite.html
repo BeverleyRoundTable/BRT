@@ -275,7 +275,7 @@ function setHref(id, url) {
 function loadEvents() {
   if (!isLive) { renderEvents(DEMO_EVENTS, true); return; }
   const cb = 'evcb_' + Math.random().toString(36).slice(2);
-  const timer = setTimeout(() => { cleanup(); renderEvents([], false); }, 7000);
+  const timer = setTimeout(() => { cleanup(); renderEvents([], false); }, 15000);
   window[cb] = (res) => { cleanup(); renderEvents((res && res.events) || [], false); };
   function cleanup() { clearTimeout(timer); delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); }
   const s = document.createElement('script');
