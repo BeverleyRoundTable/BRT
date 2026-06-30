@@ -28,12 +28,17 @@
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
-    margin: 0; background: var(--table-grey); color: var(--white);
-    font-family: var(--body); font-size: 16px; line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }
-  a { color: inherit; }
-  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  margin: 0; 
+  background-color: var(--table-grey); 
+  /* The linear-gradient acts as a dark tint over your image */
+  background-image: linear-gradient(rgba(29, 29, 26, 0.85), rgba(29, 29, 26, 0.95)), url('YOUR_BACKGROUND_URL.png');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  color: var(--white);
+  font-family: var(--body); font-size: 16px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
 
   /* ---- Header ---- */
   .site-head {
@@ -125,7 +130,7 @@
 
 <header class="site-head">
   <div class="wrap">
-    <span class="brand-name">Beverley Round Table</span>
+    <img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png" alt="Beverley Round Table" style="height: 40px; width: auto; display: block;">
     <span class="from-tag" id="fromTag"></span>
   </div>
 </header>
