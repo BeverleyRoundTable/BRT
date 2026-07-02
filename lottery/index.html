@@ -166,14 +166,15 @@ input[type=text]:focus,input[type=email]:focus{outline:none;border-color:var(--g
     <div class="eyebrow">Beverley Round Table · Monthly Draw</div>
     <h1>Win Big.<br><span class="y">Do More.</span></h1>
     <div class="brush"></div>
-    <p class="lede">£2 a ticket. Win a cash prize each month — and every entry helps Beverley Round Table do good right here in the community.</p>
+    <!-- [FIX 11] price/pct copy is now rendered from /status (Config is the single source of truth) -->
+    <p class="lede"><span data-price>£2</span> a ticket. Win a cash prize each month — and every entry helps Beverley Round Table do good right here in the community.</p>
   </header>
 
   <!-- LIVE POT -->
   <section class="pot fade">
     <div class="pot-label">Estimated prize this month</div>
     <div class="pot-prize muted-mono" id="prize">£—</div>
-    <div class="pot-sub" id="prizeSub">50% of the pot goes to one lucky winner</div>
+    <div class="pot-sub" id="prizeSub"><span data-pct>50%</span> of the pot goes to one lucky winner</div>
     <div class="pot-meta">
       <div><b class="muted-mono" id="tickets">—</b>tickets in</div>
       <div><b class="muted-mono" id="pot">£—</b>total pot</div>
@@ -188,8 +189,8 @@ input[type=text]:focus,input[type=email]:focus{outline:none;border-color:var(--g
   <section class="fade">
     <h2>How it works</h2>
     <div class="how">
-      <div><div class="n">£2 each</div><p>Every ticket is the same price. Buy as many as you like.</p></div>
-      <div><div class="n">Win 50%</div><p>Half the pot goes to the winner, drawn at the start of each month.</p></div>
+      <div><div class="n"><span data-price>£2</span> each</div><p>Every ticket is the same price. Buy as many as you like.</p></div>
+      <div><div class="n">Win <span data-pct>50%</span></div><p><span data-pct>50%</span> of the pot goes to the winner, drawn at the start of each month.</p></div>
       <div><div class="n">The rest to good</div><p>Whatever's left after the prize goes straight to local community causes.</p></div>
       <div><div class="n">16+ only</div><p>You must be 16 or over to take part. Have your details ready.</p></div>
     </div>
@@ -229,7 +230,7 @@ input[type=text]:focus,input[type=email]:focus{outline:none;border-color:var(--g
     <h3>The important bits</h3>
     <dl>
       <dt>Promoting society</dt><dd id="societyName">Beverley Round Table</dd>
-      <dt>Ticket price</dt><dd>£2.00 (all tickets the same price)</dd>
+      <dt>Ticket price</dt><dd><span data-price-long>£2.00</span> (all tickets the same price)</dd>
       <dt>Promoter</dt><dd id="promoterInfo">—</dd>
       <dt>Draw</dt><dd>Drawn at the start of each calendar month</dd>
       <dt>Registration</dt><dd><span id="regNo">East Riding of Yorkshire Council reg. no. — to be added</span></dd>
@@ -243,7 +244,7 @@ input[type=text]:focus,input[type=email]:focus{outline:none;border-color:var(--g
 <script>
 // ====== CONFIG — set this to your deployed Cloudflare Worker base URL ======
 const WORKER_URL = 'https://restless-snowflake-e3c1.beverley247.workers.dev';
-const TICKET_PRICE = 200;   // pence, must match the Worker/Config
+let TICKET_PRICE = 200;   // pence — display default; overwritten from /status [FIX 11]
 // ===========================================================================
 
 const $ = id => document.getElementById(id);
@@ -257,7 +258,9 @@ const clamp = n => Math.max(1, Math.min(100, n||1));
 function renderQty(){ $('qty').value = qty; $('total').textContent = gbp(qty*TICKET_PRICE); }
 $('plus').onclick  = ()=>{ qty = clamp(qty+1); renderQty(); };
 $('minus').onclick = ()=>{ qty = clamp(qty-1); renderQty(); };
-$('qty').oninput   = e =>{ qty = clamp(parseInt(e.target.value.replace(/\D/g,''),10)); };
+// [FIX 11] update the total live while typing (don't rewrite the input mid-type)
+$('qty').oninput   = e =>{ qty = clamp(parseInt(e.target.value.replace(/\D/g,''),10));
+                           $('total').textContent = gbp(qty*TICKET_PRICE); };
 $('qty').onblur    = ()=> renderQty();
 renderQty();
 
@@ -266,6 +269,22 @@ renderQty();
   try{
     const r = await fetch(WORKER_URL + '/status');
     const s = await r.json();
+
+    // [FIX 11] Config drives the displayed price and prize percentage, so the
+    // page can never disagree with what the backend will actually charge/pay.
+    if (s.ticket_price_pence){
+      TICKET_PRICE = Number(s.ticket_price_pence);
+      renderQty();
+      document.querySelectorAll('[data-price]').forEach(el =>
+        el.textContent = gbp(TICKET_PRICE).replace(/\.00$/,''));
+      document.querySelectorAll('[data-price-long]').forEach(el =>
+        el.textContent = gbp(TICKET_PRICE));
+    }
+    if (s.prize_pct){
+      document.querySelectorAll('[data-pct]').forEach(el =>
+        el.textContent = Number(s.prize_pct) + '%');
+    }
+
     $('prize').textContent   = gbp(s.estimated_prize_pence||0);
     $('pot').textContent     = gbp(s.pot_pence||0);
     $('tickets').textContent = (s.ticket_count||0).toLocaleString('en-GB');
@@ -275,11 +294,18 @@ renderQty();
       s.promoter_name + (s.promoter_address ? ', ' + s.promoter_address : '');
     if (s.registration_no)
       $('regNo').textContent = 'East Riding of Yorkshire Council reg. no. ' + s.registration_no;
+
+    // [FIX 2] Build the winner strip with textContent, never innerHTML — the
+    // display name derives from a buyer-typed name, and unescaped user input
+    // in innerHTML is stored XSS for every visitor to this page.
     if (s.last_winner && s.last_winner.winner_display){
       const w = s.last_winner;
-      $('winner').style.display = 'flex';
-      $('winner').innerHTML = '🏆 Last month <b>'+w.winner_display+'</b> (ticket #'+
-        w.winning_ticket_no+') won <b>'+gbp(w.prize_pence)+'</b>. You could be next!';
+      const box = $('winner');
+      box.textContent = '';
+      const b1 = document.createElement('b'); b1.textContent = w.winner_display;
+      const b2 = document.createElement('b'); b2.textContent = gbp(Number(w.prize_pence)||0);
+      box.append('🏆 Last month ', b1, ' (ticket #' + (Number(w.winning_ticket_no)||'?') + ') won ', b2, '. You could be next!');
+      box.style.display = 'flex';
     }
   }catch(e){
     $('prizeSub').textContent = 'Live pot unavailable right now — you can still enter below.';
