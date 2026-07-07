@@ -1471,9 +1471,33 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       };
 
       function showNotifyMarker(lat, lng, confirmed) { if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); const iconUrl = confirmed ? AppConfig.ICONS.CONFIRMED : AppConfig.ICONS.PREVIEW; AppState.notifyMarker = L.marker([lat, lng], { icon: L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", shadowSize: [41, 41] }), interactive: true }).addTo(AppState.map); if (!confirmed) { AppState.notifyMarker.bindPopup("📍 Tap this pin again to confirm").openPopup(); AppState.notifyMarker.once("click", () => { AppState.flags.awaitingPin = false; showNotifyMarker(lat, lng, true); sessionStorage.setItem("SANTA_NOTIFY_POINT", JSON.stringify({ lat, lng })); AppState.vars.pendingSubscription = { lat, lng }; AppState.vars.notifyLatLng = { lat, lng }; document.getElementById("emailModal").style.display = "flex"; document.getElementById("subEmail").focus(); }); } }
-      function fireBrowserNotification(title, body) { if (!("Notification" in window)) return; if (Notification.permission !== "granted") return; try { new Notification(title, { body, icon: AppConfig.ICONS.BROWSER_ICON, requireInteraction: true }); } catch (e) {} }
+      
+      function fireBrowserNotification(title, body) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  // tag dedupes if it ever double-fires
+  const opts = { body, icon: AppConfig.ICONS.BROWSER_ICON, requireInteraction: true, tag: "santa-near" };
+  const fallback = () => { try { new Notification(title, opts); } catch (e) {} };
+  if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+    navigator.serviceWorker.getRegistration()
+      .then(reg => (reg && reg.showNotification) ? reg.showNotification(title, opts) : fallback())
+      .catch(fallback);
+  } else {
+    fallback();
+  }
+}
+      
       function triggerPolaroid(imgSrc, captionText = "Live from the Sleigh!") { if (!AppState.flags.pageVisible) return; const p = document.createElement("div"); p.className = "polaroid"; const isMobile = window.innerWidth < 600; const isLeft = Math.random() > 0.5; const TOP_SAFE = 90, BOTTOM_SAFE = isMobile ? 230 : 210, POLAROID_H = isMobile ? 180 : 300; const availableH = window.innerHeight - TOP_SAFE - BOTTOM_SAFE - POLAROID_H; const safeTop = TOP_SAFE + (availableH > 0 ? Math.random() * availableH : 0); if (isMobile) { p.style.left = isLeft ? "22px" : "auto"; p.style.right = isLeft ? "auto" : "22px"; } else { p.style.left = isLeft ? (Math.random() * 6 + 1) + "%" : "auto"; p.style.right = isLeft ? "auto" : (Math.random() * 6 + 1) + "%"; } p.style.top = safeTop + "px"; const maxRot = isMobile ? 6 : 12; const rot = Math.random() * (maxRot * 2) - maxRot; p.style.setProperty("--rotStart", (rot * 2) + "deg"); p.style.setProperty("--rotMid", rot + "deg"); p.style.setProperty("--rotEnd", (rot * 0.5) + "deg"); p.innerHTML = `<img src="${imgSrc}" alt="Elf Cam"><div class="polaroid-caption">${captionText}</div>`; document.body.appendChild(p); setTimeout(() => p.remove(), 10000); }
 
+      // Ask once, from a user gesture. Safari requires the gesture; Chrome
+// downgrades non-gesture prompts to a quiet UI most people never see.
+function ensureNotifyPermission() {
+  if (!("Notification" in window) || Notification.permission !== "default") return;
+  try {
+    const p = Notification.requestPermission(() => {}); // callback form = legacy Safari
+    if (p && p.catch) p.catch(() => {});                // promise form = everyone else
+  } catch (e) {}
+}
+      
       async function updateTracker() {
         // Hidden tab / backgrounded PWA: stop polling entirely. The visibilitychange
         // handler restarts the loop the instant the page is visible again, so every
@@ -2014,7 +2038,7 @@ if (!AppState.flags.isKiosk && !AppState.flags.isDriver && route?.sponsorUrl && 
 
             AppState.dom.followBtn.onclick = () => { AppState.flags.follow = !AppState.flags.follow; AppState.dom.followBtn.textContent = "Follow: " + (AppState.flags.follow ? "ON" : "OFF"); };
             AppState.dom.recenterBtn.onclick = () => { AppState.flags.follow = true; AppState.dom.followBtn.textContent = "Follow: ON"; AppState.map.panTo(AppState.marker.getLatLng()); };
-            AppState.dom.notifyBtn.onclick = () => { AppState.flags.follow = false; AppState.dom.followBtn.textContent = "Follow: OFF"; AppState.flags.browserNotified = false; AppState.flags.hasPassedSticky = false; AppState.flags.celebrationFired = false; sessionStorage.removeItem("SANTA_CELEBRATION_FIRED"); AppState.routeFixes = []; AppState.vars.etaEmaSec = null; AppState.vars.userSnapCache = null; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED"); sessionStorage.removeItem("SANTA_NOTIFY_POINT"); sessionStorage.removeItem("SANTA_HAS_PASSED"); if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; AppState.vars.notifyLatLng = null; if (AppState.vars.escapeListener) document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = (e) => { if (e.key === "Escape" && AppState.flags.awaitingPin) { AppState.flags.awaitingPin = false; if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.dom.statusBox.textContent = ""; Utils.toggleFollowControls(true); document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } }; document.addEventListener("keydown", AppState.vars.escapeListener); AppState.flags.awaitingPin = true; AppState.dom.statusBox.textContent = "📍 Locating you..."; if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((position) => { AppState.map.setView([position.coords.latitude, position.coords.longitude], 17); showNotifyMarker(position.coords.latitude, position.coords.longitude, false); AppState.dom.statusBox.textContent = "📍 Is this your house? Tap the pin to confirm."; }, () => { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; }, { enableHighAccuracy: true, timeout: 5000 }); } else { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; } };
+            AppState.dom.notifyBtn.onclick = () => {ensureNotifyPermission(); AppState.flags.follow = false; AppState.dom.followBtn.textContent = "Follow: OFF"; AppState.flags.browserNotified = false; AppState.flags.hasPassedSticky = false; AppState.flags.celebrationFired = false; sessionStorage.removeItem("SANTA_CELEBRATION_FIRED"); AppState.routeFixes = []; AppState.vars.etaEmaSec = null; AppState.vars.userSnapCache = null; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED"); sessionStorage.removeItem("SANTA_NOTIFY_POINT"); sessionStorage.removeItem("SANTA_HAS_PASSED"); if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; AppState.vars.notifyLatLng = null; if (AppState.vars.escapeListener) document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = (e) => { if (e.key === "Escape" && AppState.flags.awaitingPin) { AppState.flags.awaitingPin = false; if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.dom.statusBox.textContent = ""; Utils.toggleFollowControls(true); document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } }; document.addEventListener("keydown", AppState.vars.escapeListener); AppState.flags.awaitingPin = true; AppState.dom.statusBox.textContent = "📍 Locating you..."; if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((position) => { AppState.map.setView([position.coords.latitude, position.coords.longitude], 17); showNotifyMarker(position.coords.latitude, position.coords.longitude, false); AppState.dom.statusBox.textContent = "📍 Is this your house? Tap the pin to confirm."; }, () => { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; }, { enableHighAccuracy: true, timeout: 5000 }); } else { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; } };
 
             if (AppState.dom.msgBtn) { AppState.dom.msgBtn.onclick = () => { document.getElementById('msgModal').style.display = 'flex'; document.getElementById('userMsgInput').focus(); }; }
             document.getElementById('msgCancelBtn').onclick = () => { document.getElementById('msgModal').style.display = 'none'; };
