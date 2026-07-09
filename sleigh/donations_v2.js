@@ -60,7 +60,6 @@
 
     font-family: 'DM Sans', sans-serif;
     color: var(--text);
-    /* FIXED: Added 40px bottom margin so the drop-shadow doesn't overlap host site elements */
     margin: 1.2rem auto 40px; 
     max-width: 480px;
     width: 100%;
@@ -73,8 +72,34 @@
     box-sizing: border-box;
 }
 
+/* ---------- DONATE BUTTON STYLES ---------- */
+.ts-donate-btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 12px 28px;
+    background: var(--gold);
+    color: var(--dark);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1.5px;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 15px var(--gold-glow);
+    text-transform: uppercase;
+}
+
+.ts-donate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(251, 175, 51, 0.4);
+    background: #ffb947;
+}
+
+.ts-donate-btn:active {
+    transform: translateY(1px);
+}
+
 /* ---------- MINI BAR ---------- */
-/* FIXED: Added a card wrapper for the mini bar so the white text is readable on white websites */
 .ts-mini-card {
     background: var(--surface);
     border-radius: 16px;
@@ -123,14 +148,12 @@
     background: var(--surface);
     border-radius: 16px;
     border: 1px solid var(--border);
-    /* FIXED: Softened the drop shadow for light backgrounds */
     box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
     padding: 32px 24px;
     position: relative;
     overflow: hidden;
 }
 
-/* Background glow */
 .ts-thermo-card::before {
     content: '';
     position: absolute;
@@ -287,6 +310,7 @@
                         <div class="ts-mini-fill" id="tsMiniFill"></div>
                     </div>
                     <div class="ts-mini-val" id="tsMiniVal">Loading…</div>
+                    <a href="#" target="_blank" class="ts-donate-btn" id="tsMiniDonate" style="display: none;">Donate Now</a>
                 </div>
             </div>
         `;
@@ -311,6 +335,7 @@
                             <div class="ts-thermo-last" id="tsThermoLast"></div>
                         </div>
                     </div>
+                    <a href="#" target="_blank" class="ts-donate-btn" id="tsThermoDonate" style="display: none;">Donate Now</a>
                     <img class="ts-thermo-logo" id="tsThermoLogo" src="">
                 </div>
             </div>
@@ -327,12 +352,27 @@
         const total  = Number(donations.total  || 0);
         const target = Number(donations.target || 0);
         const pct    = target > 0 ? Math.min(100, (total / target) * 100) : 0;
+        
+        // Extract donate URL safely
+        const donateUrl = settings.donate_url && settings.donate_url.trim() !== "" ? settings.donate_url.trim() : null;
 
         /* MINI BAR */
         const mf = document.getElementById("tsMiniFill");
         const mv = document.getElementById("tsMiniVal");
+        const miniBtn = document.getElementById("tsMiniDonate");
+        
         if (mf) mf.style.width = pct + "%";
         if (mv) mv.innerHTML = `<span>£${total.toLocaleString("en-GB")}</span> of £${target.toLocaleString("en-GB")}`;
+        
+        if (miniBtn) {
+            if (donateUrl) {
+                miniBtn.href = donateUrl;
+                miniBtn.style.display = "inline-block";
+            } else {
+                miniBtn.style.display = "none";
+                miniBtn.removeAttribute("href");
+            }
+        }
 
         /* THERMOMETER */
         const tf    = document.getElementById("tsThermoFill");
@@ -340,6 +380,7 @@
         const taLbl = document.getElementById("tsThermoAmountLbl");
         const tl    = document.getElementById("tsThermoLast");
         const logo  = document.getElementById("tsThermoLogo");
+        const thermoBtn = document.getElementById("tsThermoDonate");
 
         if (tf) {
             tf.style.height = pct + "%";
@@ -354,6 +395,16 @@
         if (taLbl) taLbl.textContent = `Raised of £${target.toLocaleString("en-GB")}`;
 
         if (tl) tl.textContent = "Last updated: " + (donations.lastUpdatePretty || "Awaiting first update");
+
+        if (thermoBtn) {
+            if (donateUrl) {
+                thermoBtn.href = donateUrl;
+                thermoBtn.style.display = "inline-block";
+            } else {
+                thermoBtn.style.display = "none";
+                thermoBtn.removeAttribute("href");
+            }
+        }
 
         // dynamic logo support (Settings → logo_overlay_url)
         if (logo) {
