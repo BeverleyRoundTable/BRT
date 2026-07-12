@@ -1,23 +1,23 @@
 /* ============================================================
-   TurboSanta — "Talk to Father Christmas" widget loader  v3
+   TurboSanta — "Talk to Father Christmas" widget loader  v3.1
    ElevenLabs Agents integration — tracker + Carrd embeds
    ------------------------------------------------------------
    TRACKER (floating bubble, route-night gated):
      <script src="/sleigh/santa-chat.js" defer></script>
 
    CARRD "Chat" SECTION (open box inside the section):
-     <div style="max-width:420px;margin:0 auto;">
-       <script src="https://brt-23f.pages.dev/sleigh/santa-chat.js"
-               data-inline="1" data-always="1" defer></script>
-     </div>
+     <div id="santa-chat-box" data-always="1"
+          style="max-width:420px;margin:0 auto;min-height:520px;"></div>
+     <script src="https://brt-23f.pages.dev/sleigh/santa-chat.js" defer></script>
 
-   Per-embed options (data- attributes on the script tag):
-     data-inline="1"   render as an open box where the tag sits,
-                       instead of a floating corner bubble
-     data-always="1"   available any time (ignore route-night gating)
-     data-width/-height  inline box size (default 400px / 500px)
+   The loader mounts into #santa-chat-box if it exists anywhere
+   on the page (Carrd-safe — Carrd relocates embed scripts, so
+   attributes on the div, not the script tag). Options on the div:
+     data-always="1"     available any time (ignore route gating)
+     data-width/-height  box size (default 400px / 500px)
 
-   v3 also skips loading on driver satnav URLs (?driver=1).
+   No #santa-chat-box div = floating corner bubble (tracker mode).
+   Driver satnav URLs (?driver=1) are always skipped.
    ============================================================ */
 
 (function () {
@@ -62,15 +62,22 @@
   var WIDGET_TAG = "elevenlabs-convai";
   var EMBED_SRC = "https://unpkg.com/@elevenlabs/convai-widget-embed";
 
-  // Per-embed options from the script tag (must be read at load time)
-  var SCRIPT = document.currentScript;
-  var OPTS = {
-    inline: !!(SCRIPT && SCRIPT.dataset.inline === "1"),
-    always: !!(SCRIPT && SCRIPT.dataset.always === "1"),
-    width: (SCRIPT && SCRIPT.dataset.width) || "400px",
-    height: (SCRIPT && SCRIPT.dataset.height) || "500px"
-  };
-  var MOUNT = OPTS.inline && SCRIPT ? SCRIPT.parentElement : null;
+  // Per-embed options. Carrd relocates embed scripts (currentScript
+  // becomes null), so the mount div is the reliable carrier.
+  var SCRIPT = document.currentScript; // may be null — fallback only
+  var MOUNT = null;
+  var OPTS = { always: false, width: "400px", height: "500px" };
+
+  function resolveMountAndOpts() {
+    MOUNT = document.getElementById("santa-chat-box");
+    if (!MOUNT && SCRIPT && SCRIPT.dataset && SCRIPT.dataset.inline === "1") {
+      MOUNT = SCRIPT.parentElement;
+    }
+    var d = (MOUNT && MOUNT.dataset) || (SCRIPT && SCRIPT.dataset) || {};
+    if (d.always === "1") OPTS.always = true;
+    if (d.width) OPTS.width = d.width;
+    if (d.height) OPTS.height = d.height;
+  }
 
   var injected = false;
   var lastRouteInfo = "Route details unavailable — check the tracker map with a grown-up.";
@@ -213,6 +220,8 @@
   function init() {
     // Never load over the driver's satnav view
     if (param("driver") === "1" && !hasPreviewFlag()) return;
+
+    resolveMountAndOpts();
 
     if (!CONFIG.enabled && !hasPreviewFlag()) {
       console.info("[SantaChat] Disabled.");
