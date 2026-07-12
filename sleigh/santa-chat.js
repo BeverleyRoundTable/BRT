@@ -66,7 +66,7 @@
   // becomes null), so the mount div is the reliable carrier.
   var SCRIPT = document.currentScript; // may be null — fallback only
   var MOUNT = null;
-  var OPTS = { always: false, width: "400px", height: "500px" };
+  var OPTS = { always: false, width: "100%", height: "500px" };
 
   function resolveMountAndOpts() {
     MOUNT = document.getElementById("santa-chat-box");
