@@ -1,48 +1,48 @@
 /* ============================================================
-   TurboSanta — "Talk to Father Christmas" widget loader  v2
-   ElevenLabs Agents integration for the tracker site
+   TurboSanta — "Talk to Father Christmas" widget loader  v3
+   ElevenLabs Agents integration — tracker + Carrd embeds
    ------------------------------------------------------------
-   Install: upload alongside the tracker and add before </body>:
-     <script src="santa-chat.js" defer></script>
+   TRACKER (floating bubble, route-night gated):
+     <script src="/sleigh/santa-chat.js" defer></script>
 
-   v2: pulls route nights straight from the tracker's Apps
-   Script API (the same endpoint as ?api=). The widget shows
-   itself on route days between the hours you set, and Santa
-   is told tonight's route via the {{route_info}} dynamic
-   variable — no double-entry of dates anywhere.
+   CARRD "Chat" SECTION (open box inside the section):
+     <div style="max-width:420px;margin:0 auto;">
+       <script src="https://brt-23f.pages.dev/sleigh/santa-chat.js"
+               data-inline="1" data-always="1" defer></script>
+     </div>
 
-   Requirements (see santa-agent-setup.md):
-   - Agent must be PUBLIC (authentication disabled)
-   - Tracker domain added to the agent's allowlist
-   - route_info dynamic variable defined on the agent
+   Per-embed options (data- attributes on the script tag):
+     data-inline="1"   render as an open box where the tag sits,
+                       instead of a floating corner bubble
+     data-always="1"   available any time (ignore route-night gating)
+     data-width/-height  inline box size (default 400px / 500px)
+
+   v3 also skips loading on driver satnav URLs (?driver=1).
    ============================================================ */
 
 (function () {
   "use strict";
 
   var CONFIG = {
-    // From the ElevenLabs dashboard → your agent → Widget tab
-    agentId: "4401kxaqcqygfb4940wnc4a9haeh",
+    agentId: "agent_4401kxaqcqygfb4940wnc4a9haeh",
 
-    // Master switch. False = widget never loads.
+    // Master switch. False = widget never loads anywhere.
     enabled: true,
 
-    // Tracker Apps Script endpoint. Leave "" to auto-read the
-    // page's ?api= parameter — same multi-chapter pattern as
-    // the rest of the platform.
-    apiUrl: "",
+    // Tracker Apps Script endpoint. Used for route-night gating
+    // and for telling Santa tonight's route. If empty, the
+    // page's ?api= parameter is used instead.
+    apiUrl: "https://script.google.com/macros/s/AKfycbwl88G_1QGwp6uN1JEGV2Abd7FAwQg7Id3_ufSNW_n1e7rsPAw-ZUor5vlqL8_GBfCK/exec",
 
-    // true  = widget only appears on route days (needs the API)
-    // false = widget appears whenever enabled; the API is still
-    //         used to feed Santa the route details
+    // true  = floating widget only appears on route days
+    //         (data-always="1" overrides this per embed)
     routeNightsOnly: true,
 
     // On route days, when is Santa taking calls? (local time)
     routeDayHours: { start: "15:00", end: "21:30" },
 
-    // Manual fallback windows, used only if the API is missing
-    // or unreachable. Empty = always available while enabled.
-    // Example: { start: "2026-12-07T17:00", end: "2026-12-07T20:30" }
+    // Manual fallback windows if the API is unreachable.
+    // Empty = always available while enabled.
     schedule: [],
 
     labels: {
@@ -51,33 +51,44 @@
       end: "Back to the North Pole"
     },
 
-    // Optional https:// image for the widget button (use a Santa
-    // or sleigh photo — not the Round Table rondel; see brand notes)
+    // Optional https:// image for the floating button. Leave ""
+    // to use the avatar set in the ElevenLabs Widget tab.
     avatarUrl: "",
 
-    // Visiting ?santa=1 forces the widget on for testing.
+    // ?santa=1 forces the widget on for testing.
     previewParam: "santa"
   };
 
   var WIDGET_TAG = "elevenlabs-convai";
   var EMBED_SRC = "https://unpkg.com/@elevenlabs/convai-widget-embed";
+
+  // Per-embed options from the script tag (must be read at load time)
+  var SCRIPT = document.currentScript;
+  var OPTS = {
+    inline: !!(SCRIPT && SCRIPT.dataset.inline === "1"),
+    always: !!(SCRIPT && SCRIPT.dataset.always === "1"),
+    width: (SCRIPT && SCRIPT.dataset.width) || "400px",
+    height: (SCRIPT && SCRIPT.dataset.height) || "500px"
+  };
+  var MOUNT = OPTS.inline && SCRIPT ? SCRIPT.parentElement : null;
+
   var injected = false;
   var lastRouteInfo = "Route details unavailable — check the tracker map with a grown-up.";
 
   /* ---------- helpers ---------- */
 
-  function resolveApiUrl() {
-    if (CONFIG.apiUrl) return CONFIG.apiUrl;
+  function param(name) {
     try {
-      return new URLSearchParams(window.location.search).get("api") || "";
-    } catch (e) { return ""; }
+      return new URLSearchParams(window.location.search).get(name);
+    } catch (e) { return null; }
+  }
+
+  function resolveApiUrl() {
+    return CONFIG.apiUrl || param("api") || "";
   }
 
   function hasPreviewFlag() {
-    try {
-      var params = new URLSearchParams(window.location.search);
-      return params.get(CONFIG.previewParam) === "1";
-    } catch (e) { return false; }
+    return param(CONFIG.previewParam) === "1";
   }
 
   function todayISO() {
@@ -142,6 +153,18 @@
 
   /* ---------- widget ---------- */
 
+  function ensureInlineStyle() {
+    if (document.getElementById("santa-inline-style")) return;
+    var style = document.createElement("style");
+    style.id = "santa-inline-style";
+    style.textContent =
+      WIDGET_TAG + ".santa-inline{" +
+      "position:relative !important;inset:auto !important;display:block;" +
+      "--elevenlabs-convai-widget-width:" + OPTS.width + ";" +
+      "--elevenlabs-convai-widget-height:" + OPTS.height + ";}";
+    document.head.appendChild(style);
+  }
+
   function injectWidget() {
     if (injected) return;
     if (!CONFIG.agentId || CONFIG.agentId === "PASTE_AGENT_ID_HERE") {
@@ -156,7 +179,17 @@
     if (CONFIG.labels.start) el.setAttribute("start-call-text", CONFIG.labels.start);
     if (CONFIG.labels.end) el.setAttribute("end-call-text", CONFIG.labels.end);
     if (CONFIG.avatarUrl) el.setAttribute("avatar-image-url", CONFIG.avatarUrl);
-    document.body.appendChild(el);
+
+    if (MOUNT) {
+      // Inline mode: open box where the embed sits
+      ensureInlineStyle();
+      el.className = "santa-inline";
+      el.setAttribute("variant", "expanded");
+      MOUNT.appendChild(el);
+    } else {
+      // Floating mode: corner bubble
+      document.body.appendChild(el);
+    }
 
     var script = document.createElement("script");
     script.src = EMBED_SRC;
@@ -165,7 +198,7 @@
     document.body.appendChild(script);
 
     injected = true;
-    console.info("[SantaChat] Widget loaded. route_info: " + lastRouteInfo);
+    console.info("[SantaChat] Widget loaded (" + (MOUNT ? "inline" : "floating") + "). route_info: " + lastRouteInfo);
   }
 
   function removeWidget() {
@@ -178,17 +211,20 @@
   /* ---------- decide & init ---------- */
 
   function init() {
+    // Never load over the driver's satnav view
+    if (param("driver") === "1" && !hasPreviewFlag()) return;
+
     if (!CONFIG.enabled && !hasPreviewFlag()) {
       console.info("[SantaChat] Disabled.");
       return;
     }
 
     var apiUrl = resolveApiUrl();
+    var gated = CONFIG.routeNightsOnly && !OPTS.always;
 
     if (!apiUrl) {
-      // No API available — fall back to manual schedule behaviour
-      if (hasPreviewFlag() || inManualWindow()) injectWidget();
-      else console.info("[SantaChat] Hidden (manual schedule). Append ?santa=1 to preview.");
+      if (hasPreviewFlag() || !gated || inManualWindow()) injectWidget();
+      else console.info("[SantaChat] Hidden (no API, manual schedule). Append ?santa=1 to preview.");
       return;
     }
 
@@ -198,16 +234,15 @@
         var nextRoute = getNextRoute(routes);
         lastRouteInfo = buildRouteInfo(todayRoute, nextRoute);
 
-        var show = hasPreviewFlag() ||
-          !CONFIG.routeNightsOnly ||
+        var show = hasPreviewFlag() || !gated ||
           (todayRoute && withinHours(CONFIG.routeDayHours));
 
         if (show) injectWidget();
         else console.info("[SantaChat] Hidden (no route tonight / outside hours). Append ?santa=1 to preview.");
       })
       .catch(function (e) {
-        console.warn("[SantaChat] API unreachable (" + e.message + ") — using manual schedule fallback.");
-        if (hasPreviewFlag() || inManualWindow()) injectWidget();
+        console.warn("[SantaChat] API unreachable (" + e.message + ") — fallback behaviour.");
+        if (hasPreviewFlag() || !gated || inManualWindow()) injectWidget();
       });
   }
 
@@ -220,6 +255,8 @@
       return {
         enabled: CONFIG.enabled,
         preview: hasPreviewFlag(),
+        inline: !!MOUNT,
+        always: OPTS.always,
         apiUrl: resolveApiUrl() || "(none)",
         routeInfo: lastRouteInfo,
         injected: injected
