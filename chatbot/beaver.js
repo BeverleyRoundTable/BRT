@@ -431,4 +431,29 @@
   } else {
     init();
   }
+
+  // ─── Yield to Santa on the chat section ────────────────────
+  // The ElevenLabs Santa box owns these Carrd sections; hide the
+  // Beaver there so the two assistants never overlap.
+  const HIDE_ON_HASHES = ['#chat'];
+
+  function brtToggleForSection() {
+    const hide = HIDE_ON_HASHES.includes(location.hash);
+    const launcher = document.querySelector('.brt-chat-launcher');
+    const panel = document.querySelector('.brt-chat-panel');
+    if (launcher) {
+      launcher.style.display = hide ? 'none' : '';
+      if (hide) launcher.classList.remove('open');
+    }
+    if (panel && hide) panel.classList.remove('open');
+  }
+
+  // Registered after init's own ready-handler, so the elements
+  // exist by the time this first runs.
+  window.addEventListener('hashchange', brtToggleForSection);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', brtToggleForSection);
+  } else {
+    brtToggleForSection();
+  }
 })();
