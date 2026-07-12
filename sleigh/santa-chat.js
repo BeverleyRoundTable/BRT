@@ -22,7 +22,7 @@
 
   var CONFIG = {
     // From the ElevenLabs dashboard → your agent → Widget tab
-    agentId: "PASTE_AGENT_ID_HERE",
+    agentId: "4401kxaqcqygfb4940wnc4a9haeh",
 
     // Master switch. False = widget never loads.
     enabled: true,
