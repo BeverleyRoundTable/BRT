@@ -952,6 +952,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
         lerp: (a, b, t) => a + (b - a) * t,
         easeOutCubic: (t) => 1 - Math.pow(1 - t, 3),
         isValidImageUrl(url) { if (!url || typeof url !== 'string') return false; try { const parsed = new URL(url); return ['http:', 'https:', 'data:'].includes(parsed.protocol); } catch { return false; } },
+        resolveImageUrl(url) { if (!url || typeof url !== 'string' || !url.includes('drive.google.com')) return url; try { const u = new URL(url); const pathMatch = u.pathname.match(/\/file\/d\/([^/]+)/); const fileId = u.searchParams.get('id') || (pathMatch ? pathMatch[1] : null); return fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w400` : url; } catch { return url; } },
         async loadJSON(url) { const r = await fetch(url, { cache: "no-store" }); if (!r.ok) throw new Error(`Fetch failed: ${r.status}`); return r.json(); },
         haversineMeters(a, b) { const R = 6371000, dLat = (b.lat - a.lat) * Math.PI / 180, dLng = (b.lng - a.lng) * Math.PI / 180; const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(s)); },
         calculateSpeed(fixes) { if (fixes.length < AppConfig.API.MIN_FIXES_FOR_ETA) return null; const first = fixes[0], last = fixes[fixes.length - 1], elapsed = last.ts - first.ts; if (elapsed < AppConfig.API.MIN_ETA_WINDOW_MS) return null; return Math.min(Math.max((last.cumulative - first.cumulative) / (elapsed / 1000), 0.3), 31); },
@@ -1522,9 +1523,9 @@ function ensureNotifyPermission() {
           const ts = new Date(data.ts).getTime(), age = Date.now() - ts, isFresh = age <= AppConfig.API.STALE_MS;
 
           const rs = document.getElementById('routeSponsor');
-if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl && !AppState.flags.isKiosk && !AppState.flags.isDriver);
+if (rs) rs.classList.toggle('visible', !!AppState.vars.sponsorReady && !AppState.flags.isKiosk && !AppState.flags.isDriver);
           
-          if (AppState.flags.isKiosk) { AppState.dom.kioskBanner.classList.toggle("live", isFresh); const statusEl = document.getElementById("kioskStatus"); if (statusEl) statusEl.textContent = isFresh ? "🎅 LIVE TRACKING" : "🎄 PREPARING IN LAPLAND"; if (AppState.dom.sponsorBox) AppState.dom.sponsorBox.classList.toggle("visible", isFresh && !!AppState.vars.todayRoute?.sponsorUrl); }
+          if (AppState.flags.isKiosk) { AppState.dom.kioskBanner.classList.toggle("live", isFresh); const statusEl = document.getElementById("kioskStatus"); if (statusEl) statusEl.textContent = isFresh ? "🎅 LIVE TRACKING" : "🎄 PREPARING IN LAPLAND"; if (AppState.dom.sponsorBox) AppState.dom.sponsorBox.classList.toggle("visible", isFresh && !!AppState.vars.kioskSponsorReady); }
 
           if (!isFresh) {
             if (!AppState.vars.staleSince) AppState.vars.staleSince = ts;
@@ -2022,13 +2023,19 @@ if (rs) rs.classList.toggle('visible', !!AppState.vars.todayRoute?.sponsorUrl &&
            L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(AppState.map);
             if (AppState.flags.isKiosk) { const m = AppState.map; m.dragging.disable(); m.scrollWheelZoom.disable(); m.doubleClickZoom.disable(); m.boxZoom.disable(); m.keyboard.disable(); m.touchZoom.disable(); AppState.dom.followBtn.style.display = "none"; AppState.dom.recenterBtn.style.display = "none"; AppState.dom.notifyBtn.style.display = "none"; if(AppState.dom.msgBtn) AppState.dom.msgBtn.style.display = "none"; AppState.dom.donateBox.style.display = "none"; }
             if (route && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 0) { const allLatLngs = AppState.gpxRoute.map(p => [p.lat, p.lng]); AppState.dynamicRouteCompleted = L.polyline([], { color: "#808080", weight: 4, opacity: 0.5, dashArray: "8, 8" }).addTo(AppState.map); AppState.dynamicRouteRemainingGlow = L.polyline(allLatLngs, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(AppState.map); AppState.dynamicRouteRemainingMain = L.polyline(allLatLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(AppState.map); const startPt = AppState.gpxRoute[0], endPt = AppState.gpxRoute[AppState.gpxRoute.length - 1]; L.marker([startPt.lat, startPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); L.marker([endPt.lat, endPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); AppState.map.fire("zoomend"); }
-            if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) { const span = document.createElement('span'); span.textContent = 'Proudly sponsored by'; const img = document.createElement('img'); img.src = route.sponsorUrl; img.alt = 'Sponsor'; AppState.dom.sponsorBox.innerHTML = ''; AppState.dom.sponsorBox.appendChild(span); AppState.dom.sponsorBox.appendChild(img); }
+            if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) { const span = document.createElement('span'); span.textContent = 'Proudly sponsored by'; const img = document.createElement('img'); img.alt = route.sponsorName || 'Sponsor'; img.onerror = () => { AppState.vars.kioskSponsorReady = false; AppState.dom.sponsorBox.classList.remove('visible'); }; img.src = Utils.resolveImageUrl(route.sponsorUrl); AppState.dom.sponsorBox.innerHTML = ''; AppState.dom.sponsorBox.appendChild(span); AppState.dom.sponsorBox.appendChild(img); AppState.vars.kioskSponsorReady = true; }
           // Non-kiosk route sponsor — set src/href once at init; visibility is toggled per poll in updateTracker
 if (!AppState.flags.isKiosk && !AppState.flags.isDriver && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
   const rs = document.getElementById('routeSponsor');
   if (rs) {
-    rs.querySelector('img').src = route.sponsorUrl;
-    if (route.sponsorLink) rs.href = route.sponsorLink; else rs.removeAttribute('href');
+    const img = rs.querySelector('img');
+    img.alt = route.sponsorName ? `${route.sponsorName} logo` : 'Sponsor logo';
+    img.onerror = () => { AppState.vars.sponsorReady = false; rs.classList.remove('visible'); };
+    img.src = Utils.resolveImageUrl(route.sponsorUrl);
+    if (route.sponsorName) rs.setAttribute('aria-label', `Tonight's route sponsor: ${route.sponsorName}`);
+    if (route.sponsorLink) { rs.href = route.sponsorLink; } else { rs.removeAttribute('href'); }
+    rs.addEventListener('click', () => { try { fetch(`${AppState.vars.apiUrl}?function=logSponsorClick&route=${encodeURIComponent(route.routeName || '')}&sponsor=${encodeURIComponent(route.sponsorName || route.sponsorLink || 'unknown')}`, { keepalive: true }).catch(() => {}); } catch(e) {} });
+    AppState.vars.sponsorReady = true;
   }
 }
             if (!AppState.flags.isKiosk) { const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT"); if (savedPin) { try { const p = JSON.parse(savedPin); AppState.flags.browserNotified = false; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); AppState.vars.notifyLatLng = { lat: p.lat, lng: p.lng }; showNotifyMarker(p.lat, p.lng, true); } catch(e) {} } }
