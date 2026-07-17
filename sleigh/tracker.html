@@ -233,7 +233,7 @@
   z-index: 3500;
   opacity: 0;
   transform: translateY(-6px);
-  transition: opacity .5s ease, transform .5s ease;
+  transition: opacity .5s ease, transform .5s ease, top .35s ease;
   pointer-events: auto;
   text-decoration: none;
   backdrop-filter: blur(8px);
@@ -264,10 +264,9 @@ body.driver-mode .route-sponsor { display: none; }
 body.dim-ui .route-sponsor { opacity: 0.55; filter: saturate(0.85); }
 body.dim-ui .route-sponsor:hover { opacity: 0.85; }
 
-/* Mobile — drop below the status popup to avoid collision, keep logo bold */
+/* Mobile — sizing only; vertical position is set by layoutOverlays() against the live status bar */
 @media (max-width: 480px) {
   .route-sponsor {
-    top: calc(130px + env(safe-area-inset-top, 0px));
     right: 10px;
     padding: 8px 14px 10px;
     gap: 4px;
@@ -381,7 +380,6 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     }
     
     @media(max-width: 480px) { 
-  .donate-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 160px) !important; } 
   
   .info-popup { 
     width: calc(100vw - 16px); 
@@ -1524,6 +1522,7 @@ function ensureNotifyPermission() {
 
           const rs = document.getElementById('routeSponsor');
 if (rs) rs.classList.toggle('visible', !!AppState.vars.sponsorReady && !AppState.flags.isKiosk && !AppState.flags.isDriver);
+if (window.layoutOverlays) window.layoutOverlays();
           
           if (AppState.flags.isKiosk) { AppState.dom.kioskBanner.classList.toggle("live", isFresh); const statusEl = document.getElementById("kioskStatus"); if (statusEl) statusEl.textContent = isFresh ? "🎅 LIVE TRACKING" : "🎄 PREPARING IN LAPLAND"; if (AppState.dom.sponsorBox) AppState.dom.sponsorBox.classList.toggle("visible", isFresh && !!AppState.vars.kioskSponsorReady); }
 
@@ -2031,6 +2030,7 @@ if (!AppState.flags.isKiosk && !AppState.flags.isDriver && route?.sponsorUrl && 
     const img = rs.querySelector('img');
     img.alt = route.sponsorName ? `${route.sponsorName} logo` : 'Sponsor logo';
     img.onerror = () => { AppState.vars.sponsorReady = false; rs.classList.remove('visible'); };
+    img.onload = () => { if (window.layoutOverlays) window.layoutOverlays(); };
     img.src = Utils.resolveImageUrl(route.sponsorUrl);
     if (route.sponsorName) rs.setAttribute('aria-label', `Tonight's route sponsor: ${route.sponsorName}`);
     if (route.sponsorLink) { rs.href = route.sponsorLink; } else { rs.removeAttribute('href'); }
@@ -2038,6 +2038,44 @@ if (!AppState.flags.isKiosk && !AppState.flags.isDriver && route?.sponsorUrl && 
     AppState.vars.sponsorReady = true;
   }
 }
+
+// ── Overlay layout engine ──────────────────────────────────────────
+// (a) Donate stack rides the button panel: the panel grows when the
+//     live-mode buttons appear, so measure its real top edge and
+//     drive --donate-bottom from it (donate box, Gift Aid link and
+//     toasts all key off that one variable).
+// (b) Sponsor pill hugs the status bar: beside it when there's
+//     horizontal room, tucked directly beneath it when there isn't —
+//     one rule for browser and embeds, live or idle.
+window.layoutOverlays = function() {
+  const nav = document.querySelector('.info-popup');
+  if (nav) {
+    const nr = nav.getBoundingClientRect();
+    if (nr.height > 0) {
+      document.documentElement.style.setProperty('--donate-bottom', (Math.max(0, window.innerHeight - nr.top) + 14) + 'px');
+    }
+  }
+  const pill = document.getElementById('routeSponsor');
+  const sb = AppState.dom.statusBox;
+  if (pill && sb) {
+    const sbr = sb.getBoundingClientRect();
+    if (sbr.height > 0) {
+      const margin = 12;
+      const fitsBeside = (window.innerWidth - sbr.right - margin * 2) >= pill.offsetWidth;
+      pill.style.top = Math.round(fitsBeside ? Math.max(margin, sbr.top) : sbr.bottom + 10) + 'px';
+    }
+  }
+};
+if ('ResizeObserver' in window) {
+  const overlayRO = new ResizeObserver(() => window.layoutOverlays());
+  const navEl = document.querySelector('.info-popup');
+  if (navEl) overlayRO.observe(navEl);
+  if (AppState.dom.statusBox) overlayRO.observe(AppState.dom.statusBox);
+  const pillEl = document.getElementById('routeSponsor');
+  if (pillEl) overlayRO.observe(pillEl);
+}
+window.addEventListener('resize', () => window.layoutOverlays());
+window.layoutOverlays();
             if (!AppState.flags.isKiosk) { const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT"); if (savedPin) { try { const p = JSON.parse(savedPin); AppState.flags.browserNotified = false; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); AppState.vars.notifyLatLng = { lat: p.lat, lng: p.lng }; showNotifyMarker(p.lat, p.lng, true); } catch(e) {} } }
             AppState.map.on("click", e => { if (!AppState.flags.awaitingPin) return; showNotifyMarker(e.latlng.lat, e.latlng.lng, false); AppState.dom.statusBox.textContent = "📍 Pin moved — tap again to confirm"; });
             AppState.marker = L.marker(AppConfig.LOCATIONS.LAPLAND, { icon: L.icon({ iconUrl: settings.sleigh_icon_live || AppConfig.ICONS.FALLBACK_LIVE, iconSize: [64, 64], iconAnchor: [32, 60] }) });
