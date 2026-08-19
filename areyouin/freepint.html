@@ -14,99 +14,122 @@
 <meta property="og:title" content="Your first pint is on us 🍻">
 <meta property="og:description" content="Thinking about coming down to a Beverley Round Table night? Grab a digital voucher, turn up to our next social, and the first round is on us.">
 <meta property="og:url" content="https://beverleyroundtable.co.uk/freepint">
-<meta property="og:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/areyouin/quiz-og.png"> <!-- Suggest swapping for a pub photo later -->
+<meta property="og:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/areyouin/rageroom.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 
 <style>
-  :root{
-    --gold:#FBAF33; --dark:#1D1D1A; 
-    --ink:#fff; --dim:#a7a7a2; --line:rgba(255,255,255,.12);
-    --card:#26261f;
+  :root {
+    --gold: #FBAF33; 
+    --dark: #1D1D1A; 
+    --ink: #fff; 
+    --dim: #a7a7a2; 
+    --line: rgba(255,255,255,.12);
+    --card: #26261f;
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;min-height:100%}
-  body{
-    font-family:'Open Sans',system-ui,sans-serif;color:var(--ink);
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: 'Open Sans', system-ui, sans-serif; 
+    color: var(--ink);
     background:
       radial-gradient(900px 500px at 50% -10%, rgba(251,175,51,.16), transparent 60%),
       radial-gradient(700px 600px at 100% 110%, rgba(255,255,255,.04), transparent 55%),
       var(--dark);
-    display:flex;justify-content:center;align-items:center;
-    padding:24px 16px;min-height:100vh;
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    padding: 24px 16px; 
+    min-height: 100vh;
   }
-  .wrap{width:100%;max-width:460px}
+  .wrap { width: 100%; max-width: 460px; }
 
   /* Shared screen animation */
-  .screen{animation:fade .45s cubic-bezier(.2,.8,.2,1) both}
-  @keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-  .hidden{display:none !important}
+  .screen { animation: fade .45s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .hidden { display: none !important; }
 
   /* Typography */
-  .kick{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--gold);margin-bottom:14px;
-    font-family: 'Saira', system-ui, sans-serif;}
+  .kick {
+    display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 14px;
+    font-family: 'Saira', system-ui, sans-serif;
+  }
     
-  h1{
-     font-size:42px; line-height:1.05; font-weight:800; margin:0 0 14px;
+  h1 {
+     font-size: 42px; line-height: 1.05; font-weight: 800; margin: 0 0 14px;
      font-family: 'Saira', system-ui, sans-serif; text-transform: uppercase;
   }
-  h1 .em{color:var(--gold)}
-  .lead{font-size:16px;color:var(--dim);line-height:1.55;margin:0 0 28px}
-  .meta{font-size:13px;color:var(--dim);margin-top:18px; text-align:center;}
+  h1 .em { color: var(--gold); }
+  .lead { font-size: 16px; color: var(--dim); line-height: 1.55; margin: 0 0 28px; }
+  .meta { font-size: 13px; color: var(--dim); margin-top: 18px; text-align: center; }
 
   /* Imagery */
-  .hero-img { width: 100%; height: 200px; object-fit: cover; border-radius: 14px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); border: 1px solid var(--line); }
+  .hero-img { 
+    width: 100%; height: 200px; object-fit: cover; border-radius: 14px; 
+    margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); border: 1px solid var(--line); 
+  }
 
   /* Buttons */
-  .btn{display:inline-block;width:100%;text-align:center;padding:16px;border:0;border-radius:13px;
-    cursor:pointer;font:inherit;font-weight:800;font-size:16.5px;text-decoration:none;
-    transition:transform .12s, filter .15s, box-shadow .15s;}
-  .btn-gold{background:var(--gold);color:var(--dark); box-shadow: 0 4px 14px rgba(251,175,51,0.25);}
-  .btn-gold:hover{filter:brightness(1.05); box-shadow: 0 6px 20px rgba(251,175,51,0.4);}
-  .btn:active{transform:scale(.985)}
-  .btn-ghost{background:transparent;color:var(--ink);border:1.6px solid var(--line)}
-  .btn-ghost:hover{border-color:var(--gold)}
-  .btn + .btn{margin-top:12px}
+  .btn {
+    display: flex; justify-content: center; align-items: center; width: 100%;
+    padding: 16px; border: 0; border-radius: 13px; cursor: pointer; font: inherit;
+    font-weight: 800; font-size: 16.5px; text-decoration: none;
+    transition: transform .12s, filter .15s, box-shadow .15s;
+  }
+  .btn-gold { background: var(--gold); color: var(--dark); box-shadow: 0 4px 14px rgba(251,175,51,0.25); }
+  .btn-gold:hover { filter: brightness(1.05); box-shadow: 0 6px 20px rgba(251,175,51,0.4); }
+  .btn:active { transform: scale(.985); }
+  .btn-ghost { background: transparent; color: var(--ink); border: 1.6px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--gold); }
+  .btn + .btn { margin-top: 12px; }
 
-  /* Ticket / Voucher Styling */
+  /* Premium Ticket Styling (CSS Only) */
   .ticket-wrap {
-    background: var(--gold);
-    padding: 4px;
-    border-radius: 16px;
-    margin-bottom: 24px;
-    box-shadow: 0 12px 32px rgba(251,175,51,0.15);
+    padding: 3px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(251,175,51,0.8), rgba(251,175,51,0.2));
+    margin-bottom: 28px;
+    box-shadow: 0 16px 40px rgba(251,175,51,0.15), inset 0 0 0 1px rgba(255,255,255,0.1);
     animation: popIn .6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
   @keyframes popIn { 0% { transform: scale(0.9) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
   
   .ticket-inner {
     background: var(--card);
-    border: 2px dashed rgba(251,175,51,0.6);
-    border-radius: 12px;
-    padding: 24px 20px;
+    background-image: radial-gradient(circle at top right, rgba(255,255,255,0.03), transparent 60%);
+    border: 2px dashed rgba(251,175,51,0.5);
+    border-radius: 15px;
+    padding: 30px 20px;
     text-align: center;
     position: relative;
+    overflow: hidden;
   }
   
-  /* Ticket cutouts */
+  /* Ticket perforated cutouts */
   .ticket-inner::before, .ticket-inner::after {
-    content: ''; position: absolute; top: 50%; width: 20px; height: 20px;
+    content: ''; position: absolute; top: 50%; width: 24px; height: 24px;
     background: var(--dark); border-radius: 50%; transform: translateY(-50%);
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
   }
-  .ticket-inner::before { left: -14px; border-right: 2px solid var(--gold); }
-  .ticket-inner::after { right: -14px; border-left: 2px solid var(--gold); }
+  .ticket-inner::before { left: -14px; border-right: 1px solid rgba(251,175,51,0.4); }
+  .ticket-inner::after { right: -14px; border-left: 1px solid rgba(251,175,51,0.4); }
 
-  .t-header { font-family: 'Saira', sans-serif; font-weight: 800; font-size: 28px; color: var(--gold); text-transform: uppercase; line-height: 1.1; margin-bottom: 4px;}
-  .t-sub { font-size: 14px; color: var(--ink); font-weight: 700; margin-bottom: 20px; letter-spacing: 0.05em;}
-  .t-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0; }
+  .t-header { font-family: 'Saira', sans-serif; font-weight: 900; font-size: 32px; color: var(--gold); text-transform: uppercase; line-height: 1.05; margin-bottom: 6px;}
+  .t-sub { font-size: 14px; color: var(--ink); font-weight: 700; margin-bottom: 24px; letter-spacing: 0.1em; opacity: 0.9;}
+  .t-divider { border-top: 1px dashed rgba(255,255,255,0.15); margin: 20px 0; }
   
   /* Dynamic Event Injector */
-  .event-loader { font-size: 14px; color: var(--dim); font-style: italic; }
-  .event-details { text-align: left; background: rgba(0,0,0,0.2); padding: 12px 16px; border-radius: 8px;}
-  .e-label { font-size: 11px; text-transform: uppercase; color: var(--gold); font-weight: 800; letter-spacing: 0.1em; margin-bottom: 4px;}
-  .e-title { font-weight: 700; font-size: 16px; color: var(--ink); margin-bottom: 4px;}
-  .e-meta { font-size: 14px; color: var(--dim); display: flex; align-items: center; gap: 6px; margin-bottom: 2px;}
+  .event-loader { font-size: 14px; color: var(--dim); font-style: italic; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+  
+  .event-details { 
+    text-align: left; background: rgba(0,0,0,0.25); padding: 14px 18px; 
+    border-radius: 10px; border-left: 3px solid var(--gold);
+  }
+  .e-label { font-size: 11px; text-transform: uppercase; color: var(--gold); font-weight: 800; letter-spacing: 0.12em; margin-bottom: 8px;}
+  .e-title { font-weight: 700; font-size: 16px; color: var(--ink); margin-bottom: 4px; line-height: 1.3;}
+  .e-meta { font-size: 13px; font-weight: 600; color: var(--dim); display: flex; align-items: center; gap: 6px; margin-top: 4px;}
 
 </style>
 </head>
@@ -118,7 +141,6 @@
   <section class="screen" id="landing">
     <span class="kick">🍻 No awkward networking</span>
     
-    <!-- Grab a good photo of the lads with a pint for this -->
     <img class="hero-img" src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/areyouin/rageroom.jpg" alt="Round Table Lads">
     
     <h1>First Pint <span class="em">On Us.</span></h1>
@@ -141,11 +163,13 @@
         <div class="e-label">Valid at our next social:</div>
         
         <div id="eventTarget">
-          <div class="event-loader">Locating the next meetup...</div>
+          <div class="event-loader">Locating the calendar...</div>
         </div>
 
         <div class="t-divider"></div>
-        <div style="font-size: 12px; color: var(--dim);">Show this screen to any Round Table member when you arrive. Over 18s only.</div>
+        <div style="font-size: 11px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em;">
+          Show this screen to any Round Table member when you arrive. Over 18s only.
+        </div>
       </div>
     </div>
 
@@ -168,45 +192,39 @@
   
   var nextEvent = null;
 
-  // 1. Fetch the next event in the background immediately
+  // 1. Fetch the next event via Google Apps Script immediately
   fetch(API_URL)
     .then(function(res) { return res.json(); })
     .then(function(data) {
       if (data && data.length > 0) {
-        // Grab the very first upcoming event
         nextEvent = data[0]; 
+        renderEventToTicket(); // Update the DOM the moment data arrives
+      } else {
+        renderFallback();
       }
     })
-    .catch(function(err) { console.warn("Could not load events", err); });
+    .catch(function(err) { 
+      console.warn("Could not load events", err); 
+      renderFallback();
+    });
 
   // 2. Handle 'Claim Voucher' Click
   document.getElementById('claimBtn').addEventListener('click', function() {
     document.getElementById('landing').classList.add('hidden');
     document.getElementById('voucher').classList.remove('hidden');
-    renderEventToTicket();
+    // We call render just in case it fired before the click, but the fetch promise will also trigger it.
+    if(nextEvent) renderEventToTicket();
   });
 
   // 3. Render the event details onto the ticket
   function renderEventToTicket() {
     var target = document.getElementById('eventTarget');
-    
-    if (!nextEvent) {
-      // Fallback if API fails or no events are scheduled
-      target.innerHTML = `
-        <div class="event-details" style="text-align:center;">
-          <div class="e-title">Upcoming Meetup</div>
-          <div class="e-meta">Check the WhatsApp group for dates!</div>
-        </div>
-      `;
-      return;
-    }
+    if (!nextEvent) return;
 
-    // Format Date
     var dateStr = nextEvent.DateTime;
     var d = new Date(nextEvent.DateTime);
     if (!isNaN(d.getTime())) {
       dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-      // If we have a time, add it
       var timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
       if (timeStr !== "00:00") dateStr += ' @ ' + timeStr;
     }
@@ -222,22 +240,29 @@
     `;
   }
 
-  // 4. Handle WhatsApp "Drop In" Click
+  function renderFallback() {
+    var target = document.getElementById('eventTarget');
+    target.innerHTML = `
+      <div class="event-details" style="text-align:center; border-left: none;">
+        <div class="e-title">Upcoming Meetup</div>
+        <div class="e-meta" style="justify-content:center;">Check the WhatsApp group for dates!</div>
+      </div>
+    `;
+  }
+
+  // 4. Handle WhatsApp "Drop In" Click (Clipboard automation)
   document.getElementById('waDropIn').addEventListener('click', async function(e) {
     e.preventDefault();
     
-    // Draft the icebreaker
     var introText = "Alright lads! I just grabbed a free pint voucher off the website. Coming down to the next meetup!";
     
     try {
-      // Secretly copy it to their phone's clipboard
       await navigator.clipboard.writeText(introText);
-      alert("We've copied an intro message to your clipboard!\n\nJust paste it into the chat when you join the group so we know you're coming.");
+      alert("We've copied an intro message to your clipboard!\\n\\nJust paste it into the chat when you join the group so we know you're coming.");
     } catch(err) {
       // Fall silently if clipboard access is blocked
     }
     
-    // Fire them off to the WhatsApp group
     window.open(JOIN_URL, '_blank', 'noopener');
   });
 
