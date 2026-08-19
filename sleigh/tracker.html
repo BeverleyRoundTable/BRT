@@ -762,7 +762,12 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+   document.addEventListener("DOMContentLoaded", () => {
+
+      // --- RATE LIMITING CLIENT ID ---
+      if (!localStorage.getItem("turbo_santa_client_id")) {
+        localStorage.setItem("turbo_santa_client_id", crypto.randomUUID());
+      }
 
       // --- SANTA'S WORKSHOP MANAGER ---
       const WorkshopManager = {
@@ -2087,7 +2092,31 @@ window.layoutOverlays();
 
             if (AppState.dom.msgBtn) { AppState.dom.msgBtn.onclick = () => { document.getElementById('msgModal').style.display = 'flex'; document.getElementById('userMsgInput').focus(); }; }
             document.getElementById('msgCancelBtn').onclick = () => { document.getElementById('msgModal').style.display = 'none'; };
-            document.getElementById('msgConfirmBtn').onclick = () => { const input = document.getElementById('userMsgInput'); const msg = input.value.trim(); if (!msg) return; document.getElementById('msgModal').style.display = 'none'; showToast("Sending message to the elves..."); fetch(AppState.vars.apiUrl, { method: 'POST', body: JSON.stringify({ action: "submitUserMessage", message: msg, routeName: AppState.vars.todayRoute?.routeName || '' }) }).then(r => r.json()).then(d => { if (d.ok) showToast("💬 Sent! Waiting for Elf approval..."); else showToast("❌ " + (d.error || "Failed to send.")); }).catch(() => showToast("❌ Network error.")); input.value = ''; };
+            document.getElementById('msgConfirmBtn').onclick = () => { 
+  const input = document.getElementById('userMsgInput'); 
+  const msg = input.value.trim(); 
+  if (!msg) return; 
+  document.getElementById('msgModal').style.display = 'none'; 
+  showToast("Sending message to the elves..."); 
+  
+  fetch(AppState.vars.apiUrl, { 
+    method: 'POST', 
+    body: JSON.stringify({ 
+      action: "submitUserMessage", 
+      message: msg, 
+      routeName: AppState.vars.todayRoute?.routeName || '',
+      clientId: localStorage.getItem("turbo_santa_client_id") // Attached here
+    }) 
+  })
+  .then(r => r.json())
+  .then(d => { 
+    if (d.ok) showToast("💬 Sent! Waiting for Elf approval..."); 
+    else showToast("❌ " + (d.error || "Failed to send.")); 
+  })
+  .catch(() => showToast("❌ Network error.")); 
+  
+  input.value = ''; 
+};
             document.getElementById("modalCancelBtn").addEventListener("click", () => { document.getElementById("emailModal").style.display = "none"; AppState.dom.statusBox.textContent = "Tap the pin to try again"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } });
             document.getElementById("modalConfirmBtn").addEventListener("click", () => { const email = document.getElementById("subEmail").value.trim(); document.getElementById("emailModal").style.display = "none"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } Utils.toggleFollowControls(true); if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") { showToast("🎅 You're already signed up!"); return; } AppState.dom.statusBox.textContent = "🔔 Saving your notification..."; if (!AppState.vars.pendingSubscription) { showToast("❌ Error: No location selected."); return; } fetch(`${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`).then(r=>r.json()).then(d => { if (d.ok) { sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1"); showToast(email ? "🎅 You're signed up! We'll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts."); AppState.dom.statusBox.textContent = ""; if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; } AppState.vars.pendingSubscription = null; } else { showToast("❌ Error saving notification."); AppState.dom.statusBox.textContent = "❌ Failed to save."; } }).catch(() => { showToast("❌ Network error."); AppState.dom.statusBox.textContent = "❌ Connection failed."; }); });
 
