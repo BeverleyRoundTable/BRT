@@ -2014,7 +2014,7 @@ if (window.layoutOverlays) window.layoutOverlays();
         fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { keepalive: true });
 
         setInterval(() => {
-          if (document.visibilityState === "visible" && AppState.vars.apiUrl) {
+          if (document.visibilityState === "visible" && navigator.onLine && AppState.vars.apiUrl) {
             fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web_heartbeat&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { cache: "no-store" })
               .catch(() => {});
           }
