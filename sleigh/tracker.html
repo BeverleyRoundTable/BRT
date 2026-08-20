@@ -2012,6 +2012,14 @@ if (window.layoutOverlays) window.layoutOverlays();
         }
         
         fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { keepalive: true });
+
+        setInterval(() => {
+          if (document.visibilityState === "visible" && AppState.vars.apiUrl) {
+            fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web_heartbeat&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { cache: "no-store" })
+              .catch(() => {});
+          }
+        }, 3 * 60 * 1000);
+        
         if (AppState.flags.isKiosk && AppState.dom.kioskBanner) { const statusDiv = document.createElement('div'); statusDiv.id = 'kioskStatus'; statusDiv.textContent = '🎄 PREPARING IN LAPLAND'; const subtitleDiv = document.createElement('div'); subtitleDiv.className = 'kiosk-subtitle'; subtitleDiv.textContent = AppState.vars.sleighName; AppState.dom.kioskBanner.innerHTML = ''; AppState.dom.kioskBanner.appendChild(statusDiv); AppState.dom.kioskBanner.appendChild(subtitleDiv); AppState.dom.kioskBanner.classList.add("visible"); }
         if (!route) { AppState.dom.notifyBtn.style.display = "none"; } else { await loadGpxRoute(route.gpxUrl); if (AppState.flags.isDriver && AppState.flags.gpxLoaded) TurnByTurn.load(AppState.gpxRoute); }
 
