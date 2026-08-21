@@ -197,12 +197,13 @@
     let map;
     let userPin = null;
 
-    // 1. Initialize Dark Mode Map over Beverley
+    // 1. Initialize Light Mode Map over Beverley
     function initMap() {
       map = L.map('lookup-map').setView([53.844, -0.428], 13);
       
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap',
+      // Swapped from CartoDB Dark to standard OpenStreetMap Light
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 18
       }).addTo(map);
 
