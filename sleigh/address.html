@@ -86,8 +86,9 @@
       transition: transform 0.1s, background 0.2s;
     }
 
-    .locate-btn:hover { background: #e59d28; }
-    .locate-btn:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+    .locate-btn:hover:not(:disabled) { background: #e59d28; }
+    .locate-btn:active:not(:disabled) { transform: scale(0.96); box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+    .locate-btn:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
     .instruction-text {
       text-align: center;
@@ -161,14 +162,8 @@
   <div id="address-root">
     
     <div class="controls-wrapper">
-      <button id="locateBtn" class="locate-btn">
-        <!-- SVG GPS Icon (Adjusted for Bebas Neue alignment) -->
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px;">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
-        </svg>
-        Use My Current Location
+      <button id="locateBtn" class="locate-btn" disabled>
+        Loading Map Data...
       </button>
       <div class="instruction-text">or simply tap your street on the map below</div>
     </div>
@@ -209,13 +204,23 @@
       }).addTo(map);
 
       map.on('click', function(e) {
-        processCoordinates(e.latlng.lat, e.latlng.lng);
+        // Prevent manual tapping if routes haven't finished loading yet
+        if (!document.getElementById('locateBtn').disabled) {
+          processCoordinates(e.latlng.lat, e.latlng.lng);
+        }
       });
     }
 
     // 3. Fetch Master Payload & Parse GPX Data
     async function loadRouteData() {
       const resultsDiv = document.getElementById('results');
+      const btn = document.getElementById('locateBtn');
+      const defaultBtnHtml = `
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg> Use My Current Location`;
       
       if (!API_URL) {
         resultsDiv.innerHTML = `
@@ -227,16 +232,18 @@
       }
 
       try {
-        const res = await fetch(API_URL);
+        // Enforce cache bypass exactly like the main tracker to fix Google Scripts CORS quirks
+        const res = await fetch(API_URL, { cache: "no-store" });
         const data = await res.json();
         
         if(data && data.routes) {
           routesData = data.routes;
           
-          routesData.forEach(async (route) => {
+          // Promise.all ensures we WAIT for every single GPX file to be processed before enabling interactions
+          await Promise.all(routesData.map(async (route) => {
             if (route.gpxUrl) {
               try {
-                const gpxRes = await fetch(route.gpxUrl);
+                const gpxRes = await fetch(route.gpxUrl, { cache: "no-store" });
                 const gpxXml = await gpxRes.text();
                 route.geoJSON = parseGPXToLineString(gpxXml);
                 
@@ -245,24 +252,32 @@
                 }
               } catch (e) { console.error("GPX load failed for", route.routeName); }
             }
-          });
+          }));
         }
       } catch (err) {
         console.error("Failed to fetch route data:", err);
+      } finally {
+        // Unlock UI once data is truly drawn on map
+        btn.innerHTML = defaultBtnHtml;
+        btn.disabled = false;
       }
     }
 
-    // 4. Mini XML Parser for GPX -> GeoJSON
+    // 4. XML Parser for GPX -> GeoJSON
     function parseGPXToLineString(xmlStr) {
+      // Hardened: Strip out XML namespaces that cause DOMParser to fail silently on some GPX files
+      const cleanXmlStr = xmlStr.replace(/xmlns(:\w+)?=".*?"/g, '');
       const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
+      const xmlDoc = parser.parseFromString(cleanXmlStr, "text/xml");
       const trackPoints = xmlDoc.getElementsByTagName("trkpt");
       
       const coords = [];
       for (let i = 0; i < trackPoints.length; i++) {
         const lat = parseFloat(trackPoints[i].getAttribute("lat"));
         const lon = parseFloat(trackPoints[i].getAttribute("lon"));
-        coords.push([lon, lat]); 
+        if (!isNaN(lat) && !isNaN(lon)) {
+          coords.push([lon, lat]); 
+        }
       }
       
       if (coords.length > 1) {
@@ -276,20 +291,24 @@
       const btn = document.getElementById('locateBtn');
       const originalText = btn.innerHTML;
       btn.innerHTML = "Locating...";
+      btn.disabled = true;
       
       if (!navigator.geolocation) {
         alert("Your browser doesn't support geolocation. Please tap the map instead.");
         btn.innerHTML = originalText;
+        btn.disabled = false;
         return;
       }
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
           btn.innerHTML = originalText;
+          btn.disabled = false;
           processCoordinates(position.coords.latitude, position.coords.longitude);
         },
         (error) => {
           btn.innerHTML = originalText;
+          btn.disabled = false;
           alert("Could not get your location. Please check your browser permissions or tap the map directly.");
         },
         { enableHighAccuracy: true, timeout: 5000 }
