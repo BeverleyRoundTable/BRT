@@ -252,16 +252,19 @@
       );
     });
 
-    // 5. The Core Spatial Intersection Logic
+    // 5. The Core Spatial Intersection Logic (Updated for Chronological Sorting)
     function processCoordinates(lat, lng) {
       // Manage the map UI
       if (userPin) map.removeLayer(userPin);
       userPin = L.marker([lat, lng]).addTo(map);
       map.setView([lat, lng], 16);
 
-      // Create a Turf point from the user's coordinates
       const userLocation = turf.point([lng, lat]);
       const matchedRoutes = [];
+      
+      // Get today's date (at midnight) to filter out past routes
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       // Calculate distance to every loaded GPX track
       routesData.forEach(route => {
@@ -269,16 +272,43 @@
           const distance = turf.pointToLineDistance(userLocation, route.geoJSON, { units: 'meters' });
           
           if (distance <= CATCHMENT_METERS) {
-            matchedRoutes.push({
-              ...route,
-              distance: Math.round(distance)
-            });
+            
+            // Check if the route is in the past
+            let isFutureOrToday = true;
+            let parsedTime = Infinity; // Default for missing dates so they drop to the bottom
+
+            if (route.date) {
+              const routeDate = new Date(route.date);
+              if (!isNaN(routeDate)) {
+                // Ensure we compare midnight to midnight
+                const cleanRouteDate = new Date(routeDate.getFullYear(), routeDate.getMonth(), routeDate.getDate());
+                if (cleanRouteDate < today) {
+                  isFutureOrToday = false; // It's in the past
+                }
+                parsedTime = cleanRouteDate.getTime();
+              }
+            }
+
+            // Only add to results if it hasn't happened yet
+            if (isFutureOrToday) {
+              matchedRoutes.push({
+                ...route,
+                distance: Math.round(distance),
+                parsedDate: parsedTime
+              });
+            }
           }
         }
       });
 
-      // Sort matches by proximity so the closest route is always top
-      matchedRoutes.sort((a, b) => a.distance - b.distance);
+      // Sort primarily by SOONEST DATE. If dates match, sort by shortest distance.
+      matchedRoutes.sort((a, b) => {
+        if (a.parsedDate !== b.parsedDate) {
+          return a.parsedDate - b.parsedDate;
+        }
+        return a.distance - b.distance; // Tie-breaker
+      });
+      
       renderResults(matchedRoutes);
     }
 
