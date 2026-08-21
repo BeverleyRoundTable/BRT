@@ -3,13 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TurboSanta — Address Lookup</title>
+  <title>TurboSanta — Spatial Lookup</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Turf.js for Lightning-Fast Client-Side Spatial Math -->
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <style>
     /* ═══════════════════════════════════════ */
@@ -22,25 +27,20 @@
       --dark: #0d0d0b;
       --surface: #161614;
       --surface-2: #1e1e1b;
-      --surface-3: #252522;
       --border: rgba(255,255,255,0.08);
-      --border-gold: rgba(251,175,51,0.2);
       --text: #eaeae5;
       --text-dim: rgba(255,255,255,0.55);
-      --text-muted: rgba(255,255,255,0.3);
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      /* FIXED: Added 60px bottom padding for the shadow, removed from top */
       padding: 24px 12px 60px; 
       background: transparent; 
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
       -webkit-font-smoothing: antialiased;
-      /* FIXED: Forces the scrollbar to hide */
       overflow-y: hidden; 
     }
 
@@ -54,56 +54,17 @@
       box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     }
 
-    /* ── Search box ── */
-    .address-search {
+    /* ── Map & Geolocation Controls ── */
+    .controls-wrapper {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 8px;
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
-    .address-search-input {
-      width: 100%;
-      max-width: 900px;
-      padding: 16px 20px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface-2);
-      color: #FFFFFF;
-      font-family: 'DM Mono', monospace;
-      font-size: 1rem;
-      box-sizing: border-box;
-      appearance: none;
-      -webkit-appearance: none;
-      transition: all 0.2s ease;
-      text-align: center;
-    }
-
-    .address-search-input::placeholder {
-      color: var(--text-muted);
-      font-family: 'DM Sans', sans-serif;
-    }
-
-    .address-search-input:focus {
-      outline: none;
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px var(--gold-glow);
-    }
-
-    .address-search-input:-webkit-autofill,
-    .address-search-input:-webkit-autofill:hover,
-    .address-search-input:-webkit-autofill:focus {
-      -webkit-text-fill-color: #FFFFFF;
-      box-shadow: 0 0 0px 1000px var(--surface-2) inset;
-      transition: background-color 9999s ease-out;
-    }
-
-    .address-search button {
+    .locate-btn {
       height: 48px;
       width: 100%;
-      max-width: 900px;
-      padding: 0 28px;
       border-radius: 8px;
       border: none;
       background: var(--gold);
@@ -117,66 +78,44 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
+      gap: 10px;
+      transition: transform 0.1s, background 0.2s;
     }
 
-    .address-search button:hover {
-      background: #e59d28;
-      transform: translateY(-1px);
+    .locate-btn:hover { background: #e59d28; }
+    .locate-btn:active { transform: scale(0.98); }
+
+    .instruction-text {
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-dim);
     }
 
-    .address-search button:active {
-      transform: scale(0.98);
+    #lookup-map {
+      height: 350px;
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      z-index: 1; /* Keeps Leaflet controls below modals if added later */
     }
 
-    @keyframes searchPulse {
-      0%   { box-shadow: 0 0 0 rgba(251, 175, 51, 0); }
-      50%  { box-shadow: 0 0 14px var(--gold-glow); }
-      100% { box-shadow: 0 0 0 rgba(251, 175, 51, 0); }
-    }
-
-    .address-search button.pulse {
-      animation: searchPulse 0.8s ease-out;
-    }
-
+    /* ── Results Cards ── */
     #results:empty { margin-top: 0; }
-
-    /* ── Cards ── */
     .addr-route-card {
       background: var(--surface-2);
       border-radius: 14px;
       border: 1px solid var(--border);
       padding: 20px 24px;
       margin: 20px 0;
-      transition: background 0.15s;
     }
-    
-    .addr-route-card:hover {
-      background: rgba(251,175,51,0.03);
-    }
-
-    .addr-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-      margin-bottom: 12px;
-    }
-
-    .addr-card-titles {
-      flex: 1;
-      min-width: 0;
-    }
-
     .addr-route-title {
       margin: 0 0 4px;
       font-family: 'Bebas Neue', sans-serif;
       font-size: 28px;
       letter-spacing: 1.5px;
       color: #fff;
-      line-height: 1.1;
     }
-
     .addr-route-date {
       margin: 0;
       font-family: 'DM Mono', monospace;
@@ -184,118 +123,6 @@
       font-weight: 500;
       color: var(--gold);
     }
-
-    .addr-countdown {
-      flex-shrink: 0;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      white-space: nowrap;
-      text-transform: uppercase;
-    }
-
-    .countdown-imminent {
-      background: var(--gold);
-      color: #000000;
-      box-shadow: 0 0 12px var(--gold-glow);
-      animation: badgePulse 2s ease-in-out infinite;
-    }
-
-    .countdown-soon {
-      background: var(--gold-dim);
-      color: var(--gold);
-      border: 1px solid var(--border-gold);
-    }
-
-    .countdown-future {
-      background: var(--surface-3);
-      color: var(--text-dim);
-      border: 1px solid var(--border);
-    }
-
-    .countdown-past {
-      background: rgba(255,255,255,0.03);
-      color: var(--text-muted);
-      border: 1px solid rgba(255,255,255,0.04);
-    }
-
-    @keyframes badgePulse {
-      0%, 100% { box-shadow: 0 0 6px rgba(251, 175, 51, 0.3); }
-      50%      { box-shadow: 0 0 16px rgba(251, 175, 51, 0.6); }
-    }
-
-    .addr-route-map {
-      margin: 16px 0;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-
-    .addr-route-map img {
-      display: block;
-      width: 100%;
-      height: auto;
-      object-fit: contain;
-    }
-
-    .addr-streets-list {
-      list-style: none;
-      padding: 0;
-      margin: 16px 0 0;
-      font-size: 14px;
-    }
-
-    .addr-streets-list li {
-      margin: 6px 0;
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      color: var(--text);
-    }
-
-    .addr-streets-list li .pin {
-      flex-shrink: 0;
-      font-size: 0.9em;
-      color: var(--text-dim);
-    }
-
-    .addr-streets-list mark {
-      background: var(--gold-dim);
-      color: var(--gold);
-      border-radius: 4px;
-      padding: 2px 6px;
-      font-weight: 700;
-    }
-
-    .addr-sponsor {
-      margin-top: 20px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .addr-sponsor .sponsor-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--text-muted);
-      flex-shrink: 0;
-    }
-
-    .addr-sponsor img {
-      height: 32px;
-      width: auto;
-      max-width: 140px;
-      object-fit: contain;
-      opacity: 0.9;
-      border-radius: 4px;
-    }
-
     .addr-no-results {
       text-align: center;
       margin-top: 32px;
@@ -303,61 +130,203 @@
       color: var(--gold);
       font-size: 16px;
     }
-
-    .addr-no-results small {
-      display: block;
-      margin-top: 8px;
-      font-weight: 400;
-      font-family: 'DM Mono', monospace;
-      font-size: 13px;
-      color: var(--text-dim);
-    }
-
-    @media (min-width: 700px) {
-      body { padding-top: 32px; }
-      .address-search { flex-direction: row; }
-      .address-search-input { text-align: left; }
-      .address-search button { width: auto; }
-    }
   </style>
 </head>
 
 <body>
   <div id="address-root">
-    <div class="address-search">
-      <input
-        id="searchInput"
-        class="address-search-input"
-        type="text"
-        placeholder="Enter your street name..."
-      />
-      <button id="searchBtn">Search Route</button>
+    
+    <div class="controls-wrapper">
+      <button id="locateBtn" class="locate-btn">
+        <!-- SVG GPS Icon -->
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        Use My Current Location
+      </button>
+      <div class="instruction-text">or simply tap your street on the map below</div>
     </div>
 
+    <div id="lookup-map"></div>
     <div id="results"></div>
+
   </div>
 
   <script>
-    (function () {
-      const s = document.createElement("script");
-      s.src = "https://brt-23f.pages.dev/sleigh/address.js?v=" + Date.now();
-      document.body.appendChild(s);
-    })();
-  </script>
+    // Configuration
+    const API_URL = "YOUR_API_URL_HERE"; // Replace with your actual TurboSanta API
+    const CATCHMENT_METERS = 150; // How close a pin needs to be to a route to trigger a match
+    
+    let routesData = [];
+    let map;
+    let userPin = null;
 
-  <script>
+    // 1. Initialize Dark Mode Map over Beverley
+    function initMap() {
+      map = L.map('lookup-map').setView([53.844, -0.428], 13);
+      
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 18
+      }).addTo(map);
+
+      // Listen for manual taps on the map
+      map.on('click', function(e) {
+        processCoordinates(e.latlng.lat, e.latlng.lng);
+      });
+    }
+
+    // 2. Fetch Master Payload & Parse GPX Data
+    async function loadRouteData() {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        
+        if(data && data.routes) {
+          routesData = data.routes;
+          
+          // Background parse GPX for all routes
+          routesData.forEach(async (route) => {
+            if (route.gpxUrl) {
+              try {
+                const gpxRes = await fetch(route.gpxUrl);
+                const gpxXml = await gpxRes.text();
+                route.geoJSON = parseGPXToLineString(gpxXml);
+                
+                // Optional: Draw faint gold lines on the map so users know where to click
+                if(route.geoJSON) {
+                  L.geoJSON(route.geoJSON, { color: '#FBAF33', weight: 3, opacity: 0.2 }).addTo(map);
+                }
+              } catch (e) { console.error("GPX load failed for", route.routeName); }
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch route data:", err);
+      }
+    }
+
+    // 3. Mini XML Parser for GPX -> GeoJSON
+    function parseGPXToLineString(xmlStr) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
+      const trackPoints = xmlDoc.getElementsByTagName("trkpt");
+      
+      const coords = [];
+      for (let i = 0; i < trackPoints.length; i++) {
+        const lat = parseFloat(trackPoints[i].getAttribute("lat"));
+        const lon = parseFloat(trackPoints[i].getAttribute("lon"));
+        coords.push([lon, lat]); // Turf requires [Longitude, Latitude]
+      }
+      
+      // Needs at least 2 points to be a valid path
+      if (coords.length > 1) {
+        return turf.lineString(coords);
+      }
+      return null;
+    }
+
+    // 4. HTML5 Geolocation Trigger
+    document.getElementById('locateBtn').addEventListener('click', () => {
+      const btn = document.getElementById('locateBtn');
+      btn.innerHTML = "Locating...";
+      
+      if (!navigator.geolocation) {
+        alert("Your browser doesn't support geolocation. Please tap the map instead.");
+        btn.innerHTML = "Use My Current Location";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          btn.innerHTML = "Use My Current Location";
+          processCoordinates(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          btn.innerHTML = "Use My Current Location";
+          alert("Could not get your location. Please check your browser permissions or tap the map directly.");
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    });
+
+    // 5. The Core Spatial Intersection Logic
+    function processCoordinates(lat, lng) {
+      // Manage the map UI
+      if (userPin) map.removeLayer(userPin);
+      userPin = L.marker([lat, lng]).addTo(map);
+      map.setView([lat, lng], 16);
+
+      // Create a Turf point from the user's coordinates
+      const userLocation = turf.point([lng, lat]);
+      const matchedRoutes = [];
+
+      // Calculate distance to every loaded GPX track
+      routesData.forEach(route => {
+        if (route.geoJSON) {
+          const distance = turf.pointToLineDistance(userLocation, route.geoJSON, { units: 'meters' });
+          
+          if (distance <= CATCHMENT_METERS) {
+            matchedRoutes.push({
+              ...route,
+              distance: Math.round(distance)
+            });
+          }
+        }
+      });
+
+      // Sort matches by proximity so the closest route is always top
+      matchedRoutes.sort((a, b) => a.distance - b.distance);
+      renderResults(matchedRoutes);
+    }
+
+    // 6. Render the Results
+    function renderResults(matches) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = "";
+
+      if (matches.length === 0) {
+        resultsDiv.innerHTML = `
+          <div class="addr-no-results">
+            No routes found close to this location.
+            <small>Try dropping the pin slightly closer to the main road.</small>
+          </div>`;
+      } else {
+        matches.forEach(route => {
+          const formattedDate = route.date ? new Date(route.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : "Date TBC";
+          
+          resultsDiv.innerHTML += `
+            <div class="addr-route-card">
+              <h3 class="addr-route-title">${route.routeName}</h3>
+              <p class="addr-route-date">${formattedDate} (Approx ${route['Start Time'] || '17:30'})</p>
+              <p style="margin: 8px 0 0; font-size: 13px; color: var(--text-dim);">
+                📍 This route passes roughly ${route.distance} meters from your pin.
+              </p>
+            </div>
+          `;
+        });
+      }
+      sendHeight(); // Resizes the iframe dynamically
+    }
+
+    // 7. Iframe Auto-Resize Handlers
     function sendHeight() {
-      // Use the exact document element scroll height, which now safely includes the 60px bottom padding
       const height = document.documentElement.scrollHeight;
       parent.postMessage({ addressLookupHeight: height }, "*");
     }
 
-    window.onload = sendHeight;
+    window.onload = () => {
+      initMap();
+      loadRouteData();
+      sendHeight();
+    };
 
     const observer = new MutationObserver(sendHeight);
     observer.observe(document.body, { childList: true, subtree: true });
-
     window.addEventListener("resize", sendHeight);
+
   </script>
 </body>
 </html>
