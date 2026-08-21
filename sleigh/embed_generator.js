@@ -67,6 +67,10 @@ const carouselLink = `
 // ADDRESS LOOKUP — FINAL iFrame Version
 // Works everywhere: Carrd, WordPress, Wix, Squarespace, etc.
 // ================================
+const addressLink = `
+https://brt-23f.pages.dev/sleigh/address.html?api=${ensureApi()}
+`;
+
 const addressLookup = `
 <div style="width:100%;max-width:900px;margin:0 auto;">
   <iframe
