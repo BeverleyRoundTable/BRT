@@ -71,9 +71,10 @@ const addressLookup = `
 <div style="width:100%;max-width:900px;margin:0 auto;">
   <iframe
     id="addressFrame"
-    src="https://brt-23f.pages.dev/sleigh/address.html?api=${ensureApi()}"
-    style="width:100%;border:none;border-radius:12px;transition:height .25s ease;background:transparent;"
+    src="https://brt-23f.pages.dev/sleigh/address.html?api=https://script.google.com/macros/s/AKfycbwl88G_1QGwp6uN1JEGV2Abd7FAwQg7Id3_ufSNW_n1e7rsPAw-ZUor5vlqL8_GBfCK/exec"
+    style="width:100%;height:550px;border:none;border-radius:12px;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
+    allow="geolocation"
     scrolling="no"
     loading="lazy"
   ></iframe>
@@ -187,6 +188,7 @@ const recommendedTracker = `
   src="https://brt-23f.pages.dev/sleigh/tracker.html?api=${ensureApi()}"
   style="width:100%;height:80vh;min-height:490px;border:none;border-radius:15px;overflow:hidden;box-shadow:0 4px 18px #0002;background:transparent;"
   allowtransparency="true"
+  allow="geolocation"
   scrolling="no"
   loading="lazy"
 ></iframe>
