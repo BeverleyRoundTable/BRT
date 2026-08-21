@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TurboSanta — Spatial Lookup</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  
+
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
+
   <!-- Turf.js for Lightning-Fast Client-Side Spatial Math -->
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
@@ -109,8 +109,12 @@
     }
 
     /* ── Results Cards ── */
-    #results:empty { margin-top: 0; }
+    #results {
+      padding-bottom: 40px; /* Fix for snipped bottom card in iframe */
+    }
     
+    #results:empty { margin-top: 0; padding-bottom: 0; }
+
     .addr-route-card {
       background: var(--surface-2);
       border-radius: 14px;
@@ -120,6 +124,14 @@
       position: relative;
       overflow: hidden;
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer; /* Makes it obvious it can be clicked */
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .addr-route-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(251,175,51,0.15); /* Subtle gold glow */
+      border-color: rgba(251,175,51,0.5);
     }
 
     /* Gradient Top Border matching the Workshop Card */
@@ -139,7 +151,7 @@
       color: #fff;
       line-height: 1;
     }
-    
+
     .addr-route-date {
       margin: 0;
       font-family: 'DM Mono', monospace;
@@ -147,7 +159,7 @@
       font-weight: 700;
       color: var(--gold);
     }
-    
+
     .addr-no-results {
       text-align: center;
       margin-top: 32px;
@@ -160,7 +172,7 @@
 
 <body>
   <div id="address-root">
-    
+
     <div class="controls-wrapper">
       <button id="locateBtn" class="locate-btn" disabled>
         Loading Map Data...
@@ -180,7 +192,7 @@
     const params = new URLSearchParams(location.search);
     const API_URL = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
     const CATCHMENT_METERS = 150; // How close a pin needs to be (in meters)
-    
+
     const redIcon = L.icon({
       iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
       shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
@@ -194,10 +206,14 @@
     let map;
     let userPin = null;
 
+    // Default and Highlight styles for the map layers
+    const mapStyleDefault = { color: '#FBAF33', weight: 4, opacity: 0.4 };
+    const mapStyleHighlight = { color: '#FBAF33', weight: 6, opacity: 1 };
+
     // 2. Initialize Light Mode Map
     function initMap() {
       map = L.map('lookup-map').setView([53.844, -0.428], 13);
-      
+
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap',
         maxZoom: 18
@@ -221,7 +237,7 @@
           <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
           <circle cx="12" cy="12" r="3"></circle>
         </svg> Use My Current Location`;
-      
+
       if (!API_URL) {
         resultsDiv.innerHTML = `
           <div class="addr-no-results" style="color: var(--red);">
@@ -235,10 +251,10 @@
         // Enforce cache bypass exactly like the main tracker to fix Google Scripts CORS quirks
         const res = await fetch(API_URL, { cache: "no-store" });
         const data = await res.json();
-        
+
         if(data && data.routes) {
           routesData = data.routes;
-          
+
           // Promise.all ensures we WAIT for every single GPX file to be processed before enabling interactions
           await Promise.all(routesData.map(async (route) => {
             if (route.gpxUrl) {
@@ -246,9 +262,10 @@
                 const gpxRes = await fetch(route.gpxUrl, { cache: "no-store" });
                 const gpxXml = await gpxRes.text();
                 route.geoJSON = parseGPXToLineString(gpxXml);
-                
+
                 if(route.geoJSON) {
-                  L.geoJSON(route.geoJSON, { color: '#FBAF33', weight: 4, opacity: 0.4 }).addTo(map);
+                  // Store the Leaflet layer instance back onto the route object so we can manipulate it later
+                  route.mapLayer = L.geoJSON(route.geoJSON, mapStyleDefault).addTo(map);
                 }
               } catch (e) { console.error("GPX load failed for", route.routeName); }
             }
@@ -270,7 +287,7 @@
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(cleanXmlStr, "text/xml");
       const trackPoints = xmlDoc.getElementsByTagName("trkpt");
-      
+
       const coords = [];
       for (let i = 0; i < trackPoints.length; i++) {
         const lat = parseFloat(trackPoints[i].getAttribute("lat"));
@@ -279,7 +296,7 @@
           coords.push([lon, lat]); 
         }
       }
-      
+
       if (coords.length > 1) {
         return turf.lineString(coords);
       }
@@ -292,7 +309,7 @@
       const originalText = btn.innerHTML;
       btn.innerHTML = "Locating...";
       btn.disabled = true;
-      
+
       if (!navigator.geolocation) {
         alert("Your browser doesn't support geolocation. Please tap the map instead.");
         btn.innerHTML = originalText;
@@ -323,14 +340,14 @@
 
       const userLocation = turf.point([lng, lat]);
       const matchedRoutes = [];
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       routesData.forEach(route => {
         if (route.geoJSON) {
           const distance = turf.pointToLineDistance(userLocation, route.geoJSON, { units: 'meters' });
-          
+
           if (distance <= CATCHMENT_METERS) {
             let isFutureOrToday = true;
             let parsedTime = Infinity; 
@@ -361,7 +378,7 @@
         if (a.parsedDate !== b.parsedDate) return a.parsedDate - b.parsedDate;
         return a.distance - b.distance; 
       });
-      
+
       renderResults(matchedRoutes);
     }
 
@@ -379,11 +396,12 @@
       } else {
         matches.forEach(route => {
           const formattedDate = route.date ? new Date(route.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : "Date TBC";
-          
+
+          // Fixed the Time string clarity here, and added data-route-name for click events
           resultsDiv.innerHTML += `
-            <div class="addr-route-card">
+            <div class="addr-route-card" data-route-name="${route.routeName}">
               <h3 class="addr-route-title">${route.routeName}</h3>
-              <p class="addr-route-date">${formattedDate} (Approx ${route['Start Time'] || '17:30'})</p>
+              <p class="addr-route-date">${formattedDate} (Starts at approx ${route['Start Time'] || '17:30'})</p>
               <p style="margin: 12px 0 0; font-size: 13px; font-weight: 600; color: var(--text-dim);">
                 📍 This route passes roughly <span style="color: var(--text);">${route.distance} meters</span> from your pin.
               </p>
@@ -391,6 +409,31 @@
           `;
         });
       }
+
+      // Attach click events to the newly generated cards
+      document.querySelectorAll('.addr-route-card').forEach(card => {
+        card.addEventListener('click', function() {
+          const targetRouteName = this.getAttribute('data-route-name');
+
+          // Reset all routes to default style
+          routesData.forEach(r => {
+            if (r.mapLayer) {
+              r.mapLayer.setStyle(mapStyleDefault);
+            }
+          });
+
+          // Find the clicked route and highlight it
+          const selectedRoute = routesData.find(r => r.routeName === targetRouteName);
+          if (selectedRoute && selectedRoute.mapLayer) {
+            selectedRoute.mapLayer.setStyle(mapStyleHighlight);
+            selectedRoute.mapLayer.bringToFront();
+            
+            // Pan and zoom map to fit the selected route with a smooth animation
+            map.flyToBounds(selectedRoute.mapLayer.getBounds(), { padding: [40, 40], duration: 1.2 });
+          }
+        });
+      });
+
       sendHeight();
     }
 
