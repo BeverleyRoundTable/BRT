@@ -121,7 +121,6 @@ const niceListEmbed = `
 // ================================
 const santasBeenEmbed = `
 <div style="width:100%;max-width:420px;margin:0 auto;">
-...
   <iframe
     id="santasBeenFrame"
     src="https://brt-23f.pages.dev/sleigh/santa_frame.html"
@@ -354,7 +353,7 @@ const recommendedLetter = `
 <div style="width:100%;max-width:600px;margin:0 auto;">
   <iframe
     id="letterFrame"
-    src="https://brt-23f.pages.dev/sleigh/.html?api=${ensureApi()}"
+    src="https://brt-23f.pages.dev/sleigh/letter.html?api=${ensureApi()}"
     style="width:100%;border:none;border-radius:16px;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
     scrolling="no"
