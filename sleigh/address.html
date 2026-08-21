@@ -18,7 +18,7 @@
 
   <style>
     /* ═══════════════════════════════════════ */
-    /* TURBOSANTA DESIGN SYSTEM */
+    /* TURBOSANTA DESIGN SYSTEM                */
     /* ═══════════════════════════════════════ */
     :root {
       --gold: #FBAF33;
@@ -28,8 +28,10 @@
       --surface: #161614;
       --surface-2: #1e1e1b;
       --border: rgba(255,255,255,0.08);
+      --border-gold: rgba(251,175,51,0.2);
       --text: #eaeae5;
       --text-dim: rgba(255,255,255,0.55);
+      --red: #D31C1C;
     }
 
     * { box-sizing: border-box; }
@@ -44,14 +46,15 @@
       overflow-y: hidden; 
     }
 
+    /* Styled to match the Tracker's Workshop Card */
     #address-root {
       max-width: 960px;
       margin: 0 auto;
       padding: 24px 20px;
       background: var(--surface);
       border-radius: 16px;
-      border: 1px solid var(--border);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      border: 1px solid var(--border-gold);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
     }
 
     /* ── Map & Geolocation Controls ── */
@@ -62,33 +65,37 @@
       margin-bottom: 24px;
     }
 
+    /* Styled to match the Tracker's Donate / Nav Buttons */
     .locate-btn {
-      height: 48px;
+      height: 58px;
       width: 100%;
-      border-radius: 8px;
-      border: none;
+      border-radius: 16px;
+      border: 2px solid var(--gold);
       background: var(--gold);
       color: #000000;
-      font-weight: 700;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-weight: 900;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 1.5px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
       transition: transform 0.1s, background 0.2s;
     }
 
     .locate-btn:hover { background: #e59d28; }
-    .locate-btn:active { transform: scale(0.98); }
+    .locate-btn:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(0,0,0,.4); }
 
     .instruction-text {
       text-align: center;
-      font-size: 14px;
+      font-size: 13px;
+      font-weight: 700;
       color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     #lookup-map {
@@ -97,32 +104,49 @@
       border-radius: 12px;
       border: 1px solid var(--border);
       background: var(--surface-2);
-      z-index: 1; /* Keeps Leaflet controls below modals if added later */
+      z-index: 1; 
     }
 
     /* ── Results Cards ── */
     #results:empty { margin-top: 0; }
+    
     .addr-route-card {
       background: var(--surface-2);
       border-radius: 14px;
       border: 1px solid var(--border);
       padding: 20px 24px;
       margin: 20px 0;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
+
+    /* Gradient Top Border matching the Workshop Card */
+    .addr-route-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--red), var(--gold));
+    }
+
     .addr-route-title {
       margin: 0 0 4px;
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 28px;
+      font-size: 32px;
       letter-spacing: 1.5px;
       color: #fff;
+      line-height: 1;
     }
+    
     .addr-route-date {
       margin: 0;
       font-family: 'DM Mono', monospace;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 14px;
+      font-weight: 700;
       color: var(--gold);
     }
+    
     .addr-no-results {
       text-align: center;
       margin-top: 32px;
@@ -138,8 +162,8 @@
     
     <div class="controls-wrapper">
       <button id="locateBtn" class="locate-btn">
-        <!-- SVG GPS Icon -->
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- SVG GPS Icon (Adjusted for Bebas Neue alignment) -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px;">
           <circle cx="12" cy="12" r="10"></circle>
           <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
           <circle cx="12" cy="12" r="3"></circle>
@@ -159,6 +183,16 @@
     const API_URL = "YOUR_API_URL_HERE"; // Replace with your actual TurboSanta API
     const CATCHMENT_METERS = 150; // How close a pin needs to be to a route to trigger a match
     
+    // Shared TurboSanta Red Pin
+    const redIcon = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
     let routesData = [];
     let map;
     let userPin = null;
@@ -195,9 +229,9 @@
                 const gpxXml = await gpxRes.text();
                 route.geoJSON = parseGPXToLineString(gpxXml);
                 
-                // Optional: Draw faint gold lines on the map so users know where to click
+                // Draw lines matching the tracker's weight and gold color
                 if(route.geoJSON) {
-                  L.geoJSON(route.geoJSON, { color: '#FBAF33', weight: 3, opacity: 0.2 }).addTo(map);
+                  L.geoJSON(route.geoJSON, { color: '#FBAF33', weight: 4, opacity: 0.4 }).addTo(map);
                 }
               } catch (e) { console.error("GPX load failed for", route.routeName); }
             }
@@ -218,10 +252,9 @@
       for (let i = 0; i < trackPoints.length; i++) {
         const lat = parseFloat(trackPoints[i].getAttribute("lat"));
         const lon = parseFloat(trackPoints[i].getAttribute("lon"));
-        coords.push([lon, lat]); // Turf requires [Longitude, Latitude]
+        coords.push([lon, lat]); 
       }
       
-      // Needs at least 2 points to be a valid path
       if (coords.length > 1) {
         return turf.lineString(coords);
       }
@@ -235,61 +268,55 @@
       
       if (!navigator.geolocation) {
         alert("Your browser doesn't support geolocation. Please tap the map instead.");
-        btn.innerHTML = "Use My Current Location";
+        btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px;"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path><circle cx="12" cy="12" r="3"></circle></svg> Use My Current Location`;
         return;
       }
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          btn.innerHTML = "Use My Current Location";
+          btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px;"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path><circle cx="12" cy="12" r="3"></circle></svg> Use My Current Location`;
           processCoordinates(position.coords.latitude, position.coords.longitude);
         },
         (error) => {
-          btn.innerHTML = "Use My Current Location";
+          btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px;"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path><circle cx="12" cy="12" r="3"></circle></svg> Use My Current Location`;
           alert("Could not get your location. Please check your browser permissions or tap the map directly.");
         },
         { enableHighAccuracy: true, timeout: 5000 }
       );
     });
 
-    // 5. The Core Spatial Intersection Logic (Updated for Chronological Sorting)
+    // 5. The Core Spatial Intersection Logic
     function processCoordinates(lat, lng) {
-      // Manage the map UI
       if (userPin) map.removeLayer(userPin);
-      userPin = L.marker([lat, lng]).addTo(map);
+      // Replaced default pin with custom red tracker pin
+      userPin = L.marker([lat, lng], {icon: redIcon}).addTo(map);
       map.setView([lat, lng], 16);
 
       const userLocation = turf.point([lng, lat]);
       const matchedRoutes = [];
       
-      // Get today's date (at midnight) to filter out past routes
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Calculate distance to every loaded GPX track
       routesData.forEach(route => {
         if (route.geoJSON) {
           const distance = turf.pointToLineDistance(userLocation, route.geoJSON, { units: 'meters' });
           
           if (distance <= CATCHMENT_METERS) {
-            
-            // Check if the route is in the past
             let isFutureOrToday = true;
-            let parsedTime = Infinity; // Default for missing dates so they drop to the bottom
+            let parsedTime = Infinity; 
 
             if (route.date) {
               const routeDate = new Date(route.date);
               if (!isNaN(routeDate)) {
-                // Ensure we compare midnight to midnight
                 const cleanRouteDate = new Date(routeDate.getFullYear(), routeDate.getMonth(), routeDate.getDate());
                 if (cleanRouteDate < today) {
-                  isFutureOrToday = false; // It's in the past
+                  isFutureOrToday = false; 
                 }
                 parsedTime = cleanRouteDate.getTime();
               }
             }
 
-            // Only add to results if it hasn't happened yet
             if (isFutureOrToday) {
               matchedRoutes.push({
                 ...route,
@@ -301,12 +328,9 @@
         }
       });
 
-      // Sort primarily by SOONEST DATE. If dates match, sort by shortest distance.
       matchedRoutes.sort((a, b) => {
-        if (a.parsedDate !== b.parsedDate) {
-          return a.parsedDate - b.parsedDate;
-        }
-        return a.distance - b.distance; // Tie-breaker
+        if (a.parsedDate !== b.parsedDate) return a.parsedDate - b.parsedDate;
+        return a.distance - b.distance; 
       });
       
       renderResults(matchedRoutes);
@@ -321,7 +345,7 @@
         resultsDiv.innerHTML = `
           <div class="addr-no-results">
             No routes found close to this location.
-            <small>Try dropping the pin slightly closer to the main road.</small>
+            <br><small style="font-size: 13px; color: var(--text-dim); font-weight: 500;">Try dropping the pin slightly closer to the main road.</small>
           </div>`;
       } else {
         matches.forEach(route => {
@@ -331,14 +355,14 @@
             <div class="addr-route-card">
               <h3 class="addr-route-title">${route.routeName}</h3>
               <p class="addr-route-date">${formattedDate} (Approx ${route['Start Time'] || '17:30'})</p>
-              <p style="margin: 8px 0 0; font-size: 13px; color: var(--text-dim);">
-                📍 This route passes roughly ${route.distance} meters from your pin.
+              <p style="margin: 12px 0 0; font-size: 13px; font-weight: 600; color: var(--text-dim);">
+                📍 This route passes roughly <span style="color: var(--text);">${route.distance} meters</span> from your pin.
               </p>
             </div>
           `;
         });
       }
-      sendHeight(); // Resizes the iframe dynamically
+      sendHeight();
     }
 
     // 7. Iframe Auto-Resize Handlers
