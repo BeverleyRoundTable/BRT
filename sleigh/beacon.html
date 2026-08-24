@@ -390,8 +390,23 @@ function gpsOn() {
   if(!("geolocation" in navigator)){_("St").textContent="Geolocation not supported";L("❌ Geolocation unavailable","r");return}
   X.wid = navigator.geolocation.watchPosition(
     pos => {
-      const c=pos.coords;
-      const payload={lat:c.latitude,lng:c.longitude,ts:new Date().toISOString()};
+  const c = pos.coords;
+  const payload = { lat: c.latitude, lng: c.longitude, ts: new Date().toISOString() };
+  
+  if (window._lastRoadName) payload.roadName = window._lastRoadName;
+
+  const now = Date.now();
+  if (!window._lastGeocodeTime || now - window._lastGeocodeTime > 5000) {
+    window._lastGeocodeTime = now;
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${c.latitude.toFixed(6)}&lon=${c.longitude.toFixed(6)}&format=json&zoom=18&addressdetails=1`, { 
+      headers: { 'User-Agent': 'TurboSanta-Beacon/1.0' } 
+    })
+    .then(r => r.json())
+    .then(data => {
+      const road = data.address?.road || data.address?.pedestrian || data.address?.path || "";
+      if (road) window._lastRoadName = road;
+    }).catch(() => {});
+  }
       const acc=Math.round(c.accuracy);
       const aEl=_("Va"); aEl.textContent=acc; aEl.className="sv "+(acc<=10?"cg":acc<=30?"cw":"ca");
       if(c.speed!=null&&c.speed>=0){const kph=Math.round(c.speed*3.6);const sEl=_("Vs");sEl.textContent=kph;sEl.className="sv "+(kph>2?"cg":"cw")}
