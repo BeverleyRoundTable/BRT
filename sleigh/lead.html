@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TurboSanta — Lead</title>
+  <title>TurboSanta — God Mode</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -388,7 +388,7 @@ async function init() {
   let secret = sessionStorage.getItem('sleighSecret');
   
   if (!secret) {
-    secret = prompt("🎅 Lead Authorization Required\n\nEnter the Master Password:");
+    secret = prompt("🎅 God Mode Authorization Required\n\nEnter the Master Password:");
     if (!secret) {
       document.getElementById('app').innerHTML = '<div class="error-msg">Authorization required. Refresh the page to try again.</div>';
       document.getElementById('loader').classList.add('done');
@@ -1404,7 +1404,7 @@ async function handleUserMsg(encodedMsg, action) {
   const secret = sessionStorage.getItem('sleighSecret') || '';
   const msg = decodeURIComponent(encodedMsg);
   
-  // Optimistically set the active state instantly so Lead feels fast
+  // Optimistically set the active state instantly so God Mode feels fast
   if (action === 'approveUserMessage') {
     STATE.settings.user_announcement = msg;
     STATE.settings.user_announcement_ts = Date.now();
@@ -1498,7 +1498,7 @@ const GpsHealth = (() => {
     const rateEl = document.getElementById("gphRate");
     if (rateEl) { rateEl.textContent = r || "—"; rateEl.style.color = r >= 20 ? GREEN : r >= 10 ? AMBER : r > 0 ? RED : ""; }
  
-    // Feed stat card (top row) — these IDs already exist in Lead
+    // Feed stat card (top row) — these IDs already exist in God Mode
     const statStatus = document.getElementById("statGpsStatus");
     if (statStatus) { statStatus.textContent = l; statStatus.className = "value " + (ageSec <= T_GREEN ? "green" : ageSec <= T_AMBER ? "gold" : "red"); }
  
@@ -1508,7 +1508,7 @@ const GpsHealth = (() => {
     const statRate = document.getElementById("statGpsRate");
     if (statRate) statRate.textContent = r > 0 ? r + " fix/min" : "";
  
-    // Feed existing GPS Data fields that other parts of Lead reference
+    // Feed existing GPS Data fields that other parts of God Mode reference
     if (lat !== null) {
       const latEl = document.getElementById("gpsLat");
       if (latEl) latEl.textContent = lat.toFixed(6);
