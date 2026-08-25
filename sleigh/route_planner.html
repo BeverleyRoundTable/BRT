@@ -304,6 +304,28 @@
     .sidebar { width: 100%; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--border); }
     .map-area { min-height: 50vh; }
   }
+
+  /* ── WAYPOINT STOPS UI ── */
+.wp-item { flex-direction: column; align-items: stretch; }
+.wp-header { display: flex; align-items: center; gap: 12px; width: 100%; }
+.wp-stop-panel { 
+  margin-top: 8px; margin-left: 32px; padding: 8px; 
+  background: rgba(0,0,0,0.2); border-radius: 6px; 
+  border: 1px solid var(--border-gold); 
+}
+.wp-stop-toggle { 
+  display: flex; align-items: center; gap: 6px; 
+  font-size: 11px; font-weight: 700; color: var(--gold); 
+  text-transform: uppercase; cursor: pointer; 
+}
+.wp-stop-input { 
+  margin-top: 6px; width: 100%; background: var(--surface); 
+  border: 1px solid var(--border); color: #fff; 
+  padding: 6px 8px; border-radius: 4px; 
+  font-family: inherit; font-size: 12px; 
+}
+.wp-stop-input:focus { outline: none; border-color: var(--gold); }
+  
 </style>
 </head>
 <body>
@@ -465,15 +487,71 @@ function setProfile(btn) {
 // ═══════════════════════════════════════
 // MAP CLICK — Place waypoints
 // ═══════════════════════════════════════
+// Update the click handler to include default stop states
 map.on('click', async e => {
   if (mode !== 'place') return;
   const { lat, lng } = e.latlng;
   addWaypointMarker(lat, lng);
-  waypoints.push({ lat, lng });
+  waypoints.push({ lat, lng, isStop: false, stopName: '' }); // Added stop properties
   updateWpUI();
   if (waypoints.length >= 2) await routeAllWaypoints();
   updateStats();
 });
+
+// Replace the existing updateWpUI function
+function updateWpUI() {
+  document.getElementById('wpCount').textContent = waypoints.length + ' pts';
+  const list = document.getElementById('wpList');
+  list.innerHTML = waypoints.map((w, i) => `
+    <div class="wp-item">
+      <div class="wp-header">
+        <span class="wp-idx">${i + 1}</span>
+        <span class="wp-coords">${w.lat.toFixed(5)}, ${w.lng.toFixed(5)}</span>
+        <button class="wp-del" onclick="deleteWpIndex(${i})" title="Remove">✕</button>
+      </div>
+      <div class="wp-stop-panel">
+        <label class="wp-stop-toggle">
+          <input type="checkbox" onchange="toggleStop(${i}, this.checked)" ${w.isStop ? 'checked' : ''}>
+          Mark as Planned Stop
+        </label>
+        <input type="text" class="wp-stop-input" placeholder="e.g., The Dog & Duck Pub" 
+               value="${w.stopName}" oninput="updateStopName(${i}, this.value)" 
+               style="display: ${w.isStop ? 'block' : 'none'}">
+      </div>
+    </div>
+  `).join('');
+}
+
+// Add these helper functions to handle the new inputs
+window.toggleStop = function(index, isChecked) {
+  waypoints[index].isStop = isChecked;
+  updateWpUI();
+  updateMarkerVisual(index);
+};
+
+window.updateStopName = function(index, name) {
+  waypoints[index].stopName = name;
+};
+
+// Add this to change the map marker visual if it's a stop
+function updateMarkerVisual(index) {
+  const marker = waypointMarkers[index];
+  if (!marker) return;
+  const isFirst = index === 0;
+  const w = waypoints[index];
+  
+  // Stops get a red square, normal points get the standard circle
+  const visualHtml = w.isStop 
+    ? `<div style="background:var(--red); width:14px; height:14px; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`
+    : `<div style="background:${isFirst ? 'var(--green)' : 'var(--gold)'}; width:${isFirst ? 16 : 12}px; height:${isFirst ? 16 : 12}px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`;
+
+  marker.setIcon(L.divIcon({
+    className: '',
+    html: visualHtml,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+  }));
+}
 
 function addWaypointMarker(lat, lng) {
   const idx = waypointMarkers.length;
@@ -496,7 +574,10 @@ function addWaypointMarker(lat, lng) {
     const pos = marker.getLatLng();
     const i = waypointMarkers.indexOf(marker);
     if (i >= 0) {
-      waypoints[i] = { lat: pos.lat, lng: pos.lng };
+      // FIX: Update coordinates without destroying stop data
+      waypoints[i].lat = pos.lat;
+      waypoints[i].lng = pos.lng;
+      
       updateWpUI();
       if (waypoints.length >= 2) await routeAllWaypoints();
       updateStats();
@@ -863,14 +944,24 @@ function exportDenseGPX() {
     denseNames = null;
   }
 
+  // Build the <wpt> blocks for planned stops
+  let wptTags = '';
+  waypoints.forEach((w, i) => {
+    if (w.isStop) {
+      const defaultName = `Stop ${i + 1}`;
+      wptTags += `  <wpt lat="${w.lat.toFixed(7)}" lon="${w.lng.toFixed(7)}">\n    <name>${escXml(w.stopName || defaultName)}</name>\n  </wpt>\n`;
+    }
+  });
+
   const trkpts = dense.map((p, i) => {
     const nameTag = denseNames && denseNames[i] ? `\n        <name>${escXml(denseNames[i])}</name>` : '';
     return `      <trkpt lat="${p[0].toFixed(7)}" lon="${p[1].toFixed(7)}">${nameTag}\n      </trkpt>`;
   }).join('\n');
 
+  // Insert wptTags before the <trk> block
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="TurboSanta Route Planner">
-  <trk>
+${wptTags}  <trk>
     <name>TurboSanta Route (${density}m density)</name>
     <trkseg>
 ${trkpts}
