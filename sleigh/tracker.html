@@ -351,6 +351,35 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     .btn-cancel { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
     .btn-confirm { background: var(--rt-gold); color: #000; box-shadow: 0 4px 12px rgba(251,175,51,0.3); }
 
+    /* ── SCHEDULE MODAL STYLES ── */
+    .schedule-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.2s ease;
+    }
+    .schedule-item:hover {
+      border-color: rgba(251,175,51,0.3);
+    }
+    .schedule-details { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; padding-right: 10px; }
+    .schedule-route { font-weight: 800; color: var(--rt-gold); font-size: 1.1em; line-height: 1.1; }
+    .schedule-date { font-size: 0.85em; color: var(--text-dim); font-weight: 600; }
+    .schedule-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .cal-btn {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 8px 12px; font-size: 0.8em;
+      cursor: pointer; font-weight: 700; transition: all 0.2s ease; font-family: inherit;
+    }
+    .cal-btn:hover { background: var(--surface-3); border-color: var(--text-dim); }
+    .cal-btn:active { transform: scale(0.95); }
+    .cal-btn.btn-gcal { color: #fff; }
+    .cal-btn.btn-ics { color: #fff; }
+    
     .toast-box { display: none; position: fixed; left: 50%; bottom: calc(var(--donate-bottom) + 80px); transform: translateX(-50%); background: rgba(251, 175, 51, 0.95); color: #000; padding: 14px 20px; font-weight: 800; border-radius: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 6000; pointer-events: none; max-width: min(90vw,420px); text-align: center; line-height: 1.3; }
     .toast-visible { display: block; }
 
@@ -681,6 +710,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     <button class="btn" id="followBtn" aria-label="Toggle auto-follow Santa on map">Follow: ON</button>
     <button class="btn" id="recenterBtn" aria-label="Re-centre map on Santa">Re-centre</button>
     <button class="btn" id="notifyBtn" aria-label="Set a notification pin for when Santa is nearby">🔔 Notify Me</button>
+    <button class="btn" id="scheduleBtn" aria-label="View upcoming routes schedule">🗓️ Schedule</button>
     <button class="btn" id="twitchBtn" style="display: none; border-color: var(--rt-gold); color: var(--rt-gold);" aria-label="Toggle sleigh camera feed">📺 Cam: OFF</button>
     <button class="btn" id="msgBtn" style="display: none;" aria-label="Send a message to Santa">💬 Msg Santa</button>
     <button class="btn" id="shareBtn" style="display: none;" aria-label="Share this tracker link with others">📤 Share</button>
@@ -716,6 +746,19 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     </div>
   </div>
 
+  <div id="scheduleModal" class="modal-overlay" role="dialog" aria-labelledby="scheduleModalTitle" aria-modal="true">
+  <div class="modal-box" style="max-width: 440px; display: flex; flex-direction: column; max-height: 85vh;">
+    <div class="modal-title" id="scheduleModalTitle">🗓️ Route Schedule</div>
+    <div class="modal-desc">Find your street and save the date!</div>
+    <div id="scheduleList" style="overflow-y: auto; text-align: left; margin-bottom: 20px; padding-right: 5px; flex-grow: 1;">
+      <!-- Populated by JavaScript -->
+    </div>
+    <div class="modal-btns">
+      <button class="btn-full btn-cancel" id="scheduleCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+  
   <div id="kioskBanner" class="kiosk-banner"></div>
   <div id="kioskSponsor" class="kiosk-sponsor"></div>
   <div id="map" role="application" aria-label="Live Santa tracker map"></div>
@@ -775,9 +818,10 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
         init(routes) {
             if (!routes || routes.length === 0) return false;
             const now = new Date();
-            let targetDate = null;
-            const futureRouteObjects = routes
-                .filter(r => new Date(r.date) > now)
+now.setHours(0, 0, 0, 0);
+let targetDate = null;
+const futureRouteObjects = routes
+    .filter(r => new Date(r.date) >= now)
                 .sort((a,b) => new Date(a.date) - new Date(b.date));
             if (futureRouteObjects.length > 0) {
                 targetDate = new Date(futureRouteObjects[0].date);
@@ -1600,6 +1644,103 @@ else { const currentRoad = data.roadName || AppState.gpxRoute?.[AppState.vars.la
         scheduleNextPoll();
       }
 
+     // --- CALENDAR EXPORT LOGIC ---
+const CalendarHelper = {
+  // Converts "2026-12-05" and "17:30" to standard ICS YYYYMMDDTHHMMSSZ format
+  formatICSDate(dateStr, timeStr) {
+    if (!timeStr) timeStr = "17:30"; // Fallback start time
+    const d = new Date(dateStr);
+    const datePart = d.toISOString().split('T')[0].replace(/-/g, '');
+    const timePart = timeStr.replace(':', '') + '00';
+    return `${datePart}T${timePart}Z`;
+  },
+  
+  buildGoogleUrl(route) {
+    const start = this.formatICSDate(route.date, route["Start Time"]);
+    const end = this.formatICSDate(route.date, route["End Time"] || route["Start Time"]);
+    const title = encodeURIComponent(`Santa Sleigh: ${route.routeName}`);
+    const loc = encodeURIComponent(`${route.routeName}, Beverley, UK`);
+    const details = encodeURIComponent(`The Round Table Santa Sleigh is visiting ${route.routeName}! Listen out for the music and track us live at: ${window.location.href.split('?')[0]}`);
+    
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${loc}`;
+  },
+  
+  downloadIcs(route) {
+    const start = this.formatICSDate(route.date, route["Start Time"]);
+    const end = this.formatICSDate(route.date, route["End Time"] || route["Start Time"]);
+    const title = `Santa Sleigh: ${route.routeName}`;
+    const loc = `${route.routeName}, Beverley, UK`;
+    const desc = `The Round Table Santa Sleigh is visiting ${route.routeName}! Track us live at: ${window.location.href.split('?')[0]}`;
+
+    const icsData = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//TurboSanta//EN",
+      "CALSCALE:GREGORIAN",
+      "BEGIN:VEVENT",
+      `UID:${route.routeName.replace(/\s+/g, '')}-${start}@turbosanta`,
+      `DTSTAMP:${start}`,
+      `DTSTART:${start}`,
+      `DTEND:${end}`,
+      `SUMMARY:${title}`,
+      `LOCATION:${loc}`,
+      `DESCRIPTION:${desc}`,
+      "END:VEVENT",
+      "END:VCALENDAR"
+    ].join("\r\n");
+
+    const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Santa_${route.routeName.replace(/\s+/g, '_')}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
+
+function populateScheduleModal(routes) {
+  const list = document.getElementById("scheduleList");
+  list.innerHTML = "";
+  
+  const now = new Date();
+  now.setHours(0,0,0,0);
+
+  // Filter for today and future routes only
+  const futureRoutes = (routes || [])
+    .filter(r => r.date && new Date(r.date) >= now)
+    .sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  if (futureRoutes.length === 0) {
+    list.innerHTML = `<div style="text-align:center; color: var(--text-dim); margin-top: 20px;">No upcoming routes scheduled.</div>`;
+    return;
+  }
+
+  futureRoutes.forEach(route => {
+    const d = new Date(route.date);
+    const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const timeStr = route["Start Time"] ? ` @ ${route["Start Time"]}` : "";
+
+    const item = document.createElement("div");
+    item.className = "schedule-item";
+    item.innerHTML = `
+      <div class="schedule-details">
+        <div class="schedule-route">${route.routeName || 'TBC'}</div>
+        <div class="schedule-date">📅 ${dateStr}${timeStr}</div>
+      </div>
+      <div class="schedule-actions">
+        <button class="cal-btn btn-gcal" aria-label="Add to Google Calendar">Google</button>
+        <button class="cal-btn btn-ics" aria-label="Download for Apple Calendar">Apple</button>
+      </div>
+    `;
+
+    item.querySelector('.btn-gcal').onclick = () => window.open(CalendarHelper.buildGoogleUrl(route), '_blank');
+    item.querySelector('.btn-ics').onclick = () => CalendarHelper.downloadIcs(route);
+
+    list.appendChild(item);
+  });
+}
+
       async function init() {
         const params = new URLSearchParams(location.search);
         AppState.flags.isKiosk = params.get("kiosk") === "1" || sessionStorage.getItem("SANTA_KIOSK") === "1";
@@ -1967,6 +2108,25 @@ const payload = { lat, lng, roadName: activeRoad, ts: new Date().toISOString() }
         // the first live fix can appear.
         AppState.vars.latestApiData = apiData;
         AppState.vars.lastSettingsFetch = Date.now();
+
+        // Setup Schedule Modal
+          const scheduleBtn = document.getElementById('scheduleBtn');
+          const scheduleModal = document.getElementById('scheduleModal');
+          const scheduleCloseBtn = document.getElementById('scheduleCloseBtn');
+
+          if (scheduleBtn && scheduleModal) {
+            // Populate the list using the routes data we already fetched
+            populateScheduleModal(apiData.routes);
+            
+            scheduleBtn.onclick = () => {
+              scheduleModal.style.display = 'flex';
+            };
+            
+            scheduleCloseBtn.onclick = () => {
+              scheduleModal.style.display = 'none';
+            };
+          }
+        
         AppState.vars.firebaseUrl = apiData.tracker?.firebase_url ? apiData.tracker.firebase_url.replace(/\/$/, "") : null;
         const settings = apiData.settings || {};
         AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
