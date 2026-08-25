@@ -1025,7 +1025,18 @@ const futureRouteObjects = routes
       function pushRouteFix(routeDist, ts) { const fixes = AppState.routeFixes; fixes.push({ routeDist, ts }); const cutoff = ts - AppConfig.API.MOTION_WINDOW_MS; while (fixes.length && fixes[0].ts < cutoff) fixes.shift(); }
       function isSleighMoving() { if (AppState.recentFixes.length < 2) return false; const first = AppState.recentFixes[0], last = AppState.recentFixes[AppState.recentFixes.length - 1]; return (last.cumulative - first.cumulative) >= AppConfig.API.MOVE_THRESHOLD_METERS; }
 
-      async function loadGpxRoute(url) { try { const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 5000); const res = await fetch(url, { cache: "no-store", signal: controller.signal }); clearTimeout(timeoutId); if (!res.ok) throw new Error("GPX fetch failed"); const text = await res.text(); const xml = new DOMParser().parseFromString(text, "text/xml"); const pts = [...xml.getElementsByTagName("trkpt")]; if (pts.length < 2) throw new Error("GPX too short"); let dist = 0; let route = []; for (let i = 0; i < pts.length; i++) { const lat = parseFloat(pts[i].getAttribute("lat")); const lng = parseFloat(pts[i].getAttribute("lon")); const nameEl = pts[i].getElementsByTagName("name")[0]; const roadName = nameEl ? (nameEl.textContent || '').trim() : ''; if (i > 0) dist += Utils.haversineMeters(route[i - 1], { lat, lng }); route.push({ lat, lng, dist, index: i, roadName }); } AppState.gpxRoute = route; AppState.flags.gpxLoaded = true; AppState.vars.lastSnapIndex = 0; } catch (e) { AppState.flags.gpxLoaded = false; AppState.dom.notifyBtn.style.display = "none"; } }
+      async function loadGpxRoute(url) { try { const controller = new AbortController(); 
+      const timeoutId = setTimeout(() => controller.abort(), 5000); 
+      const res = await fetch(url, { cache: "no-store", signal: controller.signal }); clearTimeout(timeoutId); if (!res.ok) throw new Error("GPX fetch failed"); 
+      const text = await res.text(); const xml = new DOMParser().parseFromString(text, "text/xml"); 
+      const wpts = [...xml.getElementsByTagName("wpt")];
+      AppState.gpxStops = wpts.map(wpt => ({
+        lat: parseFloat(wpt.getAttribute("lat")),
+        lng: parseFloat(wpt.getAttribute("lon")),
+        name: (wpt.getElementsByTagName("name")[0]?.textContent || "Planned Stop").trim()
+      }));
+
+      const pts = [...xml.getElementsByTagName("trkpt")]; if (pts.length < 2) throw new Error("GPX too short"); let dist = 0; let route = []; for (let i = 0; i < pts.length; i++) { const lat = parseFloat(pts[i].getAttribute("lat")); const lng = parseFloat(pts[i].getAttribute("lon")); const nameEl = pts[i].getElementsByTagName("name")[0]; const roadName = nameEl ? (nameEl.textContent || '').trim() : ''; if (i > 0) dist += Utils.haversineMeters(route[i - 1], { lat, lng }); route.push({ lat, lng, dist, index: i, roadName }); } AppState.gpxRoute = route; AppState.flags.gpxLoaded = true; AppState.vars.lastSnapIndex = 0; } catch (e) { AppState.flags.gpxLoaded = false; AppState.dom.notifyBtn.style.display = "none"; } }
 
       function snapToGpxIndex(pos, searchOpts) { if (!AppState.gpxRoute) return null; const { AHEAD, BACK, EARLY_EXIT_METERS } = searchOpts || AppConfig.GPX; const isGlobalSearch = !searchOpts; const start = isGlobalSearch ? 0 : Math.max(0, AppState.vars.lastSnapIndex - BACK); const end = isGlobalSearch ? AppState.gpxRoute.length - 1 : Math.min(AppState.gpxRoute.length - 1, AppState.vars.lastSnapIndex + AHEAD); let bestIndex = isGlobalSearch ? 0 : AppState.vars.lastSnapIndex; let bestDist = Infinity; for (let i = start; i <= end; i++) { const d = Utils.haversineMeters(pos, AppState.gpxRoute[i]); if (d < bestDist) { bestDist = d; bestIndex = i; } if (!isGlobalSearch && i > AppState.vars.lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break; } if (!isGlobalSearch) AppState.vars.lastSnapIndex = bestIndex; return { point: AppState.gpxRoute[bestIndex], distance: bestDist }; }
 
@@ -2196,27 +2207,58 @@ const payload = { lat, lng, roadName: activeRoad, ts: new Date().toISOString() }
         }
         
         window.initTrackerMap = function() {
-            AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk && !AppState.flags.isDriver, rotate: !!AppState.flags.isDriver, touchRotate: false, shiftKeyRotate: false, rotateControl: false }).setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
-            AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteCompleted.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); });
-           L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(AppState.map);
-            if (AppState.flags.isKiosk) { const m = AppState.map; m.dragging.disable(); m.scrollWheelZoom.disable(); m.doubleClickZoom.disable(); m.boxZoom.disable(); m.keyboard.disable(); m.touchZoom.disable(); AppState.dom.followBtn.style.display = "none"; AppState.dom.recenterBtn.style.display = "none"; AppState.dom.notifyBtn.style.display = "none"; if(AppState.dom.msgBtn) AppState.dom.msgBtn.style.display = "none"; AppState.dom.donateBox.style.display = "none"; }
-            if (route && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 0) { const allLatLngs = AppState.gpxRoute.map(p => [p.lat, p.lng]); AppState.dynamicRouteCompleted = L.polyline([], { color: "#808080", weight: 4, opacity: 0.5, dashArray: "8, 8" }).addTo(AppState.map); AppState.dynamicRouteRemainingGlow = L.polyline(allLatLngs, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(AppState.map); AppState.dynamicRouteRemainingMain = L.polyline(allLatLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(AppState.map); const startPt = AppState.gpxRoute[0], endPt = AppState.gpxRoute[AppState.gpxRoute.length - 1]; L.marker([startPt.lat, startPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); L.marker([endPt.lat, endPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); AppState.map.fire("zoomend"); }
-            if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) { const span = document.createElement('span'); span.textContent = 'Proudly sponsored by'; const img = document.createElement('img'); img.alt = route.sponsorName || 'Sponsor'; img.onerror = () => { AppState.vars.kioskSponsorReady = false; AppState.dom.sponsorBox.classList.remove('visible'); }; img.src = Utils.resolveImageUrl(route.sponsorUrl); AppState.dom.sponsorBox.innerHTML = ''; AppState.dom.sponsorBox.appendChild(span); AppState.dom.sponsorBox.appendChild(img); AppState.vars.kioskSponsorReady = true; }
-          // Non-kiosk route sponsor — set src/href once at init; visibility is toggled per poll in updateTracker
-if (!AppState.flags.isKiosk && !AppState.flags.isDriver && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
-  const rs = document.getElementById('routeSponsor');
-  if (rs) {
-    const img = rs.querySelector('img');
-    img.alt = route.sponsorName ? `${route.sponsorName} logo` : 'Sponsor logo';
-    img.onerror = () => { AppState.vars.sponsorReady = false; rs.classList.remove('visible'); };
-    img.onload = () => { if (window.layoutOverlays) window.layoutOverlays(); };
-    img.src = Utils.resolveImageUrl(route.sponsorUrl);
-    if (route.sponsorName) rs.setAttribute('aria-label', `Tonight's route sponsor: ${route.sponsorName}`);
-    if (route.sponsorLink) { rs.href = route.sponsorLink; } else { rs.removeAttribute('href'); }
-    rs.addEventListener('click', () => { try { fetch(`${AppState.vars.apiUrl}?function=logSponsorClick&route=${encodeURIComponent(route.routeName || '')}&sponsor=${encodeURIComponent(route.sponsorName || route.sponsorLink || 'unknown')}`, { keepalive: true }).catch(() => {}); } catch(e) {} });
-    AppState.vars.sponsorReady = true;
-  }
-}
+    AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk && !AppState.flags.isDriver, rotate: !!AppState.flags.isDriver, touchRotate: false, shiftKeyRotate: false, rotateControl: false }).setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
+    
+    AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteCompleted.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); });
+    
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(AppState.map);
+    
+    if (AppState.flags.isKiosk) { const m = AppState.map; m.dragging.disable(); m.scrollWheelZoom.disable(); m.doubleClickZoom.disable(); m.boxZoom.disable(); m.keyboard.disable(); m.touchZoom.disable(); AppState.dom.followBtn.style.display = "none"; AppState.dom.recenterBtn.style.display = "none"; AppState.dom.notifyBtn.style.display = "none"; if(AppState.dom.msgBtn) AppState.dom.msgBtn.style.display = "none"; AppState.dom.donateBox.style.display = "none"; }
+    
+    if (route && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 0) { 
+        const allLatLngs = AppState.gpxRoute.map(p => [p.lat, p.lng]); 
+        AppState.dynamicRouteCompleted = L.polyline([], { color: "#808080", weight: 4, opacity: 0.5, dashArray: "8, 8" }).addTo(AppState.map); 
+        AppState.dynamicRouteRemainingGlow = L.polyline(allLatLngs, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(AppState.map); 
+        AppState.dynamicRouteRemainingMain = L.polyline(allLatLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(AppState.map); 
+        const startPt = AppState.gpxRoute[0], endPt = AppState.gpxRoute[AppState.gpxRoute.length - 1]; 
+        L.marker([startPt.lat, startPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); 
+        L.marker([endPt.lat, endPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); 
+        AppState.map.fire("zoomend"); 
+    }
+
+    // Draw Planned Stops
+    if (AppState.gpxStops && AppState.gpxStops.length > 0) {
+      AppState.gpxStops.forEach(stop => {
+        L.marker([stop.lat, stop.lng], {
+          icon: L.divIcon({
+            className: 'stop-marker',
+            html: '<div style="font-size:22px; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6)); text-align:center;">🎁</div>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          })
+        })
+        .bindTooltip(stop.name, { direction: 'top', offset: [0, -10], className: 'stop-tooltip' })
+        .addTo(AppState.map);
+      });
+    }
+
+    if (AppState.flags.isKiosk && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) { const span = document.createElement('span'); span.textContent = 'Proudly sponsored by'; const img = document.createElement('img'); img.alt = route.sponsorName || 'Sponsor'; img.onerror = () => { AppState.vars.kioskSponsorReady = false; AppState.dom.sponsorBox.classList.remove('visible'); }; img.src = Utils.resolveImageUrl(route.sponsorUrl); AppState.dom.sponsorBox.innerHTML = ''; AppState.dom.sponsorBox.appendChild(span); AppState.dom.sponsorBox.appendChild(img); AppState.vars.kioskSponsorReady = true; }
+    
+    // Non-kiosk route sponsor — set src/href once at init; visibility is toggled per poll in updateTracker
+    if (!AppState.flags.isKiosk && !AppState.flags.isDriver && route?.sponsorUrl && Utils.isValidImageUrl(route.sponsorUrl)) {
+      const rs = document.getElementById('routeSponsor');
+      if (rs) {
+        const img = rs.querySelector('img');
+        img.alt = route.sponsorName ? `${route.sponsorName} logo` : 'Sponsor logo';
+        img.onerror = () => { AppState.vars.sponsorReady = false; rs.classList.remove('visible'); };
+        img.onload = () => { if (window.layoutOverlays) window.layoutOverlays(); };
+        img.src = Utils.resolveImageUrl(route.sponsorUrl);
+        if (route.sponsorName) rs.setAttribute('aria-label', `Tonight's route sponsor: ${route.sponsorName}`);
+        if (route.sponsorLink) { rs.href = route.sponsorLink; } else { rs.removeAttribute('href'); }
+        rs.addEventListener('click', () => { try { fetch(`${AppState.vars.apiUrl}?function=logSponsorClick&route=${encodeURIComponent(route.routeName || '')}&sponsor=${encodeURIComponent(route.sponsorName || route.sponsorLink || 'unknown')}`, { keepalive: true }).catch(() => {}); } catch(e) {} });
+        AppState.vars.sponsorReady = true;
+      }
+    }
 
 // ── Overlay layout engine ──────────────────────────────────────────
 // (a) Donate stack rides the button panel: the panel grows when the
