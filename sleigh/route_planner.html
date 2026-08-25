@@ -627,14 +627,6 @@ function clearAllWaypoints() {
   updateStats();
 }
 
-function updateWpUI() {
-  document.getElementById('wpCount').textContent = waypoints.length + ' pts';
-  const list = document.getElementById('wpList');
-  list.innerHTML = waypoints.map((w, i) =>
-    `<div class="wp-item"><span class="wp-idx">${i + 1}</span><span class="wp-coords">${w.lat.toFixed(5)}, ${w.lng.toFixed(5)}</span><button class="wp-del" onclick="deleteWpIndex(${i})" title="Remove">✕</button></div>`
-  ).join('');
-}
-
 // Helper to delete from the list UI directly
 window.deleteWpIndex = async function(i) {
   if (i >= 0 && i < waypointMarkers.length) {
