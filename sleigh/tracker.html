@@ -2255,7 +2255,51 @@ if ('ResizeObserver' in window) {
 }
 window.addEventListener('resize', () => window.layoutOverlays());
 window.layoutOverlays();
-            if (!AppState.flags.isKiosk) { const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT"); if (savedPin) { try { const p = JSON.parse(savedPin); AppState.flags.browserNotified = false; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); AppState.vars.notifyLatLng = { lat: p.lat, lng: p.lng }; showNotifyMarker(p.lat, p.lng, true); } catch(e) {} } }
+            if (!AppState.flags.isKiosk) {
+              let pinSource = null;
+              let isDeepLink = false;
+              
+              // 1. Check URL for a shared pin
+              const pinParam = new URLSearchParams(location.search).get("pin");
+              if (pinParam) {
+                const parts = pinParam.split(',');
+                if (parts.length === 2) {
+                  const pLat = parseFloat(parts[0]);
+                  const pLng = parseFloat(parts[1]);
+                  if (Utils.validPos(pLat, pLng)) {
+                    pinSource = { lat: pLat, lng: pLng };
+                    isDeepLink = true;
+                  }
+                }
+                // Strip the pin from the address bar so it doesn't persist on page refresh
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.searchParams.delete('pin');
+                window.history.replaceState({}, document.title, cleanUrl.toString());
+              }
+              
+              // 2. Fallback to their own saved session pin
+              if (!pinSource) {
+                const savedPin = sessionStorage.getItem("SANTA_NOTIFY_POINT");
+                if (savedPin) { try { pinSource = JSON.parse(savedPin); } catch(e) {} }
+              }
+
+              if (pinSource) {
+                AppState.flags.browserNotified = false;
+                sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED");
+                AppState.vars.notifyLatLng = { lat: pinSource.lat, lng: pinSource.lng };
+                
+                // If it's a deep link, place a 'preview' pin (false) so they must tap it to subscribe.
+                // If it's from sessionStorage, it's already 'confirmed' (true).
+                showNotifyMarker(pinSource.lat, pinSource.lng, !isDeepLink);
+                
+                if (isDeepLink) {
+                  AppState.flags.awaitingPin = true; // Enables moving it by tapping elsewhere
+                  AppState.map.setView([pinSource.lat, pinSource.lng], 17);
+                  AppState.dom.statusBox.textContent = "📍 Shared pin found! Tap it to get notified.";
+                }
+              }
+            }
+          
             AppState.map.on("click", e => { if (!AppState.flags.awaitingPin) return; showNotifyMarker(e.latlng.lat, e.latlng.lng, false); AppState.dom.statusBox.textContent = "📍 Pin moved — tap again to confirm"; });
             AppState.marker = L.marker(AppConfig.LOCATIONS.LAPLAND, { icon: L.icon({ iconUrl: settings.sleigh_icon_live || AppConfig.ICONS.FALLBACK_LIVE, iconSize: [64, 64], iconAnchor: [32, 60] }) });
             if (!AppState.flags.isDriver) AppState.marker.addTo(AppState.map);
