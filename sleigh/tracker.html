@@ -2523,6 +2523,23 @@ window.layoutOverlays();
                   for (const p of AppState.gpxRoute) { if (p.lat < minLat) minLat = p.lat; if (p.lat > maxLat) maxLat = p.lat; if (p.lng < minLng) minLng = p.lng; if (p.lng > maxLng) maxLng = p.lng; }
                   mlMap.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 60, pitch: 0, bearing: 0, duration: 0 });
                 }
+
+                // 🎁 Draw Planned Stops on MapLibre (Driver Mode) 🎁
+                if (AppState.gpxStops && AppState.gpxStops.length > 0) {
+                  AppState.gpxStops.forEach(stop => {
+                    const el = document.createElement('div');
+                    el.innerHTML = '<div style="font-size:28px; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.8));">🎁</div>';
+                    
+                    const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
+                      .setHTML(`<div style="color:#000; font-weight:900; font-family:'DM Sans', sans-serif; font-size:14px; padding:4px;">${stop.name}</div>`);
+
+                    new maplibregl.Marker({ element: el, anchor: 'bottom' })
+                      .setLngLat([stop.lng, stop.lat])
+                      .setPopup(popup)
+                      .addTo(AppState.mlMap);
+                  });
+                }
+                
               });
 
               // Fix: maplibre canvas may not size correctly until layout settles
