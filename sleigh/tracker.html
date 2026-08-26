@@ -280,6 +280,17 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
   }
   .route-sponsor img { max-height: 36px; max-width: 110px; }
 }
+
+.magic-fab {
+  position: fixed; top: calc(75px + env(safe-area-inset-top, 0px)); right: 12px;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(29, 29, 26, 0.92); border: 2px solid var(--rt-gold);
+  font-size: 22px; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5); z-index: 3400; cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent;
+}
+.magic-fab:active { transform: scale(0.9); box-shadow: 0 0 15px rgba(251,175,51,0.6); }
+body.kiosk .magic-fab, body.driver-mode .magic-fab { display: none; }
     
     #magic-container {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -676,6 +687,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       .ws-schedule-item { padding: 5px 0; font-size: 12px; }
       .ws-skip-btn { margin-top: 12px; }
     }
+    
   </style>
 </head>
 <body>
@@ -687,6 +699,8 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     <img alt="">
   </a>
 
+  <button id="magicBtn" class="magic-fab" aria-label="Send Magic to Santa">🪄</button>
+  
   <div class="donate-box" id="donateBox">
     <a id="donateLink" class="donate-btn gamified-pulse" target="_blank" aria-label="Donate and support the Santa Sleigh">
       <span id="donateText">🎁 DONATE & SUPPORT US</span>
@@ -805,6 +819,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
   </div>
 
   <script>
+    
    document.addEventListener("DOMContentLoaded", () => {
 
       // --- RATE LIMITING CLIENT ID ---
@@ -812,6 +827,23 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
         localStorage.setItem("turbo_santa_client_id", crypto.randomUUID());
       }
 
+      // --- NETWORK STATUS LISTENERS ---
+      window.addEventListener('offline', () => showToast("📶 Connection lost. Map updates paused."));
+      window.addEventListener('online', () => showToast("📡 Reconnected!"));
+
+      // --- TAP-OUTSIDE TO CLOSE MODALS ---
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) {
+            overlay.style.display = 'none';
+            if (typeof AppState !== 'undefined' && AppState.vars && AppState.vars.escapeListener) {
+              document.removeEventListener("keydown", AppState.vars.escapeListener);
+              AppState.vars.escapeListener = null;
+            }
+          }
+        });
+      });
+     
       // --- SANTA'S WORKSHOP MANAGER ---
       const WorkshopManager = {
         timerId: null,
@@ -951,6 +983,36 @@ const futureRouteObjects = routes
         setTimeout(() => { if (targetUrl && targetUrl !== "#") { window.open(targetUrl, '_blank'); } }, 800); 
       });
 
+     // --- SEND MAGIC BUTTON ---
+const magicBtn = document.getElementById('magicBtn');
+if (magicBtn) {
+  magicBtn.addEventListener('click', (e) => {
+    // Haptic feedback for Android
+    if (navigator.vibrate) navigator.vibrate([30, 80, 30]);
+    
+    const container = document.getElementById('magic-container');
+    if (container) { 
+      for (let i = 0; i < 15; i++) { 
+        const sparkle = document.createElement('div'); 
+        sparkle.className = 'sparkle'; 
+        // Originate from the button position
+        const rect = magicBtn.getBoundingClientRect();
+        const x = rect.left + (rect.width / 2) + (Math.random() * 80 - 40); 
+        const y = rect.top + (rect.height / 2) + (Math.random() * 80 - 40); 
+        const colors = ['#ffd700', '#ffffff', '#ff4d4d', '#FBAF33']; 
+        const color = colors[Math.floor(Math.random() * colors.length)]; 
+        sparkle.style.left = x + 'px'; 
+        sparkle.style.top = y + 'px'; 
+        sparkle.style.background = color; 
+        sparkle.style.boxShadow = `0 0 12px ${color}, 0 0 20px ${color}`; 
+        sparkle.style.animationDuration = (Math.random() * 0.8 + 0.6) + 's'; 
+        container.appendChild(sparkle); 
+        setTimeout(() => sparkle.remove(), 1500); 
+      } 
+    }
+  });
+}
+
       const dynamicManifest = {
         "name": "Santa Sleigh Tracker", "short_name": "Santa Tracker",
         "description": "Live GPS tracking for the local Round Table Santa Sleigh.",
@@ -1015,7 +1077,26 @@ const futureRouteObjects = routes
       };
 
       let batteryState = { supported: false, charging: true, level: 1 };
-      if ("getBattery" in navigator) { navigator.getBattery().then(battery => { batteryState.supported = true; const update = () => { batteryState.charging = battery.charging; batteryState.level = battery.level; }; update(); battery.addEventListener("chargingchange", update); battery.addEventListener("levelchange", update); }); }
+if ("getBattery" in navigator) { 
+  navigator.getBattery().then(battery => { 
+    batteryState.supported = true; 
+    const update = () => { 
+      batteryState.charging = battery.charging; 
+      batteryState.level = battery.level; 
+      
+      // Driver Mode Battery Saver: Flatten pitch if battery drops below 20% and is discharging
+      if (AppState.flags.isDriver && AppState.mlMap && !batteryState.charging && batteryState.level <= 0.2) {
+        if (AppState.mlMap.getPitch() > 0) {
+          AppState.mlMap.easeTo({ pitch: 0, duration: 2000 });
+          console.warn("Low battery: Switched MapLibre to 2D mode to save power.");
+        }
+      }
+    }; 
+    update(); 
+    battery.addEventListener("chargingchange", update); 
+    battery.addEventListener("levelchange", update); 
+  }); 
+}update(); battery.addEventListener("chargingchange", update); battery.addEventListener("levelchange", update); }); }
 
       let wakeLock = null;
       async function requestWakeLock() { try { if ("wakeLock" in navigator) { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => setTimeout(requestWakeLock, 2000)); } } catch(e) {} }
@@ -1673,12 +1754,46 @@ if (window.layoutOverlays) window.layoutOverlays();
           if (liveMsg && liveMsg.trim() !== "") { AppState.dom.statusBox.textContent = `📢 ${liveMsg}`; AppState.dom.statusBox.classList.add("is-announcement"); AppState.dom.statusBox.classList.remove("is-user-msg"); setDimUI(false); }
           else if (isUserMsgActive) { AppState.dom.statusBox.textContent = `💬 ${userMsg}`; AppState.dom.statusBox.classList.add("is-user-msg"); AppState.dom.statusBox.classList.remove("is-announcement"); setDimUI(false); }
           else { AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg");
-            if (AppState.flags.hasPassedSticky) { AppState.dom.statusBox.textContent = "🎄 Santa has just been here! 🎉"; setDimUI(false); }
-            else if (etaSeconds !== null && !moving) { AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!"; setDimUI(false); }
-            else if (etaSeconds !== null) { const mins = etaSeconds / 60; const dueMs = Date.now() + etaSeconds * 1000; let etaText; if (mins < 2) { etaText = "🎅 Santa is nearly here!"; } else if (mins < 12) { const band = mins < 4 ? "~3" : mins < 7 ? "~5" : "~10"; etaText = "🎅 Santa is " + band + " mins away — about " + formatClock(dueMs) + " at your pin!"; } else { etaText = "🎅 Santa\u2019s due near your pin around " + formatClock(roundTo5Min(dueMs)) + "!"; } AppState.dom.statusBox.textContent = etaText; setDimUI(mins > 45); }
-            else if (moving) { const currentRoad = data.roadName || AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; AppState.dom.statusBox.textContent = currentRoad ? `🎅 Santa is on ${currentRoad}!` : "🎅 Santa is out spreading joy!"; setDimUI(false); }
-else { const currentRoad = data.roadName || AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; AppState.dom.statusBox.textContent = currentRoad ? `🎄 Santa has stopped on ${currentRoad}!` : "🎄 Santa has stopped to spread cheer!"; setDimUI(false); }
-          }
+            if (AppState.flags.hasPassedSticky) { 
+  AppState.dom.statusBox.textContent = "🎄 Santa has just been here! 🎉"; 
+  setDimUI(false); 
+  document.title = "Passed - TurboSanta"; // <-- ADDED
+}
+else if (etaSeconds !== null && !moving) { 
+  AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!"; 
+  setDimUI(false); 
+  document.title = "Stopped - TurboSanta"; // <-- ADDED
+}
+else if (etaSeconds !== null) { 
+  const mins = etaSeconds / 60; 
+  const dueMs = Date.now() + etaSeconds * 1000; 
+  let etaText; 
+  if (mins < 2) { 
+    etaText = "🎅 Santa is nearly here!"; 
+    document.title = "(< 2m) TurboSanta"; // <-- ADDED
+  } else if (mins < 12) { 
+    const band = mins < 4 ? "~3" : mins < 7 ? "~5" : "~10"; 
+    etaText = "🎅 Santa is " + band + " mins away — about " + formatClock(dueMs) + " at your pin!"; 
+    document.title = `(${band}m) TurboSanta`; // <-- ADDED
+  } else { 
+    etaText = "🎅 Santa\u2019s due near your pin around " + formatClock(roundTo5Min(dueMs)) + "!"; 
+    document.title = `(${Math.ceil(mins)}m) TurboSanta`; // <-- ADDED
+  } 
+  AppState.dom.statusBox.textContent = etaText; 
+  setDimUI(mins > 45); 
+}
+else if (moving) { 
+  const currentRoad = data.roadName || AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; 
+  AppState.dom.statusBox.textContent = currentRoad ? `🎅 Santa is on ${currentRoad}!` : "🎅 Santa is out spreading joy!"; 
+  setDimUI(false); 
+  document.title = "Live 🔴 TurboSanta"; // <-- ADDED
+}
+else { 
+  const currentRoad = data.roadName || AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; 
+  AppState.dom.statusBox.textContent = currentRoad ? `🎄 Santa has stopped on ${currentRoad}!` : "🎄 Santa has stopped to spread cheer!"; 
+  setDimUI(false); 
+  document.title = "TurboSanta — Tracker"; // <-- ADDED
+}
 
           if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) { const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.vars.notifyLatLng); const isSmartEta = (etaSeconds !== null && etaSeconds < 180); const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600); if (isSmartEta || isCloseFallback) { AppState.flags.browserNotified = true; sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1"); fireBrowserNotification("🎅 Santa is nearly here!", "He's approaching your location! 🎄"); } }
           if (AppState.flags.firstFix) { AppState.map.setView(visualPos, AppState.flags.isKiosk ? 15 : 16); AppState.flags.firstFix = false; }
