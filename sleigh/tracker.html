@@ -1601,6 +1601,42 @@ if (window.layoutOverlays) window.layoutOverlays();
           }
 
           animateMarkerTo(visualPos.lat, visualPos.lng);
+
+          // --- FADING TAIL LOGIC ---
+          if (!AppState.tailFixes) AppState.tailFixes = [];
+          const lastTailFix = AppState.tailFixes[AppState.tailFixes.length - 1];
+          const moveDist = lastTailFix ? Utils.haversineMeters({lat: lastTailFix[0], lng: lastTailFix[1]}, visualPos) : 999;
+          
+          // Only stretch the tail if moving, prevents collapsing when parked
+          if (moveDist > 2) {
+              AppState.tailFixes.push([visualPos.lat, visualPos.lng]);
+              if (AppState.tailFixes.length > 25) AppState.tailFixes.shift(); // Max 25 coordinates
+          }
+
+          // Render Leaflet segmented tail (draw backwards so newest point always has highest opacity)
+          if (AppState.tailSegments && AppState.tailFixes.length > 1) {
+              const maxSegs = AppState.tailSegments.length;
+              const tailLen = AppState.tailFixes.length;
+              
+              for (let i = 0; i < maxSegs; i++) AppState.tailSegments[i].setLatLngs([]); // Clear old segments
+              
+              for (let i = 0; i < tailLen - 1; i++) {
+                  const pNewer = AppState.tailFixes[tailLen - 1 - i];
+                  const pOlder = AppState.tailFixes[tailLen - 2 - i];
+                  const targetSegIdx = maxSegs - 1 - i;
+                  if (targetSegIdx >= 0) AppState.tailSegments[targetSegIdx].setLatLngs([pOlder, pNewer]);
+              }
+          }
+
+          // Render MapLibre gradient tail
+          if (AppState.mlMap && AppState.mlMap.getSource('sleigh-tail')) {
+              AppState.mlMap.getSource('sleigh-tail').setData(
+                  AppState.tailFixes.length >= 2 
+                  ? { type: 'Feature', geometry: { type: 'LineString', coordinates: AppState.tailFixes.map(p => [p[1], p[0]]) } } 
+                  : { type: 'FeatureCollection', features: [] }
+              );
+          }
+          // -------------------------
           pushFix(data.lat, data.lng, Date.now());
 
           let etaSeconds = null;
@@ -2209,7 +2245,7 @@ const payload = { lat, lng, roadName: activeRoad, ts: new Date().toISOString() }
         window.initTrackerMap = function() {
     AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk && !AppState.flags.isDriver, rotate: !!AppState.flags.isDriver, touchRotate: false, shiftKeyRotate: false, rotateControl: false }).setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
     
-    AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteCompleted.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); });
+    AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); const tailWeight = z >= 17 ? 7 : z >= 15 ? 5 : 4; if (AppState.tailSegments) AppState.tailSegments.forEach(seg => seg.setStyle({ weight: tailWeight })); });
     
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(AppState.map);
     
@@ -2217,9 +2253,14 @@ const payload = { lat, lng, roadName: activeRoad, ts: new Date().toISOString() }
     
     if (route && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 0) { 
         const allLatLngs = AppState.gpxRoute.map(p => [p.lat, p.lng]); 
-        AppState.dynamicRouteCompleted = L.polyline([], { color: "#808080", weight: 4, opacity: 0.5, dashArray: "8, 8" }).addTo(AppState.map); 
         AppState.dynamicRouteRemainingGlow = L.polyline(allLatLngs, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(AppState.map); 
         AppState.dynamicRouteRemainingMain = L.polyline(allLatLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(AppState.map); 
+        
+        // Initialize the 24 dynamic tail segments (fading out from index 23 down to 0)
+        AppState.tailFixes = [];
+        AppState.tailSegments = Array.from({length: 24}, (_, i) => 
+            L.polyline([], { color: '#FBAF33', weight: 6, opacity: (i + 1) / 24, lineCap: 'round', lineJoin: 'round' }).addTo(AppState.map)
+        );
         const startPt = AppState.gpxRoute[0], endPt = AppState.gpxRoute[AppState.gpxRoute.length - 1]; 
         L.marker([startPt.lat, startPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); 
         L.marker([endPt.lat, endPt.lng], { icon: L.icon({ iconUrl: settings.sleigh_icon_end || AppConfig.ICONS.FALLBACK_END, iconSize: [48, 48], iconAnchor: [24, 48] }) }).addTo(AppState.map); 
@@ -2487,22 +2528,19 @@ window.layoutOverlays();
                 // The two sources are updated each tick alongside the Leaflet setLatLngs calls.
                 if (AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 1) {
                   const coords = AppState.gpxRoute.map(p => [p.lng, p.lat]);
-                  mlMap.addSource('gpx-route-completed', {
-                    type: 'geojson',
-                    data: { type: 'FeatureCollection', features: [] }
-                  });
                   mlMap.addSource('gpx-route-remaining', {
                     type: 'geojson',
                     data: { type: 'Feature', geometry: { type: 'LineString', coordinates: coords } }
                   });
-                  // Layer order: completed (bottom) → glow (middle) → main red (top)
-                  mlMap.addLayer({
-                    id: 'gpx-route-completed',
-                    type: 'line',
-                    source: 'gpx-route-completed',
-                    layout: { 'line-cap': 'round', 'line-join': 'round' },
-                    paint: { 'line-color': '#808080', 'line-width': 4, 'line-opacity': 0.5, 'line-dasharray': [2, 2] }
+                  
+                  // Add the dynamic tail source (requires lineMetrics for gradient)
+                  mlMap.addSource('sleigh-tail', {
+                    type: 'geojson',
+                    lineMetrics: true, 
+                    data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } }
                   });
+                  
+                  // Layer order: remaining glow (bottom) -> remaining red (middle) -> tail (top)
                   mlMap.addLayer({
                     id: 'gpx-route-glow',
                     type: 'line',
@@ -2516,6 +2554,22 @@ window.layoutOverlays();
                     source: 'gpx-route-remaining',
                     layout: { 'line-cap': 'round', 'line-join': 'round' },
                     paint: { 'line-color': '#d31c1c', 'line-width': 6, 'line-opacity': 0.95 }
+                  });
+                  
+                  // Fading Gradient Tail Layer
+                  mlMap.addLayer({
+                    id: 'sleigh-tail-layer',
+                    type: 'line',
+                    source: 'sleigh-tail',
+                    layout: { 'line-cap': 'round', 'line-join': 'round' },
+                    paint: { 
+                      'line-width': 8,
+                      'line-gradient': [
+                        'interpolate', ['linear'], ['line-progress'],
+                        0, 'rgba(251, 175, 51, 0)', // Tail tip (transparent)
+                        1, '#FBAF33'                // Sleigh connection (solid gold)
+                      ]
+                    }
                   });
                 }
 
