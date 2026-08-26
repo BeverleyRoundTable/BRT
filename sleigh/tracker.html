@@ -1077,26 +1077,26 @@ if (magicBtn) {
       };
 
       let batteryState = { supported: false, charging: true, level: 1 };
-if ("getBattery" in navigator) { 
-  navigator.getBattery().then(battery => { 
-    batteryState.supported = true; 
-    const update = () => { 
-      batteryState.charging = battery.charging; 
-      batteryState.level = battery.level; 
-      
-      // Driver Mode Battery Saver: Flatten pitch if battery drops below 20% and is discharging
-      if (AppState.flags.isDriver && AppState.mlMap && !batteryState.charging && batteryState.level <= 0.2) {
-        if (AppState.mlMap.getPitch() > 0) {
-          AppState.mlMap.easeTo({ pitch: 0, duration: 2000 });
-          console.warn("Low battery: Switched MapLibre to 2D mode to save power.");
-        }
+      if ("getBattery" in navigator) { 
+        navigator.getBattery().then(battery => { 
+          batteryState.supported = true; 
+          const update = () => { 
+            batteryState.charging = battery.charging; 
+            batteryState.level = battery.level; 
+            
+            // Driver Mode Battery Saver: Flatten pitch if battery drops below 20% and is discharging
+            if (AppState.flags.isDriver && AppState.mlMap && !batteryState.charging && batteryState.level <= 0.2) {
+              if (AppState.mlMap.getPitch() > 0) {
+                AppState.mlMap.easeTo({ pitch: 0, duration: 2000 });
+                console.warn("Low battery: Switched MapLibre to 2D mode to save power.");
+              }
+            }
+          }; 
+          update(); 
+          battery.addEventListener("chargingchange", update); 
+          battery.addEventListener("levelchange", update); 
+        }); 
       }
-    }; 
-    update(); 
-    battery.addEventListener("chargingchange", update); 
-    battery.addEventListener("levelchange", update); 
-  }); 
-}update(); battery.addEventListener("chargingchange", update); battery.addEventListener("levelchange", update); }); }
 
       let wakeLock = null;
       async function requestWakeLock() { try { if ("wakeLock" in navigator) { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => setTimeout(requestWakeLock, 2000)); } } catch(e) {} }
