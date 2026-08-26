@@ -1794,7 +1794,7 @@ else {
   setDimUI(false); 
   document.title = "TurboSanta — Tracker"; // <-- ADDED
 }
-
+}
           if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) { const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.vars.notifyLatLng); const isSmartEta = (etaSeconds !== null && etaSeconds < 180); const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600); if (isSmartEta || isCloseFallback) { AppState.flags.browserNotified = true; sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1"); fireBrowserNotification("🎅 Santa is nearly here!", "He's approaching your location! 🎄"); } }
           if (AppState.flags.firstFix) { AppState.map.setView(visualPos, AppState.flags.isKiosk ? 15 : 16); AppState.flags.firstFix = false; }
 
