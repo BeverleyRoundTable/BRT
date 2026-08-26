@@ -2228,16 +2228,19 @@ const payload = { lat, lng, roadName: activeRoad, ts: new Date().toISOString() }
 
     // Draw Planned Stops
     if (AppState.gpxStops && AppState.gpxStops.length > 0) {
+      // Pull the stop icon from settings, fallback to start icon if not defined
+      const stopImgUrl = settings.sleigh_icon_stop || settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START;
+      
       AppState.gpxStops.forEach(stop => {
         L.marker([stop.lat, stop.lng], {
           icon: L.divIcon({
             className: 'stop-marker',
-            html: '<div style="font-size:22px; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6)); text-align:center;">🎁</div>',
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
+            html: `<img src="${stopImgUrl}" style="width:32px; height:32px; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6)); object-fit:contain; display:block;">`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16] // Center the image over the coordinate
           })
         })
-        .bindTooltip(stop.name, { direction: 'top', offset: [0, -10], className: 'stop-tooltip' })
+        .bindTooltip(stop.name, { direction: 'top', offset: [0, -16], className: 'stop-tooltip' })
         .addTo(AppState.map);
       });
     }
@@ -2524,11 +2527,13 @@ window.layoutOverlays();
                   mlMap.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 60, pitch: 0, bearing: 0, duration: 0 });
                 }
 
-                // 🎁 Draw Planned Stops on MapLibre (Driver Mode) 🎁
+                // Draw Planned Stops on MapLibre (Driver Mode)
                 if (AppState.gpxStops && AppState.gpxStops.length > 0) {
+                  const stopImgUrl = settings.sleigh_icon_stop || settings.sleigh_icon_start || AppConfig.ICONS.FALLBACK_START;
+
                   AppState.gpxStops.forEach(stop => {
                     const el = document.createElement('div');
-                    el.innerHTML = '<div style="font-size:28px; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.8));">🎁</div>';
+                    el.innerHTML = `<img src="${stopImgUrl}" style="width:40px; height:40px; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.8)); object-fit:contain; display:block;">`;
                     
                     const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
                       .setHTML(`<div style="color:#000; font-weight:900; font-family:'DM Sans', sans-serif; font-size:14px; padding:4px;">${stop.name}</div>`);
