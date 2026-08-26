@@ -282,15 +282,26 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
 }
 
 .magic-fab {
-  position: fixed; top: calc(75px + env(safe-area-inset-top, 0px)); right: 12px;
+  position: fixed; 
+  bottom: var(--info-bottom); /* Aligns horizontally with the control panel */
+  left: 20px;                 /* Anchors to the bottom left */
   width: 48px; height: 48px; border-radius: 50%;
   background: rgba(29, 29, 26, 0.92); border: 2px solid var(--rt-gold);
   font-size: 22px; display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 16px rgba(0,0,0,0.5); z-index: 3400; cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent;
 }
+
 .magic-fab:active { transform: scale(0.9); box-shadow: 0 0 15px rgba(251,175,51,0.6); }
 body.kiosk .magic-fab, body.driver-mode .magic-fab { display: none; }
+
+/* Safely bumps the button up on mobile so it doesn't overlap the full-width buttons */
+@media (max-width: 480px) {
+  .magic-fab {
+    bottom: calc(var(--donate-bottom) + 15px);
+    left: 12px;
+  }
+}
     
     #magic-container {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
