@@ -340,6 +340,9 @@
 <div id="app"></div>
 
 <script>
+// ⚡ SET YOUR WORKER URL HERE
+const WORKER_URL = "https://your-worker.workers.dev/"; 
+
 const API = new URLSearchParams(location.search).get('api') || '';
 
 const STATE = {
@@ -384,6 +387,31 @@ if (!API) {
   init();
 }
 
+  async function fetchFastAnnouncements() {
+  if (!API) return;
+  
+  // Construct the target URL and wrap it in the Worker
+  const targetScript = `${API}${API.includes('?') ? '&' : '?'}function=getAnnouncement`;
+  const fastTrackUrl = `${WORKER_URL}?ttl=2&target=${encodeURIComponent(targetScript)}`;
+
+  try {
+    const res = await fetch(fastTrackUrl);
+    const data = await res.json();
+    
+    if (data.settings) {
+      STATE.settings.live_announcement = data.settings.live_announcement || '';
+      STATE.settings.user_announcement = data.settings.user_announcement || '';
+      STATE.settings.user_announcement_ts = data.settings.user_announcement_ts || 0;
+    }
+
+    // Force UI refresh instantly
+    updatePaButtonState();
+    updateUserMsgState();
+  } catch (e) {
+    // Fail silently so it doesn't clutter the console on a fast loop
+  }
+}
+  
 async function init() {
   let secret = sessionStorage.getItem('sleighSecret');
   
@@ -420,12 +448,13 @@ async function init() {
   document.getElementById('loader').classList.add('done');
   
   fetchGps();
-  if (STATE.tracker.firebase_url) {
-    GpsHealth.init(STATE.tracker.firebase_url.replace(/\/$/, ""));
-  }
+  // 🛡️ Initialize GPS Health without the direct Firebase URL
+  GpsHealth.init();
+  
   fetchViewers();
   fetchWeather();
   
+  // ── EXISTING HEAVY LOOPS ──
   setInterval(fetchApiData, 30000);
   setInterval(fetchGps, 5000);
   setInterval(fetchViewers, 10000);
@@ -433,6 +462,10 @@ async function init() {
   setInterval(updateClock, 1000);
   setInterval(updateGpsAge, 1000);
   setInterval(updateUserMsgState, 1000);
+
+  // ⚡ NEW: FAST-TRACK LOOPS ──
+  setInterval(fetchFastAnnouncements, 3000);
+  fetchFastAnnouncements(); // Kick off immediately
 
   // Keep screen awake
   requestWakeLock();
@@ -1581,7 +1614,11 @@ const GpsHealth = (() => {
  
   async function poll() {
     try {
-      const r = await fetch(fbUrl + "/location/current.json", { cache: "no-store" });
+      // 🛡️ SANTA PROXY: Fetch via Cloudflare Worker -> GAS Proxy
+      const proxyScript = `${API}${API.includes('?') ? '&' : '?'}function=proxyFirebase`;
+      const fastGpsUrl = `${WORKER_URL}?ttl=2&target=${encodeURIComponent(proxyScript)}`;
+      
+      const r = await fetch(fastGpsUrl, { cache: "no-store" });
       if (!r.ok) throw new Error("HTTP " + r.status);
       let d = await r.json();
  
@@ -1609,9 +1646,7 @@ const GpsHealth = (() => {
   }
  
   return {
-    init(url) {
-      if (!url) { console.error("GpsHealth: no Firebase URL"); return; }
-      fbUrl = url.replace(/\/$/, "");
+    init() {
       if (tmr) clearInterval(tmr);
       poll();
       tmr = setInterval(poll, POLL);
