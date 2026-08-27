@@ -1048,8 +1048,58 @@ if (magicBtn) {
       window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; const overlay = document.getElementById('installOverlayBox'); overlay.classList.add('visible'); installTimeout = setTimeout(() => { overlay.classList.remove('visible'); }, 10000); });
       document.getElementById('installAppBtn').addEventListener('click', async () => { const overlay = document.getElementById('installOverlayBox'); if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; overlay.classList.remove('visible'); deferredPrompt = null; clearTimeout(installTimeout); } });
 
+      // ⚡ CLOUDFLARE WORKER ENDPOINT
+      const WORKER_URL = "https://santaproxy.beverley247.workers.dev/";
+
+      async function fetchFastAnnouncements() {
+        if (!AppState.flags.pageVisible || !AppState.vars.apiUrl) return;
+
+        const targetScript = `${AppState.vars.apiUrl}${AppState.vars.apiUrl.includes('?') ? '&' : '?'}function=getAnnouncement`;
+        const fastTrackUrl = `${WORKER_URL}?ttl=2&target=${encodeURIComponent(targetScript)}`;
+
+        try {
+          const data = await Utils.loadJSON(fastTrackUrl);
+          if (data.settings && AppState.vars.latestApiData) {
+            const s = AppState.vars.latestApiData.settings || {};
+            s.live_announcement = data.settings.live_announcement || '';
+            s.user_announcement = data.settings.user_announcement || '';
+            s.user_announcement_ts = data.settings.user_announcement_ts || 0;
+            AppState.vars.latestApiData.settings = s;
+
+            // Immediately evaluate message UI
+            const liveMsg = s.live_announcement;
+            const userMsg = s.user_announcement;
+            const userMsgTs = Number(String(s.user_announcement_ts).replace(/\D/g, '')) || 0;
+
+            if (userMsg && userMsgTs !== AppState.vars.lastSeenMsgTs) {
+              AppState.vars.lastSeenMsgTs = userMsgTs;
+              sessionStorage.setItem('SANTA_LAST_MSG_TS', String(userMsgTs));
+              if (userMsgTs && (Date.now() - userMsgTs) < 30 * 60 * 1000) AppState.vars.localMsgStartTime = Date.now();
+            }
+            
+            const isUserMsgActive = userMsg && AppState.vars.localMsgStartTime && (Date.now() - AppState.vars.localMsgStartTime < 20000);
+
+            if (liveMsg && liveMsg.trim() !== "") {
+              AppState.dom.statusBox.textContent = `📢 ${liveMsg}`;
+              AppState.dom.statusBox.classList.add("is-announcement");
+              AppState.dom.statusBox.classList.remove("is-user-msg");
+              setDimUI(false);
+            } else if (isUserMsgActive) {
+              AppState.dom.statusBox.textContent = `💬 ${userMsg}`;
+              AppState.dom.statusBox.classList.add("is-user-msg");
+              AppState.dom.statusBox.classList.remove("is-announcement");
+              setDimUI(false);
+            } else if (AppState.dom.statusBox.classList.contains("is-announcement") || AppState.dom.statusBox.classList.contains("is-user-msg")) {
+              // If it just cleared, remove the classes. The main GPS loop will rewrite the text on the next 6-second tick.
+              AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg");
+            }
+          }
+        } catch(e) { } // Fail silently so it doesn't clutter the console
+      }
+
       const AppConfig = {
         API: { REFRESH_MS: 6000, REFRESH_MAX_MS: 60000, STALE_MS: 5 * 60 * 1000, MOTION_WINDOW_MS: 60 * 1000, MOVE_THRESHOLD_METERS: 8, MIN_FIXES_FOR_ETA: 3, MIN_ETA_WINDOW_MS: 15 * 1000 },
+        
         NOTIFICATIONS: { NEAR_DISTANCE_METERS: 250, PASSED_DISTANCE_OFFSET: 150 },
         GPX: { AHEAD: 80, BACK: 5, EARLY_EXIT_METERS: 25 },
         SNOW: { ETA_MINUTES_MAX: 15, LEVELS: { LIGHT: 1, HEAVY: 2, BLIZZARD: 3 }, MOBILE_BASE_COUNT: 30, DESKTOP_BASE_COUNT: 60, MULTIPLIERS: [0, 1, 2.5, 5] },
@@ -1662,8 +1712,11 @@ function ensureNotifyPermission() {
           const rawElfCamUrl = latestApiData.settings?.elf_cam_url;
           if (rawElfCamUrl && rawElfCamUrl !== AppState.vars.lastElfCamUrl && Utils.isValidImageUrl(rawElfCamUrl)) { if (AppState.flags.pageVisible) { AppState.vars.lastElfCamUrl = rawElfCamUrl; let finalImgUrl = rawElfCamUrl; if (finalImgUrl.includes("drive.google.com")) { try { const urlObj = new URL(finalImgUrl); const fileId = urlObj.searchParams.get("id"); if (fileId) finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`; } catch(e) {} } triggerPolaroid(finalImgUrl, "Live from the Sleigh!"); } }
 
-          if (!AppState.vars.firebaseUrl) throw new Error("No Firebase URL found");
-          let data = await Utils.loadJSON(AppState.vars.firebaseUrl + "/location/current.json");
+          // 🛡️ SANTA PROXY: Fetch via Cloudflare Worker -> GAS Proxy
+          const proxyScript = `${AppState.vars.apiUrl}${AppState.vars.apiUrl.includes('?') ? '&' : '?'}function=proxyFirebase`;
+          const fastGpsUrl = `${WORKER_URL}?ttl=2&target=${encodeURIComponent(proxyScript)}`;
+          
+          let data = await Utils.loadJSON(fastGpsUrl);
           if (data && typeof data === "object" && !data.lat) { const first = Object.values(data)[0]; if (first && typeof first === "object") data = first; }
           if (!data || !Utils.validPos(data.lat, data.lng)) throw new Error("Invalid Coords");
 
@@ -2750,7 +2803,12 @@ window.layoutOverlays();
               window.addEventListener('resize', () => mlMap.resize());
             }
 
+            // Kick off the heavy 6-second GPS/Data loop
             updateTracker();
+            
+            // ⚡ Kick off the lightning-fast 3-second PA Announcement loop
+            setInterval(fetchFastAnnouncements, 3000);
+            fetchFastAnnouncements();
         };
 
         Fireworks.init();
