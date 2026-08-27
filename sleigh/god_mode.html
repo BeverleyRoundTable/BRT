@@ -623,11 +623,6 @@ async function sendAnnouncement() {
   }
 }
 
-async function clearAnnouncement() {
-  document.getElementById('paInput').value = '';
-  await sendAnnouncement();
-}
-
 function updatePaButtonState() {
   const btn = document.getElementById('broadcastBtn');
   const paInput = document.getElementById("paInput");
@@ -671,11 +666,76 @@ async function sendCrewAlert() {
   }
 }
 
-async function clearCrewAlert() {
-  document.getElementById('crewAlertInput').value = '';
-  await sendCrewAlert();
+  async function clearAnnouncement() {
+  const btn = document.getElementById('broadcastBtn');
+  const secret = sessionStorage.getItem('sleighSecret') || ''; 
+  
+  btn.innerText = "Clearing...";
+  btn.style.background = "var(--surface-3)";
+  btn.style.color = "var(--text-dim)";
+  
+  try {
+    const response = await fetch(API, { 
+      method: "POST", 
+      body: JSON.stringify({ 
+        action: "updateAnnouncement", 
+        message: " ", // 🎅 MAGIC TRICK: Single space forces Google to overwrite the cell
+        secret: secret 
+      }) 
+    });
+    
+    const result = await response.json();
+    
+    if (result.ok) {
+      STATE.settings.live_announcement = '';
+      document.getElementById('paInput').value = '';
+    } else {
+      alert("Action Blocked: " + result.error); 
+    }
+    
+    updatePaButtonState();
+    
+  } catch(e) { 
+    alert('Failed to clear announcement. Check connection.'); 
+    updatePaButtonState(); 
+  }
 }
 
+async function clearCrewAlert() {
+  const btn = document.getElementById('crewAlertBtn');
+  const secret = sessionStorage.getItem('sleighSecret') || ''; 
+  
+  btn.innerText = "Clearing...";
+  btn.style.background = "var(--surface-3)";
+  btn.style.color = "var(--text-dim)";
+  
+  try {
+    const response = await fetch(API, { 
+      method: "POST", 
+      body: JSON.stringify({ 
+        action: "updateCrewAlert", 
+        message: " ", // 🎅 MAGIC TRICK: Single space forces Google to overwrite the cell
+        secret: secret 
+      }) 
+    });
+    
+    const result = await response.json();
+    
+    if (result.ok) {
+      STATE.settings.crew_alert = '';
+      document.getElementById('crewAlertInput').value = '';
+    } else {
+      alert("Action Blocked: " + result.error);
+    }
+    
+    updateCrewAlertButtonState();
+    
+  } catch(e) { 
+    alert('Failed to clear crew alert. Check connection.'); 
+    updateCrewAlertButtonState(); 
+  }
+}
+  
 function updateCrewAlertButtonState() {
   const btn = document.getElementById('crewAlertBtn');
   const input = document.getElementById('crewAlertInput');
