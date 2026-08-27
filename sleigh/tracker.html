@@ -1656,7 +1656,7 @@ function ensureNotifyPermission() {
         if (!AppState.flags.pageVisible) return;
         try {
           const now = Date.now();
-          if (!AppState.vars.lastSettingsFetch || now - AppState.vars.lastSettingsFetch > 60000) { AppState.vars.latestApiData = await Utils.loadJSON(AppState.vars.apiUrl); AppState.vars.lastSettingsFetch = now; }
+          if (!AppState.vars.lastSettingsFetch || now - AppState.vars.lastSettingsFetch > 60000) { AppState.vars.latestApiData = await Utils.loadJSON(AppState.vars.dataUrl); AppState.vars.lastSettingsFetch = now; }
           const latestApiData = AppState.vars.latestApiData;
           
           const rawElfCamUrl = latestApiData.settings?.elf_cam_url;
@@ -2270,12 +2270,30 @@ const payload = { lat, lng, roadName: activeRoad, ts: new Date().toISOString() }
           };
         }
         
-        AppState.vars.apiUrl = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
-        if (!AppState.vars.apiUrl) { alert("Missing ?api=URL"); return; }
-        localStorage.setItem("SANTA_API", AppState.vars.apiUrl); sessionStorage.setItem("SANTA_API", AppState.vars.apiUrl);
+       AppState.vars.apiUrl = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
+if (!AppState.vars.apiUrl) { alert("Missing ?api=URL"); return; }
+
+// Safety feature: If a new naked API URL is used, wipe any old proxy from memory
+if (params.has("api") && !params.has("proxy")) {
+  localStorage.removeItem("SANTA_PROXY");
+  sessionStorage.removeItem("SANTA_PROXY");
+}
+
+AppState.vars.proxyUrl = params.get("proxy") || localStorage.getItem("SANTA_PROXY") || sessionStorage.getItem("SANTA_PROXY");
+
+localStorage.setItem("SANTA_API", AppState.vars.apiUrl); 
+sessionStorage.setItem("SANTA_API", AppState.vars.apiUrl);
+
+if (AppState.vars.proxyUrl) {
+  localStorage.setItem("SANTA_PROXY", AppState.vars.proxyUrl); 
+  sessionStorage.setItem("SANTA_PROXY", AppState.vars.proxyUrl);
+}
+
+// Create a unified data endpoint (Prefers proxy, falls back to direct API)
+AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
         requestWakeLock(); setInterval(() => { if (document.visibilityState === "visible") requestWakeLock(); }, 60000);
 
-        const apiData = await Utils.loadJSON(AppState.vars.apiUrl);
+        const apiData = await Utils.loadJSON(AppState.vars.dataUrl);
         // Seed the settings cache so the first updateTracker doesn't immediately
         // re-fetch the same Apps Script endpoint — removes a 1–2s roundtrip before
         // the first live fix can appear.
