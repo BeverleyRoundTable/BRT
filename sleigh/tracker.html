@@ -1656,7 +1656,7 @@ function ensureNotifyPermission() {
         if (!AppState.flags.pageVisible) return;
         try {
           const now = Date.now();
-          if (!AppState.vars.lastSettingsFetch || now - AppState.vars.lastSettingsFetch > 60000) { AppState.vars.latestApiData = await Utils.loadJSON(AppState.vars.dataUrl); AppState.vars.lastSettingsFetch = now; }
+          if (!AppState.vars.lastSettingsFetch || now - AppState.vars.lastSettingsFetch > 10000) { AppState.vars.latestApiData = await Utils.loadJSON(AppState.vars.dataUrl); AppState.vars.lastSettingsFetch = now; }
           const latestApiData = AppState.vars.latestApiData;
           
           const rawElfCamUrl = latestApiData.settings?.elf_cam_url;
