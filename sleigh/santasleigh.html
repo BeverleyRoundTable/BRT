@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa Sleigh</title>
+    
+    <!-- Open Sans is the official Round Table paragraph font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Official Round Table Brand Guidelines 2024 Colors */
+            --primary: #FBAF33; /* Golden Yellow */
+            --accent: #FFFFFF; /* White */
+            --bg-dark: #1D1D1A; /* Table Grey */
+            --bg-card: #000000; /* Black */
+            --text-main: #FFFFFF;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --border: rgba(255, 255, 255, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            /* Official Body Font */
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Official Header Font (Eurostile fallback stack) */
+        h1, h2, h3, .brand-font {
+            font-family: 'Eurostile Extended Bold', 'Eurostile', 'Open Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- LOADER --- */
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- NAVBAR --- */
+        nav {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+        .nav-logo {
+            height: 50px;
+            width: 50px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: var(--accent); /* Helps pop against dark background */
+            padding: 2px;
+        }
+        .nav-title {
+            font-size: 24px;
+            color: var(--primary);
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* --- ANNOUNCEMENT BAR --- */
+        #announcement-bar {
+            background: var(--primary);
+            color: var(--bg-card);
+            padding: 10px 20px;
+            text-align: center;
+            font-weight: 700;
+            display: none;
+            font-size: 14px;
+        }
+
+        /* --- HERO --- */
+        .hero {
+            padding: 60px 20px;
+            text-align: center;
+            background: radial-gradient(circle at center, rgba(251, 175, 51, 0.05) 0%, transparent 70%);
+        }
+        .hero h1 {
+            font-size: 56px;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+        .hero h1 span {
+            color: var(--primary);
+        }
+        .hero p {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
+            display: inline-block;
+            padding: 12px 28px;
+            background: var(--primary);
+            color: var(--bg-card);
+            font-family: 'Eurostile Extended Bold', 'Eurostile', 'Open Sans', sans-serif;
+            font-size: 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-transform: uppercase;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        /* --- SECTIONS --- */
+        section {
+            padding: 60px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .section-header h2 {
+            font-size: 40px;
+            color: var(--primary);
+        }
+
+        /* --- IFRAME CONTAINERS --- */
+        .iframe-container {
+            width: 100%;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .iframe-container iframe {
+            width: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* --- DONATIONS --- */
+        .thermo-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .thermo-title {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 24px;
+            background: var(--bg-dark);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            border-radius: 12px;
+            transition: width 1.5s ease-out;
+        }
+        .thermo-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+
+        /* --- ROUTES GRID --- */
+        .routes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .route-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .route-card h3 {
+            color: var(--text-main);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .route-date {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        .route-streets {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* --- SPONSORS --- */
+        .sponsors-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+        }
+        .sponsor-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 15px;
+            width: 180px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sponsor-card img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        @media(max-width: 600px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Setup / Loader Screen -->
+    <div id="loader">
+        <div class="spinner"></div>
+        <h2 class="brand-font" id="loader-text" style="color: var(--primary); margin-top: 10px;">DO MORE THIS CHRISTMAS</h2>
+        <p id="loader-error" style="color: #d31c1c; display: none; max-width: 400px; text-align: center; margin-top: 15px;"></p>
+    </div>
+
+    <!-- Live Announcement -->
+    <div id="announcement-bar"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="#" class="nav-brand">
+            <img id="nav-logo" src="" alt="Sleigh Logo" class="nav-logo" style="display: none;">
+            <div class="nav-title brand-font" id="nav-title">Santa Sleigh</div>
+        </a>
+        <div class="nav-links">
+            <a href="#tracker">Live Tracker</a>
+            <a href="#routes">Routes</a>
+            <a href="#donate">Donate</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <h1>Welcome to the <br><span id="hero-title">Santa Sleigh</span></h1>
+        <p>Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!</p>
+        <a href="#tracker" class="btn">Track Santa Live</a>
+    </header>
+
+    <!-- Tracker Section -->
+    <section id="tracker">
+        <div class="section-header">
+            <h2>Live Tracker</h2>
+            <p>Watch Santa's sleigh move in real-time as he visits the streets!</p>
+        </div>
+        <div class="iframe-container">
+            <iframe id="tracker-iframe" height="600" title="Santa Tracker"></iframe>
+        </div>
+    </section>
+
+    <!-- Donations Section -->
+    <section id="donate">
+        <div class="section-header">
+            <h2>Help Us Spread the Magic</h2>
+            <p>Every penny raised goes directly back into supporting our local community.</p>
+        </div>
+        <div class="thermo-card">
+            <h3 class="thermo-title brand-font" style="color: var(--text-main);">FUNDRAISER <span style="color: var(--primary);">TARGET</span></h3>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="donation-fill"></div>
+            </div>
+            <div class="thermo-stats brand-font">
+                <span id="donation-current" style="color: var(--primary);">£0</span>
+                <span id="donation-target" style="color: var(--text-muted);">£0</span>
+            </div>
+            <p style="margin-bottom: 20px; font-size: 14px; color: var(--text-muted);">Last updated: <span id="donation-updated">Recently</span></p>
+            <a href="#" id="donate-btn" class="btn" target="_blank" style="display: none;">Donate Now</a>
+        </div>
+    </section>
+
+    <!-- Routes Section -->
+    <section id="routes">
+        <div class="section-header">
+            <h2>Route Schedule</h2>
+            <p>Find out exactly when Santa is coming to your neighborhood.</p>
+        </div>
+        
+        <div class="iframe-container" style="margin-bottom: 40px;">
+            <iframe id="address-iframe" height="500" title="Address Lookup" scrolling="no"></iframe>
+        </div>
+
+        <div class="routes-grid" id="routes-container">
+            <!-- Populated by JS -->
+        </div>
+    </section>
+
+    <!-- Sponsors Section -->
+    <section id="sponsors" style="display: none;">
+        <div class="section-header">
+            <h2>Our Generous Sponsors</h2>
+            <p>Thank you to the local businesses keeping the sleigh on the road.</p>
+        </div>
+        <div class="sponsors-grid" id="sponsors-container">
+            <!-- Populated by JS -->
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; <span id="year"></span> <span id="footer-name">Santa Sleigh</span>. Powered by TurboSanta.</p>
+    </footer>
+
+    <script>
+        document.getElementById('year').innerText = new Date().getFullYear();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const apiUrl = urlParams.get('api');
+
+        if (!apiUrl) {
+            showError("Welcome to the Universal Sleigh Template! <br><br> To use this page, you must provide your TurboSanta API URL in the browser address bar like this: <br><br> <code>?api=YOUR_GOOGLE_SCRIPT_URL</code>");
+        } else {
+            fetchSleighData(apiUrl);
+        }
+
+        function showError(msg) {
+            const loaderText = document.getElementById('loader-text');
+            const loaderError = document.getElementById('loader-error');
+            document.querySelector('.spinner').style.display = 'none';
+            loaderText.innerText = "Setup Required";
+            loaderText.style.color = "#d31c1c";
+            loaderError.innerHTML = msg;
+            loaderError.style.display = "block";
+        }
+
+        function fetchSleighData(api) {
+            fetch(api)
+                .then(response => {
+                    if (!response.ok) throw new Error("Failed to load API data");
+                    return response.json();
+                })
+                .then(data => {
+                    if(data.error) throw new Error(data.error);
+                    applySettings(data, api);
+                    removeLoader();
+                })
+                .catch(err => {
+                    showError("Could not load data from the provided API. Please check the URL and ensure your Google Script is deployed as a Web App accessible to 'Anyone'.<br><br>" + err.message);
+                });
+        }
+
+        function applySettings(data, api) {
+            const settings = data.settings || {};
+            const donations = data.donations || {};
+            const routes = data.routes || [];
+            const sponsors = data.sponsors || [];
+
+            // --- Apply Colors (Overrides official brand colors if specified in API) ---
+            const root = document.documentElement;
+            if(settings.primary_color) root.style.setProperty('--primary', settings.primary_color);
+            if(settings.accent_color) root.style.setProperty('--accent', settings.accent_color);
+
+            // --- Apply Text & Branding ---
+            const siteName = settings.sleigh_display_name || "Santa Sleigh";
+            document.title = siteName;
+            document.getElementById('nav-title').innerText = siteName;
+            document.getElementById('hero-title').innerText = siteName;
+            document.getElementById('footer-name').innerText = siteName;
+
+            // --- Fallback Logo Logic ---
+            const navLogo = document.getElementById('nav-logo');
+            if (settings.logo_overlay_url) {
+                navLogo.src = settings.logo_overlay_url;
+            } else {
+                // Fetch official Round Table fallback from GitHub Raw URL
+                navLogo.src = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png";
+            }
+            navLogo.style.display = "block";
+
+            // --- Live Announcement ---
+            if (settings.live_announcement) {
+                const annBar = document.getElementById('announcement-bar');
+                annBar.innerText = "🎅 " + settings.live_announcement;
+                annBar.style.display = "block";
+            }
+
+            // --- Setup Iframes ---
+            document.getElementById('tracker-iframe').src = `https://brt-23f.pages.dev/sleigh/tracker?api=${encodeURIComponent(api)}`;
+            document.getElementById('address-iframe').src = `https://brt-23f.pages.dev/sleigh/address.html?api=${encodeURIComponent(api)}`;
+
+            window.addEventListener("message", (e) => {
+                if (e.data && e.data.addressLookupHeight) {
+                    document.getElementById("address-iframe").style.height = e.data.addressLookupHeight + "px";
+                }
+            });
+
+            // --- Donations Widget ---
+            const currency = donations.currency || "£";
+            const target = parseFloat(donations.target) || 0;
+            const current = parseFloat(donations.total) || 0;
+            
+            document.getElementById('donation-current').innerText = `${currency}${current.toLocaleString()}`;
+            document.getElementById('donation-target').innerText = `OF ${currency}${target.toLocaleString()}`;
+            document.getElementById('donation-updated').innerText = donations.lastUpdatePretty || "Today";
+
+            if (target > 0) {
+                const percentage = Math.min((current / target) * 100, 100);
+                setTimeout(() => {
+                    document.getElementById('donation-fill').style.width = percentage + '%';
+                }, 500);
+            }
+
+            if (settings.donate_url) {
+                const donateBtn = document.getElementById('donate-btn');
+                donateBtn.href = settings.donate_url;
+                donateBtn.style.display = "inline-block";
+            }
+
+            // --- Build Routes Grid ---
+            const routesContainer = document.getElementById('routes-container');
+            if (routes.length > 0) {
+                routes.forEach(route => {
+                    if(!route.routeName) return;
+
+                    const card = document.createElement('div');
+                    card.className = 'route-card';
+                    
+                    const startTime = route["Start Time"] ? route["Start Time"] : "";
+                    const endTime = route["End Time"] ? route["End Time"] : "";
+                    const timeString = (startTime && endTime) ? `${startTime} - ${endTime}` : "";
+
+                    let dateDisplay = route.date;
+                    if(route.date) {
+                        const d = new Date(route.date);
+                        if(!isNaN(d)) {
+                            dateDisplay = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                        }
+                    }
+
+                    let html = `
+                        <div class="route-date">${dateDisplay} ${timeString ? '| ' + timeString : ''}</div>
+                        <h3 class="brand-font">${route.routeName}</h3>
+                    `;
+
+                    if (route.streets) {
+                        const streetsArr = route.streets.split(',');
+                        let displayStreets = streetsArr.slice(0, 8).join(', ');
+                        if(streetsArr.length > 8) displayStreets += ' and more...';
+                        html += `<div class="route-streets">${displayStreets}</div>`;
+                    }
+
+                    if (route.sponsorName) {
+                        html += `<div style="margin-top: 15px; font-size: 12px; color: var(--primary);">Sponsored by: <strong style="color: var(--text-main);">${route.sponsorName}</strong></div>`;
+                    }
+
+                    card.innerHTML = html;
+                    routesContainer.appendChild(card);
+                });
+            } else {
+                routesContainer.innerHTML = "<p style='color: var(--text-muted);'>No routes scheduled yet. Check back soon!</p>";
+            }
+
+            // --- Build Sponsors Grid ---
+            const sponsorsContainer = document.getElementById('sponsors-container');
+            let validSponsors = sponsors.filter(s => s.sponsorUrl);
+            
+            if (validSponsors.length > 0) {
+                document.getElementById('sponsors').style.display = "block";
+                validSponsors.forEach(sponsor => {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'sponsor-card';
+                    
+                    let innerHtml = `<img src="${sponsor.sponsorUrl}" alt="${sponsor.name || 'Sponsor'}" />`;
+                    
+                    if(sponsor.sponsorLink) {
+                        wrap.innerHTML = `<a href="${sponsor.sponsorLink}" target="_blank" style="display:flex; width:100%; height:100%; justify-content:center;">${innerHtml}</a>`;
+                    } else {
+                        wrap.innerHTML = innerHtml;
+                    }
+                    
+                    sponsorsContainer.appendChild(wrap);
+                });
+            }
+        }
+
+        function removeLoader() {
+            const loader = document.getElementById('loader');
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 500);
+        }
+    </script>
+</body>
+</html>
