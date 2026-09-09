@@ -28,7 +28,7 @@ function ensureApi() { return api; }
 // Santa Sleigh Main App
 // ================================
 const santasleighLink = `
-${BASE_URL}/santasleigh?api=${ensureApi()}
+https://brt-23f.pages.dev/sleigh/santasleigh?api=${ensureApi()}
 `;
 
 // ================================
