@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
@@ -306,6 +307,44 @@
             object-fit: contain;
         }
 
+        /* --- ABOUT US --- */
+        .about-card {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-size: 24px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border);
+        }
+        .social-btn:hover {
+            background: var(--primary);
+            color: var(--bg-card);
+            transform: translateY(-3px);
+        }
+
         /* --- FOOTER --- */
         footer {
             text-align: center;
@@ -413,11 +452,36 @@
         </div>
     </section>
 
+    <!-- NEW ABOUT US SECTION -->
+    <section id="about">
+        <div class="section-header">
+            <h2>Who We Are</h2>
+        </div>
+        <div class="about-card">
+            <p style="font-size: 18px; margin-bottom: 20px;">
+                The Santa Sleigh is proudly operated by <strong id="about-table-name" style="color: var(--primary);">Round Table</strong>.
+            </p>
+            <p style="margin-bottom: 20px; color: var(--text-muted);">
+                Round Table is an events-based club for young men aged 18-45 focused on delivering a programme of social and community events. Whether it be trying a new sport, going on an adventure, or raising money for our communities, we aim to have fun, make friends, and live life to the fullest.
+            </p>
+            <p style="font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: var(--text-main);">
+                Find the friends you've been missing. Do More in <span id="current-year-text"></span>.
+            </p>
+            
+            <div class="social-links" id="social-links-container">
+                <!-- Social links populated by JS -->
+            </div>
+        </div>
+    </section>
+
     <footer>
         <p>&copy; <span id="year"></span> <span id="footer-name">Santa Sleigh</span>. Powered by TurboSanta.</p>
     </footer>
 
     <script>
+        const currentYear = new Date().getFullYear();
+document.getElementById('current-year-text').innerText = currentYear;
+        
         document.getElementById('year').innerText = new Date().getFullYear();
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -599,6 +663,33 @@
                     sponsorsContainer.appendChild(wrap);
                 });
             }
+
+            // --- Build About Us Section ---
+            let tableName = siteName.replace(/santa/i, '').replace(/sleigh/i, '').trim();
+            if(tableName) {
+                document.getElementById('about-table-name').innerText = tableName + " Round Table";
+            }
+
+            // --- Build Social Links ---
+            const socialContainer = document.getElementById('social-links-container');
+            
+            // Check for explicit website URL, fallback to roundtable.co.uk
+            const webUrl = settings.table_website_url || "https://www.roundtable.co.uk";
+            socialContainer.innerHTML += `<a href="${webUrl}" target="_blank" class="social-btn" title="Website"><i class="fa-solid fa-globe"></i></a>`;
+
+            if (settings.table_facebook_url) {
+                socialContainer.innerHTML += `<a href="${settings.table_facebook_url}" target="_blank" class="social-btn" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>`;
+            }
+            if (settings.table_instagram_url) {
+                socialContainer.innerHTML += `<a href="${settings.table_instagram_url}" target="_blank" class="social-btn" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
+            }
+            if (settings.table_tiktok_url) {
+                socialContainer.innerHTML += `<a href="${settings.table_tiktok_url}" target="_blank" class="social-btn" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>`;
+            }
+            if (settings.table_youtube_url) {
+                socialContainer.innerHTML += `<a href="${settings.table_youtube_url}" target="_blank" class="social-btn" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
+            }
+            
         }
 
         function removeLoader() {
