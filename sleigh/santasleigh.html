@@ -456,7 +456,7 @@
         }
         .faq-item.active .faq-content {
             padding: 20px;
-            max-height: 500px; /* Arbitrary large number to allow content to expand */
+            max-height: 500px; 
             border-top: 1px solid var(--border);
         }
         .faq-item.active .faq-icon {
@@ -501,6 +501,7 @@
         <div class="nav-links">
             <a href="#tracker">Live Tracker</a>
             <a href="#routes">Routes</a>
+            <a href="#memory-book">Memory Book</a>
             <a href="#donate">Donate</a>
         </div>
     </nav>
@@ -544,7 +545,7 @@
             <a href="#" id="donate-btn" class="btn" target="_blank" style="display: none;">Donate Now</a>
         </div>
 
-        <!-- NEW VOLUNTEER BANNER -->
+        <!-- VOLUNTEER BANNER -->
         <div id="volunteer-container" style="display: none; max-width: 500px; margin: 0 auto;">
             <div class="volunteer-banner">
                 <div class="volunteer-text">
@@ -569,6 +570,17 @@
 
         <div class="routes-grid" id="routes-container">
             <!-- Populated by JS -->
+        </div>
+    </section>
+
+    <!-- MEMORY BOOK SECTION -->
+    <section id="memory-book">
+        <div class="section-header">
+            <h2>Digital Memory Book</h2>
+            <p>Spotted Santa? Help us build our digital memory book and share your photos!</p>
+        </div>
+        <div class="iframe-container">
+            <iframe id="memory-book-iframe" height="900" title="Santa Memory Book" loading="lazy"></iframe>
         </div>
     </section>
 
@@ -659,7 +671,7 @@
         </div>
     </section>
     
-    <!-- NEW ABOUT US SECTION -->
+    <!-- ABOUT US SECTION -->
     <section id="about">
         <div class="section-header">
             <h2>Who We Are</h2>
@@ -687,9 +699,8 @@
 
     <script>
         const currentYear = new Date().getFullYear();
-document.getElementById('current-year-text').innerText = currentYear;
-        
-        document.getElementById('year').innerText = new Date().getFullYear();
+        document.getElementById('current-year-text').innerText = currentYear;
+        document.getElementById('year').innerText = currentYear;
 
         const urlParams = new URLSearchParams(window.location.search);
         const apiUrl = urlParams.get('api');
@@ -738,14 +749,12 @@ document.getElementById('current-year-text').innerText = currentYear;
             if(settings.accent_color) root.style.setProperty('--accent', settings.accent_color);
 
             // --- Apply Custom or Fallback Background Image ---
-            // If the API provided a URL use it, otherwise use the official fallback
             const bgUrl = settings.background_url || "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/site_background.png";
             
             document.body.style.backgroundImage = `
                 linear-gradient(180deg, rgba(29, 29, 26, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%),
                 url('${bgUrl}')
             `;
-            // Re-apply background properties that get overwritten when modifying backgroundImage via JS
             document.body.style.backgroundSize = 'cover';
             document.body.style.backgroundPosition = 'center';
             document.body.style.backgroundAttachment = 'fixed';
@@ -773,9 +782,10 @@ document.getElementById('current-year-text').innerText = currentYear;
                 annBar.style.display = "block";
             }
 
-            // --- Setup Iframes ---
+            // --- Setup Iframes (Including Memory Book) ---
             document.getElementById('tracker-iframe').src = `https://brt-23f.pages.dev/sleigh/tracker?api=${encodeURIComponent(api)}`;
             document.getElementById('address-iframe').src = `https://brt-23f.pages.dev/sleigh/address.html?api=${encodeURIComponent(api)}`;
+            document.getElementById('memory-book-iframe').src = `https://brt-23f.pages.dev/sleigh/memory_book?api=${encodeURIComponent(api)}`;
 
             window.addEventListener("message", (e) => {
                 if (e.data && e.data.addressLookupHeight) {
@@ -887,8 +897,6 @@ document.getElementById('current-year-text').innerText = currentYear;
 
             // --- Build Social Links ---
             const socialContainer = document.getElementById('social-links-container');
-            
-            // Check for explicit website URL, fallback to roundtable.co.uk
             const webUrl = settings.table_website_url || "https://www.roundtable.co.uk";
             socialContainer.innerHTML += `<a href="${webUrl}" target="_blank" class="social-btn" title="Website"><i class="fa-solid fa-globe"></i></a>`;
 
@@ -904,7 +912,6 @@ document.getElementById('current-year-text').innerText = currentYear;
             if (settings.table_youtube_url) {
                 socialContainer.innerHTML += `<a href="${settings.table_youtube_url}" target="_blank" class="social-btn" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
             }
-            
         }
 
         function removeLoader() {
@@ -918,19 +925,14 @@ document.getElementById('current-year-text').innerText = currentYear;
         // --- FAQ Accordion Logic ---
         function toggleFaq(headerElement) {
             const item = headerElement.parentElement;
-            
-            // Close any currently open items (optional - makes it so only one is open at a time)
             const allItems = document.querySelectorAll('.faq-item');
             allItems.forEach(i => {
                 if (i !== item) {
                     i.classList.remove('active');
                 }
             });
-
-            // Toggle the clicked item
             item.classList.toggle('active');
         }
-        
     </script>
 </body>
 </html>
