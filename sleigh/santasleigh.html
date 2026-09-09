@@ -258,25 +258,33 @@
             border: 1px solid var(--primary);
             border-radius: 12px;
             padding: 25px;
-            margin-top: 30px;
+            margin-top: 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 20px;
-            box-shadow: 0 10px 20px rgba(251, 175, 51, 0.1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            text-align: left;
+        }
+        .volunteer-text {
+            flex: 1;
         }
         .volunteer-text h3 {
             color: var(--primary);
             font-size: 24px;
             margin-bottom: 5px;
+            line-height: 1.2;
         }
         .volunteer-text p {
             font-size: 14px;
             color: var(--text-muted);
             margin: 0;
+            line-height: 1.4;
         }
         .btn-outline {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             padding: 10px 20px;
             background: transparent;
             color: var(--primary);
@@ -298,6 +306,10 @@
             .volunteer-banner {
                 flex-direction: column;
                 text-align: center;
+                padding: 20px;
+            }
+            .btn-outline {
+                width: 100%;
             }
         }
 
@@ -517,18 +529,9 @@
             <h2>Help Us Spread the Magic</h2>
             <p>Every penny raised goes directly back into supporting our local community.</p>
         </div>
+        
+        <!-- Thermometer Card -->
         <div class="thermo-card">
-            <h3 class="thermo-title brand-font" style="color: var(--text-main);">FUNDRAISER <span style="color: var(--primary);">TARGET</span></h3>
-            <div class="progress-bar-bg">
-                <div class="progress-bar-fill" id="donation-fill"></div>
-            </div>
-            <section id="donate">
-        <div class="section-header">
-            <h2>Help Us Spread the Magic</h2>
-            <p>Every penny raised goes directly back into supporting our local community.</p>
-        </div>
-        <div class="thermo-card">
-            <!-- Existing Thermo Card HTML -->
             <h3 class="thermo-title brand-font" style="color: var(--text-main);">FUNDRAISER <span style="color: var(--primary);">TARGET</span></h3>
             <div class="progress-bar-bg">
                 <div class="progress-bar-fill" id="donation-fill"></div>
@@ -542,7 +545,7 @@
         </div>
 
         <!-- NEW VOLUNTEER BANNER -->
-        <div id="volunteer-container" style="display: none;">
+        <div id="volunteer-container" style="display: none; max-width: 500px; margin: 0 auto;">
             <div class="volunteer-banner">
                 <div class="volunteer-text">
                     <h3 class="brand-font">Help Keep The Sleigh Moving!</h3>
@@ -550,14 +553,6 @@
                 </div>
                 <a href="#" id="volunteer-btn" class="btn-outline" target="_blank">Volunteer Now <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></a>
             </div>
-        </div>
-    </section>
-            <div class="thermo-stats brand-font">
-                <span id="donation-current" style="color: var(--primary);">£0</span>
-                <span id="donation-target" style="color: var(--text-muted);">£0</span>
-            </div>
-            <p style="margin-bottom: 20px; font-size: 14px; color: var(--text-muted);">Last updated: <span id="donation-updated">Recently</span></p>
-            <a href="#" id="donate-btn" class="btn" target="_blank" style="display: none;">Donate Now</a>
         </div>
     </section>
 
