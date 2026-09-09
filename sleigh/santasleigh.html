@@ -345,6 +345,63 @@
             transform: translateY(-3px);
         }
 
+        /* --- FAQ SECTION --- */
+        .faq-accordion {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .faq-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .faq-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: rgba(0,0,0,0.4);
+            transition: background 0.2s ease;
+        }
+        .faq-header:hover {
+            background: rgba(251, 175, 51, 0.1);
+        }
+        .faq-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 0;
+            padding-right: 20px;
+        }
+        .faq-icon {
+            color: var(--primary);
+            font-size: 20px;
+            transition: transform 0.3s ease;
+        }
+        .faq-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease;
+            background: var(--bg-card);
+            color: var(--text-muted);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .faq-item.active .faq-content {
+            padding: 20px;
+            max-height: 500px; /* Arbitrary large number to allow content to expand */
+            border-top: 1px solid var(--border);
+        }
+        .faq-item.active .faq-icon {
+            transform: rotate(180deg);
+        }
+
         /* --- FOOTER --- */
         footer {
             text-align: center;
@@ -452,6 +509,82 @@
         </div>
     </section>
 
+    <!-- FAQ & SAFETY SECTION -->
+    <section id="faq">
+        <div class="section-header">
+            <h2>FAQ & Safety Rules</h2>
+            <p>Important information about the sleigh routes and how to enjoy the magic safely.</p>
+        </div>
+        
+        <div class="faq-accordion">
+            <!-- FAQ 1 -->
+            <div class="faq-item">
+                <div class="faq-header" onclick="toggleFaq(this)">
+                    <h3 class="faq-title">Will you definitely come down my street tonight?</h3>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-content">
+                    <p>Our routes are a guide, not a guarantee. We are entirely run by volunteers and rely on good weather, clear traffic, and having enough people to safely operate the sleigh. Sometimes we have to cut a route short due to rain, ice, or time restrictions. Please use the live tracker to see exactly where we are!</p>
+                </div>
+            </div>
+
+            <!-- FAQ 2 -->
+            <div class="faq-item">
+                <div class="faq-header" onclick="toggleFaq(this)">
+                    <h3 class="faq-title">Why didn't you turn down my cul-de-sac?</h3>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-content">
+                    <p>The Santa Sleigh is very large and difficult to maneuver. If there are parked cars blocking a turning circle, or if a cul-de-sac is too tight for us to safely turn around, the driver will make the decision to stay on the main road. If you live down a tight street, please come out to the nearest junction to wave to Santa!</p>
+                </div>
+            </div>
+
+            <!-- FAQ 3 -->
+            <div class="faq-item">
+                <div class="faq-header" onclick="toggleFaq(this)">
+                    <h3 class="faq-title">Can my children climb onto the sleigh for a photo?</h3>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-content">
+                    <p>For safety and insurance reasons, <strong>no one is allowed on the sleigh</strong> while it is moving or during the street collections. You are very welcome to take photos of Santa from the pavement. Please ensure children do not run into the road towards the moving vehicle.</p>
+                </div>
+            </div>
+
+            <!-- FAQ 4 -->
+            <div class="faq-item">
+                <div class="faq-header" onclick="toggleFaq(this)">
+                    <h3 class="faq-title">Where does the donated money go?</h3>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-content">
+                    <p>Every single penny collected goes directly into our local Round Table charity fund. Throughout the year, we distribute this money to local good causes, community groups, food banks, and individuals in need right here in our town.</p>
+                </div>
+            </div>
+
+            <!-- FAQ 5 -->
+            <div class="faq-item">
+                <div class="faq-header" onclick="toggleFaq(this)">
+                    <h3 class="faq-title">Do you accept card donations?</h3>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-content">
+                    <p>Yes! Our elves carry contactless card readers alongside their traditional buckets. You can also donate right here on this website using the Donate button at the top of the page.</p>
+                </div>
+            </div>
+            
+             <!-- FAQ 6 -->
+            <div class="faq-item">
+                <div class="faq-header" onclick="toggleFaq(this)">
+                    <h3 class="faq-title">Can I volunteer to help?</h3>
+                    <i class="fa-solid fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-content">
+                    <p>Absolutely! We are always looking for enthusiastic volunteers to help collect donations, act as safety walkers, or even drive the towing vehicle. Reach out to us via our social media channels below to get involved.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
     <!-- NEW ABOUT US SECTION -->
     <section id="about">
         <div class="section-header">
@@ -701,6 +834,23 @@ document.getElementById('current-year-text').innerText = currentYear;
                 loader.style.display = 'none';
             }, 500);
         }
+
+        // --- FAQ Accordion Logic ---
+        function toggleFaq(headerElement) {
+            const item = headerElement.parentElement;
+            
+            // Close any currently open items (optional - makes it so only one is open at a time)
+            const allItems = document.querySelectorAll('.faq-item');
+            allItems.forEach(i => {
+                if (i !== item) {
+                    i.classList.remove('active');
+                }
+            });
+
+            // Toggle the clicked item
+            item.classList.toggle('active');
+        }
+        
     </script>
 </body>
 </html>
