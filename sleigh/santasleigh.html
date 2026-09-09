@@ -252,6 +252,55 @@
             font-size: 24px;
         }
 
+        /* --- VOLUNTEER BANNER --- */
+        .volunteer-banner {
+            background: linear-gradient(135deg, rgba(29,29,26,0.9) 0%, rgba(0,0,0,0.95) 100%);
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 10px 20px rgba(251, 175, 51, 0.1);
+        }
+        .volunteer-text h3 {
+            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .volunteer-text p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .btn-outline {
+            display: inline-block;
+            padding: 10px 20px;
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            font-family: 'Eurostile Extended Bold', 'Eurostile', 'Open Sans', sans-serif;
+            font-size: 18px;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .btn-outline:hover {
+            background: var(--primary);
+            color: var(--bg-card);
+        }
+        
+        @media(max-width: 600px) {
+            .volunteer-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
         /* --- ROUTES GRID --- */
         .routes-grid {
             display: grid;
@@ -473,6 +522,36 @@
             <div class="progress-bar-bg">
                 <div class="progress-bar-fill" id="donation-fill"></div>
             </div>
+            <section id="donate">
+        <div class="section-header">
+            <h2>Help Us Spread the Magic</h2>
+            <p>Every penny raised goes directly back into supporting our local community.</p>
+        </div>
+        <div class="thermo-card">
+            <!-- Existing Thermo Card HTML -->
+            <h3 class="thermo-title brand-font" style="color: var(--text-main);">FUNDRAISER <span style="color: var(--primary);">TARGET</span></h3>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="donation-fill"></div>
+            </div>
+            <div class="thermo-stats brand-font">
+                <span id="donation-current" style="color: var(--primary);">£0</span>
+                <span id="donation-target" style="color: var(--text-muted);">£0</span>
+            </div>
+            <p style="margin-bottom: 20px; font-size: 14px; color: var(--text-muted);">Last updated: <span id="donation-updated">Recently</span></p>
+            <a href="#" id="donate-btn" class="btn" target="_blank" style="display: none;">Donate Now</a>
+        </div>
+
+        <!-- NEW VOLUNTEER BANNER -->
+        <div id="volunteer-container" style="display: none;">
+            <div class="volunteer-banner">
+                <div class="volunteer-text">
+                    <h3 class="brand-font">Help Keep The Sleigh Moving!</h3>
+                    <p>We need drivers, navigators, and bucket collectors. Volunteer as an elf this year!</p>
+                </div>
+                <a href="#" id="volunteer-btn" class="btn-outline" target="_blank">Volunteer Now <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></a>
+            </div>
+        </div>
+    </section>
             <div class="thermo-stats brand-font">
                 <span id="donation-current" style="color: var(--primary);">£0</span>
                 <span id="donation-target" style="color: var(--text-muted);">£0</span>
@@ -731,6 +810,12 @@ document.getElementById('current-year-text').innerText = currentYear;
                 donateBtn.style.display = "inline-block";
             }
 
+            // --- Volunteer Logic ---
+            if (settings.volunteer_form_url) {
+                document.getElementById('volunteer-btn').href = settings.volunteer_form_url;
+                document.getElementById('volunteer-container').style.display = "block";
+            }
+            
             // --- Build Routes Grid ---
             const routesContainer = document.getElementById('routes-container');
             if (routes.length > 0) {
