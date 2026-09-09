@@ -25,6 +25,13 @@ document.getElementById("apiDisplay").textContent = api;
 function ensureApi() { return api; }
 
 // ================================
+// Santa Sleigh Main App
+// ================================
+const santasleighLink = `
+${BASE_URL}/santasleigh?api=${ensureApi()}
+`;
+
+// ================================
 // Mini Thermometer
 // ================================
 const miniThermo = `
@@ -476,6 +483,7 @@ https://brt-23f.pages.dev/sleigh/santa_studio?api=${ensureApi()}
 // ================================
 // Inject into UI textareas
 // ================================
+document.getElementById("santasleighLink").value = santasleighLink.trim();
 document.getElementById("miniThermo").value = miniThermo.trim();
 document.getElementById("fullThermo").value = fullThermo.trim();
 document.getElementById("carouselLink").value = carouselLink.trim();
