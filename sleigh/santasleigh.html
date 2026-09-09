@@ -665,9 +665,11 @@ document.getElementById('current-year-text').innerText = currentYear;
             }
 
             // --- Build About Us Section ---
-            let tableName = siteName.replace(/santa/i, '').replace(/sleigh/i, '').trim();
+            let tableName = siteName.replace(/santa/i, '').replace(/sleigh/i, '').replace(/round\s+table/i, '').trim();
             if(tableName) {
                 document.getElementById('about-table-name').innerText = tableName + " Round Table";
+            } else {
+                document.getElementById('about-table-name').innerText = siteName;
             }
 
             // --- Build Social Links ---
