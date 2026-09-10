@@ -822,48 +822,62 @@
             }
             
             // --- Build Routes Grid ---
-            const routesContainer = document.getElementById('routes-container');
-            if (routes.length > 0) {
-                routes.forEach(route => {
-                    if(!route.routeName) return;
+const routesContainer = document.getElementById('routes-container');
 
-                    const card = document.createElement('div');
-                    card.className = 'route-card';
-                    
-                    const startTime = route["Start Time"] ? route["Start Time"] : "";
-                    const endTime = route["End Time"] ? route["End Time"] : "";
-                    const timeString = (startTime && endTime) ? `${startTime} - ${endTime}` : "";
+// Get today's date and set it to midnight for an accurate day comparison
+const today = new Date();
+today.setHours(0, 0, 0, 0);
 
-                    let dateDisplay = route.date;
-                    if(route.date) {
-                        const d = new Date(route.date);
-                        if(!isNaN(d)) {
-                            dateDisplay = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-                        }
-                    }
+// Filter the routes array to only include today or future dates
+const upcomingRoutes = routes.filter(route => {
+    if (!route.date) return false;
+    const routeDate = new Date(route.date);
+    // Set the route date to midnight as well to ensure same-day routes aren't hidden
+    routeDate.setHours(0, 0, 0, 0); 
+    return routeDate >= today;
+});
 
-                    let html = `
-                        <div class="route-date">${dateDisplay} ${timeString ? '| ' + timeString : ''}</div>
-                        <h3 class="brand-font">${route.routeName}</h3>
-                    `;
+if (upcomingRoutes.length > 0) {
+    upcomingRoutes.forEach(route => {
+        if(!route.routeName) return;
 
-                    if (route.streets) {
-                        const streetsArr = route.streets.split(',');
-                        let displayStreets = streetsArr.slice(0, 8).join(', ');
-                        if(streetsArr.length > 8) displayStreets += ' and more...';
-                        html += `<div class="route-streets">${displayStreets}</div>`;
-                    }
+        const card = document.createElement('div');
+        card.className = 'route-card';
+        
+        const startTime = route["Start Time"] ? route["Start Time"] : "";
+        const endTime = route["End Time"] ? route["End Time"] : "";
+        const timeString = (startTime && endTime) ? `${startTime} - ${endTime}` : "";
 
-                    if (route.sponsorName) {
-                        html += `<div style="margin-top: 15px; font-size: 12px; color: var(--primary);">Sponsored by: <strong style="color: var(--text-main);">${route.sponsorName}</strong></div>`;
-                    }
-
-                    card.innerHTML = html;
-                    routesContainer.appendChild(card);
-                });
-            } else {
-                routesContainer.innerHTML = "<p style='color: var(--text-muted);'>No routes scheduled yet. Check back soon!</p>";
+        let dateDisplay = route.date;
+        if(route.date) {
+            const d = new Date(route.date);
+            if(!isNaN(d)) {
+                dateDisplay = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
             }
+        }
+
+        let html = `
+            <div class="route-date">${dateDisplay} ${timeString ? '| ' + timeString : ''}</div>
+            <h3 class="brand-font">${route.routeName}</h3>
+        `;
+
+        if (route.streets) {
+            const streetsArr = route.streets.split(',');
+            let displayStreets = streetsArr.slice(0, 8).join(', ');
+            if(streetsArr.length > 8) displayStreets += ' and more...';
+            html += `<div class="route-streets">${displayStreets}</div>`;
+        }
+
+        if (route.sponsorName) {
+            html += `<div style="margin-top: 15px; font-size: 12px; color: var(--primary);">Sponsored by: <strong style="color: var(--text-main);">${route.sponsorName}</strong></div>`;
+        }
+
+        card.innerHTML = html;
+        routesContainer.appendChild(card);
+    });
+} else {
+    routesContainer.innerHTML = "<p style='color: var(--text-muted);'>No routes scheduled yet. Check back soon!</p>";
+}
 
             // --- Build Sponsors Grid ---
             const sponsorsContainer = document.getElementById('sponsors-container');
