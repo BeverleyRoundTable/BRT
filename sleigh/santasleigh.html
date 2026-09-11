@@ -540,11 +540,11 @@
     </nav>
 
     <!-- Hero Section -->
-    <header class="hero">
-        <h1>Welcome to the <br><span id="hero-title">Santa Sleigh</span></h1>
-        <p>Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!</p>
-        <a href="#tracker" class="btn">Track Santa Live</a>
-    </header>
+<header class="hero">
+    <h1><span id="hero-title">Santa Sleigh</span></h1>
+    <p>Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!</p>
+    <a href="#tracker" class="btn">Track Santa Live</a>
+</header>
 
     <!-- Tracker Section -->
     <section id="tracker">
@@ -803,27 +803,22 @@
             document.title = siteName;
             document.getElementById('footer-name').innerText = siteName;
 
-            /// Dynamically split the title for dual-colour branding
+            // Dynamically split the title to highlight the Table location and name
 let formattedTitle;
-const match = siteName.match(/(Round Table)/i);
+const match = siteName.match(/(.*?\bRound Table\b)/i);
 
-// If the name contains "Round Table" (e.g., "Beverley Round Table Santa Sleigh")
 if (match) {
-    const tableIndex = match.index;
-    const tableLength = match[0].length;
+    const tablePart = match[1].trim(); // Captures "Beverley Round Table"
+    const suffix = siteName.substring(match[0].length).trim(); // Captures "Santa Sleigh"
     
-    const prefix = siteName.substring(0, tableIndex).trim(); // e.g. "Welcome to the Beverley" (or "Beverley")
-    const tableText = siteName.substring(tableIndex, tableIndex + tableLength); // "Round Table"
-    const suffix = siteName.substring(tableIndex + tableLength).trim(); // e.g. "Santa Sleigh"
-
-    // Builds: "Beverley <span style="color: var(--primary);">Round Table</span> Santa Sleigh"
-    formattedTitle = `${prefix ? prefix + ' ' : ''}<span style="color: var(--primary);">${tableText}</span>${suffix ? ' ' + suffix : ''}`;
+    // Wraps "Beverley Round Table" in gold, keeping "Santa Sleigh" white
+    formattedTitle = `<span style="color: var(--primary);">${tablePart}</span>${suffix ? ' ' + suffix : ''}`;
 } else {
-    // Fallback if "Round Table" is not present in the site name
+    // Fallback if "Round Table" isn't present
     formattedTitle = `<span style="color: var(--primary);">${siteName}</span>`;
 }
 
-// Inject the dual-colored text into the Nav and Hero
+// Inject into Nav and Hero
 document.getElementById('nav-title').innerHTML = formattedTitle;
 document.getElementById('hero-title').innerHTML = formattedTitle;
 
