@@ -803,23 +803,29 @@
             document.title = siteName;
             document.getElementById('footer-name').innerText = siteName;
 
-            // Dynamically split the title for dual-colour branding
-            let formattedTitle;
-            const match = siteName.match(/(Santa Sleigh)/i);
-            
-            // If the name contains "Santa Sleigh" (e.g., "Beverley Round Table Santa Sleigh")
-            if (match && match.index > 0) {
-                const prefix = siteName.substring(0, match.index).trim();
-                const suffix = siteName.substring(match.index);
-                formattedTitle = `${prefix} <span style="color: var(--primary);">${suffix}</span>`;
-            } else {
-                // Fallback if it's just "Santa Sleigh"
-                formattedTitle = `<span style="color: var(--primary);">${siteName}</span>`;
-            }
+            /// Dynamically split the title for dual-colour branding
+let formattedTitle;
+const match = siteName.match(/(Round Table)/i);
 
-            // Inject the dual-colored text into the Nav and Hero
-            document.getElementById('nav-title').innerHTML = formattedTitle;
-            document.getElementById('hero-title').innerHTML = formattedTitle;
+// If the name contains "Round Table" (e.g., "Beverley Round Table Santa Sleigh")
+if (match) {
+    const tableIndex = match.index;
+    const tableLength = match[0].length;
+    
+    const prefix = siteName.substring(0, tableIndex).trim(); // e.g. "Welcome to the Beverley" (or "Beverley")
+    const tableText = siteName.substring(tableIndex, tableIndex + tableLength); // "Round Table"
+    const suffix = siteName.substring(tableIndex + tableLength).trim(); // e.g. "Santa Sleigh"
+
+    // Builds: "Beverley <span style="color: var(--primary);">Round Table</span> Santa Sleigh"
+    formattedTitle = `${prefix ? prefix + ' ' : ''}<span style="color: var(--primary);">${tableText}</span>${suffix ? ' ' + suffix : ''}`;
+} else {
+    // Fallback if "Round Table" is not present in the site name
+    formattedTitle = `<span style="color: var(--primary);">${siteName}</span>`;
+}
+
+// Inject the dual-colored text into the Nav and Hero
+document.getElementById('nav-title').innerHTML = formattedTitle;
+document.getElementById('hero-title').innerHTML = formattedTitle;
 
             // --- Fallback Logo Logic ---
             const navLogo = document.getElementById('nav-logo');
