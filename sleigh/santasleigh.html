@@ -7,6 +7,9 @@
     
     <!-- Primary Meta Tags -->
     <meta name="description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
+    
+    <!-- SEO: Static Canonical Link added to head -->
+    <link rel="canonical" href="https://your-domain.com/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -33,7 +36,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-
         html {
             scroll-behavior: smooth;
         }
@@ -429,10 +431,11 @@
             transition: all 0.2s ease;
             border: 1px solid var(--border);
         }
+        /* Unified hover transform scale across interactive elements */
         .social-btn:hover {
             background: var(--primary);
             color: var(--bg-card);
-            transform: translateY(-3px);
+            transform: translateY(-2px); 
         }
 
         /* --- FAQ SECTION --- */
@@ -549,7 +552,8 @@
             <p>Watch Santa's sleigh move in real-time as he visits the streets!</p>
         </div>
         <div class="iframe-container">
-            <iframe id="tracker-iframe" height="600" title="Santa Tracker"></iframe>
+            <!-- Added lazy loading -->
+            <iframe id="tracker-iframe" height="600" title="Santa Tracker" loading="lazy"></iframe>
         </div>
     </section>
 
@@ -594,7 +598,8 @@
         </div>
         
         <div class="iframe-container" style="margin-bottom: 40px;">
-            <iframe id="address-iframe" height="500" title="Address Lookup" scrolling="no"></iframe>
+            <!-- Added lazy loading -->
+            <iframe id="address-iframe" height="500" title="Address Lookup" scrolling="no" loading="lazy"></iframe>
         </div>
 
         <div class="routes-grid" id="routes-container">
@@ -609,7 +614,8 @@
             <p>Spotted Santa? Help us build our digital memory book and share your photos!</p>
         </div>
         <div class="iframe-container">
-            <iframe id="memory-book-iframe" height="900" title="Santa Memory Book" loading="lazy"></iframe>
+            <!-- Added device permission allowances for camera and location -->
+            <iframe id="memory-book-iframe" height="900" title="Santa Memory Book" loading="lazy" allow="camera; microphone; geolocation"></iframe>
         </div>
     </section>
 
@@ -727,11 +733,7 @@
     </footer>
 
     <script>
-        // Inject Canonical URL for SEO
-        const canonicalLink = document.createElement('link');
-        canonicalLink.rel = 'canonical';
-        canonicalLink.href = window.location.href;
-        document.head.appendChild(canonicalLink);
+        // Set dynamic years
         const currentYear = new Date().getFullYear();
         document.getElementById('current-year-text').innerText = currentYear;
         document.getElementById('year').innerText = currentYear;
@@ -874,62 +876,62 @@
             }
             
             // --- Build Routes Grid ---
-const routesContainer = document.getElementById('routes-container');
+            const routesContainer = document.getElementById('routes-container');
 
-// Get today's date and set it to midnight for an accurate day comparison
-const today = new Date();
-today.setHours(0, 0, 0, 0);
+            // Get today's date and set it to midnight for an accurate day comparison
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-// Filter the routes array to only include today or future dates
-const upcomingRoutes = routes.filter(route => {
-    if (!route.date) return false;
-    const routeDate = new Date(route.date);
-    // Set the route date to midnight as well to ensure same-day routes aren't hidden
-    routeDate.setHours(0, 0, 0, 0); 
-    return routeDate >= today;
-});
+            // Filter the routes array to only include today or future dates
+            const upcomingRoutes = routes.filter(route => {
+                if (!route.date) return false;
+                const routeDate = new Date(route.date);
+                // Set the route date to midnight as well to ensure same-day routes aren't hidden
+                routeDate.setHours(0, 0, 0, 0); 
+                return routeDate >= today;
+            });
 
-if (upcomingRoutes.length > 0) {
-    upcomingRoutes.forEach(route => {
-        if(!route.routeName) return;
+            if (upcomingRoutes.length > 0) {
+                upcomingRoutes.forEach(route => {
+                    if(!route.routeName) return;
 
-        const card = document.createElement('div');
-        card.className = 'route-card';
-        
-        const startTime = route["Start Time"] ? route["Start Time"] : "";
-        const endTime = route["End Time"] ? route["End Time"] : "";
-        const timeString = (startTime && endTime) ? `${startTime} - ${endTime}` : "";
+                    const card = document.createElement('div');
+                    card.className = 'route-card';
+                    
+                    const startTime = route["Start Time"] ? route["Start Time"] : "";
+                    const endTime = route["End Time"] ? route["End Time"] : "";
+                    const timeString = (startTime && endTime) ? `${startTime} - ${endTime}` : "";
 
-        let dateDisplay = route.date;
-        if(route.date) {
-            const d = new Date(route.date);
-            if(!isNaN(d)) {
-                dateDisplay = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                    let dateDisplay = route.date;
+                    if(route.date) {
+                        const d = new Date(route.date);
+                        if(!isNaN(d)) {
+                            dateDisplay = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                        }
+                    }
+
+                    let html = `
+                        <div class="route-date">${dateDisplay} ${timeString ? '| ' + timeString : ''}</div>
+                        <h3 class="brand-font">${route.routeName}</h3>
+                    `;
+
+                    if (route.streets) {
+                        const streetsArr = route.streets.split(',');
+                        let displayStreets = streetsArr.slice(0, 8).join(', ');
+                        if(streetsArr.length > 8) displayStreets += ' and more...';
+                        html += `<div class="route-streets">${displayStreets}</div>`;
+                    }
+
+                    if (route.sponsorName) {
+                        html += `<div style="margin-top: 15px; font-size: 12px; color: var(--primary);">Sponsored by: <strong style="color: var(--text-main);">${route.sponsorName}</strong></div>`;
+                    }
+
+                    card.innerHTML = html;
+                    routesContainer.appendChild(card);
+                });
+            } else {
+                routesContainer.innerHTML = "<p style='color: var(--text-muted);'>No routes scheduled yet. Check back soon!</p>";
             }
-        }
-
-        let html = `
-            <div class="route-date">${dateDisplay} ${timeString ? '| ' + timeString : ''}</div>
-            <h3 class="brand-font">${route.routeName}</h3>
-        `;
-
-        if (route.streets) {
-            const streetsArr = route.streets.split(',');
-            let displayStreets = streetsArr.slice(0, 8).join(', ');
-            if(streetsArr.length > 8) displayStreets += ' and more...';
-            html += `<div class="route-streets">${displayStreets}</div>`;
-        }
-
-        if (route.sponsorName) {
-            html += `<div style="margin-top: 15px; font-size: 12px; color: var(--primary);">Sponsored by: <strong style="color: var(--text-main);">${route.sponsorName}</strong></div>`;
-        }
-
-        card.innerHTML = html;
-        routesContainer.appendChild(card);
-    });
-} else {
-    routesContainer.innerHTML = "<p style='color: var(--text-muted);'>No routes scheduled yet. Check back soon!</p>";
-}
 
             // --- Build Sponsors Grid ---
             const sponsorsContainer = document.getElementById('sponsors-container');
@@ -961,22 +963,22 @@ if (upcomingRoutes.length > 0) {
                 document.getElementById('about-table-name').innerText = siteName;
             }
 
-            // --- Build Social Links ---
+            // --- Build Social Links (Added ARIA Labels for screen readers) ---
             const socialContainer = document.getElementById('social-links-container');
             const webUrl = settings.table_website_url || "https://www.roundtable.co.uk";
-            socialContainer.innerHTML += `<a href="${webUrl}" target="_blank" class="social-btn" title="Website"><i class="fa-solid fa-globe"></i></a>`;
+            socialContainer.innerHTML += `<a href="${webUrl}" target="_blank" class="social-btn" aria-label="Website" title="Website"><i class="fa-solid fa-globe"></i></a>`;
 
             if (settings.table_facebook_url) {
-                socialContainer.innerHTML += `<a href="${settings.table_facebook_url}" target="_blank" class="social-btn" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>`;
+                socialContainer.innerHTML += `<a href="${settings.table_facebook_url}" target="_blank" class="social-btn" aria-label="Facebook" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>`;
             }
             if (settings.table_instagram_url) {
-                socialContainer.innerHTML += `<a href="${settings.table_instagram_url}" target="_blank" class="social-btn" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
+                socialContainer.innerHTML += `<a href="${settings.table_instagram_url}" target="_blank" class="social-btn" aria-label="Instagram" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
             }
             if (settings.table_tiktok_url) {
-                socialContainer.innerHTML += `<a href="${settings.table_tiktok_url}" target="_blank" class="social-btn" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>`;
+                socialContainer.innerHTML += `<a href="${settings.table_tiktok_url}" target="_blank" class="social-btn" aria-label="TikTok" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>`;
             }
             if (settings.table_youtube_url) {
-                socialContainer.innerHTML += `<a href="${settings.table_youtube_url}" target="_blank" class="social-btn" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
+                socialContainer.innerHTML += `<a href="${settings.table_youtube_url}" target="_blank" class="social-btn" aria-label="YouTube" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
             }
         }
 
