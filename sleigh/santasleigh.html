@@ -132,7 +132,7 @@
         }
         .nav-title {
             font-size: 24px;
-            color: var(--primary);
+            color: var(--text-main); /*
         }
         .nav-links {
             display: flex;
@@ -173,9 +173,6 @@
             margin-bottom: 15px;
             color: var(--text-main);
             text-shadow: 0 4px 10px rgba(0,0,0,0.8);
-        }
-        .hero h1 span {
-            color: var(--primary);
         }
         .hero p {
             font-size: 18px;
@@ -218,7 +215,7 @@
         }
         .section-header h2 {
             font-size: 40px;
-            color: var(--primary);
+            color: var(--text-main);
             text-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
         .section-header p {
@@ -548,7 +545,7 @@
     <!-- Tracker Section -->
     <section id="tracker">
         <div class="section-header">
-            <h2>Live Tracker</h2>
+            <h2>LIVE <span style="color: var(--primary);">TRACKER</span></h2>
             <p>Watch Santa's sleigh move in real-time as he visits the streets!</p>
         </div>
         <div class="iframe-container">
@@ -559,7 +556,7 @@
     <!-- Donations Section -->
     <section id="donate">
         <div class="section-header">
-            <h2>Help Us Spread the Magic</h2>
+            <h2>HELP US SPREAD <span style="color: var(--primary);">THE MAGIC</span></h2>
             <p>Every penny raised goes directly back into supporting our local community.</p>
         </div>
         
@@ -592,7 +589,7 @@
     <!-- Routes Section -->
     <section id="routes">
         <div class="section-header">
-            <h2>Route Schedule</h2>
+            <h2>ROUTE <span style="color: var(--primary);">SCHEDULE</span></h2>
             <p>Find out exactly when Santa is coming to your neighborhood.</p>
         </div>
         
@@ -608,7 +605,7 @@
     <!-- MEMORY BOOK SECTION -->
     <section id="memory-book">
         <div class="section-header">
-            <h2>Digital Memory Book</h2>
+            <h2>DIGITAL <span style="color: var(--primary);">MEMORY BOOK</span></h2>
             <p>Spotted Santa? Help us build our digital memory book and share your photos!</p>
         </div>
         <div class="iframe-container">
@@ -619,7 +616,7 @@
     <!-- Sponsors Section -->
     <section id="sponsors" style="display: none;">
         <div class="section-header">
-            <h2>Our Generous Sponsors</h2>
+            <h2>OUR GENEROUS <span style="color: var(--primary);">SPONSORS</span></h2>
             <p>Thank you to the local businesses keeping the sleigh on the road.</p>
         </div>
         <div class="sponsors-grid" id="sponsors-container">
@@ -630,7 +627,7 @@
     <!-- FAQ & SAFETY SECTION -->
     <section id="faq">
         <div class="section-header">
-            <h2>FAQ & Safety Rules</h2>
+            <h2>FAQ & <span style="color: var(--primary);">SAFETY RULES</span></h2>
             <p>Important information about the sleigh routes and how to enjoy the magic safely.</p>
         </div>
         
@@ -706,7 +703,7 @@
     <!-- ABOUT US SECTION -->
     <section id="about">
         <div class="section-header">
-            <h2>Who We Are</h2>
+            <h2>WHO <span style="color: var(--primary);">WE ARE</span></h2>
         </div>
         <div class="about-card">
             <p style="font-size: 18px; margin-bottom: 20px;">
@@ -801,9 +798,25 @@
             // --- Apply Text & Branding ---
             const siteName = settings.sleigh_display_name || "Santa Sleigh";
             document.title = siteName;
-            document.getElementById('nav-title').innerText = siteName;
-            document.getElementById('hero-title').innerText = siteName;
             document.getElementById('footer-name').innerText = siteName;
+
+            // Dynamically split the title for dual-colour branding
+            let formattedTitle;
+            const match = siteName.match(/(Santa Sleigh)/i);
+            
+            // If the name contains "Santa Sleigh" (e.g., "Beverley Round Table Santa Sleigh")
+            if (match && match.index > 0) {
+                const prefix = siteName.substring(0, match.index).trim();
+                const suffix = siteName.substring(match.index);
+                formattedTitle = `${prefix} <span style="color: var(--primary);">${suffix}</span>`;
+            } else {
+                // Fallback if it's just "Santa Sleigh"
+                formattedTitle = `<span style="color: var(--primary);">${siteName}</span>`;
+            }
+
+            // Inject the dual-colored text into the Nav and Hero
+            document.getElementById('nav-title').innerHTML = formattedTitle;
+            document.getElementById('hero-title').innerHTML = formattedTitle;
 
             // --- Fallback Logo Logic ---
             const navLogo = document.getElementById('nav-logo');
