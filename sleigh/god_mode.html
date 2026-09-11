@@ -166,6 +166,26 @@
       letter-spacing: 1.5px; color: #fff; line-height: 1; margin: 0;
     }
 
+    /* ── MEMORY BOOK ── */
+    .intake-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.intake-img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  cursor: zoom-in;
+  border-bottom: 1px solid var(--border);
+}
+.intake-actions {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+}
+    
     /* ── PA SYSTEM & INPUTS ── */
     .pa-input {
       width: 100%; background: var(--surface-2); border: 1px solid var(--border);
@@ -952,6 +972,17 @@ function buildDashboard() {
         </div>
       </div>
 
+      <div class="panel" id="memoryIntakePanel">
+  <div class="panel-header">
+    <span class="icon">📸</span>
+    <h3>Photo Intake</h3>
+    <span class="crew-alert-badge" id="intakeCount">0 pending</span>
+  </div>
+  <div id="memoryIntakeQueue" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+     <div class="no-route" style="grid-column: span 2;">No pending photos</div>
+  </div>
+</div>
+
       <div class="panel">
         <div class="panel-header"><span class="icon">🗺️</span><h3>Route & Planning</h3></div>
         <div id="routeDetail"></div>
@@ -1520,6 +1551,69 @@ async function fetchPendingMessages() {
   
 }
 
+  setInterval(fetchIntakeMemories, 15000); // Poll every 15 seconds
+
+async function fetchIntakeMemories() {
+  const secret = sessionStorage.getItem('sleighSecret') || '';
+  try {
+    const res = await fetch(`${API}${API.includes('?')?'&':'?'}function=getIntakeMemories&secret=${encodeURIComponent(secret)}`);
+    const files = await res.json();
+    const container = document.getElementById('memoryIntakeQueue');
+    const badge = document.getElementById('intakeCount');
+    
+    if (badge) badge.textContent = `${files.length} pending`;
+    
+    if (files.length === 0) {
+       container.innerHTML = '<div class="no-route" style="grid-column: span 2;">No pending photos</div>';
+       return;
+    }
+    
+    let html = '';
+    files.forEach(f => {
+       html += `
+         <div class="intake-card" id="intake-${f.id}">
+           <img src="${f.url}" class="intake-img" onclick="window.open('${f.url.replace('w400', 'w1200')}', '_blank')">
+           <div class="intake-actions">
+             <button class="btn-approve" style="padding: 6px; font-size: 11px;" onclick="moderateMemory('${f.id}', 'approve')">Approve</button>
+             <button class="btn-reject" style="padding: 6px; font-size: 11px;" onclick="moderateMemory('${f.id}', 'deny')">Deny</button>
+           </div>
+         </div>
+       `;
+    });
+    container.innerHTML = html;
+  } catch(e) {}
+}
+
+async function moderateMemory(fileId, action) {
+  const secret = sessionStorage.getItem('sleighSecret') || '';
+  
+  // Optimistic UI update: hide the card immediately
+  const card = document.getElementById(`intake-${fileId}`);
+  if (card) card.style.opacity = '0.3';
+
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'moderateMemory', fileId: fileId, modAction: action, secret: secret })
+    });
+    const result = await res.json();
+    
+    if (result.ok) {
+      if (card) card.remove();
+      // Optional: Decrement badge count instantly
+    } else {
+      alert("Failed to moderate photo: " + result.error);
+      if (card) card.style.opacity = '1';
+    }
+  } catch(e) {
+    alert("Network error processing photo.");
+    if (card) card.style.opacity = '1';
+  }
+}
+
+// Kickstart on load
+setTimeout(fetchIntakeMemories, 2000);
+  
 async function handleUserMsg(encodedMsg, action) {
   const secret = sessionStorage.getItem('sleighSecret') || '';
   const msg = decodeURIComponent(encodedMsg);
