@@ -280,28 +280,6 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
   }
   .route-sponsor img { max-height: 36px; max-width: 110px; }
 }
-
-.magic-fab {
-  position: fixed; 
-  bottom: var(--info-bottom); /* Aligns horizontally with the control panel */
-  left: 20px;                 /* Anchors to the bottom left */
-  width: 48px; height: 48px; border-radius: 50%;
-  background: rgba(29, 29, 26, 0.92); border: 2px solid var(--rt-gold);
-  font-size: 22px; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5); z-index: 3400; cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent;
-}
-
-.magic-fab:active { transform: scale(0.9); box-shadow: 0 0 15px rgba(251,175,51,0.6); }
-body.kiosk .magic-fab, body.driver-mode .magic-fab { display: none; }
-
-/* Safely bumps the button up on mobile so it doesn't overlap the full-width buttons */
-@media (max-width: 480px) {
-  .magic-fab {
-    bottom: calc(var(--donate-bottom) + 15px);
-    left: 12px;
-  }
-}
     
     #magic-container {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -710,8 +688,6 @@ body.kiosk .magic-fab, body.driver-mode .magic-fab { display: none; }
     <img alt="">
   </a>
 
-  <button id="magicBtn" class="magic-fab" aria-label="Send Magic to Santa">🪄</button>
-  
   <div class="donate-box" id="donateBox">
     <a id="donateLink" class="donate-btn gamified-pulse" target="_blank" aria-label="Donate and support the Santa Sleigh">
       <span id="donateText">🎁 DONATE & SUPPORT US</span>
@@ -993,36 +969,6 @@ const futureRouteObjects = routes
         if (container) { for (let i = 0; i < 25; i++) { const sparkle = document.createElement('div'); sparkle.className = 'sparkle'; const x = (e.clientX || window.innerWidth / 2) + (Math.random() * 80 - 40); const y = (e.clientY || window.innerHeight - 100) + (Math.random() * 60 - 30); const colors = ['#ffd700', '#ffffff', '#ff4d4d', '#FBAF33']; const color = colors[Math.floor(Math.random() * colors.length)]; sparkle.style.left = x + 'px'; sparkle.style.top = y + 'px'; sparkle.style.background = color; sparkle.style.boxShadow = `0 0 10px ${color}, 0 0 20px ${color}`; sparkle.style.animationDuration = (Math.random() * 1 + 0.8) + 's'; container.appendChild(sparkle); setTimeout(() => { sparkle.remove(); }, 2000); } }
         setTimeout(() => { if (targetUrl && targetUrl !== "#") { window.open(targetUrl, '_blank'); } }, 800); 
       });
-
-     // --- SEND MAGIC BUTTON ---
-const magicBtn = document.getElementById('magicBtn');
-if (magicBtn) {
-  magicBtn.addEventListener('click', (e) => {
-    // Haptic feedback for Android
-    if (navigator.vibrate) navigator.vibrate([30, 80, 30]);
-    
-    const container = document.getElementById('magic-container');
-    if (container) { 
-      for (let i = 0; i < 15; i++) { 
-        const sparkle = document.createElement('div'); 
-        sparkle.className = 'sparkle'; 
-        // Originate from the button position
-        const rect = magicBtn.getBoundingClientRect();
-        const x = rect.left + (rect.width / 2) + (Math.random() * 80 - 40); 
-        const y = rect.top + (rect.height / 2) + (Math.random() * 80 - 40); 
-        const colors = ['#ffd700', '#ffffff', '#ff4d4d', '#FBAF33']; 
-        const color = colors[Math.floor(Math.random() * colors.length)]; 
-        sparkle.style.left = x + 'px'; 
-        sparkle.style.top = y + 'px'; 
-        sparkle.style.background = color; 
-        sparkle.style.boxShadow = `0 0 12px ${color}, 0 0 20px ${color}`; 
-        sparkle.style.animationDuration = (Math.random() * 0.8 + 0.6) + 's'; 
-        container.appendChild(sparkle); 
-        setTimeout(() => sparkle.remove(), 1500); 
-      } 
-    }
-  });
-}
 
       const dynamicManifest = {
         "name": "Santa Sleigh Tracker", "short_name": "Santa Tracker",
