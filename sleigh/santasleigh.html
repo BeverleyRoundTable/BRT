@@ -10,26 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Social sharing preview. Crawlers (Facebook/WhatsApp/Slack) don't run our JS, so these
-         are static fallbacks - every chapter's shared link shows this until/unless a future
-         version injects them server-side per ?api= chapter. -->
-    <meta name="description" content="Follow Santa's sleigh live this Christmas, find out when he's on your street, and help raise money for the local community.">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Track Santa Live This Christmas">
-    <meta property="og:description" content="Follow Santa's sleigh live this Christmas, find out when he's on your street, and help raise money for the local community.">
-    <meta property="og:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/site_background.png">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Track Santa Live This Christmas">
-    <meta name="twitter:description" content="Follow Santa's sleigh live this Christmas, find out when he's on your street, and help raise money for the local community.">
-    <meta name="twitter:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/site_background.png">
-
-    <!-- PWA install (mirrors tracker.html's pattern; manifest is built dynamically per-chapter in JS) -->
-    <link id="dynamic-manifest" rel="manifest" href="">
-    <meta name="theme-color" content="#1D1D1A">
-    <link rel="icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png">
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png">
-
+    
     <style>
         :root {
             /* Official Round Table Brand Guidelines 2024 Colors */
@@ -520,8 +501,6 @@
         <div class="nav-links">
             <a href="#tracker">Live Tracker</a>
             <a href="#routes">Routes</a>
-            <a href="#chat">Chat</a>
-            <a href="#fun">Fun</a>
             <a href="#memory-book">Memory Book</a>
             <a href="#donate">Donate</a>
         </div>
@@ -563,7 +542,7 @@
                 <span id="donation-target" style="color: var(--text-muted);">£0</span>
             </div>
             <p style="margin-bottom: 20px; font-size: 14px; color: var(--text-muted);">Last updated: <span id="donation-updated">Recently</span></p>
-            <a href="#" id="donate-btn" class="btn" target="_blank" rel="noopener noreferrer" style="display: none;">Donate Now</a>
+            <a href="#" id="donate-btn" class="btn" target="_blank" style="display: none;">Donate Now</a>
         </div>
 
         <!-- VOLUNTEER BANNER -->
@@ -573,7 +552,7 @@
                     <h3 class="brand-font">Help Keep The Sleigh Moving!</h3>
                     <p>We need drivers, navigators, and bucket collectors. Volunteer as an elf this year!</p>
                 </div>
-                <a href="#" id="volunteer-btn" class="btn-outline" target="_blank" rel="noopener noreferrer">Volunteer Now <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></a>
+                <a href="#" id="volunteer-btn" class="btn-outline" target="_blank">Volunteer Now <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></a>
             </div>
         </div>
     </section>
@@ -590,28 +569,6 @@
         </div>
 
         <div class="routes-grid" id="routes-container">
-            <!-- Populated by JS -->
-        </div>
-    </section>
-
-    <!-- CHAT SECTION (santa-chat.js widget, already built, previously unlinked) -->
-    <section id="chat">
-        <div class="section-header">
-            <h2>Talk to Santa</h2>
-            <p>Send Santa a message and he'll write back!</p>
-        </div>
-        <div class="iframe-container" style="max-width: 460px; margin: 0 auto; padding: 20px; min-height: 540px;">
-            <div id="santa-chat-box" data-always="1" style="max-width:420px;margin:0 auto;min-height:500px;"></div>
-        </div>
-    </section>
-
-    <!-- FUN SECTION (links out to the existing standalone game pages) -->
-    <section id="fun">
-        <div class="section-header">
-            <h2>Sleigh Spotter Fun</h2>
-            <p>Games and activities while you wait for Santa to arrive.</p>
-        </div>
-        <div class="routes-grid" id="fun-container">
             <!-- Populated by JS -->
         </div>
     </section>
@@ -740,9 +697,6 @@
         <p>&copy; <span id="year"></span> <span id="footer-name">Santa Sleigh</span>. Powered by TurboSanta.</p>
     </footer>
 
-    <!-- Mounts into #santa-chat-box above (data-always="1" keeps it live outside route nights too) -->
-    <script src="https://brt-23f.pages.dev/sleigh/santa-chat.js" defer></script>
-
     <script>
         const currentYear = new Date().getFullYear();
         document.getElementById('current-year-text').innerText = currentYear;
@@ -783,19 +737,6 @@
                 });
         }
 
-        // Sheet-sourced strings (route names, streets, sponsor names) go through here before
-        // being inserted via innerHTML, so a stray "<" or quote in a spreadsheet cell can't
-        // inject markup or attributes into the page.
-        function escapeHtml(str) {
-            if (str === null || str === undefined) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
         function applySettings(data, api) {
             const settings = data.settings || {};
             const donations = data.donations || {};
@@ -825,40 +766,14 @@
             document.getElementById('hero-title').innerText = siteName;
             document.getElementById('footer-name').innerText = siteName;
 
-            // Update meta tags for anything that does render JS (most social-preview
-            // crawlers don't, so this is a bonus on top of the static head tags, not a
-            // replacement for them)
-            const metaDesc = `Follow ${siteName} live this Christmas, find out when he's on your street, and help raise money for the local community.`;
-            document.querySelector('meta[name="description"]').setAttribute('content', metaDesc);
-            document.querySelector('meta[property="og:title"]').setAttribute('content', `Track ${siteName} Live`);
-            document.querySelector('meta[property="og:description"]').setAttribute('content', metaDesc);
-            document.querySelector('meta[name="twitter:title"]').setAttribute('content', `Track ${siteName} Live`);
-            document.querySelector('meta[name="twitter:description"]').setAttribute('content', metaDesc);
-
             // --- Fallback Logo Logic ---
             const navLogo = document.getElementById('nav-logo');
-            const logoUrl = settings.logo_overlay_url || "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png";
-            navLogo.src = logoUrl;
-            navLogo.style.display = "block";
-
-            // --- PWA: dynamic per-chapter manifest + service worker (mirrors tracker.html) ---
-            const dynamicManifest = {
-                "name": siteName, "short_name": siteName.substring(0, 12),
-                "description": metaDesc,
-                "start_url": window.location.href, "display": "standalone",
-                "background_color": "#1D1D1A", "theme_color": settings.primary_color || "#FBAF33",
-                "icons": [
-                    { "src": logoUrl, "sizes": "192x192", "type": "image/png", "purpose": "any" },
-                    { "src": logoUrl, "sizes": "512x512", "type": "image/png", "purpose": "any" }
-                ]
-            };
-            const manifestBlob = new Blob([JSON.stringify(dynamicManifest)], { type: 'application/json' });
-            const manifestUrl = URL.createObjectURL(manifestBlob);
-            document.getElementById('dynamic-manifest').setAttribute('href', manifestUrl);
-            setTimeout(() => URL.revokeObjectURL(manifestUrl), 0);
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+            if (settings.logo_overlay_url) {
+                navLogo.src = settings.logo_overlay_url;
+            } else {
+                navLogo.src = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png";
             }
+            navLogo.style.display = "block";
 
             // --- Live Announcement ---
             if (settings.live_announcement) {
@@ -942,19 +857,19 @@ if (upcomingRoutes.length > 0) {
         }
 
         let html = `
-            <div class="route-date">${escapeHtml(dateDisplay)} ${timeString ? '| ' + escapeHtml(timeString) : ''}</div>
-            <h3 class="brand-font">${escapeHtml(route.routeName)}</h3>
+            <div class="route-date">${dateDisplay} ${timeString ? '| ' + timeString : ''}</div>
+            <h3 class="brand-font">${route.routeName}</h3>
         `;
 
         if (route.streets) {
             const streetsArr = route.streets.split(',');
-            let displayStreets = streetsArr.slice(0, 8).map(escapeHtml).join(', ');
+            let displayStreets = streetsArr.slice(0, 8).join(', ');
             if(streetsArr.length > 8) displayStreets += ' and more...';
             html += `<div class="route-streets">${displayStreets}</div>`;
         }
 
         if (route.sponsorName) {
-            html += `<div style="margin-top: 15px; font-size: 12px; color: var(--primary);">Sponsored by: <strong style="color: var(--text-main);">${escapeHtml(route.sponsorName)}</strong></div>`;
+            html += `<div style="margin-top: 15px; font-size: 12px; color: var(--primary);">Sponsored by: <strong style="color: var(--text-main);">${route.sponsorName}</strong></div>`;
         }
 
         card.innerHTML = html;
@@ -963,28 +878,6 @@ if (upcomingRoutes.length > 0) {
 } else {
     routesContainer.innerHTML = "<p style='color: var(--text-muted);'>No routes scheduled yet. Check back soon!</p>";
 }
-
-            // --- Build Fun Grid (links out to the existing standalone game pages) ---
-            const funContainer = document.getElementById('fun-container');
-            const funGames = [
-                { name: "Sleigh Spotter Bingo", desc: "Tick off what you spot on the route.", page: "bingo.html" },
-                { name: "Build a Snowman", desc: "Design and decorate your own snowman.", page: "snowman.html" },
-                { name: "Colouring Page", desc: "Print or colour in on-screen.", page: "colouring_page.html" },
-                { name: "Adopt a Reindeer", desc: "Pick a reindeer to follow this year.", page: "adopt_reindeer.html" },
-                { name: "Countdown to Santa", desc: "See exactly how long until he arrives.", page: "countdown.html" }
-            ];
-            funGames.forEach(game => {
-                const card = document.createElement('a');
-                card.className = 'route-card';
-                card.href = `${game.page}?api=${encodeURIComponent(api)}`;
-                card.target = "_blank";
-                card.rel = "noopener noreferrer";
-                card.style.display = "block";
-                card.style.textDecoration = "none";
-                card.style.color = "inherit";
-                card.innerHTML = `<h3 class="brand-font">${escapeHtml(game.name)}</h3><div class="route-streets">${escapeHtml(game.desc)}</div>`;
-                funContainer.appendChild(card);
-            });
 
             // --- Build Sponsors Grid ---
             const sponsorsContainer = document.getElementById('sponsors-container');
@@ -996,10 +889,10 @@ if (upcomingRoutes.length > 0) {
                     const wrap = document.createElement('div');
                     wrap.className = 'sponsor-card';
                     
-                    let innerHtml = `<img src="${escapeHtml(sponsor.sponsorUrl)}" alt="${escapeHtml(sponsor.name || 'Sponsor')}" />`;
+                    let innerHtml = `<img src="${sponsor.sponsorUrl}" alt="${sponsor.name || 'Sponsor'}" />`;
                     
                     if(sponsor.sponsorLink) {
-                        wrap.innerHTML = `<a href="${escapeHtml(sponsor.sponsorLink)}" target="_blank" rel="noopener noreferrer" style="display:flex; width:100%; height:100%; justify-content:center;">${innerHtml}</a>`;
+                        wrap.innerHTML = `<a href="${sponsor.sponsorLink}" target="_blank" style="display:flex; width:100%; height:100%; justify-content:center;">${innerHtml}</a>`;
                     } else {
                         wrap.innerHTML = innerHtml;
                     }
@@ -1019,19 +912,19 @@ if (upcomingRoutes.length > 0) {
             // --- Build Social Links ---
             const socialContainer = document.getElementById('social-links-container');
             const webUrl = settings.table_website_url || "https://www.roundtable.co.uk";
-            socialContainer.innerHTML += `<a href="${escapeHtml(webUrl)}" target="_blank" rel="noopener noreferrer" class="social-btn" title="Website"><i class="fa-solid fa-globe"></i></a>`;
+            socialContainer.innerHTML += `<a href="${webUrl}" target="_blank" class="social-btn" title="Website"><i class="fa-solid fa-globe"></i></a>`;
 
             if (settings.table_facebook_url) {
-                socialContainer.innerHTML += `<a href="${escapeHtml(settings.table_facebook_url)}" target="_blank" rel="noopener noreferrer" class="social-btn" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>`;
+                socialContainer.innerHTML += `<a href="${settings.table_facebook_url}" target="_blank" class="social-btn" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>`;
             }
             if (settings.table_instagram_url) {
-                socialContainer.innerHTML += `<a href="${escapeHtml(settings.table_instagram_url)}" target="_blank" rel="noopener noreferrer" class="social-btn" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
+                socialContainer.innerHTML += `<a href="${settings.table_instagram_url}" target="_blank" class="social-btn" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
             }
             if (settings.table_tiktok_url) {
-                socialContainer.innerHTML += `<a href="${escapeHtml(settings.table_tiktok_url)}" target="_blank" rel="noopener noreferrer" class="social-btn" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>`;
+                socialContainer.innerHTML += `<a href="${settings.table_tiktok_url}" target="_blank" class="social-btn" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>`;
             }
             if (settings.table_youtube_url) {
-                socialContainer.innerHTML += `<a href="${escapeHtml(settings.table_youtube_url)}" target="_blank" rel="noopener noreferrer" class="social-btn" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
+                socialContainer.innerHTML += `<a href="${settings.table_youtube_url}" target="_blank" class="social-btn" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
             }
         }
 
