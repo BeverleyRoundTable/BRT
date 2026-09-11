@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Santa Sleigh</title>
+    <!-- Primary Meta Tags -->
+    <meta name="description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Santa Sleigh Live Tracker">
+    <meta property="og:description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
+    <meta property="og:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/site_background.png"> 
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Santa Sleigh Live Tracker">
+    <meta name="twitter:description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/site_background.png">
     
     <!-- Open Sans is the official Round Table paragraph font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -212,6 +226,12 @@
             width: 100%;
             border: none;
             display: block;
+        }
+        
+        /* --- TRACKER --- */
+        #tracker-iframe {
+            height: 75dvh;
+            min-height: 500px;
         }
 
         /* --- DONATIONS --- */
@@ -698,6 +718,11 @@
     </footer>
 
     <script>
+        // Inject Canonical URL for SEO
+        const canonicalLink = document.createElement('link');
+        canonicalLink.rel = 'canonical';
+        canonicalLink.href = window.location.href;
+        document.head.appendChild(canonicalLink);
         const currentYear = new Date().getFullYear();
         document.getElementById('current-year-text').innerText = currentYear;
         document.getElementById('year').innerText = currentYear;
@@ -722,7 +747,9 @@
         }
 
         function fetchSleighData(api) {
-            fetch(api)
+            const workerUrl = `https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(api)}`;
+
+            fetch(workerUrl)
                 .then(response => {
                     if (!response.ok) throw new Error("Failed to load API data");
                     return response.json();
@@ -947,6 +974,36 @@ if (upcomingRoutes.length > 0) {
             });
             item.classList.toggle('active');
         }
+
+        // Register Service Worker for Offline Fallback
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => {
+                    console.log('Service Worker registration failed: ', err);
+                });
+            });
+        }
+
+        // Graceful Offline UI
+        window.addEventListener('offline', () => {
+            const annBar = document.getElementById('announcement-bar');
+            annBar.innerText = "📶 Connection lost. Showing offline map and saved routes.";
+            annBar.style.backgroundColor = "#d31c1c"; // Red alert
+            annBar.style.color = "#ffffff";
+            annBar.style.display = "block";
+        });
+
+        window.addEventListener('online', () => {
+            const annBar = document.getElementById('announcement-bar');
+            annBar.innerText = "📡 Reconnected! Refreshing sleigh data...";
+            annBar.style.backgroundColor = "var(--primary)";
+            annBar.style.color = "var(--bg-card)";
+            setTimeout(() => {
+                // Clear the bar or re-fetch the API to get the latest live announcement
+                if (apiUrl) fetchSleighData(apiUrl);
+            }, 2000);
+        });
+        
     </script>
 </body>
 </html>
