@@ -1570,12 +1570,14 @@ async function fetchIntakeMemories() {
     
     let html = '';
     files.forEach(f => {
-       // Use direct uc?export=view link format
-       const imgUrl = `https://drive.google.com/uc?export=view&id=${f.id}`;
+       // Embed-friendly thumbnail for the God Mode UI
+       const thumbUrl = `https://drive.google.com/thumbnail?id=${f.id}&sz=w400`;
+       // Full resolution link for the new tab
+       const fullUrl = `https://drive.google.com/uc?export=view&id=${f.id}`;
        
        html += `
          <div class="intake-card" id="intake-${f.id}">
-           <img src="${imgUrl}" class="intake-img" onclick="window.open('${imgUrl}', '_blank')">
+           <img src="${thumbUrl}" class="intake-img" onclick="window.open('${fullUrl}', '_blank')">
            <div class="intake-actions">
              <button class="btn-approve" style="padding: 6px; font-size: 11px;" onclick="moderateMemory('${f.id}', 'approve')">Approve</button>
              <button class="btn-reject" style="padding: 6px; font-size: 11px;" onclick="moderateMemory('${f.id}', 'deny')">Deny</button>
