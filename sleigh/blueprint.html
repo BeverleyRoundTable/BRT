@@ -9,7 +9,7 @@
     body {
       margin: 0;
       padding: 20px;
-      background-color: #0f0f1a; /* Dark background to make the lights pop */
+      background-color: #0f0f1a;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #333;
     }
@@ -149,14 +149,14 @@
 
     <!-- The Visual Map -->
     <div class="sleigh-map">
-      <!-- Ensure your image is named sleigh-wireframe.png and is in the same GitHub folder -->
-      <img src="sleigh-wireframe.png" alt="Santa Sleigh Blueprint" class="base-image" id="sleigh-image">
+      <!-- Using the raw GitHub user content URL so the image loads correctly within the web app -->
+      <img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/sleigh-wireframe.png" alt="Santa Sleigh Blueprint" class="base-image" id="sleigh-image">
       
-      <!-- Hotspots (Top/Left % will be updated using the dev tool below) -->
-      <div class="hotspot active-dot" style="top: 70%; left: 45%;" data-id="power"></div>
-      <div class="hotspot" style="top: 80%; left: 20%;" data-id="audio"></div>
-      <div class="hotspot" style="top: 20%; left: 50%;" data-id="lighting"></div>
-      <div class="hotspot" style="top: 60%; left: 80%;" data-id="chassis"></div>
+      <!-- Hotspots mapped to the Mahindra Treo Silhouette -->
+      <div class="hotspot active-dot" style="top: 60%; left: 70%;" data-id="power"></div>
+      <div class="hotspot" style="top: 45%; left: 82%;" data-id="audio"></div>
+      <div class="hotspot" style="top: 25%; left: 45%;" data-id="lighting"></div>
+      <div class="hotspot" style="top: 75%; left: 50%;" data-id="chassis"></div>
     </div>
 
     <!-- The Sponsor Info Panel -->
@@ -172,10 +172,9 @@
 
   <script>
     // =========================================================================
-    // 1. YOUR WEB APP URL (PASTE THIS ONCE)
+    // 1. YOUR WEB APP URL (Site Analytics / Hub)
     // =========================================================================
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwyAk3IScj--iNDQUn0ddk5wUH99Gfh6kPnCGmxgHhb4dIOoPRGaRwGT1lD-E9jf8dv/exec"; 
-
 
     // =========================================================================
     // 2. COMPONENT DATABASE
@@ -185,7 +184,7 @@
         title: "The Magic Core",
         sponsor: "Official Power Partner: Zendure",
         desc: "Super power packs to make the sleigh sparkle! These SolarFlow stations provide clean, silent energy to keep Santa glowing all night long without noisy generators.",
-        logLabel: "Blueprint_Tap_Zendure" // What gets saved in Google Sheets
+        logLabel: "Blueprint_Tap_Zendure" 
       },
       audio: {
         title: "Sleigh Bells & Bass",
@@ -234,26 +233,21 @@
 
     hotspots.forEach(dot => {
       dot.addEventListener('click', (e) => {
-        // Handle active visual state
         hotspots.forEach(h => h.classList.remove('active-dot'));
         e.target.classList.add('active-dot');
 
-        // Fetch corresponding data
         const id = e.target.getAttribute('data-id');
         const data = sleighComponents[id];
 
-        // Trigger CSS reflow for the fade-in animation
         infoPanel.classList.remove('fade-in');
         void infoPanel.offsetWidth; 
         
-        // Update DOM elements
         panelTitle.textContent = data.title;
         panelSponsor.textContent = data.sponsor;
         panelDesc.textContent = data.desc;
         
         infoPanel.classList.add('fade-in');
 
-        // Log the click to Google Sheets silently
         if(WEB_APP_URL !== "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
           fetch(WEB_APP_URL, {
             method: 'POST',
@@ -266,7 +260,7 @@
     });
 
     // =========================================================================
-    // 5. DEV TOOL: COORDINATE FINDER (Uncomment to perfectly place dots)
+    // 5. DEV TOOL: COORDINATE FINDER 
     // =========================================================================
     /*
     document.getElementById('sleigh-image').addEventListener('click', function(e) {
