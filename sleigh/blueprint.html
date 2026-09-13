@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sleigh Blueprint & Live Stats</title>
+  <title>Sleigh Blueprint</title>
   <style>
     /* --- CORE STYLES --- */
     body {
       margin: 0;
       padding: 20px;
-      background-color: #0f0f1a;
+      background-color: #0f0f1a; /* Dark background to make the lights pop */
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #333;
     }
@@ -22,7 +22,7 @@
       margin: 0 auto;
     }
 
-    /* --- LIVE STATS BANNER --- */
+    /* --- INSTRUCTION BANNER --- */
     #live-stats-banner {
       background: rgba(251, 175, 51, 0.1);
       color: #FBAF33;
@@ -142,9 +142,9 @@
 
   <div class="blueprint-container">
     
-    <!-- Live Stats Banner (Populated via Apps Script) -->
+    <!-- Family-friendly instruction banner -->
     <div id="live-stats-banner">
-      Connecting to Santa's radar...
+      ✨ <strong>Inside Santa's Workshop:</strong> Tap the glowing dots on the sleigh to see the magic under the hood!
     </div>
 
     <!-- The Visual Map -->
@@ -172,7 +172,7 @@
 
   <script>
     // =========================================================================
-    // 1. YOUR WEB APP URL (Site Analytics / Hub)
+    // 1. YOUR WEB APP URL (Site Analytics / Hub for silent logging)
     // =========================================================================
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwyAk3IScj--iNDQUn0ddk5wUH99Gfh6kPnCGmxgHhb4dIOoPRGaRwGT1lD-E9jf8dv/exec"; 
 
@@ -207,23 +207,7 @@
     };
 
     // =========================================================================
-    // 3. FETCH LIVE STATS (DATA OUT)
-    // =========================================================================
-    if(WEB_APP_URL !== "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
-      fetch(WEB_APP_URL)
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById('live-stats-banner').innerHTML = 
-            `🎅 <strong>${data.totalViews}</strong> families have tracked the sleigh live! <br> Top Route: <strong>${data.popularRoute}</strong> | Devices: <strong>${data.deviceSplit}</strong>`;
-        })
-        .catch(error => {
-          console.error("Couldn't load stats", error);
-          document.getElementById('live-stats-banner').style.display = 'none';
-        });
-    }
-
-    // =========================================================================
-    // 4. INTERACTION LOGIC & LOGGING (DATA IN)
+    // 3. INTERACTION LOGIC & SILENT LOGGING (DATA IN)
     // =========================================================================
     const hotspots = document.querySelectorAll('.hotspot');
     const panelTitle = document.getElementById('panel-title');
@@ -248,7 +232,8 @@
         
         infoPanel.classList.add('fade-in');
 
-        if(WEB_APP_URL !== "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
+        // Silently log the click to Google Sheets for your backend reporting
+        if(WEB_APP_URL !== "") {
           fetch(WEB_APP_URL, {
             method: 'POST',
             mode: 'no-cors', 
@@ -260,7 +245,7 @@
     });
 
     // =========================================================================
-    // 5. DEV TOOL: COORDINATE FINDER 
+    // 4. DEV TOOL: COORDINATE FINDER 
     // =========================================================================
     /*
     document.getElementById('sleigh-image').addEventListener('click', function(e) {
