@@ -134,13 +134,13 @@
       border-color: rgba(251,175,51,0.5);
     }
 
-    /* Gradient Top Border matching the Workshop Card */
+    /* Dynamic Top Border matching the Map Route */
     .addr-route-card::before {
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--red), var(--gold));
+      height: 4px;
+      background: var(--route-color, var(--gold));
     }
 
     .addr-route-title {
@@ -224,9 +224,80 @@
       shadowSize: [41, 41]
     });
 
+    // Distinct palette optimized for map tiles
+    const ROUTE_COLORS = [
+      '#3a86ff', // Royal Blue
+      '#fb5607', // Vivid Orange
+      '#ff006e', // Magenta
+      '#8338ec', // Purple
+      '#06d6a0', // Mint Green
+      '#ffbe0b', // Yellow
+      '#3a0ca3', // Deep Indigo
+      '#ef476f'  // Coral Red
+    ];
+
     let routesData = [];
     let map;
     let userPin = null;
+
+    // ... (Keep your existing initMap function) ...
+
+    // 3. Fetch Master Payload & Parse GPX Data
+    async function loadRouteData() {
+      const resultsDiv = document.getElementById('results');
+      const btn = document.getElementById('locateBtn');
+      const defaultBtnHtml = `
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg> Use My Current Location`;
+
+      if (!API_URL) {
+        resultsDiv.innerHTML = `
+          <div class="addr-no-results" style="color: var(--red);">
+            Error: Could not connect to Santa's API.<br>
+            <small style="color: var(--text-dim);">Try opening the main tracker first to establish a connection.</small>
+          </div>`;
+        return;
+      }
+
+      try {
+        const res = await fetch(DATA_URL, { cache: "no-store" });
+        const data = await res.json();
+
+        if(data && data.routes) {
+          routesData = data.routes;
+
+          // Add 'index' to the map callback to loop through colors
+          await Promise.all(routesData.map(async (route, index) => {
+            if (route.gpxUrl) {
+              try {
+                const gpxRes = await fetch(route.gpxUrl, { cache: "no-store" });
+                const gpxXml = await gpxRes.text();
+                route.geoJSON = parseGPXToLineString(gpxXml);
+
+                if(route.geoJSON) {
+                  // Assign color from palette, looping back to start if there are more than 8 routes
+                  route.color = ROUTE_COLORS[index % ROUTE_COLORS.length];
+                  
+                  route.mapLayer = L.geoJSON(route.geoJSON, {
+                    color: route.color, 
+                    weight: 4, 
+                    opacity: 0.5
+                  }).addTo(map);
+                }
+              } catch (e) { console.error("GPX load failed for", route.routeName); }
+            }
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch route data:", err);
+      } finally {
+        btn.innerHTML = defaultBtnHtml;
+        btn.disabled = false;
+      }
+    }
 
     // Default and Highlight styles for the map layers
     const mapStyleDefault = { color: '#FBAF33', weight: 4, opacity: 0.4 };
@@ -419,9 +490,9 @@
         matches.forEach(route => {
           const formattedDate = route.date ? new Date(route.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : "Date TBC";
 
-          // Fixed the Time string clarity here, and added data-route-name for click events
+          // Inject route.color into the CSS variable
           resultsDiv.innerHTML += `
-            <div class="addr-route-card" data-route-name="${route.routeName}">
+            <div class="addr-route-card" data-route-name="${route.routeName}" style="--route-color: ${route.color || '#FBAF33'};">
               <h3 class="addr-route-title">${route.routeName}</h3>
               <p class="addr-route-date">${formattedDate} (Starts at approx ${route['Start Time'] || '17:30'})</p>
               <p style="margin: 12px 0 0; font-size: 13px; font-weight: 600; color: var(--text-dim);">
@@ -432,25 +503,23 @@
         });
       }
 
-      // Attach click events to the newly generated cards
       document.querySelectorAll('.addr-route-card').forEach(card => {
         card.addEventListener('click', function() {
           const targetRouteName = this.getAttribute('data-route-name');
 
-          // Reset all routes to default style
+          // Reset all routes back to their assigned default state
           routesData.forEach(r => {
             if (r.mapLayer) {
-              r.mapLayer.setStyle(mapStyleDefault);
+              r.mapLayer.setStyle({ color: r.color || '#FBAF33', weight: 4, opacity: 0.5 });
             }
           });
 
-          // Find the clicked route and highlight it
+          // Find the clicked route and highlight it dynamically
           const selectedRoute = routesData.find(r => r.routeName === targetRouteName);
           if (selectedRoute && selectedRoute.mapLayer) {
-            selectedRoute.mapLayer.setStyle(mapStyleHighlight);
+            selectedRoute.mapLayer.setStyle({ color: selectedRoute.color || '#FBAF33', weight: 7, opacity: 1 });
             selectedRoute.mapLayer.bringToFront();
             
-            // Pan and zoom map to fit the selected route with a smooth animation
             map.flyToBounds(selectedRoute.mapLayer.getBounds(), { padding: [40, 40], duration: 1.2 });
           }
         });
