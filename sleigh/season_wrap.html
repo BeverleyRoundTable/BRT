@@ -301,7 +301,6 @@
   .donation-bar-inner { height: 100%; background: linear-gradient(90deg, var(--red), var(--gold)); border-radius: 14px; transition: width 1s ease; min-width: 20px; }
   .donation-pct { text-align: center; margin-top: 16px; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; }
 
-  /* 👇 NEW: Financial Breakdown Styles */
   .finance-breakdown { display: flex; gap: 24px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
   .finance-item { flex: 1; }
   .finance-item:not(:first-child) { border-left: 1px solid var(--border); padding-left: 24px; }
@@ -381,7 +380,6 @@
     .loader { display: none !important; }
     .report { padding: 0 20px; }
     
-    /* Ensure Header Prints Beautifully */
     .report-header { 
       padding: 80px 40px 60px; 
       min-height: 300px; 
@@ -392,7 +390,6 @@
     }
     .report-title { font-size: 72px; }
     
-    /* Force Background Images to Render */
     .report-hero-bg { 
       display: block !important; 
       visibility: visible !important; 
@@ -475,74 +472,38 @@
   }
 
   @media (max-width: 500px) {
-    /* Print bar — stack buttons on small screens */
-    .print-bar {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 16px;
-      padding: 16px 20px;
-    }
+    .print-bar { flex-direction: column; align-items: flex-start; gap: 16px; padding: 16px 20px; }
     .print-bar-title { font-size: 10px; }
     .print-bar > div { width: 100%; display: flex; gap: 12px; }
-    .print-bar > div .snapshot-btn,
-    .print-bar > div .print-btn {
-      flex: 1;
-      text-align: center;
-      margin-right: 0;
-      padding: 12px;
-      font-size: 12px;
-    }
-
-    /* Hero stats single column */
+    .print-bar > div .snapshot-btn, .print-bar > div .print-btn { flex: 1; text-align: center; margin-right: 0; padding: 12px; font-size: 12px; }
     .hero-stats { grid-template-columns: 1fr 1fr; gap: 12px; }
     .hero-stat { padding: 24px 16px; }
     .hero-stat .number { font-size: 42px; }
-
-    /* Report header */
     .report-title { font-size: 56px; }
     .report-header { padding: 100px 24px 64px; min-height: 380px; }
     .report-logo { width: 64px; height: 64px; }
-
-    /* Report body */
     .report { padding: 80px 16px 48px; }
     .section { margin-top: 48px; }
     .section-head h2 { font-size: 32px; }
     .section-head .icon { font-size: 24px; }
-
-    /* Donations */
     .donation-bar-wrap { padding: 24px 20px; }
     .donation-labels { font-size: 11px; }
-
-    /* 👇 NEW: Stack finances on mobile */
     .finance-breakdown { flex-direction: column; gap: 16px; }
     .finance-item:not(:first-child) { border-left: none; padding-left: 0; border-top: 1px dashed var(--border); padding-top: 16px; }
-
-    /* Route table — hide streets column on mobile */
     .route-table .route-streets { display: none; }
     .route-table td, .route-table th { padding: 12px; font-size: 12px; }
     .route-table .route-name { font-size: 13px; }
-    
-    /* Reach grid single column */
     .reach-row { grid-template-columns: 1fr; gap: 12px; }
     .reach-item { padding: 24px 20px; }
     .reach-item .number { font-size: 40px; }
-
-    /* Highlight quote */
     .highlight-quote { padding: 24px 28px; font-size: 16px; }
-
-    /* Charts — single column, shorter height */
     .comparison-grid { grid-template-columns: 1fr; gap: 16px; }
     .chart-card { padding: 20px; }
     .chart-card canvas { max-height: 140px; }
-
-    /* Sponsors */
     .sponsor-card { min-width: 140px; padding: 20px 24px; }
-
-    /* Footer */
     .report-footer { padding: 40px 0 24px; font-size: 9px; }
   }
 
-  /* Tablet tweaks */
   @media (min-width: 501px) and (max-width: 800px) {
     .route-table .route-streets { display: none; }
     .chart-card canvas { max-height: 160px; }
@@ -595,12 +556,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const res = await fetch(api);
     const data = await res.json();
 
-    // Also fetch season history (silent fail if not yet populated)
+    // Fetch season history (silent fail if not yet populated)
     try {
       const histRes = await fetch(`${api}?function=getSeasonHistory`);
       const histData = await histRes.json();
       if (Array.isArray(histData.history)) _seasonHistory = histData.history;
-    } catch(e) { /* no history yet */ }
+    } catch(e) { }
+
+    // Fetch auto-calculated tracker & sponsor analytics
+    try {
+      const statRes = await fetch(`${api}?function=getWrapAnalytics`);
+      const statData = await statRes.json();
+      if (statData && statData.totalViews !== undefined) {
+         data.wrapAnalytics = statData;
+      }
+    } catch(e) { }
 
     render(data);
   } catch(e) {
@@ -616,6 +586,7 @@ function render(data) {
   const donations = data.donations || {};
   const streets = data.streets || [];
   const sponsors = data.sponsors || [];
+  const a = data.wrapAnalytics || {}; // <--- Extract auto-analytics
 
   const logo = s.logo_overlay_url || '';
   const bgImage = s.bgImageUrl || '';
@@ -623,9 +594,8 @@ function render(data) {
   const currency = donations.currency || '£';
   const year = s.wrap_year || s.sponsor_pack_year || new Date().getFullYear();
 
-  // Computed — split routes by date
   const today = new Date();
-  today.setHours(23, 59, 59, 999); // include today as completed
+  today.setHours(23, 59, 59, 999); 
   const completedRoutes = routes.filter(r => {
     if (!r.date) return false;
     return new Date(r.date + 'T23:59:59') <= today;
@@ -648,11 +618,17 @@ function render(data) {
   const pct = targetAmount > 0 ? Math.min(100, Math.round((totalRaised / targetAmount) * 100)) : 0;
   const volunteers = s.wrap_volunteers || s.sponsor_pack_volunteers || '—';
 
-  // Analytics
-  const computedViews = completedRoutes.reduce((sum, r) => sum + (parseInt(r.views) || 0), 0);
+  // Digital Reach — Autopopulated from Payload or Settings fallback
+  const computedViews = a.totalViews || completedRoutes.reduce((sum, r) => sum + (parseInt(r.views) || 0), 0);
   const totalViews = computedViews > 0 ? computedViews : (s.wrap_total_views || '');
-  const desktopMobile = s.wrap_desktop_mobile || '';
-  const popularRoute = s.wrap_most_popular_route || '';
+  
+  const desktopMobile = (a.desktopPct > 0 || a.mobilePct > 0) 
+    ? `${a.desktopPct}% / ${a.mobilePct}%` 
+    : (s.wrap_desktop_mobile || '');
+    
+  const popularRoute = a.topRoute || s.wrap_most_popular_route || '';
+  const sponsorClicks = a.sponsorClicks || s.wrap_sponsor_clicks || 0;
+
   const socialFollowers = s.wrap_social_followers || s.wrap_facebook_followers || s.sponsor_pack_facebook_followers || '';
   const socialReach = s.wrap_social_reach || s.wrap_facebook_reach || s.sponsor_pack_facebook_reach || '';
   const webViews = s.wrap_website_views || s.sponsor_pack_website_views || '';
@@ -662,23 +638,17 @@ function render(data) {
   const totalMessages = messageStats.total || 0;
   const highlight = s.wrap_highlight || '';
 
-  // Sorted completed routes by date
   const sortedRoutes = [...completedRoutes].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   const sortedPlanned = [...plannedRoutes].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
-  // Sponsor logos
   const sponsorUrls = [...new Set(completedRoutes.map(r => r.sponsorUrl).filter(Boolean))];
-
-  // Date range
   const dates = completedRoutes.map(r => r.date).filter(Boolean).sort();
   const firstDate = dates[0] ? fmtDate(dates[0]) : '';
   const lastDate = dates[dates.length - 1] ? fmtDate(dates[dates.length - 1]) : '';
   const dateRange = firstDate && lastDate ? `${firstDate} — ${lastDate}` : '';
 
-  // Has digital stats?
-  const hasDigital = totalViews || socialFollowers || socialReach || webViews || desktopMobile || popularRoute || peakViewers || totalWaves || totalMessages > 0;
+  const hasDigital = totalViews || socialFollowers || socialReach || webViews || desktopMobile || popularRoute || peakViewers || totalWaves || totalMessages > 0 || sponsorClicks > 0;
 
-  // Build
   let h = '';
 
   // Print bar
@@ -735,7 +705,6 @@ function render(data) {
       <div class="donation-section">
         <div class="donation-bar-wrap">`;
         
-    // Only show the progress bar if a target is set
     if (targetAmount > 0) {
       h += `
           <div class="donation-labels">
@@ -748,7 +717,6 @@ function render(data) {
           <div class="donation-pct">${pct}% of target</div>`;
     }
 
-    // Always show the financial breakdown
     h += `
           <div class="finance-breakdown" ${targetAmount === 0 ? 'style="border-top:none; margin-top:0; padding-top:0;"' : ''}>
             <div class="finance-item">
@@ -907,6 +875,7 @@ function render(data) {
     if (webViews) h += `<div class="reach-item"><div class="icon">💻</div><div class="number">${webViews}</div><div class="label">Website Views</div></div>`;
     if (desktopMobile) h += `<div class="reach-item"><div class="icon">📱💻</div><div class="number" style="font-family:'DM Sans', sans-serif; font-size:36px; font-weight:800; padding-top:10px;">${desktopMobile}</div><div class="label">Desktop / Mobile %</div></div>`;
     if (popularRoute) h += `<div class="reach-item"><div class="icon">🏆</div><div class="number" style="font-family:'DM Sans', sans-serif; font-size:24px; font-weight:800; padding-top:20px; line-height:1.2; word-wrap:break-word;">${popularRoute}</div><div class="label">Most Viewed Route</div></div>`;
+    if (sponsorClicks > 0) h += `<div class="reach-item"><div class="icon">🖱️</div><div class="number">${sponsorClicks.toLocaleString()}</div><div class="label">Sponsor Link Clicks</div></div>`;
     if (peakViewers) h += `<div class="reach-item"><div class="icon">🔥</div><div class="number">${peakViewers}</div><div class="label">Peak Live Trackers</div></div>`;
     if (totalMessages > 0) h += `<div class="reach-item"><div class="icon">💬</div><div class="number">${totalMessages.toLocaleString()}</div><div class="label">Messages to Santa</div></div>`;
     if (giftAidDeclarations > 0) h += `<div class="reach-item"><div class="icon">📝</div><div class="number">${giftAidDeclarations}</div><div class="label">Gift Aid Forms</div></div>`;    
@@ -953,7 +922,6 @@ function render(data) {
       Next year, this section will automatically populate with comparison charts.
     </div>`;
   } else {
-    // Merge history with current season for charting
     const allSeasons = [..._seasonHistory];
     const currentExists = allSeasons.some(s => String(s.year) === String(year));
     if (!currentExists) {
@@ -990,7 +958,6 @@ function render(data) {
       h += `<div class="chart-card"><h4>${c.label}</h4><canvas id="${c.id}" height="160"></canvas></div>`;
     });
 
-    // Store chart config for after DOM insertion
     h += `<script id="chartConfig" type="application/json">${JSON.stringify({ labels, charts: charts.map(c => ({ id: c.id, data: c.data, color: c.color })) })}\<\/script>`;
   }
 
@@ -1003,16 +970,15 @@ function render(data) {
       ${sleighName} · Season Report ${year} · TurboSanta
     </div>`;
 
-  h += '</div>'; // end .report
+  h += '</div>';
 
   document.getElementById('app').innerHTML = h;
 
-  // Populate snapshot data for the button click
   _snapshotData = {
     year,
     raised: totalRaised,
-    netRaised: netRaised,      // Added for future-proofing
-    expenses: totalExpenses,   // Added for future-proofing
+    netRaised: netRaised,
+    expenses: totalExpenses,
     routes: routeCount,
     streets: uniqueStreets,
     totalViews: totalViews || '', 
@@ -1020,7 +986,6 @@ function render(data) {
     volunteers: volunteers || ''
   };
 
-  // Render charts if history exists
   const configEl = document.getElementById('chartConfig');
   if (configEl) {
     try {
@@ -1030,7 +995,7 @@ function render(data) {
         if (!canvas) return;
         const isMobile = window.innerWidth < 500;
         
-        Chart.defaults.font.family = "'DM Mono', monospace"; // TurboSanta font for charts
+        Chart.defaults.font.family = "'DM Mono', monospace";
         
         new Chart(canvas, {
           type: 'bar',
@@ -1109,7 +1074,6 @@ async function snapshotSeason() {
     if (result.ok) {
       btn.textContent = '✅ Saved!';
       btn.classList.add('saved');
-      // Reload page to show chart with new data
       setTimeout(() => location.reload(), 1500);
     } else {
       alert('Failed to save: ' + (result.error || 'Unknown error'));
