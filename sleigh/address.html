@@ -223,10 +223,6 @@
         maxZoom: 18
       }).addTo(map);
 
-      // Headquarters Pin permanently applied on load
-      const hqMarker = L.marker([52.470611, -1.921000]).addTo(map);
-      hqMarker.bindPopup("<div style='font-family: \"DM Sans\", sans-serif; color: #111;'><b>Round Table HQ</b><br>Marchesi House, 4 Embassy Dr</div>").openPopup();
-
       map.on('click', function(e) {
         if (!document.getElementById('locateBtn').disabled) {
           processCoordinates(e.latlng.lat, e.latlng.lng);
