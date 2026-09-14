@@ -194,6 +194,7 @@
       localStorage.setItem("SANTA_API", API_URL); 
       sessionStorage.setItem("SANTA_API", API_URL);
     }
+    
     if (PROXY_URL) {
       localStorage.setItem("SANTA_PROXY", PROXY_URL); 
       sessionStorage.setItem("SANTA_PROXY", PROXY_URL);
@@ -202,7 +203,8 @@
     // ⚡ Force the heavy Google Script payload through your Cloudflare Worker cache (30s TTL)
     const WORKER_URL = "https://santaproxy.beverley247.workers.dev/";
     const DATA_URL = `${WORKER_URL}?ttl=30&target=${encodeURIComponent(API_URL)}`;
-    const CATCHMENT_METERS = 150; 
+    
+    const CATCHMENT_METERS = 150;
 
     const redIcon = L.icon({
       iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
