@@ -176,19 +176,20 @@
       <!-- Using the raw GitHub user content URL -->
       <img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/sleigh-wireframe.png" alt="Santa Sleigh Blueprint" class="base-image" id="sleigh-image">
       
-      <!-- Hotspots mapped to the Mahindra Treo Silhouette -->
-      <div class="hotspot active-dot" style="top: 60%; left: 70%;" data-id="power"></div>
+      <!-- Hotspots mapped for 16:9 Landscape Layout -->
+      <div class="hotspot" style="top: 60%; left: 70%;" data-id="power"></div>
       <div class="hotspot" style="top: 45%; left: 82%;" data-id="audio"></div>
       <div class="hotspot" style="top: 25%; left: 45%;" data-id="lighting"></div>
-      <div class="hotspot" style="top: 75%; left: 50%;" data-id="chassis"></div>
+      <!-- Chassis is default active on load -->
+      <div class="hotspot active-dot" style="top: 75%; left: 50%;" data-id="chassis"></div>
     </div>
 
-    <!-- The Sponsor Info Panel -->
+    <!-- The Sponsor Info Panel (Starts on Chassis) -->
     <div class="info-panel" id="sponsor-panel">
       <div class="panel-content">
-        <h3 id="panel-title">The Magic Core</h3>
-        <h4 id="panel-sponsor" class="highlight-text">Official Power Partner: Zendure</h4>
-        <p id="panel-desc">Super power packs to make the sleigh sparkle! These SolarFlow stations provide clean, silent energy to keep Santa glowing all night long without noisy generators.</p>
+        <h3 id="panel-title">The Sleigh Base</h3>
+        <h4 id="panel-sponsor" class="highlight-text">Mahindra Treo Platform</h4>
+        <p id="panel-desc">A fully electric, zero-emission foundation wrapped in festive magic, keeping the route green and environmentally friendly.</p>
       </div>
     </div>
 
@@ -204,6 +205,12 @@
     // 2. COMPONENT DATABASE
     // =========================================================================
     const sleighComponents = {
+      chassis: {
+        title: "The Sleigh Base",
+        sponsor: "Mahindra Treo Platform",
+        desc: "A fully electric, zero-emission foundation wrapped in festive magic, keeping the route green and environmentally friendly.",
+        logLabel: "Blueprint_Tap_Chassis"
+      },
       power: {
         title: "The Magic Core",
         sponsor: "Official Power Partner: Zendure",
@@ -221,12 +228,6 @@
         sponsor: "Powered by Govee",
         desc: "Thousands of smart LEDs mapped across the modular aluminum frame, capable of snowfall effects and reacting live to the music.",
         logLabel: "Blueprint_Tap_Govee"
-      },
-      chassis: {
-        title: "The Sleigh Base",
-        sponsor: "Mahindra Treo Platform",
-        desc: "A fully electric, zero-emission foundation wrapped in festive magic, keeping the route green and environmentally friendly.",
-        logLabel: "Blueprint_Tap_Chassis"
       }
     };
 
@@ -237,7 +238,7 @@
     const panelTitle = document.getElementById('panel-title');
     const panelSponsor = document.getElementById('panel-sponsor');
     const panelDesc = document.getElementById('panel-desc');
-    const infoPanel = document.getElementById('sponsor-panel');
+    infoPanel = document.getElementById('sponsor-panel');
 
     hotspots.forEach(dot => {
       dot.addEventListener('click', (e) => {
