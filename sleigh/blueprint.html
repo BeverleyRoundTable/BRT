@@ -284,5 +284,25 @@
     */
   </script>
 
+  <script>
+  function sendHeight() {
+    const height = document.documentElement.scrollHeight;
+    window.parent.postMessage({ frameHeight: height }, '*');
+  }
+  
+  // Send height when page loads
+  window.addEventListener('load', sendHeight);
+  
+  // Send height if window resizes (desktop to mobile transitions)
+  window.addEventListener('resize', sendHeight);
+  
+  // Send height when a hotspot is clicked (in case text changes panel size)
+  document.querySelectorAll('.hotspot').forEach(dot => {
+    dot.addEventListener('click', () => {
+      setTimeout(sendHeight, 50); // slight delay to allow new text to render
+    });
+  });
+</script>
+
 </body>
 </html>
