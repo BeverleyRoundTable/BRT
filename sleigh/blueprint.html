@@ -270,18 +270,33 @@
     });
 
     // =========================================================================
-    // 4. DEV TOOL: COORDINATE FINDER 
+    // 4. DEV TOOL: COORDINATE FINDER (Triggered via URL: ?pinpoint=true)
     // =========================================================================
-    /*
-    document.getElementById('sleigh-image').addEventListener('click', function(e) {
-      const rect = e.target.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      
-      console.log(`Copy this into your HTML hotspot element:`);
-      console.log(`style="top: ${y.toFixed(2)}%; left: ${x.toFixed(2)}%;"`);
-    });
-    */
+    const urlParamsBlueprint = new URLSearchParams(window.location.search);
+    
+    if (urlParamsBlueprint.has('pinpoint')) {
+      // Add a visible banner so you know Dev Mode is active
+      const devBanner = document.createElement('div');
+      devBanner.innerHTML = "🛠️ PINPOINT MODE ACTIVE: Click anywhere on the sleigh to get coordinates.";
+      devBanner.style.cssText = "background: #ff3333; color: white; text-align: center; padding: 10px; font-weight: bold; border-radius: 8px; margin-bottom: 15px;";
+      document.querySelector('.blueprint-container').prepend(devBanner);
+
+      // Listen for clicks on the image
+      document.getElementById('sleigh-image').addEventListener('click', function(e) {
+        const rect = e.target.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        
+        const coordinateString = `style="top: ${y.toFixed(2)}%; left: ${x.toFixed(2)}%;"`;
+        
+        // Log to console just in case
+        console.log(`Copy this into your HTML hotspot element:\n${coordinateString}`);
+        
+        // Pop up an easy-to-copy prompt box on the screen
+        prompt("Copy your new coordinates:", coordinateString);
+      });
+    }
+    
   </script>
 
   <script>
