@@ -12,19 +12,29 @@
   <style>
     body { 
       background: #0d0d0b; 
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
       color: #eaeae5; 
       font-family: 'DM Sans', sans-serif; 
       text-align: center; 
       padding: 40px 20px; 
       margin: 0;
+      min-height: 100vh;
+    }
+    .header-logo {
+      max-height: 70px;
+      margin-bottom: 15px;
+      display: none;
     }
     h1 { 
       font-family: 'Bebas Neue', sans-serif; 
       font-size: 64px; 
       color: #FBAF33; 
       letter-spacing: 2px; 
-      margin-bottom: 5px; 
+      margin: 0 0 5px 0; 
       line-height: 1;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.6);
     }
     .subtitle { 
       color: #a0a09a; 
@@ -36,26 +46,33 @@
     }
     .grid { 
       display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
       gap: 20px; 
       max-width: 1000px; 
       margin: 0 auto 30px; 
     }
     .card { 
-      background: #161614; 
-      border: 1px solid rgba(255,255,255,0.08); 
+      background: rgba(22, 22, 20, 0.88); 
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1); 
       border-radius: 16px; 
-      padding: 30px 20px; 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+      padding: 25px 20px; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
     }
     .card .number { 
       font-family: 'Bebas Neue', sans-serif; 
-      font-size: 56px; 
+      font-size: 52px; 
       color: #fff; 
       line-height: 1; 
-      margin-bottom: 10px; 
+      margin-bottom: 5px; 
     }
     .card .number.gold { color: #FBAF33; }
+    .card .subtext {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 8px;
+    }
     .card .label { 
       font-family: 'DM Mono', monospace;
       font-size: 12px; 
@@ -65,15 +82,15 @@
       letter-spacing: 1px; 
     }
     
-    /* Chart Section */
     .chart-container { 
       max-width: 1000px; 
       margin: 0 auto; 
-      background: #161614; 
-      border: 1px solid rgba(255,255,255,0.08); 
+      background: rgba(22, 22, 20, 0.88); 
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1); 
       border-radius: 16px; 
       padding: 30px; 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
       text-align: left; 
     }
     .chart-container h2 { 
@@ -93,39 +110,55 @@
 </head>
 <body>
 
+  <!-- Dynamic Header Logo -->
+  <img id="headerLogo" class="header-logo" alt="Sponsor Logo">
+  
   <h1>Sponsor Impact</h1>
   <div class="subtitle" id="sponsorName">Loading Report...</div>
 
-  <!-- Hero Stats -->
+  <!-- Extended Stats Grid -->
   <div class="grid" id="statsGrid" style="display:none;">
     <div class="card">
       <div class="number gold" id="valClicks">0</div>
-      <div class="label">Direct Link Clicks</div>
+      <div class="subtext" id="valClicksBreakdown">Site: 0 | Map: 0</div>
+      <div class="label">Total Link Clicks</div>
     </div>
     <div class="card">
       <div class="number" id="valViews">0</div>
+      <div class="subtext">Sleigh Tracker App</div>
       <div class="label">Live Tracker Views</div>
     </div>
     <div class="card">
       <div class="number" id="valSocial">0</div>
+      <div class="subtext">All Combined Channels</div>
       <div class="label">Total Social Reach</div>
     </div>
     <div class="card">
-      <div class="number" style="font-size: 36px; padding-top:15px;" id="valDevice">0%</div>
-      <div class="label">Mobile / Desktop</div>
+      <div class="number" style="font-size: 36px; padding-top:8px;" id="valRoute">TBC</div>
+      <div class="subtext">Highest Engagement</div>
+      <div class="label">Popular Route</div>
+    </div>
+    <div class="card">
+      <div class="number" style="font-size: 36px; padding-top:8px;" id="valDevice">0%</div>
+      <div class="subtext">Mobile / Desktop Split</div>
+      <div class="label">Device Access</div>
+    </div>
+    <div class="card">
+      <div class="number gold" style="font-size: 36px; padding-top:8px;" id="valCTR">0.0%</div>
+      <div class="subtext">Clicks ÷ Views Ratio</div>
+      <div class="label">Engagement Rate</div>
     </div>
   </div>
 
   <!-- Daily Click Chart -->
   <div class="chart-container" id="chartCard" style="display:none;">
-    <h2>Daily Engagement</h2>
+    <h2>Daily Engagement Timeline</h2>
     <div class="canvas-wrapper">
       <canvas id="clickChart"></canvas>
     </div>
   </div>
 
   <script>
-
     const API_URL = "/api";
     
     // Extract ?sponsor= from URL
@@ -139,20 +172,36 @@
     fetch(`${API_URL}?sponsor=${encodeURIComponent(sponsor)}`)
       .then(res => res.json())
       .then(data => {
-        // 1. Update Stat Cards
+        // 1. Apply Dynamic Custom Branding
+        if (data.bgImageUrl) {
+          document.body.style.backgroundImage = `linear-gradient(rgba(13,13,11,0.85), rgba(13,13,11,0.85)), url('${data.bgImageUrl}')`;
+        }
+        if (data.logoUrl) {
+          const logoImg = document.getElementById('headerLogo');
+          logoImg.src = data.logoUrl;
+          logoImg.style.display = 'inline-block';
+        }
+
+        // 2. Update Stat Cards
         document.getElementById('valClicks').innerText = data.sponsorClicks.toLocaleString();
+        document.getElementById('valClicksBreakdown').innerText = `Site: ${data.carrdClicks || 0} | Tracker Map: ${data.trackerClicks || 0}`;
         document.getElementById('valViews').innerText = data.totalViews.toLocaleString();
         document.getElementById('valSocial').innerText = data.socialReach.toLocaleString();
+        document.getElementById('valRoute').innerText = data.popularRoute || 'TBC';
         document.getElementById('valDevice').innerText = data.deviceSplit;
+
+        // Calculate Click-Through-Rate (CTR)
+        const ctr = data.totalViews > 0 ? ((data.sponsorClicks / data.totalViews) * 100).toFixed(2) : "0.00";
+        document.getElementById('valCTR').innerText = `${ctr}%`;
+
         document.getElementById('statsGrid').style.display = 'grid';
 
-        // 2. Render Chart (only if there are clicks to show)
+        // 3. Render Chart
         if (data.chartLabels && data.chartLabels.length > 0) {
           document.getElementById('chartCard').style.display = 'block';
           
           const ctx = document.getElementById('clickChart').getContext('2d');
           
-          // TurboSanta Chart.js Defaults
           Chart.defaults.font.family = "'DM Mono', monospace";
           Chart.defaults.color = 'rgba(255,255,255,0.5)';
           
@@ -163,8 +212,8 @@
               datasets: [{
                 label: 'Link Clicks',
                 data: data.chartData,
-                backgroundColor: 'rgba(251,175,51,0.2)', // Turbo Gold transparent
-                borderColor: '#FBAF33',                  // Turbo Gold solid
+                backgroundColor: 'rgba(251,175,51,0.25)', 
+                borderColor: '#FBAF33',                  
                 borderWidth: 2,
                 borderRadius: 4
               }]
@@ -172,9 +221,7 @@
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              plugins: {
-                legend: { display: false }
-              },
+              plugins: { legend: { display: false } },
               scales: {
                 x: {
                   grid: { color: 'rgba(255,255,255,0.05)' },
