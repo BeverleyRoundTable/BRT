@@ -3,16 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <title>Partner Impact Report</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Fonts & Chart.js -->
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  
   <style>
-    body { background: #0d0d0b; color: #eaeae5; font-family: 'DM Sans', sans-serif; text-align: center; padding: 40px 20px; }
-    h1 { font-family: 'Bebas Neue', sans-serif; font-size: 64px; color: #FBAF33; letter-spacing: 2px; margin-bottom: 5px; }
-    .subtitle { color: #a0a09a; font-size: 18px; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 2px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; max-width: 900px; margin: 0 auto; }
-    .card { background: #161614; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .card .number { font-family: 'Bebas Neue', sans-serif; font-size: 56px; color: #fff; line-height: 1; margin-bottom: 10px; }
+    body { 
+      background: #0d0d0b; 
+      color: #eaeae5; 
+      font-family: 'DM Sans', sans-serif; 
+      text-align: center; 
+      padding: 40px 20px; 
+      margin: 0;
+    }
+    h1 { 
+      font-family: 'Bebas Neue', sans-serif; 
+      font-size: 64px; 
+      color: #FBAF33; 
+      letter-spacing: 2px; 
+      margin-bottom: 5px; 
+      line-height: 1;
+    }
+    .subtitle { 
+      color: #a0a09a; 
+      font-size: 18px; 
+      margin-bottom: 40px; 
+      text-transform: uppercase; 
+      letter-spacing: 2px; 
+      font-weight: 700;
+    }
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+      gap: 20px; 
+      max-width: 1000px; 
+      margin: 0 auto 30px; 
+    }
+    .card { 
+      background: #161614; 
+      border: 1px solid rgba(255,255,255,0.08); 
+      border-radius: 16px; 
+      padding: 30px 20px; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+    }
+    .card .number { 
+      font-family: 'Bebas Neue', sans-serif; 
+      font-size: 56px; 
+      color: #fff; 
+      line-height: 1; 
+      margin-bottom: 10px; 
+    }
     .card .number.gold { color: #FBAF33; }
-    .card .label { font-size: 12px; color: rgba(255,255,255,0.4); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+    .card .label { 
+      font-family: 'DM Mono', monospace;
+      font-size: 12px; 
+      color: rgba(255,255,255,0.4); 
+      text-transform: uppercase; 
+      font-weight: 700; 
+      letter-spacing: 1px; 
+    }
+    
+    /* Chart Section */
+    .chart-container { 
+      max-width: 1000px; 
+      margin: 0 auto; 
+      background: #161614; 
+      border: 1px solid rgba(255,255,255,0.08); 
+      border-radius: 16px; 
+      padding: 30px; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+      text-align: left; 
+    }
+    .chart-container h2 { 
+      font-family: 'Bebas Neue', sans-serif; 
+      font-size: 32px; 
+      color: #fff; 
+      margin-top: 0; 
+      margin-bottom: 20px; 
+      letter-spacing: 1px; 
+    }
+    .canvas-wrapper {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -20,6 +96,7 @@
   <h1>Sponsor Impact</h1>
   <div class="subtitle" id="sponsorName">Loading Report...</div>
 
+  <!-- Hero Stats -->
   <div class="grid" id="statsGrid" style="display:none;">
     <div class="card">
       <div class="number gold" id="valClicks">0</div>
@@ -35,30 +112,91 @@
     </div>
     <div class="card">
       <div class="number" style="font-size: 36px; padding-top:15px;" id="valDevice">0%</div>
-      <div class="label">Mobile / Desktop Split</div>
+      <div class="label">Mobile / Desktop</div>
+    </div>
+  </div>
+
+  <!-- Daily Click Chart -->
+  <div class="chart-container" id="chartCard" style="display:none;">
+    <h2>Daily Engagement</h2>
+    <div class="canvas-wrapper">
+      <canvas id="clickChart"></canvas>
     </div>
   </div>
 
   <script>
-    // Extract parameters from the URL: ?api=YOUR_SCRIPT_URL&sponsor=Zendure
+    // HARDWIRED API URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbwyAk3IScj--iNDQUn0ddk5wUH99Gfh6kPnCGmxgHhb4dIOoPRGaRwGT1lD-E9jf8dv/exec";
+    
+    // Extract ?sponsor= from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const api = urlParams.get('api');
     const sponsor = urlParams.get('sponsor') || 'Global Partner';
 
+    // Set Title
     document.getElementById('sponsorName').innerText = `${sponsor} x Santa Sleigh`;
 
-    if (api) {
-      fetch(`${api}?sponsor=${encodeURIComponent(sponsor)}`)
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById('valClicks').innerText = data.sponsorClicks.toLocaleString();
-          document.getElementById('valViews').innerText = data.totalViews.toLocaleString();
-          document.getElementById('valSocial').innerText = data.socialReach.toLocaleString();
-          document.getElementById('valDevice').innerText = data.deviceSplit;
-          document.getElementById('statsGrid').style.display = 'grid';
-        })
-        .catch(err => console.error("Error fetching data:", err));
-    }
+    // Fetch and Build
+    fetch(`${API_URL}?sponsor=${encodeURIComponent(sponsor)}`)
+      .then(res => res.json())
+      .then(data => {
+        // 1. Update Stat Cards
+        document.getElementById('valClicks').innerText = data.sponsorClicks.toLocaleString();
+        document.getElementById('valViews').innerText = data.totalViews.toLocaleString();
+        document.getElementById('valSocial').innerText = data.socialReach.toLocaleString();
+        document.getElementById('valDevice').innerText = data.deviceSplit;
+        document.getElementById('statsGrid').style.display = 'grid';
+
+        // 2. Render Chart (only if there are clicks to show)
+        if (data.chartLabels && data.chartLabels.length > 0) {
+          document.getElementById('chartCard').style.display = 'block';
+          
+          const ctx = document.getElementById('clickChart').getContext('2d');
+          
+          // TurboSanta Chart.js Defaults
+          Chart.defaults.font.family = "'DM Mono', monospace";
+          Chart.defaults.color = 'rgba(255,255,255,0.5)';
+          
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.chartLabels,
+              datasets: [{
+                label: 'Link Clicks',
+                data: data.chartData,
+                backgroundColor: 'rgba(251,175,51,0.2)', // Turbo Gold transparent
+                borderColor: '#FBAF33',                  // Turbo Gold solid
+                borderWidth: 2,
+                borderRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                x: {
+                  grid: { color: 'rgba(255,255,255,0.05)' },
+                  ticks: { font: { weight: '700' } }
+                },
+                y: {
+                  grid: { color: 'rgba(255,255,255,0.05)' },
+                  beginAtZero: true,
+                  ticks: { 
+                    stepSize: 1,
+                    font: { family: "'DM Sans', sans-serif", weight: '600' }
+                  }
+                }
+              }
+            }
+          });
+        }
+      })
+      .catch(err => {
+        document.getElementById('sponsorName').innerText = "Error loading report.";
+        console.error("Error fetching data:", err);
+      });
   </script>
 </body>
 </html>
