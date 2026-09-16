@@ -3,345 +3,528 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Turbo Santa - Spectator Dashboard</title>
+    <title>Turbo Santa - Chimney Drop</title>
     <style>
-        /* CSS Reset & Setup */
-        html, body {
+        /* CSS reset and container setup for responsive canvas */
+        body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: #050a15; /* Dashboard container dark background */
+            background-color: #0d1b2a; /* Night sky background */
+            overflow: hidden; /* Prevent scrolling */
+            touch-action: none; /* Prevent default touch actions like pull-to-refresh */
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
-            touch-action: none; /* Prevents pull-to-refresh & pinch zoom */
-            user-select: none;
-            -webkit-user-select: none;
         }
 
-        /* Responsive scaling via CSS while maintaining a 3:4 aspect ratio */
-        #gameCanvas {
-            background-color: #0A192F; /* Deep night sky */
-            display: block;
-            max-width: 100vw;
-            max-height: 100vh;
-            aspect-ratio: 3 / 4;
+        #gameContainer {
+            width: 100%;
+            max-width: 600px; /* Lock aspect ratio on larger screens */
             height: 100%;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            max-height: 900px;
+            position: relative;
         }
 
-        /* Fallbacks to ensure the canvas shrinks appropriately on ultrawide or tall screens */
-        @media (min-aspect-ratio: 3/4) {
-            #gameCanvas { width: auto; height: 100vh; }
-        }
-        @media (max-aspect-ratio: 3/4) {
-            #gameCanvas { width: 100vw; height: auto; }
+        canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Scale canvas cleanly to fit */
+            image-rendering: pixelated; /* Crisp rendering */
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
     </style>
 </head>
 <body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+    </div>
 
-<canvas id="gameCanvas"></canvas>
+    <script>
+        /**
+         * TURBO SANTA: CHIMNEY DROP
+         * 
+         * An optimized HTML5 Canvas game.
+         * Features:
+         * - Object Pooling for all entities (no GC stutter)
+         * - Off-screen Canvas pre-rendering for sprites and text
+         * - Bitwise integer coercion for rendering coords
+         * - Touch-first mobile design
+         */
 
-<script>
-    /**
-     * TURBO SANTA - Core Engine
-     * Zero-dependency, GC-optimized HTML5 Canvas game.
-     */
-    
-    // --- Configuration ---
-    const GAME_WIDTH = 600;
-    const GAME_HEIGHT = 800;
-    
-    // Core Elements
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d', { alpha: false }); // alpha:false optimizes the root canvas
-    canvas.width = GAME_WIDTH;
-    canvas.height = GAME_HEIGHT;
+        // --- CONSTANTS & CONFIG ---
+        const GAME_WIDTH = 400;
+        const GAME_HEIGHT = 600;
+        const FPS = 60;
+        const FRAME_TIME = 1000 / FPS;
 
-    // --- Atlas & Pre-rendering ---
-    // We create an off-screen canvas to hold all our text and emoji sprites.
-    // This prevents the browser from re-rasterizing fonts/emojis at 60fps.
-    const atlas = document.createElement('canvas');
-    const actx = atlas.getContext('2d', { alpha: true });
-    atlas.width = 1024;
-    atlas.height = 1024;
-    const sprites = {}; // Maps string ID to source {x, y, w, h} in the atlas
+        const STATE_MENU = 0;
+        const STATE_PLAYING = 1;
+        const STATE_GAMEOVER = 2;
 
-    function buildAtlas() {
-        // Render Emojis (Row 0)
-        actx.font = '80px sans-serif';
-        actx.textBaseline = 'top';
-        actx.fillText('🎅', 0, 0);   sprites.santa = {x: 0, y: 0, w: 90, h: 90};
-        actx.fillText('🎁', 100, 0); sprites.present = {x: 100, y: 0, w: 90, h: 90};
-        actx.fillText('🏠', 200, 0); sprites.house = {x: 200, y: 0, w: 90, h: 90};
-        actx.fillText('❄️', 300, 0); sprites.snow = {x: 300, y: 0, w: 90, h: 90};
-        actx.fillText('❤️', 400, 0); sprites.heart = {x: 400, y: 0, w: 90, h: 90};
+        // --- GLOBAL VARIABLES ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false }); // Optimize by disabling alpha background
+        canvas.width = GAME_WIDTH;
+        canvas.height = GAME_HEIGHT;
 
-        // Render Numbers 0-9 for the score (Row 1)
-        actx.font = 'bold 50px sans-serif';
-        actx.fillStyle = '#FFFFFF';
-        for (let i = 0; i <= 9; i++) {
-            let str = i.toString();
-            let w = actx.measureText(str).width;
-            actx.fillText(str, i * 60, 100);
-            sprites['n' + i] = {x: i * 60, y: 100, w: Math.ceil(w), h: 60};
+        let gameState = STATE_MENU;
+        let score = 0;
+        let lives = 3;
+        let lastTime = 0;
+        let accumulator = 0;
+
+        // Pre-rendered asset dictionaries
+        const sprites = {};
+        const textSprites = {};
+        const digits = [];
+
+        // --- OFF-SCREEN RENDERING UTILITIES ---
+
+        // Pre-renders an emoji to an off-screen canvas
+        function renderEmoji(emoji, size) {
+            const c = document.createElement('canvas');
+            c.width = size;
+            c.height = size;
+            const cx = c.getContext('2d');
+            cx.font = `${size * 0.8}px sans-serif`;
+            cx.textAlign = 'center';
+            cx.textBaseline = 'middle';
+            // Draw slightly offset to center perfectly
+            cx.fillText(emoji, size / 2 | 0, (size / 2 + size * 0.05) | 0);
+            return c;
         }
 
-        // Render Static UI Text
-        actx.font = 'bold 64px sans-serif';
-        sprites.title = addAtlasText('TURBO SANTA', '#FFCC00', 0, 200);
-        
-        actx.font = 'bold 36px sans-serif';
-        sprites.tap = addAtlasText('TAP TO DROP', '#FFFFFF', 0, 300);
-        
-        actx.font = 'bold 64px sans-serif';
-        sprites.over = addAtlasText('GAME OVER', '#FF4444', 0, 400);
-        
-        actx.font = 'italic 24px sans-serif';
-        sprites.easter = addAtlasText('Delivering smiles since 1950', '#88BBDD', 0, 500); // Easter egg
-        
-        actx.font = 'bold 30px sans-serif';
-        sprites.scoreLbl = addAtlasText('SCORE:', '#FFFFFF', 0, 600);
-    }
-
-    // Helper to measure, draw, and save text coordinates in the atlas
-    function addAtlasText(text, color, x, y) {
-        actx.fillStyle = color;
-        let metrics = actx.measureText(text);
-        let w = Math.ceil(metrics.width);
-        // Approximation of height since measureText height isn't uniformly supported in old browsers
-        let h = parseInt(actx.font, 10) * 1.3; 
-        actx.fillText(text, x, y);
-        return {x: x, y: y, w: w, h: h};
-    }
-
-    // --- Game State & Object Pools ---
-    // Avoid dynamic allocations (`new` / `[]`) in the game loop to prevent GC drops.
-    let state = 'MENU'; // 'MENU', 'PLAY', 'OVER'
-    let score = 0;
-    let lives = 3;
-
-    // Entity: Santa
-    const santa = {x: 250, y: 50, w: 80, h: 80, speed: 4.5, dir: 1};
-
-    // Pool: Presents (Max 5 on screen at once)
-    const MAX_PRESENTS = 5;
-    const presents = [];
-    for(let i=0; i<MAX_PRESENTS; i++) presents.push({active: false, x: 0, y: 0, w: 40, h: 40});
-
-    // Pool: Snowflakes (Visuals only)
-    const MAX_SNOW = 40;
-    const snow = [];
-    for(let i=0; i<MAX_SNOW; i++) {
-        snow.push({
-            x: Math.random() * GAME_WIDTH, 
-            y: Math.random() * GAME_HEIGHT, 
-            speed: Math.random() * 2 + 1,
-            size: Math.random() * 10 + 15
-        });
-    }
-
-    // Entities: Chimneys (Different sizes/speeds/multipliers for replayability)
-    const chimneys = [
-        {x: 50,  y: 600, w: 100, h: 200, speed: 2.0, dir: 1,  mult: 1}, // Easy
-        {x: 250, y: 640, w: 70,  h: 160, speed: 3.5, dir: -1, mult: 2}, // Harder
-        {x: 450, y: 580, w: 120, h: 220, speed: 1.5, dir: 1,  mult: 1}  // Slow/Wide
-    ];
-
-    function resetGame() {
-        score = 0;
-        lives = 3;
-        santa.x = GAME_WIDTH / 2 - santa.w / 2;
-        santa.speed = 4.5;
-        for(let i=0; i<MAX_PRESENTS; i++) presents[i].active = false;
-        
-        // Reset chimney speeds
-        chimneys[0].speed = 2.0;
-        chimneys[1].speed = 3.5;
-        chimneys[2].speed = 1.5;
-    }
-
-    // --- Input Handling ---
-    function handleTap() {
-        if (state === 'MENU' || state === 'OVER') {
-            resetGame();
-            state = 'PLAY';
-            return;
+        // Pre-renders text to an off-screen canvas to avoid text rendering in game loop
+        function renderText(text, size, color, isBold = true) {
+            const c = document.createElement('canvas');
+            const cx = c.getContext('2d');
+            const fontStr = `${isBold ? 'bold ' : ''}${size}px sans-serif`;
+            cx.font = fontStr;
+            const metrics = cx.measureText(text);
+            c.width = Math.ceil(metrics.width) + 4;
+            c.height = size + 10;
+            cx.font = fontStr; // Re-apply font after resize
+            cx.fillStyle = color;
+            cx.textBaseline = 'top';
+            cx.fillText(text, 2, 2);
+            return c;
         }
 
-        if (state === 'PLAY') {
-            // Find first inactive present in the pool and drop it
-            for (let i = 0; i < MAX_PRESENTS; i++) {
-                if (!presents[i].active) {
-                    presents[i].active = true;
-                    // Center under Santa
-                    presents[i].x = santa.x + (santa.w / 2) - (presents[i].w / 2);
-                    presents[i].y = santa.y + santa.h - 10;
+        // Procedurally generate a brick chimney sprite off-screen
+        function renderChimney(width, height) {
+            const c = document.createElement('canvas');
+            c.width = width;
+            c.height = height;
+            const cx = c.getContext('2d');
+            
+            // Base brick color
+            cx.fillStyle = '#b22222';
+            cx.fillRect(0, 0, width, height);
+            
+            // Draw brick mortar lines
+            cx.fillStyle = '#000000';
+            for (let y = 0; y < height; y += 15) {
+                cx.fillRect(0, y, width, 2); // Horizontal lines
+                const offset = (y % 30 === 0) ? 0 : 15;
+                for (let x = offset; x < width; x += 30) {
+                    cx.fillRect(x, y, 2, 15); // Vertical lines
+                }
+            }
+
+            // Top rim / opening
+            cx.fillStyle = '#333333';
+            cx.fillRect(-2, 0, width + 4, 12); // Flange
+            cx.fillStyle = '#111111';
+            cx.fillRect(4, 0, width - 8, 8); // Hole
+
+            // Snow on top rim
+            cx.fillStyle = '#ffffff';
+            cx.fillRect(0, 0, width, 4);
+            cx.fillRect(0, 4, 10, 3);
+            cx.fillRect(width - 10, 4, 10, 3);
+
+            return c;
+        }
+
+        // Pre-render night sky gradient background
+        function renderBackground() {
+            const c = document.createElement('canvas');
+            c.width = GAME_WIDTH;
+            c.height = GAME_HEIGHT;
+            const cx = c.getContext('2d');
+            const grad = cx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+            grad.addColorStop(0, '#000022');
+            grad.addColorStop(1, '#1a3a5c');
+            cx.fillStyle = grad;
+            cx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            
+            // Draw some static moon/stars
+            cx.fillStyle = '#ffffe0';
+            cx.beginPath();
+            cx.arc(320, 80, 40, 0, Math.PI * 2);
+            cx.fill();
+            
+            // Craters
+            cx.fillStyle = '#e6e6cc';
+            cx.beginPath(); cx.arc(310, 70, 10, 0, Math.PI * 2); cx.fill();
+            cx.beginPath(); cx.arc(335, 95, 8, 0, Math.PI * 2); cx.fill();
+
+            return c;
+        }
+
+        function initAssets() {
+            // Entities
+            sprites.santa = renderEmoji('🎅', 60);
+            sprites.present = renderEmoji('🎁', 30);
+            sprites.heart = renderEmoji('❤️', 24);
+            sprites.emptyHeart = renderEmoji('🖤', 24);
+            sprites.chimney = renderChimney(60, 80);
+            sprites.chimneySmall = renderChimney(45, 60);
+            sprites.bg = renderBackground();
+
+            // Text and UI Strings
+            textSprites.title1 = renderText('TURBO', 48, '#ffffff');
+            textSprites.title2 = renderText('SANTA', 64, '#ff3333');
+            textSprites.tapToStart = renderText('Tap to Start!', 24, '#ffff00');
+            textSprites.gameOver = renderText('GAME OVER', 48, '#ff3333');
+            textSprites.tapToRestart = renderText('Tap to Restart', 24, '#ffffff');
+            textSprites.score = renderText('Score: ', 24, '#ffffff');
+            textSprites.lore = renderText('Delivering smiles since 1950', 16, '#aaaaaa', false);
+            textSprites.instructions = renderText('Tap to drop presents into chimneys!', 18, '#ffffff', false);
+
+            // Digits 0-9 for dynamic score display
+            for (let i = 0; i < 10; i++) {
+                digits[i] = renderText(i.toString(), 24, '#ffff00');
+            }
+        }
+
+        // --- OBJECT POOLS (Preventing GC Stutter) ---
+
+        const poolSize = {
+            snow: 50,
+            presents: 10,
+            chimneys: 4
+        };
+
+        const snowPool = Array.from({ length: poolSize.snow }, () => ({
+            x: 0, y: 0, speed: 0, size: 0, active: false
+        }));
+
+        const presentPool = Array.from({ length: poolSize.presents }, () => ({
+            x: 0, y: 0, vy: 0, active: false
+        }));
+
+        const chimneyPool = Array.from({ length: poolSize.chimneys }, () => ({
+            x: 0, y: 0, vx: 0, w: 0, h: 0, sprite: null, active: false
+        }));
+
+        const santa = {
+            x: GAME_WIDTH / 2,
+            y: 50,
+            w: 60,
+            h: 60,
+            vx: 3
+        };
+
+        // --- GAME LOGIC ---
+
+        function spawnSnow() {
+            for (let i = 0; i < snowPool.length; i++) {
+                const s = snowPool[i];
+                s.x = (Math.random() * GAME_WIDTH) | 0;
+                s.y = (Math.random() * GAME_HEIGHT) | 0;
+                s.speed = (Math.random() * 1.5 + 0.5);
+                s.size = (Math.random() * 3 + 1) | 0;
+                s.active = true;
+            }
+        }
+
+        function spawnChimney() {
+            // Find inactive chimney
+            for (let i = 0; i < chimneyPool.length; i++) {
+                const c = chimneyPool[i];
+                if (!c.active) {
+                    const isSmall = Math.random() > 0.6;
+                    c.w = isSmall ? 45 : 60;
+                    c.h = isSmall ? 60 : 80;
+                    c.sprite = isSmall ? sprites.chimneySmall : sprites.chimney;
+                    
+                    // Start offscreen left or right
+                    const fromLeft = Math.random() > 0.5;
+                    c.x = fromLeft ? -c.w : GAME_WIDTH;
+                    c.y = GAME_HEIGHT - c.h;
+                    
+                    // Base speed + slightly faster as score increases
+                    const speed = 1.5 + (Math.random() * 1) + (score * 0.01);
+                    c.vx = fromLeft ? speed : -speed;
+                    
+                    c.active = true;
                     break;
                 }
             }
         }
-    }
 
-    // Bind both touch and mouse, prevent defaults to disable scrolling/zooming
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(); }, {passive: false});
-    canvas.addEventListener('mousedown', (e) => { e.preventDefault(); handleTap(); });
-
-    // --- Game Logic ---
-    function update() {
-        if (state !== 'PLAY') return;
-
-        // Update Santa
-        santa.x += santa.speed * santa.dir;
-        if (santa.x < 0) { santa.x = 0; santa.dir = 1; }
-        if (santa.x + santa.w > GAME_WIDTH) { santa.x = GAME_WIDTH - santa.w; santa.dir = -1; }
-
-        // Update Chimneys
-        for (let i = 0; i < chimneys.length; i++) {
-            let c = chimneys[i];
-            c.x += c.speed * c.dir;
-            if (c.x < 0) { c.x = 0; c.dir = 1; }
-            if (c.x + c.w > GAME_WIDTH) { c.x = GAME_WIDTH - c.w; c.dir = -1; }
+        function dropPresent() {
+            if (gameState !== STATE_PLAYING) return;
+            
+            // Find inactive present
+            for (let i = 0; i < presentPool.length; i++) {
+                const p = presentPool[i];
+                if (!p.active) {
+                    p.x = santa.x + (santa.w / 2) - 15 | 0;
+                    p.y = santa.y + 40;
+                    p.vy = 0;
+                    p.active = true;
+                    break;
+                }
+            }
         }
 
-        // Update Presents & Collisions
-        for (let i = 0; i < MAX_PRESENTS; i++) {
-            let p = presents[i];
-            if (!p.active) continue;
+        function resetGame() {
+            score = 0;
+            lives = 3;
+            santa.x = GAME_WIDTH / 2;
+            santa.vx = 3;
+            
+            for (let i = 0; i < presentPool.length; i++) presentPool[i].active = false;
+            for (let i = 0; i < chimneyPool.length; i++) chimneyPool[i].active = false;
+            
+            spawnChimney();
+        }
 
-            p.y += 10; // Fall speed
+        // --- UPDATE LOOP ---
 
-            // Check collision with chimneys
-            let caught = false;
-            for (let j = 0; j < chimneys.length; j++) {
-                let c = chimneys[j];
-                // Present bottom crosses the top lip of the chimney
-                if (p.y + p.h >= c.y && p.y + p.h <= c.y + 20) {
-                    // Check if horizontal center of present falls within chimney bounds
-                    let pCenter = p.x + p.w / 2;
-                    if (pCenter > c.x && pCenter < c.x + c.w) {
-                        caught = true;
-                        p.active = false;
-                        score += c.mult;
-                        
-                        // Increase difficulty slightly over time
-                        santa.speed = Math.min(10, santa.speed + 0.15);
-                        c.speed += 0.1;
-                        break;
+        function update() {
+            // Update Snow
+            for (let i = 0; i < snowPool.length; i++) {
+                const s = snowPool[i];
+                if (s.active) {
+                    s.y += s.speed;
+                    if (s.y > GAME_HEIGHT) {
+                        s.y = 0;
+                        s.x = (Math.random() * GAME_WIDTH) | 0;
                     }
                 }
             }
 
-            // Present fell past the bottom of the screen completely
-            if (!caught && p.y > GAME_HEIGHT) {
-                p.active = false;
-                lives--;
-                if (lives <= 0) state = 'OVER';
-            }
-        }
-    }
+            if (gameState === STATE_PLAYING) {
+                // Update Santa
+                santa.x += santa.vx;
+                // Bounce off walls
+                if (santa.x <= 0 || santa.x + santa.w >= GAME_WIDTH) {
+                    santa.vx *= -1;
+                    // Keep within bounds
+                    santa.x = santa.x <= 0 ? 0 : GAME_WIDTH - santa.w;
+                }
 
-    // --- Rendering Logic ---
-    // Helper to draw pre-rendered sprites safely and blazingly fast using Bitwise OR `| 0` 
-    // to strip float values. Avoids sub-pixel anti-aliasing overhead.
-    function drawSprite(sprite, dx, dy, dw, dh) {
-        if (!sprite) return;
-        ctx.drawImage(atlas, sprite.x, sprite.y, sprite.w, sprite.h, dx | 0, dy | 0, dw | 0, dh | 0);
-    }
+                // Update Presents
+                for (let i = 0; i < presentPool.length; i++) {
+                    const p = presentPool[i];
+                    if (p.active) {
+                        p.vy += 0.2; // Gravity
+                        p.y += p.vy;
 
-    function drawNumber(num, x, y) {
-        let str = num.toString();
-        let curX = x;
-        for (let i = 0; i < str.length; i++) {
-            let s = sprites['n' + str[i]];
-            if (s) {
-                drawSprite(s, curX, y, s.w, s.h);
-                curX += s.w + 2;
-            }
-        }
-    }
+                        // Check collision with chimneys
+                        let caught = false;
+                        for (let j = 0; j < chimneyPool.length; j++) {
+                            const c = chimneyPool[j];
+                            if (c.active) {
+                                // Simple AABB Collision for the chimney opening
+                                // Hitbox is the top 10 pixels of the chimney
+                                if (p.y + 30 > c.y && p.y + 30 < c.y + 15 && 
+                                    p.x + 20 > c.x && p.x + 10 < c.x + c.w) {
+                                    
+                                    // Caught present!
+                                    score += c.w === 45 ? 20 : 10; // More points for small chimneys
+                                    p.active = false;
+                                    caught = true;
+                                    
+                                    // Make chimney briefly flash or "consume" it (just hide present for now)
+                                    break; 
+                                }
+                            }
+                        }
 
-    function render() {
-        // Clear background
-        ctx.fillStyle = '#0A192F';
-        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+                        // Missed / Hit ground
+                        if (!caught && p.y > GAME_HEIGHT) {
+                            p.active = false;
+                            lives--;
+                            if (lives <= 0) {
+                                gameState = STATE_GAMEOVER;
+                            }
+                        }
+                    }
+                }
 
-        // Render Snow (runs constantly for ambiance)
-        for (let i = 0; i < MAX_SNOW; i++) {
-            let s = snow[i];
-            s.y += s.speed;
-            if (s.y > GAME_HEIGHT) s.y = -s.size; // Wrap around
-            drawSprite(sprites.snow, s.x, s.y, s.size, s.size);
-        }
+                // Update Chimneys
+                let activeChimneys = 0;
+                for (let i = 0; i < chimneyPool.length; i++) {
+                    const c = chimneyPool[i];
+                    if (c.active) {
+                        activeChimneys++;
+                        c.x += c.vx;
+                        // Deactivate if off screen
+                        if ((c.vx < 0 && c.x + c.w < -20) || (c.vx > 0 && c.x > GAME_WIDTH + 20)) {
+                            c.active = false;
+                        }
+                    }
+                }
 
-        // Render Chimneys and Houses
-        for (let i = 0; i < chimneys.length; i++) {
-            let c = chimneys[i];
-            // Procedural Brick Base
-            ctx.fillStyle = '#6A1111';
-            ctx.fillRect(c.x | 0, c.y | 0, c.w | 0, c.h | 0);
-            ctx.fillStyle = '#8B1A1A';
-            ctx.fillRect((c.x + 5) | 0, c.y | 0, (c.w - 10) | 0, c.h | 0);
-            
-            // House emoji at the bottom of the chimney for visual storytelling!
-            drawSprite(sprites.house, c.x + (c.w / 2) - 40, c.y + c.h - 80, 80, 80);
-        }
-
-        // Render Presents
-        for (let i = 0; i < MAX_PRESENTS; i++) {
-            if (presents[i].active) {
-                drawSprite(sprites.present, presents[i].x, presents[i].y, presents[i].w, presents[i].h);
-            }
-        }
-
-        // Render Santa
-        drawSprite(sprites.santa, santa.x, santa.y, santa.w, santa.h);
-
-        // Render UI
-        if (state === 'PLAY' || state === 'OVER') {
-            drawSprite(sprites.scoreLbl, 10, 10, sprites.scoreLbl.w, sprites.scoreLbl.h);
-            drawNumber(score, 10 + sprites.scoreLbl.w + 10, 10);
-            
-            // Draw life hearts
-            for (let i = 0; i < lives; i++) {
-                drawSprite(sprites.heart, GAME_WIDTH - 40 - (i * 40), 10, 30, 30);
+                // Randomly spawn new chimneys
+                if (activeChimneys < poolSize.chimneys && Math.random() < 0.02) {
+                    spawnChimney();
+                }
             }
         }
 
-        // Menu & Game Over Screens
-        if (state === 'MENU') {
-            ctx.fillStyle = 'rgba(10, 25, 47, 0.7)';
-            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-            
-            drawSprite(sprites.title, (GAME_WIDTH/2 - sprites.title.w/2), 250, sprites.title.w, sprites.title.h);
-            drawSprite(sprites.tap, (GAME_WIDTH/2 - sprites.tap.w/2), 400, sprites.tap.w, sprites.tap.h);
-            drawSprite(sprites.easter, (GAME_WIDTH/2 - sprites.easter.w/2), GAME_HEIGHT - 50, sprites.easter.w, sprites.easter.h);
+        // --- RENDER LOOP ---
+
+        // Helper to draw pre-rendered text at specific coords using integer cast
+        function drawPreRendered(sprite, x, y) {
+            ctx.drawImage(sprite, x | 0, y | 0);
         }
 
-        if (state === 'OVER') {
-            ctx.fillStyle = 'rgba(10, 25, 47, 0.7)';
-            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-            
-            drawSprite(sprites.over, (GAME_WIDTH/2 - sprites.over.w/2), 250, sprites.over.w, sprites.over.h);
-            drawSprite(sprites.tap, (GAME_WIDTH/2 - sprites.tap.w/2), 400, sprites.tap.w, sprites.tap.h);
-            drawSprite(sprites.easter, (GAME_WIDTH/2 - sprites.easter.w/2), GAME_HEIGHT - 50, sprites.easter.w, sprites.easter.h);
+        function drawScoreNumber(num, x, y) {
+            const numStr = num.toString();
+            let cursorX = x | 0;
+            for (let i = 0; i < numStr.length; i++) {
+                const digit = parseInt(numStr[i]);
+                const sprite = digits[digit];
+                ctx.drawImage(sprite, cursorX, y | 0);
+                cursorX += sprite.width - 2; // slightly compact spacing
+            }
         }
-    }
 
-    // --- Main Game Loop ---
-    function loop() {
-        update();
-        render();
-        requestAnimationFrame(loop);
-    }
+        function draw() {
+            // Draw background
+            drawPreRendered(sprites.bg, 0, 0);
 
-    // Initialize atlas then bootstrap loop
-    buildAtlas();
-    requestAnimationFrame(loop);
+            // Draw Snow (Direct canvas commands are cheap for simple rects)
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < snowPool.length; i++) {
+                const s = snowPool[i];
+                if (s.active) {
+                    ctx.fillRect(s.x | 0, s.y | 0, s.size | 0, s.size | 0);
+                }
+            }
 
-</script>
+            // Draw Chimneys
+            for (let i = 0; i < chimneyPool.length; i++) {
+                const c = chimneyPool[i];
+                if (c.active) {
+                    drawPreRendered(c.sprite, c.x, c.y);
+                }
+            }
+
+            // Draw Presents
+            for (let i = 0; i < presentPool.length; i++) {
+                const p = presentPool[i];
+                if (p.active) {
+                    drawPreRendered(sprites.present, p.x, p.y);
+                }
+            }
+
+            // Draw Santa
+            if (gameState === STATE_PLAYING || gameState === STATE_GAMEOVER) {
+                drawPreRendered(sprites.santa, santa.x, santa.y);
+            }
+
+            // UI Layer
+            if (gameState === STATE_MENU) {
+                // Title
+                drawPreRendered(textSprites.title1, (GAME_WIDTH - textSprites.title1.width) / 2, 120);
+                drawPreRendered(textSprites.title2, (GAME_WIDTH - textSprites.title2.width) / 2, 180);
+                
+                // Instructions
+                drawPreRendered(textSprites.instructions, (GAME_WIDTH - textSprites.instructions.width) / 2, 280);
+                
+                // Tap to start
+                // Blinking effect
+                if (Math.floor(Date.now() / 500) % 2 === 0) {
+                    drawPreRendered(textSprites.tapToStart, (GAME_WIDTH - textSprites.tapToStart.width) / 2, 400);
+                }
+
+                // Lore
+                drawPreRendered(textSprites.lore, (GAME_WIDTH - textSprites.lore.width) / 2, GAME_HEIGHT - 30);
+
+            } else if (gameState === STATE_PLAYING) {
+                // Score
+                drawPreRendered(textSprites.score, 10, 10);
+                drawScoreNumber(score, 10 + textSprites.score.width, 10);
+
+                // Lives (Hearts)
+                for (let i = 0; i < 3; i++) {
+                    const hSprite = i < lives ? sprites.heart : sprites.emptyHeart;
+                    drawPreRendered(hSprite, GAME_WIDTH - 35 - (i * 30), 10);
+                }
+
+            } else if (gameState === STATE_GAMEOVER) {
+                // Game Over Screen
+                drawPreRendered(textSprites.gameOver, (GAME_WIDTH - textSprites.gameOver.width) / 2, 200);
+                
+                drawPreRendered(textSprites.score, (GAME_WIDTH - textSprites.score.width) / 2 - 20, 280);
+                drawScoreNumber(score, (GAME_WIDTH / 2) + 20, 280);
+
+                if (Math.floor(Date.now() / 500) % 2 === 0) {
+                    drawPreRendered(textSprites.tapToRestart, (GAME_WIDTH - textSprites.tapToRestart.width) / 2, 400);
+                }
+
+                drawPreRendered(textSprites.lore, (GAME_WIDTH - textSprites.lore.width) / 2, GAME_HEIGHT - 30);
+            }
+        }
+
+        // --- CORE GAME LOOP (Fixed Timestep) ---
+
+        function loop(timestamp) {
+            let deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            // Cap delta time to prevent spiral of death if tab is inactive
+            if (deltaTime > 250) deltaTime = 250;
+
+            accumulator += deltaTime;
+
+            while (accumulator >= FRAME_TIME) {
+                update();
+                accumulator -= FRAME_TIME;
+            }
+
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        // --- INPUT HANDLING ---
+
+        function handleInput(e) {
+            e.preventDefault(); // Prevents zooming and scrolling on touch devices
+            
+            if (gameState === STATE_MENU) {
+                gameState = STATE_PLAYING;
+                resetGame();
+            } else if (gameState === STATE_PLAYING) {
+                dropPresent();
+            } else if (gameState === STATE_GAMEOVER) {
+                // Small delay to prevent accidental instant restart
+                gameState = STATE_MENU;
+            }
+        }
+
+        // Event listeners (handling both mouse and touch)
+        canvas.addEventListener('mousedown', handleInput, { passive: false });
+        canvas.addEventListener('touchstart', handleInput, { passive: false });
+
+        // --- BOOT ---
+        window.onload = () => {
+            initAssets();
+            spawnSnow();
+            lastTime = performance.now();
+            requestAnimationFrame(loop);
+        };
+
+    </script>
 </body>
 </html>
