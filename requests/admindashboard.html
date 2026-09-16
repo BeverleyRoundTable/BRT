@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    :root {
+      --gold: #FBAF33;
+      --grey-dark: #1D1D1A;
+      --grey-card: #242421;
+      --grey-border: #39393455;
+      --text: #ecece7;
+      --text-muted: #a3a39c;
+    }
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: var(--grey-dark);
+      color: var(--text);
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 { color: var(--gold); text-transform: uppercase; letter-spacing: 1px; font-size: 24px; }
+    
+    .card {
+      background: var(--grey-card);
+      border: 1px solid var(--grey-border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--grey-border);
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    .amount { font-size: 20px; font-weight: bold; color: var(--gold); }
+    .meta { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
+    
+    .flag {
+      display: inline-block;
+      background: rgba(224,90,90,.12);
+      color: #f3b0b0;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-right: 5px;
+      font-weight: bold;
+    }
+
+    .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      text-transform: uppercase;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.8; }
+    .btn-table { background: var(--gold); color: #000; }
+    .btn-park { background: #4a4a45; color: #fff; }
+    .btn-close { background: #3a2020; color: #e05a5a; }
+  </style>
+</head>
+<body>
+
+  <h1>New Requests Triage</h1>
+  <div id="loading">Fetching applications...</div>
+  <div id="app-container"></div>
+
+  <script>
+    window.onload = loadData;
+
+    function loadData() {
+      document.getElementById('app-container').innerHTML = '';
+      document.getElementById('loading').style.display = 'block';
+      
+      // Call the bridge function in Api.gs
+      google.script.run
+        .withSuccessHandler(renderApps)
+        .uiGetPending();
+    }
+
+    function renderApps(apps) {
+      document.getElementById('loading').style.display = 'none';
+      const container = document.getElementById('app-container');
+      
+      if (!apps || apps.length === 0) {
+        container.innerHTML = '<p>No new requests to screen.</p>';
+        return;
+      }
+
+      apps.forEach(app => {
+        const id = app['Application ID'];
+        
+        // Build alert flags for the committee
+        let flags = '';
+        if (app['Safeguarding flag']) flags += `<span class="flag">SAFEGUARDING</span>`;
+        if (app['Conflict flag']) flags += `<span class="flag">CONFLICT</span>`;
+        if (app['Area flag']) flags += `<span class="flag">${app['Area flag']}</span>`;
+
+        const cardHTML = `
+          <div class="card" id="card-${id}">
+            <div class="card-header">
+              <div>
+                <div style="font-size: 12px; color: var(--text-muted);">${id}</div>
+                <strong>${app['Contact name']}</strong> ${app['Organisation'] ? `(${app['Organisation']})` : ''}
+              </div>
+              <div class="amount">£${app['Amount requested (GBP)']}</div>
+            </div>
+            
+            <div style="margin-bottom: 10px;">${flags}</div>
+            
+            <div class="meta"><strong>Summary:</strong> ${app['Summary']}</div>
+            <div class="meta"><strong>Beneficiaries:</strong> ${app['Beneficiaries']}</div>
+            
+            <div class="btn-group">
+              <button class="btn-table" onclick="screen('${id}', 'eligible')">Table for Meeting</button>
+              <button class="btn-park" onclick="screen('${id}', 'parked')">Need Info</button>
+              <button class="btn-close" onclick="screen('${id}', 'ineligible')">Decline</button>
+            </div>
+          </div>
+        `;
+        container.innerHTML += cardHTML;
+      });
+    }
+
+    function screen(id, decision) {
+      const card = document.getElementById(`card-${id}`);
+      card.style.opacity = '0.5';
+      card.style.pointerEvents = 'none';
+      
+      google.script.run
+        .withSuccessHandler(() => {
+          card.remove(); // Remove the card once successfully updated in the sheet
+        })
+        .uiScreenApplication(id, decision);
+    }
+  </script>
+</body>
+</html>
