@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbo Santa - Sleigh Dash</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: #0b1d3a; 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            touch-action: none; /* Prevents mobile pull-to-refresh */
+        }
+        h1 { 
+            margin-top: 20px; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); 
+            z-index: 10;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            max-width: 100vw;
+            border: 4px solid #fff; 
+            border-radius: 10px; 
+            box-shadow: 0 0 20px rgba(255,255,255,0.2); 
+            overflow: hidden;
+        }
+        /* Layered canvases for rendering optimization */
+        canvas { 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #bgCanvas { z-index: 1; }
+        #snowCanvas { z-index: 2; }
+        #gameCanvas { z-index: 3; }
+        
+        #instructions { 
+            margin-top: 15px; 
+            font-size: 1.2em; 
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 20px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <h1>Turbo Santa: Sleigh Dash</h1>
+    
+    <div id="game-container">
+        <!-- Static background layer -->
+        <canvas id="bgCanvas" width="800" height="400"></canvas>
+        <!-- Moving snow layer (cleared less expensively) -->
+        <canvas id="snowCanvas" width="800" height="400"></canvas>
+        <!-- Entities layer (sleigh, presents, obstacles) -->
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+    </div>
+    
+    <p id="instructions">Tap, Click, or press Spacebar to fly!</p>
+
+    <script>
+        // --- 1. SETUP & CONTEXTS ---
+        const bgCanvas = document.getElementById('bgCanvas');
+        const snowCanvas = document.getElementById('snowCanvas');
+        const gameCanvas = document.getElementById('gameCanvas');
+        
+        const bgCtx = bgCanvas.getContext('2d', { alpha: false }); // No transparency needed here
+        const snowCtx = snowCanvas.getContext('2d');
+        const ctx = gameCanvas.getContext('2d');
+
+        // Draw static background once and never clear it again
+        const gradient = bgCtx.createLinearGradient(0, 0, 0, bgCanvas.height);
+        gradient.addColorStop(0, '#1a2a6c');
+        gradient.addColorStop(0.5, '#b21f1f');
+        gradient.addColorStop(1, '#fdbb2d');
+        bgCtx.fillStyle = gradient;
+        bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+        // --- 2. OFFSCREEN CANVAS PRE-RENDERING ---
+        // Sleigh Sprite
+        const sleighSprite = document.createElement('canvas');
+        sleighSprite.width = 60; sleighSprite.height = 60;
+        const sCtx = sleighSprite.getContext('2d');
+        sCtx.font = '45px Arial';
+        sCtx.fillText('🛷', 0, 45);
+
+        // Present Sprite
+        const presentSprite = document.createElement('canvas');
+        presentSprite.width = 40; presentSprite.height = 40;
+        const pCtx = presentSprite.getContext('2d');
+        pCtx.font = '35px Arial';
+        pCtx.fillText('🎁', 0, 35);
+
+        // Master Chimney Sprite (Draw one very tall chimney to clip from later)
+        const chimneyMaxHeight = 300;
+        const chimneyWidth = 60;
+        const chimneySprite = document.createElement('canvas');
+        chimneySprite.width = chimneyWidth + 10; // Extra width for snow cap overhang
+        chimneySprite.height = chimneyMaxHeight;
+        const cCtx = chimneySprite.getContext('2d');
+        
+        // Chimney Base
+        cCtx.fillStyle = '#b22222'; 
+        cCtx.fillRect(5, 0, chimneyWidth, chimneyMaxHeight);
+        
+        // Snow Cap
+        cCtx.fillStyle = 'white'; 
+        cCtx.fillRect(0, 0, chimneyWidth + 10, 15);
+        cCtx.beginPath();
+        cCtx.arc(10, 15, 10, 0, Math.PI);
+        cCtx.arc(30, 15, 10, 0, Math.PI);
+        cCtx.arc(50, 15, 10, 0, Math.PI);
+        cCtx.arc(60, 15, 10, 0, Math.PI);
+        cCtx.fill();
+
+        // --- 3. OBJECT POOLING ---
+        const obstaclePool = Array.from({ length: 8 }, () => ({
+            active: false, x: 0, y: 0, w: chimneyWidth, h: 0 
+        }));
+        
+        const presentPool = Array.from({ length: 8 }, () => ({
+            active: false, x: 0, y: 0, w: 35, h: 35 
+        }));
+
+        // Snowflakes pre-calculated
+        const snowflakes = Array.from({ length: 75 }, () => ({
+            x: Math.random() * snowCanvas.width,
+            y: Math.random() * snowCanvas.height,
+            radius: Math.random() * 2 + 1,
+            speed: Math.random() * 2 + 0.5
+        }));
+
+        // --- 4. GAME STATE & ENTITIES ---
+        let frames = 0;
+        let score = 0;
+        let gameOver = false;
+        const gameSpeed = 4; // Integer speed
+
+        const sleigh = {
+            x: 100, y: 150, w: 45, h: 45,
+            velocity: 0, gravity: 0.30, jump: -6.5,
+            update() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+                if (this.y + this.h > gameCanvas.height) {
+                    this.y = gameCanvas.height - this.h;
+                    gameOver = true;
+                }
+                if (this.y < 0) {
+                    this.y = 0;
+                    this.velocity = 0;
+                }
+            },
+            draw() {
+                // Bitwise OR `| 0` strips decimals for faster sub-pixel-free rendering
+                ctx.drawImage(sleighSprite, this.x | 0, this.y | 0);
+            }
+        };
+
+        // --- 5. LOGIC & RENDER LOOPS ---
+        function handlePools() {
+            // Spawn logic
+            if (frames % 100 === 0) {
+                const obs = obstaclePool.find(o => !o.active);
+                if (obs) {
+                    obs.active = true;
+                    obs.x = gameCanvas.width;
+                    obs.h = (Math.random() * 160 + 60) | 0; // Force integer
+                    obs.y = gameCanvas.height - obs.h;
+                }
+            }
+
+            if (frames % 140 === 0) {
+                const pres = presentPool.find(p => !p.active);
+                if (pres) {
+                    pres.active = true;
+                    pres.x = gameCanvas.width;
+                    pres.y = (Math.random() * 200 + 50) | 0; // Force integer
+                }
+            }
+
+            // Update & Draw Obstacles
+            for (let i = 0; i < obstaclePool.length; i++) {
+                const obs = obstaclePool[i];
+                if (!obs.active) continue;
+
+                obs.x -= gameSpeed;
+
+                // Fast draw using source clipping from the master sprite
+                ctx.drawImage(chimneySprite, 
+                    0, 0, obs.w + 10, obs.h,        // Source (clip from top of master)
+                    (obs.x - 5) | 0, obs.y | 0, obs.w + 10, obs.h // Destination
+                );
+
+                // AABB Collision Check
+                if (sleigh.x < obs.x + obs.w && sleigh.x + sleigh.w > obs.x &&
+                    sleigh.y < obs.y + obs.h && sleigh.y + sleigh.h > obs.y) {
+                    gameOver = true;
+                }
+
+                // Recycle back to pool
+                if (obs.x + obs.w < -10) obs.active = false;
+            }
+
+            // Update & Draw Presents
+            for (let i = 0; i < presentPool.length; i++) {
+                const pres = presentPool[i];
+                if (!pres.active) continue;
+
+                pres.x -= gameSpeed;
+                ctx.drawImage(presentSprite, pres.x | 0, pres.y | 0);
+
+                // Collection logic
+                if (sleigh.x < pres.x + pres.w && sleigh.x + sleigh.w > pres.x &&
+                    sleigh.y < pres.y + pres.h && sleigh.y + sleigh.h > pres.y) {
+                    pres.active = false;
+                    score += 10;
+                }
+
+                if (pres.x + pres.w < -10) pres.active = false;
+            }
+        }
+
+        function drawSnow() {
+            snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+            snowCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            snowCtx.beginPath();
+            
+            // Single path draw call for all snowflakes is much faster
+            for(let i = 0; i < snowflakes.length; i++) {
+                const flake = snowflakes[i];
+                snowCtx.moveTo(flake.x, flake.y);
+                snowCtx.arc(flake.x | 0, flake.y | 0, flake.radius, 0, Math.PI * 2);
+                
+                flake.x -= flake.speed / 2;
+                flake.y += flake.speed;
+                if (flake.y > snowCanvas.height) flake.y = 0;
+                if (flake.x < 0) flake.x = snowCanvas.width;
+            }
+            snowCtx.fill();
+        }
+
+        function drawUI() {
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 28px "Segoe UI", Arial, sans-serif';
+            ctx.shadowColor = "rgba(0,0,0,0.8)";
+            ctx.shadowBlur = 4;
+            ctx.fillText(`Presents: ${score / 10}`, 20, 40);
+            ctx.shadowBlur = 0; 
+        }
+
+        function resetGame() {
+            sleigh.y = 150;
+            sleigh.velocity = 0;
+            obstaclePool.forEach(o => o.active = false);
+            presentPool.forEach(p => p.active = false);
+            score = 0;
+            frames = 0;
+            gameOver = false;
+            animate();
+        }
+
+        function animate() {
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                
+                ctx.font = 'bold 48px Arial';
+                ctx.fillText('Game Over!', gameCanvas.width / 2, gameCanvas.height / 2 - 40);
+                
+                ctx.font = '24px Arial';
+                ctx.fillText(`You delivered ${score / 10} presents!`, gameCanvas.width / 2, gameCanvas.height / 2 + 10);
+                
+                ctx.font = 'italic 16px Arial';
+                ctx.fillStyle = '#fdbb2d';
+                ctx.fillText('Delivering smiles since 1950.', gameCanvas.width / 2, gameCanvas.height / 2 + 45);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.fillText('Tap or Press Space to fly again', gameCanvas.width / 2, gameCanvas.height / 2 + 90);
+                
+                ctx.textAlign = 'left';
+                return;
+            }
+
+            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            drawSnow();
+            handlePools();
+            sleigh.update();
+            sleigh.draw();
+            drawUI();
+
+            frames++;
+            requestAnimationFrame(animate);
+        }
+
+        // --- 6. CONTROLS ---
+        function flap(e) {
+            if(e) e.preventDefault();
+            if (gameOver) resetGame();
+            else sleigh.velocity = sleigh.jump;
+        }
+
+        window.addEventListener('keydown', (e) => { if (e.code === 'Space') flap(e); });
+        window.addEventListener('mousedown', () => flap());
+        window.addEventListener('touchstart', flap, { passive: false });
+
+        // Start game loop
+        animate();
+
+        // --- 7. SERVICE WORKER REGISTRATION ---
+        // Ties into edge-caching architectures (like Cloudflare Pages) for instant offline loading
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Assuming you have a sw.js in your repo for caching the index file
+                navigator.serviceWorker.register('/sw.js').catch(err => {
+                    console.log('Service Worker registration skipped/failed:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
