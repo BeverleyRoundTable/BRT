@@ -841,10 +841,15 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
             // Re-declare workerUrl so the iframes can use the proxy
             const workerUrl = `https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(api)}`;
             
-            // Pass workerUrl instead of the raw Google Script api URL
+            // Load Tracker immediately (top of page)
             document.getElementById('tracker-iframe').src = `https://brt-23f.pages.dev/sleigh/tracker?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
-            document.getElementById('address-iframe').src = `https://brt-23f.pages.dev/sleigh/address.html?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
-            document.getElementById('memory-book-iframe').src = `https://brt-23f.pages.dev/sleigh/memory_book?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
+            
+            // Defer Address and Memory Book
+            document.getElementById('address-iframe').dataset.src = `https://brt-23f.pages.dev/sleigh/address.html?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
+            document.getElementById('memory-book-iframe').dataset.src = `https://brt-23f.pages.dev/sleigh/memory_book?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
+            
+            // Initialize the stagger
+            lazyLoadIframes();
 
             window.addEventListener("message", (e) => {
                 if (e.data && e.data.addressLookupHeight) {
@@ -1035,6 +1040,24 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
                 if (apiUrl) fetchSleighData(apiUrl);
             }, 2000);
         });
+
+        function lazyLoadIframes() {
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const iframe = entry.target;
+                if (iframe.dataset.src) {
+                    iframe.src = iframe.dataset.src; // Trigger the network load
+                    iframe.removeAttribute('data-src');
+                    obs.unobserve(iframe); // Stop tracking once loaded
+                }
+            }
+        });
+    }, { rootMargin: "300px" }); // Start loading 300px before it enters the screen
+
+    observer.observe(document.getElementById('address-iframe'));
+    observer.observe(document.getElementById('memory-book-iframe'));
+}
         
     </script>
 </body>
