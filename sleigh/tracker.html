@@ -2603,7 +2603,7 @@ document.getElementById('msgConfirmBtn').onclick = () => {
   document.getElementById('msgModal').style.display = 'none'; 
   showToast("Sending message to the elves..."); 
   
-  // FIX: Route the POST request through the Cloudflare Worker proxy
+  // Route through the Cloudflare Worker proxy to bypass CORS
   const messageTarget = `${WORKER_URL}?target=${encodeURIComponent(AppState.vars.apiUrl)}`;
 
   fetch(messageTarget, { 
