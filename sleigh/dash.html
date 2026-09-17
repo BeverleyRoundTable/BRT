@@ -3,35 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Turbo Santa - Chimney Drop</title>
+    <title>Turbo Santa - Magical Catch</title>
     <style>
-        /* CSS reset and container setup for responsive canvas */
+        /* ==========================================================================
+           RESPONSIVE CONTAINER & CSS RESET
+           ========================================================================== */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: #0d1b2a; /* Night sky background */
-            overflow: hidden; /* Prevent scrolling */
-            touch-action: none; /* Prevent default touch actions like pull-to-refresh */
+            background-color: #08101a; /* Deep winter night */
+            overflow: hidden; 
+            /* CRITICAL: touch-action: none prevents browser pull-to-refresh, 
+               swipe-to-go-back, and double-tap zooming during gameplay */
+            touch-action: none; 
             display: flex;
             justify-content: center;
             align-items: center;
+            font-family: sans-serif;
         }
 
         #gameContainer {
             width: 100%;
-            max-width: 600px; /* Lock aspect ratio on larger screens */
+            max-width: 500px; /* Constrain on tablets/desktops to maintain portrait feel */
             height: 100%;
-            max-height: 900px;
+            max-height: 850px;
             position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
         }
 
         canvas {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Scale canvas cleanly to fit */
-            image-rendering: pixelated; /* Crisp rendering */
+            object-fit: contain; /* Automatically scales cleanly while maintaining aspect ratio */
+            image-rendering: pixelated; /* Keeps pre-rendered off-screen canvases crisp */
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
@@ -45,17 +51,27 @@
 
     <script>
         /**
-         * TURBO SANTA: CHIMNEY DROP
+         * ==========================================================================
+         * TURBO SANTA: MAGICAL CATCH
+         * ==========================================================================
+         * A gentle, forgiving drag-to-catch game designed for 7 to 9-year-olds.
+         * Features large hitboxes, slow gravity, and intuitive 1:1 finger tracking.
          * 
-         * An optimized HTML5 Canvas game.
-         * Features:
-         * - Object Pooling for all entities (no GC stutter)
-         * - Off-screen Canvas pre-rendering for sprites and text
-         * - Bitwise integer coercion for rendering coords
-         * - Touch-first mobile design
+         * HIGH-PERFORMANCE RENDERING OPTIMIZATIONS IMPLEMENTED:
+         * 1. Off-screen Canvas Pre-rendering: Text and Emojis are drawn ONCE during init
+         *    to hidden canvases, then stamped onto the main canvas using `drawImage`. 
+         *    (Canvas API text/emoji rendering is notoriously slow inside a 60fps loop).
+         * 2. Strict Object Pooling: All arrays (snow, items, particles) are pre-allocated.
+         *    We toggle an `.active` boolean instead of using `new Object()`, `Array.push()`,
+         *    or `Array.splice()`. This totally eliminates Garbage Collection (GC) pauses.
+         * 3. Bitwise Integer Coercion: `x | 0` is applied to all `drawImage` coordinates. 
+         *    This forcibly truncates decimals, ensuring the browser renders strictly on 
+         *    whole pixels, bypassing expensive sub-pixel anti-aliasing calculations.
+         * 4. Opaque Main Canvas Context: initialized with `{ alpha: false }`.
+         * ==========================================================================
          */
 
-        // --- CONSTANTS & CONFIG ---
+        // --- GAME CONSTANTS ---
         const GAME_WIDTH = 400;
         const GAME_HEIGHT = 600;
         const FPS = 60;
@@ -65,9 +81,10 @@
         const STATE_PLAYING = 1;
         const STATE_GAMEOVER = 2;
 
-        // --- GLOBAL VARIABLES ---
+        // --- GLOBALS ---
         const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d', { alpha: false }); // Optimize by disabling alpha background
+        // Optimize context by disabling alpha blending against the DOM background
+        const ctx = canvas.getContext('2d', { alpha: false }); 
         canvas.width = GAME_WIDTH;
         canvas.height = GAME_HEIGHT;
 
@@ -77,14 +94,14 @@
         let lastTime = 0;
         let accumulator = 0;
 
-        // Pre-rendered asset dictionaries
+        // --- PRE-RENDERED ASSET CACHE ---
         const sprites = {};
         const textSprites = {};
         const digits = [];
 
-        // --- OFF-SCREEN RENDERING UTILITIES ---
-
-        // Pre-renders an emoji to an off-screen canvas
+        /**
+         * Utility: Renders an Emoji to an off-screen canvas.
+         */
         function renderEmoji(emoji, size) {
             const c = document.createElement('canvas');
             c.width = size;
@@ -93,12 +110,32 @@
             cx.font = `${size * 0.8}px sans-serif`;
             cx.textAlign = 'center';
             cx.textBaseline = 'middle';
-            // Draw slightly offset to center perfectly
+            // Slight vertical offset for vertical centering consistency across OS
             cx.fillText(emoji, size / 2 | 0, (size / 2 + size * 0.05) | 0);
             return c;
         }
 
-        // Pre-renders text to an off-screen canvas to avoid text rendering in game loop
+        /**
+         * Utility: Combines Santa and Sleigh into one pre-rendered sprite to save draw calls.
+         */
+        function renderSantaSleigh() {
+            const c = document.createElement('canvas');
+            c.width = 90;
+            c.height = 90;
+            const cx = c.getContext('2d');
+            cx.font = `50px sans-serif`;
+            cx.textAlign = 'center';
+            cx.textBaseline = 'middle';
+            // Draw Santa a bit higher, then Sleigh overlapping
+            cx.fillText('🎅', 45, 35);
+            cx.font = `60px sans-serif`;
+            cx.fillText('🛷', 45, 60);
+            return c;
+        }
+
+        /**
+         * Utility: Pre-renders text to avoid text layout calculations in the game loop.
+         */
         function renderText(text, size, color, isBold = true) {
             const c = document.createElement('canvas');
             const cx = c.getContext('2d');
@@ -106,180 +143,138 @@
             cx.font = fontStr;
             const metrics = cx.measureText(text);
             c.width = Math.ceil(metrics.width) + 4;
-            c.height = size + 10;
-            cx.font = fontStr; // Re-apply font after resize
+            c.height = size + 12;
+            cx.font = fontStr; // Re-apply after resize
             cx.fillStyle = color;
             cx.textBaseline = 'top';
             cx.fillText(text, 2, 2);
             return c;
         }
 
-        // Procedurally generate a brick chimney sprite off-screen
-        function renderChimney(width, height) {
-            const c = document.createElement('canvas');
-            c.width = width;
-            c.height = height;
-            const cx = c.getContext('2d');
-            
-            // Base brick color
-            cx.fillStyle = '#b22222';
-            cx.fillRect(0, 0, width, height);
-            
-            // Draw brick mortar lines
-            cx.fillStyle = '#000000';
-            for (let y = 0; y < height; y += 15) {
-                cx.fillRect(0, y, width, 2); // Horizontal lines
-                const offset = (y % 30 === 0) ? 0 : 15;
-                for (let x = offset; x < width; x += 30) {
-                    cx.fillRect(x, y, 2, 15); // Vertical lines
-                }
-            }
-
-            // Top rim / opening
-            cx.fillStyle = '#333333';
-            cx.fillRect(-2, 0, width + 4, 12); // Flange
-            cx.fillStyle = '#111111';
-            cx.fillRect(4, 0, width - 8, 8); // Hole
-
-            // Snow on top rim
-            cx.fillStyle = '#ffffff';
-            cx.fillRect(0, 0, width, 4);
-            cx.fillRect(0, 4, 10, 3);
-            cx.fillRect(width - 10, 4, 10, 3);
-
-            return c;
-        }
-
-        // Pre-render night sky gradient background
+        /**
+         * Utility: Pre-renders the complex gradient background and static moon
+         * so we only draw ONE image per frame instead of generating gradients.
+         */
         function renderBackground() {
             const c = document.createElement('canvas');
             c.width = GAME_WIDTH;
             c.height = GAME_HEIGHT;
             const cx = c.getContext('2d');
+            
             const grad = cx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
-            grad.addColorStop(0, '#000022');
-            grad.addColorStop(1, '#1a3a5c');
+            grad.addColorStop(0, '#0a1931'); // Very dark blue
+            grad.addColorStop(1, '#150e56'); // Deep magical purple
             cx.fillStyle = grad;
             cx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
             
-            // Draw some static moon/stars
-            cx.fillStyle = '#ffffe0';
-            cx.beginPath();
-            cx.arc(320, 80, 40, 0, Math.PI * 2);
-            cx.fill();
-            
-            // Craters
-            cx.fillStyle = '#e6e6cc';
-            cx.beginPath(); cx.arc(310, 70, 10, 0, Math.PI * 2); cx.fill();
-            cx.beginPath(); cx.arc(335, 95, 8, 0, Math.PI * 2); cx.fill();
+            // Magical Moon
+            cx.fillStyle = '#fde047';
+            cx.beginPath(); cx.arc(330, 100, 50, 0, Math.PI * 2); cx.fill();
+            // Moon crater/cutout illusion
+            cx.fillStyle = '#0a1931'; 
+            cx.beginPath(); cx.arc(315, 85, 45, 0, Math.PI * 2); cx.fill();
 
             return c;
         }
 
+        /**
+         * Bootstraps all pre-rendered graphics into memory.
+         */
         function initAssets() {
-            // Entities
-            sprites.santa = renderEmoji('🎅', 60);
-            sprites.present = renderEmoji('🎁', 30);
-            sprites.heart = renderEmoji('❤️', 24);
-            sprites.emptyHeart = renderEmoji('🖤', 24);
-            sprites.chimney = renderChimney(60, 80);
-            sprites.chimneySmall = renderChimney(45, 60);
+            sprites.sleigh = renderSantaSleigh();
+            sprites.present = renderEmoji('🎁', 45);
+            sprites.star = renderEmoji('⭐', 40);
+            sprites.heart = renderEmoji('❤️', 30);
+            sprites.emptyHeart = renderEmoji('🖤', 30);
             sprites.bg = renderBackground();
 
-            // Text and UI Strings
-            textSprites.title1 = renderText('TURBO', 48, '#ffffff');
-            textSprites.title2 = renderText('SANTA', 64, '#ff3333');
-            textSprites.tapToStart = renderText('Tap to Start!', 24, '#ffff00');
-            textSprites.gameOver = renderText('GAME OVER', 48, '#ff3333');
-            textSprites.tapToRestart = renderText('Tap to Restart', 24, '#ffffff');
+            textSprites.title1 = renderText('TURBO', 55, '#ffffff');
+            textSprites.title2 = renderText('SANTA', 70, '#ff3b3b');
+            textSprites.tapToStart = renderText('Tap to Catch!', 28, '#fde047');
+            textSprites.gameOver = renderText('GAME OVER', 55, '#ff3b3b');
+            textSprites.tapToRestart = renderText('Tap to Play Again', 24, '#ffffff');
             textSprites.score = renderText('Score: ', 24, '#ffffff');
-            textSprites.lore = renderText('Delivering smiles since 1927', 16, '#aaaaaa', false);
-            textSprites.instructions = renderText('Tap to drop presents into chimneys!', 18, '#ffffff', false);
+            
+            // The requested Lore/Easter Egg
+            textSprites.lore = renderText('Delivering smiles since 1927', 16, '#7ea1c4', false);
 
-            // Digits 0-9 for dynamic score display
             for (let i = 0; i < 10; i++) {
-                digits[i] = renderText(i.toString(), 24, '#ffff00');
+                digits[i] = renderText(i.toString(), 26, '#fde047');
             }
         }
 
-        // --- OBJECT POOLS (Preventing GC Stutter) ---
+        // --- OBJECT POOLS ---
+        // Pre-allocate everything. No dynamic array growth during gameplay.
+        
+        const MAX_ITEMS = 12; // Keeps screen clean for kids, prevents overwhelming them
+        const itemPool = Array.from({ length: MAX_ITEMS }, () => ({
+            x: 0, y: 0, speed: 0, type: 0, active: false // type 0 = present, 1 = star
+        }));
 
-        const poolSize = {
-            snow: 50,
-            presents: 10,
-            chimneys: 4
-        };
-
-        const snowPool = Array.from({ length: poolSize.snow }, () => ({
+        const MAX_SNOW = 50;
+        const snowPool = Array.from({ length: MAX_SNOW }, () => ({
             x: 0, y: 0, speed: 0, size: 0, active: false
         }));
 
-        const presentPool = Array.from({ length: poolSize.presents }, () => ({
-            x: 0, y: 0, vy: 0, active: false
+        const MAX_PARTICLES = 20;
+        const particlePool = Array.from({ length: MAX_PARTICLES }, () => ({
+            x: 0, y: 0, vx: 0, vy: 0, life: 0, active: false
         }));
 
-        const chimneyPool = Array.from({ length: poolSize.chimneys }, () => ({
-            x: 0, y: 0, vx: 0, w: 0, h: 0, sprite: null, active: false
-        }));
-
-        const santa = {
-            x: GAME_WIDTH / 2,
-            y: 50,
-            w: 60,
-            h: 60,
-            vx: 2 // SLOWED DOWN: Was 3, now 2 for easier tracking
+        // Player State
+        const sleigh = {
+            x: GAME_WIDTH / 2 - 45,
+            y: GAME_HEIGHT - 110,
+            w: 90,
+            h: 90,
+            targetX: GAME_WIDTH / 2 - 45
         };
 
-        // --- GAME LOGIC ---
+        // --- GAME LOGIC FUNCTIONS ---
 
         function spawnSnow() {
             for (let i = 0; i < snowPool.length; i++) {
                 const s = snowPool[i];
                 s.x = (Math.random() * GAME_WIDTH) | 0;
                 s.y = (Math.random() * GAME_HEIGHT) | 0;
-                s.speed = (Math.random() * 1.5 + 0.5);
+                s.speed = (Math.random() * 0.8 + 0.4); // Very gentle snowfall
                 s.size = (Math.random() * 3 + 1) | 0;
                 s.active = true;
             }
         }
 
-        function spawnChimney() {
-            // Find inactive chimney
-            for (let i = 0; i < chimneyPool.length; i++) {
-                const c = chimneyPool[i];
-                if (!c.active) {
-                    const isSmall = Math.random() > 0.6;
-                    c.w = isSmall ? 45 : 60;
-                    c.h = isSmall ? 60 : 80;
-                    c.sprite = isSmall ? sprites.chimneySmall : sprites.chimney;
+        function spawnItem() {
+            for (let i = 0; i < itemPool.length; i++) {
+                const item = itemPool[i];
+                if (!item.active) {
+                    // Keep items comfortably within screen bounds
+                    item.x = (Math.random() * (GAME_WIDTH - 60)) + 15 | 0;
+                    item.y = -50;
                     
-                    // Start offscreen left or right
-                    const fromLeft = Math.random() > 0.5;
-                    c.x = fromLeft ? -c.w : GAME_WIDTH;
-                    c.y = GAME_HEIGHT - c.h;
+                    // Relaxed pacing: base speed is very slow, scales gently
+                    item.speed = 1.2 + (Math.random() * 1.0) + (score * 0.005);
                     
-                    // SLOWED DOWN: Base speed lowered, and score-speed multiplier cut in half
-                    const speed = 1.0 + (Math.random() * 0.5) + (score * 0.005);
-                    c.vx = fromLeft ? speed : -speed;
-                    
-                    c.active = true;
+                    // 20% chance for a bonus star instead of a present
+                    item.type = Math.random() > 0.8 ? 1 : 0; 
+                    item.active = true;
                     break;
                 }
             }
         }
 
-        function dropPresent() {
-            if (gameState !== STATE_PLAYING) return;
-            
-            // Find inactive present
-            for (let i = 0; i < presentPool.length; i++) {
-                const p = presentPool[i];
+        function spawnParticles(px, py) {
+            let spawned = 0;
+            for (let i = 0; i < particlePool.length; i++) {
+                const p = particlePool[i];
                 if (!p.active) {
-                    p.x = santa.x + (santa.w / 2) - 15 | 0;
-                    p.y = santa.y + 40;
-                    p.vy = 0;
+                    p.x = px + 20;
+                    p.y = py + 20;
+                    p.vx = (Math.random() - 0.5) * 4;
+                    p.vy = (Math.random() - 0.5) * 4;
+                    p.life = 1.0; // Alpha fades from 1.0 to 0
                     p.active = true;
-                    break;
+                    spawned++;
+                    if (spawned > 4) break; // 5 particles per catch
                 }
             }
         }
@@ -287,241 +282,245 @@
         function resetGame() {
             score = 0;
             lives = 3;
-            santa.x = GAME_WIDTH / 2;
-            santa.vx = 2; // SLOWED DOWN reset speed
+            sleigh.targetX = GAME_WIDTH / 2 - (sleigh.w / 2);
+            sleigh.x = sleigh.targetX;
             
-            for (let i = 0; i < presentPool.length; i++) presentPool[i].active = false;
-            for (let i = 0; i < chimneyPool.length; i++) chimneyPool[i].active = false;
-            
-            spawnChimney();
+            for (let i = 0; i < itemPool.length; i++) itemPool[i].active = false;
+            for (let i = 0; i < particlePool.length; i++) particlePool[i].active = false;
         }
 
-        // --- UPDATE LOOP ---
-
         function update() {
-            // Update Snow
+            // 1. Update Parallax Snow
             for (let i = 0; i < snowPool.length; i++) {
                 const s = snowPool[i];
                 if (s.active) {
                     s.y += s.speed;
                     if (s.y > GAME_HEIGHT) {
-                        s.y = 0;
+                        s.y = -10;
                         s.x = (Math.random() * GAME_WIDTH) | 0;
                     }
                 }
             }
 
+            // 2. Update Particles (Catch effect)
+            for (let i = 0; i < particlePool.length; i++) {
+                const p = particlePool[i];
+                if (p.active) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= 0.05;
+                    if (p.life <= 0) p.active = false;
+                }
+            }
+
             if (gameState === STATE_PLAYING) {
-                // Update Santa
-                santa.x += santa.vx;
-                // Bounce off walls
-                if (santa.x <= 0 || santa.x + santa.w >= GAME_WIDTH) {
-                    santa.vx *= -1;
-                    // Keep within bounds
-                    santa.x = santa.x <= 0 ? 0 : GAME_WIDTH - santa.w;
-                }
+                // Smooth Sleigh Movement using Linear Interpolation (Lerp)
+                // This makes the sleigh glide to the finger rather than snapping instantly
+                sleigh.x += (sleigh.targetX - sleigh.x) * 0.15;
 
-                // Update Presents
-                for (let i = 0; i < presentPool.length; i++) {
-                    const p = presentPool[i];
-                    if (p.active) {
-                        p.vy += 0.15; // SLOWED DOWN: Lower gravity (was 0.2)
-                        p.y += p.vy;
+                // Restrict sleigh to screen bounds
+                if (sleigh.x < -10) sleigh.x = -10;
+                if (sleigh.x > GAME_WIDTH - sleigh.w + 10) sleigh.x = GAME_WIDTH - sleigh.w + 10;
 
-                        // Check collision with chimneys
-                        let caught = false;
-                        for (let j = 0; j < chimneyPool.length; j++) {
-                            const c = chimneyPool[j];
-                            if (c.active) {
-                                // FORGIVING HITBOX: Expanded the detection zone slightly for kids
-                                if (p.y + 30 > c.y - 5 && p.y + 15 < c.y + 20 && 
-                                    p.x + 25 > c.x - 5 && p.x + 5 < c.x + c.w + 5) {
-                                    
-                                    // Caught present!
-                                    score += c.w === 45 ? 20 : 10; // More points for small chimneys
-                                    p.active = false;
-                                    caught = true;
-                                    break; 
-                                }
-                            }
-                        }
+                // 3. Update Falling Items
+                let activeItems = 0;
+                for (let i = 0; i < itemPool.length; i++) {
+                    const item = itemPool[i];
+                    if (item.active) {
+                        activeItems++;
+                        item.y += item.speed;
 
-                        // Missed / Hit ground
-                        if (!caught && p.y > GAME_HEIGHT) {
-                            p.active = false;
-                            lives--;
-                            if (lives <= 0) {
-                                gameState = STATE_GAMEOVER;
+                        // Collision Detection: Forgiving hitbox tailored for young kids
+                        // We check if the center of the item falls within the sleigh's bucket area
+                        const hitX = (item.x + 22 > sleigh.x + 10) && (item.x + 22 < sleigh.x + sleigh.w - 10);
+                        const hitY = (item.y + 35 > sleigh.y + 30) && (item.y < sleigh.y + sleigh.h);
+
+                        if (hitX && hitY) {
+                            item.active = false;
+                            score += (item.type === 1) ? 25 : 10;
+                            spawnParticles(item.x, item.y);
+                        } else if (item.y > GAME_HEIGHT) {
+                            item.active = false;
+                            // Only lose a life if you miss a REQUIRED present (type 0)
+                            // Missing a bonus star (type 1) does not penalize the player
+                            if (item.type === 0) {
+                                lives--;
+                                if (lives <= 0) gameState = STATE_GAMEOVER;
                             }
                         }
                     }
                 }
 
-                // Update Chimneys
-                let activeChimneys = 0;
-                for (let i = 0; i < chimneyPool.length; i++) {
-                    const c = chimneyPool[i];
-                    if (c.active) {
-                        activeChimneys++;
-                        c.x += c.vx;
-                        // Deactivate if off screen
-                        if ((c.vx < 0 && c.x + c.w < -20) || (c.vx > 0 && c.x > GAME_WIDTH + 20)) {
-                            c.active = false;
-                        }
-                    }
-                }
-
-                // Randomly spawn new chimneys (Slightly reduced spawn rate)
-                if (activeChimneys < poolSize.chimneys && Math.random() < 0.015) {
-                    spawnChimney();
+                // Spawner Logic
+                // Randomness ensures organic pacing, very slightly increasing density over time
+                if (activeItems < MAX_ITEMS && Math.random() < 0.015 + (score * 0.0001)) {
+                    spawnItem();
                 }
             }
         }
 
-        // --- RENDER LOOP ---
+        // --- RENDERING FUNCTIONS ---
 
-        // Helper to draw pre-rendered text at specific coords using integer cast
-        function drawPreRendered(sprite, x, y) {
+        /**
+         * Helper: Draws pre-rendered sprite using Bitwise OR (| 0)
+         * to force integer coordinates.
+         */
+        function drawSprite(sprite, x, y) {
             ctx.drawImage(sprite, x | 0, y | 0);
         }
 
+        /**
+         * Helper: Draws dynamically updated score using pre-rendered digit sprites.
+         */
         function drawScoreNumber(num, x, y) {
-            const numStr = num.toString();
-            let cursorX = x | 0;
-            for (let i = 0; i < numStr.length; i++) {
-                const digit = parseInt(numStr[i]);
-                const sprite = digits[digit];
-                ctx.drawImage(sprite, cursorX, y | 0);
-                cursorX += sprite.width - 2; // slightly compact spacing
+            const str = num.toString();
+            let curX = x | 0;
+            for (let i = 0; i < str.length; i++) {
+                const spr = digits[parseInt(str[i], 10)];
+                ctx.drawImage(spr, curX, y | 0);
+                curX += spr.width - 2; // Slight kerning overlap
             }
         }
 
         function draw() {
-            // Draw background
-            drawPreRendered(sprites.bg, 0, 0);
+            // 1. Draw static background
+            drawSprite(sprites.bg, 0, 0);
 
-            // Draw Snow (Direct canvas commands are cheap for simple rects)
+            // 2. Draw Snow (Direct canvas rectangles are exceptionally fast, no need for sprites here)
             ctx.fillStyle = '#ffffff';
             for (let i = 0; i < snowPool.length; i++) {
                 const s = snowPool[i];
                 if (s.active) {
+                    ctx.globalAlpha = s.size > 2 ? 0.7 : 0.3;
                     ctx.fillRect(s.x | 0, s.y | 0, s.size | 0, s.size | 0);
                 }
             }
+            ctx.globalAlpha = 1.0;
 
-            // Draw Chimneys
-            for (let i = 0; i < chimneyPool.length; i++) {
-                const c = chimneyPool[i];
-                if (c.active) {
-                    drawPreRendered(c.sprite, c.x, c.y);
+            // 3. Draw Items
+            for (let i = 0; i < itemPool.length; i++) {
+                const item = itemPool[i];
+                if (item.active) {
+                    drawSprite(item.type === 1 ? sprites.star : sprites.present, item.x, item.y);
                 }
             }
 
-            // Draw Presents
-            for (let i = 0; i < presentPool.length; i++) {
-                const p = presentPool[i];
+            // 4. Draw Catch Particles
+            ctx.fillStyle = '#fde047'; // Star yellow
+            for (let i = 0; i < particlePool.length; i++) {
+                const p = particlePool[i];
                 if (p.active) {
-                    drawPreRendered(sprites.present, p.x, p.y);
+                    ctx.globalAlpha = p.life;
+                    ctx.fillRect(p.x | 0, p.y | 0, 4, 4);
                 }
             }
+            ctx.globalAlpha = 1.0;
 
-            // Draw Santa
+            // 5. Draw Sleigh
             if (gameState === STATE_PLAYING || gameState === STATE_GAMEOVER) {
-                drawPreRendered(sprites.santa, santa.x, santa.y);
+                drawSprite(sprites.sleigh, sleigh.x, sleigh.y);
             }
 
-            // UI Layer
+            // 6. Draw UI Overlays based on state
             if (gameState === STATE_MENU) {
-                // Title
-                drawPreRendered(textSprites.title1, (GAME_WIDTH - textSprites.title1.width) / 2, 120);
-                drawPreRendered(textSprites.title2, (GAME_WIDTH - textSprites.title2.width) / 2, 180);
+                drawSprite(textSprites.title1, (GAME_WIDTH - textSprites.title1.width) / 2, 100);
+                drawSprite(textSprites.title2, (GAME_WIDTH - textSprites.title2.width) / 2, 155);
                 
-                // Instructions
-                drawPreRendered(textSprites.instructions, (GAME_WIDTH - textSprites.instructions.width) / 2, 280);
-                
-                // Tap to start
-                // Blinking effect
-                if (Math.floor(Date.now() / 500) % 2 === 0) {
-                    drawPreRendered(textSprites.tapToStart, (GAME_WIDTH - textSprites.tapToStart.width) / 2, 400);
+                // Simple blink effect tied to system time (no state variable needed)
+                if (Math.floor(Date.now() / 600) % 2 === 0) {
+                    drawSprite(textSprites.tapToStart, (GAME_WIDTH - textSprites.tapToStart.width) / 2, 350);
                 }
-
-                // Lore
-                drawPreRendered(textSprites.lore, (GAME_WIDTH - textSprites.lore.width) / 2, GAME_HEIGHT - 30);
+                
+                drawSprite(textSprites.lore, (GAME_WIDTH - textSprites.lore.width) / 2, GAME_HEIGHT - 50);
 
             } else if (gameState === STATE_PLAYING) {
-                // Score
-                drawPreRendered(textSprites.score, 10, 10);
-                drawScoreNumber(score, 10 + textSprites.score.width, 10);
+                // Score text and digits
+                drawSprite(textSprites.score, 15, 15);
+                drawScoreNumber(score, 15 + textSprites.score.width, 15);
 
-                // Lives (Hearts)
+                // Lives (Hearts display)
                 for (let i = 0; i < 3; i++) {
-                    const hSprite = i < lives ? sprites.heart : sprites.emptyHeart;
-                    drawPreRendered(hSprite, GAME_WIDTH - 35 - (i * 30), 10);
+                    const hSpr = i < lives ? sprites.heart : sprites.emptyHeart;
+                    drawSprite(hSpr, GAME_WIDTH - 45 - (i * 35), 12);
                 }
 
             } else if (gameState === STATE_GAMEOVER) {
-                // Game Over Screen
-                drawPreRendered(textSprites.gameOver, (GAME_WIDTH - textSprites.gameOver.width) / 2, 200);
+                drawSprite(textSprites.gameOver, (GAME_WIDTH - textSprites.gameOver.width) / 2, 180);
                 
-                drawPreRendered(textSprites.score, (GAME_WIDTH - textSprites.score.width) / 2 - 20, 280);
-                drawScoreNumber(score, (GAME_WIDTH / 2) + 20, 280);
+                drawSprite(textSprites.score, (GAME_WIDTH - textSprites.score.width) / 2 - 25, 260);
+                drawScoreNumber(score, (GAME_WIDTH / 2) + 20, 260);
 
-                if (Math.floor(Date.now() / 500) % 2 === 0) {
-                    drawPreRendered(textSprites.tapToRestart, (GAME_WIDTH - textSprites.tapToRestart.width) / 2, 400);
+                if (Math.floor(Date.now() / 600) % 2 === 0) {
+                    drawSprite(textSprites.tapToRestart, (GAME_WIDTH - textSprites.tapToRestart.width) / 2, 380);
                 }
-
-                drawPreRendered(textSprites.lore, (GAME_WIDTH - textSprites.lore.width) / 2, GAME_HEIGHT - 30);
+                
+                drawSprite(textSprites.lore, (GAME_WIDTH - textSprites.lore.width) / 2, GAME_HEIGHT - 50);
             }
         }
 
-        // --- CORE GAME LOOP (Fixed Timestep) ---
-
+        // --- MAIN GAME LOOP ---
+        // Utilizes a fixed timestep accumulator for smooth physics regardless of device refresh rate
         function loop(timestamp) {
             let deltaTime = timestamp - lastTime;
             lastTime = timestamp;
-
-            // Cap delta time to prevent spiral of death if tab is inactive
+            
+            // Cap deltaTime to prevent "spiral of death" if tab is backgrounded
             if (deltaTime > 250) deltaTime = 250;
-
             accumulator += deltaTime;
 
             while (accumulator >= FRAME_TIME) {
                 update();
                 accumulator -= FRAME_TIME;
             }
-
             draw();
             requestAnimationFrame(loop);
         }
 
         // --- INPUT HANDLING ---
+        
+        function setSleighTarget(e) {
+            // Normalize coordinate to canvas internal resolution vs visual CSS scaled resolution
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const scaleX = canvas.width / rect.width;
+            const x = (clientX - rect.left) * scaleX;
+            // Target the center of the sleigh to the finger
+            sleigh.targetX = x - (sleigh.w / 2); 
+        }
 
-        function handleInput(e) {
-            e.preventDefault(); // Prevents zooming and scrolling on touch devices
-            
+        function handleInputStart(e) {
+            e.preventDefault(); // Lock browser UI behaviors
             if (gameState === STATE_MENU) {
                 gameState = STATE_PLAYING;
                 resetGame();
             } else if (gameState === STATE_PLAYING) {
-                dropPresent();
+                setSleighTarget(e);
             } else if (gameState === STATE_GAMEOVER) {
-                // Small delay to prevent accidental instant restart
+                // Return to menu
                 gameState = STATE_MENU;
             }
         }
 
-        // Event listeners (handling both mouse and touch)
-        canvas.addEventListener('mousedown', handleInput, { passive: false });
-        canvas.addEventListener('touchstart', handleInput, { passive: false });
+        // Listeners for intuitive dragging mechanics (Touch & Mouse unified)
+        // `{ passive: false }` is strictly required to allow `e.preventDefault()` on modern browsers
+        canvas.addEventListener('mousedown', handleInputStart, { passive: false });
+        canvas.addEventListener('mousemove', (e) => { 
+            if (gameState === STATE_PLAYING && e.buttons > 0) setSleighTarget(e); 
+        }, { passive: false });
+        
+        canvas.addEventListener('touchstart', handleInputStart, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { 
+            e.preventDefault(); // Stop page scrolling
+            if (gameState === STATE_PLAYING) setSleighTarget(e); 
+        }, { passive: false });
 
-        // --- BOOT ---
+        // --- BOOTSTRAP ---
         window.onload = () => {
             initAssets();
             spawnSnow();
             lastTime = performance.now();
             requestAnimationFrame(loop);
         };
-
     </script>
 </body>
 </html>
