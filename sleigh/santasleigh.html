@@ -721,13 +721,36 @@
         }
 
         function showError(msg) {
+            // Defensive: this template currently has no loader/spinner overlay
+            // markup, so fall back to the announcement bar rather than
+            // throwing on missing elements (which was silently swallowing
+            // every API error before).
             const loaderText = document.getElementById('loader-text');
             const loaderError = document.getElementById('loader-error');
-            document.querySelector('.spinner').style.display = 'none';
-            loaderText.innerText = "Setup Required";
-            loaderText.style.color = "#d31c1c";
-            loaderError.innerHTML = msg;
-            loaderError.style.display = "block";
+            const spinner = document.querySelector('.spinner');
+            if (spinner) spinner.style.display = 'none';
+
+            if (loaderText && loaderError) {
+                loaderText.innerText = "Setup Required";
+                loaderText.style.color = "#d31c1c";
+                loaderError.innerHTML = msg;
+                loaderError.style.display = "block";
+            } else {
+                const annBar = document.getElementById('announcement-bar');
+                annBar.innerHTML = msg;
+                annBar.style.backgroundColor = "#d31c1c";
+                annBar.style.color = "#ffffff";
+                annBar.style.display = "block";
+            }
+            console.error(msg);
+        }
+
+        function removeLoader() {
+            // Defensive: safe no-op if no loader overlay element exists in
+            // this template. Wire this up to the real overlay's id/class if
+            // one gets added back later.
+            const loader = document.getElementById('loader') || document.querySelector('.loader-overlay');
+            if (loader) loader.style.display = 'none';
         }
 
         function fetchSleighData(api) {
@@ -765,15 +788,10 @@
                 linear-gradient(180deg, rgba(29, 29, 26, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%),
                 url('${settings.background_url}')
             `;
-        }
-            
-            document.body.style.backgroundImage = `
-                linear-gradient(180deg, rgba(29, 29, 26, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%),
-                url('${bgUrl}')
-            `;
             document.body.style.backgroundSize = 'cover';
             document.body.style.backgroundPosition = 'center';
             document.body.style.backgroundAttachment = 'fixed';
+        }
 
             // --- Apply Text & Branding ---
             const siteName = settings.sleigh_display_name || "Santa Sleigh";
