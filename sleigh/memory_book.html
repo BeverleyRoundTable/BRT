@@ -335,8 +335,9 @@
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-      const apiUrl = getApiUrl();
-      const sep = apiUrl.includes('?') ? '&' : '?';
+  const apiUrl = getApiUrl();
+  const sep = apiUrl.includes('?') ? '&' : '?';
+  const WORKER_URL = "https://santaproxy.beverley247.workers.dev/"; // Added worker proxy endpoint
 
       // Elements
       const gallery = document.getElementById('gallery');
@@ -640,7 +641,10 @@
             imageData: base64Output // server reads the real MIME from this prefix
           };
 
-          const response = await fetch(apiUrl, {
+          // ⬅️ REPLACE fetch(apiUrl, { ... }) RIGHT HERE:
+          const uploadTarget = `${WORKER_URL}?target=${encodeURIComponent(apiUrl)}`;
+
+          const response = await fetch(uploadTarget, {
             method: "POST",
             headers: { "Content-Type": "text/plain" },
             body: JSON.stringify(payload)
