@@ -595,7 +595,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
   position: fixed; inset: 0; background: var(--dark);
   z-index: 8000; display: none; flex-direction: column;
   /* align-items removed */
-  padding: 40px 20px; overflow-y: auto; text-align: center;
+  padding: 40px 20px; overflow-y: auto; overflow-x: hidden; text-align: center;
 }
     .ws-card {
   background: var(--surface); border: 1px solid var(--border-gold);
@@ -660,8 +660,8 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       font-size: 13px;
     }
     .ws-schedule-item:last-child { border-bottom: none; }
-    .ws-schedule-date { color: var(--text-dim); font-weight: 700; white-space: nowrap; }
-    .ws-schedule-name { color: var(--text); font-weight: 800; text-align: right; }
+    .ws-schedule-date { color: var(--text-dim); font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+    .ws-schedule-name { color: var(--text); font-weight: 800; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: 10px; }
     .ws-schedule-item:first-child .ws-schedule-name { color: var(--gold); }
     .ws-schedule-item:first-child .ws-schedule-date { color: var(--gold); }
 
