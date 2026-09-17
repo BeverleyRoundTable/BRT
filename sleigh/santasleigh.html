@@ -843,8 +843,8 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
             
             // Pass workerUrl instead of the raw Google Script api URL
             document.getElementById('tracker-iframe').src = `https://brt-23f.pages.dev/sleigh/tracker?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
-            document.getElementById('address-iframe').src = `https://brt-23f.pages.dev/sleigh/address.html?api=${encodeURIComponent(workerUrl)}`;
-            document.getElementById('memory-book-iframe').src = `https://brt-23f.pages.dev/sleigh/memory_book?api=${encodeURIComponent(workerUrl)}`;
+            document.getElementById('address-iframe').src = `https://brt-23f.pages.dev/sleigh/address.html?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
+            document.getElementById('memory-book-iframe').src = `https://brt-23f.pages.dev/sleigh/memory_book?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
 
             window.addEventListener("message", (e) => {
                 if (e.data && e.data.addressLookupHeight) {
