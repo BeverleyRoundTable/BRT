@@ -641,7 +641,7 @@
             imageData: base64Output // server reads the real MIME from this prefix
           };
 
-          // ⬅️ REPLACE fetch(apiUrl, { ... }) RIGHT HERE:
+          // ⬅️ Replace fetch(apiUrl, ...) with these lines:
           const uploadTarget = `${WORKER_URL}?target=${encodeURIComponent(apiUrl)}`;
 
           const response = await fetch(uploadTarget, {
