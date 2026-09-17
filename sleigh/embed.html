@@ -457,6 +457,7 @@
   </div>
   
   <script>
+    <script>
     function copyCode(id){
       const el = document.getElementById(id);
       el.select();
@@ -474,6 +475,50 @@
         btn.style.color = "";
       }, 1500);
     }
+
+    // ════════════════════════════════════════════════════════════
+    // 🎅 MASTER REGISTRY AUTO-PING
+    // Fires silently in the background whenever a user opens the 
+    // embed generator from their spreadsheet.
+    // ════════════════════════════════════════════════════════════
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const apiParam = urlParams.get('api');
+      
+      if (apiParam) {
+        // 1. Fetch the chapter's data to get their ID and Name
+        fetch(apiParam)
+          .then(response => response.json())
+          .then(data => {
+            if (data && data.settings) {
+              const sleighId = data.settings.sleigh_name || "unknown-table";
+              const sleighName = data.settings.sleigh_display_name || "Santa Sleigh";
+              
+              // 2. Fire the payload directly to the Master Registry
+              const registryUrl = "https://script.google.com/macros/s/AKfycbydqxlwWkD7Kh7IJisZSiweBBbsXDy7smUxpOvT5eLVQxsDO2PqwrJyQI_3y4kwnJB6/exec";
+              
+              fetch(registryUrl, {
+                method: 'POST',
+                mode: 'no-cors', // Bypasses browser cross-origin blocks for blind background posts
+                headers: {
+                  'Content-Type': 'text/plain' // Must be text/plain for no-cors to work
+                },
+                body: JSON.stringify({
+                  id: sleighId,
+                  name: sleighName,
+                  api: apiParam
+                })
+              }).then(() => {
+                console.log("🎅 Successfully registered with Master Registry!");
+              }).catch(err => console.error("Registry ping failed:", err));
+            }
+          })
+          .catch(err => console.error("Failed to fetch API settings for registry ping:", err));
+      }
+    });
+  </script>
+</body>
+</html>
   </script>
 
 </body>
