@@ -665,7 +665,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     .ws-schedule-item:first-child .ws-schedule-name { color: var(--gold); }
     .ws-schedule-item:first-child .ws-schedule-date { color: var(--gold); }
 
-    @media (max-height: 750px) {
+    @media (max-height: 950px) {
       .ws-card { padding: 20px 24px; }
       .ws-title { font-size: 32px; margin-bottom: 4px; }
       .ws-card > p { font-size: 12px; margin-bottom: 0; }
@@ -857,7 +857,7 @@ const futureRouteObjects = routes
               const scheduleEl = document.getElementById('wsSchedule');
               const listEl = document.getElementById('wsScheduleList');
               scheduleEl.style.display = 'block';
-              const toShow = futureRouteObjects.slice(0, 8);
+              const toShow = futureRouteObjects.slice(0, 3);
               for (const r of toShow) {
                 const d = new Date(r.date);
                 const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -866,14 +866,13 @@ const futureRouteObjects = routes
                 item.innerHTML = `<span class="ws-schedule-date">${dateStr}</span><span class="ws-schedule-name">${r.routeName || 'TBC'}</span>`;
                 listEl.appendChild(item);
               }
-              if (futureRouteObjects.length > 8) {
-                const more = document.createElement('div');
-                more.style.cssText = 'text-align:center; color:var(--text-dim); font-size:11px; margin-top:6px; font-style:italic;';
-                more.textContent = `+ ${futureRouteObjects.length - 8} more routes`;
-                listEl.appendChild(more);
-              }
+              if (futureRouteObjects.length > 3) {
+              const more = document.createElement('div');
+              more.style.cssText = 'text-align:center; color:var(--text-dim); font-size:11px; margin-top:6px; font-style:italic;';
+              more.textContent = `+ ${futureRouteObjects.length - 3} more routes`;
+              listEl.appendChild(more);
             }
-            
+           
             this.startLoop(startDate, targetDate);
             return true;
         },
