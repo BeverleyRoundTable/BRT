@@ -179,283 +179,289 @@
   </div>
 
   <script>
-    const params = new URLSearchParams(location.search);
-    
-    let API_URL = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
-    
-    if (params.has("api") && !params.has("proxy")) {
-      localStorage.removeItem("SANTA_PROXY");
-      sessionStorage.removeItem("SANTA_PROXY");
-    }
+  const params = new URLSearchParams(location.search);
+  
+  let API_URL = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
+  
+  if (params.has("api") && !params.has("proxy")) {
+    localStorage.removeItem("SANTA_PROXY");
+    sessionStorage.removeItem("SANTA_PROXY");
+  }
 
-    let PROXY_URL = params.get("proxy") || localStorage.getItem("SANTA_PROXY") || sessionStorage.getItem("SANTA_PROXY");
+  let PROXY_URL = params.get("proxy") || localStorage.getItem("SANTA_PROXY") || sessionStorage.getItem("SANTA_PROXY");
 
-    if (API_URL) {
-      localStorage.setItem("SANTA_API", API_URL); 
-      sessionStorage.setItem("SANTA_API", API_URL);
-    }
-    
-    if (PROXY_URL) {
-      localStorage.setItem("SANTA_PROXY", PROXY_URL); 
-      sessionStorage.setItem("SANTA_PROXY", PROXY_URL);
-    }
+  if (API_URL) {
+    localStorage.setItem("SANTA_API", API_URL); 
+    sessionStorage.setItem("SANTA_API", API_URL);
+  }
+  
+  if (PROXY_URL) {
+    localStorage.setItem("SANTA_PROXY", PROXY_URL); 
+    sessionStorage.setItem("SANTA_PROXY", PROXY_URL);
+  }
 
-    // ⚡ Force the heavy Google Script payload through your Cloudflare Worker cache (30s TTL)
-    const WORKER_URL = "https://santaproxy.beverley247.workers.dev/";
-    const DATA_URL = `${WORKER_URL}?ttl=30&target=${encodeURIComponent(API_URL)}`;
-    
-    const CATCHMENT_METERS = 150;
+  // ⚡ Force the heavy Google Script payload through your Cloudflare Worker cache (30s TTL)
+  const WORKER_URL = "https://santaproxy.beverley247.workers.dev/";
+  const DATA_URL = `${WORKER_URL}?ttl=30&target=${encodeURIComponent(API_URL)}`;
+  
+  const CATCHMENT_METERS = 150;
 
-    const redIcon = L.icon({
-      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41]
+  const redIcon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  let routesData = [];
+  let map;
+  let userPin = null;
+
+  function initMap() {
+    // Initialized without hardcoded city focus; fitBounds will adjust once API data loads
+    map = L.map('lookup-map').setView([53.84, -0.43], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap',
+      maxZoom: 18
+    }).addTo(map);
+
+    map.on('click', function(e) {
+      if (!document.getElementById('locateBtn').disabled) {
+        processCoordinates(e.latlng.lat, e.latlng.lng);
+      }
     });
+  }
 
-    let routesData = [];
-    let map;
-    let userPin = null;
+  async function loadRouteData() {
+    const resultsDiv = document.getElementById('results');
+    const btn = document.getElementById('locateBtn');
+    const defaultBtnHtml = `
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px;">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg> Use My Current Location`;
 
-    function initMap() {
-      map = L.map('lookup-map').setView([52.470611, -1.921000], 16);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap',
-        maxZoom: 18
-      }).addTo(map);
-
-      map.on('click', function(e) {
-        if (!document.getElementById('locateBtn').disabled) {
-          processCoordinates(e.latlng.lat, e.latlng.lng);
-        }
-      });
+    if (!API_URL) {
+      resultsDiv.innerHTML = `
+        <div class="addr-no-results" style="color: var(--red);">
+          Error: Could not connect to Santa's API.<br>
+          <small style="color: var(--text-dim);">Try opening the main tracker first to establish a connection.</small>
+        </div>`;
+      return;
     }
 
-    async function loadRouteData() {
-      const resultsDiv = document.getElementById('results');
-      const btn = document.getElementById('locateBtn');
-      const defaultBtnHtml = `
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2px;">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
-        </svg> Use My Current Location`;
+    try {
+      const res = await fetch(DATA_URL, { cache: "no-store" });
+      const data = await res.json();
 
-      if (!API_URL) {
-        resultsDiv.innerHTML = `
-          <div class="addr-no-results" style="color: var(--red);">
-            Error: Could not connect to Santa's API.<br>
-            <small style="color: var(--text-dim);">Try opening the main tracker first to establish a connection.</small>
-          </div>`;
-        return;
-      }
+      if(data && data.routes) {
+        routesData = data.routes;
+        const totalRoutes = routesData.length;
+        const loadedLayers = [];
 
-      try {
-        const res = await fetch(DATA_URL, { cache: "no-store" });
-        const data = await res.json();
+        await Promise.all(routesData.map(async (route, index) => {
+          if (route.gpxUrl) {
+            try {
+              const gpxRes = await fetch(route.gpxUrl, { cache: "no-store" });
+              const gpxXml = await gpxRes.text();
+              route.geoJSON = parseGPXToLineString(gpxXml);
 
-        if(data && data.routes) {
-          routesData = data.routes;
-          const totalRoutes = routesData.length; // Get the total number of routes
+              if(route.geoJSON) {
+                const hue = Math.round((index / totalRoutes) * 360);
+                route.color = `hsl(${hue}, 90%, 55%)`;
+                
+                route.mapLayer = L.geoJSON(route.geoJSON, {
+                  color: route.color,
+                  weight: 4, 
+                  opacity: 0.75
+                }).addTo(map);
 
-          await Promise.all(routesData.map(async (route, index) => {
-            if (route.gpxUrl) {
-              try {
-                const gpxRes = await fetch(route.gpxUrl, { cache: "no-store" });
-                const gpxXml = await gpxRes.text();
-                route.geoJSON = parseGPXToLineString(gpxXml);
+                loadedLayers.push(route.mapLayer);
+              }
+            } catch (e) { console.error("GPX load failed for", route.routeName); }
+          }
+        }));
 
-                if(route.geoJSON) {
-                  // Dynamically generate a unique color across the 360-degree color wheel
-                  const hue = Math.round((index / totalRoutes) * 360);
-                  route.color = `hsl(${hue}, 90%, 55%)`; // High saturation/lightness to pop on dark map
-                  
-                  route.mapLayer = L.geoJSON(route.geoJSON, {
-                    color: route.color,
-                    weight: 4, 
-                    opacity: 0.75
-                  }).addTo(map);
-                }
-              } catch (e) { console.error("GPX load failed for", route.routeName); }
-            }
-          }));
+        // 📍 Dynamically center and scale map to fit all loaded API routes
+        if (loadedLayers.length > 0) {
+          const featureGroup = L.featureGroup(loadedLayers);
+          map.fitBounds(featureGroup.getBounds(), { padding: [30, 30] });
         }
-      } catch (err) {
-        console.error("Failed to fetch route data:", err);
-      } finally {
-        btn.innerHTML = defaultBtnHtml;
-        btn.disabled = false;
+      }
+    } catch (err) {
+      console.error("Failed to fetch route data:", err);
+    } finally {
+      btn.innerHTML = defaultBtnHtml;
+      btn.disabled = false;
+    }
+  }
+
+  function parseGPXToLineString(xmlStr) {
+    const cleanXmlStr = xmlStr.replace(/xmlns(:\w+)?=".*?"/g, '');
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(cleanXmlStr, "text/xml");
+    const trackPoints = xmlDoc.getElementsByTagName("trkpt");
+
+    const coords = [];
+    for (let i = 0; i < trackPoints.length; i++) {
+      const lat = parseFloat(trackPoints[i].getAttribute("lat"));
+      const lon = parseFloat(trackPoints[i].getAttribute("lon"));
+      if (!isNaN(lat) && !isNaN(lon)) {
+        coords.push([lon, lat]); 
       }
     }
 
-    function parseGPXToLineString(xmlStr) {
-      const cleanXmlStr = xmlStr.replace(/xmlns(:\w+)?=".*?"/g, '');
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(cleanXmlStr, "text/xml");
-      const trackPoints = xmlDoc.getElementsByTagName("trkpt");
+    if (coords.length > 1) {
+      return turf.lineString(coords);
+    }
+    return null;
+  }
 
-      const coords = [];
-      for (let i = 0; i < trackPoints.length; i++) {
-        const lat = parseFloat(trackPoints[i].getAttribute("lat"));
-        const lon = parseFloat(trackPoints[i].getAttribute("lon"));
-        if (!isNaN(lat) && !isNaN(lon)) {
-          coords.push([lon, lat]); 
-        }
-      }
+  document.getElementById('locateBtn').addEventListener('click', () => {
+    const btn = document.getElementById('locateBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "Locating...";
+    btn.disabled = true;
 
-      if (coords.length > 1) {
-        return turf.lineString(coords);
-      }
-      return null;
+    if (!navigator.geolocation) {
+      alert("Your browser doesn't support geolocation. Please tap the map instead.");
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      return;
     }
 
-    document.getElementById('locateBtn').addEventListener('click', () => {
-      const btn = document.getElementById('locateBtn');
-      const originalText = btn.innerHTML;
-      btn.innerHTML = "Locating...";
-      btn.disabled = true;
-
-      if (!navigator.geolocation) {
-        alert("Your browser doesn't support geolocation. Please tap the map instead.");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
         btn.innerHTML = originalText;
         btn.disabled = false;
-        return;
-      }
+        processCoordinates(position.coords.latitude, position.coords.longitude);
+      },
+      (error) => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert("Could not get your location. Please check your browser permissions or tap the map directly.");
+      },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  });
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          btn.innerHTML = originalText;
-          btn.disabled = false;
-          processCoordinates(position.coords.latitude, position.coords.longitude);
-        },
-        (error) => {
-          btn.innerHTML = originalText;
-          btn.disabled = false;
-          alert("Could not get your location. Please check your browser permissions or tap the map directly.");
-        },
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
-    });
+  function processCoordinates(lat, lng) {
+    if (userPin) map.removeLayer(userPin);
+    userPin = L.marker([lat, lng], {icon: redIcon}).addTo(map);
+    map.setView([lat, lng], 16);
 
-    function processCoordinates(lat, lng) {
-      if (userPin) map.removeLayer(userPin);
-      userPin = L.marker([lat, lng], {icon: redIcon}).addTo(map);
-      map.setView([lat, lng], 16);
+    const userLocation = turf.point([lng, lat]);
+    const matchedRoutes = [];
 
-      const userLocation = turf.point([lng, lat]);
-      const matchedRoutes = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+    routesData.forEach(route => {
+      if (route.geoJSON) {
+        const distance = turf.pointToLineDistance(userLocation, route.geoJSON, { units: 'meters' });
 
-      routesData.forEach(route => {
-        if (route.geoJSON) {
-          const distance = turf.pointToLineDistance(userLocation, route.geoJSON, { units: 'meters' });
+        if (distance <= CATCHMENT_METERS) {
+          let isFutureOrToday = true;
+          let parsedTime = Infinity; 
 
-          if (distance <= CATCHMENT_METERS) {
-            let isFutureOrToday = true;
-            let parsedTime = Infinity; 
-
-            if (route.date) {
-              const routeDate = new Date(route.date);
-              if (!isNaN(routeDate)) {
-                const cleanRouteDate = new Date(routeDate.getFullYear(), routeDate.getMonth(), routeDate.getDate());
-                if (cleanRouteDate < today) {
-                  isFutureOrToday = false; 
-                }
-                parsedTime = cleanRouteDate.getTime();
+          if (route.date) {
+            const routeDate = new Date(route.date);
+            if (!isNaN(routeDate)) {
+              const cleanRouteDate = new Date(routeDate.getFullYear(), routeDate.getMonth(), routeDate.getDate());
+              if (cleanRouteDate < today) {
+                isFutureOrToday = false; 
               }
+              parsedTime = cleanRouteDate.getTime();
             }
+          }
 
-            if (isFutureOrToday) {
-              matchedRoutes.push({
-                ...route,
-                distance: Math.round(distance),
-                parsedDate: parsedTime
-              });
-            }
+          if (isFutureOrToday) {
+            matchedRoutes.push({
+              ...route,
+              distance: Math.round(distance),
+              parsedDate: parsedTime
+            });
           }
         }
-      });
+      }
+    });
 
-      matchedRoutes.sort((a, b) => {
-        if (a.parsedDate !== b.parsedDate) return a.parsedDate - b.parsedDate;
-        return a.distance - b.distance; 
-      });
+    matchedRoutes.sort((a, b) => {
+      if (a.parsedDate !== b.parsedDate) return a.parsedDate - b.parsedDate;
+      return a.distance - b.distance; 
+    });
 
-      renderResults(matchedRoutes);
+    renderResults(matchedRoutes);
+  }
+
+  function renderResults(matches) {
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = "";
+
+    if (matches.length === 0) {
+      resultsDiv.innerHTML = `
+        <div class="addr-no-results">
+          No routes found close to this location.
+          <br><small style="font-size: 13px; color: var(--text-dim); font-weight: 500;">Try dropping the pin slightly closer to the main road.</small>
+        </div>`;
+    } else {
+      matches.forEach(route => {
+        const formattedDate = route.date ? new Date(route.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : "Date TBC";
+
+        resultsDiv.innerHTML += `
+          <div class="addr-route-card" data-route-name="${route.routeName}" style="--route-color: ${route.color || '#FBAF33'};">
+            <h3 class="addr-route-title">${route.routeName}</h3>
+            <p class="addr-route-date">${formattedDate} (Starts at approx ${route['Start Time'] || '17:30'})</p>
+            <p style="margin: 12px 0 0; font-size: 13px; font-weight: 600; color: var(--text-dim);">
+              📍 This route passes roughly <span style="color: var(--text);">${route.distance} meters</span> from your pin.
+            </p>
+          </div>
+        `;
+      });
     }
 
-    function renderResults(matches) {
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = "";
+    document.querySelectorAll('.addr-route-card').forEach(card => {
+      card.addEventListener('click', function() {
+        const targetRouteName = this.getAttribute('data-route-name');
 
-      if (matches.length === 0) {
-        resultsDiv.innerHTML = `
-          <div class="addr-no-results">
-            No routes found close to this location.
-            <br><small style="font-size: 13px; color: var(--text-dim); font-weight: 500;">Try dropping the pin slightly closer to the main road.</small>
-          </div>`;
-      } else {
-        matches.forEach(route => {
-          const formattedDate = route.date ? new Date(route.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : "Date TBC";
-
-          // Inject the generated HSL color into the card's CSS variable
-          resultsDiv.innerHTML += `
-            <div class="addr-route-card" data-route-name="${route.routeName}" style="--route-color: ${route.color || '#FBAF33'};">
-              <h3 class="addr-route-title">${route.routeName}</h3>
-              <p class="addr-route-date">${formattedDate} (Starts at approx ${route['Start Time'] || '17:30'})</p>
-              <p style="margin: 12px 0 0; font-size: 13px; font-weight: 600; color: var(--text-dim);">
-                📍 This route passes roughly <span style="color: var(--text);">${route.distance} meters</span> from your pin.
-              </p>
-            </div>
-          `;
-        });
-      }
-
-      document.querySelectorAll('.addr-route-card').forEach(card => {
-        card.addEventListener('click', function() {
-          const targetRouteName = this.getAttribute('data-route-name');
-
-          // Reset all routes to their generated color state
-          routesData.forEach(r => {
-            if (r.mapLayer) {
-              r.mapLayer.setStyle({ color: r.color || '#FBAF33', weight: 4, opacity: 0.75 });
-            }
-          });
-
-          // Highlight clicked route with thicker stroke
-          const selectedRoute = routesData.find(r => r.routeName === targetRouteName);
-          if (selectedRoute && selectedRoute.mapLayer) {
-            selectedRoute.mapLayer.setStyle({ color: selectedRoute.color || '#FBAF33', weight: 8, opacity: 1 });
-            selectedRoute.mapLayer.bringToFront();
-            
-            map.flyToBounds(selectedRoute.mapLayer.getBounds(), { padding: [40, 40], duration: 1.2 });
+        routesData.forEach(r => {
+          if (r.mapLayer) {
+            r.mapLayer.setStyle({ color: r.color || '#FBAF33', weight: 4, opacity: 0.75 });
           }
         });
+
+        const selectedRoute = routesData.find(r => r.routeName === targetRouteName);
+        if (selectedRoute && selectedRoute.mapLayer) {
+          selectedRoute.mapLayer.setStyle({ color: selectedRoute.color || '#FBAF33', weight: 8, opacity: 1 });
+          selectedRoute.mapLayer.bringToFront();
+          
+          map.flyToBounds(selectedRoute.mapLayer.getBounds(), { padding: [40, 40], duration: 1.2 });
+        }
       });
+    });
 
-      sendHeight();
-    }
+    sendHeight();
+  }
 
-    function sendHeight() {
-      const height = document.documentElement.scrollHeight;
-      parent.postMessage({ addressLookupHeight: height }, "*");
-    }
+  function sendHeight() {
+    const height = document.documentElement.scrollHeight;
+    parent.postMessage({ addressLookupHeight: height }, "*");
+  }
 
-    window.onload = () => {
-      initMap();
-      loadRouteData();
-      sendHeight();
-    };
+  window.onload = () => {
+    initMap();
+    loadRouteData();
+    sendHeight();
+  };
 
-    const observer = new MutationObserver(sendHeight);
-    observer.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener("resize", sendHeight);
+  const observer = new MutationObserver(sendHeight);
+  observer.observe(document.body, { childList: true, subtree: true });
+  window.addEventListener("resize", sendHeight);
 
-  </script>
+</script>
 </body>
 </html>
