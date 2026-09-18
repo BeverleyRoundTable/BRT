@@ -517,8 +517,15 @@
          URLSearchParams.prototype.get('api') to return the resolved API URL.
          Reading it any earlier (e.g. from <head>) captures the real,
          un-patched, empty query string instead. -->
+    
     <script>
-        window.__sleighApiUrl = new URLSearchParams(location.search).get('api');
+    window.__sleighApiUrl = new URLSearchParams(location.search).get('api');
+    
+    if (window.__sleighPrefetchedData) {
+        // Data was injected by the router, use it immediately
+        window.__sleighDataPromise = Promise.resolve(window.__sleighPrefetchedData);
+    } else {
+        // Fallback for direct loads without the router
         window.__sleighDataPromise = window.__sleighApiUrl
             ? fetch(`https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(window.__sleighApiUrl)}`)
                 .then(response => {
@@ -526,10 +533,8 @@
                     return response.json();
                 })
             : Promise.resolve(null);
-    </script>
-
-
-    
+    }
+</script>
 
     <!-- Live Announcement -->
     <div id="announcement-bar"></div>
