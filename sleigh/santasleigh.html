@@ -15,26 +15,49 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="Santa Sleigh Live Tracker">
     <meta property="og:description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
-    <meta property="og:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/site_background.png"> 
+    <meta property="og:image" content="https://brt-23f.pages.dev/icons/site_background.png"> 
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Santa Sleigh Live Tracker">
     <meta name="twitter:description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
-    <meta name="twitter:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/site_background.png">
+    <meta name="twitter:image" content="https://brt-23f.pages.dev/icons/site_background.png">
 
     <!-- PWA & Mobile App Tags -->
     <meta name="theme-color" content="#1D1D1A">
-    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png">
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png">
+    <link rel="icon" type="image/png" href="https://brt-23f.pages.dev/icons/RTBI_Santa.png">
+    <link rel="apple-touch-icon" href="https://brt-23f.pages.dev/icons/RTBI_Santa.png">
     <link rel="manifest" href="/manifest.json">
     
     <!-- Open Sans is the official Round Table paragraph font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
+    <!-- Perf: only the families actually used (solid + brands), not the full bundle -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/brands.min.css">
+
+    <!-- Perf: warm the connections the personalised-content path depends on -->
+    <link rel="preconnect" href="https://santaproxy.beverley247.workers.dev">
+    <link rel="preconnect" href="https://brt-23f.pages.dev">
+
+    <!-- Perf: kick off the sleigh-data fetch now, in parallel with the rest of
+         this document parsing, instead of waiting for the whole ~1000-line
+         page to finish before the network request even starts. -->
+    <script>
+        window.__sleighApiUrl = new URLSearchParams(location.search).get('api');
+        window.__sleighDataPromise = window.__sleighApiUrl
+            ? fetch(`https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(window.__sleighApiUrl)}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Failed to load API data");
+                    return response.json();
+                })
+            : Promise.resolve(null);
+    </script>
+
     <style>
         html {
             scroll-behavior: smooth;
@@ -63,16 +86,27 @@
         background-color: var(--bg-dark);
         
         /* Load the default background immediately */
+        /* Default fallback background, served from the same fast origin as
+           the rest of the personalised content. A table's own
+           settings.background_url (via the API) overrides this once
+           applySettings() runs. */
         background-image: 
             linear-gradient(180deg, rgba(29, 29, 26, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%),
-            url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/site_background.png');
-        background-attachment: fixed;
+            url('https://brt-23f.pages.dev/icons/site_background.png');
         background-size: cover;
         background-position: center;
         
         color: var(--text-main);
         line-height: 1.6;
         overflow-x: hidden;
+    }
+
+    /* Perf: fixed backgrounds force a repaint on every scroll frame on mobile
+       Safari — only pin the background on larger screens where that's free. */
+    @media(min-width: 601px) {
+        body {
+            background-attachment: fixed;
+        }
     }
 
         /* Official Header Font (Eurostile fallback stack) */
@@ -711,13 +745,22 @@
         document.getElementById('current-year-text').innerText = currentYear;
         document.getElementById('year').innerText = currentYear;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const apiUrl = urlParams.get('api');
+        const apiUrl = window.__sleighApiUrl;
 
         if (!apiUrl) {
             showError("Welcome to the Universal Sleigh Template! <br><br> To use this page, you must provide your TurboSanta API URL in the browser address bar like this: <br><br> <code>?api=YOUR_GOOGLE_SCRIPT_URL</code>");
         } else {
-            fetchSleighData(apiUrl);
+            // Perf: consume the fetch already started in <head> rather than
+            // firing a second, duplicate request here.
+            window.__sleighDataPromise
+                .then(data => {
+                    if (data.error) throw new Error(data.error);
+                    applySettings(data, apiUrl);
+                    removeLoader();
+                })
+                .catch(err => {
+                    showError("Could not load data from the provided API. Please check the URL and ensure your Google Script is deployed as a Web App accessible to 'Anyone'.<br><br>" + err.message);
+                });
         }
 
         function showError(msg) {
@@ -753,6 +796,8 @@
             if (loader) loader.style.display = 'none';
         }
 
+        // Used only to re-fetch after a reconnect (see the 'online' listener
+        // below) — the initial load is handled by window.__sleighDataPromise.
         function fetchSleighData(api) {
             const workerUrl = `https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(api)}`;
 
@@ -822,7 +867,7 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
             if (settings.logo_overlay_url) {
                 navLogo.src = settings.logo_overlay_url;
             } else {
-                navLogo.src = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png";
+                navLogo.src = "https://brt-23f.pages.dev/icons/RTBI_Santa.png";
             }
             navLogo.style.display = "block";
 
