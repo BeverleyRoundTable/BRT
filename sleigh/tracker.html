@@ -804,7 +804,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       </div>
       
       <button class="ws-skip-btn" onclick="document.getElementById('workshopOverlay').remove();">Bypass & view map</button>
-      <a id="wsDonate" class="ws-donate hidden" href="#" target="_blank">🎁 Donate to support good causes</a>
+<a id="wsDonate" class="ws-donate" href="#" target="_blank" style="display: none;">🎁 Donate to support good causes</a>
     </div>
   </div>
 
@@ -2365,10 +2365,14 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
         if (twitchEnabled && twitchChannel && twitchChannel.trim() !== "" && !AppState.flags.isKiosk && !AppState.flags.isDriver) { const twitchBtn = document.getElementById('twitchBtn'), twitchBox = document.getElementById('twitchBox'); let twitchLoaded = false; twitchBtn.style.display = "inline-block"; twitchBtn.addEventListener('click', () => { if (twitchBox.classList.contains('visible')) { twitchBox.classList.remove('visible'); twitchBtn.textContent = "📺 Cam: OFF"; twitchBtn.style.background = "var(--surface-2)"; twitchBtn.style.color = "var(--rt-gold)"; } else { twitchBox.classList.add('visible'); twitchBtn.textContent = "📺 Cam: LIVE"; twitchBtn.style.background = "var(--gold-glow)"; twitchBtn.style.color = "var(--rt-gold)"; if (!twitchLoaded) { const parents = new Set([window.location.hostname || "localhost"]); if (window.top !== window.self && document.referrer) { try { const rh = new URL(document.referrer).hostname; if (rh) parents.add(rh); } catch(e) {} } const pp = [...parents].map(p => `parent=${encodeURIComponent(p)}`).join('&'); twitchBox.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(twitchChannel)}&${pp}&muted=true" frameborder="0" allowfullscreen="true" scrolling="no" allow="autoplay; fullscreen"></iframe>`; twitchLoaded = true; } } }); }
         
         const don = apiData.donations || {};
+        const wsD = document.getElementById('wsDonate'); // Moved outside the if-statement
+        
         if (settings.donate_url && !AppState.flags.isKiosk) { 
           AppState.dom.donateLink.href = settings.donate_url;
-          const wsD = document.getElementById('wsDonate');
-          if (wsD) { wsD.href = settings.donate_url; wsD.classList.remove('hidden'); } 
+          if (wsD) { 
+            wsD.href = settings.donate_url; 
+            wsD.style.display = "inline-block"; // Show the workshop button
+          } 
           AppState.dom.donateBox.style.display = "block"; 
           GamifiedDonation.init();
           if (don.target && don.target > 0) { 
@@ -2377,6 +2381,7 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
           } 
         } else { 
           AppState.dom.donateBox.style.display = "none"; 
+          if (wsD) wsD.style.display = "none"; // Hide the workshop button
         }
         
         fetch(`${AppState.vars.apiUrl}?function=logView&ua=${encodeURIComponent(navigator.userAgent)}&source=web&route=${encodeURIComponent(AppState.vars.todayRoute ? AppState.vars.todayRoute.routeName : 'Unassigned')}`, { keepalive: true });
