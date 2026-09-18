@@ -748,23 +748,44 @@
         document.getElementById('current-year-text').innerText = currentYear;
         document.getElementById('year').innerText = currentYear;
 
-        const apiUrl = window.__sleighApiUrl;
+        // Start of replacement
+function initializeSleighApp(retryCount = 0) {
+    // 1. Re-check for the API URL in case the router was delayed
+    const apiUrl = window.__sleighApiUrl || new URLSearchParams(location.search).get('api');
 
-        if (!apiUrl) {
-            showError("Welcome to the Universal Sleigh Template! <br><br> To use this page, you must provide your TurboSanta API URL in the browser address bar like this: <br><br> <code>?api=YOUR_GOOGLE_SCRIPT_URL</code>");
-        } else {
-            // Perf: consume the fetch already started in <head> rather than
-            // firing a second, duplicate request here.
-            window.__sleighDataPromise
-                .then(data => {
-                    if (data.error) throw new Error(data.error);
-                    applySettings(data, apiUrl);
-                    removeLoader();
-                })
-                .catch(err => {
-                    showError("Could not load data from the provided API. Please check the URL and ensure your Google Script is deployed as a Web App accessible to 'Anyone'.<br><br>" + err.message);
-                });
+    if (!apiUrl) {
+        // 2. If the router script is still loading, wait 100ms and try again (up to 10 times)
+        if (retryCount < 10) {
+            setTimeout(() => initializeSleighApp(retryCount + 1), 100);
+            return;
         }
+        showError("Welcome to the Universal Sleigh Template! <br><br> To use this page, you must provide your TurboSanta API URL in the browser address bar like this: <br><br> <code>?api=YOUR_GOOGLE_SCRIPT_URL</code>");
+        return;
+    }
+
+    // 3. If we found the URL but missed the early fetch at the top of the page, trigger it now
+    if (!window.__sleighDataPromise) {
+        window.__sleighDataPromise = fetch(`https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(apiUrl)}`)
+            .then(response => {
+                if (!response.ok) throw new Error("Failed to load API data");
+                return response.json();
+            });
+    }
+
+    // 4. Process the data
+    window.__sleighDataPromise
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            applySettings(data, apiUrl);
+            removeLoader();
+        })
+        .catch(err => {
+            showError("Could not load data from the provided API. Please check the URL and ensure your Google Script is deployed as a Web App accessible to 'Anyone'.<br><br>" + err.message);
+        });
+}
+
+initializeSleighApp();
+// End of replacement
 
         function showError(msg) {
             // Defensive: this template currently has no loader/spinner overlay
