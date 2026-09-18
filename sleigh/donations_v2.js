@@ -21,7 +21,6 @@
             return;
         }
 
-        apiBase = apiBase.replace(/\?.*$/, "");
         const API_URL = apiBase;
 
         installCSS();
