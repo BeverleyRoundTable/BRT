@@ -39,7 +39,11 @@ const miniThermo = `
 <script>
 const s = document.createElement('script');
 s.src = 'https://brt-23f.pages.dev/sleigh/donations_v2.js';
-s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); };
+s.onload = () => { 
+    const gasUrl = '${ensureApi()}';
+    window.BRT_DONATE_API = 'https://santaproxy.beverley247.workers.dev/?ttl=10&target=' + encodeURIComponent(gasUrl); 
+    if (typeof BRT_DONATE_INIT === 'function') BRT_DONATE_INIT(); 
+};
 document.head.appendChild(s);
 </script>
 `;
@@ -52,7 +56,11 @@ const fullThermo = `
 <script>
 const s = document.createElement('script');
 s.src = 'https://brt-23f.pages.dev/sleigh/donations_v2.js';
-s.onload = () => { window.BRT_DONATE_API = '${ensureApi()}'; BRT_DONATE_INIT(); };
+s.onload = () => { 
+    const gasUrl = '${ensureApi()}';
+    window.BRT_DONATE_API = 'https://santaproxy.beverley247.workers.dev/?ttl=10&target=' + encodeURIComponent(gasUrl); 
+    if (typeof BRT_DONATE_INIT === 'function') BRT_DONATE_INIT(); 
+};
 document.head.appendChild(s);
 </script>
 `;
