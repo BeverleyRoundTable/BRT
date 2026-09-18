@@ -44,20 +44,6 @@
     <link rel="preconnect" href="https://santaproxy.beverley247.workers.dev">
     <link rel="preconnect" href="https://brt-23f.pages.dev">
 
-    <!-- Perf: kick off the sleigh-data fetch now, in parallel with the rest of
-         this document parsing, instead of waiting for the whole ~1000-line
-         page to finish before the network request even starts. -->
-    <script>
-        window.__sleighApiUrl = new URLSearchParams(location.search).get('api');
-        window.__sleighDataPromise = window.__sleighApiUrl
-            ? fetch(`https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(window.__sleighApiUrl)}`)
-                .then(response => {
-                    if (!response.ok) throw new Error("Failed to load API data");
-                    return response.json();
-                })
-            : Promise.resolve(null);
-    </script>
-
     <style>
         html {
             scroll-behavior: smooth;
@@ -525,6 +511,23 @@
     </style>
 </head>
 <body>
+    <!-- Perf: kick off the sleigh-data fetch as early as possible, but only
+         once we're past </head> — the router (for pretty-subdomain sites)
+         injects a script at the end of <head> that patches
+         URLSearchParams.prototype.get('api') to return the resolved API URL.
+         Reading it any earlier (e.g. from <head>) captures the real,
+         un-patched, empty query string instead. -->
+    <script>
+        window.__sleighApiUrl = new URLSearchParams(location.search).get('api');
+        window.__sleighDataPromise = window.__sleighApiUrl
+            ? fetch(`https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(window.__sleighApiUrl)}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Failed to load API data");
+                    return response.json();
+                })
+            : Promise.resolve(null);
+    </script>
+
 
     
 
