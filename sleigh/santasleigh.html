@@ -102,6 +102,28 @@
             letter-spacing: 1px;
         }
 
+        /* --- LOADER OVERLAY --- */
+.loader-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+}
+.spinner {
+    width: 50px; height: 50px;
+    border: 4px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+        
         /* --- NAVBAR --- */
         nav {
             background: var(--bg-card);
@@ -203,11 +225,42 @@
             filter: brightness(1.1);
         }
 
+        /* --- MAP SCROLL TRAP FIX --- */
+.map-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+.map-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+.map-overlay-pill {
+    background: var(--primary);
+    color: var(--bg-card);
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+#tracker-iframe.inactive {
+    pointer-events: none;
+}
+        
         /* --- SECTIONS --- */
         section {
             padding: 60px 20px;
             max-width: 1000px;
             margin: 0 auto;
+            scroll-margin-top: 80px;
         }
         .section-header {
             text-align: center;
@@ -517,6 +570,13 @@
          URLSearchParams.prototype.get('api') to return the resolved API URL.
          Reading it any earlier (e.g. from <head>) captures the real,
          un-patched, empty query string instead. -->
+
+    <!-- Loading Overlay -->
+<div id="loader" class="loader-overlay">
+    <div class="spinner"></div>
+    <h2 id="loader-text" class="brand-font">Loading Sleigh Data...</h2>
+    <div id="loader-error" style="display: none; color: #d31c1c; text-align: center; max-width: 80%; margin-top: 20px;"></div>
+</div>
     
     <script>
     window.__sleighApiUrl = new URLSearchParams(location.search).get('api');
@@ -567,9 +627,14 @@
             <p>Watch Santa's sleigh move in real-time as he visits the streets!</p>
         </div>
         <div class="iframe-container">
-            <!-- Added lazy loading -->
-            <iframe id="tracker-iframe" height="600" title="Santa Tracker" loading="lazy" allow="geolocation; screen-wake-lock"></iframe>
+    <div class="map-wrapper">
+        <div class="map-overlay" id="map-overlay" onclick="activateMap()">
+            <div class="map-overlay-pill">Tap to explore map</div>
         </div>
+        <!-- Note the added 'inactive' class -->
+        <iframe id="tracker-iframe" class="inactive" height="600" title="Santa Tracker" allow="geolocation; screen-wake-lock"></iframe>
+    </div>
+</div>
     </section>
 
     <!-- Donations Section -->
@@ -1118,6 +1183,11 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
 
     observer.observe(document.getElementById('address-iframe'));
     observer.observe(document.getElementById('memory-book-iframe'));
+}
+
+        function activateMap() {
+    document.getElementById('map-overlay').style.display = 'none';
+    document.getElementById('tracker-iframe').classList.remove('inactive');
 }
         
     </script>
