@@ -224,36 +224,6 @@
             transform: translateY(-2px);
             filter: brightness(1.1);
         }
-
-        /* --- MAP SCROLL TRAP FIX --- */
-.map-wrapper {
-    position: relative;
-    width: 100%;
-    height: 100%;
-}
-.map-overlay {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    cursor: pointer;
-    transition: opacity 0.3s ease;
-}
-.map-overlay-pill {
-    background: var(--primary);
-    color: var(--bg-card);
-    padding: 10px 24px;
-    border-radius: 20px;
-    font-weight: 700;
-    text-transform: uppercase;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-}
-#tracker-iframe.inactive {
-    pointer-events: none;
-}
         
         /* --- SECTIONS --- */
         section {
@@ -627,13 +597,7 @@
             <p>Watch Santa's sleigh move in real-time as he visits the streets!</p>
         </div>
         <div class="iframe-container">
-    <div class="map-wrapper">
-        <div class="map-overlay" id="map-overlay" onclick="activateMap()">
-            <div class="map-overlay-pill">Tap to explore map</div>
-        </div>
-        <!-- Note the added 'inactive' class -->
-        <iframe id="tracker-iframe" class="inactive" height="600" title="Santa Tracker" allow="geolocation; screen-wake-lock"></iframe>
-    </div>
+    <iframe id="tracker-iframe" height="600" title="Santa Tracker" allow="geolocation; screen-wake-lock"></iframe>
 </div>
     </section>
 
@@ -1184,12 +1148,7 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
     observer.observe(document.getElementById('address-iframe'));
     observer.observe(document.getElementById('memory-book-iframe'));
 }
-
-        function activateMap() {
-    document.getElementById('map-overlay').style.display = 'none';
-    document.getElementById('tracker-iframe').classList.remove('inactive');
-}
-        
+       
     </script>
 </body>
 </html>
