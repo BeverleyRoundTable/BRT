@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +8,8 @@
     <!-- Primary Meta Tags -->
     <meta name="description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
     
-    <!-- SEO: Static Canonical Link added to head -->
-    <link rel="canonical" href="https://your-domain.com/">
+    <!-- Canonical link is added at runtime (renderBranding) so every table gets its own
+         URL. It used to be a hardcoded placeholder domain. -->
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -58,6 +58,7 @@
             --text-main: #FFFFFF;
             --text-muted: rgba(255, 255, 255, 0.7);
             --border: rgba(255, 255, 255, 0.15);
+            --on-primary: #000000; /* Text colour on --primary; auto-picked in JS for custom brand colours */
         }
 
         * {
@@ -175,12 +176,16 @@
         /* --- ANNOUNCEMENT BAR --- */
         #announcement-bar {
             background: var(--primary);
-            color: var(--bg-card);
+            color: var(--on-primary);
             padding: 10px 20px;
             text-align: center;
             font-weight: 700;
             display: none;
             font-size: 14px;
+        }
+        #announcement-bar.is-alert {
+            background: #d31c1c;
+            color: #ffffff;
         }
 
         /* --- HERO --- */
@@ -209,7 +214,7 @@
             display: inline-block;
             padding: 12px 28px;
             background: var(--primary);
-            color: var(--bg-card);
+            color: var(--on-primary);
             font-family: 'Eurostile Extended Bold', 'Eurostile', 'Open Sans', sans-serif;
             font-size: 20px;
             text-decoration: none;
@@ -351,7 +356,7 @@
         }
         .btn-outline:hover {
             background: var(--primary);
-            color: var(--bg-card);
+            color: var(--on-primary);
         }
         
         @media(max-width: 600px) {
@@ -455,7 +460,7 @@
         /* Unified hover transform scale across interactive elements */
         .social-btn:hover {
             background: var(--primary);
-            color: var(--bg-card);
+            color: var(--on-primary);
             transform: translateY(-2px); 
         }
 
@@ -482,7 +487,10 @@
             cursor: pointer;
             background: rgba(0,0,0,0.4);
             transition: background 0.2s ease;
+            list-style: none;
         }
+        .faq-header::-webkit-details-marker { display: none; }
+        .faq-header::marker { content: ''; }
         .faq-header:hover {
             background: rgba(251, 175, 51, 0.1);
         }
@@ -498,21 +506,16 @@
             font-size: 20px;
             transition: transform 0.3s ease;
         }
+        /* Native <details>: no max-height cap, so long custom answers are never cut off */
         .faq-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out, padding 0.3s ease;
+            padding: 20px;
+            border-top: 1px solid var(--border);
             background: var(--bg-card);
             color: var(--text-muted);
             font-size: 15px;
             line-height: 1.6;
         }
-        .faq-item.active .faq-content {
-            padding: 20px;
-            max-height: 500px; 
-            border-top: 1px solid var(--border);
-        }
-        .faq-item.active .faq-icon {
+        .faq-item[open] .faq-icon {
             transform: rotate(180deg);
         }
 
@@ -548,6 +551,42 @@
             }
             .hero h1 { font-size: 40px; }
         }
+
+        /* --- TRACKER FULL-SCREEN LINK --- */
+        .tracker-fs {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+        }
+        .tracker-fs:hover { text-decoration: underline; }
+        .tracker-fs[hidden] { display: none; }
+
+        /* --- KEYBOARD FOCUS --- */
+        a:focus-visible,
+        button:focus-visible,
+        summary:focus-visible {
+            outline: 3px solid var(--text-main);
+            outline-offset: 3px;
+        }
+
+        /* --- REDUCED MOTION --- */
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after {
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+            }
+            /* Keep the loader visibly "working", just slower */
+            .spinner {
+                animation-duration: 2.5s !important;
+                animation-iteration-count: infinite !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -559,37 +598,60 @@
          un-patched, empty query string instead. -->
 
     <!-- Loading Overlay -->
-<div id="loader" class="loader-overlay">
+<div id="loader" class="loader-overlay" role="status" aria-live="polite">
     <div class="spinner"></div>
     <h2 id="loader-text" class="brand-font">Loading Sleigh Data...</h2>
     <div id="loader-error" style="display: none; color: #d31c1c; text-align: center; max-width: 80%; margin-top: 20px;"></div>
 </div>
     
     <script>
+    // Deployment config. A router/worker can pre-define window.SLEIGH_CONFIG
+    // (before this script runs) to override any of these without editing the page.
+    window.SLEIGH_CONFIG = Object.assign({
+        proxyBase: 'https://santaproxy.beverley247.workers.dev',
+        frameBase: 'https://brt-23f.pages.dev/sleigh',
+        assetBase: 'https://brt-23f.pages.dev/icons'
+    }, window.SLEIGH_CONFIG || {});
+
+    window.sleighProxyUrl = function (api) {
+        return window.SLEIGH_CONFIG.proxyBase + '/?ttl=30&target=' + encodeURIComponent(api);
+    };
+
+    window.sleighFetchData = function (api) {
+        return fetch(window.sleighProxyUrl(api)).then(function (response) {
+            if (!response.ok) throw new Error('Failed to load API data (HTTP ' + response.status + ')');
+            return response.json();
+        });
+    };
+
     window.__sleighApiUrl = new URLSearchParams(location.search).get('api');
-    
+
     if (window.__sleighPrefetchedData) {
         // Data was injected by the router, use it immediately
         window.__sleighDataPromise = Promise.resolve(window.__sleighPrefetchedData);
-    } else {
-        // Fallback for direct loads without the router
-        window.__sleighDataPromise = window.__sleighApiUrl
-            ? fetch(`https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(window.__sleighApiUrl)}`)
-                .then(response => {
-                    if (!response.ok) throw new Error("Failed to load API data");
-                    return response.json();
-                })
-            : Promise.resolve(null);
+    } else if (window.__sleighApiUrl) {
+        // Direct load with ?api= : start the request as early as possible
+        window.__sleighDataPromise = window.sleighFetchData(window.__sleighApiUrl);
     }
-</script>
+    // Otherwise __sleighDataPromise is deliberately left undefined. initializeSleighApp()
+    // creates it once the API URL is known (it may arrive late via the router patch).
+    // It used to be Promise.resolve(null), which made a late-arriving URL crash on
+    // `data.error` and show a misleading "could not load data" message.
+
+    if (window.__sleighDataPromise) {
+        // Mark as handled so an early network failure isn't reported as an unhandled
+        // rejection before initializeSleighApp() attaches its own .catch().
+        window.__sleighDataPromise.catch(function () {});
+    }
+    </script>
 
     <!-- Live Announcement -->
-    <div id="announcement-bar"></div>
+    <div id="announcement-bar" role="status" aria-live="polite"></div>
 
     <!-- Navigation -->
     <nav>
         <a href="#" class="nav-brand">
-            <img id="nav-logo" src="" alt="Sleigh Logo" class="nav-logo" style="display: none;">
+            <img id="nav-logo" src="" alt="" class="nav-logo" style="display: none;">
             <div class="nav-title brand-font" id="nav-title">Santa Sleigh</div>
         </a>
         <div class="nav-links">
@@ -605,7 +667,7 @@
     <h1><span id="hero-title">Santa Sleigh</span></h1>
     <p>Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!</p>
     <a href="#tracker" class="btn">Track Santa Live</a>
-    <button id="share-btn" class="btn" style="margin-left: 10px; background: transparent; border: 2px solid var(--border); color: var(--text-main);"><i class="fa-solid fa-share-nodes"></i></button>
+    <button id="share-btn" type="button" aria-label="Share this page" class="btn" style="margin-left: 10px; background: transparent; border: 2px solid var(--border); color: var(--text-main);"><i class="fa-solid fa-share-nodes"></i></button>
 </header>
 
     <!-- Tracker Section -->
@@ -617,6 +679,7 @@
         <div class="iframe-container">
     <iframe id="tracker-iframe" height="600" title="Santa Tracker" allow="geolocation; screen-wake-lock"></iframe>
 </div>
+        <a id="tracker-fullscreen" class="tracker-fs" href="#" target="_blank" rel="noopener" hidden>Open the tracker full-screen</a>
     </section>
 
     <!-- Donations Section -->
@@ -636,8 +699,8 @@
                 <span id="donation-current" style="color: var(--primary);">£0</span>
                 <span id="donation-target" style="color: var(--text-muted);">£0</span>
             </div>
-            <p style="margin-bottom: 20px; font-size: 14px; color: var(--text-muted);">Last updated: <span id="donation-updated">Recently</span></p>
-            <a href="#" id="donate-btn" class="btn" target="_blank" style="display: none;">Donate Now</a>
+            <p id="donation-updated-wrap" style="margin-bottom: 20px; font-size: 14px; color: var(--text-muted);">Last updated: <span id="donation-updated">Recently</span></p>
+            <a href="#" id="donate-btn" class="btn" target="_blank" rel="noopener noreferrer" style="display: none;">Donate Now</a>
         </div>
 
         <!-- VOLUNTEER BANNER -->
@@ -647,7 +710,7 @@
                     <h3 class="brand-font">Help Keep The Sleigh Moving!</h3>
                     <p>We need drivers, navigators, and bucket collectors. Volunteer as an elf this year!</p>
                 </div>
-                <a href="#" id="volunteer-btn" class="btn-outline" target="_blank">Volunteer Now <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></a>
+                <a href="#" id="volunteer-btn" class="btn-outline" target="_blank" rel="noopener noreferrer">Volunteer Now <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></a>
             </div>
         </div>
     </section>
@@ -656,7 +719,7 @@
     <section id="routes">
         <div class="section-header">
             <h2>ROUTE <span style="color: var(--primary);">SCHEDULE</span></h2>
-            <p>Find out exactly when Santa is coming to your neighborhood.</p>
+            <p>Find out exactly when Santa is coming to your neighbourhood.</p>
         </div>
         
         <div class="iframe-container" style="margin-bottom: 40px;">
@@ -701,70 +764,70 @@
         
         <div class="faq-accordion">
             <!-- FAQ 1 -->
-            <div class="faq-item">
-                <div class="faq-header" onclick="toggleFaq(this)">
+            <details class="faq-item" name="faq">
+                <summary class="faq-header">
                     <h3 class="faq-title">Will you definitely come down my street tonight?</h3>
-                    <i class="fa-solid fa-chevron-down faq-icon"></i>
-                </div>
+                    <i class="fa-solid fa-chevron-down faq-icon" aria-hidden="true"></i>
+                </summary>
                 <div class="faq-content">
                     <p>Our routes are a guide, not a guarantee. We are entirely run by volunteers and rely on good weather, clear traffic, and having enough people to safely operate the sleigh. Sometimes we have to cut a route short due to rain, ice, or time restrictions. Please use the live tracker to see exactly where we are!</p>
                 </div>
-            </div>
+            </details>
 
             <!-- FAQ 2 -->
-            <div class="faq-item">
-                <div class="faq-header" onclick="toggleFaq(this)">
+            <details class="faq-item" name="faq">
+                <summary class="faq-header">
                     <h3 class="faq-title">Why didn't you turn down my cul-de-sac?</h3>
-                    <i class="fa-solid fa-chevron-down faq-icon"></i>
-                </div>
+                    <i class="fa-solid fa-chevron-down faq-icon" aria-hidden="true"></i>
+                </summary>
                 <div class="faq-content">
-                    <p>The Santa Sleigh is very large and difficult to maneuver. If there are parked cars blocking a turning circle, or if a cul-de-sac is too tight for us to safely turn around, the driver will make the decision to stay on the main road. If you live down a tight street, please come out to the nearest junction to wave to Santa!</p>
+                    <p>The Santa Sleigh is very large and difficult to manoeuvre. If there are parked cars blocking a turning circle, or if a cul-de-sac is too tight for us to safely turn around, the driver will make the decision to stay on the main road. If you live down a tight street, please come out to the nearest junction to wave to Santa!</p>
                 </div>
-            </div>
+            </details>
 
             <!-- FAQ 3 -->
-            <div class="faq-item">
-                <div class="faq-header" onclick="toggleFaq(this)">
+            <details class="faq-item" name="faq">
+                <summary class="faq-header">
                     <h3 class="faq-title">Can my children climb onto the sleigh for a photo?</h3>
-                    <i class="fa-solid fa-chevron-down faq-icon"></i>
-                </div>
+                    <i class="fa-solid fa-chevron-down faq-icon" aria-hidden="true"></i>
+                </summary>
                 <div class="faq-content">
                     <p>For safety and insurance reasons, <strong>no one is allowed on the sleigh</strong> while it is moving or during the street collections. You are very welcome to take photos of Santa from the pavement. Please ensure children do not run into the road towards the moving vehicle.</p>
                 </div>
-            </div>
+            </details>
 
             <!-- FAQ 4 -->
-            <div class="faq-item">
-                <div class="faq-header" onclick="toggleFaq(this)">
+            <details class="faq-item" name="faq">
+                <summary class="faq-header">
                     <h3 class="faq-title">Where does the donated money go?</h3>
-                    <i class="fa-solid fa-chevron-down faq-icon"></i>
-                </div>
+                    <i class="fa-solid fa-chevron-down faq-icon" aria-hidden="true"></i>
+                </summary>
                 <div class="faq-content">
                     <p>Every single penny collected goes directly into our local Round Table charity fund. Throughout the year, we distribute this money to local good causes, community groups, food banks, and individuals in need right here in our town.</p>
                 </div>
-            </div>
+            </details>
 
             <!-- FAQ 5 -->
-            <div class="faq-item">
-                <div class="faq-header" onclick="toggleFaq(this)">
+            <details class="faq-item" name="faq">
+                <summary class="faq-header">
                     <h3 class="faq-title">Do you accept card donations?</h3>
-                    <i class="fa-solid fa-chevron-down faq-icon"></i>
-                </div>
+                    <i class="fa-solid fa-chevron-down faq-icon" aria-hidden="true"></i>
+                </summary>
                 <div class="faq-content">
                     <p>Yes! Our elves carry contactless card readers alongside their traditional buckets. You can also donate right here on this website using the Donate button at the top of the page.</p>
                 </div>
-            </div>
+            </details>
             
              <!-- FAQ 6 -->
-            <div class="faq-item">
-                <div class="faq-header" onclick="toggleFaq(this)">
+            <details class="faq-item" name="faq">
+                <summary class="faq-header">
                     <h3 class="faq-title">Can I volunteer to help?</h3>
-                    <i class="fa-solid fa-chevron-down faq-icon"></i>
-                </div>
+                    <i class="fa-solid fa-chevron-down faq-icon" aria-hidden="true"></i>
+                </summary>
                 <div class="faq-content">
                     <p>Absolutely! We are always looking for enthusiastic volunteers to help collect donations, act as safety walkers, or even drive the towing vehicle. Reach out to us via our social media channels below to get involved.</p>
                 </div>
-            </div>
+            </details>
         </div>
     </section>
     
@@ -795,364 +858,579 @@
     </footer>
 
     <script>
+        // ------------------------------------------------------------------
+        // Config + small helpers
+        // ------------------------------------------------------------------
+        const CFG = window.SLEIGH_CONFIG;
+        const $ = (id) => document.getElementById(id);
+        const DEFAULT_LOGO = CFG.assetBase + '/RTBI_Santa.png';
+        const DEFAULT_WEBSITE = 'https://www.roundtable.co.uk';
+        const BG_OVERLAY = 'linear-gradient(180deg, rgba(29, 29, 26, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%)';
+        const FRAME_ORIGIN = (() => { try { return new URL(CFG.frameBase).origin; } catch (e) { return ''; } })();
+
         // Set dynamic years
         const currentYear = new Date().getFullYear();
-        document.getElementById('current-year-text').innerText = currentYear;
-        document.getElementById('year').innerText = currentYear;
+        $('current-year-text').textContent = currentYear;
+        $('year').textContent = currentYear;
 
-        // Start of replacement
-function initializeSleighApp(retryCount = 0) {
-    // 1. Re-check for the API URL in case the router was delayed
-    const apiUrl = window.__sleighApiUrl || new URLSearchParams(location.search).get('api');
-
-    if (!apiUrl) {
-        // 2. If the router script is still loading, wait 100ms and try again (up to 10 times)
-        if (retryCount < 10) {
-            setTimeout(() => initializeSleighApp(retryCount + 1), 100);
-            return;
+        // Anything that ends up in an href/src must be plain http(s). Blocks javascript:, data: etc.
+        function safeUrl(u) {
+            if (!u) return '';
+            try {
+                const x = new URL(String(u).trim(), location.href);
+                return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : '';
+            } catch (e) { return ''; }
         }
-        showError("Welcome to the Universal Sleigh Template! <br><br> To use this page, you must provide your TurboSanta API URL in the browser address bar like this: <br><br> <code>?api=YOUR_GOOGLE_SCRIPT_URL</code>");
-        return;
-    }
 
-    // 3. If we found the URL but missed the early fetch at the top of the page, trigger it now
-    if (!window.__sleighDataPromise) {
-        window.__sleighDataPromise = fetch(`https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(apiUrl)}`)
-            .then(response => {
-                if (!response.ok) throw new Error("Failed to load API data");
-                return response.json();
-            });
-    }
+        // Build elements with textContent, never innerHTML, for anything that came from the API.
+        function el(tag, className, text) {
+            const n = document.createElement(tag);
+            if (className) n.className = className;
+            if (text !== undefined && text !== null) n.textContent = text;
+            return n;
+        }
 
-    // 4. Process the data
-    window.__sleighDataPromise
-        .then(data => {
-            if (data.error) throw new Error(data.error);
-            applySettings(data, apiUrl);
-            removeLoader();
-        })
-        .catch(err => {
-            showError("Could not load data from the provided API. Please check the URL and ensure your Google Script is deployed as a Web App accessible to 'Anyone'.<br><br>" + err.message);
-        });
-}
+        function asArray(v) { return Array.isArray(v) ? v : []; }
 
-initializeSleighApp();
-// End of replacement
+        // Returns [r, g, b] for a valid CSS colour, otherwise null.
+        function parseColor(v) {
+            if (typeof v !== 'string') return null;
+            const s = v.trim();
+            const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+            if (hex) {
+                let h = hex[1];
+                if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+                if (h.length !== 6 && h.length !== 8) return null;
+                return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+            }
+            try {
+                if (/var\(|url\(|expression/i.test(s)) return null;
+                if (!(window.CSS && CSS.supports && CSS.supports('color', s))) return null;
+                const ctx = document.createElement('canvas').getContext('2d');
+                ctx.fillStyle = '#000000';
+                ctx.fillStyle = s;
+                const out = ctx.fillStyle;
+                if (out.charAt(0) === '#') return parseColor(out);
+                const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(out);
+                return rgb ? [+rgb[1], +rgb[2], +rgb[3]] : null;
+            } catch (e) { return null; }
+        }
 
-        function showError(msg) {
-            // Defensive: this template currently has no loader/spinner overlay
-            // markup, so fall back to the announcement bar rather than
-            // throwing on missing elements (which was silently swallowing
-            // every API error before).
-            const loaderText = document.getElementById('loader-text');
-            const loaderError = document.getElementById('loader-error');
+        // Black or white, whichever reads better on the given colour (WCAG contrast ratio).
+        function readableTextOn(rgb) {
+            const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+            const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+            return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+        }
+
+        // Date-only strings (YYYY-MM-DD) are read as LOCAL dates so they can't slip a day
+        // across timezones. Anything else goes through the normal Date parser.
+        function parseRouteDate(v) {
+            if (!v) return null;
+            const s = String(v).trim();
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+            const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(s);
+            return isNaN(d) ? null : d;
+        }
+
+        // Derive "Ellon Round Table" from a display name like "Ellon Round Table Santa Sleigh".
+        // Handles "Santa's Sleigh" and plural "Sleighs" (the old regex left "'s" / "s" behind).
+        // Set settings.table_name in the API to skip this guesswork entirely.
+        function deriveTableName(siteName) {
+            return siteName
+                .replace(/\bsanta(?:['\u2019]s)?\b/gi, '')
+                .replace(/\bsleighs?\b/gi, '')
+                .replace(/\bround\s+table\b/gi, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // ------------------------------------------------------------------
+        // Loader / error UI
+        // ------------------------------------------------------------------
+        // `html` must be static markup written in this file. `detail` may be untrusted
+        // (e.g. an error message from the API) and is always inserted as text.
+        function showError(html, detail) {
+            const loaderText = $('loader-text');
+            const loaderError = $('loader-error');
             const spinner = document.querySelector('.spinner');
             if (spinner) spinner.style.display = 'none';
 
-            if (loaderText && loaderError) {
-                loaderText.innerText = "Setup Required";
-                loaderText.style.color = "#d31c1c";
-                loaderError.innerHTML = msg;
-                loaderError.style.display = "block";
-            } else {
-                const annBar = document.getElementById('announcement-bar');
-                annBar.innerHTML = msg;
-                annBar.style.backgroundColor = "#d31c1c";
-                annBar.style.color = "#ffffff";
-                annBar.style.display = "block";
+            const target = (loaderText && loaderError) ? loaderError : $('announcement-bar');
+            target.innerHTML = html;
+            if (detail) {
+                const p = el('p', '', detail);
+                p.style.marginTop = '12px';
+                target.appendChild(p);
             }
-            console.error(msg);
+            if (target === loaderError) {
+                loaderText.textContent = 'Setup Required';
+                loaderText.style.color = '#d31c1c';
+                loaderError.style.display = 'block';
+            } else {
+                target.classList.add('is-alert');
+                target.style.display = 'block';
+            }
+            console.error(html, detail || '');
         }
 
         function removeLoader() {
-            // Defensive: safe no-op if no loader overlay element exists in
-            // this template. Wire this up to the real overlay's id/class if
-            // one gets added back later.
-            const loader = document.getElementById('loader') || document.querySelector('.loader-overlay');
-            if (loader) loader.style.display = 'none';
+            const loader = $('loader') || document.querySelector('.loader-overlay');
+            if (loader) {
+                loader.style.display = 'none';
+                loader.setAttribute('aria-hidden', 'true');
+            }
         }
 
-        // Used only to re-fetch after a reconnect (see the 'online' listener
-        // below) — the initial load is handled by window.__sleighDataPromise.
-        function fetchSleighData(api) {
-            const workerUrl = `https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(api)}`;
+        // ------------------------------------------------------------------
+        // Banner: one place decides between offline / reconnecting / live announcement
+        // ------------------------------------------------------------------
+        let netState = 'online';        // 'online' | 'offline' | 'reconnecting'
+        let liveAnnouncement = '';
 
-            fetch(workerUrl)
-                .then(response => {
-                    if (!response.ok) throw new Error("Failed to load API data");
-                    return response.json();
-                })
-                .then(data => {
-                    if(data.error) throw new Error(data.error);
-                    applySettings(data, api);
-                    removeLoader();
-                })
-                .catch(err => {
-                    showError("Could not load data from the provided API. Please check the URL and ensure your Google Script is deployed as a Web App accessible to 'Anyone'.<br><br>" + err.message);
-                });
+        function paintBanner() {
+            const bar = $('announcement-bar');
+            let text = '';
+            let alert = false;
+            if (netState === 'offline') {
+                text = '\uD83D\uDCF6 Connection lost. Showing offline map and saved routes.';
+                alert = true;
+            } else if (netState === 'reconnecting') {
+                text = '\uD83D\uDCE1 Reconnected! Refreshing sleigh data...';
+            } else if (liveAnnouncement) {
+                text = '\uD83C\uDF85 ' + liveAnnouncement;
+            }
+            bar.classList.toggle('is-alert', alert);
+            bar.textContent = text;
+            bar.style.display = text ? 'block' : 'none';
         }
 
-        function applySettings(data, api) {
-            const settings = data.settings || {};
-            const donations = data.donations || {};
-            const routes = data.routes || [];
-            const sponsors = data.sponsors || [];
-
-            // --- Apply Colors (Overrides official brand colors if specified in API) ---
+        // ------------------------------------------------------------------
+        // Renderers. Every one of these is idempotent: safe to call again with
+        // fresh data (reconnect, future polling) without duplicating anything.
+        // ------------------------------------------------------------------
+        function renderTheme(settings) {
             const root = document.documentElement;
-            if(settings.primary_color) root.style.setProperty('--primary', settings.primary_color);
-            if(settings.accent_color) root.style.setProperty('--accent', settings.accent_color);
+            const primary = parseColor(settings.primary_color);
+            if (primary) {
+                root.style.setProperty('--primary', String(settings.primary_color).trim());
+                root.style.setProperty('--on-primary', readableTextOn(primary));
+            } else {
+                root.style.removeProperty('--primary');
+                root.style.removeProperty('--on-primary');
+            }
+            if (parseColor(settings.accent_color)) {
+                root.style.setProperty('--accent', String(settings.accent_color).trim());
+            } else {
+                root.style.removeProperty('--accent');
+            }
 
-            // --- Apply Custom Background Image (Only if overriding default) ---
-        if (settings.background_url) {
-            document.body.style.backgroundImage = `
-                linear-gradient(180deg, rgba(29, 29, 26, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%),
-                url('${settings.background_url}')
-            `;
-            document.body.style.backgroundSize = 'cover';
-            document.body.style.backgroundPosition = 'center';
-            document.body.style.backgroundAttachment = 'fixed';
+            // Only the image is set inline. Size/position/attachment stay in the stylesheet,
+            // so mobile keeps its non-fixed background (fixed backgrounds repaint every
+            // scroll frame on mobile Safari).
+            const bg = safeUrl(settings.background_url);
+            document.body.style.backgroundImage = bg
+                ? BG_OVERLAY + ', url("' + bg.replace(/"/g, '%22') + '")'
+                : '';
         }
 
-            // --- Apply Text & Branding ---
-            const siteName = settings.sleigh_display_name || "Santa Sleigh";
+        function setTitleParts(node, highlight, suffix) {
+            node.replaceChildren();
+            const span = el('span', '', highlight);
+            span.style.color = 'var(--primary)';
+            node.appendChild(span);
+            if (suffix) node.appendChild(document.createTextNode(' ' + suffix));
+        }
+
+        function renderBranding(settings) {
+            const siteName = String(settings.sleigh_display_name || 'Santa Sleigh');
             document.title = siteName;
-            document.getElementById('footer-name').innerText = siteName;
+            $('footer-name').textContent = siteName;
 
-            // Dynamically split the title to highlight the Table location and name
-let formattedTitle;
-const match = siteName.match(/(.*?\bRound Table\b)/i);
+            // Highlight "<Town> Round Table" in gold, keep the rest white
+            const match = siteName.match(/(.*?\bRound Table\b)/i);
+            const tablePart = match ? match[1].trim() : siteName;
+            const suffix = match ? siteName.substring(match[0].length).trim() : '';
+            setTitleParts($('nav-title'), tablePart, suffix);
+            setTitleParts($('hero-title'), tablePart, suffix);
 
-if (match) {
-    const tablePart = match[1].trim(); // Captures "Beverley Round Table"
-    const suffix = siteName.substring(match[0].length).trim(); // Captures "Santa Sleigh"
-    
-    // Wraps "Beverley Round Table" in gold, keeping "Santa Sleigh" white
-    formattedTitle = `<span style="color: var(--primary);">${tablePart}</span>${suffix ? ' ' + suffix : ''}`;
-} else {
-    // Fallback if "Round Table" isn't present
-    formattedTitle = `<span style="color: var(--primary);">${siteName}</span>`;
-}
+            // Logo, falling back to the default if the table's own image fails to load
+            const logo = safeUrl(settings.logo_overlay_url);
+            const navLogo = $('nav-logo');
+            navLogo.onerror = () => { navLogo.onerror = null; navLogo.src = DEFAULT_LOGO; };
+            navLogo.src = logo || DEFAULT_LOGO;
+            navLogo.alt = siteName + ' logo';
+            navLogo.style.display = 'block';
 
-// Inject into Nav and Hero
-document.getElementById('nav-title').innerHTML = formattedTitle;
-document.getElementById('hero-title').innerHTML = formattedTitle;
-
-            // --- Fallback Logo Logic ---
-            const navLogo = document.getElementById('nav-logo');
-            if (settings.logo_overlay_url) {
-                navLogo.src = settings.logo_overlay_url;
-            } else {
-                navLogo.src = "https://brt-23f.pages.dev/icons/RTBI_Santa.png";
-            }
-            navLogo.style.display = "block";
-
-            // --- Live Announcement ---
-            if (settings.live_announcement) {
-                const annBar = document.getElementById('announcement-bar');
-                annBar.innerText = "🎅 " + settings.live_announcement;
-                annBar.style.display = "block";
-            }
-
-            // Re-declare workerUrl so the iframes can use the proxy
-            const workerUrl = `https://santaproxy.beverley247.workers.dev/?ttl=30&target=${encodeURIComponent(api)}`;
-            
-            // Load Tracker immediately (top of page)
-            document.getElementById('tracker-iframe').src = `https://brt-23f.pages.dev/sleigh/tracker?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
-            
-            // Defer Address and Memory Book
-            document.getElementById('address-iframe').dataset.src = `https://brt-23f.pages.dev/sleigh/address.html?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
-            document.getElementById('memory-book-iframe').dataset.src = `https://brt-23f.pages.dev/sleigh/memory_book?api=${encodeURIComponent(api)}&proxy=${encodeURIComponent(workerUrl)}`;
-            
-            // Initialize the stagger
-            lazyLoadIframes();
-
-            window.addEventListener("message", (e) => {
-                if (e.data && e.data.addressLookupHeight) {
-                    document.getElementById("address-iframe").style.height = e.data.addressLookupHeight + "px";
-                }
-            });
-
-            // --- Dynamic Favicon ---
-            if (settings.logo_overlay_url) {
+            if (logo) {
                 const iconLink = document.querySelector("link[rel='icon']");
                 const appleIconLink = document.querySelector("link[rel='apple-touch-icon']");
-                if (iconLink) iconLink.href = settings.logo_overlay_url;
-                if (appleIconLink) appleIconLink.href = settings.logo_overlay_url;
+                if (iconLink) iconLink.href = logo;
+                if (appleIconLink) appleIconLink.href = logo;
             }
 
-            // --- Donations Widget ---
-            const currency = donations.currency || "£";
+            // Canonical: per-table, never a placeholder
+            if (location.protocol === 'http:' || location.protocol === 'https:') {
+                let canon = document.querySelector('link[rel="canonical"]');
+                if (!canon) {
+                    canon = document.createElement('link');
+                    canon.rel = 'canonical';
+                    document.head.appendChild(canon);
+                }
+                canon.href = safeUrl(settings.canonical_url) || (location.origin + location.pathname);
+            }
+        }
+
+        function renderAnnouncement(settings) {
+            liveAnnouncement = settings.live_announcement ? String(settings.live_announcement) : '';
+            paintBanner();
+        }
+
+        // --- Iframes -------------------------------------------------------
+        let lazyObserver = null;
+        function observeLazyFrame(frame) {
+            if (!('IntersectionObserver' in window)) {
+                frame.src = frame.dataset.src;
+                frame.removeAttribute('data-src');
+                return;
+            }
+            if (!lazyObserver) {
+                lazyObserver = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(entry => {
+                        if (!entry.isIntersecting) return;
+                        const f = entry.target;
+                        if (f.dataset.src) {          // Start the network load
+                            f.src = f.dataset.src;
+                            f.removeAttribute('data-src');
+                        }
+                        obs.unobserve(f);
+                    });
+                }, { rootMargin: '300px' });          // Start loading 300px before it enters the screen
+            }
+            lazyObserver.observe(frame);
+        }
+
+        // Never reassign an unchanged src: doing so reloads the iframe (and would wipe the tracker).
+        function setFrameSrc(id, url, lazy) {
+            const frame = $(id);
+            if (!frame) return;
+            if (frame.getAttribute('src') === url || frame.dataset.src === url) return;
+            if (lazy && !frame.getAttribute('src')) {
+                frame.dataset.src = url;
+                observeLazyFrame(frame);
+            } else {
+                frame.src = url;
+            }
+        }
+
+        function frameUrl(page, api) {
+            return CFG.frameBase + '/' + page +
+                '?api=' + encodeURIComponent(api) +
+                '&proxy=' + encodeURIComponent(window.sleighProxyUrl(api));
+        }
+
+        let frameMessageBound = false;
+        function bindFrameMessages() {
+            if (frameMessageBound) return;
+            frameMessageBound = true;
+            window.addEventListener('message', (e) => {
+                const addr = $('address-iframe');
+                if (!addr || e.source !== addr.contentWindow) return;
+                if (FRAME_ORIGIN && e.origin !== FRAME_ORIGIN) return;
+                const h = e.data && Number(e.data.addressLookupHeight);
+                if (Number.isFinite(h) && h >= 100 && h <= 5000) addr.style.height = Math.round(h) + 'px';
+            });
+        }
+
+        function renderFrames(api) {
+            const trackerUrl = frameUrl('tracker', api);
+            setFrameSrc('tracker-iframe', trackerUrl, false);
+            setFrameSrc('address-iframe', frameUrl('address.html', api), true);
+            setFrameSrc('memory-book-iframe', frameUrl('memory_book', api), true);
+            const fs = $('tracker-fullscreen');
+            if (fs) { fs.href = trackerUrl; fs.hidden = false; }
+            bindFrameMessages();
+        }
+
+        // --- Donations + volunteer -----------------------------------------
+        let donationFillAnimated = false;
+        function renderDonations(donations, settings) {
+            const currency = donations.currency ? String(donations.currency) : '\u00A3';
             const target = parseFloat(donations.target) || 0;
             const current = parseFloat(donations.total) || 0;
-            
-            let hasThermoContent = false;
-            
-            if (target > 0) {
-                hasThermoContent = true;
-                document.getElementById('donation-current').innerText = `${currency}${current.toLocaleString()}`;
-                document.getElementById('donation-target').innerText = `OF ${currency}${target.toLocaleString()}`;
-                document.getElementById('donation-updated').innerText = donations.lastUpdatePretty || "Today";
+            const hasTarget = target > 0;
+            const donateUrl = safeUrl(settings.donate_url);
+            const volunteerUrl = safeUrl(settings.volunteer_form_url);
 
-                const percentage = Math.min((current / target) * 100, 100);
-                setTimeout(() => {
-                    document.getElementById('donation-fill').style.width = percentage + '%';
-                }, 500);
+            const card = document.querySelector('.thermo-card');
+            [
+                card.querySelector('.thermo-title'),
+                card.querySelector('.progress-bar-bg'),
+                card.querySelector('.thermo-stats'),
+                $('donation-updated-wrap')
+            ].forEach(n => { if (n) n.style.display = hasTarget ? '' : 'none'; });
+
+            if (hasTarget) {
+                $('donation-current').textContent = currency + current.toLocaleString();
+                $('donation-target').textContent = 'OF ' + currency + target.toLocaleString();
+                $('donation-updated').textContent = donations.lastUpdatePretty ? String(donations.lastUpdatePretty) : 'Today';
+                const pct = Math.max(0, Math.min((current / target) * 100, 100));
+                setTimeout(() => { $('donation-fill').style.width = pct + '%'; }, donationFillAnimated ? 0 : 500);
+                donationFillAnimated = true;
+            }
+
+            const donateBtn = $('donate-btn');
+            if (donateUrl) {
+                donateBtn.href = donateUrl;
+                donateBtn.style.display = 'inline-block';
             } else {
-                // Hide just the thermometer elements if no target is set
-                document.querySelector('.thermo-title').style.display = 'none';
-                document.querySelector('.progress-bar-bg').style.display = 'none';
-                document.querySelector('.thermo-stats').style.display = 'none';
-                document.querySelector('.thermo-card p').style.display = 'none';
+                donateBtn.style.display = 'none';
+            }
+            // Hide the whole card if there's neither a thermometer nor a donate button
+            card.style.display = (hasTarget || donateUrl) ? '' : 'none';
+
+            if (volunteerUrl) {
+                $('volunteer-btn').href = volunteerUrl;
+                $('volunteer-container').style.display = 'block';
+            } else {
+                $('volunteer-container').style.display = 'none';
             }
 
-            if (settings.donate_url) {
-                hasThermoContent = true;
-                const donateBtn = document.getElementById('donate-btn');
-                donateBtn.href = settings.donate_url;
-                donateBtn.style.display = "inline-block";
-            }
-            
-            // If neither the thermometer nor the donate button is configured, hide the whole card
-            if (!hasThermoContent) {
-                document.querySelector('.thermo-card').style.display = "none";
-            }
+            // Hide the whole Donate section (and its nav link) if nothing in it is configured
+            const hasAny = hasTarget || !!donateUrl || !!volunteerUrl;
+            $('donate').style.display = hasAny ? '' : 'none';
+            const navDonate = $('nav-donate');
+            if (navDonate) navDonate.style.display = hasAny ? '' : 'none';
+        }
 
-            let hasDonateSectionContent = hasThermoContent;
+        // --- Routes ---------------------------------------------------------
+        function renderRoutes(routes) {
+            const container = $('routes-container');
+            container.replaceChildren();
 
-            // --- Volunteer Logic ---
-            if (settings.volunteer_form_url) {
-                document.getElementById('volunteer-btn').href = settings.volunteer_form_url;
-                document.getElementById('volunteer-container').style.display = "block";
-                hasDonateSectionContent = true;
-            }
-
-            // Hide the entire Donate section from the webpage if no elements are configured
-            if (!hasDonateSectionContent) {
-                document.getElementById('donate').style.display = "none";
-                if(document.getElementById('nav-donate')) {
-                    document.getElementById('nav-donate').style.display = "none"; 
-                }
-            }
-            
-            // --- Build Routes Grid ---
-            const routesContainer = document.getElementById('routes-container');
-
-            // Get today's date and set it to midnight for an accurate day comparison
+            // Compare on midnight so same-day routes aren't hidden
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // Filter the routes array to only include today or future dates
-            const upcomingRoutes = routes.filter(route => {
-                if (!route.date) return false;
-                const routeDate = new Date(route.date);
-                // Set the route date to midnight as well to ensure same-day routes aren't hidden
-                routeDate.setHours(0, 0, 0, 0); 
-                return routeDate >= today;
-            });
+            const upcoming = routes
+                .filter(r => r && r.routeName)
+                .map(route => {
+                    const d = parseRouteDate(route.date);
+                    if (!d) return null;
+                    const day = new Date(d);
+                    day.setHours(0, 0, 0, 0);
+                    return { route, d, day };
+                })
+                .filter(x => x && x.day >= today)
+                .sort((a, b) => a.day - b.day);   // stable: same-day routes keep sheet order
 
-            if (upcomingRoutes.length > 0) {
-                upcomingRoutes.forEach(route => {
-                    if(!route.routeName) return;
+            if (!upcoming.length) {
+                const p = el('p', '', 'No routes scheduled yet. Check back soon!');
+                p.style.color = 'var(--text-muted)';
+                container.appendChild(p);
+                return;
+            }
 
-                    const card = document.createElement('div');
-                    card.className = 'route-card';
-                    
-                    const startTime = route["Start Time"] ? route["Start Time"] : "";
-                    const endTime = route["End Time"] ? route["End Time"] : "";
-                    const timeString = (startTime && endTime) ? `${startTime} - ${endTime}` : "";
+            upcoming.forEach(({ route, d }) => {
+                const card = el('div', 'route-card');
 
-                    let dateDisplay = route.date;
-                    if(route.date) {
-                        const d = new Date(route.date);
-                        if(!isNaN(d)) {
-                            dateDisplay = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-                        }
+                const start = route['Start Time'] || '';
+                const end = route['End Time'] || '';
+                const time = (start && end) ? start + ' - ' + end : '';
+                const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                card.appendChild(el('div', 'route-date', time ? dateText + ' | ' + time : dateText));
+                card.appendChild(el('h3', 'brand-font', String(route.routeName)));
+
+                if (route.streets) {
+                    const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
+                    if (streets.length) {
+                        let text = streets.slice(0, 8).join(', ');
+                        if (streets.length > 8) text += ' and more...';
+                        card.appendChild(el('div', 'route-streets', text));
                     }
-
-                    let html = `
-                        <div class="route-date">${dateDisplay} ${timeString ? '| ' + timeString : ''}</div>
-                        <h3 class="brand-font">${route.routeName}</h3>
-                    `;
-
-                    if (route.streets) {
-                        const streetsArr = route.streets.split(',');
-                        let displayStreets = streetsArr.slice(0, 8).join(', ');
-                        if(streetsArr.length > 8) displayStreets += ' and more...';
-                        html += `<div class="route-streets">${displayStreets}</div>`;
-                    }
-
-                    if (route.sponsorName) {
-                        html += `<div style="margin-top: 15px; font-size: 12px; color: var(--primary);">Sponsored by: <strong style="color: var(--text-main);">${route.sponsorName}</strong></div>`;
-                    }
-
-                    card.innerHTML = html;
-                    routesContainer.appendChild(card);
-                });
-            } else {
-                routesContainer.innerHTML = "<p style='color: var(--text-muted);'>No routes scheduled yet. Check back soon!</p>";
-            }
-
-            // --- Build Sponsors Grid ---
-            const sponsorsContainer = document.getElementById('sponsors-container');
-            let validSponsors = sponsors.filter(s => s.sponsorUrl);
-            
-            if (validSponsors.length > 0) {
-                document.getElementById('sponsors').style.display = "block";
-                validSponsors.forEach(sponsor => {
-                    const wrap = document.createElement('div');
-                    wrap.className = 'sponsor-card';
-                    
-                    let innerHtml = `<img src="${sponsor.sponsorUrl}" alt="${sponsor.name || 'Sponsor'}" />`;
-                    
-                    if(sponsor.sponsorLink) {
-                        wrap.innerHTML = `<a href="${sponsor.sponsorLink}" target="_blank" style="display:flex; width:100%; height:100%; justify-content:center;">${innerHtml}</a>`;
-                    } else {
-                        wrap.innerHTML = innerHtml;
-                    }
-                    
-                    sponsorsContainer.appendChild(wrap);
-                });
-            }
-
-            // --- Build About Us Section ---
-            let tableName = siteName.replace(/santa/i, '').replace(/sleigh/i, '').replace(/round\s+table/i, '').trim();
-            if(tableName) {
-                document.getElementById('about-table-name').innerText = tableName + " Round Table";
-            } else {
-                document.getElementById('about-table-name').innerText = siteName;
-            }
-
-            // --- Build Social Links (Added ARIA Labels for screen readers) ---
-            const socialContainer = document.getElementById('social-links-container');
-            const webUrl = settings.table_website_url || "https://www.roundtable.co.uk";
-            socialContainer.innerHTML += `<a href="${webUrl}" target="_blank" class="social-btn" aria-label="Website" title="Website"><i class="fa-solid fa-globe"></i></a>`;
-
-            if (settings.table_facebook_url) {
-                socialContainer.innerHTML += `<a href="${settings.table_facebook_url}" target="_blank" class="social-btn" aria-label="Facebook" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>`;
-            }
-            if (settings.table_instagram_url) {
-                socialContainer.innerHTML += `<a href="${settings.table_instagram_url}" target="_blank" class="social-btn" aria-label="Instagram" title="Instagram"><i class="fa-brands fa-instagram"></i></a>`;
-            }
-            if (settings.table_tiktok_url) {
-                socialContainer.innerHTML += `<a href="${settings.table_tiktok_url}" target="_blank" class="social-btn" aria-label="TikTok" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>`;
-            }
-            if (settings.table_youtube_url) {
-                socialContainer.innerHTML += `<a href="${settings.table_youtube_url}" target="_blank" class="social-btn" aria-label="YouTube" title="YouTube"><i class="fa-brands fa-youtube"></i></a>`;
-            }
-        }
-
-        // --- FAQ Accordion Logic ---
-        function toggleFaq(headerElement) {
-            const item = headerElement.parentElement;
-            const allItems = document.querySelectorAll('.faq-item');
-            allItems.forEach(i => {
-                if (i !== item) {
-                    i.classList.remove('active');
                 }
+
+                if (route.sponsorName) {
+                    const s = el('div');
+                    s.style.cssText = 'margin-top: 15px; font-size: 12px; color: var(--primary);';
+                    s.appendChild(document.createTextNode('Sponsored by: '));
+                    const strong = el('strong', '', String(route.sponsorName));
+                    strong.style.color = 'var(--text-main)';
+                    s.appendChild(strong);
+                    card.appendChild(s);
+                }
+
+                container.appendChild(card);
             });
-            item.classList.toggle('active');
         }
+
+        // --- Sponsors -------------------------------------------------------
+        function renderSponsors(sponsors) {
+            const section = $('sponsors');
+            const container = $('sponsors-container');
+            container.replaceChildren();
+
+            const valid = sponsors.filter(s => s && safeUrl(s.sponsorUrl));
+            section.style.display = valid.length ? 'block' : 'none';
+
+            valid.forEach(sponsor => {
+                const wrap = el('div', 'sponsor-card');
+                const img = document.createElement('img');
+                img.src = safeUrl(sponsor.sponsorUrl);       // sponsorUrl is the logo image
+                img.alt = sponsor.name ? String(sponsor.name) : 'Sponsor';
+                img.loading = 'lazy';
+                img.decoding = 'async';
+
+                const link = safeUrl(sponsor.sponsorLink);
+                if (link) {
+                    const a = document.createElement('a');
+                    a.href = link;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer sponsored';
+                    a.style.cssText = 'display:flex; width:100%; height:100%; justify-content:center;';
+                    a.appendChild(img);
+                    wrap.appendChild(a);
+                } else {
+                    wrap.appendChild(img);
+                }
+                container.appendChild(wrap);
+            });
+        }
+
+        // --- About + social -------------------------------------------------
+        function renderAbout(settings) {
+            const siteName = String(settings.sleigh_display_name || 'Santa Sleigh');
+            const explicit = settings.table_name ? String(settings.table_name).trim() : '';
+            const derived = deriveTableName(siteName);
+            $('about-table-name').textContent = explicit || (derived ? derived + ' Round Table' : siteName);
+        }
+
+        function socialBtn(href, label, iconClass) {
+            const a = document.createElement('a');
+            a.href = href;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.className = 'social-btn';
+            a.setAttribute('aria-label', label);
+            a.title = label;
+            const i = document.createElement('i');
+            i.className = iconClass;
+            i.setAttribute('aria-hidden', 'true');
+            a.appendChild(i);
+            return a;
+        }
+
+        function renderSocial(settings) {
+            const container = $('social-links-container');
+            container.replaceChildren();
+            [
+                [safeUrl(settings.table_website_url) || DEFAULT_WEBSITE, 'Website', 'fa-solid fa-globe'],
+                [safeUrl(settings.table_facebook_url), 'Facebook', 'fa-brands fa-facebook-f'],
+                [safeUrl(settings.table_instagram_url), 'Instagram', 'fa-brands fa-instagram'],
+                [safeUrl(settings.table_tiktok_url), 'TikTok', 'fa-brands fa-tiktok'],
+                [safeUrl(settings.table_youtube_url), 'YouTube', 'fa-brands fa-youtube']
+            ].forEach(([href, label, icon]) => {
+                if (href) container.appendChild(socialBtn(href, label, icon));
+            });
+        }
+
+        // One bad row or setting shouldn't take the whole page down with it
+        function safely(name, fn) {
+            try { fn(); } catch (err) { console.error('Render failed: ' + name, err); }
+        }
+
+        function applySettings(data, api) {
+            const settings = (data && data.settings) || {};
+            const donations = (data && data.donations) || {};
+            const routes = asArray(data && data.routes);
+            const sponsors = asArray(data && data.sponsors);
+
+            safely('theme', () => renderTheme(settings));
+            safely('branding', () => renderBranding(settings));
+            safely('announcement', () => renderAnnouncement(settings));
+            safely('frames', () => renderFrames(api));
+            safely('donations', () => renderDonations(donations, settings));
+            safely('routes', () => renderRoutes(routes));
+            safely('sponsors', () => renderSponsors(sponsors));
+            safely('about', () => renderAbout(settings));
+            safely('social', () => renderSocial(settings));
+        }
+
+        // ------------------------------------------------------------------
+        // Data loading
+        // ------------------------------------------------------------------
+        const SETUP_ERROR_HTML = "Could not load data from the provided API. Please check the URL and ensure your Google Script is deployed as a Web App accessible to 'Anyone'.";
+
+        function checkPayload(data) {
+            if (!data || typeof data !== 'object') throw new Error('The API returned an empty response.');
+            if (data.error) throw new Error(String(data.error));
+            return data;
+        }
+
+        function initializeSleighApp(retryCount = 0) {
+            // Re-check for the API URL in case the router was delayed
+            const apiUrl = window.__sleighApiUrl || new URLSearchParams(location.search).get('api');
+
+            if (!apiUrl) {
+                // If the router script is still loading, wait 100ms and try again (up to 10 times)
+                if (retryCount < 10) {
+                    setTimeout(() => initializeSleighApp(retryCount + 1), 100);
+                    return;
+                }
+                showError("Welcome to the Universal Sleigh Template! <br><br> To use this page, you must provide your TurboSanta API URL in the browser address bar like this: <br><br> <code>?api=YOUR_GOOGLE_SCRIPT_URL</code>");
+                return;
+            }
+
+            window.__sleighApiUrl = apiUrl;   // reconnect refresh reads this
+            if (!window.__sleighDataPromise) {
+                window.__sleighDataPromise = window.sleighFetchData(apiUrl);
+            }
+
+            window.__sleighDataPromise
+                .then(data => {
+                    applySettings(checkPayload(data), apiUrl);
+                    removeLoader();
+                })
+                .catch(err => showError(SETUP_ERROR_HTML + '<br><br>', err && err.message));
+        }
+
+        // Re-fetch after a reconnect. Quiet on failure: the page is already showing data.
+        function refreshSleighData() {
+            const api = window.__sleighApiUrl;
+            if (!api) return Promise.resolve();
+            return window.sleighFetchData(api).then(data => applySettings(checkPayload(data), api));
+        }
+
+        window.addEventListener('offline', () => {
+            netState = 'offline';
+            paintBanner();
+        });
+
+        window.addEventListener('online', () => {
+            netState = 'reconnecting';
+            paintBanner();
+            setTimeout(() => {
+                refreshSleighData()
+                    .catch(err => console.warn('Refresh after reconnect failed:', err))
+                    .finally(() => {
+                        if (netState === 'reconnecting') netState = 'online';
+                        paintBanner();
+                    });
+            }, 2000);
+        });
+
+        // ------------------------------------------------------------------
+        // FAQ: native <details>. `name="faq"` makes it a one-open-at-a-time accordion in
+        // modern browsers; this keeps that behaviour in older ones too.
+        // ------------------------------------------------------------------
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.addEventListener('toggle', () => {
+                if (!item.open) return;
+                document.querySelectorAll('.faq-item[open]').forEach(other => {
+                    if (other !== item) other.open = false;
+                });
+            });
+        });
 
         // Register Service Worker for Offline Fallback
         if ('serviceWorker' in navigator) {
@@ -1163,28 +1441,8 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
             });
         }
 
-        // Graceful Offline UI
-        window.addEventListener('offline', () => {
-            const annBar = document.getElementById('announcement-bar');
-            annBar.innerText = "📶 Connection lost. Showing offline map and saved routes.";
-            annBar.style.backgroundColor = "#d31c1c"; // Red alert
-            annBar.style.color = "#ffffff";
-            annBar.style.display = "block";
-        });
-
-        window.addEventListener('online', () => {
-            const annBar = document.getElementById('announcement-bar');
-            annBar.innerText = "📡 Reconnected! Refreshing sleigh data...";
-            annBar.style.backgroundColor = "var(--primary)";
-            annBar.style.color = "var(--bg-card)";
-            setTimeout(() => {
-                // Clear the bar or re-fetch the API to get the latest live announcement
-                if (apiUrl) fetchSleighData(apiUrl);
-            }, 2000);
-        });
-
         // --- Web Share API ---
-        const shareBtn = document.getElementById('share-btn');
+        const shareBtn = $('share-btn');
         if (shareBtn) {
             if (navigator.share) {
                 shareBtn.addEventListener('click', () => {
@@ -1192,7 +1450,9 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
                         title: document.title,
                         text: 'Santa is on his way! Track the sleigh live:',
                         url: window.location.href
-                    }).catch(console.error);
+                    }).catch(err => {
+                        if (err && err.name !== 'AbortError') console.error(err);   // AbortError = user closed the share sheet
+                    });
                 });
             } else {
                 // Hide the button on older browsers that don't support native sharing
@@ -1200,24 +1460,7 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
             }
         }
 
-        function lazyLoadIframes() {
-    const observer = new IntersectionObserver((entries, obs) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const iframe = entry.target;
-                if (iframe.dataset.src) {
-                    iframe.src = iframe.dataset.src; // Trigger the network load
-                    iframe.removeAttribute('data-src');
-                    obs.unobserve(iframe); // Stop tracking once loaded
-                }
-            }
-        });
-    }, { rootMargin: "300px" }); // Start loading 300px before it enters the screen
-
-    observer.observe(document.getElementById('address-iframe'));
-    observer.observe(document.getElementById('memory-book-iframe'));
-}
-       
+        initializeSleighApp();
     </script>
 </body>
 </html>
