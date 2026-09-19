@@ -605,6 +605,7 @@
     <h1><span id="hero-title">Santa Sleigh</span></h1>
     <p>Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!</p>
     <a href="#tracker" class="btn">Track Santa Live</a>
+    <button id="share-btn" class="btn" style="margin-left: 10px; background: transparent; border: 2px solid var(--border); color: var(--text-main);"><i class="fa-solid fa-share-nodes"></i></button>
 </header>
 
     <!-- Tracker Section -->
@@ -1181,6 +1182,23 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
                 if (apiUrl) fetchSleighData(apiUrl);
             }, 2000);
         });
+
+        // --- Web Share API ---
+        const shareBtn = document.getElementById('share-btn');
+        if (shareBtn) {
+            if (navigator.share) {
+                shareBtn.addEventListener('click', () => {
+                    navigator.share({
+                        title: document.title,
+                        text: 'Santa is on his way! Track the sleigh live:',
+                        url: window.location.href
+                    }).catch(console.error);
+                });
+            } else {
+                // Hide the button on older browsers that don't support native sharing
+                shareBtn.style.display = 'none';
+            }
+        }
 
         function lazyLoadIframes() {
     const observer = new IntersectionObserver((entries, obs) => {
