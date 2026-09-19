@@ -955,32 +955,63 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
                 }
             });
 
+            // --- Dynamic Favicon ---
+            if (settings.logo_overlay_url) {
+                const iconLink = document.querySelector("link[rel='icon']");
+                const appleIconLink = document.querySelector("link[rel='apple-touch-icon']");
+                if (iconLink) iconLink.href = settings.logo_overlay_url;
+                if (appleIconLink) appleIconLink.href = settings.logo_overlay_url;
+            }
+
             // --- Donations Widget ---
             const currency = donations.currency || "£";
             const target = parseFloat(donations.target) || 0;
             const current = parseFloat(donations.total) || 0;
             
-            document.getElementById('donation-current').innerText = `${currency}${current.toLocaleString()}`;
-            document.getElementById('donation-target').innerText = `OF ${currency}${target.toLocaleString()}`;
-            document.getElementById('donation-updated').innerText = donations.lastUpdatePretty || "Today";
-
+            let hasThermoContent = false;
+            
             if (target > 0) {
+                hasThermoContent = true;
+                document.getElementById('donation-current').innerText = `${currency}${current.toLocaleString()}`;
+                document.getElementById('donation-target').innerText = `OF ${currency}${target.toLocaleString()}`;
+                document.getElementById('donation-updated').innerText = donations.lastUpdatePretty || "Today";
+
                 const percentage = Math.min((current / target) * 100, 100);
                 setTimeout(() => {
                     document.getElementById('donation-fill').style.width = percentage + '%';
                 }, 500);
+            } else {
+                // Hide just the thermometer elements if no target is set
+                document.querySelector('.thermo-title').style.display = 'none';
+                document.querySelector('.progress-bar-bg').style.display = 'none';
+                document.querySelector('.thermo-stats').style.display = 'none';
+                document.querySelector('.thermo-card p').style.display = 'none';
             }
 
             if (settings.donate_url) {
+                hasThermoContent = true;
                 const donateBtn = document.getElementById('donate-btn');
                 donateBtn.href = settings.donate_url;
                 donateBtn.style.display = "inline-block";
             }
+            
+            // If neither the thermometer nor the donate button is configured, hide the whole card
+            if (!hasThermoContent) {
+                document.querySelector('.thermo-card').style.display = "none";
+            }
+
+            let hasDonateSectionContent = hasThermoContent;
 
             // --- Volunteer Logic ---
             if (settings.volunteer_form_url) {
                 document.getElementById('volunteer-btn').href = settings.volunteer_form_url;
                 document.getElementById('volunteer-container').style.display = "block";
+                hasDonateSectionContent = true;
+            }
+
+            // Hide the entire Donate section from the webpage if no elements are configured
+            if (!hasDonateSectionContent) {
+                document.getElementById('donate').style.display = "none";
             }
             
             // --- Build Routes Grid ---
