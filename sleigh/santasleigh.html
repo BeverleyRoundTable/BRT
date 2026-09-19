@@ -528,7 +528,24 @@
         }
 
         @media(max-width: 600px) {
-            .nav-links { display: none; }
+            nav {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+            .nav-links {
+                width: 100%;
+                overflow-x: auto;
+                white-space: nowrap;
+                padding-bottom: 5px;
+                justify-content: flex-start;
+                /* Hides the scrollbar visually but keeps functionality */
+                -ms-overflow-style: none;  
+                scrollbar-width: none;  
+            }
+            .nav-links::-webkit-scrollbar { 
+                display: none; 
+            }
             .hero h1 { font-size: 40px; }
         }
     </style>
@@ -578,8 +595,8 @@
         <div class="nav-links">
             <a href="#tracker">Live Tracker</a>
             <a href="#routes">Routes</a>
-            <a href="#memory-book">Memory Book</a>
-            <a href="#donate">Donate</a>
+            <a href="#memory-book" id="nav-memory-book">Memory Book</a>
+            <a href="#donate" id="nav-donate">Donate</a>
         </div>
     </nav>
 
@@ -1012,6 +1029,9 @@ document.getElementById('hero-title').innerHTML = formattedTitle;
             // Hide the entire Donate section from the webpage if no elements are configured
             if (!hasDonateSectionContent) {
                 document.getElementById('donate').style.display = "none";
+                if(document.getElementById('nav-donate')) {
+                    document.getElementById('nav-donate').style.display = "none"; 
+                }
             }
             
             // --- Build Routes Grid ---
