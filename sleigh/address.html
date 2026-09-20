@@ -242,11 +242,49 @@
 
     .addr-btn-ghost { background: var(--surface); color: #fff; border: 1px solid var(--border); }
     .addr-btn-ghost:hover { background: var(--dark); }
+
+    /* ── STANDALONE NAVIGATION ── */
+    .addr-back-banner {
+      display: none; /* Hidden by default when embedded as an iframe */
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      text-decoration: none;
+      color: #fff;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 1.5px;
+      transition: background 0.2s, transform 0.1s, border-color 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .addr-back-banner:hover {
+      background: var(--surface);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    
+    .addr-back-banner:active {
+      transform: scale(0.98);
+    }
+    
+    /* Reveal the button ONLY when opened directly via a share link */
+    html.standalone .addr-back-banner {
+      display: block; 
+    }
+    
   </style>
 </head>
 
 <body>
   <div id="address-root">
+    
+    <a href="#" id="backToMainLink" class="addr-back-banner">
+      ⬅ RETURN TO MAIN TRACKER
+    </a>
 
     <div class="controls-wrapper">
       <button id="locateBtn" class="locate-btn" disabled>
@@ -300,8 +338,23 @@
   let PRIMARY = DEFAULT_PRIMARY;   // JS-side copy of --primary (Leaflet line colours can't read CSS vars)
 
   // Opened directly (e.g. from a shared link) instead of inside the site's iframe:
-  // the transparent body would otherwise show a white page behind the dark card.
-  if (window.self === window.top) document.documentElement.classList.add('standalone');
+  if (window.self === window.top) {
+    document.documentElement.classList.add('standalone');
+    
+    // Automatically calculate the town's main tracker URL
+    const host = location.hostname.toLowerCase();
+    let mainUrl = 'https://www.roundtablesantasleigh.co.uk'; // Generic fallback
+    
+    if (host.includes('addresses.')) {
+      // Swaps "ellonaddresses.roundtablesantasleigh.co.uk" back to "ellon.roundtablesantasleigh.co.uk"
+      mainUrl = location.protocol + '//' + host.replace('addresses.', '.');
+    } else if (API_URL) {
+      // Fallback for when you are testing on raw .pages.dev links
+      mainUrl = 'https://brt-23f.pages.dev/sleigh/santasleigh.html?api=' + encodeURIComponent(API_URL);
+    }
+    
+    document.getElementById('backToMainLink').href = mainUrl;
+  }
 
   // Returns [r, g, b] for a valid CSS colour, otherwise null. (Copied from santasleigh.html)
   function parseColor(v) {
