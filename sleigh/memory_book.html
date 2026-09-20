@@ -8,7 +8,11 @@
   
   <style>
     :root {
-      --gold: #FBAF33;
+      /* Brand colour. Default is Round Table gold; applyTheme() overrides these from the API
+         (settings.primary_color), exactly like the Santa sleigh page does. */
+      --primary: #FBAF33;
+      --primary-rgb: 251, 175, 51;   /* same colour as an r, g, b triplet for translucent shades */
+      --on-primary: #000000;         /* text on --primary, auto-picked for readability */
       --dark: #0d0d0b;
       --surface: #161614;
       --surface-2: #1e1e1b;
@@ -29,26 +33,19 @@
       min-height: 100vh;
       overflow-x: hidden;
       /* Kept the magical glow, it will blend beautifully over the host site's background! */
-      background-image: radial-gradient(circle at 50% 0%, rgba(251,175,51,0.05) 0%, transparent 70%);
+      background-image: radial-gradient(circle at 50% 0%, rgba(var(--primary-rgb), 0.05) 0%, transparent 70%);
     }
+
+    /* Set by JS when the page is opened directly rather than embedded: transparent would show white */
+    html.standalone body { background-color: var(--dark); }
 
     /* --- HEADER --- */
     header {
       text-align: center;
-      padding: 60px 20px 40px;
+      padding: 44px 20px 40px;
       max-width: 800px;
       margin: 0 auto;
     }
-
-    h1 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(48px, 8vw, 72px);
-      letter-spacing: 2px;
-      color: #fff;
-      line-height: 1;
-      margin-bottom: 16px;
-    }
-    h1 span { color: var(--gold); }
 
     .subtext {
       font-size: 16px;
@@ -65,7 +62,7 @@
     }
     .time-machine span { color: var(--text-dim); font-size: 13px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
     .time-machine select {
-      background: transparent; color: var(--gold); border: none;
+      background: transparent; color: var(--primary); border: none;
       font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 1.5px;
       cursor: pointer; outline: none; appearance: none; padding-right: 4px;
     }
@@ -79,8 +76,8 @@
       transition: all 0.2s; cursor: pointer; outline: none;
     }
     .btn:hover {
-      background: var(--gold); color: #000; border-color: var(--gold);
-      transform: translateY(-2px); box-shadow: 0 8px 24px rgba(251,175,51,0.2);
+      background: var(--primary); color: var(--on-primary); border-color: var(--primary);
+      transform: translateY(-2px); box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.2);
     }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
@@ -143,7 +140,7 @@
     }
     .spinner {
       width: 40px; height: 40px;
-      border: 3px solid var(--border); border-top-color: var(--gold);
+      border: 3px solid var(--border); border-top-color: var(--primary);
       border-radius: 50%; animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -164,7 +161,7 @@
     
     .modal-title {
       font-family: 'Bebas Neue', sans-serif; font-size: 32px;
-      letter-spacing: 1.5px; margin: 0 0 12px 0; color: var(--gold); line-height: 1;
+      letter-spacing: 1.5px; margin: 0 0 12px 0; color: var(--primary); line-height: 1;
     }
     .modal-desc { font-size: 14px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.5; }
 
@@ -174,8 +171,8 @@
       padding: 30px 20px; background: var(--surface-2);
       cursor: pointer; transition: all 0.2s; margin-bottom: 24px;
     }
-    .file-drop-area:hover { border-color: var(--gold); background: rgba(251,175,51,0.05); }
-    .file-drop-area span { display: block; font-size: 14px; color: var(--text-dim); font-weight: 700; margin-top: 8px;}
+    .file-drop-area:hover { border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); }
+    .file-drop-area span { display: block; font-size: 14px; color: var(--text-dim); font-weight: 700; margin-top: 0;}
     .file-drop-area input[type=file] { display: none; }
     
     .preview-img {
@@ -207,7 +204,7 @@
     .polaroid .video-play-btn {
       position: absolute; inset: 0; margin: auto;
       width: 64px; height: 64px; border-radius: 50%;
-      background: var(--gold); color: var(--dark);
+      background: var(--primary); color: var(--on-primary);
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 4px 18px rgba(0,0,0,0.5);
       transition: transform 0.2s ease; pointer-events: none;
@@ -238,7 +235,7 @@
       color: var(--text-dim); font-size: 13px; font-weight: 700;
       text-decoration: none; transition: color 0.2s;
     }
-    .lightbox-fallback:hover { color: var(--gold); }
+    .lightbox-fallback:hover { color: var(--primary); }
     .lightbox-close {
       position: absolute; top: 20px; right: 24px;
       width: 44px; height: 44px; border-radius: 50%;
@@ -247,7 +244,7 @@
       display: flex; align-items: center; justify-content: center;
       transition: all 0.2s;
     }
-    .lightbox-close:hover { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+    .lightbox-close:hover { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 
     .modal-btns { display: flex; gap: 12px; }
     .btn-full { flex: 1; }
@@ -255,7 +252,7 @@
     .btn-cancel:hover { background: var(--surface-3); border-color: var(--text-dim); color: #fff; box-shadow: none; transform: none;}
 
     @media(max-width: 768px) {
-      header { padding: 40px 20px 30px; }
+      header { padding: 32px 20px 30px; }
       .gallery-container { gap: 16px; padding: 0 16px 60px; }
       .polaroid { width: calc(50% - 8px); min-width: 150px; padding: 10px 10px 24px 10px; }
       .polaroid-caption { font-size: 16px; margin-top: 10px; }
@@ -265,15 +262,14 @@
 <body>
 
   <header>
-    <h1>COMMUNITY <span>MEMORIES</span></h1>
     <p class="subtext" id="headerSubtext">Loading sleigh data...</p>
     
     <div class="time-machine" id="timeMachineBox" style="display: none;">
-      <span>⏳ Archive:</span>
+      <span>Archive:</span>
       <select id="yearSelect"></select>
     </div>
     <br>
-    <button class="btn" id="openUploadBtn">📸 Submit a Photo or Video</button>
+    <button class="btn" id="openUploadBtn">Submit a Photo or Video</button>
   </header>
 
   <div class="gallery-container" id="gallery">
@@ -289,7 +285,6 @@
       <div class="modal-desc">Send us your best photo or a short video clip from the night! Everything is reviewed by the elves before being added to the book.</div>
       
       <div class="file-drop-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
-        <span style="font-size: 32px; margin: 0;">📁</span>
         <span id="dropText">Tap to select a photo or video</span>
         <input type="file" id="fileInput" accept="image/jpeg, image/png, video/mp4, video/quicktime, video/webm">
       </div>
@@ -317,6 +312,71 @@
 
   <script>
     
+    // --- THEME FROM THE API ---
+    // Same source and rules as the Santa sleigh page: settings.primary_color drives the brand colour,
+    // and text on it flips black/white for readability. Missing or invalid -> Round Table gold.
+    // Opened directly instead of inside the site's iframe: the transparent body would show white.
+    if (window.self === window.top) document.documentElement.classList.add('standalone');
+
+    // Returns [r, g, b] for a valid CSS colour, otherwise null. (Copied from santasleigh.html)
+    function parseColor(v) {
+      if (typeof v !== 'string') return null;
+      const s = v.trim();
+      const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+      if (hex) {
+        let h = hex[1];
+        if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+        if (h.length !== 6 && h.length !== 8) return null;
+        return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+      }
+      try {
+        if (/var\(|url\(|expression/i.test(s)) return null;
+        if (!(window.CSS && CSS.supports && CSS.supports('color', s))) return null;
+        const ctx = document.createElement('canvas').getContext('2d');
+        ctx.fillStyle = '#000000';
+        ctx.fillStyle = s;
+        const out = ctx.fillStyle;
+        if (out.charAt(0) === '#') return parseColor(out);
+        const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(out);
+        return rgb ? [+rgb[1], +rgb[2], +rgb[3]] : null;
+      } catch (e) { return null; }
+    }
+
+    // Black or white, whichever reads better on the given colour (WCAG contrast ratio). (Copied from santasleigh.html)
+    function readableTextOn(rgb) {
+      const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+      const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+      return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+    }
+
+    function applyTheme(settings) {
+      const root = document.documentElement;
+      const raw = settings && settings.primary_color;
+      const rgb = parseColor(raw);
+      if (rgb) {
+        root.style.setProperty('--primary', String(raw).trim());
+        root.style.setProperty('--primary-rgb', rgb.join(', '));
+        root.style.setProperty('--on-primary', readableTextOn(rgb));
+      } else {
+        ['--primary', '--primary-rgb', '--on-primary'].forEach(p => root.style.removeProperty(p));
+      }
+    }
+
+    // The settings request below is a direct Apps Script call (slow), so remember the colour per API
+    // and apply it straight away next time instead of flashing gold first. Storage can be blocked in iframes.
+    function loadCachedTheme(api) {
+      try {
+        const c = localStorage.getItem('SANTA_THEME:' + api);
+        if (c) applyTheme({ primary_color: c });
+      } catch (e) {}
+    }
+    function saveTheme(api, color) {
+      try {
+        if (parseColor(color)) localStorage.setItem('SANTA_THEME:' + api, String(color).trim());
+        else localStorage.removeItem('SANTA_THEME:' + api);
+      } catch (e) {}
+    }
+
     // --- HELPER: GET BASE URL ---
     function getApiUrl() {
       // 1. Look for ?api= in the URL (for Cloudflare/external hosting)
@@ -337,6 +397,7 @@
     document.addEventListener("DOMContentLoaded", async () => {
   const apiUrl = getApiUrl();
   const sep = apiUrl.includes('?') ? '&' : '?';
+  loadCachedTheme(apiUrl);
   const WORKER_URL = "https://santaproxy.beverley247.workers.dev/";
 
       // Elements
@@ -399,7 +460,6 @@
           if (!images || images.length === 0) {
             gallery.innerHTML = `
               <div class="state-message">
-                <span style="font-size: 40px; margin-bottom: 10px;">📸</span>
                 The memory book for ${year} is empty.<br>Click 'Submit a Photo' above to be the first!
               </div>`;
           } else {
@@ -468,7 +528,7 @@
           }
         } catch (err) {
           loader.style.display = 'none';
-          gallery.innerHTML = `<div class="state-message"><span style="color: var(--red); font-size: 32px; margin-bottom: 10px;">⚠️</span>Oops! The elves couldn't load the photos right now.</div>`;
+          gallery.innerHTML = `<div class="state-message" style="color: var(--red);">Oops! The elves couldn't load the photos right now.</div>`;
         }
       }
 
@@ -476,6 +536,7 @@
         // Fetch Sleigh Name
         fetch(`${apiUrl}${sep}function=getRoutes`).then(r => r.json()).then(data => {
             if(data && data.settings) {
+                try { applyTheme(data.settings); saveTheme(apiUrl, data.settings.primary_color); } catch (e) { console.warn('Theme not applied:', e); }
                 const name = data.settings.sleigh_display_name || "Santa Sleigh";
                 subtext.textContent = `Magical moments from the ${name} routes.`;
                 document.title = `Memories — ${name}`;
@@ -558,7 +619,7 @@
         const isImage = file.type.startsWith('image/');
 
         if (!isVideo && !isImage) {
-          alert("❌ Please choose a photo or a video file.");
+          alert("Please choose a photo or a video file.");
           fileInput.value = "";
           return;
         }
@@ -567,7 +628,7 @@
         if (isVideo) {
           if (file.size > MAX_VIDEO_BYTES) {
             const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-            alert(`❌ That clip is ${sizeMb} MB — too big to send.\n\nPlease keep videos under ${MAX_VIDEO_MB} MB (about a 15–25 second clip). On a phone you can trim it in your gallery before uploading.`);
+            alert(`That clip is ${sizeMb} MB — too big to send.\n\nPlease keep videos under ${MAX_VIDEO_MB} MB (about a 15–25 second clip). On a phone you can trim it in your gallery before uploading.`);
             fileInput.value = "";
             return;
           }
@@ -632,8 +693,8 @@
 
         confirmUploadBtn.disabled = true;
         confirmUploadBtn.textContent = (mediaKind === 'video')
-          ? "Uploading clip… 🦌💨"
-          : "Sending… 🦌💨";
+          ? "Uploading clip…"
+          : "Sending…";
 
         try {
           const payload = {
@@ -641,7 +702,7 @@
             imageData: base64Output // server reads the real MIME from this prefix
           };
 
-          // ⬅️ Replace fetch(apiUrl, ...) with these lines:
+          // Replace fetch(apiUrl, ...) with these lines:
           const uploadTarget = `${WORKER_URL}?target=${encodeURIComponent(apiUrl)}`;
 
           const response = await fetch(uploadTarget, {
@@ -653,15 +714,15 @@
           const data = await response.json();
           if (data.ok) {
             const what = (mediaKind === 'video') ? "video" : "photo";
-            alert(`✅ Thank you! Your ${what} has been sent to the elves for review.`);
+            alert(`Thank you! Your ${what} has been sent to the elves for review.`);
             resetModal();
           } else {
-            alert("❌ Upload Failed: " + data.error);
+            alert("Upload Failed: " + data.error);
             confirmUploadBtn.disabled = false;
             confirmUploadBtn.textContent = "Try Again";
           }
         } catch (err) {
-          alert("❌ Network Error. Please check your connection. Large videos may time out — try a shorter clip.");
+          alert("Network Error. Please check your connection. Large videos may time out — try a shorter clip.");
           confirmUploadBtn.disabled = false;
           confirmUploadBtn.textContent = "Try Again";
         }
