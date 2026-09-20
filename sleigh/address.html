@@ -789,12 +789,21 @@
   // ═══════════════════════════════════════
   // Always carries ?api= so the link works standalone, even if this page got its API from storage
   function routeShareUrl(routeName) {
-    const url = new URL(location.href);
-    url.search = '';
-    url.hash = '';
+    // Use the pleasant URL passed from the parent if available, otherwise fallback to the iframe's URL
+    const shareBase = params.get('shareBase');
+    const url = new URL(shareBase || location.href);
+    
+    // Only clear search parameters if we are falling back to the raw iframe URL
+    if (!shareBase) {
+      url.search = '';
+      url.hash = '';
+    }
+    
+    // Always append parameters (even on pleasant URLs, having ?api= as a fallback is a good safety net)
     url.searchParams.set('api', API_URL);
     url.searchParams.set('route', routeName);
     if (currentStreet) url.searchParams.set('street', currentStreet);
+    
     return url.toString();
   }
 
