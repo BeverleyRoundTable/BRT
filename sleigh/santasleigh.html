@@ -1126,9 +1126,18 @@
         }
 
         function frameUrl(page, api) {
-            return CFG.frameBase + '/' + page +
+            let url = CFG.frameBase + '/' + page +
                 '?api=' + encodeURIComponent(api) +
                 '&proxy=' + encodeURIComponent(window.sleighProxyUrl(api));
+            
+            // Pass the pleasant addresses URL down to the iframe for sharing
+            if (page === 'address.html') {
+                const shareBase = prettyAddressesUrl();
+                if (shareBase) {
+                    url += '&shareBase=' + encodeURIComponent(shareBase);
+                }
+            }
+            return url;
         }
 
         let frameMessageBound = false;
@@ -1169,6 +1178,19 @@
             // Ensure we aren't appending 'crew' to a string that already ends in it
             if (!/^[a-z0-9-]+$/.test(sub) || sub === 'www' || /tracker$/.test(sub) || /crew$/.test(sub)) return '';
             return location.protocol + '//' + sub + 'crew' + suffix;
+        }
+
+        // Generate the dynamic [town]addresses URL using the active subdomain
+        function prettyAddressesUrl() {
+            const domain = String(CFG.prettyDomain || '').toLowerCase();
+            if (!domain) return '';
+            const host = location.hostname.toLowerCase();
+            const suffix = '.' + domain;
+            if (host.length <= suffix.length || host.slice(-suffix.length) !== suffix) return '';
+            const sub = host.slice(0, -suffix.length);
+            // Ensure we aren't appending to a string that already ends in one of our suffixes
+            if (!/^[a-z0-9-]+$/.test(sub) || sub === 'www' || /tracker$/.test(sub) || /crew$/.test(sub) || /addresses$/.test(sub)) return '';
+            return location.protocol + '//' + sub + 'addresses' + suffix;
         }
 
         function renderFrames(api) {
