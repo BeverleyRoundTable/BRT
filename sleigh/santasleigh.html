@@ -1158,6 +1158,19 @@
             return location.protocol + '//' + sub + 'tracker' + suffix;
         }
 
+        // Generate the dynamic [town]crew URL using the active subdomain
+        function prettyCrewUrl() {
+            const domain = String(CFG.prettyDomain || '').toLowerCase();
+            if (!domain) return '';
+            const host = location.hostname.toLowerCase();
+            const suffix = '.' + domain;
+            if (host.length <= suffix.length || host.slice(-suffix.length) !== suffix) return '';
+            const sub = host.slice(0, -suffix.length);
+            // Ensure we aren't appending 'crew' to a string that already ends in it
+            if (!/^[a-z0-9-]+$/.test(sub) || sub === 'www' || /tracker$/.test(sub) || /crew$/.test(sub)) return '';
+            return location.protocol + '//' + sub + 'crew' + suffix;
+        }
+
         function renderFrames(api) {
             const trackerUrl = frameUrl('tracker', api);
             setFrameSrc('tracker-iframe', trackerUrl, false);
@@ -1176,7 +1189,11 @@
             const current = parseFloat(donations.total) || 0;
             const hasTarget = target > 0;
             const donateUrl = safeUrl(settings.donate_url);
-            const volunteerUrl = safeUrl(settings.volunteer_form_url);
+            
+            // Build the dynamic crew signup URL (fallback to the raw pages.dev + api url if they aren't using a pretty domain yet)
+            const api = window.__sleighApiUrl;
+            const fallbackCrewUrl = CFG.frameBase + '/crew?api=' + encodeURIComponent(api);
+            const volunteerUrl = prettyCrewUrl() || fallbackCrewUrl;
 
             const card = document.querySelector('.thermo-card');
             [
