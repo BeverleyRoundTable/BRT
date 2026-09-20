@@ -610,7 +610,9 @@
     window.SLEIGH_CONFIG = Object.assign({
         proxyBase: 'https://santaproxy.beverley247.workers.dev',
         frameBase: 'https://brt-23f.pages.dev/sleigh',
-        assetBase: 'https://brt-23f.pages.dev/icons'
+        assetBase: 'https://brt-23f.pages.dev/icons',
+        // Domain the router serves pretty per-table hosts on (<table>.<domain>, <table>tracker.<domain>)
+        prettyDomain: 'roundtablesantasleigh.co.uk'
     }, window.SLEIGH_CONFIG || {});
 
     window.sleighProxyUrl = function (api) {
@@ -1142,13 +1144,27 @@
             });
         }
 
+        // On a pretty table host such as ellon.roundtablesantasleigh.co.uk the router also serves
+        // the standalone tracker at ellontracker.roundtablesantasleigh.co.uk. Returns '' on any
+        // other host (direct ?api= loads, pages.dev previews) so callers fall back to the raw URL.
+        function prettyTrackerUrl() {
+            const domain = String(CFG.prettyDomain || '').toLowerCase();
+            if (!domain) return '';
+            const host = location.hostname.toLowerCase();
+            const suffix = '.' + domain;
+            if (host.length <= suffix.length || host.slice(-suffix.length) !== suffix) return '';
+            const sub = host.slice(0, -suffix.length);
+            if (!/^[a-z0-9-]+$/.test(sub) || sub === 'www' || /tracker$/.test(sub)) return '';
+            return location.protocol + '//' + sub + 'tracker' + suffix;
+        }
+
         function renderFrames(api) {
             const trackerUrl = frameUrl('tracker', api);
             setFrameSrc('tracker-iframe', trackerUrl, false);
             setFrameSrc('address-iframe', frameUrl('address.html', api), true);
             setFrameSrc('memory-book-iframe', frameUrl('memory_book', api), true);
             const fs = $('tracker-fullscreen');
-            if (fs) { fs.href = trackerUrl; fs.hidden = false; }
+            if (fs) { fs.href = prettyTrackerUrl() || trackerUrl; fs.hidden = false; }
             bindFrameMessages();
         }
 
