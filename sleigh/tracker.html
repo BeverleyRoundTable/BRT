@@ -24,18 +24,21 @@
 
   <style>
     :root {
-      --gold: #FBAF33;
-      --gold-dim: rgba(251,175,51,0.12);
-      --gold-glow: rgba(251,175,51,0.25);
+      /* Brand colour. Default is Round Table gold; applyTheme() overrides these from the API
+         (settings.primary_color), exactly like the Santa sleigh page does. */
+      --primary: #FBAF33;
+      --primary-rgb: 251, 175, 51;   /* same colour as an r, g, b triplet for translucent shades */
+      --on-primary: #000000;         /* text on --primary, auto-picked for readability */
+      --primary-dim: rgba(var(--primary-rgb), 0.12);
+      --primary-glow: rgba(var(--primary-rgb), 0.25);
       --dark: #0d0d0b;
       --surface: #161614;
       --surface-2: #1e1e1b;
       --surface-3: #252522;
       --border: rgba(255,255,255,0.08);
-      --border-gold: rgba(251,175,51,0.2);
+      --border-primary: rgba(var(--primary-rgb), 0.2);
       --text: #eaeae5;
       --text-dim: rgba(255,255,255,0.55);
-      --rt-gold: var(--gold);
       --rt-grey: var(--dark);
       --red: #D31C1C;
       
@@ -96,22 +99,22 @@
       top: 0;
       left: 0;
       height: 4px;
-      background: var(--rt-gold);
+      background: var(--primary);
       width: var(--progress, 0%);
       transition: width 1s ease-in-out;
-      box-shadow: 0 0 10px rgba(251, 175, 51, 0.8);
+      box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.8);
       z-index: 0;
     }
 
     .status-popup.is-announcement {
-      background: rgba(29, 29, 26, 0.95) !important; color: var(--rt-gold) !important; 
-      border: 1px solid var(--rt-gold) !important; font-weight: 900 !important;
+      background: rgba(29, 29, 26, 0.95) !important; color: var(--primary) !important; 
+      border: 1px solid var(--primary) !important; font-weight: 900 !important;
       text-transform: uppercase; letter-spacing: 0.05em; animation: alertPulse 1.5s infinite; 
     }
     @keyframes alertPulse {
-      0% { box-shadow: 0 0 0 0 rgba(251, 175, 51, 0.5); transform: translateX(-50%) scale(1); }
-      50% { box-shadow: 0 0 0 15px rgba(251, 175, 51, 0); transform: translateX(-50%) scale(1.02); }
-      100% { box-shadow: 0 0 0 0 rgba(251, 175, 51, 0); transform: translateX(-50%) scale(1); }
+      0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.5); transform: translateX(-50%) scale(1); }
+      50% { box-shadow: 0 0 0 15px rgba(var(--primary-rgb), 0); transform: translateX(-50%) scale(1.02); }
+      100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); transform: translateX(-50%) scale(1); }
     }
 
     .status-popup.is-user-msg {
@@ -178,7 +181,7 @@
     @media (hover: hover) {
       .btn:hover { background: var(--surface); color: var(--text); }
     }
-    .btn:active { transform: scale(0.96); border-color: var(--rt-gold); color: var(--rt-gold); }
+    .btn:active { transform: scale(0.96); border-color: var(--primary); color: var(--primary); }
     .btn.locked { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
 
     .donate-box { 
@@ -190,7 +193,7 @@
       font-family: 'Bebas Neue', sans-serif;
       font-size: 22px;
       letter-spacing: 1.5px;
-      background: var(--rt-gold); color: #000000; border: 2px solid var(--rt-gold); 
+      background: var(--primary); color: var(--on-primary); border: 2px solid var(--primary); 
       display: flex; align-items: center; justify-content: center;
       height: 58px; padding: 0 15px; box-sizing: border-box; width: 100%;
       border-radius: 16px; 
@@ -213,9 +216,9 @@
       animation: magicPulse 3s infinite;
     }
     @keyframes magicPulse {
-      0% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 0 rgba(251, 175, 51, 0.6); }
-      70% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 12px rgba(251, 175, 51, 0); }
-      100% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 0 rgba(251, 175, 51, 0); }
+      0% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 0 rgba(var(--primary-rgb), 0.6); }
+      70% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 12px rgba(var(--primary-rgb), 0); }
+      100% { box-shadow: 0 4px 16px rgba(0,0,0,.4), 0 0 0 0 rgba(var(--primary-rgb), 0); }
     }
 
     .route-sponsor {
@@ -227,9 +230,9 @@
   gap: 14px;
   padding: 10px 18px 10px 20px;
   background: rgba(29, 29, 26, 0.92);
-  border: 1px solid var(--border-gold);
+  border: 1px solid var(--border-primary);
   border-radius: 16px;
-  box-shadow: 0 6px 22px rgba(0,0,0,0.5), 0 0 0 1px rgba(251,175,51,0.06);
+  box-shadow: 0 6px 22px rgba(0,0,0,0.5), 0 0 0 1px rgba(var(--primary-rgb), 0.06);
   z-index: 3500;
   opacity: 0;
   transform: translateY(-6px);
@@ -245,7 +248,7 @@
   font-weight: 800;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--rt-gold);
+  color: var(--primary);
   white-space: nowrap;
   line-height: 1;
 }
@@ -327,7 +330,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     body.dim-ui .donate-box:hover, body.dim-ui .info-popup:hover, body.dim-ui .status-popup:hover { opacity: 0.75; }
     .status-dot { width: 12px; aspect-ratio: 1/1; border-radius: 50%; flex-shrink: 0; display: none; }
     .dot-moving { background: #2cff4e; animation: pulse 1.4s infinite; }
-    .dot-stopped { background: var(--rt-gold); }
+    .dot-stopped { background: var(--primary); }
     @keyframes pulse { 
       0% { box-shadow: 0 0 0 0 rgba(44,255,78,.6); } 
       70% { box-shadow: 0 0 0 10px rgba(44,255,78,0); } 
@@ -335,21 +338,21 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     }
     
     #loadingCover { position: fixed; inset: 0; background: var(--rt-grey); display: flex; align-items: center; justify-content: center; z-index: 6000; }
-    #loadingSpinner { width: 52px; height: 52px; border-radius: 50%; border: 4px solid var(--border); border-top-color: var(--rt-gold); animation: spin .9s linear infinite; }
+    #loadingSpinner { width: 52px; height: 52px; border-radius: 50%; border: 4px solid var(--border); border-top-color: var(--primary); animation: spin .9s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
     .modal-box { background: var(--surface); padding: 24px; border-radius: 20px; width: 100%; max-width: 340px; text-align: center; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.6); animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: 1.5px; margin: 0 0 8px 0; color: var(--rt-gold); }
+    .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: 1.5px; margin: 0 0 8px 0; color: var(--primary); }
     .modal-desc { font-size: 0.9em; color: var(--text-dim); margin-bottom: 20px; line-height: 1.4; }
     .modal-input { width: 100%; padding: 14px; margin-bottom: 20px; background: var(--surface-2); border: 2px solid var(--border); border-radius: 12px; color: var(--text); font-size: 16px; box-sizing: border-box; text-align: center; font-family: inherit; }
-    .modal-input:focus { outline: none; border-color: var(--rt-gold); }
+    .modal-input:focus { outline: none; border-color: var(--primary); }
     .modal-btns { display: flex; gap: 12px; }
     .btn-full { flex: 1; padding: 12px; border-radius: 12px; font-weight: 800; font-size: 0.95em; cursor: pointer; border: none; transition: transform 0.1s; font-family: inherit; }
     .btn-full:active { transform: scale(0.96); }
     .btn-cancel { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
-    .btn-confirm { background: var(--rt-gold); color: #000; box-shadow: 0 4px 12px rgba(251,175,51,0.3); }
+    .btn-confirm { background: var(--primary); color: var(--on-primary); box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3); }
 
     /* ── SCHEDULE MODAL STYLES ── */
     .schedule-item {
@@ -364,10 +367,10 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       transition: border-color 0.2s ease;
     }
     .schedule-item:hover {
-      border-color: rgba(251,175,51,0.3);
+      border-color: rgba(var(--primary-rgb), 0.3);
     }
     .schedule-details { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; padding-right: 10px; }
-    .schedule-route { font-weight: 800; color: var(--rt-gold); font-size: 1.1em; line-height: 1.1; }
+    .schedule-route { font-weight: 800; color: var(--primary); font-size: 1.1em; line-height: 1.1; }
     .schedule-date { font-size: 0.85em; color: var(--text-dim); font-weight: 600; }
     .schedule-actions { display: flex; gap: 8px; flex-shrink: 0; }
     .cal-btn {
@@ -380,7 +383,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     .cal-btn.btn-gcal { color: #fff; }
     .cal-btn.btn-ics { color: #fff; }
     
-    .toast-box { display: none; position: fixed; left: 50%; bottom: calc(var(--donate-bottom) + 80px); transform: translateX(-50%); background: rgba(251, 175, 51, 0.95); color: #000; padding: 14px 20px; font-weight: 800; border-radius: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 6000; pointer-events: none; max-width: min(90vw,420px); text-align: center; line-height: 1.3; }
+    .toast-box { display: none; position: fixed; left: 50%; bottom: calc(var(--donate-bottom) + 80px); transform: translateX(-50%); background: rgba(var(--primary-rgb), 0.95); color: var(--on-primary); padding: 14px 20px; font-weight: 800; border-radius: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 6000; pointer-events: none; max-width: min(90vw,420px); text-align: center; line-height: 1.3; }
     .toast-visible { display: block; }
 
     body.kiosk { --kiosk-bottom: 56px; cursor: none; }
@@ -393,8 +396,8 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     body.kiosk .kiosk-banner { display: block; }
     .kiosk-banner.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
     .kiosk-banner.live { animation: kioskPulse 2.8s ease-in-out infinite; }
-    .kiosk-subtitle { font-size: 0.75em; opacity: 0.85; margin-top: 4px; text-align: center; color: var(--rt-gold); }
-    @keyframes kioskPulse { 0%,100%{box-shadow:0 8px 28px rgba(0,0,0,0.55)} 50%{box-shadow:0 8px 34px rgba(251, 175, 51, 0.4)} }
+    .kiosk-subtitle { font-size: 0.75em; opacity: 0.85; margin-top: 4px; text-align: center; color: var(--primary); }
+    @keyframes kioskPulse { 0%,100%{box-shadow:0 8px 28px rgba(0,0,0,0.55)} 50%{box-shadow:0 8px 34px rgba(var(--primary-rgb), 0.4)} }
     
     .kiosk-sponsor { position: fixed; bottom: var(--kiosk-bottom); left: 50%; transform: translateX(-50%) translateY(6px); background: rgba(29, 29, 26, 0.95); border: 1px solid var(--border); padding: 10px 18px; border-radius: 14px; display: flex; align-items: center; gap: 12px; z-index: 4400; box-shadow: 0 6px 22px rgba(0,0,0,0.55); opacity: 0; pointer-events: none; transition: opacity 0.6s ease, transform 0.6s ease; }
     .kiosk-sponsor.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -445,7 +448,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
   .toast-box { bottom: calc(env(safe-area-inset-bottom, 0px) + 230px) !important; } 
 }
     
-    .ios-install-prompt { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(29, 29, 26, 0.95); border: 1px solid var(--rt-gold); color: #fff; padding: 16px; border-radius: 16px; font-size: 0.9em; font-weight: 700; text-align: center; z-index: 9999; width: 85%; max-width: 340px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); opacity: 0; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
+    .ios-install-prompt { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(29, 29, 26, 0.95); border: 1px solid var(--primary); color: #fff; padding: 16px; border-radius: 16px; font-size: 0.9em; font-weight: 700; text-align: center; z-index: 9999; width: 85%; max-width: 340px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); opacity: 0; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
     .ios-install-prompt.visible { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
     .ios-install-prompt .close-btn { position: absolute; top: 4px; right: 10px; background: none; border: none; color: var(--text-dim); font-size: 1.5em; cursor: pointer; }
 
@@ -461,7 +464,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     @media (max-width: 600px) { .polaroid { max-width: 160px; padding: 5px 5px 16px 5px; } .polaroid-caption { font-size: 0.85em; margin-top: 6px; } }
     
     .driver-mode { max-width: 500px; margin: 0 auto; position: relative; border-left: 1px solid var(--border); border-right: 1px solid var(--border); box-shadow: 0 0 40px rgba(0,0,0,0.8); }
-    .driver-progress-box { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; display: none; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(29, 29, 26, 0.95); border: 3px solid var(--rt-gold); color: var(--rt-gold); padding: 14px 40px; font-size: 3em; font-weight: 900; border-radius: 24px; z-index: 5000; box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 15px rgba(251, 175, 51, 0.2); text-align: center; pointer-events: none; }
+    .driver-progress-box { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; display: none; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(29, 29, 26, 0.95); border: 3px solid var(--primary); color: var(--primary); padding: 14px 40px; font-size: 3em; font-weight: 900; border-radius: 24px; z-index: 5000; box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 15px rgba(var(--primary-rgb), 0.2); text-align: center; pointer-events: none; }
     body.driver-mode.nav-active .driver-progress-box { display: none; }
     body.driver-mode .donate-box, body.driver-mode .info-popup, body.driver-mode .install-overlay, body.driver-mode .ios-install-prompt { display: none !important; }
 
@@ -485,8 +488,8 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       display: none;
       z-index: 6000;
       font-family: 'DM Sans', sans-serif;
-      border-bottom: 3px solid var(--rt-gold);
-      box-shadow: 0 6px 28px rgba(0,0,0,0.7), 0 2px 0 rgba(251,175,51,0.15) inset;
+      border-bottom: 3px solid var(--primary);
+      box-shadow: 0 6px 28px rgba(0,0,0,0.7), 0 2px 0 rgba(var(--primary-rgb), 0.15) inset;
       box-sizing: border-box;
       pointer-events: none;
       overflow: hidden;
@@ -516,9 +519,9 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       letter-spacing: 3px;
       font-size: 2.6em;
       font-weight: 900;
-      color: var(--rt-gold);
+      color: var(--primary);
       line-height: 1;
-      text-shadow: 0 0 20px rgba(251,175,51,0.3);
+      text-shadow: 0 0 20px rgba(var(--primary-rgb), 0.3);
     }
 
     #navBanner .nav-road {
@@ -544,8 +547,8 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     #navBanner .nav-mute {
       pointer-events: auto;
       background: var(--surface-2);
-      border: 2px solid var(--border-gold);
-      color: var(--rt-gold);
+      border: 2px solid var(--border-primary);
+      color: var(--primary);
       font-size: 1.3em;
       width: 48px; height: 48px;
       border-radius: 50%;
@@ -556,7 +559,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     }
     #navBanner .nav-mute:active {
       transform: scale(0.92);
-      background: var(--gold-dim);
+      background: var(--primary-dim);
     }
 
     /* Speed + ETA strip at bottom of nav banner */
@@ -572,7 +575,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       letter-spacing: 0.5px;
     }
     .nav-meta-strip .nav-speed { color: var(--text); }
-    .nav-meta-strip .nav-eta { color: var(--rt-gold); }
+    .nav-meta-strip .nav-eta { color: var(--primary); }
 
     #navBanner.off-route {
       border-bottom-color: var(--red);
@@ -581,7 +584,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     #navBanner.off-route .nav-dist { color: var(--red); text-shadow: 0 0 20px rgba(211,28,28,0.4); }
     #navBanner.off-route .nav-road { color: var(--red); }
 
-    .twitch-container { position: fixed; bottom: calc(var(--info-bottom) + 80px); right: 12px; width: 640px; height: 360px; background: var(--surface-2); border: 2px solid var(--rt-gold); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 3000; overflow: hidden; transform: translateX(120%); opacity: 0; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
+    .twitch-container { position: fixed; bottom: calc(var(--info-bottom) + 80px); right: 12px; width: 640px; height: 360px; background: var(--surface-2); border: 2px solid var(--primary); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 3000; overflow: hidden; transform: translateX(120%); opacity: 0; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
     .twitch-container.visible { transform: translateX(0); opacity: 1; pointer-events: auto; }
     .twitch-container iframe { width: 100%; height: 100%; border: none; }
     @media (max-width: 768px) { .twitch-container { width: calc(100vw - 32px); right: 16px; left: 16px; height: 200px; bottom: calc(var(--info-bottom) + 110px); transform: translateY(150%); } .twitch-container.visible { transform: translateY(0); } }
@@ -589,7 +592,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     #fireworks { position: fixed; inset: 0; pointer-events: none; z-index: 9500; opacity: 0; transition: opacity 0.5s ease; }
     #fireworks.active { opacity: 1; }
 
-    .btn.music-on { border-color: var(--rt-gold); color: var(--rt-gold); }
+    .btn.music-on { border-color: var(--primary); color: var(--primary); }
 
     #workshopOverlay {
   position: fixed; inset: 0; background: var(--dark);
@@ -598,7 +601,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
   padding: 40px 20px; overflow-y: auto; overflow-x: hidden; text-align: center;
 }
     .ws-card {
-  background: var(--surface); border: 1px solid var(--border-gold);
+  background: var(--surface); border: 1px solid var(--border-primary);
   padding: 40px; border-radius: 16px; max-width: 500px; width: 100%;
   box-shadow: 0 10px 40px rgba(0,0,0,0.6); position: relative; overflow: hidden;
   margin: 0 auto;
@@ -607,13 +610,13 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     }
     .ws-card::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-      background: linear-gradient(90deg, var(--red), var(--gold));
+      background: linear-gradient(90deg, var(--red), var(--primary));
     }
     .ws-title {
       font-family: 'Bebas Neue', sans-serif; font-size: 42px;
       color: #fff; letter-spacing: 2px; margin-bottom: 10px; line-height: 1;
     }
-    .ws-title span { color: var(--gold); }
+    .ws-title span { color: var(--primary); }
     .ws-countdown {
       font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 700;
       margin: 24px 0; color: #fff;
@@ -624,7 +627,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       border: 1px solid var(--border); overflow: hidden; margin-top: 8px; position: relative;
     }
     .ws-bar-fill {
-      background: linear-gradient(90deg, var(--red), var(--gold));
+      background: linear-gradient(90deg, var(--red), var(--primary));
       height: 100%; width: 0%; transition: width 1s ease;
     }
     .ws-item { text-align: left; margin-bottom: 24px; }
@@ -635,11 +638,11 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     .ws-status-text { color: var(--text); font-size: 12px; margin-top: 6px; font-style: italic; }
     .ws-donate {
       display: inline-block; margin-top: 20px; padding: 12px 24px;
-      background: var(--gold); color: #000; font-weight: 700; font-size: 14px;
+      background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 14px;
       border-radius: 8px; text-decoration: none;
       transition: background 0.2s, transform 0.1s;
     }
-    .ws-donate:hover { background: #e59d28; }
+    .ws-donate:hover { filter: brightness(0.92); }
     .ws-donate:active { transform: scale(0.97); }
 
     .ws-skip-btn {
@@ -664,8 +667,8 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     .ws-schedule-item:last-child { border-bottom: none; }
     .ws-schedule-date { color: var(--text-dim); font-weight: 700; white-space: nowrap; flex-shrink: 0; }
     .ws-schedule-name { color: var(--text); font-weight: 800; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: 10px; }
-    .ws-schedule-item:first-child .ws-schedule-name { color: var(--gold); }
-    .ws-schedule-item:first-child .ws-schedule-date { color: var(--gold); }
+    .ws-schedule-item:first-child .ws-schedule-name { color: var(--primary); }
+    .ws-schedule-item:first-child .ws-schedule-date { color: var(--primary); }
 
     @media (max-height: 950px) {
       .ws-card { padding: 20px 24px; }
@@ -684,7 +687,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
 </head>
 <body>
   <div id="loadingCover"><div id="loadingSpinner"></div></div>
-  <div class="status-popup" id="statusBox" role="status" aria-live="polite" aria-atomic="true">🔍 Searching for Santa…</div>
+  <div class="status-popup" id="statusBox" role="status" aria-live="polite" aria-atomic="true">Searching for Santa…</div>
 
   <a id="routeSponsor" class="route-sponsor" target="_blank" rel="noopener" aria-label="Tonight's route sponsor">
     <span>Sponsored by</span>
@@ -693,32 +696,32 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
 
   <div class="donate-box" id="donateBox">
     <a id="donateLink" class="donate-btn gamified-pulse" target="_blank" aria-label="Donate and support the Santa Sleigh">
-      <span id="donateText">🎁 DONATE & SUPPORT US</span>
+      <span id="donateText">DONATE & SUPPORT US</span>
     </a>
     <div class="install-overlay" id="installOverlayBox">
-      <button id="installAppBtn" class="donate-btn override-install-btn" aria-label="Install tracker app to home screen">📲 Add App to Home Screen</button>
+      <button id="installAppBtn" class="donate-btn override-install-btn" aria-label="Install tracker app to home screen">Add App to Home Screen</button>
     </div>
   </div>
 
-  <a id="giftAidLink" href="#" target="_blank" style="display:none; position:fixed; bottom:calc(var(--donate-bottom) + 70px); left:50%; transform:translateX(-50%); font-family:'DM Sans',sans-serif; font-size:12px; color:#2ecc71; text-decoration:none; font-weight:700; z-index:2000; text-align:center; padding:6px 14px; background:rgba(13,13,11,0.85); border:1px solid rgba(46,204,113,0.2); border-radius:100px;">🎁 UK taxpayer? Boost your donation by 25%</a>
+  <a id="giftAidLink" href="#" target="_blank" style="display:none; position:fixed; bottom:calc(var(--donate-bottom) + 70px); left:50%; transform:translateX(-50%); font-family:'DM Sans',sans-serif; font-size:12px; color:#2ecc71; text-decoration:none; font-weight:700; z-index:2000; text-align:center; padding:6px 14px; background:rgba(13,13,11,0.85); border:1px solid rgba(46,204,113,0.2); border-radius:100px;">UK taxpayer? Boost your donation by 25%</a>
   
   <div id="iosPrompt" class="ios-install-prompt" role="dialog" aria-label="Install instructions for iOS">
     <button class="close-btn" id="iosCloseBtn" aria-label="Close install instructions">&times;</button>
     To install this tracker, tap the <strong>Share</strong> icon below <br>
     (the square with an arrow) and select <br>
-    <span style="color: var(--rt-gold);">"Add to Home Screen"</span>
+    <span style="color: var(--primary);">"Add to Home Screen"</span>
   </div>
 
   <nav class="info-popup" aria-label="Tracker controls">
     <div id="statusDot" class="status-dot" role="img" aria-label="Connection status indicator"></div>
     <button class="btn" id="followBtn" aria-label="Toggle auto-follow Santa on map">Follow: ON</button>
     <button class="btn" id="recenterBtn" aria-label="Re-centre map on Santa">Re-centre</button>
-    <button class="btn" id="notifyBtn" aria-label="Set a notification pin for when Santa is nearby">🔔 Notify Me</button>
-    <button class="btn" id="scheduleBtn" aria-label="View upcoming routes schedule">🗓️ Schedule</button>
-    <button class="btn" id="twitchBtn" style="display: none; border-color: var(--rt-gold); color: var(--rt-gold);" aria-label="Toggle sleigh camera feed">📺 Cam: OFF</button>
-    <button class="btn" id="msgBtn" style="display: none;" aria-label="Send a message to Santa">💬 Msg Santa</button>
-    <button class="btn" id="shareBtn" style="display: none;" aria-label="Share this tracker link with others">📤 Share</button>
-    <button class="btn" id="musicBtn" style="display: none;" aria-label="Play Christmas music">🔇 Music</button>
+    <button class="btn" id="notifyBtn" aria-label="Set a notification pin for when Santa is nearby">Notify Me</button>
+    <button class="btn" id="scheduleBtn" aria-label="View upcoming routes schedule">Schedule</button>
+    <button class="btn" id="twitchBtn" style="display: none; border-color: var(--primary); color: var(--primary);" aria-label="Toggle sleigh camera feed">Cam: OFF</button>
+    <button class="btn" id="msgBtn" style="display: none;" aria-label="Send a message to Santa">Msg Santa</button>
+    <button class="btn" id="shareBtn" style="display: none;" aria-label="Share this tracker link with others">Share</button>
+    <button class="btn" id="musicBtn" style="display: none;" aria-label="Play Christmas music">Music: Off</button>
     <div id="toast" class="toast-box" role="alert" aria-live="assertive"></div>
   </nav>
 
@@ -728,7 +731,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
 
   <div id="emailModal" class="modal-overlay" role="dialog" aria-labelledby="emailModalTitle" aria-modal="true">
     <div class="modal-box">
-      <div class="modal-title" id="emailModalTitle">🔔 Get Notified</div>
+      <div class="modal-title" id="emailModalTitle">Get Notified</div>
       <div class="modal-desc">Want to know when Santa is nearby? Enter your email below (optional).</div>
       <input type="email" id="subEmail" class="modal-input" placeholder="santa@example.com" aria-label="Your email address for notifications">
       <div class="modal-btns">
@@ -740,7 +743,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
 
   <div id="msgModal" class="modal-overlay" role="dialog" aria-labelledby="msgModalTitle" aria-modal="true">
     <div class="modal-box">
-      <div class="modal-title" id="msgModalTitle">💬 Message Santa</div>
+      <div class="modal-title" id="msgModalTitle">Message Santa</div>
       <div class="modal-desc">Send a quick message to the sleigh (max 50 chars). Shows on the tracker if the Elves approve!</div>
       <input type="text" id="userMsgInput" class="modal-input" placeholder="e.g., We are outside waiting!" maxlength="50" aria-label="Your message to Santa, maximum 50 characters">
       <div class="modal-btns">
@@ -752,7 +755,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
 
   <div id="scheduleModal" class="modal-overlay" role="dialog" aria-labelledby="scheduleModalTitle" aria-modal="true">
   <div class="modal-box" style="max-width: 440px; display: flex; flex-direction: column; max-height: 85vh;">
-    <div class="modal-title" id="scheduleModalTitle">🗓️ Route Schedule</div>
+    <div class="modal-title" id="scheduleModalTitle">Route Schedule</div>
     <div class="modal-desc">Find your street and save the date!</div>
     <div id="scheduleList" style="overflow-y: auto; text-align: left; margin-bottom: 20px; padding-right: 5px; flex-grow: 1;">
       <!-- Populated by JavaScript -->
@@ -775,13 +778,13 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
   
   <div id="workshopOverlay">
     <div class="ws-card">
-      <h1 class="ws-title">🎅 SANTA'S <span>WORKSHOP</span></h1>
+      <h1 class="ws-title">SANTA'S <span>WORKSHOP</span></h1>
       <p style="color: var(--text-dim); font-size: 14px;">The sleigh is currently undergoing off-season maintenance. We'll be back on the road in:</p>
       
       <div id="wsCountdown" class="ws-countdown">-- : -- : --</div>
 
       <div id="wsSchedule" class="ws-schedule" style="display: none;">
-        <div class="ws-schedule-title">🗓️ Upcoming Routes</div>
+        <div class="ws-schedule-title">Upcoming Routes</div>
         <div id="wsScheduleList" class="ws-schedule-list"></div>
       </div>
 
@@ -804,7 +807,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       </div>
       
       <button class="ws-skip-btn" onclick="document.getElementById('workshopOverlay').remove();">Bypass & view map</button>
-<a id="wsDonate" class="ws-donate" href="#" target="_blank" style="display: none;">🎁 Donate to support good causes</a>
+<a id="wsDonate" class="ws-donate" href="#" target="_blank" style="display: none;">Donate to support good causes</a>
     </div>
   </div>
 
@@ -812,14 +815,80 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     
    document.addEventListener("DOMContentLoaded", () => {
 
+      // --- THEME FROM THE API ---
+      // Same source and rules as the Santa sleigh page: settings.primary_color drives the brand colour,
+      // and text on it flips black/white for readability. Missing or invalid -> Round Table gold.
+      let PRIMARY_HEX = '#FBAF33';   // JS-side copy of --primary for canvas effects (CSS uses the variables)
+
+      // Returns [r, g, b] for a valid CSS colour, otherwise null. (Copied from santasleigh.html)
+      function parseColor(v) {
+        if (typeof v !== 'string') return null;
+        const s = v.trim();
+        const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+        if (hex) {
+          let h = hex[1];
+          if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+          if (h.length !== 6 && h.length !== 8) return null;
+          return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+        }
+        try {
+          if (/var\(|url\(|expression/i.test(s)) return null;
+          if (!(window.CSS && CSS.supports && CSS.supports('color', s))) return null;
+          const ctx = document.createElement('canvas').getContext('2d');
+          ctx.fillStyle = '#000000';
+          ctx.fillStyle = s;
+          const out = ctx.fillStyle;
+          if (out.charAt(0) === '#') return parseColor(out);
+          const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(out);
+          return rgb ? [+rgb[1], +rgb[2], +rgb[3]] : null;
+        } catch (e) { return null; }
+      }
+
+      // Black or white, whichever reads better on the given colour (WCAG contrast ratio). (Copied from santasleigh.html)
+      function readableTextOn(rgb) {
+        const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+        const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+        return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+      }
+
+      function applyTheme(settings) {
+        const root = document.documentElement;
+        const raw = settings && settings.primary_color;
+        const rgb = parseColor(raw);
+        if (rgb) {
+          PRIMARY_HEX = '#' + rgb.map(x => x.toString(16).padStart(2, '0')).join('');
+          root.style.setProperty('--primary', String(raw).trim());
+          root.style.setProperty('--primary-rgb', rgb.join(', '));
+          root.style.setProperty('--on-primary', readableTextOn(rgb));
+        } else {
+          PRIMARY_HEX = '#FBAF33';
+          ['--primary', '--primary-rgb', '--on-primary'].forEach(p => root.style.removeProperty(p));
+        }
+      }
+
+      // Remember the colour per API so repeat visits skip the gold flash before the first payload lands.
+      // Storage can be blocked inside iframes, so both helpers swallow errors.
+      function loadCachedTheme(api) {
+        try {
+          const c = localStorage.getItem('SANTA_THEME:' + api);
+          if (c) applyTheme({ primary_color: c });
+        } catch (e) {}
+      }
+      function saveTheme(api, color) {
+        try {
+          if (parseColor(color)) localStorage.setItem('SANTA_THEME:' + api, String(color).trim());
+          else localStorage.removeItem('SANTA_THEME:' + api);
+        } catch (e) {}
+      }
+
       // --- RATE LIMITING CLIENT ID ---
       if (!localStorage.getItem("turbo_santa_client_id")) {
         localStorage.setItem("turbo_santa_client_id", crypto.randomUUID());
       }
 
       // --- NETWORK STATUS LISTENERS ---
-      window.addEventListener('offline', () => showToast("📶 Connection lost. Map updates paused."));
-      window.addEventListener('online', () => showToast("📡 Reconnected!"));
+      window.addEventListener('offline', () => showToast("Connection lost. Map updates paused."));
+      window.addEventListener('online', () => showToast("Reconnected!"));
 
       // --- TAP-OUTSIDE TO CLOSE MODALS ---
       document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -904,7 +973,7 @@ const futureRouteObjects = routes
                 if (motPct > 60) motTxt = "Upgrading sat-nav software...";
                 if (motPct > 75) motTxt = "Testing the magic thrusters...";
                 if (motPct > 90) motTxt = "Polishing the bells...";
-                if (motPct >= 100) motTxt = "Sleigh MOT passed! ✅";
+                if (motPct >= 100) motTxt = "Sleigh MOT passed!";
                 if (pct === 0) motTxt = "Recovering from the big night...";
                 document.getElementById('wsMotText').textContent = motTxt;
                 const deerPct = Math.min(100, Math.pow(pct/100, 2) * 100).toFixed(1);
@@ -919,7 +988,7 @@ const futureRouteObjects = routes
                 if (deerPct > 60) deerTxt = "High-altitude acclimation...";
                 if (deerPct > 75) deerTxt = "Test flights over the tundra...";
                 if (deerPct > 90) deerTxt = "Carb-loading on magic oats...";
-                if (deerPct >= 100) deerTxt = "Ready for flight! 🦌💨";
+                if (deerPct >= 100) deerTxt = "Ready for flight!";
                 if (pct === 0) deerTxt = "Sleeping off the carrots...";
                 document.getElementById('wsDeerText').textContent = deerTxt;
                 const todayDay = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
@@ -934,7 +1003,7 @@ const futureRouteObjects = routes
                 if (elfPctRaw > 60) elfTxt = "Bucket shaking orientation...";
                 if (elfPctRaw > 75) elfTxt = "Practicing friendly waves...";
                 if (elfPctRaw > 90) elfTxt = "Final safety briefings...";
-                if (elfPctRaw >= 100) elfTxt = "Crew is briefed & ready! 🧝";
+                if (elfPctRaw >= 100) elfTxt = "Crew is briefed & ready!";
                 if (pct === 0) elfTxt = "Taking annual leave...";
                 document.getElementById('wsElfText').textContent = elfTxt;
             };
@@ -946,19 +1015,19 @@ const futureRouteObjects = routes
       // --- GAMIFIED DONATION LOGIC ---
       const GamifiedDonation = {
         phrases: [
-          "🥧 Buy Santa a Mince Pie (£2)", "🍪 Leave out Milk & Cookies (£4)",
-          "🎅 Chip in for Santa's Dry Cleaning (£5)", "🧦 Keep Santa's Toes Warm (£4)",
-          "☕ Buy Santa a Midnight Espresso (£3)", "🥕 Buy Rudolph a Carrot (£3)",
-          "🍎 Buy a juicy Apple for Blitzen (£2)", "🦌 Sponsor a Reindeer's Flight (£10)",
-          "🪄 Buy a pouch of Magical Reindeer Dust (£3)", "🥣 Top up Dasher's Magical Oats (£4)",
-          "☕ Warm up the Elves with Hot Cocoa (£5)", "🍬 Treat the Crew to Candy Canes (£2)",
-          "🧣 Buy the Lead Elf some Earmuffs (£5)", "🧤 Keep the Elves' hands warm (£3)",
-          "🍕 Buy the volunteer crew a slice of pizza (£5)", "✨ Fuel the Sleigh with Magic (£5)",
-          "🔔 Keep the Sleigh Bells Ringing (£3)", "🛠️ Fix a wobbly Sleigh Runner (£5)",
-          "❄️ Buy Magical Anti-Freeze for the Sleigh (£4)", "🗺️ Upgrade Santa's Sat-Nav (£10)",
-          "🕯️ Light the way for the Sleigh (£3)", "🎁 Support Local Charities (£2+)",
-          "🌟 Spread Christmas Cheer (£5)", "🧸 Help fill a local Stocking (£5)",
-          "💖 Give the gift of giving (£2+)"
+          "Buy Santa a Mince Pie (£2)", "Leave out Milk & Cookies (£4)",
+          "Chip in for Santa's Dry Cleaning (£5)", "Keep Santa's Toes Warm (£4)",
+          "Buy Santa a Midnight Espresso (£3)", "Buy Rudolph a Carrot (£3)",
+          "Buy a juicy Apple for Blitzen (£2)", "Sponsor a Reindeer's Flight (£10)",
+          "Buy a pouch of Magical Reindeer Dust (£3)", "Top up Dasher's Magical Oats (£4)",
+          "Warm up the Elves with Hot Cocoa (£5)", "Treat the Crew to Candy Canes (£2)",
+          "Buy the Lead Elf some Earmuffs (£5)", "Keep the Elves' hands warm (£3)",
+          "Buy the volunteer crew a slice of pizza (£5)", "Fuel the Sleigh with Magic (£5)",
+          "Keep the Sleigh Bells Ringing (£3)", "Fix a wobbly Sleigh Runner (£5)",
+          "Buy Magical Anti-Freeze for the Sleigh (£4)", "Upgrade Santa's Sat-Nav (£10)",
+          "Light the way for the Sleigh (£3)", "Support Local Charities (£2+)",
+          "Spread Christmas Cheer (£5)", "Help fill a local Stocking (£5)",
+          "Give the gift of giving (£2+)"
         ],
         currentIndex: 0, textEl: null,
         init() { this.textEl = document.getElementById("donateText"); if (!this.textEl) return; this.currentIndex = Math.floor(Math.random() * this.phrases.length); this.textEl.textContent = this.phrases[this.currentIndex]; setInterval(() => this.rotate(), 10000); },
@@ -969,7 +1038,7 @@ const futureRouteObjects = routes
       document.getElementById('donateLink').addEventListener('click', function(e) {
         e.preventDefault(); const targetUrl = this.href; 
         const container = document.getElementById('magic-container');
-        if (container) { for (let i = 0; i < 25; i++) { const sparkle = document.createElement('div'); sparkle.className = 'sparkle'; const x = (e.clientX || window.innerWidth / 2) + (Math.random() * 80 - 40); const y = (e.clientY || window.innerHeight - 100) + (Math.random() * 60 - 30); const colors = ['#ffd700', '#ffffff', '#ff4d4d', '#FBAF33']; const color = colors[Math.floor(Math.random() * colors.length)]; sparkle.style.left = x + 'px'; sparkle.style.top = y + 'px'; sparkle.style.background = color; sparkle.style.boxShadow = `0 0 10px ${color}, 0 0 20px ${color}`; sparkle.style.animationDuration = (Math.random() * 1 + 0.8) + 's'; container.appendChild(sparkle); setTimeout(() => { sparkle.remove(); }, 2000); } }
+        if (container) { for (let i = 0; i < 25; i++) { const sparkle = document.createElement('div'); sparkle.className = 'sparkle'; const x = (e.clientX || window.innerWidth / 2) + (Math.random() * 80 - 40); const y = (e.clientY || window.innerHeight - 100) + (Math.random() * 60 - 30); const colors = ['#ffd700', '#ffffff', '#ff4d4d', PRIMARY_HEX]; const color = colors[Math.floor(Math.random() * colors.length)]; sparkle.style.left = x + 'px'; sparkle.style.top = y + 'px'; sparkle.style.background = color; sparkle.style.boxShadow = `0 0 10px ${color}, 0 0 20px ${color}`; sparkle.style.animationDuration = (Math.random() * 1 + 0.8) + 's'; container.appendChild(sparkle); setTimeout(() => { sparkle.remove(); }, 2000); } }
         setTimeout(() => { if (targetUrl && targetUrl !== "#") { window.open(targetUrl, '_blank'); } }, 800); 
       });
 
@@ -1029,12 +1098,12 @@ const futureRouteObjects = routes
             const isUserMsgActive = userMsg && AppState.vars.localMsgStartTime && (Date.now() - AppState.vars.localMsgStartTime < 20000);
 
             if (liveMsg && liveMsg.trim() !== "") {
-              AppState.dom.statusBox.textContent = `📢 ${liveMsg}`;
+              AppState.dom.statusBox.textContent = `${liveMsg}`;
               AppState.dom.statusBox.classList.add("is-announcement");
               AppState.dom.statusBox.classList.remove("is-user-msg");
               setDimUI(false);
             } else if (isUserMsgActive) {
-              AppState.dom.statusBox.textContent = `💬 ${userMsg}`;
+              AppState.dom.statusBox.textContent = `${userMsg}`;
               AppState.dom.statusBox.classList.add("is-user-msg");
               AppState.dom.statusBox.classList.remove("is-announcement");
               setDimUI(false);
@@ -1181,7 +1250,7 @@ const futureRouteObjects = routes
         const frac = Math.min(1, Math.max(0, userSnap.point.dist / total));
         let due = start + frac * (end - start);
         if (due < Date.now()) due = Date.now() + 5 * 60 * 1000;  // running late — never show a time in the past
-        return "🎅 Santa is due near your pin around " + formatClock(roundTo5Min(due)) + " tonight!";
+        return "Santa is due near your pin around " + formatClock(roundTo5Min(due)) + " tonight!";
       }
 
       // ══════════════════════════════════════════════════════════════
@@ -1595,7 +1664,7 @@ const futureRouteObjects = routes
         init() { this.canvas = AppState.dom.fireworks; this.ctx = this.canvas.getContext("2d"); this.resize(); window.addEventListener("resize", () => this.resize()); },
         resize() { if (!this.canvas) return; this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; },
         launch() { if (this.active) return; this.active = true; this.canvas.classList.add("active"); for (let burst = 0; burst < 5; burst++) { setTimeout(() => this._createBurst(), burst * 400); } this._draw(); setTimeout(() => this.stop(), 4000); },
-        _createBurst() { const cx = Math.random() * this.canvas.width * 0.6 + this.canvas.width * 0.2; const cy = Math.random() * this.canvas.height * 0.3 + this.canvas.height * 0.1; const colors = ["#FBAF33", "#D31C1C", "#2cff4e", "#fff", "#ff6b9d", "#4fc3f7"]; const count = 40 + Math.floor(Math.random() * 30); for (let i = 0; i < count; i++) { const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3; const speed = 2 + Math.random() * 4; this.particles.push({ x: cx, y: cy, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1, decay: 0.008 + Math.random() * 0.012, color: colors[Math.floor(Math.random() * colors.length)], size: 2 + Math.random() * 3 }); } },
+        _createBurst() { const cx = Math.random() * this.canvas.width * 0.6 + this.canvas.width * 0.2; const cy = Math.random() * this.canvas.height * 0.3 + this.canvas.height * 0.1; const colors = [PRIMARY_HEX, "#D31C1C", "#2cff4e", "#fff", "#ff6b9d", "#4fc3f7"]; const count = 40 + Math.floor(Math.random() * 30); for (let i = 0; i < count; i++) { const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3; const speed = 2 + Math.random() * 4; this.particles.push({ x: cx, y: cy, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1, decay: 0.008 + Math.random() * 0.012, color: colors[Math.floor(Math.random() * colors.length)], size: 2 + Math.random() * 3 }); } },
         _draw() { if (!this.active) return; const ctx = this.ctx; ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); for (let i = this.particles.length - 1; i >= 0; i--) { const p = this.particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.vx *= 0.99; p.life -= p.decay; if (p.life <= 0) { this.particles.splice(i, 1); continue; } ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2); ctx.fill(); if (Math.random() > 0.7) { ctx.globalAlpha = p.life * 0.4; ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(p.x - p.vx * 2, p.y - p.vy * 2, p.size * 0.4, 0, Math.PI * 2); ctx.fill(); } } ctx.globalAlpha = 1; this.rafId = requestAnimationFrame(() => this._draw()); },
         stop() { this.active = false; if (this.rafId) cancelAnimationFrame(this.rafId); this.particles = []; if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); this.canvas.classList.remove("active"); }
       };
@@ -1620,7 +1689,7 @@ const futureRouteObjects = routes
         setLevel(on, level) { if (!on) { if (AppState.flags.snowActive) { AppState.flags.snowActive = false; if (SnowSystem._rafId) { cancelAnimationFrame(SnowSystem._rafId); SnowSystem._rafId = null; } document.body.classList.remove("snowing"); const ctx = AppState.dom.snowCanvas.getContext("2d"); ctx.clearRect(0, 0, AppState.dom.snowCanvas.width, AppState.dom.snowCanvas.height); } return; } if (AppState.currentSnowLevel !== level) { AppState.currentSnowLevel = level; SnowSystem.create(level); } if (!AppState.flags.snowActive) { AppState.flags.snowActive = true; document.body.classList.add("snowing"); SnowSystem.draw(); } }
       };
 
-      function showNotifyMarker(lat, lng, confirmed) { if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); const iconUrl = confirmed ? AppConfig.ICONS.CONFIRMED : AppConfig.ICONS.PREVIEW; AppState.notifyMarker = L.marker([lat, lng], { icon: L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", shadowSize: [41, 41] }), interactive: true }).addTo(AppState.map); if (!confirmed) { AppState.notifyMarker.bindPopup("📍 Tap this pin again to confirm").openPopup(); AppState.notifyMarker.once("click", () => { AppState.flags.awaitingPin = false; showNotifyMarker(lat, lng, true); sessionStorage.setItem("SANTA_NOTIFY_POINT", JSON.stringify({ lat, lng })); AppState.vars.pendingSubscription = { lat, lng }; AppState.vars.notifyLatLng = { lat, lng }; document.getElementById("emailModal").style.display = "flex"; document.getElementById("subEmail").focus(); }); } }
+      function showNotifyMarker(lat, lng, confirmed) { if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); const iconUrl = confirmed ? AppConfig.ICONS.CONFIRMED : AppConfig.ICONS.PREVIEW; AppState.notifyMarker = L.marker([lat, lng], { icon: L.icon({ iconUrl, iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png", shadowSize: [41, 41] }), interactive: true }).addTo(AppState.map); if (!confirmed) { AppState.notifyMarker.bindPopup("Tap this pin again to confirm").openPopup(); AppState.notifyMarker.once("click", () => { AppState.flags.awaitingPin = false; showNotifyMarker(lat, lng, true); sessionStorage.setItem("SANTA_NOTIFY_POINT", JSON.stringify({ lat, lng })); AppState.vars.pendingSubscription = { lat, lng }; AppState.vars.notifyLatLng = { lat, lng }; document.getElementById("emailModal").style.display = "flex"; document.getElementById("subEmail").focus(); }); } }
       
       function fireBrowserNotification(title, body) {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
@@ -1678,12 +1747,12 @@ function ensureNotifyPermission() {
 if (rs) rs.classList.toggle('visible', !!AppState.vars.sponsorReady && !AppState.flags.isKiosk && !AppState.flags.isDriver);
 if (window.layoutOverlays) window.layoutOverlays();
           
-          if (AppState.flags.isKiosk) { AppState.dom.kioskBanner.classList.toggle("live", isFresh); const statusEl = document.getElementById("kioskStatus"); if (statusEl) statusEl.textContent = isFresh ? "🎅 LIVE TRACKING" : "🎄 PREPARING IN LAPLAND"; if (AppState.dom.sponsorBox) AppState.dom.sponsorBox.classList.toggle("visible", isFresh && !!AppState.vars.kioskSponsorReady); }
+          if (AppState.flags.isKiosk) { AppState.dom.kioskBanner.classList.toggle("live", isFresh); const statusEl = document.getElementById("kioskStatus"); if (statusEl) statusEl.textContent = isFresh ? "LIVE TRACKING" : "PREPARING IN LAPLAND"; if (AppState.dom.sponsorBox) AppState.dom.sponsorBox.classList.toggle("visible", isFresh && !!AppState.vars.kioskSponsorReady); }
 
           if (!isFresh) {
             if (!AppState.vars.staleSince) AppState.vars.staleSince = ts;
-            if (Date.now() - AppState.vars.staleSince > AppConfig.API.STALE_MS) { AppState.marker.setLatLng(AppConfig.LOCATIONS.LAPLAND); if (AppState.flags.follow) AppState.map.setView(AppConfig.LOCATIONS.LAPLAND, 5, { animate: true, duration: 2 }); AppState.dom.statusBox.textContent = getScheduledPinEtaText() || "🎄 Santa is in Lapland preparing for Christmas!"; AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg"); AppState.dom.statusDot.style.display = "none"; setDimUI(false); AppState.flags.firstFix = true; SleighAudio.setIntensity(0); scheduleNextPoll(); return; }
-            if (AppState.lastFix) { animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng); const staleRoad = AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; AppState.dom.statusBox.textContent = staleRoad ? `🎄 Santa has stopped on ${staleRoad}!` : "🎄 Santa has stopped to spread cheer!"; AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg"); AppState.dom.statusDot.style.display = "block"; AppState.dom.statusDot.className = "status-dot dot-stopped"; setDimUI(false); scheduleNextPoll(); return; }
+            if (Date.now() - AppState.vars.staleSince > AppConfig.API.STALE_MS) { AppState.marker.setLatLng(AppConfig.LOCATIONS.LAPLAND); if (AppState.flags.follow) AppState.map.setView(AppConfig.LOCATIONS.LAPLAND, 5, { animate: true, duration: 2 }); AppState.dom.statusBox.textContent = getScheduledPinEtaText() || "Santa is in Lapland preparing for Christmas!"; AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg"); AppState.dom.statusDot.style.display = "none"; setDimUI(false); AppState.flags.firstFix = true; SleighAudio.setIntensity(0); scheduleNextPoll(); return; }
+            if (AppState.lastFix) { animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng); const staleRoad = AppState.gpxRoute?.[AppState.vars.lastSnapIndex]?.roadName; AppState.dom.statusBox.textContent = staleRoad ? `Santa has stopped on ${staleRoad}!` : "Santa has stopped to spread cheer!"; AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg"); AppState.dom.statusDot.style.display = "block"; AppState.dom.statusDot.className = "status-dot dot-stopped"; setDimUI(false); scheduleNextPoll(); return; }
           } else { AppState.vars.staleSince = null; AppState.lastFix = { lat: data.lat, lng: data.lng }; }
 
           let visualPos = { lat: data.lat, lng: data.lng };
@@ -1764,16 +1833,16 @@ if (window.layoutOverlays) window.layoutOverlays();
           if (userMsg && userMsgTs !== AppState.vars.lastSeenMsgTs) { AppState.vars.lastSeenMsgTs = userMsgTs; sessionStorage.setItem('SANTA_LAST_MSG_TS', String(userMsgTs)); const MSG_MAX_AGE_MS = 30 * 60 * 1000; if (userMsgTs && (Date.now() - userMsgTs) < MSG_MAX_AGE_MS) AppState.vars.localMsgStartTime = Date.now(); }
           const isUserMsgActive = userMsg && AppState.vars.localMsgStartTime && (Date.now() - AppState.vars.localMsgStartTime < 20000);
 
-          if (liveMsg && liveMsg.trim() !== "") { AppState.dom.statusBox.textContent = `📢 ${liveMsg}`; AppState.dom.statusBox.classList.add("is-announcement"); AppState.dom.statusBox.classList.remove("is-user-msg"); setDimUI(false); }
-          else if (isUserMsgActive) { AppState.dom.statusBox.textContent = `💬 ${userMsg}`; AppState.dom.statusBox.classList.add("is-user-msg"); AppState.dom.statusBox.classList.remove("is-announcement"); setDimUI(false); }
+          if (liveMsg && liveMsg.trim() !== "") { AppState.dom.statusBox.textContent = `${liveMsg}`; AppState.dom.statusBox.classList.add("is-announcement"); AppState.dom.statusBox.classList.remove("is-user-msg"); setDimUI(false); }
+          else if (isUserMsgActive) { AppState.dom.statusBox.textContent = `${userMsg}`; AppState.dom.statusBox.classList.add("is-user-msg"); AppState.dom.statusBox.classList.remove("is-announcement"); setDimUI(false); }
           else { AppState.dom.statusBox.classList.remove("is-announcement", "is-user-msg");
             if (AppState.flags.hasPassedSticky) { 
-  AppState.dom.statusBox.textContent = "🎄 Santa has just been here! 🎉"; 
+  AppState.dom.statusBox.textContent = "Santa has just been here!"; 
   setDimUI(false); 
   document.title = "Passed - TurboSanta"; // <-- ADDED
 }
 else if (etaSeconds !== null && !moving) { 
-  AppState.dom.statusBox.textContent = "🎄 Santa has stopped nearby!"; 
+  AppState.dom.statusBox.textContent = "Santa has stopped nearby!"; 
   setDimUI(false); 
   document.title = "Stopped - TurboSanta"; // <-- ADDED
 }
@@ -1782,14 +1851,14 @@ else if (etaSeconds !== null) {
   const dueMs = Date.now() + etaSeconds * 1000; 
   let etaText; 
   if (mins < 2) { 
-    etaText = "🎅 Santa is nearly here!"; 
+    etaText = "Santa is nearly here!"; 
     document.title = "(< 2m) TurboSanta"; // <-- ADDED
   } else if (mins < 12) { 
     const band = mins < 4 ? "~3" : mins < 7 ? "~5" : "~10"; 
-    etaText = "🎅 Santa is " + band + " mins away — about " + formatClock(dueMs) + " at your pin!"; 
+    etaText = "Santa is " + band + " mins away — about " + formatClock(dueMs) + " at your pin!"; 
     document.title = `(${band}m) TurboSanta`; // <-- ADDED
   } else { 
-    etaText = "🎅 Santa\u2019s due near your pin around " + formatClock(roundTo5Min(dueMs)) + "!"; 
+    etaText = "Santa\u2019s due near your pin around " + formatClock(roundTo5Min(dueMs)) + "!"; 
     document.title = `(${Math.ceil(mins)}m) TurboSanta`; // <-- ADDED
   } 
   AppState.dom.statusBox.textContent = etaText; 
@@ -1800,27 +1869,27 @@ else if (moving) {
   const gpxDist = gpxPoint ? Utils.haversineMeters({lat: data.lat, lng: data.lng}, gpxPoint) : 999;
   const currentRoad = data.roadName || (gpxDist < 60 ? gpxPoint.roadName : "");
   
-  AppState.dom.statusBox.textContent = currentRoad ? `🎅 Santa is on ${currentRoad}!` : "🎅 Santa is out spreading joy!"; 
+  AppState.dom.statusBox.textContent = currentRoad ? `Santa is on ${currentRoad}!` : "Santa is out spreading joy!"; 
   setDimUI(false); 
-  document.title = "Live 🔴 TurboSanta"; 
+  document.title = "Live — TurboSanta"; 
 }
 else { 
   const gpxPoint = AppState.gpxRoute?.[AppState.vars.lastSnapIndex];
   const gpxDist = gpxPoint ? Utils.haversineMeters({lat: data.lat, lng: data.lng}, gpxPoint) : 999;
   const currentRoad = data.roadName || (gpxDist < 60 ? gpxPoint.roadName : "");
   
-  AppState.dom.statusBox.textContent = currentRoad ? `🎄 Santa has stopped on ${currentRoad}!` : "🎄 Santa has stopped to spread cheer!"; 
+  AppState.dom.statusBox.textContent = currentRoad ? `Santa has stopped on ${currentRoad}!` : "Santa has stopped to spread cheer!"; 
   setDimUI(false); 
   document.title = "TurboSanta — Tracker"; 
 }
                }
-          if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) { const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.vars.notifyLatLng); const isSmartEta = (etaSeconds !== null && etaSeconds < 180); const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600); if (isSmartEta || isCloseFallback) { AppState.flags.browserNotified = true; sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1"); fireBrowserNotification("🎅 Santa is nearly here!", "He's approaching your location! 🎄"); } }
+          if (AppState.vars.notifyLatLng && !AppState.flags.browserNotified && !AppState.flags.hasPassedSticky) { const straightDist = Utils.haversineMeters({ lat: data.lat, lng: data.lng }, AppState.vars.notifyLatLng); const isSmartEta = (etaSeconds !== null && etaSeconds < 180); const isCloseFallback = straightDist < AppConfig.NOTIFICATIONS.NEAR_DISTANCE_METERS && (etaSeconds === null || etaSeconds < 600); if (isSmartEta || isCloseFallback) { AppState.flags.browserNotified = true; sessionStorage.setItem("SANTA_BROWSER_NOTIFIED", "1"); fireBrowserNotification("Santa is nearly here!", "He's approaching your location!"); } }
           if (AppState.flags.firstFix) { AppState.map.setView(visualPos, AppState.flags.isKiosk ? 15 : 16); AppState.flags.firstFix = false; }
 
         } catch (e) {
           AppState.vars.consecutiveErrors++;
-          if (AppState.vars.consecutiveErrors >= 2) { setConnectionState("reconnecting"); AppState.dom.statusBox.textContent = "📡 Reconnecting to Santa…"; }
-          if (AppState.lastFix) { animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng); if (AppState.vars.consecutiveErrors < 2) AppState.dom.statusBox.textContent = "🎅 Santa is nearby…"; AppState.dom.statusDot.style.display = "none"; setDimUI(false); }
+          if (AppState.vars.consecutiveErrors >= 2) { setConnectionState("reconnecting"); AppState.dom.statusBox.textContent = "Reconnecting to Santa…"; }
+          if (AppState.lastFix) { animateMarkerTo(AppState.lastFix.lat, AppState.lastFix.lng); if (AppState.vars.consecutiveErrors < 2) AppState.dom.statusBox.textContent = "Santa is nearby…"; AppState.dom.statusDot.style.display = "none"; setDimUI(false); }
         }
         scheduleNextPoll();
       }
@@ -1907,7 +1976,7 @@ function populateScheduleModal(routes) {
     item.innerHTML = `
       <div class="schedule-details">
         <div class="schedule-route">${route.routeName || 'TBC'}</div>
-        <div class="schedule-date">📅 ${dateStr}${timeStr}</div>
+        <div class="schedule-date">${dateStr}${timeStr}</div>
       </div>
       <div class="schedule-actions">
         <button class="cal-btn btn-gcal" aria-label="Add to Google Calendar">Google</button>
@@ -1945,29 +2014,29 @@ function populateScheduleModal(routes) {
         if (AppState.flags.isDriver) {
           document.body.classList.add("driver-mode");
           const navBtn = document.createElement("button");
-          navBtn.innerHTML = "🧭 START SAT-NAV & BEACON";
-          navBtn.style.cssText = "position:absolute; bottom:80px; left:10%; width:80%; padding:20px; font-size:20px; font-weight:900; font-family:'Bebas Neue',sans-serif; letter-spacing:2px; background:var(--rt-gold); color:#000; border-radius:16px; z-index:9999; border:3px solid rgba(255,255,255,0.2); box-shadow:0 10px 40px rgba(0,0,0,0.6), 0 0 30px rgba(251,175,51,0.3); cursor:pointer;";
+          navBtn.innerHTML = "START SAT-NAV & BEACON";
+          navBtn.style.cssText = "position:absolute; bottom:80px; left:10%; width:80%; padding:20px; font-size:20px; font-weight:900; font-family:'Bebas Neue',sans-serif; letter-spacing:2px; background:var(--primary); color:var(--on-primary); border-radius:16px; z-index:9999; border:3px solid rgba(255,255,255,0.2); box-shadow:0 10px 40px rgba(0,0,0,0.6), 0 0 30px rgba(var(--primary-rgb), 0.3); cursor:pointer;";
           document.body.appendChild(navBtn);
           
-          const BeaconDB = { db: null, sent: 0, depth: 0, init: () => new Promise((resolve) => { const req = indexedDB.open("TurboBeacon", 1); req.onupgradeneeded = e => { if(!e.target.result.objectStoreNames.contains("q")) e.target.result.createObjectStore("q", {keyPath:"id", autoIncrement:true}); }; req.onsuccess = () => { BeaconDB.db = req.result; resolve(); }; req.onerror = () => resolve(); }), add: (p) => new Promise(res => { if(!BeaconDB.db) return res(); const tx = BeaconDB.db.transaction("q","readwrite"); tx.objectStore("q").add({p, t:Date.now()}); tx.oncomplete=()=>{ BeaconDB.updateUI(); res(); }; }), getAll: () => new Promise(res => { if(!BeaconDB.db) return res([]); const tx = BeaconDB.db.transaction("q","readonly"); const req = tx.objectStore("q").getAll(); req.onsuccess=()=>res(req.result||[]); }), del: (id) => new Promise(res => { if(!BeaconDB.db) return res(); const tx = BeaconDB.db.transaction("q","readwrite"); tx.objectStore("q").delete(id); tx.oncomplete=res; }), updateUI: async () => { if(!BeaconDB.db) return; BeaconDB.depth = (await BeaconDB.getAll()).length; const qEl = document.getElementById('txQueued'); if(qEl) qEl.textContent = BeaconDB.depth; const pill = document.getElementById('txPill'); if(pill) { if (BeaconDB.depth > 0) { pill.style.borderColor = "var(--rt-gold)"; pill.style.color = "var(--rt-gold)"; document.getElementById('txState').textContent = "📦 BUFFERING"; } else { pill.style.borderColor = "#00e676"; pill.style.color = "#00e676"; document.getElementById('txState').textContent = "📡 LIVE"; } } }, flush: async (url) => { if (BeaconDB.depth === 0 || !navigator.onLine) return; const items = await BeaconDB.getAll(); if (!items.length) return; items.sort((a,b) => a.t - b.t); for (const it of items) { if (Date.now() - it.t > 90*60*1000) { await BeaconDB.del(it.id); continue; } try { const r = await fetch(url, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(it.p) }); if (r.ok) { await BeaconDB.del(it.id); BeaconDB.sent++; document.getElementById('txSent').textContent = BeaconDB.sent; } else break; } catch { break; } } BeaconDB.updateUI(); } };
+          const BeaconDB = { db: null, sent: 0, depth: 0, init: () => new Promise((resolve) => { const req = indexedDB.open("TurboBeacon", 1); req.onupgradeneeded = e => { if(!e.target.result.objectStoreNames.contains("q")) e.target.result.createObjectStore("q", {keyPath:"id", autoIncrement:true}); }; req.onsuccess = () => { BeaconDB.db = req.result; resolve(); }; req.onerror = () => resolve(); }), add: (p) => new Promise(res => { if(!BeaconDB.db) return res(); const tx = BeaconDB.db.transaction("q","readwrite"); tx.objectStore("q").add({p, t:Date.now()}); tx.oncomplete=()=>{ BeaconDB.updateUI(); res(); }; }), getAll: () => new Promise(res => { if(!BeaconDB.db) return res([]); const tx = BeaconDB.db.transaction("q","readonly"); const req = tx.objectStore("q").getAll(); req.onsuccess=()=>res(req.result||[]); }), del: (id) => new Promise(res => { if(!BeaconDB.db) return res(); const tx = BeaconDB.db.transaction("q","readwrite"); tx.objectStore("q").delete(id); tx.oncomplete=res; }), updateUI: async () => { if(!BeaconDB.db) return; BeaconDB.depth = (await BeaconDB.getAll()).length; const qEl = document.getElementById('txQueued'); if(qEl) qEl.textContent = BeaconDB.depth; const pill = document.getElementById('txPill'); if(pill) { if (BeaconDB.depth > 0) { pill.style.borderColor = "var(--primary)"; pill.style.color = "var(--primary)"; document.getElementById('txState').textContent = "BUFFERING"; } else { pill.style.borderColor = "#00e676"; pill.style.color = "#00e676"; document.getElementById('txState').textContent = "LIVE"; } } }, flush: async (url) => { if (BeaconDB.depth === 0 || !navigator.onLine) return; const items = await BeaconDB.getAll(); if (!items.length) return; items.sort((a,b) => a.t - b.t); for (const it of items) { if (Date.now() - it.t > 90*60*1000) { await BeaconDB.del(it.id); continue; } try { const r = await fetch(url, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(it.p) }); if (r.ok) { await BeaconDB.del(it.id); BeaconDB.sent++; document.getElementById('txSent').textContent = BeaconDB.sent; } else break; } catch { break; } } BeaconDB.updateUI(); } };
           
           navBtn.onclick = async () => {
             let secret = sessionStorage.getItem('beaconSecret');
-            if (!secret) { secret = prompt("📡 Beacon Authorization\nEnter the Beacon password:"); if (!secret) return; }
-            navBtn.textContent = "⏳ VERIFYING...";
+            if (!secret) { secret = prompt("Beacon Authorization\nEnter the Beacon password:"); if (!secret) return; }
+            navBtn.textContent = "VERIFYING...";
             let gpsLoggerUrl = null;
             try {
               const sep = AppState.vars.apiUrl.includes('?') ? '&' : '?';
               const res = await fetch(`${AppState.vars.apiUrl}${sep}function=verifyBeaconAuth&secret=${encodeURIComponent(secret)}`);
               const result = await res.json();
-              if (!result.valid) { alert("❌ Access Denied."); navBtn.textContent = "🧭 START SAT-NAV & BEACON"; sessionStorage.removeItem('beaconSecret'); return; }
+              if (!result.valid) { alert("Access Denied."); navBtn.textContent = "START SAT-NAV & BEACON"; sessionStorage.removeItem('beaconSecret'); return; }
               sessionStorage.setItem('beaconSecret', secret);
-              navBtn.textContent = "⏳ FETCHING CONFIG...";
+              navBtn.textContent = "FETCHING CONFIG...";
               const cfgRes = await fetch(`${AppState.vars.apiUrl}${sep}function=getBeaconConfig&secret=${encodeURIComponent(secret)}`);
               const cfg = await cfgRes.json();
               if (cfg.error || !cfg.gpsLoggerUrl) throw new Error(cfg.error || "Missing URL");
               gpsLoggerUrl = cfg.gpsLoggerUrl;
-            } catch (e) { alert("❌ Setup failed: " + e.message); navBtn.textContent = "🧭 START SAT-NAV & BEACON"; return; }
+            } catch (e) { alert("Setup failed: " + e.message); navBtn.textContent = "START SAT-NAV & BEACON"; return; }
             
             await BeaconDB.init();
             await BeaconDB.updateUI();
@@ -1986,8 +2055,8 @@ try {
 } catch(e) {}
             TurnByTurn.prime();
                                         
-            AppState.dom.statusBox.textContent = "🧭 Sat-Nav & Beacon Active";
-            AppState.dom.statusBox.style.color = "var(--rt-gold)";
+            AppState.dom.statusBox.textContent = "Sat-Nav & Beacon Active";
+            AppState.dom.statusBox.style.color = "var(--primary)";
             // Zoom in for nav — use MapLibre when available (driver mode), fallback to Leaflet
             if (AppState.mlMap) {
               AppState.mlMap.easeTo({ zoom: 18, pitch: 60, duration: 1200, essential: true });
@@ -1999,7 +2068,7 @@ try {
             const txPill = document.createElement("div");
             txPill.id = "txPill";
             txPill.style.cssText = "position:fixed; top:auto; bottom:50px; left:50%; transform:translateX(-50%); background:rgba(13, 13, 11, 0.95); border:2px solid #00e676; color:#00e676; padding:8px 16px; border-radius:14px; font-weight:900; font-size:0.8em; z-index:4500; box-shadow:0 4px 16px rgba(0,0,0,0.6); display:flex; gap:12px; pointer-events:none; font-family:'DM Sans',sans-serif;";
-            txPill.innerHTML = `<span id="txState">📡 LIVE</span> <span>Tx: <span id="txSent">0</span></span> <span>Q: <span id="txQueued">0</span></span>`;
+            txPill.innerHTML = `<span id="txState">LIVE</span> <span>Tx: <span id="txSent">0</span></span> <span>Q: <span id="txQueued">0</span></span>`;
             document.body.appendChild(txPill);
             
             // Driver position arrow.
@@ -2269,7 +2338,7 @@ try {
                   document.getElementById('txSent').textContent = BeaconDB.sent;
                   if(BeaconDB.depth === 0) {
                     txPill.style.borderColor = "#00e676"; txPill.style.color = "#00e676";
-                    document.getElementById('txState').textContent = "📡 LIVE";
+                    document.getElementById('txState').textContent = "LIVE";
                   }
                 } catch(e) {
                   await BeaconDB.add(payload);
@@ -2294,6 +2363,7 @@ AppState.vars.proxyUrl = params.get("proxy") || localStorage.getItem("SANTA_PROX
 
 localStorage.setItem("SANTA_API", AppState.vars.apiUrl); 
 sessionStorage.setItem("SANTA_API", AppState.vars.apiUrl);
+loadCachedTheme(AppState.vars.apiUrl);
 
 if (AppState.vars.proxyUrl) {
   localStorage.setItem("SANTA_PROXY", AppState.vars.proxyUrl); 
@@ -2310,6 +2380,9 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
         // the first live fix can appear.
         AppState.vars.latestApiData = apiData;
         AppState.vars.lastSettingsFetch = Date.now();
+        if (apiData && apiData.settings) {
+          try { applyTheme(apiData.settings); saveTheme(AppState.vars.apiUrl, apiData.settings.primary_color); } catch (e) { console.warn('Theme not applied:', e); }
+        }
 
         // Setup Schedule Modal
           const scheduleBtn = document.getElementById('scheduleBtn');
@@ -2349,12 +2422,12 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
           musicBtn.onclick = () => {
             AppState.flags.musicEnabled = !AppState.flags.musicEnabled;
             if (AppState.flags.musicEnabled) {
-              musicBtn.textContent = "🎵 Music"; musicBtn.classList.add("music-on");
+              musicBtn.textContent = "Music: On"; musicBtn.classList.add("music-on");
               musicBtn.setAttribute("aria-label", "Christmas music is playing — tap to mute");
               SleighAudio.play();
               if (AppState.flags.snowActive && AppState.currentSnowLevel) { SleighAudio.setIntensity(AppState.currentSnowLevel); } else { SleighAudio.setIntensity(0); }
             } else {
-              musicBtn.textContent = "🔇 Music"; musicBtn.classList.remove("music-on");
+              musicBtn.textContent = "Music: Off"; musicBtn.classList.remove("music-on");
               musicBtn.setAttribute("aria-label", "Christmas music is muted — tap to play");
               SleighAudio.mute();
             }
@@ -2362,7 +2435,7 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
         }
 
         const twitchEnabled = String(settings.enable_twitch || "").toUpperCase() === "TRUE"; const twitchChannel = settings.twitch_channel;
-        if (twitchEnabled && twitchChannel && twitchChannel.trim() !== "" && !AppState.flags.isKiosk && !AppState.flags.isDriver) { const twitchBtn = document.getElementById('twitchBtn'), twitchBox = document.getElementById('twitchBox'); let twitchLoaded = false; twitchBtn.style.display = "inline-block"; twitchBtn.addEventListener('click', () => { if (twitchBox.classList.contains('visible')) { twitchBox.classList.remove('visible'); twitchBtn.textContent = "📺 Cam: OFF"; twitchBtn.style.background = "var(--surface-2)"; twitchBtn.style.color = "var(--rt-gold)"; } else { twitchBox.classList.add('visible'); twitchBtn.textContent = "📺 Cam: LIVE"; twitchBtn.style.background = "var(--gold-glow)"; twitchBtn.style.color = "var(--rt-gold)"; if (!twitchLoaded) { const parents = new Set([window.location.hostname || "localhost"]); if (window.top !== window.self && document.referrer) { try { const rh = new URL(document.referrer).hostname; if (rh) parents.add(rh); } catch(e) {} } const pp = [...parents].map(p => `parent=${encodeURIComponent(p)}`).join('&'); twitchBox.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(twitchChannel)}&${pp}&muted=true" frameborder="0" allowfullscreen="true" scrolling="no" allow="autoplay; fullscreen"></iframe>`; twitchLoaded = true; } } }); }
+        if (twitchEnabled && twitchChannel && twitchChannel.trim() !== "" && !AppState.flags.isKiosk && !AppState.flags.isDriver) { const twitchBtn = document.getElementById('twitchBtn'), twitchBox = document.getElementById('twitchBox'); let twitchLoaded = false; twitchBtn.style.display = "inline-block"; twitchBtn.addEventListener('click', () => { if (twitchBox.classList.contains('visible')) { twitchBox.classList.remove('visible'); twitchBtn.textContent = "Cam: OFF"; twitchBtn.style.background = "var(--surface-2)"; twitchBtn.style.color = "var(--primary)"; } else { twitchBox.classList.add('visible'); twitchBtn.textContent = "Cam: LIVE"; twitchBtn.style.background = "var(--primary-glow)"; twitchBtn.style.color = "var(--primary)"; if (!twitchLoaded) { const parents = new Set([window.location.hostname || "localhost"]); if (window.top !== window.self && document.referrer) { try { const rh = new URL(document.referrer).hostname; if (rh) parents.add(rh); } catch(e) {} } const pp = [...parents].map(p => `parent=${encodeURIComponent(p)}`).join('&'); twitchBox.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(twitchChannel)}&${pp}&muted=true" frameborder="0" allowfullscreen="true" scrolling="no" allow="autoplay; fullscreen"></iframe>`; twitchLoaded = true; } } }); }
         
         const don = apiData.donations || {};
         const wsD = document.getElementById('wsDonate'); // Moved outside the if-statement
@@ -2377,7 +2450,7 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
           GamifiedDonation.init();
           if (don.target && don.target > 0) { 
             const pct = Math.min(100, Math.max(0, Math.round((don.total / don.target) * 100))); 
-            AppState.dom.donateLink.style.background = `linear-gradient(90deg, #FBAF33 ${pct}%, rgba(251, 175, 51, 0.3) ${pct}%)`; 
+            AppState.dom.donateLink.style.background = `linear-gradient(90deg, var(--primary) ${pct}%, rgba(var(--primary-rgb), 0.3) ${pct}%)`; 
           } 
         } else { 
           AppState.dom.donateBox.style.display = "none"; 
@@ -2393,7 +2466,7 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
           }
         }, 3 * 60 * 1000);
         
-        if (AppState.flags.isKiosk && AppState.dom.kioskBanner) { const statusDiv = document.createElement('div'); statusDiv.id = 'kioskStatus'; statusDiv.textContent = '🎄 PREPARING IN LAPLAND'; const subtitleDiv = document.createElement('div'); subtitleDiv.className = 'kiosk-subtitle'; subtitleDiv.textContent = AppState.vars.sleighName; AppState.dom.kioskBanner.innerHTML = ''; AppState.dom.kioskBanner.appendChild(statusDiv); AppState.dom.kioskBanner.appendChild(subtitleDiv); AppState.dom.kioskBanner.classList.add("visible"); }
+        if (AppState.flags.isKiosk && AppState.dom.kioskBanner) { const statusDiv = document.createElement('div'); statusDiv.id = 'kioskStatus'; statusDiv.textContent = 'PREPARING IN LAPLAND'; const subtitleDiv = document.createElement('div'); subtitleDiv.className = 'kiosk-subtitle'; subtitleDiv.textContent = AppState.vars.sleighName; AppState.dom.kioskBanner.innerHTML = ''; AppState.dom.kioskBanner.appendChild(statusDiv); AppState.dom.kioskBanner.appendChild(subtitleDiv); AppState.dom.kioskBanner.classList.add("visible"); }
         if (!route) { AppState.dom.notifyBtn.style.display = "none"; } else { await loadGpxRoute(route.gpxUrl); if (AppState.flags.isDriver && AppState.flags.gpxLoaded) TurnByTurn.load(AppState.gpxRoute); }
 
         const gaLink = document.getElementById('giftAidLink');
@@ -2515,12 +2588,12 @@ window.layoutOverlays();
                   urlObj.searchParams.delete("pin");
                 }
                 const shareUrl = urlObj.toString();
-                const shareText = `🎅 Track Santa's sleigh LIVE! ${AppState.vars.sleighName}`;
+                const shareText = `Track Santa's sleigh LIVE! ${AppState.vars.sleighName}`;
                 
                 const copyFallback = async () => {
                   try {
                     await navigator.clipboard.writeText(shareUrl);
-                    showToast("📋 Link copied! Share it with your street!");
+                    showToast("Link copied! Share it with your street!");
                   } catch(e) {
                     prompt("Copy this tracker link:", shareUrl);
                   }
@@ -2529,7 +2602,7 @@ window.layoutOverlays();
                 if (navigator.share) {
                   try {
                     await navigator.share({ title: "Santa Sleigh Tracker", text: shareText, url: shareUrl });
-                    showToast("🎅 Shared!");
+                    showToast("Shared!");
                   } catch(e) {
                     if (!e || e.name !== "AbortError") await copyFallback();
                   }
@@ -2579,18 +2652,18 @@ window.layoutOverlays();
                 if (isDeepLink) {
                   AppState.flags.awaitingPin = true; // Enables moving it by tapping elsewhere
                   AppState.map.setView([pinSource.lat, pinSource.lng], 17);
-                  AppState.dom.statusBox.textContent = "📍 Shared pin found! Tap it to get notified.";
+                  AppState.dom.statusBox.textContent = "Shared pin found! Tap it to get notified.";
                 }
               }
             }
           
-            AppState.map.on("click", e => { if (!AppState.flags.awaitingPin) return; showNotifyMarker(e.latlng.lat, e.latlng.lng, false); AppState.dom.statusBox.textContent = "📍 Pin moved — tap again to confirm"; });
+            AppState.map.on("click", e => { if (!AppState.flags.awaitingPin) return; showNotifyMarker(e.latlng.lat, e.latlng.lng, false); AppState.dom.statusBox.textContent = "Pin moved — tap again to confirm"; });
             AppState.marker = L.marker(AppConfig.LOCATIONS.LAPLAND, { icon: L.icon({ iconUrl: settings.sleigh_icon_live || AppConfig.ICONS.FALLBACK_LIVE, iconSize: [64, 64], iconAnchor: [32, 60] }) });
             if (!AppState.flags.isDriver) AppState.marker.addTo(AppState.map);
 
             AppState.dom.followBtn.onclick = () => { AppState.flags.follow = !AppState.flags.follow; AppState.dom.followBtn.textContent = "Follow: " + (AppState.flags.follow ? "ON" : "OFF"); };
             AppState.dom.recenterBtn.onclick = () => { AppState.flags.follow = true; AppState.dom.followBtn.textContent = "Follow: ON"; AppState.map.panTo(AppState.marker.getLatLng()); };
-            AppState.dom.notifyBtn.onclick = () => {ensureNotifyPermission(); AppState.flags.follow = false; AppState.dom.followBtn.textContent = "Follow: OFF"; AppState.flags.browserNotified = false; AppState.flags.hasPassedSticky = false; AppState.flags.celebrationFired = false; sessionStorage.removeItem("SANTA_CELEBRATION_FIRED"); AppState.routeFixes = []; AppState.vars.etaEmaSec = null; AppState.vars.userSnapCache = null; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED"); sessionStorage.removeItem("SANTA_NOTIFY_POINT"); sessionStorage.removeItem("SANTA_HAS_PASSED"); if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; AppState.vars.notifyLatLng = null; if (AppState.vars.escapeListener) document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = (e) => { if (e.key === "Escape" && AppState.flags.awaitingPin) { AppState.flags.awaitingPin = false; if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.dom.statusBox.textContent = ""; Utils.toggleFollowControls(true); document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } }; document.addEventListener("keydown", AppState.vars.escapeListener); AppState.flags.awaitingPin = true; AppState.dom.statusBox.textContent = "📍 Locating you..."; if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((position) => { AppState.map.setView([position.coords.latitude, position.coords.longitude], 17); showNotifyMarker(position.coords.latitude, position.coords.longitude, false); AppState.dom.statusBox.textContent = "📍 Is this your house? Tap the pin to confirm."; }, () => { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; }, { enableHighAccuracy: true, timeout: 5000 }); } else { AppState.dom.statusBox.textContent = "📍 Tap the map to place your pin..."; } };
+            AppState.dom.notifyBtn.onclick = () => {ensureNotifyPermission(); AppState.flags.follow = false; AppState.dom.followBtn.textContent = "Follow: OFF"; AppState.flags.browserNotified = false; AppState.flags.hasPassedSticky = false; AppState.flags.celebrationFired = false; sessionStorage.removeItem("SANTA_CELEBRATION_FIRED"); AppState.routeFixes = []; AppState.vars.etaEmaSec = null; AppState.vars.userSnapCache = null; sessionStorage.removeItem("SANTA_BROWSER_NOTIFIED"); sessionStorage.removeItem("SANTA_EMAIL_SUBSCRIBED"); sessionStorage.removeItem("SANTA_NOTIFY_POINT"); sessionStorage.removeItem("SANTA_HAS_PASSED"); if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; AppState.vars.notifyLatLng = null; if (AppState.vars.escapeListener) document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = (e) => { if (e.key === "Escape" && AppState.flags.awaitingPin) { AppState.flags.awaitingPin = false; if (AppState.notifyMarker) AppState.map.removeLayer(AppState.notifyMarker); AppState.dom.statusBox.textContent = ""; Utils.toggleFollowControls(true); document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } }; document.addEventListener("keydown", AppState.vars.escapeListener); AppState.flags.awaitingPin = true; AppState.dom.statusBox.textContent = "Locating you..."; if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((position) => { AppState.map.setView([position.coords.latitude, position.coords.longitude], 17); showNotifyMarker(position.coords.latitude, position.coords.longitude, false); AppState.dom.statusBox.textContent = "Is this your house? Tap the pin to confirm."; }, () => { AppState.dom.statusBox.textContent = "Tap the map to place your pin..."; }, { enableHighAccuracy: true, timeout: 5000 }); } else { AppState.dom.statusBox.textContent = "Tap the map to place your pin..."; } };
 
             if (AppState.dom.msgBtn) { 
   AppState.dom.msgBtn.onclick = () => { 
@@ -2624,15 +2697,15 @@ document.getElementById('msgConfirmBtn').onclick = () => {
   })
   .then(r => r.json())
   .then(d => { 
-    if (d.ok) showToast("💬 Sent! Waiting for Elf approval..."); 
-    else showToast("❌ " + (d.error || "Failed to send.")); 
+    if (d.ok) showToast("Sent! Waiting for Elf approval..."); 
+    else showToast(d.error || "Failed to send."); 
   })
-  .catch(() => showToast("❌ Network error.")); 
+  .catch(() => showToast("Network error.")); 
   
   input.value = ''; 
 };
             document.getElementById("modalCancelBtn").addEventListener("click", () => { document.getElementById("emailModal").style.display = "none"; AppState.dom.statusBox.textContent = "Tap the pin to try again"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } });
-            document.getElementById("modalConfirmBtn").addEventListener("click", () => { const email = document.getElementById("subEmail").value.trim(); document.getElementById("emailModal").style.display = "none"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } Utils.toggleFollowControls(true); if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") { showToast("🎅 You're already signed up!"); return; } AppState.dom.statusBox.textContent = "🔔 Saving your notification..."; if (!AppState.vars.pendingSubscription) { showToast("❌ Error: No location selected."); return; } fetch(`${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`).then(r=>r.json()).then(d => { if (d.ok) { sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1"); showToast(email ? "🎅 You're signed up! We'll email you when Santa is close." : "🎅 You're signed up! Keep this page open for alerts."); AppState.dom.statusBox.textContent = ""; if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; } AppState.vars.pendingSubscription = null; } else { showToast("❌ Error saving notification."); AppState.dom.statusBox.textContent = "❌ Failed to save."; } }).catch(() => { showToast("❌ Network error."); AppState.dom.statusBox.textContent = "❌ Connection failed."; }); });
+            document.getElementById("modalConfirmBtn").addEventListener("click", () => { const email = document.getElementById("subEmail").value.trim(); document.getElementById("emailModal").style.display = "none"; if (AppState.vars.escapeListener) { document.removeEventListener("keydown", AppState.vars.escapeListener); AppState.vars.escapeListener = null; } Utils.toggleFollowControls(true); if (sessionStorage.getItem("SANTA_EMAIL_SUBSCRIBED") === "1") { showToast("You're already signed up!"); return; } AppState.dom.statusBox.textContent = "Saving your notification..."; if (!AppState.vars.pendingSubscription) { showToast("Error: No location selected."); return; } fetch(`${AppState.vars.apiUrl}?function=subscribe&lat=${AppState.vars.pendingSubscription.lat}&lng=${AppState.vars.pendingSubscription.lng}&email=${encodeURIComponent(email)}`).then(r=>r.json()).then(d => { if (d.ok) { sessionStorage.setItem("SANTA_EMAIL_SUBSCRIBED", "1"); showToast(email ? "You're signed up! We'll email you when Santa is close." : "You're signed up! Keep this page open for alerts."); AppState.dom.statusBox.textContent = ""; if (AppState.notifyMarker) { AppState.map.removeLayer(AppState.notifyMarker); AppState.notifyMarker = null; } AppState.vars.pendingSubscription = null; } else { showToast("Error saving notification."); AppState.dom.statusBox.textContent = "Failed to save."; } }).catch(() => { showToast("Network error."); AppState.dom.statusBox.textContent = "Connection failed."; }); });
 
             // ══════════════════════════════════════════════
             //  DRIVER MODE — MapLibre GL JS satnav overlay
@@ -2670,8 +2743,8 @@ document.getElementById('msgConfirmBtn').onclick = () => {
               // Recenter button — appears when user pans away
               const recenterBtnEl = document.createElement('button');
               recenterBtnEl.id = 'driverRecenterBtn';
-              recenterBtnEl.innerHTML = '🎯 RECENTER';
-              recenterBtnEl.style.cssText = "position:fixed; right:16px; bottom:130px; padding:14px 18px; background:var(--rt-gold); color:#000; border:3px solid rgba(255,255,255,0.2); border-radius:24px; font-family:'Bebas Neue',sans-serif; font-size:1.1em; font-weight:900; letter-spacing:2px; box-shadow:0 8px 24px rgba(0,0,0,0.6), 0 0 20px rgba(251,175,51,0.3); z-index:5500; display:none; cursor:pointer;";
+              recenterBtnEl.innerHTML = 'RECENTER';
+              recenterBtnEl.style.cssText = "position:fixed; right:16px; bottom:130px; padding:14px 18px; background:var(--primary); color:var(--on-primary); border:3px solid rgba(255,255,255,0.2); border-radius:24px; font-family:'Bebas Neue',sans-serif; font-size:1.1em; font-weight:900; letter-spacing:2px; box-shadow:0 8px 24px rgba(0,0,0,0.6), 0 0 20px rgba(var(--primary-rgb), 0.3); z-index:5500; display:none; cursor:pointer;";
               document.body.appendChild(recenterBtnEl);
               recenterBtnEl.onclick = () => {
                 AppState.flags.driverFollow = true;
