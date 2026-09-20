@@ -18,14 +18,18 @@
 
   <style>
     :root {
-      --gold: #FBAF33;
-      --gold-dim: rgba(251,175,51,0.12);
-      --gold-glow: rgba(251,175,51,0.25);
+      /* Brand colour. Defaults are Round Table gold; applyTheme() overrides these from the API
+         (settings.primary_color), exactly like the Santa sleigh page does. */
+      --primary: #FBAF33;
+      --primary-rgb: 251, 175, 51;   /* same colour as an r, g, b triplet for the translucent shades below */
+      --on-primary: #000000;         /* text on --primary, auto-picked for readability */
+      --primary-dim: rgba(var(--primary-rgb), 0.12);
+      --primary-glow: rgba(var(--primary-rgb), 0.25);
       --dark: #0d0d0b;
       --surface: #161614;
       --surface-2: #1e1e1b;
       --border: rgba(255,255,255,0.08);
-      --border-gold: rgba(251,175,51,0.2);
+      --border-primary: rgba(var(--primary-rgb), 0.2);
       --text: #eaeae5;
       --text-dim: rgba(255,255,255,0.55);
       --red: #D31C1C;
@@ -45,13 +49,16 @@
       overflow-y: auto;
     }
 
+    /* Set by JS when the page is opened directly rather than embedded */
+    html.standalone body { background: var(--dark); }
+
     #address-root {
       max-width: 960px;
       margin: 0 auto;
       padding: 24px 20px;
       background: var(--surface);
       border-radius: 16px;
-      border: 1px solid var(--border-gold);
+      border: 1px solid var(--border-primary);
       box-shadow: 0 10px 40px rgba(0,0,0,0.6);
     }
 
@@ -66,9 +73,9 @@
       height: 58px;
       width: 100%;
       border-radius: 16px;
-      border: 2px solid var(--gold);
-      background: var(--gold);
-      color: #000000;
+      border: 2px solid var(--primary);
+      background: var(--primary);
+      color: var(--on-primary);
       font-weight: 900;
       font-family: 'Bebas Neue', sans-serif;
       font-size: 24px;
@@ -79,10 +86,10 @@
       justify-content: center;
       gap: 10px;
       box-shadow: 0 4px 16px rgba(0,0,0,.4);
-      transition: transform 0.1s, background 0.2s;
+      transition: transform 0.1s, filter 0.2s;
     }
 
-    .locate-btn:hover:not(:disabled) { background: #e59d28; }
+    .locate-btn:hover:not(:disabled) { filter: brightness(0.92); }
     .locate-btn:active:not(:disabled) { transform: scale(0.96); box-shadow: 0 2px 8px rgba(0,0,0,.4); }
     .locate-btn:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
@@ -125,8 +132,8 @@
 
     .addr-route-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(251,175,51,0.15); 
-      border-color: rgba(251,175,51,0.5);
+      box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.15); 
+      border-color: rgba(var(--primary-rgb), 0.5);
     }
 
     /* Dynamically accepts the route color generated in JS */
@@ -135,7 +142,7 @@
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 4px;
-      background: var(--route-color, var(--gold));
+      background: var(--route-color, var(--primary));
     }
 
     .addr-route-title {
@@ -152,14 +159,14 @@
       font-family: 'DM Mono', monospace;
       font-size: 14px;
       font-weight: 700;
-      color: var(--gold);
+      color: var(--primary);
     }
 
     .addr-no-results {
       text-align: center;
       margin-top: 32px;
       font-weight: 600;
-      color: var(--gold);
+      color: var(--primary);
       font-size: 16px;
     }
 
@@ -181,7 +188,7 @@
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .addr-search-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
+    .addr-search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
     .addr-search-input:disabled { opacity: 0.6; cursor: not-allowed; }
     .addr-search-input::placeholder { color: var(--text-muted); font-family: 'DM Sans', sans-serif; }
 
@@ -209,13 +216,13 @@
       color: var(--text);
     }
     .addr-suggest-item:last-child { border-bottom: none; }
-    .addr-suggest-item:hover, .addr-suggest-item:focus { background: var(--gold-dim); color: #fff; outline: none; }
+    .addr-suggest-item:hover, .addr-suggest-item:focus { background: var(--primary-dim); color: #fff; outline: none; }
 
     .addr-suggest-route {
       font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
       color: var(--text-muted); text-transform: uppercase; text-align: right;
     }
-    .addr-suggest-item:hover .addr-suggest-route { color: var(--gold); }
+    .addr-suggest-item:hover .addr-suggest-route { color: var(--primary); }
 
     .addr-suggest-empty { padding: 20px; text-align: center; color: var(--text-dim); font-size: 14px; }
 
@@ -226,12 +233,12 @@
       flex: 1; padding: 12px; border-radius: 12px; border: none;
       font-weight: 900; font-size: 20px; letter-spacing: 1.5px; font-family: 'Bebas Neue', sans-serif;
       cursor: pointer; text-align: center;
-      transition: transform 0.1s, background 0.2s;
+      transition: transform 0.1s, background 0.2s, filter 0.2s;
     }
     .addr-btn:active { transform: scale(0.97); }
 
-    .addr-btn-gold { background: var(--gold); color: #000; }
-    .addr-btn-gold:hover { background: #e59d28; }
+    .addr-btn-primary { background: var(--primary); color: var(--on-primary); }
+    .addr-btn-primary:hover { filter: brightness(0.92); }
 
     .addr-btn-ghost { background: var(--surface); color: #fff; border: 1px solid var(--border); }
     .addr-btn-ghost:hover { background: var(--dark); }
@@ -285,6 +292,62 @@
   const DATA_URL = `${WORKER_URL}?ttl=30&target=${encodeURIComponent(API_URL)}`;
   
   const CATCHMENT_METERS = 150;
+
+  // ── Theme from the API ──────────────────────────────────────────────
+  // Same source and rules as the Santa sleigh page: settings.primary_color drives the brand
+  // colour, and text on it flips black/white for readability. Missing or invalid -> Round Table gold.
+  const DEFAULT_PRIMARY = '#FBAF33';
+  let PRIMARY = DEFAULT_PRIMARY;   // JS-side copy of --primary (Leaflet line colours can't read CSS vars)
+
+  // Opened directly (e.g. from a shared link) instead of inside the site's iframe:
+  // the transparent body would otherwise show a white page behind the dark card.
+  if (window.self === window.top) document.documentElement.classList.add('standalone');
+
+  // Returns [r, g, b] for a valid CSS colour, otherwise null. (Copied from santasleigh.html)
+  function parseColor(v) {
+    if (typeof v !== 'string') return null;
+    const s = v.trim();
+    const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+    if (hex) {
+      let h = hex[1];
+      if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+      if (h.length !== 6 && h.length !== 8) return null;
+      return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+    }
+    try {
+      if (/var\(|url\(|expression/i.test(s)) return null;
+      if (!(window.CSS && CSS.supports && CSS.supports('color', s))) return null;
+      const ctx = document.createElement('canvas').getContext('2d');
+      ctx.fillStyle = '#000000';
+      ctx.fillStyle = s;
+      const out = ctx.fillStyle;
+      if (out.charAt(0) === '#') return parseColor(out);
+      const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(out);
+      return rgb ? [+rgb[1], +rgb[2], +rgb[3]] : null;
+    } catch (e) { return null; }
+  }
+
+  // Black or white, whichever reads better on the given colour (WCAG contrast ratio). (Copied from santasleigh.html)
+  function readableTextOn(rgb) {
+    const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+    const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+    return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+  }
+
+  function applyTheme(settings) {
+    const root = document.documentElement;
+    const raw = settings && settings.primary_color;
+    const rgb = parseColor(raw);
+    if (rgb) {
+      PRIMARY = String(raw).trim();
+      root.style.setProperty('--primary', PRIMARY);
+      root.style.setProperty('--primary-rgb', rgb.join(', '));
+      root.style.setProperty('--on-primary', readableTextOn(rgb));
+    } else {
+      PRIMARY = DEFAULT_PRIMARY;
+      ['--primary', '--primary-rgb', '--on-primary'].forEach(p => root.style.removeProperty(p));
+    }
+  }
 
   const redIcon = L.icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
@@ -393,6 +456,8 @@
     try {
       const res = await fetch(DATA_URL, { cache: "no-store" });
       const data = await res.json();
+
+      try { applyTheme(data && data.settings); } catch (e) { console.warn('Theme not applied:', e); }
 
       if(data && data.routes) {
         routesData = data.routes;
@@ -552,12 +617,12 @@
         }
 
         resultsDiv.innerHTML += `
-          <div class="addr-route-card" data-route-name="${route.routeName}" style="--route-color: ${route.color || '#FBAF33'};">
+          <div class="addr-route-card" data-route-name="${route.routeName}" style="--route-color: ${route.color || PRIMARY};">
             <h3 class="addr-route-title">${route.routeName}</h3>
             <p class="addr-route-date">${formattedDate} (Starts at approx ${route['Start Time'] || '17:30'})</p>
             ${locationLine ? `<p style="margin: 12px 0 0; font-size: 13px; font-weight: 600; color: var(--text-dim);">${locationLine}</p>` : ''}
             <div class="addr-btn-row">
-              <button type="button" class="addr-btn addr-btn-gold addr-share-btn">📤 Share</button>
+              <button type="button" class="addr-btn addr-btn-primary addr-share-btn">📤 Share</button>
               <button type="button" class="addr-btn addr-btn-ghost addr-copy-btn">🔗 Copy Link</button>
             </div>
           </div>
@@ -588,13 +653,13 @@
   function focusRoute(targetRouteName) {
     routesData.forEach(r => {
       if (r.mapLayer) {
-        r.mapLayer.setStyle({ color: r.color || '#FBAF33', weight: 4, opacity: 0.75 });
+        r.mapLayer.setStyle({ color: r.color || PRIMARY, weight: 4, opacity: 0.75 });
       }
     });
 
     const selectedRoute = routesData.find(r => r.routeName === targetRouteName);
     if (selectedRoute && selectedRoute.mapLayer) {
-      selectedRoute.mapLayer.setStyle({ color: selectedRoute.color || '#FBAF33', weight: 8, opacity: 1 });
+      selectedRoute.mapLayer.setStyle({ color: selectedRoute.color || PRIMARY, weight: 8, opacity: 1 });
       selectedRoute.mapLayer.bringToFront();
 
       map.flyToBounds(selectedRoute.mapLayer.getBounds(), { padding: [40, 40], duration: 1.2 });
