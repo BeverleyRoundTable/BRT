@@ -219,6 +219,30 @@
   let map;
   let userPin = null;
 
+  // 🔗 Sheet cells sometimes hold "raw.githubusercontent.com/..." with no scheme.
+  // fetch() treats that as a relative path on THIS site (404), so add https:// when missing.
+  function normaliseUrl(url) {
+    const u = String(url || '').trim();
+    if (!u) return '';
+    if (/^https?:\/\//i.test(u)) return u;
+    if (u.startsWith('//')) return 'https:' + u;
+    return 'https://' + u.replace(/^\/+/, '');
+  }
+
+  // 🎨 Unlimited distinct colours: golden-angle hue steps keep neighbours far apart,
+  // and every 8 routes the saturation/lightness band shifts so late routes get new shades.
+  const COLOUR_TIERS = [
+    { s: 90, l: 55 },
+    { s: 85, l: 38 },
+    { s: 80, l: 70 },
+    { s: 95, l: 46 }
+  ];
+  function routeColour(index) {
+    const hue = Math.round((index * 137.508) % 360);
+    const tier = COLOUR_TIERS[Math.floor(index / 8) % COLOUR_TIERS.length];
+    return `hsl(${hue}, ${tier.s}%, ${tier.l}%)`;
+  }
+
   function initMap() {
     // Initialized without hardcoded city focus; fitBounds will adjust once API data loads
     map = L.map('lookup-map').setView([53.84, -0.43], 13);
@@ -260,20 +284,21 @@
 
       if(data && data.routes) {
         routesData = data.routes;
-        const totalRoutes = routesData.length;
         const loadedLayers = [];
+
+        // Colour is fixed by position in the API list, so one failed GPX never shifts the others
+        routesData.forEach((route, index) => { route.color = routeColour(index); });
 
         await Promise.all(routesData.map(async (route, index) => {
           if (route.gpxUrl) {
             try {
-              const gpxRes = await fetch(route.gpxUrl, { cache: "no-store" });
+              const gpxRes = await fetch(normaliseUrl(route.gpxUrl), { cache: "no-store" });
+              if (!gpxRes.ok) throw new Error("HTTP " + gpxRes.status);
               const gpxXml = await gpxRes.text();
               route.geoJSON = parseGPXToLineString(gpxXml);
+              if (!route.geoJSON) console.warn("No track points found in GPX for", route.routeName);
 
               if(route.geoJSON) {
-                const hue = Math.round((index / totalRoutes) * 360);
-                route.color = `hsl(${hue}, 90%, 55%)`;
-                
                 route.mapLayer = L.geoJSON(route.geoJSON, {
                   color: route.color,
                   weight: 4, 
@@ -282,7 +307,7 @@
 
                 loadedLayers.push(route.mapLayer);
               }
-            } catch (e) { console.error("GPX load failed for", route.routeName); }
+            } catch (e) { console.error("GPX load failed for", route.routeName, route.gpxUrl, e); }
           }
         }));
 
