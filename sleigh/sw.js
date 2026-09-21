@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sleigh-shell-v2';
+const CACHE_NAME = 'sleigh-shell-v3'; // Bumped to v3 to force clients to update
+const API_CACHE = 'sleigh-api-cache-v1';
 const STATIC_ASSETS = [
     'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/site_background.png',
     'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png',
@@ -18,7 +19,7 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) => {
             return Promise.all(
-                keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+                keys.filter((key) => key !== CACHE_NAME && key !== API_CACHE).map((key) => caches.delete(key))
             );
         })
     );
@@ -29,7 +30,24 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // 1. Cache-First Strategy for Fonts and Static Images
+    // 1. Stale-while-revalidate Strategy for the Sleigh API and Proxy Data
+    // Ensures instant loading of the last known location/routes offline, then updates behind the scenes.
+    if (url.hostname.includes('santaproxy') || url.searchParams.has('api')) {
+        event.respondWith(
+            caches.match(event.request).then((cachedResponse) => {
+                const networkFetch = fetch(event.request).then((response) => {
+                    const clone = response.clone();
+                    caches.open(API_CACHE).then((cache) => cache.put(event.request, clone));
+                    return response;
+                }).catch(() => cachedResponse); 
+                
+                return cachedResponse || networkFetch;
+            })
+        );
+        return; // Stop here so it doesn't fall through to the rules below
+    }
+
+    // 2. Cache-First Strategy for Fonts and Static Images
     if (
         url.hostname.includes('fonts.googleapis.com') || 
         url.hostname.includes('fonts.gstatic.com') || 
@@ -48,7 +66,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 2. Network-First Strategy for HTML and Cloudflare API config
+    // 3. Network-First Strategy for HTML and Cloudflare API config
     if (event.request.method === 'GET') {
         event.respondWith(
             fetch(event.request)
