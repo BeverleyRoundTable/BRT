@@ -729,13 +729,19 @@ async function checkPassword() {
   const originalBtnText = btn.textContent;
   
   btn.disabled = true;
-  btn.textContent = "CONNECTING..."; // ⭐ Added visual feedback
+  btn.textContent = "CONNECTING..."; // ⭐ Visual feedback
   document.getElementById('passInput').disabled = true;
   document.getElementById('passError').style.display = 'none';
   
   try {
     const res = await fetch(authUrl);
     const text = await res.text();
+    
+    // ⭐ Check if response is an HTML error page (Cloudflare / Google timeout)
+    if (text.trim().startsWith('<') || text.includes('<!DOCTYPE html>')) {
+      console.error("Server returned HTML instead of JSON:", text);
+      throw new Error("Server gateway timeout or Google Apps Script error. Check console.");
+    }
     
     // 2. Safely parse JSON response
     let data;
@@ -754,7 +760,7 @@ async function checkPassword() {
       document.getElementById('passInput').disabled = false;
       document.getElementById('passInput').focus();
       btn.disabled = false;
-      btn.textContent = originalBtnText; // ⭐ Reset button
+      btn.textContent = originalBtnText;
       return;
     }
 
@@ -763,7 +769,7 @@ async function checkPassword() {
       document.getElementById('passError').style.display = 'block';
       document.getElementById('passInput').disabled = false;
       btn.disabled = false;
-      btn.textContent = originalBtnText; // ⭐ Reset button
+      btn.textContent = originalBtnText;
       return;
     }
 
@@ -785,7 +791,7 @@ async function checkPassword() {
     document.getElementById('passError').style.display = 'block';
     document.getElementById('passInput').disabled = false;
     btn.disabled = false;
-    btn.textContent = originalBtnText; // ⭐ Reset button
+    btn.textContent = originalBtnText;
   }
 }
 
@@ -994,7 +1000,7 @@ async function loadAll(fetchRegistry = true, isBackground = false) {
     const fastTrackUrl = `https://santaproxy.beverley247.workers.dev/?ttl=60&target=${encodeURIComponent(targetScript)}`;
 
     // 2. The payload arrives fully aggregated
-const payload = await fetchWithTimeout(fastTrackUrl, FETCH_TIMEOUT_MS);
+    const payload = await fetchWithTimeout(fastTrackUrl, FETCH_TIMEOUT_MS);
     
     if (payload.error) {
       if (payload.error === "Access Denied" || payload.error.includes("Secret")) {
@@ -1243,9 +1249,6 @@ async function renderMap(data) {
   const activeTables = data.filter(d => d.ok);
 
   for (const table of activeTables) {
-    // Note: If the backend includes the GPX points, we could still plot the route here.
-    // For now, we focus on placing the marker instantly without any fetch().
-
     if (table.lat && table.lng) {
       const isFresh = table.gps_ts ? (Date.now() - new Date(table.gps_ts).getTime()) < (5 * 60 * 1000) : false;
       
