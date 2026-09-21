@@ -41,9 +41,7 @@
       overflow-x: hidden;
     }
 
-    /* ═══════════════════════════════════════ */
     /* GATEKEEPER / LOGIN SCREEN */
-    /* ═══════════════════════════════════════ */
     #gatekeeper {
       position: fixed;
       inset: 0;
@@ -128,9 +126,7 @@
       font-weight: 600;
     }
 
-    /* ═══════════════════════════════════════ */
-    /* HEADER CONTROLS (TIME MACHINE) */
-    /* ═══════════════════════════════════════ */
+    /* HEADER CONTROLS */
     .top-controls {
       position: absolute;
       top: 24px;
@@ -161,9 +157,18 @@
       background-color: var(--surface-3);
     }
 
-    /* ═══════════════════════════════════════ */
-    /* HERO */
-    /* ═══════════════════════════════════════ */
+    /* HERO & TICKER */
+    .ticker-wrap {
+      display: none;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border-gold);
+      padding: 10px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--gold);
+      font-weight: 600;
+    }
+
     .hero {
       position: relative;
       padding: 64px 32px 48px;
@@ -171,18 +176,6 @@
       overflow: hidden;
       border-bottom: 1px solid var(--border);
       background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(251,175,51,0.06) 0%, transparent 70%);
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -60%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 800px;
-      height: 800px;
-      background: radial-gradient(circle, rgba(251,175,51,0.04) 0%, transparent 60%);
-      pointer-events: none;
     }
 
     .hero-badge {
@@ -223,20 +216,18 @@
     .hero-stats {
       display: flex;
       justify-content: center;
-      gap: 4px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
-    /* ═══════════════════════════════════════ */
-    /* STAT CARDS (top-level totals) */
-    /* ═══════════════════════════════════════ */
+    /* STAT CARDS */
     .stat-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 20px 28px;
+      padding: 18px 24px;
       text-align: center;
-      min-width: 140px;
+      min-width: 130px;
       position: relative;
       overflow: hidden;
     }
@@ -244,9 +235,7 @@
     .stat-card::after {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       height: 2px;
       background: linear-gradient(90deg, transparent, var(--gold), transparent);
       opacity: 0.4;
@@ -263,24 +252,18 @@
 
     .stat-value {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 36px;
+      font-size: 34px;
       color: var(--gold);
       line-height: 1;
       letter-spacing: 1px;
     }
 
-    /* ═══════════════════════════════════════ */
-    /* CONTAINER */
-    /* ═══════════════════════════════════════ */
     .container {
       max-width: 1100px;
       margin: 0 auto;
       padding: 40px 24px 60px;
     }
 
-    /* ═══════════════════════════════════════ */
-    /* SECTION HEADERS */
-    /* ═══════════════════════════════════════ */
     .section-head {
       display: flex;
       align-items: center;
@@ -304,11 +287,8 @@
       color: #fff;
     }
 
-    .section-head .section-icon {
-      font-size: 24px;
-    }
+    .section-icon { font-size: 24px; }
 
-    /* 2. MAP CSS INJECTED HERE */
     .view-toggle {
       display: flex;
       gap: 8px;
@@ -318,6 +298,7 @@
       border: 1px solid var(--border);
       width: fit-content;
     }
+
     .view-btn {
       background: transparent;
       color: var(--text-muted);
@@ -329,12 +310,14 @@
       cursor: pointer;
       transition: all 0.2s;
     }
+
     .view-btn.active {
       background: var(--surface);
       color: var(--gold);
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
       border: 1px solid var(--border-gold);
     }
+
     #nationalMap {
       height: 600px;
       width: 100%;
@@ -343,18 +326,18 @@
       display: none; 
       z-index: 1;
     }
+
     .leaflet-popup-content-wrapper {
       background: var(--surface-2);
       color: var(--text);
       border: 1px solid var(--border-gold);
       border-radius: 8px;
     }
+
     .leaflet-popup-tip { background: var(--surface-2); }
     .map-popup-title { color: var(--gold); font-weight: 800; font-size: 14px; margin-bottom: 4px; }
 
-    /* ═══════════════════════════════════════ */
     /* LEADERBOARD TABLE */
-    /* ═══════════════════════════════════════ */
     .lb-wrap {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -403,6 +386,21 @@
       color: #fff;
     }
 
+    .progress-bar-bg {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--gold);
+      border-radius: 2px;
+    }
+
     .lb-val {
       font-family: 'DM Mono', monospace;
       font-size: 13px;
@@ -411,13 +409,9 @@
     }
 
     .lb-val.gold { color: var(--gold); font-weight: 700; }
+    .lb-header span:nth-child(n+3), .lb-row .lb-val { text-align: right; }
 
-    .lb-header span:nth-child(n+3),
-    .lb-row .lb-val { text-align: right; }
-
-    /* ═══════════════════════════════════════ */
     /* CHARTS */
-    /* ═══════════════════════════════════════ */
     .charts-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -432,9 +426,7 @@
       padding: 24px;
     }
 
-    .chart-card.full-width {
-      grid-column: 1 / -1;
-    }
+    .chart-card.full-width { grid-column: 1 / -1; }
 
     .chart-title {
       font-size: 11px;
@@ -450,9 +442,6 @@
       height: 260px;
     }
 
-    /* ═══════════════════════════════════════ */
-    /* LOADING / ERROR STATES */
-    /* ═══════════════════════════════════════ */
     .loading-wrap {
       text-align: center;
       padding: 80px 20px;
@@ -470,10 +459,7 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .loading-text {
-      font-size: 14px;
-      color: var(--text-dim);
-    }
+    .loading-text { font-size: 14px; color: var(--text-dim); }
 
     .error-card {
       background: var(--red-dim);
@@ -496,24 +482,10 @@
       border-radius: 10px;
     }
 
-    .status-live {
-      background: var(--green-dim);
-      color: var(--green);
-    }
+    .status-live { background: var(--green-dim); color: var(--green); }
+    .status-hist { background: var(--blue); color: #fff; }
+    .status-off { background: rgba(255,255,255,0.05); color: var(--text-muted); }
 
-    .status-hist {
-      background: var(--blue);
-      color: #fff;
-    }
-
-    .status-off {
-      background: rgba(255,255,255,0.05);
-      color: var(--text-muted);
-    }
-
-    /* ═══════════════════════════════════════ */
-    /* FOOTER */
-    /* ═══════════════════════════════════════ */
     .footer {
       border-top: 1px solid var(--border);
       padding: 28px 32px;
@@ -556,9 +528,6 @@
       color: var(--gold);
     }
 
-    /* ═══════════════════════════════════════ */
-    /* RESPONSIVE */
-    /* ═══════════════════════════════════════ */
     @media (max-width: 768px) {
       .top-controls { top: 16px; right: 16px; }
       .hero { padding: 80px 20px 32px; }
@@ -567,13 +536,8 @@
       .stat-value { font-size: 28px; }
       .container { padding: 24px 16px 48px; }
       .charts-grid { grid-template-columns: 1fr; }
-      .lb-header, .lb-row {
-        grid-template-columns: 36px 1fr 90px 70px;
-      }
-      .lb-header, .lb-row {
-        grid-template-columns: 36px 1fr 90px; /* Just Rank, Name, Net on mobile */
-      }
-      /* Hide everything except Rank (1), Name (2), and Net Raised (6) on mobile */
+      .lb-header, .lb-row { grid-template-columns: 36px 1fr 90px; }
+      
       .lb-header span:nth-child(3),
       .lb-header span:nth-child(4),
       .lb-header span:nth-child(5),
@@ -588,18 +552,7 @@
       .lb-row .lb-val:nth-child(8),
       .lb-row .lb-val:nth-child(9),
       .lb-row .lb-val:nth-child(10) { display: none; }
-
-    /* Animate in */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
     }
-    .animate-in { animation: fadeUp 0.5s ease both; }
-    .delay-1 { animation-delay: 0.1s; }
-    .delay-2 { animation-delay: 0.2s; }
-    .delay-3 { animation-delay: 0.3s; }
-    .delay-4 { animation-delay: 0.4s; }
-    .delay-5 { animation-delay: 0.5s; }
   </style>
 </head>
 <body>
@@ -617,8 +570,11 @@
   <div id="appContainer" style="display: none;">
     
     <div class="top-controls">
-      <select id="seasonSelect" class="season-select" onchange="changeSeason()">
-        </select>
+      <select id="seasonSelect" class="season-select" onchange="changeSeason()"></select>
+    </div>
+
+    <div id="tickerWrap" class="ticker-wrap">
+      📢 <span id="tickerText"></span>
     </div>
 
     <header class="hero">
@@ -627,35 +583,35 @@
       <p class="hero-sub" id="heroSubText">Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds.</p>
 
       <div class="hero-stats" id="heroStats">
-        <div class="stat-card animate-in">
+        <div class="stat-card">
           <div class="stat-label">Tables Live</div>
           <div class="stat-value" id="totalTables">—</div>
         </div>
-        <div class="stat-card animate-in delay-1">
+        <div class="stat-card">
           <div class="stat-label">Gross Raised</div>
           <div class="stat-value" id="totalRaised">—</div>
         </div>
-        <div class="stat-card animate-in delay-1">
+        <div class="stat-card">
           <div class="stat-label">Total Expenses</div>
           <div class="stat-value" style="color: var(--red);" id="totalExpenses">—</div>
         </div>
-        <div class="stat-card animate-in delay-1">
+        <div class="stat-card">
           <div class="stat-label">Net for Charity</div>
           <div class="stat-value" style="color: var(--green);" id="totalNet">—</div>
         </div>
-        <div class="stat-card animate-in delay-2">
+        <div class="stat-card">
           <div class="stat-label">Total Views</div>
           <div class="stat-value" id="totalViews">—</div>
         </div>
-        <div class="stat-card animate-in delay-3">
-          <div class="stat-label">Routes</div>
+        <div class="stat-card">
+          <div class="stat-label">Routes Done</div>
           <div class="stat-value" id="totalRoutes">—</div>
         </div>
-        <div class="stat-card animate-in delay-4">
-          <div class="stat-label">Streets</div>
+        <div class="stat-card">
+          <div class="stat-label">Streets Done</div>
           <div class="stat-value" id="totalStreets">—</div>
         </div>
-        <div class="stat-card animate-in delay-5">
+        <div class="stat-card">
           <div class="stat-label">Messages</div>
           <div class="stat-value" id="totalMessages">—</div>
         </div>
@@ -737,7 +693,7 @@
     <footer class="footer">
       <div class="footer-brand">🎅 TurboSanta National</div>
       <div>
-        <span class="refresh-pill" onclick="loadAll(true)">🔄 Refresh Now</span>
+        <span class="refresh-pill" onclick="loadAll(true, false)">🔄 Refresh Now</span>
       </div>
       <div class="footer-meta" id="footerMeta">
         Last updated: <span id="lastUpdated">—</span><br>
@@ -747,32 +703,25 @@
   </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-// CONFIGURATION
-// ═══════════════════════════════════════════════════════════
-
 const REGISTRY_URL = "https://script.google.com/macros/s/AKfycbydqxlwWkD7Kh7IJisZSiweBBbsXDy7smUxpOvT5eLVQxsDO2PqwrJyQI_3y4kwnJB6/exec";
 const REFRESH_INTERVAL_MS = 60000;
 const FETCH_TIMEOUT_MS = 12000;
+const SYSTEM_START_YEAR = 2024;
 
-// ═══════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════
 let tables = [];
 let results = [];
 let charts = {};
 let refreshTimer = null;
-let currentMode = "live"; // Tracks if we are looking at live data or a historical year
+let currentMode = "live";
+let natMap = null;
+let sleighMarkers = {};
+let gpxLayers = {};
 
-// ═══════════════════════════════════════════════════════════
-// AUTHENTICATION LOGIC (GATEKEEPER)
-// ═══════════════════════════════════════════════════════════
 async function checkPassword() {
   const input = document.getElementById('passInput').value.trim();
   if (!input) return;
 
   const authUrl = `${REGISTRY_URL}?secret=${encodeURIComponent(input)}`;
-  
   document.getElementById('passInput').disabled = true;
   document.getElementById('passError').style.display = 'none';
   
@@ -787,11 +736,9 @@ async function checkPassword() {
       document.getElementById('passInput').disabled = false;
       document.getElementById('passInput').focus();
     } else {
-      // Password Accepted!
       sessionStorage.setItem('national_auth', input);
       document.getElementById('gatekeeper').style.display = 'none';
       document.getElementById('appContainer').style.display = 'block';
-      
       startApp(data.tables || data);
     }
   } catch (err) {
@@ -801,11 +748,8 @@ async function checkPassword() {
   }
 }
 
-// Auto-check on load if they already unlocked it this session
-const SYSTEM_START_YEAR = 2024; // ⭐ The earliest year to show in the dropdown
-
 window.onload = async () => {
-  buildSeasonDropdown(); // ⭐ Build the dynamic dropdown first!
+  buildSeasonDropdown();
   updateSeasonBadge("live"); 
   
   const savedPass = sessionStorage.getItem('national_auth');
@@ -815,24 +759,17 @@ window.onload = async () => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════
-// UI UPDATES FOR TIME MACHINE
-// ═══════════════════════════════════════════════════════════
 function getActiveSeasonYear() {
   const now = new Date();
   const m = now.getMonth();
   const y = now.getFullYear();
-  // If it's Jan-Jun, the active season was the previous year's Christmas.
   return m < 6 ? y - 1 : y; 
 }
 
 function buildSeasonDropdown() {
   const select = document.getElementById('seasonSelect');
   select.innerHTML = '<option value="live">Live Season</option>';
-  
   const activeYear = getActiveSeasonYear();
-  
-  // Auto-generate years from the current active year down to 2024
   for (let yr = activeYear; yr >= SYSTEM_START_YEAR; yr--) {
     select.innerHTML += `<option value="${yr}">${yr} Season</option>`;
   }
@@ -840,7 +777,6 @@ function buildSeasonDropdown() {
 
 function updateSeasonBadge(mode) {
   if (mode === "live") {
-    // ⭐ ALWAYS SHOW THE CURRENT CALENDAR YEAR TO STOP CONFUSION
     const displayYear = new Date().getFullYear();
     document.getElementById('seasonBadge').innerText = `🎅 ${displayYear} Sleigh`;
     document.getElementById('heroSubText').innerText = "Live leaderboard tracking every Round Table Santa Sleigh across the country. Updated every 60 seconds.";
@@ -856,33 +792,23 @@ function changeSeason() {
   currentMode = document.getElementById('seasonSelect').value;
   updateSeasonBadge(currentMode);
   
-  // Clear charts safely to prevent script crashes
   try {
-    Object.values(charts).forEach(c => {
-      if (c && typeof c.destroy === 'function') c.destroy();
-    });
+    Object.values(charts).forEach(c => { if (c && typeof c.destroy === 'function') c.destroy(); });
   } catch (e) {}
   charts = {};
   
-  loadAll(false); 
+  loadAll(false, false); 
 }
 
-// ═══════════════════════════════════════════════════════════
-// APP START
-// ═══════════════════════════════════════════════════════════
 async function startApp(initialTables) {
   tables = initialTables;
-  await loadAll(false); 
+  await loadAll(false, false); 
   
-  // Set up the background refresh loop (only fires if mode is live)
   refreshTimer = setInterval(() => {
-    if (currentMode === "live") loadAll(true);
+    if (currentMode === "live") loadAll(true, true); // ⭐ SILENT BACKGROUND REFRESH
   }, REFRESH_INTERVAL_MS);
 }
 
-// ═══════════════════════════════════════════════════════════
-// FETCH WITH TIMEOUT
-// ═══════════════════════════════════════════════════════════
 async function fetchWithTimeout(url, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -898,18 +824,15 @@ async function fetchWithTimeout(url, timeoutMs) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// EXTRACT LIVE TABLE DATA
+// DATA EXTRACTION (FIXED & EXPANDED)
 // ═══════════════════════════════════════════════════════════
 function extractLiveTableData(table, apiData) {
-  const ledger = apiData.donationsLedger || [];
   const routes = apiData.routes || [];
   const settings = apiData.settings || {};
   const messageStats = apiData.messageStats || {};
-
-  let streetCount = 0;
-  let seasonRaised = 0;
-  let totalViews = 0;
-  const pastRoutes = [];
+  const donations = apiData.donations || {};
+  const giftAid = apiData.giftAid ? (parseFloat(apiData.giftAid.giftAid) || 0) : 0;
+  const expenses = parseFloat(apiData.expenses) || 0;
 
   const activeSeasonYear = getActiveSeasonYear();
 
@@ -918,80 +841,81 @@ function extractLiveTableData(table, apiData) {
     const d = new Date(dateString);
     const dateY = d.getFullYear();
     const dateM = d.getMonth();
-    
-    if (dateY === activeSeasonYear && dateM >= 6) return true; 
-    if (dateY === activeSeasonYear + 1 && dateM < 6) return true; 
-    return false;
+    return (dateY === activeSeasonYear && dateM >= 6) || (dateY === activeSeasonYear + 1 && dateM < 6);
   }
 
-  /* 4. MAP VARIABLES INJECTED HERE */
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const todayIso = now.toISOString().slice(0, 10);
+
+  let streetCount = 0;
+  let totalViews = 0;
+  let routeRaisedSum = 0;
+  const completedRoutes = [];
+
   const todayRoute = routes.find(r => r.date === todayIso);
 
   routes.forEach(r => {
     if (isThisSeason(r.date)) {
-      pastRoutes.push(r);
-      if (r.streets) {
-        const streets = String(r.streets).split(',').map(s => s.trim()).filter(Boolean);
-        streetCount += streets.length;
-      }
-      if (r.views) {
-        totalViews += (parseInt(r.views) || 0);
+      const rDate = new Date(r.date);
+      // ⭐ FIX: Only count completed or today's routes
+      if (rDate <= now) {
+        completedRoutes.push(r);
+        if (r.streets) {
+          const streets = String(r.streets).split(',').map(s => s.trim()).filter(Boolean);
+          streetCount += streets.length;
+        }
+        if (r.views) {
+          totalViews += (parseInt(r.views) || 0);
+        }
+        routeRaisedSum += (parseFloat(r.raised) || 0);
       }
     }
   });
 
-  if (ledger.length > 0) {
-    ledger.forEach(entry => {
-      if (isThisSeason(entry.date)) {
-        seasonRaised += (parseFloat(entry.total) || 0);
-      }
-    });
-  } else {
-    pastRoutes.forEach(r => {
-       seasonRaised += (parseFloat(r.raised) || 0);
-    });
-  }
+  // ⭐ FIX: Use apiData.donations.total (Donations!B2) instead of capping at ledger length
+  const totalRaised = (donations.total !== undefined && donations.total !== null && donations.total !== 0)
+    ? parseFloat(donations.total)
+    : routeRaisedSum;
 
+  const target = parseFloat(donations.target) || 0;
   const displayName = settings.sleigh_display_name || table.name;
-  const expenses = parseFloat(apiData.expenses) || 0;
-  
-  const giftAid = apiData.giftAid ? (parseFloat(apiData.giftAid.giftAid) || 0) : 0;
 
   return {
     id: table.id,
     name: displayName,
-    raised: seasonRaised,      
+    api: String(table.api).trim(),
+    raised: totalRaised,
+    target: target,
     giftAid: giftAid,             
     expenses: expenses,
-    netRaised: (seasonRaised + giftAid) - expenses,
+    netRaised: (totalRaised + giftAid) - expenses,
     views: totalViews,         
-    routes: pastRoutes.length, 
+    routes: completedRoutes.length, 
     streets: streetCount,      
     messages: messageStats.total || 0,
     ok: true,
-    firebaseUrl: apiData.tracker?.firebase_url ? apiData.tracker.firebase_url.replace(/\/$/, "") : null,
+    donateUrl: settings.donate_url || null,
+    announcement: settings.live_announcement || null,
     todayGpx: todayRoute ? todayRoute.gpxUrl : null,
+    todayRouteName: todayRoute ? todayRoute.routeName : null,
+    todayStartTime: todayRoute ? todayRoute["Start Time"] : null,
+    todayEndTime: todayRoute ? todayRoute["End Time"] : null,
+    todaySponsor: todayRoute ? todayRoute.sponsorName : null,
     iconUrl: settings.sleigh_icon_live || "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png"
   };
 }
 
-// ═══════════════════════════════════════════════════════════
-// EXTRACT HISTORICAL TABLE DATA
-// ═══════════════════════════════════════════════════════════
 function extractHistoricalTableData(table, historyArray, targetYear) {
-  // Relax the search to ignore trailing spaces or slight mismatches
   const seasonData = historyArray.find(h => {
      const hYear = String(h.year).trim();
      const tYear = String(targetYear).trim();
-     // If they entered "Season 2025/26" in the past, let's just look for "2025"
      return hYear === tYear || hYear.includes(tYear); 
   });
   
   if (!seasonData) {
      return {
-        id: table.id, name: table.name,
-        raised: 0, views: 0, routes: 0, streets: 0, messages: 0,
+        id: table.id, name: table.name, api: String(table.api).trim(),
+        raised: 0, target: 0, expenses: 0, netRaised: 0, views: 0, routes: 0, streets: 0, messages: 0,
         ok: true
      };
   }
@@ -999,7 +923,9 @@ function extractHistoricalTableData(table, historyArray, targetYear) {
   return {
      id: table.id,
      name: table.name,
+     api: String(table.api).trim(),
      raised: parseFloat(seasonData.raised) || 0,
+     target: 0,
      expenses: parseFloat(seasonData.expenses) || 0,
      netRaised: parseFloat(seasonData.netRaised) || 0,
      views: parseInt(seasonData.totalViews) || parseInt(seasonData.peakViewers) || 0, 
@@ -1011,11 +937,13 @@ function extractHistoricalTableData(table, historyArray, targetYear) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// LOAD ALL TABLE DATA
+// FETCH ALL (SILENT REFRESH SUPPORT)
 // ═══════════════════════════════════════════════════════════
-async function loadAll(fetchRegistry = true) {
-  document.getElementById('loadingState').style.display = 'block';
-  document.getElementById('mainContent').style.display = 'none';
+async function loadAll(fetchRegistry = true, isBackground = false) {
+  if (!isBackground) {
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'none';
+  }
 
   if (currentMode === "live") {
      document.getElementById('loadingText').innerText = "Fetching live data from all Round Tables…";
@@ -1044,19 +972,15 @@ async function loadAll(fetchRegistry = true) {
 
   const promises = tables.map(async (table) => {
     try {
-      // Clean up the API URL to prevent formatting errors
       const cleanApi = String(table.api).trim();
+      const sep = cleanApi.includes('?') ? '&' : '?';
       
       if (currentMode === "live") {
-         // ⭐ CACHE BUSTER FOR LIVE (Forces fresh payload)
-         const sep = cleanApi.includes('?') ? '&' : '?';
          const liveUrl = cleanApi + sep + "cb=" + Date.now();
          const data = await fetchWithTimeout(liveUrl, FETCH_TIMEOUT_MS);
          if (data.error) throw new Error(data.message || data.error);
          return extractLiveTableData(table, data);
       } else {
-         // ⭐ CACHE BUSTER FOR HISTORY (Fixes the toggle being stuck)
-         const sep = cleanApi.includes('?') ? '&' : '?';
          const histUrl = cleanApi + sep + "function=getSeasonHistory&cb=" + Date.now();
          const data = await fetchWithTimeout(histUrl, FETCH_TIMEOUT_MS);
          if (data.error) throw new Error(data.message || data.error);
@@ -1065,45 +989,41 @@ async function loadAll(fetchRegistry = true) {
     } catch (err) {
       errors.push({ name: table.name, error: err.message || 'Timeout' });
       return {
-        id: table.id, name: table.name,
-        raised: 0, views: 0, routes: 0, streets: 0, messages: 0,
+        id: table.id, name: table.name, api: String(table.api).trim(),
+        raised: 0, target: 0, giftAid: 0, expenses: 0, netRaised: 0, views: 0, routes: 0, streets: 0, messages: 0,
         ok: false
       };
     }
   });
 
   results = await Promise.all(promises);
-
-  // Sort by NET raised descending
   results.sort((a, b) => b.netRaised - a.netRaised);
 
-  render(results, errors);
+  render(results, errors, isBackground);
 
-  document.getElementById('loadingState').style.display = 'none';
-  document.getElementById('mainContent').style.display = 'block';
+  if (!isBackground) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+  }
   
-  if(currentMode === "live") {
+  if (currentMode === "live") {
      document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('en-GB');
   }
 }
   
-// ═══════════════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════════════
-function render(data, errors) {
+function render(data, errors, isBackground) {
   renderHeroStats(data);
+  renderTicker(data);
   renderLeaderboard(data);
   renderCharts(data);
   renderErrors(errors);
 
-  // 5. UPDATE MAP HOOK INJECTED HERE
-  if (natMap) {
+  if (natMap && currentMode === "live") {
     renderMap(data);
   }
 }
 
 function renderHeroStats(data) {
-  // If historical, any table that had data > 0 counts as "Live/Active" for that year
   const liveTables = currentMode === "live" 
       ? data.filter(d => d.ok).length 
       : data.filter(d => d.raised > 0 || d.routes > 0).length;
@@ -1116,40 +1036,26 @@ function renderHeroStats(data) {
   const totalStreets = data.reduce((s, d) => s + d.streets, 0);
   const totalMessages = data.reduce((s, d) => s + d.messages, 0);
 
-  animateCounter('totalTables', liveTables, false);
-  animateCounter('totalRaised', totalRaised, true);
-  animateCounter('totalExpenses', totalExpenses, true);
-  animateCounter('totalNet', totalNet, true);
-  animateCounter('totalViews', totalViews, false);
-  animateCounter('totalRoutes', totalRoutes, false);
-  animateCounter('totalStreets', totalStreets, false);
-  animateCounter('totalMessages', totalMessages, false);
+  document.getElementById('totalTables').textContent = liveTables.toLocaleString('en-GB');
+  document.getElementById('totalRaised').textContent = '£' + Math.round(totalRaised).toLocaleString('en-GB');
+  document.getElementById('totalExpenses').textContent = '£' + Math.round(totalExpenses).toLocaleString('en-GB');
+  document.getElementById('totalNet').textContent = '£' + Math.round(totalNet).toLocaleString('en-GB');
+  document.getElementById('totalViews').textContent = totalViews.toLocaleString('en-GB');
+  document.getElementById('totalRoutes').textContent = totalRoutes.toLocaleString('en-GB');
+  document.getElementById('totalStreets').textContent = totalStreets.toLocaleString('en-GB');
+  document.getElementById('totalMessages').textContent = totalMessages.toLocaleString('en-GB');
 }
 
-function animateCounter(elId, target, isCurrency) {
-  const el = document.getElementById(elId);
-  if (!el) return;
-
-  const duration = 1200;
-  const start = performance.now();
-  const startVal = 0;
-
-  function update(now) {
-    const elapsed = now - start;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-    const current = Math.round(startVal + (target - startVal) * eased);
-
-    if (isCurrency) {
-      el.textContent = '£' + current.toLocaleString('en-GB');
-    } else {
-      el.textContent = current.toLocaleString('en-GB');
-    }
-
-    if (progress < 1) requestAnimationFrame(update);
+function renderTicker(data) {
+  const announcements = data.filter(d => d.announcement).map(d => `<b>${escHtml(d.name)}:</b> ${escHtml(d.announcement)}`);
+  const wrap = document.getElementById('tickerWrap');
+  const txt = document.getElementById('tickerText');
+  if (announcements.length > 0 && currentMode === "live") {
+    txt.innerHTML = announcements.join(' &nbsp;•&nbsp; ');
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
   }
-
-  requestAnimationFrame(update);
 }
 
 function renderLeaderboard(data) {
@@ -1161,19 +1067,22 @@ function renderLeaderboard(data) {
     if (currentMode === "live") {
        statusHtml = d.ok ? '<span class="table-status status-live">● Connected</span>' : '<span class="table-status status-off">● Offline</span>';
     } else {
-       if (d.raised > 0 || d.routes > 0) {
-          statusHtml = '<span class="table-status status-hist">✔ Archived</span>';
-       } else {
-          statusHtml = '<span class="table-status status-off">No Data</span>';
-       }
+       statusHtml = (d.raised > 0 || d.routes > 0) ? '<span class="table-status status-hist">✔ Archived</span>' : '<span class="table-status status-off">No Data</span>';
+    }
+
+    let progressHtml = '';
+    if (d.target > 0) {
+      const pct = Math.min(Math.round((d.raised / d.target) * 100), 100);
+      progressHtml = `<div class="progress-bar-bg" title="Goal: £${d.target.toLocaleString()} (${pct}%)"><div class="progress-bar-fill" style="width: ${pct}%;"></div></div>`;
     }
 
     body.innerHTML += `
       <div class="lb-row">
         <div class="lb-rank">${i + 1}</div>
-        <div class="lb-name">${escHtml(d.name)} ${statusHtml}</div>
+        <div class="lb-name">${escHtml(d.name)} ${statusHtml} ${progressHtml}</div>
         <div class="lb-val" style="color: #aaa;">£${Math.round(d.raised).toLocaleString('en-GB')}</div>
-        <div class="lb-val" style="color: var(--green);">+£${Math.round(d.giftAid || 0).toLocaleString('en-GB')}</div> <div class="lb-val" style="color: var(--red);">£${Math.round(d.expenses).toLocaleString('en-GB')}</div>
+        <div class="lb-val" style="color: var(--green);">+£${Math.round(d.giftAid || 0).toLocaleString('en-GB')}</div>
+        <div class="lb-val" style="color: var(--red);">£${Math.round(d.expenses).toLocaleString('en-GB')}</div>
         <div class="lb-val gold" style="font-size: 15px;">£${Math.round(d.netRaised).toLocaleString('en-GB')}</div>
         <div class="lb-val">${d.views.toLocaleString()}</div>
         <div class="lb-val">${d.routes.toLocaleString()}</div>
@@ -1214,51 +1123,36 @@ function renderCharts(data) {
     }
   };
 
-  Object.values(charts).forEach(c => c.destroy());
+  Object.values(charts).forEach(c => { if (c && typeof c.destroy === 'function') c.destroy(); });
   charts = {};
 
   charts.donations = new Chart(document.getElementById('donationsChart'), {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{ data: data.map(d => d.raised), backgroundColor: getColors('251, 175, 51', data), borderRadius: 6, barThickness: 24 }]
-    },
+    data: { labels, datasets: [{ data: data.map(d => d.raised), backgroundColor: getColors('251, 175, 51', data), borderRadius: 6, barThickness: 24 }] },
     options: { ...chartDefaults, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 }, callback: v => '£' + v.toLocaleString() } }, y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } } } }
   });
 
   charts.views = new Chart(document.getElementById('viewsChart'), {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{ data: data.map(d => d.views), backgroundColor: getColors('156, 39, 176', data), borderRadius: 6, barThickness: 24 }]
-    },
+    data: { labels, datasets: [{ data: data.map(d => d.views), backgroundColor: getColors('156, 39, 176', data), borderRadius: 6, barThickness: 24 }] },
     options: { ...chartDefaults, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } }, y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } } } }
   });
 
   charts.streets = new Chart(document.getElementById('streetsChart'), {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{ data: data.map(d => d.streets), backgroundColor: getColors('46, 204, 113', data), borderRadius: 6, barThickness: 24 }]
-    },
+    data: { labels, datasets: [{ data: data.map(d => d.streets), backgroundColor: getColors('46, 204, 113', data), borderRadius: 6, barThickness: 24 }] },
     options: { ...chartDefaults, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } }, y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } } } }
   });
 
   charts.routes = new Chart(document.getElementById('routesChart'), {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{ data: data.map(d => d.routes), backgroundColor: getColors('74, 158, 255', data), borderRadius: 6, barThickness: 24 }]
-    },
+    data: { labels, datasets: [{ data: data.map(d => d.routes), backgroundColor: getColors('74, 158, 255', data), borderRadius: 6, barThickness: 24 }] },
     options: { ...chartDefaults, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } }, y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } } } }
   });
 
   charts.messages = new Chart(document.getElementById('messagesChart'), {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{ data: data.map(d => d.messages), backgroundColor: getColors('211, 28, 28', data), borderRadius: 6, barThickness: 24 }]
-    },
+    data: { labels, datasets: [{ data: data.map(d => d.messages), backgroundColor: getColors('211, 28, 28', data), borderRadius: 6, barThickness: 24 }] },
     options: { ...chartDefaults, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { family: 'DM Mono', size: 11 } } }, y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Sans', size: 12, weight: '600' } } } } }
   });
 }
@@ -1266,7 +1160,6 @@ function renderCharts(data) {
 function renderErrors(errors) {
   const el = document.getElementById('errorList');
   if (errors.length === 0 || currentMode !== "live") { 
-      // Don't show "Connection Issues" on Historical view, just silently skip them
       el.innerHTML = ''; 
       return; 
   }
@@ -1276,29 +1169,21 @@ function renderErrors(errors) {
       <span class="section-icon">⚠️</span>
       <h2>Connection Issues</h2>
     </div>
-    ${errors.map(e => `<div class="error-card"><strong>${escHtml(e.name)}</strong> — ${escHtml(e.error)}</div>`).join('')}
+    ${errors.map(e => `<div class="error-card"><strong>${escHtml(e.name)}</strong> —${escHtml(e.error)}</div>`).join('')}
   `;
 }
 
-// ═══════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════
 function escHtml(str) {
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function shortenName(name) {
   return name.replace(/\s*Round\s*Table\s*/i, '').replace(/\s*Santa\s*Sleigh\s*/i, '').trim() || name;
 }
 
-// 6. MAP LOGIC ENGINE INJECTED HERE
 // ═══════════════════════════════════════════════════════════
-// NATIONAL MAP LOGIC
+// MAP ENGINE (USING PROXY FIREBASE)
 // ═══════════════════════════════════════════════════════════
-let natMap = null;
-let sleighMarkers = {};
-let gpxLayers = {};
-
 function switchView(view) {
   const listBtn = document.getElementById('btnListView');
   const mapBtn = document.getElementById('btnMapView');
@@ -1311,17 +1196,15 @@ function switchView(view) {
     listContainer.style.display = 'none';
     mapContainer.style.display = 'block';
     
-    // ⭐ Initialize map with Dark Mode Tiles (CartoDB Dark Matter)
     if (!natMap) {
-      natMap = L.map('nationalMap').setView([54.0, -2.5], 6); // Centered on UK
+      natMap = L.map('nationalMap').setView([54.0, -2.5], 6);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
       }).addTo(natMap);
     }
-    natMap.invalidateSize(); // Fixes grey tiles on unhide
+    natMap.invalidateSize();
     
-    // Only fetch/render map data if we are in live mode
     if (currentMode === "live") {
       renderMap(results);
     }
@@ -1336,10 +1219,9 @@ function switchView(view) {
 async function renderMap(data) {
   if (!natMap || currentMode !== "live") return;
 
-  const activeTables = data.filter(d => d.ok && d.firebaseUrl);
+  const activeTables = data.filter(d => d.ok && d.api);
 
   for (const table of activeTables) {
-    // 1. Draw GPX Route using Tracker Styling (Gold Glow + Red Core)
     if (table.todayGpx && !gpxLayers[table.id]) {
       try {
         const res = await fetch(table.todayGpx, { cache: "no-store" });
@@ -1352,57 +1234,58 @@ async function renderMap(data) {
           ]);
           
           if (pts.length > 0) {
-            // Upcoming Gold glow (bottom layer)
             L.polyline(pts, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(natMap);
-            // Upcoming Red route (top layer)
             L.polyline(pts, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(natMap);
-            
-            gpxLayers[table.id] = true; // Mark as drawn so it doesn't duplicate on refresh
+            gpxLayers[table.id] = true;
           }
         }
       } catch (e) { console.warn("Could not load GPX for " + table.name); }
     }
 
-    // 2. Fetch Live Coordinates from Firebase
+    // ⭐ FIX: Query via proxyFirebase endpoint instead of hardcoded raw Firebase path
     try {
-      const fbRes = await fetch(`${table.firebaseUrl}/location/current.json`);
+      const sep = table.api.includes('?') ? '&' : '?';
+      const fbRes = await fetch(`${table.api}${sep}function=proxyFirebase&cb=${Date.now()}`);
+      if (!fbRes.ok) continue;
+      
       let coords = await fbRes.json();
       
-      // Handle Firebase object wrapping if necessary
       if (coords && typeof coords === "object" && !coords.lat) {
         const firstKey = Object.keys(coords)[0];
         coords = coords[firstKey];
       }
 
       if (coords && coords.lat && coords.lng) {
-        // ⭐ CHANGED: 5 Minute cutoff (5 * 60 * 1000) exactly matching the local tracker
-        const isFresh = (Date.now() - new Date(coords.ts).getTime()) < (5 * 60 * 1000); 
+        const isFresh = coords.ts ? (Date.now() - new Date(coords.ts).getTime()) < (5 * 60 * 1000) : false;
         
         if (isFresh) {
+          const locationText = coords.roadName ? `<div style="font-size:12px; color:#2ecc71; margin-top:4px;">📍 Currently on: <b>${escHtml(coords.roadName)}</b></div>` : '';
+          const routeInfo = table.todayRouteName ? `<div style="font-size:12px; color:#bbb; margin-top:2px;">Tonight: <b>${escHtml(table.todayRouteName)}</b></div>` : '';
+          const donateBtn = table.donateUrl ? `<a href="${escHtml(table.donateUrl)}" target="_blank" style="display:inline-block; margin-top:8px; padding:4px 10px; background:#FBAF33; color:#000; text-decoration:none; font-weight:bold; font-size:11px; border-radius:4px;">🎁 Donate to this Sleigh</a>` : '';
+
+          const popupContent = `
+            <div class="map-popup-title">${escHtml(table.name)}</div>
+            ${routeInfo}
+            ${locationText}
+            <div style="font-family: 'DM Mono', monospace; font-size: 12px; margin-top:4px;">Raised: <b>£${Math.round(table.raised).toLocaleString('en-GB')}</b></div>
+            ${donateBtn}
+          `;
+
           if (!sleighMarkers[table.id]) {
-            // Match the tracker's icon sizing exactly
             const icon = L.icon({ 
               iconUrl: table.iconUrl || "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png", 
               iconSize: [64, 64], 
               iconAnchor: [32, 60],
-              popupAnchor: [0, -50] // Push popup above the large icon
+              popupAnchor: [0, -50]
             });
             
             sleighMarkers[table.id] = L.marker([coords.lat, coords.lng], { icon }).addTo(natMap);
-            
-            sleighMarkers[table.id].bindPopup(`
-              <div class="map-popup-title">${escHtml(table.name)}</div>
-              <div style="font-family: 'DM Mono', monospace; font-size: 13px;">Raised: <b>£${table.raised.toLocaleString('en-GB')}</b></div>
-            `);
+            sleighMarkers[table.id].bindPopup(popupContent);
           } else {
             sleighMarkers[table.id].setLatLng([coords.lat, coords.lng]);
-            sleighMarkers[table.id].setPopupContent(`
-              <div class="map-popup-title">${escHtml(table.name)}</div>
-              <div style="font-family: 'DM Mono', monospace; font-size: 13px;">Raised: <b>£${table.raised.toLocaleString('en-GB')}</b></div>
-            `);
+            sleighMarkers[table.id].setPopupContent(popupContent);
           }
         } else {
-          // ⭐ NEW: If the data is stale, dynamically remove the marker from the map
           if (sleighMarkers[table.id]) {
             natMap.removeLayer(sleighMarkers[table.id]);
             delete sleighMarkers[table.id];
@@ -1410,7 +1293,7 @@ async function renderMap(data) {
         }
       }
     } catch (e) {
-      // Silently fail for individual tables to avoid stopping the loop
+      // Silently fail for individual table map errors
     }
   }
 }
