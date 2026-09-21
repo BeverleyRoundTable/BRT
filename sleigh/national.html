@@ -1067,14 +1067,14 @@ function renderLeaderboard(data) {
       <div class="lb-row">
         <div class="lb-rank">${i + 1}</div>
         <div class="lb-name">${escHtml(d.name)} ${statusHtml} ${progressHtml}</div>
-        <div class="lb-val" style="color: #aaa;">£${Math.round(d.raised).toLocaleString('en-GB')}</div>
+        <div class="lb-val" style="color: #aaa;">£${Math.round(d.raised || 0).toLocaleString('en-GB')}</div>
         <div class="lb-val" style="color: var(--green);">+£${Math.round(d.giftAid || 0).toLocaleString('en-GB')}</div>
-        <div class="lb-val" style="color: var(--red);">£${Math.round(d.expenses).toLocaleString('en-GB')}</div>
-        <div class="lb-val gold" style="font-size: 15px;">£${Math.round(d.netRaised).toLocaleString('en-GB')}</div>
-        <div class="lb-val">${d.views.toLocaleString()}</div>
-        <div class="lb-val">${d.routes.toLocaleString()}</div>
-        <div class="lb-val">${d.streets.toLocaleString()}</div>
-        <div class="lb-val">${d.messages.toLocaleString()}</div>
+        <div class="lb-val" style="color: var(--red);">£${Math.round(d.expenses || 0).toLocaleString('en-GB')}</div>
+        <div class="lb-val gold" style="font-size: 15px;">£${Math.round(d.netRaised || 0).toLocaleString('en-GB')}</div>
+        <div class="lb-val">${(d.views || 0).toLocaleString()}</div>
+        <div class="lb-val">${(d.routes || 0).toLocaleString()}</div>
+        <div class="lb-val">${(d.streets || 0).toLocaleString()}</div>
+        <div class="lb-val">${(d.messages || 0).toLocaleString()}</div>
       </div>
     `;
   });
