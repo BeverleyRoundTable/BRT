@@ -721,7 +721,10 @@ async function checkPassword() {
   const input = document.getElementById('passInput').value.trim();
   if (!input) return;
 
-  const authUrl = `${REGISTRY_URL}?secret=${encodeURIComponent(input)}`;
+  // Wrap the auth request in your CORS proxy to bypass browser blocks
+  const targetScript = `${REGISTRY_URL}?secret=${encodeURIComponent(input)}`;
+  const authUrl = `https://santaproxy.beverley247.workers.dev/?ttl=0&target=${encodeURIComponent(targetScript)}`;
+  
   document.getElementById('passInput').disabled = true;
   document.getElementById('passError').style.display = 'none';
   
@@ -747,17 +750,6 @@ async function checkPassword() {
     document.getElementById('passInput').disabled = false;
   }
 }
-
-window.onload = async () => {
-  buildSeasonDropdown();
-  updateSeasonBadge("live"); 
-  
-  const savedPass = sessionStorage.getItem('national_auth');
-  if (savedPass) {
-    document.getElementById('passInput').value = savedPass;
-    await checkPassword();
-  }
-};
 
 function getActiveSeasonYear() {
   const now = new Date();
