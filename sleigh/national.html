@@ -721,31 +721,58 @@ async function checkPassword() {
   const input = document.getElementById('passInput').value.trim();
   if (!input) return;
 
-  // Wrap the auth request in your CORS proxy to bypass browser blocks
+  // 1. Route authentication through santaproxy to bypass CORS
   const targetScript = `${REGISTRY_URL}?secret=${encodeURIComponent(input)}`;
   const authUrl = `https://santaproxy.beverley247.workers.dev/?ttl=0&target=${encodeURIComponent(targetScript)}`;
-  
+
   document.getElementById('passInput').disabled = true;
   document.getElementById('passError').style.display = 'none';
   
   try {
     const res = await fetch(authUrl);
-    const data = await res.json();
+    const text = await res.text();
     
+    // 2. Safely parse JSON response
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (jsonErr) {
+      console.error("Auth endpoint did not return valid JSON. Response body:", text);
+      throw new Error("Server returned invalid response (not JSON)");
+    }
+    
+    // 3. Check for backend access denial
     if (data.error === "Access Denied") {
       document.getElementById('passError').textContent = "Incorrect password. Please try again.";
       document.getElementById('passError').style.display = 'block';
       document.getElementById('passInput').value = '';
       document.getElementById('passInput').disabled = false;
       document.getElementById('passInput').focus();
-    } else {
-      sessionStorage.setItem('national_auth', input);
-      document.getElementById('gatekeeper').style.display = 'none';
-      document.getElementById('appContainer').style.display = 'block';
-      startApp(data.tables || data);
+      return;
     }
+
+    if (data.error) {
+      document.getElementById('passError').textContent = `Error: ${data.error}`;
+      document.getElementById('passError').style.display = 'block';
+      document.getElementById('passInput').disabled = false;
+      return;
+    }
+
+    // 4. Auth success - store session and reveal dashboard
+    sessionStorage.setItem('national_auth', input);
+    document.getElementById('gatekeeper').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'block';
+    
+    // 5. Launch app independently so render errors don't trigger password error screen
+    startApp(data.tables || data).catch(appErr => {
+      console.error("Error rendering dashboard content:", appErr);
+    });
+
   } catch (err) {
-    document.getElementById('passError').textContent = "Network error. Check your connection.";
+    // Log the exact error to DevTools Console for debugging
+    console.error("checkPassword error:", err);
+    
+    document.getElementById('passError').textContent = err.message || "Network error. Check your connection.";
     document.getElementById('passError').style.display = 'block';
     document.getElementById('passInput').disabled = false;
   }
