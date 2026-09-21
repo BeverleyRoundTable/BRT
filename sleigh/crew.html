@@ -618,6 +618,9 @@ async function loadRouteData() {
   const contentDiv = document.getElementById('opsContent');
   const refreshBtn = document.getElementById('refreshBtn'); 
   
+  // Retrieve the stored God Mode password
+  const secret = sessionStorage.getItem('opsSecret') || '';
+  
   if (!routeName) {
     contentDiv.style.display = 'none';
     refreshBtn.style.display = 'none'; 
@@ -631,9 +634,9 @@ async function loadRouteData() {
   document.getElementById('crewContainer').innerHTML = '<div class="status"><div class="spinner"></div></div>';
 
   try {
+    // Append the secret to both admin endpoints
     const [checklistRes, volRes] = await Promise.all([
-      fetch(`${API}?function=getChecklist&route=${routeName}`),
-      fetch(`${API}?function=getVolunteers&route=${routeName}`)
+      fetch(`${API}?function=getChecklist&route=${routeName}&secret=${encodeURIComponent(secret)}`),       fetch(`${API}?function=getVolunteers&route=${routeName}&secret=${encodeURIComponent(secret)}`)
     ]);
 
     const checklistPayload = await checklistRes.json();
