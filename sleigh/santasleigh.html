@@ -1270,11 +1270,10 @@
             const container = $('routes-container');
             container.replaceChildren();
 
-            // Compare on midnight so same-day routes aren't hidden
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            const upcoming = routes
+            const allRoutes = routes
                 .filter(r => r && r.routeName)
                 .map(route => {
                     const d = parseRouteDate(route.date);
@@ -1283,24 +1282,40 @@
                     day.setHours(0, 0, 0, 0);
                     return { route, d, day };
                 })
-                .filter(x => x && x.day >= today)
-                .sort((a, b) => a.day - b.day);   // stable: same-day routes keep sheet order
+                .filter(Boolean) // We no longer filter out past days
+                .sort((a, b) => a.day - b.day);
 
-            if (!upcoming.length) {
+            if (!allRoutes.length) {
                 const p = el('p', '', 'No routes scheduled yet. Check back soon!');
                 p.style.color = 'var(--text-muted)';
                 container.appendChild(p);
                 return;
             }
 
-            upcoming.forEach(({ route, d }) => {
+            allRoutes.forEach(({ route, d, day }) => {
+                const isPast = day < today;
                 const card = el('div', 'route-card');
+                
+                // Fade out completed routes visually
+                if (isPast) {
+                    card.style.opacity = '0.5';
+                    card.style.border = '1px solid var(--bg-dark)';
+                }
 
                 const start = route['Start Time'] || '';
                 const end = route['End Time'] || '';
                 const time = (start && end) ? start + ' - ' + end : '';
                 const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-                card.appendChild(el('div', 'route-date', time ? dateText + ' | ' + time : dateText));
+                
+                const dateWrapper = el('div', 'route-date');
+                if (isPast) {
+                    const badge = el('span', '', '✓ COMPLETED | ');
+                    badge.style.color = 'var(--text-main)';
+                    dateWrapper.appendChild(badge);
+                }
+                
+                dateWrapper.appendChild(document.createTextNode(time ? dateText + ' | ' + time : dateText));
+                card.appendChild(dateWrapper);
                 card.appendChild(el('h3', 'brand-font', String(route.routeName)));
 
                 if (route.streets) {
@@ -1453,7 +1468,11 @@
                     applySettings(checkPayload(data), apiUrl);
                     removeLoader();
                 })
-                .catch(err => showError(SETUP_ERROR_HTML + '<br><br>', err && err.message));
+                .catch(err => {
+                    showError(SETUP_ERROR_HTML + '<br><br>', err && err.message);
+                    // Fire-and-forget telemetry ping to the proxy
+                    fetch(CFG.proxyBase + '/log?error=' + encodeURIComponent(err && err.message) + '&api=' + encodeURIComponent(apiUrl)).catch(()=>{});
+                });
         }
 
         // Re-fetch after a reconnect. Quiet on failure: the page is already showing data.
