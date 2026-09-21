@@ -759,7 +759,7 @@ async function checkPassword() {
     }
 
     // 4. Auth success - store session and reveal dashboard
-    sessionStorage.setItem('national_auth', input);
+    localStorage.setItem('national_auth', input);
     document.getElementById('gatekeeper').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
     
@@ -966,7 +966,14 @@ async function loadAll(fetchRegistry = true, isBackground = false) {
     document.getElementById('mainContent').style.display = 'none';
   }
 
-  const savedPass = sessionStorage.getItem('national_auth');
+  const savedPass = localStorage.getItem('national_auth');
+  
+  if (!savedPass) {
+    // If password is lost, force back to login gatekeeper
+    document.getElementById('gatekeeper').style.display = 'flex';
+    document.getElementById('appContainer').style.display = 'none';
+    return;
+  }
   
   try {
     // 1. Single fetch to Cloudflare Worker, passing the master password and season mode
@@ -976,7 +983,15 @@ async function loadAll(fetchRegistry = true, isBackground = false) {
     // 2. The payload arrives fully aggregated
     const payload = await fetchWithTimeout(fastTrackUrl, 12000);
     
-    if (payload.error) throw new Error(payload.error);
+    if (payload.error) {
+      if (payload.error === "Access Denied" || payload.error.includes("Secret")) {
+        localStorage.removeItem('national_auth');
+        document.getElementById('gatekeeper').style.display = 'flex';
+        document.getElementById('appContainer').style.display = 'none';
+        return;
+      }
+      throw new Error(payload.error);
+    }
 
     // 3. Apply the results directly
     results = payload.tables || [];
