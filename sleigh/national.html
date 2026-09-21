@@ -705,7 +705,7 @@
 <script>
 const REGISTRY_URL = "https://script.google.com/macros/s/AKfycbydqxlwWkD7Kh7IJisZSiweBBbsXDy7smUxpOvT5eLVQxsDO2PqwrJyQI_3y4kwnJB6/exec";
 const REFRESH_INTERVAL_MS = 60000;
-const FETCH_TIMEOUT_MS = 12000;
+const FETCH_TIMEOUT_MS = 35000;
 const SYSTEM_START_YEAR = 2024;
 
 let tables = [];
@@ -983,7 +983,7 @@ async function loadAll(fetchRegistry = true, isBackground = false) {
     const fastTrackUrl = `https://santaproxy.beverley247.workers.dev/?ttl=60&target=${encodeURIComponent(targetScript)}`;
 
     // 2. The payload arrives fully aggregated
-    const payload = await fetchWithTimeout(fastTrackUrl, 12000);
+const payload = await fetchWithTimeout(fastTrackUrl, FETCH_TIMEOUT_MS);
     
     if (payload.error) {
       if (payload.error === "Access Denied" || payload.error.includes("Secret")) {
@@ -1004,7 +1004,11 @@ async function loadAll(fetchRegistry = true, isBackground = false) {
 
   } catch (err) {
     console.error("National fetch failed:", err);
-    // Optional: display a global error banner here
+    // Display error message in the UI so it doesn't fail silently
+    const errorEl = document.getElementById('errorList');
+    if (errorEl) {
+      errorEl.innerHTML = `<div class="error-card"><strong>Connection Error:</strong> ${escHtml(err.message || "Failed to load national data. Please try again.")}</div>`;
+    }
   }
 
   if (!isBackground) {
