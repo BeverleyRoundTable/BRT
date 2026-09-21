@@ -821,6 +821,8 @@ function changeSeason() {
 
 async function startApp(initialTables) {
   tables = initialTables;
+  buildSeasonDropdown();          
+  updateSeasonBadge(currentMode);
   await loadAll(false, false); 
   
   refreshTimer = setInterval(() => {
