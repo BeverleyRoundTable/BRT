@@ -14,15 +14,19 @@
   /* TURBOSANTA DESIGN SYSTEM */
   /* ═══════════════════════════════════════ */
   :root {
-    --gold: #FBAF33;
-    --gold-dim: rgba(251,175,51,0.12);
-    --gold-glow: rgba(251,175,51,0.25);
+    /* Brand colour. Default is Round Table gold; applyTheme() overrides these from the API
+       (settings.primary_color), exactly like the Santa sleigh page does. */
+    --primary: #FBAF33;
+    --primary-rgb: 251, 175, 51;   /* same colour as an r, g, b triplet for translucent shades */
+    --on-primary: #000000;         /* text on --primary, auto-picked for readability */
+    --primary-dim: rgba(var(--primary-rgb), 0.12);
+    --primary-glow: rgba(var(--primary-rgb), 0.25);
     --dark: #0d0d0b;
     --surface: #161614;
     --surface-2: #1e1e1b;
     --surface-3: #252522;
     --border: rgba(255,255,255,0.08);
-    --border-gold: rgba(251,175,51,0.2);
+    --border-primary: rgba(var(--primary-rgb), 0.2);
     --red: #D31C1C;
     --green: #2ecc71;
     --text: #eaeae5;
@@ -53,7 +57,7 @@
     margin-bottom: 8px;
   }
 
-  header h1 span { color: var(--gold); }
+  header h1 span { color: var(--primary); }
 
   header p { 
     color: var(--text-dim); 
@@ -76,7 +80,6 @@
     from { box-shadow: 0 0 8px rgba(211,28,28,0.1); } 
     to { box-shadow: 0 0 20px rgba(211,28,28,0.3); }
   }
-  .crew-alert-icon { font-size: 24px; flex-shrink: 0; line-height: 1; }
   .crew-alert-text { display: flex; flex-direction: column; gap: 4px; }
   .crew-alert-label {
     font-family: 'DM Mono', monospace;
@@ -100,8 +103,8 @@
     transition: all 0.2s; flex: 1; text-align: center; max-width: 200px;
   }
 
-  .format-btn:hover { border-color: var(--border-gold); color: #fff; background: var(--surface-3); }
-  .format-btn.active { border-color: var(--gold); background: var(--gold); color: #000; }
+  .format-btn:hover { border-color: var(--border-primary); color: #fff; background: var(--surface-3); }
+  .format-btn.active { border-color: var(--primary); background: var(--primary); color: var(--on-primary); }
 
   /* ── PANELS & FIELDS ── */
   .section { display: none; }
@@ -135,14 +138,14 @@
   }
 
   .field input:focus, .field select:focus { 
-    border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); 
+    border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); 
   }
   .field input::placeholder { color: var(--text-muted); font-family: 'DM Sans', sans-serif; }
   .field select option { background: var(--surface-2); color: var(--text); }
 
   /* ── AGREEMENTS ── */
   .agreement-item { display: flex; align-items: flex-start; margin-bottom: 12px; }
-  .agreement-item input { width: 18px; height: 18px; margin-right: 12px; margin-top: 2px; accent-color: var(--gold); cursor: pointer; }
+  .agreement-item input { width: 18px; height: 18px; margin-right: 12px; margin-top: 2px; accent-color: var(--primary); cursor: pointer; }
   .agreement-item label { font-family: 'DM Sans', sans-serif; text-transform: none; letter-spacing: normal; font-size: 14px; color: var(--text-dim); font-weight: 400; cursor: pointer; margin-bottom: 0; line-height: 1.5; }
   
   /* ── BUTTONS ── */
@@ -150,12 +153,12 @@
   .btn {
     width: 100%; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 15px;
     border: none; border-radius: 8px; padding: 16px 24px; cursor: pointer;
-    transition: transform 0.1s, background 0.2s; text-align: center;
+    transition: transform 0.1s, background 0.2s, filter 0.2s; text-align: center;
   }
   .btn:active { transform: scale(0.97); }
-  .btn-gold { background: var(--gold); color: #000; }
-  .btn-gold:hover:not(:disabled) { background: #e59d28; }
-  .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: var(--on-primary); }
+  .btn-primary:hover:not(:disabled) { filter: brightness(0.92); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* ── CHECKLIST & ROSTER ── */
   .check-item {
@@ -165,7 +168,7 @@
   .check-item:last-child { border-bottom: none; padding-bottom: 0; }
   .check-item input[type="checkbox"] {
     width: 22px; height: 22px; margin-right: 16px; cursor: pointer;
-    accent-color: var(--gold);
+    accent-color: var(--primary);
   }
   .check-item label {
     font-size: 15px; color: #fff; font-weight: 600;
@@ -174,7 +177,7 @@
 
   .vol-card {
     background: var(--surface-2); border: 1px solid var(--border);
-    border-left: 4px solid var(--gold); border-radius: 10px; 
+    border-left: 4px solid var(--primary); border-radius: 10px; 
     padding: 16px; margin-bottom: 12px;
   }
   .vol-card strong { display: block; font-size: 16px; color: #fff; margin-bottom: 4px;}
@@ -184,7 +187,7 @@
   .status { text-align: center; padding: 48px 20px; color: var(--text-dim); font-size: 14px; font-weight: 500; }
   .spinner {
     width: 36px; height: 36px; border: 3px solid var(--border);
-    border-top-color: var(--gold); border-radius: 50%;
+    border-top-color: var(--primary); border-radius: 50%;
     animation: spin 0.7s linear infinite; margin: 0 auto 16px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -198,7 +201,7 @@
     font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
   }
-  #refreshBtn:hover { border-color: var(--gold); color: var(--gold); background: var(--surface-3); }
+  #refreshBtn:hover { border-color: var(--primary); color: var(--primary); background: var(--surface-3); }
 
 </style>
 </head>
@@ -206,7 +209,7 @@
 
 <div class="app">
   <header>
-    <h1>🎅 CREW <span>HUB</span></h1>
+    <h1>CREW <span>HUB</span></h1>
     <p>Volunteer tools & live operations</p>
   </header>
 
@@ -217,7 +220,6 @@
   <div id="mainApp" style="display: none;">
 
     <div id="crewAlertBanner" class="crew-alert">
-      <div class="crew-alert-icon">🔔</div>
       <div class="crew-alert-text">
         <span class="crew-alert-label">Message from Lead Elf</span>
         <span id="crewAlertText"></span>
@@ -225,9 +227,9 @@
     </div>
     
     <div class="format-row">
-      <button class="format-btn active" data-target="signup" onclick="switchTab(this)">📝 Sign Up</button>
-      <button class="format-btn" data-target="qr" onclick="switchTab(this)">📱 QR Code</button>
-      <button class="format-btn" data-target="ops" onclick="switchTab(this)">🛠️ Ops</button>
+      <button class="format-btn active" data-target="signup" onclick="switchTab(this)">Sign Up</button>
+      <button class="format-btn" data-target="qr" onclick="switchTab(this)">QR Code</button>
+      <button class="format-btn" data-target="ops" onclick="switchTab(this)">Ops</button>
     </div>
 
     <div id="signup" class="section active">
@@ -267,7 +269,7 @@
           </div>
 
           <div class="field" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);">
-            <label style="color: var(--gold);">Volunteer Agreement</label>
+            <label style="color: var(--primary);">Volunteer Agreement</label>
             
             <div class="agreement-item">
               <input type="checkbox" id="agree1" required>
@@ -276,7 +278,7 @@
           </div>
           
           <div class="btn-row">
-            <button type="submit" id="submitBtn" class="btn btn-gold">Sign Up Now</button>
+            <button type="submit" id="submitBtn" class="btn btn-primary">Sign Up Now</button>
           </div>
         </form>
       </div>
@@ -289,12 +291,12 @@
           Show these QR codes for the public to scan with their phone camera.
         </p>
         
-        <button onclick="openQR('donate')" class="btn btn-gold" style="margin-bottom: 12px;">
-          💳 Donation QR Code
+        <button onclick="openQR('donate')" class="btn btn-primary" style="margin-bottom: 12px;">
+          Donation QR Code
         </button>
 
         <button onclick="openQR('giftaid')" class="btn" style="background: var(--green); color: #000; font-weight: 700;">
-          🎁 Gift Aid Declaration QR
+          Gift Aid Declaration QR
         </button>
       </div>
     </div>
@@ -304,7 +306,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <h3 style="margin-bottom: 0;">Tonight's Setup</h3>
           <button id="refreshBtn" onclick="loadRouteData()" style="display: none;">
-            🔄 Refresh
+            Refresh
           </button>
         </div>
         <div class="field" style="margin-bottom: 0;">
@@ -326,12 +328,12 @@
           <div id="crewContainer"></div>
         </div>
 
-        <div class="panel" style="border-color: var(--border-gold); background: rgba(251,175,51,0.03);">
-          <h3 style="color: var(--gold);">End of Route</h3>
+        <div class="panel" style="border-color: var(--border-primary); background: rgba(var(--primary-rgb), 0.03);">
+          <h3 style="color: var(--primary);">End of Route</h3>
           <p style="font-size: 14px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.6;">
             <strong style="color: var(--red);">Wait until cash is counted!</strong> Once all cash and card donations are logged in the Donations sheet, click here to close the route and email the final totals to the crew.
           </p>
-          <button id="closeRouteBtn" class="btn btn-gold" onclick="closeRoute()">🏁 Close Route & Email Crew</button>
+          <button id="closeRouteBtn" class="btn btn-primary" onclick="closeRoute()">Close Route & Email Crew</button>
         </div>
 
       </div> </div> </div> </div>
@@ -339,7 +341,7 @@
 <div id="qrModal" style="display:none; position:fixed; inset:0; background:var(--dark); z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align: center;">
 
   <div id="qrCrewAlert" style="display:none; width:100%; max-width:420px; background:rgba(211,28,28,0.15); border:1px solid rgba(211,28,28,0.3); border-radius:12px; padding:16px 20px; margin-bottom:24px; text-align:left;">
-    <div style="font-family:'DM Mono', monospace; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--red); margin-bottom:4px;">🔔 Message from Lead Elf</div>
+    <div style="font-family:'DM Mono', monospace; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--red); margin-bottom:4px;">Message from Lead Elf</div>
     <div id="qrCrewAlertText"></div>
   </div>
 
@@ -357,6 +359,70 @@
 const API = new URLSearchParams(location.search).get('api') || '';
 let globalDonateUrl = "";
 
+// --- THEME FROM THE API ---
+// Same source and rules as the Santa sleigh page: settings.primary_color drives the brand colour,
+// and text on it flips black/white for readability. Missing or invalid -> Round Table gold.
+
+// Returns [r, g, b] for a valid CSS colour, otherwise null. (Copied from santasleigh.html)
+function parseColor(v) {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+    if (h.length !== 6 && h.length !== 8) return null;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  try {
+    if (/var\(|url\(|expression/i.test(s)) return null;
+    if (!(window.CSS && CSS.supports && CSS.supports('color', s))) return null;
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.fillStyle = '#000000';
+    ctx.fillStyle = s;
+    const out = ctx.fillStyle;
+    if (out.charAt(0) === '#') return parseColor(out);
+    const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(out);
+    return rgb ? [+rgb[1], +rgb[2], +rgb[3]] : null;
+  } catch (e) { return null; }
+}
+
+// Black or white, whichever reads better on the given colour (WCAG contrast ratio). (Copied from santasleigh.html)
+function readableTextOn(rgb) {
+  const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+  return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+}
+
+function applyTheme(settings) {
+  const root = document.documentElement;
+  const raw = settings && settings.primary_color;
+  const rgb = parseColor(raw);
+  if (rgb) {
+    root.style.setProperty('--primary', String(raw).trim());
+    root.style.setProperty('--primary-rgb', rgb.join(', '));
+    root.style.setProperty('--on-primary', readableTextOn(rgb));
+  } else {
+    ['--primary', '--primary-rgb', '--on-primary'].forEach(p => root.style.removeProperty(p));
+  }
+}
+
+// getRoutes is a direct Apps Script call (slow), so remember the colour per API and apply it
+// straight away next time instead of flashing gold first. Storage can be blocked, so swallow errors.
+function loadCachedTheme(api) {
+  try {
+    const c = localStorage.getItem('SANTA_THEME:' + api);
+    if (c) applyTheme({ primary_color: c });
+  } catch (e) {}
+}
+function saveTheme(api, color) {
+  try {
+    if (parseColor(color)) localStorage.setItem('SANTA_THEME:' + api, String(color).trim());
+    else localStorage.removeItem('SANTA_THEME:' + api);
+  } catch (e) {}
+}
+if (API) loadCachedTheme(API);
+
 document.addEventListener("DOMContentLoaded", () => {
   if (!API) {
     document.getElementById('initArea').innerHTML = 
@@ -370,6 +436,10 @@ async function init() {
   try {
     const res = await fetch(`${API}?function=getRoutes`);
     const data = await res.json();
+
+    if (data && data.settings) {
+      try { applyTheme(data.settings); saveTheme(API, data.settings.primary_color); } catch (e) { console.warn('Theme not applied:', e); }
+    }
     
     if(!data.routes) throw new Error("Invalid API response");
 
@@ -432,7 +502,7 @@ function openQR(type) {
   if (type === 'giftaid') {
     const base = location.origin + '/sleigh/gift_aid';
     url = base + '?api=' + encodeURIComponent(API);
-    heading = '🎁 GIFT <span>AID</span>';
+    heading = 'GIFT <span>AID</span>';
     subtitle = 'Boost your donation by 25% — scan to declare';
   } else {
     if (!globalDonateUrl) {
@@ -440,7 +510,7 @@ function openQR(type) {
       return;
     }
     url = globalDonateUrl;
-    heading = '💳 DONATE <span>HERE</span>';
+    heading = 'DONATE <span>HERE</span>';
     subtitle = 'Scan with your phone camera';
   }
 
@@ -458,7 +528,7 @@ async function switchTab(btn) {
     let secret = sessionStorage.getItem('opsSecret');
     
     if (!secret) {
-      secret = prompt("🎅 Operations Authorization Required\n\nEnter the Master Password:");
+      secret = prompt("Operations Authorization Required\n\nEnter the Master Password:");
       if (!secret) return; 
       
       const originalText = btn.innerText;
@@ -470,14 +540,14 @@ async function switchTab(btn) {
         const result = await check.json();
         
         if (!result.valid) {
-          alert("❌ Access Denied. Incorrect Password.");
+          alert("Access Denied. Incorrect Password.");
           btn.innerText = originalText;
           return;
         }
         
         sessionStorage.setItem('opsSecret', secret);
       } catch(e) {
-        alert("❌ Connection failed.");
+        alert("Connection failed.");
         btn.innerText = originalText;
         return;
       }
@@ -533,7 +603,7 @@ async function submitVolunteer(e) {
 
   try {
     await fetch(API, { method: "POST", body: JSON.stringify(payload) });
-    alert("🎉 Thanks for signing up! You've been added to the roster.");
+    alert("Thanks for signing up! You've been added to the roster.");
     document.getElementById('signupForm').reset();
   } catch (err) {
     alert("Something went wrong. Please check your connection and try again.");
@@ -646,9 +716,9 @@ function renderCrew(volunteers) {
     // Update inline styles to match the new dark theme
     const btnStyle = status === "Checked In" 
       ? "background: var(--green); color: #000; font-family: 'DM Sans', sans-serif; font-weight: 700; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: default;" 
-      : "background: var(--surface); color: var(--gold); font-family: 'DM Sans', sans-serif; font-weight: 700; border: 1px solid var(--border-gold); padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;";
+      : "background: var(--surface); color: var(--primary); font-family: 'DM Sans', sans-serif; font-weight: 700; border: 1px solid var(--border-primary); padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;";
     
-    const btnText = status === "Checked In" ? "✅ Here" : "Tap to Check-in";
+    const btnText = status === "Checked In" ? "Here" : "Tap to Check-in";
     const disabledAttr = status === "Checked In" ? "disabled" : "";
 
     const orgBadge = vol["Organisation"] ? `<span style="background: var(--surface-3); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 8px;">${vol["Organisation"]}</span>` : "";
@@ -657,7 +727,7 @@ function renderCrew(volunteers) {
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
           <strong>${name}${orgBadge}</strong>
-          <span>${role}  ·  📞 ${phone}</span>
+          <span>${role}  ·  ${phone}</span>
         </div>
         <button style="${btnStyle}" ${disabledAttr} onclick="checkInVolunteer(this, '${routeName}', '${name}', '${role}')">${btnText}</button>
       </div>
@@ -674,7 +744,7 @@ async function checkInVolunteer(btn, routeName, volName, role) {
     if (bucketNumber === null) return; 
   }
 
-  btn.innerText = "⏳...";
+  btn.innerText = "Checking in...";
   const secret = sessionStorage.getItem('opsSecret') || '';
   
   const payload = {
@@ -695,14 +765,14 @@ async function checkInVolunteer(btn, routeName, volName, role) {
         return;
     }
     
-    btn.innerText = "✅ Here" + (bucketNumber ? ` (#${bucketNumber})` : "");
+    btn.innerText = "Here" + (bucketNumber ? ` (#${bucketNumber})` : "");
     btn.style.background = "var(--green)";
     btn.style.color = "#000";
     btn.style.border = "none";
     btn.disabled = true;
     
     const infoSpan = btn.parentElement.querySelector('span');
-    if (bucketNumber) infoSpan.innerText += `  ·  🪣 Bucket: ${bucketNumber}`;
+    if (bucketNumber) infoSpan.innerText += `  ·  Bucket: ${bucketNumber}`;
 
   } catch (err) {
     alert("Failed to check in. Try again.");
@@ -719,7 +789,7 @@ async function checkInVolunteer(btn, routeName, volName, role) {
 
   const btn = document.getElementById('closeRouteBtn');
   const originalText = btn.innerText;
-  btn.innerText = "⏳ Processing & Sending Emails...";
+  btn.innerText = "Processing & Sending Emails...";
   btn.disabled = true;
 
   const secret = sessionStorage.getItem('opsSecret') || '';
@@ -735,13 +805,13 @@ async function checkInVolunteer(btn, routeName, volName, role) {
     const result = await response.json();
 
     if(!result.ok) {
-      alert("❌ Error: " + result.error);
+      alert("Error: " + result.error);
     } else {
-      alert(`✅ Route Closed Successfully!\n\nSent thank-you emails to ${result.emailsSent} volunteers.`);
+      alert(`Route Closed Successfully!\n\nSent thank-you emails to ${result.emailsSent} volunteers.`);
     }
   } catch (err) {
     console.error(err);
-    alert("❌ Failed to close route. Check your connection.");
+    alert("Failed to close route. Check your connection.");
   } finally {
     btn.innerText = originalText;
     btn.disabled = false;
