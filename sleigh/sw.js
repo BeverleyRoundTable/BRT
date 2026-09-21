@@ -1,8 +1,8 @@
 const CACHE_NAME = 'sleigh-shell-v3'; // Bumped to v3 to force clients to update
 const API_CACHE = 'sleigh-api-cache-v1';
 const STATIC_ASSETS = [
-    'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/site_background.png',
-    'https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/RTBI_Santa.png',
+    'https://brt-23f.pages.dev/icons/site_background.png',
+    'https://brt-23f.pages.dev/icons/RTBI_Santa.png',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
 
