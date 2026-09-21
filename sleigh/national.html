@@ -725,6 +725,11 @@ async function checkPassword() {
   const targetScript = `${REGISTRY_URL}?secret=${encodeURIComponent(input)}`;
   const authUrl = `https://santaproxy.beverley247.workers.dev/?ttl=0&target=${encodeURIComponent(targetScript)}`;
 
+  const btn = document.querySelector('.gate-box button');
+  const originalBtnText = btn.textContent;
+  
+  btn.disabled = true;
+  btn.textContent = "CONNECTING..."; // ⭐ Added visual feedback
   document.getElementById('passInput').disabled = true;
   document.getElementById('passError').style.display = 'none';
   
@@ -748,6 +753,8 @@ async function checkPassword() {
       document.getElementById('passInput').value = '';
       document.getElementById('passInput').disabled = false;
       document.getElementById('passInput').focus();
+      btn.disabled = false;
+      btn.textContent = originalBtnText; // ⭐ Reset button
       return;
     }
 
@@ -755,6 +762,8 @@ async function checkPassword() {
       document.getElementById('passError').textContent = `Error: ${data.error}`;
       document.getElementById('passError').style.display = 'block';
       document.getElementById('passInput').disabled = false;
+      btn.disabled = false;
+      btn.textContent = originalBtnText; // ⭐ Reset button
       return;
     }
 
@@ -775,6 +784,8 @@ async function checkPassword() {
     document.getElementById('passError').textContent = err.message || "Network error. Check your connection.";
     document.getElementById('passError').style.display = 'block';
     document.getElementById('passInput').disabled = false;
+    btn.disabled = false;
+    btn.textContent = originalBtnText; // ⭐ Reset button
   }
 }
 
