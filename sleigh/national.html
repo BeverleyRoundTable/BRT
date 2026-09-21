@@ -945,61 +945,29 @@ async function loadAll(fetchRegistry = true, isBackground = false) {
     document.getElementById('mainContent').style.display = 'none';
   }
 
-  if (currentMode === "live") {
-     document.getElementById('loadingText').innerText = "Fetching live data from all Round Tables…";
-  } else {
-     document.getElementById('loadingText').innerText = `Digging up historical archives for ${currentMode}…`;
+  const savedPass = sessionStorage.getItem('national_auth');
+  
+  try {
+    // 1. Single fetch to Cloudflare Worker, passing the master password and season mode
+    const targetScript = `${REGISTRY_URL}?function=getNationalSummary&secret=${encodeURIComponent(savedPass)}&mode=${currentMode}`;
+    const fastTrackUrl = `https://santaproxy.beverley247.workers.dev/?ttl=60&target=${encodeURIComponent(targetScript)}`;
+
+    // 2. The payload arrives fully aggregated
+    const payload = await fetchWithTimeout(fastTrackUrl, 12000);
+    
+    if (payload.error) throw new Error(payload.error);
+
+    // 3. Apply the results directly
+    results = payload.tables || [];
+    const errors = payload.errors || [];
+    
+    results.sort((a, b) => b.netRaised - a.netRaised);
+    render(results, errors, isBackground);
+
+  } catch (err) {
+    console.error("National fetch failed:", err);
+    // Optional: display a global error banner here
   }
-
-  if (fetchRegistry && currentMode === "live") {
-    const savedPass = sessionStorage.getItem('national_auth');
-    try {
-      const authUrl = `${REGISTRY_URL}?secret=${encodeURIComponent(savedPass)}`;
-      const regData = await fetchWithTimeout(authUrl, 8000);
-      if (regData.error) {
-        sessionStorage.removeItem('national_auth');
-        location.reload(); 
-        return;
-      }
-      tables = regData.tables || regData;
-    } catch (e) {
-      console.warn("Failed to update registry list, using cached list.", e);
-    }
-  }
-
-  results = [];
-  const errors = [];
-
-  const promises = tables.map(async (table) => {
-    try {
-      const cleanApi = String(table.api).trim();
-      const sep = cleanApi.includes('?') ? '&' : '?';
-      
-      if (currentMode === "live") {
-         const liveUrl = cleanApi + sep + "cb=" + Date.now();
-         const data = await fetchWithTimeout(liveUrl, FETCH_TIMEOUT_MS);
-         if (data.error) throw new Error(data.message || data.error);
-         return extractLiveTableData(table, data);
-      } else {
-         const histUrl = cleanApi + sep + "function=getSeasonHistory&cb=" + Date.now();
-         const data = await fetchWithTimeout(histUrl, FETCH_TIMEOUT_MS);
-         if (data.error) throw new Error(data.message || data.error);
-         return extractHistoricalTableData(table, data.history || [], currentMode);
-      }
-    } catch (err) {
-      errors.push({ name: table.name, error: err.message || 'Timeout' });
-      return {
-        id: table.id, name: table.name, api: String(table.api).trim(),
-        raised: 0, target: 0, giftAid: 0, expenses: 0, netRaised: 0, views: 0, routes: 0, streets: 0, messages: 0,
-        ok: false
-      };
-    }
-  });
-
-  results = await Promise.all(promises);
-  results.sort((a, b) => b.netRaised - a.netRaised);
-
-  render(results, errors, isBackground);
 
   if (!isBackground) {
     document.getElementById('loadingState').style.display = 'none';
@@ -1219,81 +1187,48 @@ function switchView(view) {
 async function renderMap(data) {
   if (!natMap || currentMode !== "live") return;
 
-  const activeTables = data.filter(d => d.ok && d.api);
+  const activeTables = data.filter(d => d.ok);
 
   for (const table of activeTables) {
-    if (table.todayGpx && !gpxLayers[table.id]) {
-      try {
-        const res = await fetch(table.todayGpx, { cache: "no-store" });
-        if (res.ok) {
-          const text = await res.text();
-          const xml = new DOMParser().parseFromString(text, "text/xml");
-          const pts = [...xml.getElementsByTagName("trkpt")].map(pt => [
-            parseFloat(pt.getAttribute("lat")),
-            parseFloat(pt.getAttribute("lon"))
-          ]);
+    // Note: If the backend includes the GPX points, we could still plot the route here.
+    // For now, we focus on placing the marker instantly without any fetch().
+
+    if (table.lat && table.lng) {
+      const isFresh = table.gps_ts ? (Date.now() - new Date(table.gps_ts).getTime()) < (5 * 60 * 1000) : false;
+      
+      if (isFresh) {
+        const locationText = table.roadName ? `<div style="font-size:12px; color:#2ecc71; margin-top:4px;">📍 Currently on: <b>${escHtml(table.roadName)}</b></div>` : '';
+        const routeInfo = table.todayRouteName ? `<div style="font-size:12px; color:#bbb; margin-top:2px;">Tonight: <b>${escHtml(table.todayRouteName)}</b></div>` : '';
+        const donateBtn = table.donateUrl ? `<a href="${escHtml(table.donateUrl)}" target="_blank" style="display:inline-block; margin-top:8px; padding:4px 10px; background:#FBAF33; color:#000; text-decoration:none; font-weight:bold; font-size:11px; border-radius:4px;">🎁 Donate to this Sleigh</a>` : '';
+
+        const popupContent = `
+          <div class="map-popup-title">${escHtml(table.name)}</div>
+          ${routeInfo}
+          ${locationText}
+          <div style="font-family: 'DM Mono', monospace; font-size: 12px; margin-top:4px;">Raised: <b>£${Math.round(table.raised).toLocaleString('en-GB')}</b></div>
+          ${donateBtn}
+        `;
+
+        if (!sleighMarkers[table.id]) {
+          const icon = L.icon({ 
+            iconUrl: table.iconUrl || "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png", 
+            iconSize: [64, 64], 
+            iconAnchor: [32, 60],
+            popupAnchor: [0, -50]
+          });
           
-          if (pts.length > 0) {
-            L.polyline(pts, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(natMap);
-            L.polyline(pts, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(natMap);
-            gpxLayers[table.id] = true;
-          }
-        }
-      } catch (e) { console.warn("Could not load GPX for " + table.name); }
-    }
-
-    // ⭐ FIX: Query via proxyFirebase endpoint instead of hardcoded raw Firebase path
-    try {
-      const sep = table.api.includes('?') ? '&' : '?';
-      const fbRes = await fetch(`${table.api}${sep}function=proxyFirebase&cb=${Date.now()}`);
-      if (!fbRes.ok) continue;
-      
-      let coords = await fbRes.json();
-      
-      if (coords && typeof coords === "object" && !coords.lat) {
-        const firstKey = Object.keys(coords)[0];
-        coords = coords[firstKey];
-      }
-
-      if (coords && coords.lat && coords.lng) {
-        const isFresh = coords.ts ? (Date.now() - new Date(coords.ts).getTime()) < (5 * 60 * 1000) : false;
-        
-        if (isFresh) {
-          const locationText = coords.roadName ? `<div style="font-size:12px; color:#2ecc71; margin-top:4px;">📍 Currently on: <b>${escHtml(coords.roadName)}</b></div>` : '';
-          const routeInfo = table.todayRouteName ? `<div style="font-size:12px; color:#bbb; margin-top:2px;">Tonight: <b>${escHtml(table.todayRouteName)}</b></div>` : '';
-          const donateBtn = table.donateUrl ? `<a href="${escHtml(table.donateUrl)}" target="_blank" style="display:inline-block; margin-top:8px; padding:4px 10px; background:#FBAF33; color:#000; text-decoration:none; font-weight:bold; font-size:11px; border-radius:4px;">🎁 Donate to this Sleigh</a>` : '';
-
-          const popupContent = `
-            <div class="map-popup-title">${escHtml(table.name)}</div>
-            ${routeInfo}
-            ${locationText}
-            <div style="font-family: 'DM Mono', monospace; font-size: 12px; margin-top:4px;">Raised: <b>£${Math.round(table.raised).toLocaleString('en-GB')}</b></div>
-            ${donateBtn}
-          `;
-
-          if (!sleighMarkers[table.id]) {
-            const icon = L.icon({ 
-              iconUrl: table.iconUrl || "https://i.ibb.co/Qj3vDbSR/Santa-Marker-11.png", 
-              iconSize: [64, 64], 
-              iconAnchor: [32, 60],
-              popupAnchor: [0, -50]
-            });
-            
-            sleighMarkers[table.id] = L.marker([coords.lat, coords.lng], { icon }).addTo(natMap);
-            sleighMarkers[table.id].bindPopup(popupContent);
-          } else {
-            sleighMarkers[table.id].setLatLng([coords.lat, coords.lng]);
-            sleighMarkers[table.id].setPopupContent(popupContent);
-          }
+          sleighMarkers[table.id] = L.marker([table.lat, table.lng], { icon }).addTo(natMap);
+          sleighMarkers[table.id].bindPopup(popupContent);
         } else {
-          if (sleighMarkers[table.id]) {
-            natMap.removeLayer(sleighMarkers[table.id]);
-            delete sleighMarkers[table.id];
-          }
+          sleighMarkers[table.id].setLatLng([table.lat, table.lng]);
+          sleighMarkers[table.id].setPopupContent(popupContent);
+        }
+      } else {
+        if (sleighMarkers[table.id]) {
+          natMap.removeLayer(sleighMarkers[table.id]);
+          delete sleighMarkers[table.id];
         }
       }
-    } catch (e) {
-      // Silently fail for individual table map errors
     }
   }
 }
