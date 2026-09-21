@@ -597,9 +597,9 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     #workshopOverlay {
   position: fixed; inset: 0; background: var(--dark);
   z-index: 8000; display: none; flex-direction: column;
-  /* align-items removed */
   padding: 40px 20px; overflow-y: auto; overflow-x: hidden; text-align: center;
-}
+  box-sizing: border-box;
+  }
     .ws-card {
   background: var(--surface); border: 1px solid var(--border-primary);
   padding: 40px; border-radius: 16px; max-width: 500px; width: 100%;
@@ -670,18 +670,21 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     .ws-schedule-item:first-child .ws-schedule-name { color: var(--primary); }
     .ws-schedule-item:first-child .ws-schedule-date { color: var(--primary); }
 
-    @media (max-height: 950px) {
-      .ws-card { padding: 20px 24px; }
-      .ws-title { font-size: 32px; margin-bottom: 4px; }
-      .ws-card > p { font-size: 12px; margin-bottom: 0; }
-      .ws-countdown { font-size: 22px; padding: 10px; margin: 14px 0; }
-      .ws-item { margin-bottom: 14px; }
-      .ws-item-label { font-size: 11px; }
-      .ws-bar-wrap { height: 10px; }
-      .ws-status-text { font-size: 11px; margin-top: 3px; }
-      .ws-schedule-item { padding: 5px 0; font-size: 12px; }
-      .ws-skip-btn { margin-top: 12px; }
-    }
+    @media (max-height: 650px) {
+  #workshopOverlay { padding: 15px 10px; }
+  .ws-card { padding: 15px 20px; }
+  .ws-title { font-size: 26px; margin-bottom: 4px; }
+  .ws-card > p { display: none; } /* Hide intro paragraph to save space */
+  .ws-countdown { font-size: 20px; padding: 8px; margin: 10px 0; }
+  .ws-schedule { margin-bottom: 12px; }
+  .ws-schedule-title { margin-bottom: 4px; padding-bottom: 4px; }
+  .ws-schedule-item { padding: 3px 0; font-size: 12px; }
+  .ws-item { margin-bottom: 12px; }
+  .ws-bar-wrap { height: 8px; margin-top: 4px; }
+  .ws-status-text { font-size: 10px; margin-top: 2px; }
+  .ws-donate { margin-top: 10px; padding: 10px 16px; }
+  .ws-skip-btn { margin-top: 10px; }
+}
     
   </style>
 </head>
