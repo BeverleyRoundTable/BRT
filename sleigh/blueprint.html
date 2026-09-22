@@ -13,7 +13,11 @@
   <style>
     /* --- BRAND VARIABLES --- */
     :root {
-      --primary: #FBAF33; /* Golden Yellow */
+      /* Fallback variables, updated dynamically by applyTheme() */
+      --primary: #FBAF33;
+      --primary-rgb: 251, 175, 51;
+      --on-primary: #000000;
+      
       --accent: #FFFFFF; /* White */
       --bg-dark: #1D1D1A; /* Table Grey */
       --bg-card: #000000; /* Black */
@@ -152,14 +156,12 @@
     
     <!-- The Visual Map -->
     <div class="sleigh-map">
-      <!-- Using the raw GitHub user content URL -->
       <img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/sleigh-wireframe.png" alt="Santa Sleigh Blueprint" class="base-image" id="sleigh-image">
       
       <!-- Hotspots mapped for 16:9 Landscape Layout -->
       <div class="hotspot" style="top: 60%; left: 70%;" data-id="power"></div>
       <div class="hotspot" style="top: 45%; left: 82%;" data-id="audio"></div>
       <div class="hotspot" style="top: 25%; left: 45%;" data-id="lighting"></div>
-      <!-- Chassis is default active on load -->
       <div class="hotspot active-dot" style="top: 75%; left: 50%;" data-id="chassis"></div>
     </div>
 
@@ -175,6 +177,70 @@
   </div>
 
   <script>
+    /* ---------- THEME & API SETUP ---------- */
+    const params = new URLSearchParams(location.search);
+    let API_URL = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
+
+    if (API_URL) {
+      localStorage.setItem("SANTA_API", API_URL); 
+      sessionStorage.setItem("SANTA_API", API_URL);
+      
+      const WORKER_URL = "https://santaproxy.beverley247.workers.dev/";
+      const DATA_URL = `${WORKER_URL}?ttl=30&target=${encodeURIComponent(API_URL)}`;
+      
+      fetch(DATA_URL)
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.settings) applyTheme(data.settings);
+        })
+        .catch(e => console.warn("Failed to load theme for blueprint", e));
+    }
+
+    function parseColor(v) {
+      if (typeof v !== 'string') return null;
+      const s = v.trim();
+      const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+      if (hex) {
+        let h = hex[1];
+        if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+        if (h.length !== 6 && h.length !== 8) return null;
+        return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+      }
+      try {
+        if (/var\(|url\(|expression/i.test(s)) return null;
+        if (!(window.CSS && CSS.supports && CSS.supports('color', s))) return null;
+        const ctx = document.createElement('canvas').getContext('2d');
+        ctx.fillStyle = '#000000';
+        ctx.fillStyle = s;
+        const out = ctx.fillStyle;
+        if (out.charAt(0) === '#') return parseColor(out);
+        const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(out);
+        return rgb ? [+rgb[1], +rgb[2], +rgb[3]] : null;
+      } catch (e) { return null; }
+    }
+
+    function readableTextOn(rgb) {
+      const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+      const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+      return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+    }
+
+    function applyTheme(settings) {
+      const root = document.documentElement;
+      const raw = settings && settings.primary_color;
+      const rgb = parseColor(raw);
+      
+      if (rgb) {
+        root.style.setProperty('--primary', String(raw).trim());
+        root.style.setProperty('--primary-rgb', rgb.join(', '));
+        root.style.setProperty('--on-primary', readableTextOn(rgb));
+      } else {
+        root.style.removeProperty('--primary');
+        root.style.removeProperty('--primary-rgb');
+        root.style.removeProperty('--on-primary');
+      }
+    }
+
     // =========================================================================
     // 1. YOUR WEB APP URL (Site Analytics / Hub for silent logging)
     // =========================================================================
@@ -254,24 +320,18 @@
     const urlParamsBlueprint = new URLSearchParams(window.location.search);
     
     if (urlParamsBlueprint.has('pinpoint')) {
-      // Add a visible banner so you know Dev Mode is active
       const devBanner = document.createElement('div');
       devBanner.innerHTML = "🛠️ PINPOINT MODE ACTIVE: Click anywhere on the sleigh to get coordinates.";
       devBanner.style.cssText = "background: #ff3333; color: white; text-align: center; padding: 10px; font-weight: bold; border-radius: 8px; margin-bottom: 15px;";
       document.querySelector('.blueprint-container').prepend(devBanner);
 
-      // Listen for clicks on the image
       document.getElementById('sleigh-image').addEventListener('click', function(e) {
         const rect = e.target.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
         
         const coordinateString = `style="top: ${y.toFixed(2)}%; left: ${x.toFixed(2)}%;"`;
-        
-        // Log to console just in case
         console.log(`Copy this into your HTML hotspot element:\n${coordinateString}`);
-        
-        // Pop up an easy-to-copy prompt box on the screen
         prompt("Copy your new coordinates:", coordinateString);
       });
     }
@@ -287,13 +347,13 @@
   // Send height when page loads
   window.addEventListener('load', sendHeight);
   
-  // Send height if window resizes (desktop to mobile transitions)
+  // Send height if window resizes
   window.addEventListener('resize', sendHeight);
   
-  // Send height when a hotspot is clicked (in case text changes panel size)
+  // Send height when a hotspot is clicked
   document.querySelectorAll('.hotspot').forEach(dot => {
     dot.addEventListener('click', () => {
-      setTimeout(sendHeight, 50); // slight delay to allow new text to render
+      setTimeout(sendHeight, 50);
     });
   });
 </script>
