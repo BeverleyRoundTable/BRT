@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TurboSanta — Santa’s Been Generato</title>
+<title>TurboSanta — Santa’s Been Generator</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,15 +18,20 @@
   }
 
   :root {
-    --gold: #FBAF33;
-    --gold-dim: rgba(251,175,51,0.12);
-    --gold-glow: rgba(251,175,51,0.25);
+    /* Fallback variables, updated dynamically by applyTheme() */
+    --primary: #FBAF33;
+    --primary-rgb: 251, 175, 51;
+    --on-primary: #000000;
+    
+    --primary-dim: rgba(var(--primary-rgb), 0.12);
+    --primary-glow: rgba(var(--primary-rgb), 0.25);
+    --border-primary: rgba(var(--primary-rgb), 0.3);
+    
     --dark: #0d0d0b;
     --surface: #161614;
     --surface-2: #1e1e1b;
     --surface-3: #252522;
     --border: rgba(255,255,255,0.08);
-    --border-gold: rgba(251,175,51,0.3);
     --text: #eaeae5;
     --text-dim: rgba(255,255,255,0.55);
     --text-muted: rgba(255,255,255,0.3);
@@ -63,7 +68,7 @@
   }
 
   .card h2 span {
-    color: var(--gold);
+    color: var(--primary);
   }
 
   .helper-text {
@@ -81,21 +86,21 @@
     padding: 16px 32px;
     border-radius: 12px;
     background: var(--surface-2);
-    border: 1px dashed var(--border-gold);
+    border: 1px dashed var(--border-primary);
     cursor: pointer;
     font-family: 'DM Mono', monospace;
     font-weight: 700;
     font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--gold);
+    color: var(--primary);
     transition: all 0.2s ease;
     width: 100%;
     max-width: 320px;
   }
 
   .upload-label:hover, .upload-label:focus-within {
-    background: var(--gold-dim);
+    background: var(--primary-dim);
     border-style: solid;
   }
 
@@ -116,7 +121,7 @@
     border-radius: 8px;
     padding: 16px 24px;
     cursor: pointer;
-    transition: transform 0.1s, background 0.2s;
+    transition: transform 0.1s, filter 0.2s, background 0.2s;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -131,8 +136,8 @@
     color: var(--text-muted);
   }
 
-  .btn-gold { background: var(--gold); color: #000; }
-  .btn-gold:hover:not(:disabled) { background: #e59d28; }
+  .btn-primary { background: var(--primary); color: var(--on-primary); }
+  .btn-primary:hover:not(:disabled) { filter: brightness(0.92); }
 
   .btn-ghost {
     background: var(--surface-2);
@@ -162,9 +167,9 @@
 
   /* ── ANIMATIONS ── */
   @keyframes santaGlow {
-    0%   { box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 rgba(251, 175, 51, 0); }
-    50%  { box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 30px var(--gold-glow); }
-    100% { box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 rgba(251, 175, 51, 0); }
+    0%   { box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 rgba(var(--primary-rgb), 0); }
+    50%  { box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 30px var(--primary-glow); }
+    100% { box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 rgba(var(--primary-rgb), 0); }
   }
 
   .card.success {
@@ -172,9 +177,9 @@
   }
 
   @keyframes buttonPulse {
-    0%   { transform: scale(1); box-shadow: 0 0 0 rgba(251, 175, 51, 0.0); }
-    50%  { transform: scale(1.04); box-shadow: 0 0 20px rgba(251, 175, 51, 0.4); }
-    100% { transform: scale(1); box-shadow: 0 0 0 rgba(251, 175, 51, 0.0); }
+    0%   { transform: scale(1); box-shadow: 0 0 0 rgba(var(--primary-rgb), 0.0); }
+    50%  { transform: scale(1.04); box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.4); }
+    100% { transform: scale(1); box-shadow: 0 0 0 rgba(var(--primary-rgb), 0.0); }
   }
 
   button.success {
@@ -182,12 +187,12 @@
   }
 
   @media (max-width: 600px) {
-  .card { padding: 24px 16px; }
-  .card h2 { font-size: 36px; }
-  .helper-text { margin-bottom: 20px; font-size: 14px; }
-  .upload-label { padding: 12px 24px; }
-  .btn { padding: 14px 20px; }
-}
+    .card { padding: 24px 16px; }
+    .card h2 { font-size: 36px; }
+    .helper-text { margin-bottom: 20px; font-size: 14px; }
+    .upload-label { padding: 12px 24px; }
+    .btn { padding: 14px 20px; }
+  }
   
 </style>
 </head>
@@ -207,7 +212,7 @@
   </label>
 
   <div class="actions">
-    <button class="btn btn-gold" id="generateBtn" onclick="generate()" disabled>
+    <button class="btn btn-primary" id="generateBtn" onclick="generate()" disabled>
       Create Image
     </button>
 
@@ -218,8 +223,72 @@
 </div>
 
 <script>
-const FRAME_SRC = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/sleigh/santa_frame.png";
+/* ---------- THEME & API SETUP ---------- */
+const params = new URLSearchParams(location.search);
+let API_URL = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
 
+if (API_URL) {
+  localStorage.setItem("SANTA_API", API_URL); 
+  sessionStorage.setItem("SANTA_API", API_URL);
+  
+  const WORKER_URL = "https://santaproxy.beverley247.workers.dev/";
+  const DATA_URL = `${WORKER_URL}?ttl=30&target=${encodeURIComponent(API_URL)}`;
+  
+  fetch(DATA_URL)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.settings) applyTheme(data.settings);
+    })
+    .catch(e => console.warn("Failed to load theme for santa frame", e));
+}
+
+function parseColor(v) {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+    if (h.length !== 6 && h.length !== 8) return null;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  try {
+    if (/var\(|url\(|expression/i.test(s)) return null;
+    if (!(window.CSS && CSS.supports && CSS.supports('color', s))) return null;
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.fillStyle = '#000000';
+    ctx.fillStyle = s;
+    const out = ctx.fillStyle;
+    if (out.charAt(0) === '#') return parseColor(out);
+    const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(out);
+    return rgb ? [+rgb[1], +rgb[2], +rgb[3]] : null;
+  } catch (e) { return null; }
+}
+
+function readableTextOn(rgb) {
+  const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+  return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+}
+
+function applyTheme(settings) {
+  const root = document.documentElement;
+  const raw = settings && settings.primary_color;
+  const rgb = parseColor(raw);
+  
+  if (rgb) {
+    root.style.setProperty('--primary', String(raw).trim());
+    root.style.setProperty('--primary-rgb', rgb.join(', '));
+    root.style.setProperty('--on-primary', readableTextOn(rgb));
+  } else {
+    root.style.removeProperty('--primary');
+    root.style.removeProperty('--primary-rgb');
+    root.style.removeProperty('--on-primary');
+  }
+}
+
+/* ---------- GENERATOR LOGIC ---------- */
+const FRAME_SRC = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/sleigh/santa_frame.png";
 const FRAME = { x: 230, y: 230, size: 540 };
 
 const canvas = document.getElementById("canvas");
