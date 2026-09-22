@@ -94,7 +94,7 @@ const addressLookup = `
 <div style="width:100%;max-width:900px;margin:0 auto;">
   <iframe
     id="addressFrame"
-    src="https://brt-23f.pages.dev/sleigh/address.html?api=https://script.google.com/macros/s/AKfycbwl88G_1QGwp6uN1JEGV2Abd7FAwQg7Id3_ufSNW_n1e7rsPAw-ZUor5vlqL8_GBfCK/exec"
+    src="https://brt-23f.pages.dev/sleigh/address.html?api=${ensureApi()}"
     style="width:100%;height:550px;border:none;border-radius:12px;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
     allow="geolocation"
@@ -121,7 +121,7 @@ const niceListEmbed = `
 <div style="width:100%;max-width:720px;margin:0 auto;">
   <iframe
     id="niceListFrame"
-    src="https://brt-23f.pages.dev/sleigh/nice_list"
+    src="https://brt-23f.pages.dev/sleigh/nice_list.html?api=${ensureApi()}"
     style="width:100%;border:none;border-radius:15px;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
     scrolling="no"
@@ -146,7 +146,7 @@ const santasBeenEmbed = `
 <div style="width:100%;max-width:420px;margin:0 auto;">
   <iframe
     id="santasBeenFrame"
-    src="https://brt-23f.pages.dev/sleigh/santa_frame.html"
+    src="https://brt-23f.pages.dev/sleigh/santa_frame.html?api=${ensureApi()}"
     style="width:100%;border:none;border-radius:20px;overflow:hidden;transition:height .25s ease;background:transparent;"
     allowtransparency="true"
     scrolling="no"
@@ -175,7 +175,7 @@ const snowmanFrameEmbed = `
 <div style="width:100%;max-width:900px;margin:0 auto;">
   <iframe
     id="snowmanFrame"
-    src="https://brt-23f.pages.dev/sleigh/snowman.html"
+    src="https://brt-23f.pages.dev/sleigh/snowman.html?api=${ensureApi()}"
     style="width:100%;border:none;border-radius:20px;overflow:hidden;background:transparent;"
     allowtransparency="true"
     scrolling="no"
