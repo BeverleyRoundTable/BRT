@@ -36,6 +36,55 @@
             .catch(err => console.error("TurboSanta Donations error:", err));
     }
 
+    // --- THEME & COLOUR PARSING ---
+
+    function parseColor(v) {
+        if (typeof v !== 'string') return null;
+        const s = v.trim();
+        const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+        if (hex) {
+            let h = hex[1];
+            if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+            if (h.length !== 6 && h.length !== 8) return null;
+            return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+        }
+        try {
+            if (/var\(|url\(|expression/i.test(s)) return null;
+            if (!(window.CSS && CSS.supports && CSS.supports('color', s))) return null;
+            const ctx = document.createElement('canvas').getContext('2d');
+            ctx.fillStyle = '#000000';
+            ctx.fillStyle = s;
+            const out = ctx.fillStyle;
+            if (out.charAt(0) === '#') return parseColor(out);
+            const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(out);
+            return rgb ? [+rgb[1], +rgb[2], +rgb[3]] : null;
+        } catch (e) { return null; }
+    }
+
+    function readableTextOn(rgb) {
+        const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+        const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+        return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+    }
+
+    function applyTheme(settings) {
+        const raw = settings && settings.primary_color;
+        const rgb = parseColor(raw);
+        
+        // Scope the custom properties strictly to the donation widgets
+        document.querySelectorAll('.ts-donations-wrapper').forEach(wrapper => {
+            if (rgb) {
+                wrapper.style.setProperty('--primary', String(raw).trim());
+                wrapper.style.setProperty('--primary-rgb', rgb.join(', '));
+                wrapper.style.setProperty('--on-primary', readableTextOn(rgb));
+            } else {
+                wrapper.style.removeProperty('--primary');
+                wrapper.style.removeProperty('--primary-rgb');
+                wrapper.style.removeProperty('--on-primary');
+            }
+        });
+    }
+
     /* ---------------------------------------------------------
        INSTALL SAFE CSS (TurboSanta National Styling)
     --------------------------------------------------------- */
@@ -46,8 +95,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap');
 
 .ts-donations-wrapper {
-    --gold: #FBAF33;
-    --gold-glow: rgba(251,175,51,0.25);
+    /* Fallback variables, updated dynamically by applyTheme() */
+    --primary: #FBAF33;
+    --primary-rgb: 251, 175, 51;
+    --on-primary: #000000;
+    --primary-glow: rgba(var(--primary-rgb), 0.25);
+    
     --dark: #0d0d0b;
     --surface: #161614;
     --surface-2: #1e1e1b;
@@ -76,22 +129,22 @@
     display: inline-block;
     margin-top: 20px;
     padding: 12px 28px;
-    background: var(--gold);
-    color: var(--dark);
+    background: var(--primary);
+    color: var(--on-primary);
     font-family: 'Bebas Neue', sans-serif;
     font-size: 22px;
     letter-spacing: 1.5px;
     text-decoration: none;
     border-radius: 8px;
     transition: all 0.2s ease-in-out;
-    box-shadow: 0 4px 15px var(--gold-glow);
+    box-shadow: 0 4px 15px var(--primary-glow);
     text-transform: uppercase;
 }
 
 .ts-donate-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(251, 175, 51, 0.4);
-    background: #ffb947;
+    box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.4);
+    filter: brightness(1.1);
 }
 
 .ts-donate-btn:active {
@@ -126,7 +179,7 @@
 .ts-mini-fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, var(--red), var(--gold));
+    background: linear-gradient(90deg, var(--red), var(--primary));
     border-radius: 6px;
     transition: width 1s ease-out;
 }
@@ -139,7 +192,7 @@
     line-height: 1;
 }
 .ts-mini-val span {
-    color: var(--gold);
+    color: var(--primary);
 }
 
 /* ---------- THERMO CARD ---------- */
@@ -161,7 +214,7 @@
     transform: translateX(-50%);
     width: 300px;
     height: 300px;
-    background: radial-gradient(circle, rgba(251,175,51,0.05) 0%, transparent 60%);
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.05) 0%, transparent 60%);
     pointer-events: none;
     z-index: 0;
 }
@@ -181,9 +234,9 @@
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    background: rgba(251,175,51,0.12);
-    color: var(--gold);
-    border: 1px solid rgba(251,175,51,0.2);
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary);
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
     margin-bottom: 16px;
 }
 
@@ -196,7 +249,7 @@
     color: #fff;
 }
 .ts-thermo-title span {
-    color: var(--gold);
+    color: var(--primary);
 }
 
 .ts-thermo-layout {
@@ -222,16 +275,16 @@
 .ts-thermo-fill {
     width: 100%;
     height: 0%;
-    background: linear-gradient(to top, var(--red), var(--gold));
+    background: linear-gradient(to top, var(--red), var(--primary));
     transition: height 1.4s ease-out;
     border-radius: 12px;
-    box-shadow: 0 0 14px var(--gold-glow);
+    box-shadow: 0 0 14px var(--primary-glow);
 }
 
 @keyframes tsThermoPulse {
-  0%   { box-shadow: 0 0 10px rgba(251, 175, 51, 0.2); }
-  50%  { box-shadow: 0 0 25px rgba(251, 175, 51, 0.6); }
-  100% { box-shadow: 0 0 10px rgba(251, 175, 51, 0.2); }
+  0%   { box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.2); }
+  50%  { box-shadow: 0 0 25px rgba(var(--primary-rgb), 0.6); }
+  100% { box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.2); }
 }
 
 .ts-thermo-fill.pulse {
@@ -245,7 +298,7 @@
 .ts-thermo-amount-val {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 56px;
-    color: var(--gold);
+    color: var(--primary);
     line-height: 1;
     letter-spacing: 1px;
     margin-bottom: 4px;
@@ -347,6 +400,9 @@
     function updateUI(fullData) {
         const donations = fullData.donations || {};
         const settings = fullData.settings || {};
+
+        // Apply dynamic API theming
+        applyTheme(settings);
 
         const total  = Number(donations.total  || 0);
         const target = Number(donations.target || 0);
