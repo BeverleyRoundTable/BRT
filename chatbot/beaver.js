@@ -22,8 +22,9 @@
   window.__brtBeaverLoaded = true;
 
   // ─── Theme Detection ───────────────────────────────────────
-  // Check if '?Santa' or '&Santa' exists in the URL
-  const isSanta = window.location.search.includes('Santa');
+  // Check if '?Santa' or '&Santa' exists in the script's own URL
+  const scriptTag = document.currentScript || document.querySelector('script[src*="beaver.js"]');
+  const isSanta = scriptTag && scriptTag.src.includes('Santa');
   
   // Swap core colors based on URL
   const themeBg = isSanta ? '#D31C1C' : '#FBAF33';
@@ -467,4 +468,4 @@
   } else {
     brtToggleForSection();
   }
-})();
+})()
