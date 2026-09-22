@@ -2377,7 +2377,15 @@ if (AppState.vars.proxyUrl) {
 AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
         requestWakeLock(); setInterval(() => { if (document.visibilityState === "visible") requestWakeLock(); }, 60000);
 
-        const apiData = await Utils.loadJSON(AppState.vars.dataUrl);
+        let apiData;
+        // Check if the Cloudflare Router already pre-fetched the data for us!
+        if (window.__sleighPrefetchedData) {
+            apiData = window.__sleighPrefetchedData;
+        } else {
+            // Fallback for direct page loads
+            apiData = await Utils.loadJSON(AppState.vars.dataUrl);
+        }
+
         // Seed the settings cache so the first updateTracker doesn't immediately
         // re-fetch the same Apps Script endpoint — removes a 1–2s roundtrip before
         // the first live fix can appear.
