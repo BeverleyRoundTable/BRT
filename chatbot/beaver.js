@@ -21,10 +21,19 @@
   if (window.__brtBeaverLoaded) return;
   window.__brtBeaverLoaded = true;
 
+  // ─── Theme Detection ───────────────────────────────────────
+  // Check if '?Santa' or '&Santa' exists in the URL
+  const isSanta = window.location.search.includes('Santa');
+  
+  // Swap core colors based on URL
+  const themeBg = isSanta ? '#D31C1C' : '#FBAF33';
+  const themeText = isSanta ? '#FFFFFF' : '#1D1D1A';
+  const themeLink = isSanta ? '#B81717' : '#C8860D';
+
   // ─── Widget CSS ────────────────────────────────────────────
   const CSS = `
     .brt-chat {
-      --brt-gold: #FBAF33;
+      --brt-gold: ${themeBg};
       --brt-dark: #1D1D1A;
       --brt-red: #D31C1C;
       --brt-bg: #ffffff;
@@ -32,6 +41,8 @@
       --brt-border: #e5e5e0;
       --brt-text: #1D1D1A;
       --brt-text-soft: #6b6b65;
+      --brt-on-theme: ${themeText};
+      --brt-link: ${themeLink};
       font-family: 'Open Sans', system-ui, -apple-system, sans-serif;
     }
     .brt-chat-launcher {
@@ -50,7 +61,7 @@
       box-shadow: 0 10px 24px rgba(29, 29, 26, 0.32);
     }
     .brt-chat-launcher:active { transform: translateY(0) scale(0.98); }
-    .brt-chat-launcher svg { width: 28px; height: 28px; color: var(--brt-dark); }
+    .brt-chat-launcher svg { width: 28px; height: 28px; color: var(--brt-on-theme); }
     .brt-chat-launcher.open .icon-chat { display: none; }
     .brt-chat-launcher:not(.open) .icon-close { display: none; }
 
@@ -86,7 +97,7 @@
     }
     .brt-chat-header-title { font-weight: 700; font-size: 15px; letter-spacing: 0.3px; }
     .brt-chat-header-sub {
-      font-size: 11px; color: rgba(251, 175, 51, 0.7); margin-top: 2px;
+      font-size: 11px; color: var(--brt-gold); opacity: 0.8; margin-top: 2px;
     }
 
     .brt-chat-messages {
@@ -117,7 +128,7 @@
     }
     .brt-msg.user {
       background: var(--brt-gold);
-      color: var(--brt-dark);
+      color: var(--brt-on-theme);
       font-weight: 600;
       border-bottom-right-radius: 4px;
       align-self: flex-end;
@@ -128,7 +139,7 @@
       color: var(--brt-red);
     }
     .brt-msg.bot a {
-      color: #C8860D; font-weight: 600;
+      color: var(--brt-link); font-weight: 600;
       text-decoration: underline; overflow-wrap: anywhere;
     }
     .brt-msg.bot strong { font-weight: 700; }
@@ -163,7 +174,7 @@
       cursor: pointer; transition: all 0.15s ease;
     }
     .brt-chip:hover {
-      background: var(--brt-gold); border-color: var(--brt-dark);
+      background: var(--brt-gold); border-color: var(--brt-dark); color: var(--brt-on-theme);
     }
     .brt-chat-input-wrap {
       border-top: 1px solid var(--brt-border);
@@ -188,7 +199,7 @@
     }
     .brt-chat-send:hover:not(:disabled) { transform: scale(1.06); }
     .brt-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
-    .brt-chat-send svg { width: 18px; height: 18px; color: var(--brt-dark); }
+    .brt-chat-send svg { width: 18px; height: 18px; color: var(--brt-on-theme); }
     .brt-chat-footer {
       padding: 6px 12px 8px;
       text-align: center;
@@ -322,7 +333,7 @@
       };
 
       // Markdown links [label](url) — http(s) opens a new tab, mailto does not
-      html = html.replace(/\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g,
+      html = html.replace(/\[([^\]]+)\]\(((?:https?:\/\/\vert{}mailto:)[^\s)]+)\)/g,
         (m, label, href) => keep(href, label, /^https?:/i.test(href)));
 
       // Bare URLs in plain text
