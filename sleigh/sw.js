@@ -66,23 +66,21 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 3. Network-First Strategy for HTML and Cloudflare API config
-    if (event.request.method === 'GET') {
+    // 3. Stale-While-Revalidate Strategy for HTML Navigations
+    if (event.request.mode === 'navigate' || (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'))) {
         event.respondWith(
-            fetch(event.request)
-                .then((response) => {
-                    // Only cache successful responses
+            caches.match(event.request).then((cachedResponse) => {
+                const networkFetch = fetch(event.request).then((response) => {
                     if (response.status === 200) {
                         const clone = response.clone();
                         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
                     }
                     return response;
-                })
-                .catch(async () => {
-                    // If network fails (offline), serve the cached version seamlessly
-                    const cachedResponse = await caches.match(event.request);
-                    if (cachedResponse) return cachedResponse;
-                })
+                }).catch(() => null);
+                
+                return cachedResponse || networkFetch;
+            })
         );
+        return;
     }
 });
