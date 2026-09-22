@@ -29,6 +29,9 @@
     <link rel="apple-touch-icon" href="https://brt-23f.pages.dev/icons/RTBI_Santa.png">
     <link rel="manifest" href="/manifest.json">
     
+    <!-- Preload heavy background image for faster paint -->
+    <link rel="preload" as="image" href="https://brt-23f.pages.dev/icons/site_background.png">
+    
     <!-- Open Sans is the official Round Table paragraph font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,33 +71,54 @@
         }
 
         body {
-        /* Official Body Font */
-        font-family: 'Open Sans', sans-serif;
-        background-color: var(--bg-dark);
-        
-        /* Load the default background immediately */
-        /* Default fallback background, served from the same fast origin as
-           the rest of the personalised content. A table's own
-           settings.background_url (via the API) overrides this once
-           applySettings() runs. */
-        background-image: 
-            linear-gradient(180deg, rgba(29, 29, 26, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%),
-            url('https://brt-23f.pages.dev/icons/site_background.png');
-        background-size: cover;
-        background-position: center;
-        
-        color: var(--text-main);
-        line-height: 1.6;
-        overflow-x: hidden;
-    }
-
-    /* Perf: fixed backgrounds force a repaint on every scroll frame on mobile
-       Safari — only pin the background on larger screens where that's free. */
-    @media(min-width: 601px) {
-        body {
-            background-attachment: fixed;
+            /* Official Body Font */
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
         }
-    }
+
+        #site-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-dark);
+            background-image: 
+                linear-gradient(180deg, rgba(29, 29, 26, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%),
+                url('https://brt-23f.pages.dev/icons/site_background.png');
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+        }
+
+        /* --- FLOATING ACTION BUTTON --- */
+        .fab-map {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: var(--on-primary);
+            padding: 15px 20px;
+            border-radius: 50px;
+            font-family: 'Eurostile Extended Bold', 'Eurostile', 'Open Sans', sans-serif;
+            font-size: 16px;
+            text-transform: uppercase;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 999;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+        }
+        .fab-map.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
 
         /* Official Header Font (Eurostile fallback stack) */
         h1, h2, h3, .brand-font {
@@ -597,6 +621,7 @@
     </style>
 </head>
 <body>
+    <div id="site-bg"></div>
     <!-- Perf: kick off the sleigh-data fetch as early as possible, but only
          once we're past </head> — the router (for pretty-subdomain sites)
          injects a script at the end of <head> that patches
@@ -853,7 +878,7 @@
                 Round Table is an events-based club for young men aged 18-45 focused on delivering a programme of social and community events. Whether it be trying a new sport, going on an adventure, or raising money for our communities, we aim to have fun, make friends, and live life to the fullest.
             </p>
             <p style="font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: var(--text-main);">
-                Find the friends you've been missing. Do More in <span id="current-year-text"></span>.
+                Find the friends you've been missing. <span style="color: var(--primary);">Do More in <span id="current-year-text"></span>.</span>
             </p>
             
             <div class="social-links" id="social-links-container">
@@ -861,6 +886,10 @@
             </div>
         </div>
     </section>
+
+    <a href="#tracker" id="fab-map" class="fab-map" aria-label="Jump to map">
+        <i class="fa-solid fa-map-location-dot"></i> Live Map
+    </a>
 
     <footer>
         <p>&copy; <span id="year"></span> <span id="footer-name">Santa Sleigh</span>. Powered by TurboSanta.</p>
@@ -1034,13 +1063,14 @@
                 root.style.removeProperty('--accent');
             }
 
-            // Only the image is set inline. Size/position/attachment stay in the stylesheet,
-            // so mobile keeps its non-fixed background (fixed backgrounds repaint every
-            // scroll frame on mobile Safari).
+            // Apply background to the fixed element to prevent mobile zooming
+            const bgEl = $('site-bg');
             const bg = safeUrl(settings.background_url);
-            document.body.style.backgroundImage = bg
-                ? BG_OVERLAY + ', url("' + bg.replace(/"/g, '%22') + '")'
-                : '';
+            if (bgEl) {
+                bgEl.style.backgroundImage = bg
+                    ? BG_OVERLAY + ', url("' + bg.replace(/"/g, '%22') + '")'
+                    : '';
+            }
         }
 
         function setTitleParts(node, highlight, suffix) {
@@ -1539,6 +1569,19 @@
                 // Hide the button on older browsers that don't support native sharing
                 shareBtn.style.display = 'none';
             }
+        }
+
+        // Floating Action Button Scroll Logic
+        const fab = $('fab-map');
+        if (fab) {
+            window.addEventListener('scroll', () => {
+                // Show the button if they scroll past the tracker section (approx 800px)
+                if (window.scrollY > 800) {
+                    fab.classList.add('visible');
+                } else {
+                    fab.classList.remove('visible');
+                }
+            }, { passive: true });
         }
 
         initializeSleighApp();
