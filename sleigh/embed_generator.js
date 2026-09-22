@@ -84,7 +84,6 @@ const carouselLink = `
 
 // ================================
 // ADDRESS LOOKUP — FINAL iFrame Version
-// Works everywhere: Carrd, WordPress, Wix, Squarespace, etc.
 // ================================
 const addressLink = `
 https://brt-23f.pages.dev/sleigh/address.html?api=${ensureApi()}
@@ -104,7 +103,6 @@ const addressLookup = `
 </div>
 
 <script>
-  // Receive auto-height updates from address.html
   window.addEventListener("message", (e) => {
     if (e.data.addressLookupHeight) {
       const frame = document.getElementById("addressFrame");
@@ -257,7 +255,6 @@ const recommendedRoutes = `
 </div>
 
 <script>
-  // Receive auto-height updates from routes.html
   window.addEventListener("message", (e) => {
     if (e.data.routesHeight) {
       const frame = document.getElementById("routesFrame");
@@ -313,7 +310,7 @@ async function loadRoutes() {
     .map(r =>
         `https://brt-23f.pages.dev/sleigh/gpx_animation.html?api=${ensureApi()}&route=${encodeURIComponent(r.routeName)}`
     )
-    .join("\r\n");   // ← REAL NEWLINE
+    .join("\r\n");
 
         document.getElementById("gpxList").value = output;
 
