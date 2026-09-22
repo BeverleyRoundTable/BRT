@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sleigh-shell-v3'; // Bumped to v3 to force clients to update
+const CACHE_NAME = 'sleigh-shell-v4'; // Bumped to v4 to force clients to update
 const API_CACHE = 'sleigh-api-cache-v1';
 const STATIC_ASSETS = [
     'https://brt-23f.pages.dev/icons/site_background.png',
@@ -52,7 +52,7 @@ self.addEventListener('fetch', (event) => {
         url.hostname.includes('fonts.googleapis.com') || 
         url.hostname.includes('fonts.gstatic.com') || 
         url.hostname.includes('cdnjs.cloudflare.com') ||
-        url.hostname.includes('raw.githubusercontent.com')
+        url.hostname.includes('brt-23f.pages.dev') // Switched from GitHub to Pages
     ) {
         event.respondWith(
             caches.match(event.request).then((cached) => {
