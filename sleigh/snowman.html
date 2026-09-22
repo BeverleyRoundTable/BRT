@@ -9,15 +9,20 @@
 
 <style>
   :root {
-    --gold: #FBAF33;
-    --gold-dim: rgba(251,175,51,0.12);
-    --gold-glow: rgba(251,175,51,0.25);
+    /* Fallback variables, updated dynamically by applyTheme() */
+    --primary: #FBAF33;
+    --primary-rgb: 251, 175, 51;
+    --on-primary: #000000;
+    
+    --primary-dim: rgba(var(--primary-rgb), 0.12);
+    --primary-glow: rgba(var(--primary-rgb), 0.25);
+    --border-primary: rgba(var(--primary-rgb), 0.2);
+    
     --dark: #0d0d0b;
     --surface: #161614;
     --surface-2: #1e1e1b;
     --surface-3: #252522;
     --border: rgba(255,255,255,0.08);
-    --border-gold: rgba(251,175,51,0.2);
     --text: #eaeae5;
     --text-dim: rgba(255,255,255,0.55);
     --text-muted: rgba(255,255,255,0.3);
@@ -49,7 +54,7 @@
     margin-bottom: 40px;
     padding-bottom: 32px;
     border-bottom: 1px solid var(--border);
-    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(251,175,51,0.06) 0%, transparent 70%);
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(var(--primary-rgb), 0.06) 0%, transparent 70%);
   }
 
   .hero-badge {
@@ -62,9 +67,9 @@
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    background: var(--gold-dim);
-    color: var(--gold);
-    border: 1px solid var(--border-gold);
+    background: var(--primary-dim);
+    color: var(--primary);
+    border: 1px solid var(--border-primary);
     margin-bottom: 16px;
   }
 
@@ -78,7 +83,7 @@
   }
 
   h1 span {
-    color: var(--gold);
+    color: var(--primary);
   }
 
   .builder {
@@ -125,7 +130,7 @@
   }
 
   .options button:hover {
-    border-color: var(--gold);
+    border-color: var(--primary);
     color: #fff;
   }
 
@@ -134,9 +139,9 @@
   }
 
   .options button.active {
-    background: var(--gold);
-    color: #000;
-    border-color: var(--gold);
+    background: var(--primary);
+    color: var(--on-primary);
+    border-color: var(--primary);
   }
 
   .canvas-wrap {
@@ -160,8 +165,8 @@
   }
 
   .download button {
-    background: var(--gold);
-    color: #000;
+    background: var(--primary);
+    color: var(--on-primary);
     border: none;
     padding: 16px 32px;
     border-radius: 8px;
@@ -169,13 +174,13 @@
     font-weight: 700;
     font-family: 'DM Sans', sans-serif;
     cursor: pointer;
-    transition: transform 0.1s, background 0.2s;
+    transition: transform 0.1s, filter 0.2s;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
 
   .download button:hover {
-    background: #e59d28;
+    filter: brightness(0.92);
     transform: translateY(-2px);
   }
 
@@ -288,6 +293,77 @@ if (isEmbedded) {
   document.body.classList.add("embed");
 }
 
+let PRIMARY_COLOR = "#FBAF33"; // Synchronized with API theme
+
+/* ---------- THEME & API SETUP ---------- */
+const params = new URLSearchParams(location.search);
+let API_URL = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
+
+if (API_URL) {
+  localStorage.setItem("SANTA_API", API_URL); 
+  sessionStorage.setItem("SANTA_API", API_URL);
+  
+  const WORKER_URL = "https://santaproxy.beverley247.workers.dev/";
+  const DATA_URL = `${WORKER_URL}?ttl=30&target=${encodeURIComponent(API_URL)}`;
+  
+  fetch(DATA_URL)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.settings) applyTheme(data.settings);
+    })
+    .catch(e => console.warn("Failed to load theme for snowman", e));
+}
+
+function parseColor(v) {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+    if (h.length !== 6 && h.length !== 8) return null;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  try {
+    if (/var\(|url\(|expression/i.test(s)) return null;
+    if (!(window.CSS && CSS.supports && CSS.supports('color', s))) return null;
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.fillStyle = '#000000';
+    ctx.fillStyle = s;
+    const out = ctx.fillStyle;
+    if (out.charAt(0) === '#') return parseColor(out);
+    const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(out);
+    return rgb ? [+rgb[1], +rgb[2], +rgb[3]] : null;
+  } catch (e) { return null; }
+}
+
+function readableTextOn(rgb) {
+  const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+  return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+}
+
+function applyTheme(settings) {
+  const root = document.documentElement;
+  const raw = settings && settings.primary_color;
+  const rgb = parseColor(raw);
+  
+  if (rgb) {
+    PRIMARY_COLOR = String(raw).trim();
+    root.style.setProperty('--primary', PRIMARY_COLOR);
+    root.style.setProperty('--primary-rgb', rgb.join(', '));
+    root.style.setProperty('--on-primary', readableTextOn(rgb));
+    draw(); // Redraw canvas to update the badge color
+  } else {
+    PRIMARY_COLOR = "#FBAF33";
+    root.style.removeProperty('--primary');
+    root.style.removeProperty('--primary-rgb');
+    root.style.removeProperty('--on-primary');
+    draw();
+  }
+}
+
+/* ---------- BUILDER LOGIC ---------- */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
@@ -366,7 +442,7 @@ function bodyAccessory(){
   }
 
   if(snowman.body==="badge"){
-    ctx.fillStyle="#FBAF33";
+    ctx.fillStyle = PRIMARY_COLOR; // Dynamically uses the theme color
     ctx.beginPath();
     ctx.arc(330,320,14,0,Math.PI*2);
     ctx.fill();
@@ -445,8 +521,10 @@ function goToFrame(){
   // store in localStorage for the next page
   localStorage.setItem("snowmanPNG", png);
 
-  // go to the frame page (same tab is IMPORTANT)
-  window.location.href = "snowman_frame.html";
+  // go to the frame page (passes the API parameter to maintain theme)
+  let targetUrl = "snowman_frame.html";
+  if (API_URL) targetUrl += "?api=" + encodeURIComponent(API_URL);
+  window.location.href = targetUrl;
 }
 
 draw();
