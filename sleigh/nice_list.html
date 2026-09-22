@@ -16,9 +16,14 @@
     /* TURBOSANTA DESIGN SYSTEM */
     /* ═══════════════════════════════════════ */
     :root {
-      --gold: #FBAF33;
-      --gold-dim: rgba(251,175,51,0.12);
-      --gold-glow: rgba(251,175,51,0.25);
+      /* Fallback variables, updated dynamically by applyTheme() */
+      --primary: #FBAF33;
+      --primary-rgb: 251, 175, 51;
+      --on-primary: #000000;
+      
+      --primary-dim: rgba(var(--primary-rgb), 0.12);
+      --primary-glow: rgba(var(--primary-rgb), 0.25);
+      
       --dark: #0d0d0b;
       --surface: #161614;
       --surface-2: #1e1e1b;
@@ -76,7 +81,7 @@
     }
     
     h2 span {
-      color: var(--gold);
+      color: var(--primary);
     }
 
     input {
@@ -102,8 +107,8 @@
     
     input:focus {
       outline: none;
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px var(--gold-glow);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
     }
 
     button {
@@ -111,8 +116,8 @@
       padding: 16px 32px;
       border-radius: 8px;
       border: none;
-      background: var(--gold);
-      color: #000;
+      background: var(--primary);
+      color: var(--on-primary);
       font-weight: 700;
       font-family: 'DM Sans', sans-serif;
       font-size: 15px;
@@ -120,11 +125,11 @@
       display: block;
       margin-left: auto;
       margin-right: auto;
-      transition: transform 0.1s, background 0.2s;
+      transition: transform 0.1s, filter 0.2s;
     }
 
     button:hover {
-      background: #e59d28;
+      filter: brightness(0.92);
     }
 
     button:active {
@@ -137,7 +142,7 @@
       font-family: 'DM Mono', monospace;
       font-size: 14px;
       font-weight: 700;
-      color: var(--gold);
+      color: var(--primary);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
@@ -198,6 +203,70 @@
 const bgImage = new Image();
 bgImage.crossOrigin = "anonymous";
 bgImage.src = "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/sleigh/nice_list.png";
+
+/* ---------- THEME & API SETUP ---------- */
+const params = new URLSearchParams(location.search);
+let API_URL = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
+
+if (API_URL) {
+  localStorage.setItem("SANTA_API", API_URL); 
+  sessionStorage.setItem("SANTA_API", API_URL);
+  
+  const WORKER_URL = "https://santaproxy.beverley247.workers.dev/";
+  const DATA_URL = `${WORKER_URL}?ttl=30&target=${encodeURIComponent(API_URL)}`;
+  
+  fetch(DATA_URL)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.settings) applyTheme(data.settings);
+    })
+    .catch(e => console.warn("Failed to load theme for nice list", e));
+}
+
+function parseColor(v) {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+    if (h.length !== 6 && h.length !== 8) return null;
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  try {
+    if (/var\(|url\(|expression/i.test(s)) return null;
+    if (!(window.CSS && CSS.supports && CSS.supports('color', s))) return null;
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.fillStyle = '#000000';
+    ctx.fillStyle = s;
+    const out = ctx.fillStyle;
+    if (out.charAt(0) === '#') return parseColor(out);
+    const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(out);
+    return rgb ? [+rgb[1], +rgb[2], +rgb[3]] : null;
+  } catch (e) { return null; }
+}
+
+function readableTextOn(rgb) {
+  const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+  return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+}
+
+function applyTheme(settings) {
+  const root = document.documentElement;
+  const raw = settings && settings.primary_color;
+  const rgb = parseColor(raw);
+  
+  if (rgb) {
+    root.style.setProperty('--primary', String(raw).trim());
+    root.style.setProperty('--primary-rgb', rgb.join(', '));
+    root.style.setProperty('--on-primary', readableTextOn(rgb));
+  } else {
+    root.style.removeProperty('--primary');
+    root.style.removeProperty('--primary-rgb');
+    root.style.removeProperty('--on-primary');
+  }
+}
 
 /* ---------- MAIN FLOW ---------- */
 function startCheck(){
