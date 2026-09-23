@@ -82,7 +82,7 @@ jobs:
             echo "No webhook configured (progress callbacks disabled)"
           fi
 
-      - name: Render MP4
+            - name: Render MP4
         working-directory: TurboSanta-MP4-Renderer
         env:
           RENDER_URL: ${{ github.event.inputs.render_url }}
@@ -92,6 +92,8 @@ jobs:
           FPS: 24
           RUN_ID: ${{ github.event.inputs.slug }}
           SHEET_WEBHOOK_URL: ${{ env.SHEET_WEBHOOK_URL }}
+          SECRET: ${{ github.event.inputs.secret }}
+          ROUTE_NAME: ${{ github.event.inputs.route_name }}
         run: |
           node render.js
 
