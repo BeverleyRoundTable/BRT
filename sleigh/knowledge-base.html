@@ -101,7 +101,9 @@
             
             <form id="lesson-form">
                 <label>Table Name</label>
-                <input type="text" id="tableName" placeholder="e.g., Beverley Round Table" required>
+                <select id="tableName" required>
+                    <option value="" disabled selected>Loading registered tables...</option>
+                </select>
 
                 <label>Elf Passcode</label>
                 <input type="password" id="lessonPasscode" placeholder="Enter the shared passcode" required>
@@ -149,6 +151,47 @@
     <script>
         // Replace with your Google Apps Script Web App URL
         const API_URL = "YOUR_GAS_WEB_APP_URL"; 
+
+        // Helper to clean table names exactly like the tracker does
+        function deriveTableName(siteName) {
+            const base = siteName
+                .replace(/\bsanta(?:['\u2019]s)?\b/gi, '')
+                .replace(/\bsleighs?\b/gi, '')
+                .replace(/\bround\s+table\b/gi, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return base ? base + " Round Table" : siteName;
+        }
+
+        // Fetch registered tables on load
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getTables' })
+                });
+                const data = await response.json();
+                const select = document.getElementById('tableName');
+                select.innerHTML = '<option value="" disabled selected>Select your Table...</option>';
+                
+                // Clean the names, remove duplicates, sort alphabetically
+                const cleanNames = [...new Set(data.tables.map(deriveTableName))].sort();
+                
+                cleanNames.forEach(table => {
+                    select.innerHTML += `<option value="${table}">${table}</option>`;
+                });
+            } catch (err) {
+                document.getElementById('tableName').innerHTML = '<option value="" disabled selected>Error loading tables. Please type below.</option>';
+                // Fallback to text input if it fails
+                const select = document.getElementById('tableName');
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'tableName';
+                input.placeholder = 'e.g., Beverley Round Table';
+                input.required = true;
+                select.parentNode.replaceChild(input, select);
+            }
+        });
 
         // Form Submission Logic
         document.getElementById('lesson-form').addEventListener('submit', async (e) => {
