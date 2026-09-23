@@ -417,7 +417,11 @@ function draw(photo){
   
 /* ---------- iframe auto-height ---------- */
 function sendHeight(extra = 0){
-  const h = document.documentElement.scrollHeight + extra;
+  const card = document.querySelector('.card');
+  if (!card) return;
+  
+  // Calculate true height: card height + 32px (for the 16px top & bottom body padding)
+  const h = card.offsetHeight + 32 + extra;
   parent.postMessage({ santasBeenHeight: h }, "*");
 }
 
@@ -427,10 +431,15 @@ window.addEventListener("load", () => {
   setTimeout(() => sendHeight(30), 350);
 });
 
-window.addEventListener("resize", () => sendHeight(30));
+// Use ResizeObserver on the card instead of listening to window resizes. 
+// This only fires when the actual content changes size, breaking the loop!
+const resizeObserver = new ResizeObserver(() => sendHeight(30));
+resizeObserver.observe(document.querySelector('.card'));
 
+// Watch for elements being added/removed
 const observer = new MutationObserver(() => sendHeight(30));
 observer.observe(document.body, { childList: true, subtree: true });
+  
 </script>
 
 </body>
