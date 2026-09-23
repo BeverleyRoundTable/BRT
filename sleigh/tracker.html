@@ -2482,7 +2482,14 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
 
         const gaLink = document.getElementById('giftAidLink');
         if (gaLink && !AppState.flags.isKiosk && !AppState.flags.isDriver && String(settings.enable_gift_aid || '').toUpperCase() === 'TRUE') {
-          gaLink.href = location.origin + '/sleigh/gift_aid?api=' + encodeURIComponent(AppState.vars.apiUrl);
+          const host = location.hostname.toLowerCase();
+          if (host.includes('roundtablesantasleigh.co.uk')) {
+            let base = host.split('.')[0];
+            if (base.endsWith('tracker')) base = base.replace(/tracker$/, '');
+            gaLink.href = `https://${base}giftaid.roundtablesantasleigh.co.uk`;
+          } else {
+            gaLink.href = location.origin + '/sleigh/gift_aid?api=' + encodeURIComponent(AppState.vars.apiUrl);
+          }
           gaLink.style.display = 'block';
         }
         
