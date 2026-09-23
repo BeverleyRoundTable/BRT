@@ -16,6 +16,12 @@ on:
       webhook_url:
         description: "Apps Script Web App URL for progress callbacks (optional)"
         required: false
+      route_name:
+        description: "Exact name of the route for the sheet"
+        required: true
+      secret:
+        description: "God Mode Password for authorization"
+        required: true
 
 permissions:
   contents: write
@@ -134,10 +140,13 @@ jobs:
           echo "Run ID: ${SLUG}"
           echo "MP4 URL: ${MP4_URL}"
 
-          curl -X POST "${SHEET_WEBHOOK_URL}" \
+                    curl -X POST "${SHEET_WEBHOOK_URL}" \
             -H "Content-Type: application/json" \
             -d "{
+              \"action\": \"updateMp4Status\",
+              \"secret\": \"${{ github.event.inputs.secret }}\",
+              \"routeName\": \"${{ github.event.inputs.route_name }}\",
               \"runId\": \"${SLUG}\",
-              \"status\": \"Completed\",
+              \"status\": \"✅ Ready\",
               \"mp4Url\": \"${MP4_URL}\"
             }"
