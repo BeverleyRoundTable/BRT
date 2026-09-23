@@ -56,7 +56,7 @@
             font-family: 'Open Sans', sans-serif; box-sizing: border-box;
         }
         
-                input:focus, select:focus, textarea:focus {
+        input:focus, select:focus, textarea:focus {
             outline: none; border-color: var(--primary);
         }
 
@@ -113,6 +113,15 @@
                 <label>Elf Passcode</label>
                 <input type="password" id="lessonPasscode" placeholder="Enter the shared passcode" required>
 
+                <label>Your Role</label>
+                <select id="submitterRole" required>
+                    <option value="Driver">Driver / Tow Vehicle</option>
+                    <option value="Lead Elf / Navigator">Lead Elf / Navigator</option>
+                    <option value="Bucket Collector">Bucket Collector</option>
+                    <option value="Tech / Tracker Support">Tech / Tracker Support</option>
+                    <option value="General Volunteer">General Volunteer</option>
+                </select>
+
                 <label>Category</label>
                 <select id="category" required>
                     <option value="Route Planning">Route Planning</option>
@@ -155,7 +164,7 @@
 
     <script>
         // Replace with your Google Apps Script Web App URL
-        const API_URL = "https://script.google.com/macros/s/AKfycbydqxlwWkD7Kh7IJisZSiweBBbsXDy7smUxpOvT5eLVQxsDO2PqwrJyQI_3y4kwnJB6/exec"; 
+        const API_URL = "YOUR_GAS_WEB_APP_URL"; 
 
         // Helper to clean table names exactly like the tracker does
         function deriveTableName(siteName) {
@@ -211,6 +220,7 @@
                 action: 'submitLesson',
                 tableName: document.getElementById('tableName').value,
                 passcode: document.getElementById('lessonPasscode').value,
+                role: document.getElementById('submitterRole').value,
                 category: document.getElementById('category').value,
                 lesson: document.getElementById('lessonText').value
             };
