@@ -6,6 +6,7 @@
     <title>TurboSanta Knowledge Base</title>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             /* Inherited TurboSanta Brand Variables */
@@ -86,6 +87,9 @@
         .msg { padding: 10px 15px; border-radius: 8px; max-width: 85%; font-size: 14px; }
         .msg.user { background: var(--primary); color: var(--on-primary); align-self: flex-end; }
         .msg.ai { background: var(--bg-dark); border: 1px solid var(--border); align-self: flex-start; }
+        .msg p:first-child { margin-top: 0; }
+        .msg p:last-child { margin-bottom: 0; }
+        .msg ul { margin: 5px 0; padding-left: 20px; }
 
         @media(max-width: 768px) {
             .container { grid-template-columns: 1fr; }
@@ -164,7 +168,7 @@
 
     <script>
         // Replace with your Google Apps Script Web App URL
-        const API_URL = "https://script.google.com/macros/s/AKfycbydqxlwWkD7Kh7IJisZSiweBBbsXDy7smUxpOvT5eLVQxsDO2PqwrJyQI_3y4kwnJB6/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbydqxlwWkD7Kh7IJisZSiweBBbsXDy7smUxpOvT5eLVQxsDO2PqwrJyQI_3y4kwnJB6/exec"; 
 
         // Helper to clean table names exactly like the tracker does
         function deriveTableName(siteName) {
@@ -290,9 +294,9 @@
                 const data = await res.json();
                 
                 if (data.status === "error") {
-                    document.getElementById(loadingId).innerText = data.answer || "Error processing request.";
+                    document.getElementById(loadingId).innerHTML = data.answer || "Error processing request.";
                 } else {
-                    document.getElementById(loadingId).innerText = data.answer;
+                    document.getElementById(loadingId).innerHTML = marked.parse(data.answer);
                 }
             } catch (err) {
                 document.getElementById(loadingId).innerText = "Sorry, I lost connection to the North Pole.";
