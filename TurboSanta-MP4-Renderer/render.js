@@ -19,7 +19,14 @@ async function reportProgress(pct, status = "Rendering") {
     await fetch(PROGRESS_WEBHOOK, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ runId: RUN_ID, progress: pct, status })
+      body: JSON.stringify({ 
+        action: "updateMp4Status",                  // Tells Apps Script which function to run
+        secret: process.env.SECRET,                 // Security password
+        routeName: process.env.ROUTE_NAME,          // Which row to update
+        runId: RUN_ID, 
+        status: `🎥 Rendering (${pct}%)`,           // The live progress text!
+        mp4Url: "" 
+      })
     });
   } catch {}
 }
