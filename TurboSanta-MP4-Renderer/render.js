@@ -104,27 +104,10 @@ while (frame < maxFrames) {
     window.__RENDER_FRAME__ = f;
   }, frame);
 
-  // =====================================================
-  // 🔒 PATCH START: Wait for Map tiles to physically download
-  // =====================================================
+  // Allow browser animation frame to paint
   await page.evaluate(() =>
-    new Promise(resolve => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const m = window._map;
-          if (!m) return resolve(); 
-          if (m.loaded()) {
-            resolve();
-          } else {
-            m.once("idle", resolve);
-          }
-        });
-      });
-    })
+    new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   );
-  // =====================================================
-  // 🔒 PATCH END
-  // =====================================================
 
   const framePath = path.join(
     framesDir,
