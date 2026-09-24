@@ -46,6 +46,7 @@ console.log(`📐 ${width}x${height} @ ${fps}fps`);
 
 const browser = await puppeteer.launch({
   headless: "new",
+  protocolTimeout: 120000,
   args: [
     "--no-sandbox",
     "--disable-setuid-sandbox",
