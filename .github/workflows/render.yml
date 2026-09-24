@@ -82,7 +82,7 @@ jobs:
             echo "No webhook configured (progress callbacks disabled)"
           fi
 
-            - name: Render MP4
+      - name: Render MP4
         working-directory: TurboSanta-MP4-Renderer
         env:
           RENDER_URL: ${{ github.event.inputs.render_url }}
@@ -142,7 +142,7 @@ jobs:
           echo "Run ID: ${SLUG}"
           echo "MP4 URL: ${MP4_URL}"
 
-                    curl -X POST "${SHEET_WEBHOOK_URL}" \
+          curl -X POST "${SHEET_WEBHOOK_URL}" \
             -H "Content-Type: application/json" \
             -d "{
               \"action\": \"updateMp4Status\",
