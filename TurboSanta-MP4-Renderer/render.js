@@ -71,7 +71,7 @@ console.log("⏳ Waiting for GPX_READY…");
 
 await page.waitForFunction(
   () => window.__GPX_READY__ === true,
-  { timeout: 20000, polling: 250 }
+  { timeout: 60000, polling: 250 }
 );
 
 // 🔒 Initial settle (unchanged)
