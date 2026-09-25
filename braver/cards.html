@@ -24,31 +24,12 @@
             max-width: 120px;
             z-index: 100;
         }
-        .brand-text {
-            position: absolute;
-            top: 75px; 
-            left: 10px;
-            color: #4db8e8; 
-            font-size: 10px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            z-index: 100;
-            text-align: center;
-            width: 120px;
-        }
 
         @media (min-width: 1024px) {
             .brand-logo {
                 top: 20px;
                 left: 20px;
                 max-width: 250px;
-            }
-            .brand-text {
-                top: 130px; 
-                left: 20px;
-                font-size: 16px;
-                letter-spacing: 2px;
-                width: 250px;
             }
         }
 
@@ -128,7 +109,6 @@
 <body class="flex flex-col min-h-[100dvh] lg:h-screen w-full p-4 lg:p-6 overflow-x-hidden overflow-y-auto lg:overflow-hidden relative">
 
     <img src="https://brt-23f.pages.dev//icons/BERAVER.png" alt="Beverley Round Table" class="brand-logo">
-    <div class="brand-text">EST. 1950</div>
 
     <!-- Header -->
     <header class="text-center mb-4 lg:mb-6 flex-shrink-0 mt-24 lg:mt-0">
@@ -231,7 +211,6 @@
         let isFetching = false;
 
         // --- Offline Fallback Data ---
-        // If the venue internet fails or Apps Script throws a CORS error, the game instantly falls back to these questions.
         const fallbackQuestions = [
             { question: "We asked 100 people: How many of them have lied about their age to get a discount?", answer: 32 },
             { question: "We asked 100 people: How many check their phone within 5 minutes of waking up?", answer: 78 },
@@ -282,9 +261,8 @@
             isFetching = true;
             
             try {
-                // Controller to timeout if the network hangs
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout
+                const timeoutId = setTimeout(() => controller.abort(), 4000); 
 
                 const response = await fetch(APPS_SCRIPT_URL, { 
                     redirect: "follow",
@@ -300,7 +278,7 @@
                 }
             } catch (error) {
                 console.warn("Background API fetch failed, loading offline fallback.");
-                nextQuestionData = getFallbackQuestion(); // Instantly assign offline question
+                nextQuestionData = getFallbackQuestion(); 
             } finally {
                 isFetching = false;
             }
@@ -322,14 +300,11 @@
             aContainer.classList.remove('scale-100', 'flex');
             aContainer.classList.add('hidden');
             
-            // 1. INSTANT LOAD if background fetch succeeded (or hit fallback)
             if (nextQuestionData) {
                 displayQuestionData(nextQuestionData);
                 nextQuestionData = null; 
                 preFetchQuestion(); 
-            } 
-            // 2. IMMEDIATE FALLBACK if the user clicked before anything loaded
-            else {
+            } else {
                 displayQuestionData(getFallbackQuestion());
                 preFetchQuestion();
             }
