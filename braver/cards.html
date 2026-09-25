@@ -294,21 +294,37 @@
         }
 
         async function generateQuestion() {
-            btnGenQ.disabled = true;
-            btnRevA.disabled = true;
-            aContainer.classList.add('scale-0');
-            aContainer.classList.remove('scale-100', 'flex');
-            aContainer.classList.add('hidden');
-            
-            if (nextQuestionData) {
-                displayQuestionData(nextQuestionData);
-                nextQuestionData = null; 
-                preFetchQuestion(); 
-            } else {
-                displayQuestionData(getFallbackQuestion());
-                preFetchQuestion();
-            }
-        }
+    // 1. Reset the survey UI
+    btnGenQ.disabled = true;
+    btnRevA.disabled = true;
+    aContainer.classList.add('scale-0');
+    aContainer.classList.remove('scale-100', 'flex');
+    aContainer.classList.add('hidden');
+    
+    // 2. Reset the deck to blank/facedown cards
+    gameActive = false;
+    setButtonsState(false);
+    cardsContainer.innerHTML = '';
+    for(let i=0; i<TOTAL_CARDS_IN_GAME; i++) {
+        cardsContainer.innerHTML += `
+            <div class="card-slot">
+                <div class="card-inner">
+                    <div class="card-back"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 3. Load the new question
+    if (nextQuestionData) {
+        displayQuestionData(nextQuestionData);
+        nextQuestionData = null; 
+        preFetchQuestion(); 
+    } else {
+        displayQuestionData(getFallbackQuestion());
+        preFetchQuestion();
+    }
+}
 
         // --- Card Game Logic ---
         function getCardValue(valueString) {
