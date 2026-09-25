@@ -102,6 +102,29 @@
         .game-btn:active {
             transform: scale(0.95);
         }
+
+        .sponsor-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .sponsor-logo {
+            max-width: 100px;
+        }
+        @media (min-width: 1024px) {
+            .sponsor-container {
+                top: 20px;
+                right: 20px;
+            }
+            .sponsor-logo {
+                max-width: 200px;
+            }
+        }
+        
     </style>
 </head>
 
@@ -109,6 +132,11 @@
 <body class="flex flex-col min-h-[100dvh] lg:h-screen w-full p-4 lg:p-6 overflow-x-hidden overflow-y-auto lg:overflow-hidden relative">
 
     <img src="https://brt-23f.pages.dev//icons/BERAVER.png" alt="Beverley Round Table" class="brand-logo">
+
+    <div class="sponsor-container">
+        <span class="text-gray-400 text-[10px] lg:text-xs font-bold uppercase tracking-widest mb-1">Sponsored By</span>
+        <img src="YOUR_SPONSOR_LOGO_URL.png" alt="Sponsor" class="sponsor-logo">
+    </div>
 
     <!-- Header -->
     <header class="text-center mb-4 lg:mb-6 flex-shrink-0 mt-24 lg:mt-0">
