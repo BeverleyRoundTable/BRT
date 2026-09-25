@@ -143,7 +143,7 @@
         <h1 class="game-title text-4xl md:text-6xl font-bold tracking-wider uppercase drop-shadow-xl">
             <span class="text-[#4db8e8]">Play Your</span> <span class="text-[#ff007f]">Cards Right</span>
         </h1>
-        <p class="text-gray-400 text-sm md:text-xl mt-1 font-semibold">Hotkeys: [Space] Reveal Answer | [↑] Higher | [↓] Lower | [Enter] Draw Card</p>
+        <p class="text-gray-400 text-sm md:text-xl mt-1 font-semibold">Hotkeys: [Q] Load Question | [Space] Reveal Answer | [Enter] Draw Card | [↑] Higher | [↓] Lower | [M] Toggle Mode</p>
     </header>
 
     <!-- Main Content Area (min-h-0 ensures it shrinks to fit the screen) -->
@@ -175,6 +175,15 @@
 
             <!-- Survey Controls -->
             <div class="flex flex-col gap-3 mt-auto flex-shrink-0">
+                <!-- Mode Toggle -->
+<div class="flex items-center justify-center gap-3 mb-2 bg-[#1a1a1a] border-2 border-gray-800 rounded-xl p-3">
+    <span class="text-sm font-bold uppercase tracking-wide text-[#ff007f]" id="label-adult">Adults</span>
+    <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="mode-toggle" class="sr-only peer">
+        <div class="w-14 h-7 bg-[#ff007f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#4db8e8]"></div>
+    </label>
+    <span class="text-sm font-bold uppercase tracking-wide text-gray-500 opacity-50 transition-opacity" id="label-kids">Kids</span>
+</div>
                 <button id="btn-generate-q" class="game-btn bg-[#4db8e8] hover:bg-[#3ba4d4] text-black text-xl lg:text-2xl font-bold py-3 lg:py-4 rounded-xl shadow-[0_6px_0_#2d80a8] active:shadow-[0_0px_0_#2d80a8] active:translate-y-[6px]">
                     Load Question
                 </button>
@@ -237,24 +246,30 @@
         
         let nextQuestionData = null;
         let isFetching = false;
+        let isKidsMode = false;
 
         // --- Offline Fallback Data ---
-        const fallbackQuestions = [
-            { question: "We asked 100 people: How many of them have lied about their age to get a discount?", answer: 32 },
-            { question: "We asked 100 people: How many check their phone within 5 minutes of waking up?", answer: 78 },
-            { question: "We asked 100 people: How many have snooped through a partner's phone?", answer: 41 },
-            { question: "We asked 100 people: How many have dropped food on the floor and still eaten it?", answer: 65 },
-            { question: "We asked 100 people: How many think they are a better than average driver?", answer: 82 },
-            { question: "We asked 100 people: How many have regifted a present they didn't like?", answer: 54 },
-            { question: "We asked 100 people: How many have worn the same underwear two days in a row?", answer: 28 },
-            { question: "We asked 100 people: How many admit to singing out loud in the car when driving alone?", answer: 91 }
-        ];
+        const fallbackQuestions = {
+            adult: [
+                { question: "We asked 100 people: How many of them have lied about their age to get a discount?", answer: 32 },
+                { question: "We asked 100 people: How many check their phone within 5 minutes of waking up?", answer: 78 },
+                { question: "We asked 100 people: How many have snooped through a partner's phone?", answer: 41 },
+                { question: "We asked 100 people: How many admit to singing out loud in the car when driving alone?", answer: 91 }
+            ],
+            kids: [
+                { question: "We asked 100 kids: How many of them think they could beat their parents in a race?", answer: 68 },
+                { question: "We asked 100 kids: How many would eat ice cream for breakfast if allowed?", answer: 89 },
+                { question: "We asked 100 kids: How many have blamed a pet for something they broke?", answer: 45 },
+                { question: "We asked 100 kids: How many have hidden vegetables so they didn't have to eat them?", answer: 74 }
+            ]
+        };
 
         function getFallbackQuestion() {
-            const randomIndex = Math.floor(Math.random() * fallbackQuestions.length);
-            return fallbackQuestions[randomIndex];
+            const currentList = isKidsMode ? fallbackQuestions.kids : fallbackQuestions.adult;
+            const randomIndex = Math.floor(Math.random() * currentList.length);
+            return currentList[randomIndex];
         }
-
+ 
         // --- DOM Elements ---
         const btnGenQ = document.getElementById('btn-generate-q');
         const btnRevA = document.getElementById('btn-reveal-a');
@@ -292,7 +307,10 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 4000); 
 
-                const response = await fetch(APPS_SCRIPT_URL, { 
+                // Append the mode to the Apps Script URL
+                const fetchUrl = `${APPS_SCRIPT_URL}?mode=${isKidsMode ? 'kids' : 'adult'}`;
+
+                const response = await fetch(fetchUrl, { 
                     redirect: "follow",
                     signal: controller.signal
                 });
@@ -519,6 +537,32 @@
         });
 
         // Keyboard Hotkeys
+        // Mode Toggle Listener
+        const modeToggle = document.getElementById('mode-toggle');
+        const labelAdult = document.getElementById('label-adult');
+        const labelKids = document.getElementById('label-kids');
+
+        modeToggle.addEventListener('change', (e) => {
+            isKidsMode = e.target.checked;
+            
+            if (isKidsMode) {
+                labelKids.classList.remove('opacity-50', 'text-gray-500');
+                labelKids.classList.add('text-[#4db8e8]');
+                labelAdult.classList.add('opacity-50', 'text-gray-500');
+                labelAdult.classList.remove('text-[#ff007f]');
+            } else {
+                labelAdult.classList.remove('opacity-50', 'text-gray-500');
+                labelAdult.classList.add('text-[#ff007f]');
+                labelKids.classList.add('opacity-50', 'text-gray-500');
+                labelKids.classList.remove('text-[#4db8e8]');
+            }
+
+            // Dump cached question and fetch a new one for the correct mode
+            nextQuestionData = null;
+            preFetchQuestion();
+        });
+
+        // Keyboard Hotkeys
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
@@ -545,6 +589,19 @@
                 e.preventDefault();
                 if (!gameActive && document.getElementById('message-overlay').classList.contains('hidden')) {
                    btnStart.click();
+                }
+            } else if (e.code === 'KeyQ') {
+                e.preventDefault();
+                if (!btnGenQ.disabled) {
+                    btnGenQ.classList.add('translate-y-[6px]', 'shadow-[0_0px_0_#2d80a8]');
+                    setTimeout(() => btnGenQ.classList.remove('translate-y-[6px]', 'shadow-[0_0px_0_#2d80a8]'), 150);
+                    btnGenQ.click();
+                }
+            } else if (e.code === 'KeyM') {
+                e.preventDefault();
+                if (modeToggle) {
+                    modeToggle.checked = !modeToggle.checked;
+                    modeToggle.dispatchEvent(new Event('change'));
                 }
             }
         });
