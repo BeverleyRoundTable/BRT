@@ -73,10 +73,10 @@
     <div class="absolute inset-0 z-0 opacity-30" style="background-image: repeating-linear-gradient(45deg, #4db8e8 25%, transparent 25%, transparent 75%, #4db8e8 75%, #4db8e8), repeating-linear-gradient(45deg, #4db8e8 25%, #000000 25%, #000000 75%, #4db8e8 75%, #4db8e8); background-position: 0 0, 20px 20px; background-size: 40px 40px;"></div>
     <div class="absolute inset-0 z-0 bg-black/80 backdrop-blur-sm"></div>
 
-    <!-- Logo & Test Button -->
+    <!-- Logo & Test Button (Updated Z-Index) -->
     <img src="https://github.com/BeverleyRoundTable/BRT/blob/main/icons/BERAVER.png?raw=true" alt="BeRaver Logo" class="brand-logo drop-shadow-2xl">
     
-    <button onclick="triggerDonationDrop('Ben Watts', 20.00, 'Keep the tunes coming!')" class="absolute top-6 right-6 z-10 bg-white/10 hover:bg-white/20 text-white text-sm font-bold py-2 px-4 rounded border border-white/30 transition-all">
+    <button onclick="triggerDonationDrop('Ben Watts', 20.00, 'Keep the tunes coming!')" class="absolute top-6 right-6 z-50 bg-white/10 hover:bg-white/20 text-white text-sm font-bold py-2 px-4 rounded border border-white/30 transition-all cursor-pointer">
         Test Webhook Drop
     </button>
 
@@ -105,7 +105,7 @@
         
     </main>
 
-    <!-- Footer details (Incorporating the accurate Est. date) -->
+    <!-- Footer details -->
     <footer class="absolute bottom-4 w-full text-center z-10 text-gray-500 font-bold tracking-widest text-sm uppercase">
         Beverley Round Table • Est. 1950 • Powered by Zendure
     </footer>
@@ -135,30 +135,42 @@
         const overlayTitle = document.getElementById('drop-title');
         const overlayDetails = document.getElementById('drop-details');
 
-        // --- Synthesized Rave Airhorn Audio ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
+        // --- Synthesized Rave Airhorn Audio (Updated for Mobile) ---
+        let audioCtx; // Define it empty first
+
         function playRaveHorn() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            // Rapid stuttering rave horn effect
-            for(let i = 0; i < 4; i++) {
-                setTimeout(() => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.3);
-                    
-                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime); // Volume
-                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                    
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.3);
-                }, i * 150); // Stutter timing
+            try {
+                // Only create the context once the user actually taps
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContext();
+                }
+                
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                // Rapid stuttering rave horn effect
+                for(let i = 0; i < 4; i++) {
+                    setTimeout(() => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.3);
+                        
+                        gain.gain.setValueAtTime(0.3, audioCtx.currentTime); // Volume
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                        
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.3);
+                    }, i * 150); // Stutter timing
+                }
+            } catch (e) {
+                console.warn("Mobile browser blocked audio autoplay, but visuals will continue.", e);
             }
         }
 
