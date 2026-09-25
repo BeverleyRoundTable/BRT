@@ -1,1 +1,1063 @@
-Hello
+<!DOCTYPE html>
+<html lang="en-GB" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa Sleigh</title>
+    
+    <meta name="description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Santa Sleigh Live Tracker">
+    <meta property="og:description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
+    <meta property="og:image" content="https://brt-23f.pages.dev/icons/site_background_brt.png"> 
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Santa Sleigh Live Tracker">
+    <meta name="twitter:description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
+    <meta name="twitter:image" content="https://brt-23f.pages.dev/icons/site_background_brt.png">
+
+    <meta name="theme-color" content="#1D1D1A">
+    <link rel="icon" type="image/png" href="https://brt-23f.pages.dev/icons/Beverley_Santa_Logo.png">
+    <link rel="apple-touch-icon" href="https://brt-23f.pages.dev/icons/Beverley_Santa_Logo.png">
+    
+    <link rel="preload" as="image" href="https://brt-23f.pages.dev/icons/site_background_brt.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brt: {
+                            dark: '#1D1D1A', 
+                            gold: 'rgb(var(--primary-rgb, 251 175 51) / <alpha-value>)',
+                            onprimary: 'var(--on-primary, #000000)',
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Eurostile', 'Montserrat', 'sans-serif'], 
+                        body: ['Open Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #1D1D1A;
+            color: #FFFFFF;
+        }
+        
+        ::selection {
+            background-color: rgb(var(--primary-rgb, 251 175 51));
+            color: var(--on-primary, #000000);
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1D1D1A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgb(var(--primary-rgb, 251 175 51));
+            border-radius: 5px;
+        }
+
+        .loader-overlay {
+            transition: opacity 0.5s ease;
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+    </style>
+</head>
+<body class="font-body antialiased flex flex-col min-h-screen">
+
+    <div id="site-bg" class="fixed inset-0 bg-cover bg-center z-[-2]" style="background-image: url('https://brt-23f.pages.dev/icons/site_background_brt.png');"></div>
+    <div class="fixed inset-0 bg-gradient-to-b from-brt-dark/85 to-black z-[-1]"></div>
+
+    <div id="loader" class="fixed inset-0 bg-brt-dark z-[9999] flex flex-col items-center justify-center loader-overlay" role="status" aria-live="polite">
+        <div class="w-12 h-12 border-4 border-white/10 border-t-brt-gold rounded-full spinner mb-6"></div>
+        <h2 id="loader-text" class="font-heading font-bold text-2xl uppercase tracking-widest text-white">Loading Sleigh Data...</h2>
+        <div id="loader-error" class="hidden text-red-500 text-center max-w-md mt-4 font-body"></div>
+    </div>
+    
+    <script>
+    window.SLEIGH_CONFIG = Object.assign({
+        proxyBase: 'https://santaproxy.beverley247.workers.dev',
+        frameBase: 'https://brt-23f.pages.dev/sleigh',
+        assetBase: 'https://brt-23f.pages.dev/icons',
+        prettyDomain: 'roundtablesantasleigh.co.uk'
+    }, window.SLEIGH_CONFIG || {});
+
+    window.sleighProxyUrl = function (api) {
+        return window.SLEIGH_CONFIG.proxyBase + '/?ttl=30&target=' + encodeURIComponent(api);
+    };
+
+    window.sleighFetchData = function (api) {
+        return fetch(window.sleighProxyUrl(api)).then(function (response) {
+            if (!response.ok) throw new Error('Failed to load API data (HTTP ' + response.status + ')');
+            return response.json();
+        });
+    };
+
+    window.__sleighApiUrl = new URLSearchParams(location.search).get('api');
+
+    if (window.__sleighPrefetchedData) {
+        window.__sleighDataPromise = Promise.resolve(window.__sleighPrefetchedData);
+    } else if (window.__sleighApiUrl) {
+        window.__sleighDataPromise = window.sleighFetchData(window.__sleighApiUrl);
+    }
+
+    if (window.__sleighDataPromise) {
+        window.__sleighDataPromise.catch(function () {});
+    }
+    </script>
+
+    <div id="announcement-bar" class="hidden bg-brt-gold text-brt-onprimary text-center py-2 px-4 font-bold text-sm tracking-wide" role="status" aria-live="polite"></div>
+
+    <header class="sticky w-full top-0 z-50 bg-brt-dark/95 backdrop-blur-sm border-b border-white/10 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="#" class="flex-shrink-0 flex items-center gap-3 group text-white hover:text-white">
+                    <img id="nav-logo" src="" alt="" class="w-12 h-12 object-contain bg-white/10 rounded-full p-1 transition-transform group-hover:scale-105" style="display: none;">
+                    <div class="font-heading font-black text-xl md:text-2xl tracking-tighter uppercase" id="nav-title">Santa Sleigh</div>
+                </a>
+                
+                <nav class="hidden md:flex space-x-6 items-center">
+                    <a href="#tracker" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-gold transition-colors">Live Tracker</a>
+                    <a href="#routes" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-gold transition-colors">Routes</a>
+                    <a href="#memories" id="nav-memory-book" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-gold transition-colors">Memory Book</a>
+                    <a href="#donate" id="nav-donate" class="font-heading uppercase font-bold text-sm text-brt-onprimary bg-brt-gold px-5 py-2 rounded-full hover:bg-white transition-all duration-200 transform hover:scale-105">Donate</a>
+                </nav>
+
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-gray-300 hover:text-brt-gold focus:outline-none p-2">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-brt-dark border-b border-white/10">
+            <div class="px-2 pt-2 pb-4 space-y-1 flex flex-col">
+                <a href="#tracker" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-sm text-gray-300 hover:text-brt-gold hover:bg-white/5 rounded-md">Live Tracker</a>
+                <a href="#routes" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-sm text-gray-300 hover:text-brt-gold hover:bg-white/5 rounded-md">Routes</a>
+                <a href="#memories" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-sm text-gray-300 hover:text-brt-gold hover:bg-white/5 rounded-md">Memory Book</a>
+                <a href="#donate" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-sm text-brt-gold hover:text-white hover:bg-white/5 rounded-md">Donate</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <!-- Hero Section -->
+        <section id="hero" class="relative min-h-[75vh] flex items-center justify-center py-20">
+            <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <span class="font-heading font-extrabold uppercase tracking-widest text-sm md:text-base text-brt-gold mb-4 block drop-shadow-md">
+                    He's Making a List
+                </span>
+                <h1 class="font-heading font-black text-5xl md:text-7xl lg:text-8xl text-white uppercase leading-tight tracking-tighter mb-6 drop-shadow-xl" id="hero-title">
+                    Santa Sleigh
+                </h1>
+                <p class="font-body text-lg md:text-xl text-gray-200 max-w-3xl mx-auto mb-10 leading-relaxed drop-shadow-md">
+                    Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="#tracker" class="font-heading uppercase font-bold text-lg bg-brt-gold text-brt-onprimary px-8 py-4 rounded-full hover:bg-white transition-all duration-300 transform hover:-translate-y-1 shadow-lg hover:shadow-brt-gold/50">
+                        Track Santa Live
+                    </a>
+                    <button id="share-btn" type="button" aria-label="Share this page" class="font-heading uppercase font-bold text-lg bg-transparent border-2 border-white/20 text-white px-8 py-4 rounded-full hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                        Share <i class="fa-solid fa-share-nodes"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tracker Section -->
+        <section id="tracker" class="py-24 bg-brt-dark/80 backdrop-blur-md relative border-t border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Live <span class="text-brt-gold">Tracker</span></h2>
+                <p class="font-body text-gray-300 mb-12 text-lg max-w-2xl mx-auto">
+                    Watch Santa's sleigh move in real-time as he visits the streets!
+                </p>
+                <div class="w-full bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl relative">
+                    <iframe id="tracker-iframe" class="w-full h-[75vh] min-h-[500px] border-none" title="Santa Tracker" allow="geolocation; screen-wake-lock" scrolling="no"></iframe>
+                </div>
+                <a id="tracker-fullscreen" class="inline-block mt-6 text-brt-gold font-bold hover:text-white transition-colors" href="#" target="_blank" rel="noopener" hidden>Open the tracker full-screen <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-sm"></i></a>
+            </div>
+        </section>
+
+        <!-- Donate Section -->
+        <section id="donate" class="py-24 bg-[#151513]/90 relative border-t border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Help Us Spread <span class="text-brt-gold">The Magic</span></h2>
+                <p class="font-body text-gray-400 mb-12 text-lg max-w-2xl mx-auto">
+                    Every penny raised goes directly back into supporting our local community.
+                </p>
+
+                <!-- Thermometer Card -->
+                <div class="thermo-card bg-black border border-white/10 rounded-3xl p-8 md:p-12 max-w-lg mx-auto shadow-2xl relative overflow-hidden text-center">
+                    <div class="absolute -top-1/2 left-1/2 transform -translate-x-1/2 w-[300px] h-[300px] bg-brt-gold/20 blur-3xl rounded-full pointer-events-none"></div>
+                    
+                    <span class="inline-block bg-brt-gold/10 text-brt-gold border border-brt-gold/20 rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest mb-6 relative z-10">🎄 Fundraiser</span>
+                    
+                    <h3 class="thermo-title font-heading font-black text-4xl md:text-5xl text-white mb-8 relative z-10 uppercase">Fundraiser <span class="text-brt-gold">Target</span></h3>
+                    
+                    <div class="progress-bar-bg w-full h-6 bg-white/5 border border-white/10 rounded-full overflow-hidden mb-6 relative z-10">
+                        <div id="donation-fill" class="progress-bar-fill h-full bg-gradient-to-r from-red-600 to-brt-gold w-0 transition-all duration-1000 rounded-full"></div>
+                    </div>
+                    
+                    <div class="thermo-stats flex flex-col md:flex-row justify-between items-center md:items-end mb-6 relative z-10 gap-2">
+                        <div class="text-center md:text-left">
+                            <div id="donation-current" class="font-heading font-black text-4xl md:text-5xl text-brt-gold">£0</div>
+                            <div id="donation-target" class="font-body text-sm font-bold text-gray-400 uppercase tracking-wide">of £0</div>
+                        </div>
+                        <div class="text-center md:text-right mt-4 md:mt-0">
+                            <p id="donation-updated-wrap" class="font-body text-xs text-gray-500">Last updated: <span id="donation-updated">Recently</span></p>
+                        </div>
+                    </div>
+                    
+                    <a href="#" id="donate-btn" class="inline-block w-full text-center font-heading uppercase font-bold text-xl bg-brt-gold text-brt-onprimary px-8 py-4 rounded-xl hover:bg-white hover:text-black transition-all duration-300 relative z-10 shadow-lg" style="display: none;" target="_blank" rel="noopener noreferrer">
+                        Donate Now
+                    </a>
+                </div>
+
+                <!-- Volunteer Banner -->
+                <div id="volunteer-container" class="max-w-2xl mx-auto mt-12" style="display: none;">
+                    <div class="bg-gradient-to-br from-brt-dark to-black border border-brt-gold/30 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-brt-gold/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div class="text-center md:text-left relative z-10">
+                            <h3 class="font-heading font-bold text-2xl text-brt-gold mb-2 uppercase tracking-wide">Keep The Sleigh Moving!</h3>
+                            <p class="font-body text-gray-300">We need drivers, navigators, and collectors. Volunteer as an elf this year!</p>
+                        </div>
+                        <a href="#" id="volunteer-btn" class="relative z-10 flex-shrink-0 font-heading uppercase font-bold text-sm bg-transparent border-2 border-brt-gold text-brt-gold px-6 py-3 rounded-xl hover:bg-brt-gold hover:text-brt-onprimary transition-all duration-300 whitespace-nowrap" target="_blank" rel="noopener noreferrer">
+                            Volunteer Now <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Routes Section -->
+        <section id="routes" class="py-24 bg-brt-dark/80 backdrop-blur-md relative border-t border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Route <span class="text-brt-gold">Schedule</span></h2>
+                <p class="font-body text-gray-300 mb-12 text-lg max-w-2xl mx-auto">
+                    Find out exactly when Santa is coming to your neighbourhood.
+                </p>
+                
+                <div class="w-full bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl mb-12">
+                    <iframe id="address-iframe" class="w-full h-[550px] border-none" title="Address Lookup" scrolling="no" loading="lazy" allow="geolocation"></iframe>
+                </div>
+
+                <div id="routes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Memories Section -->
+        <section id="memories" class="py-24 bg-[#151513]/90 relative border-t border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Digital <span class="text-brt-gold">Memory Book</span></h2>
+                <p class="font-body text-gray-400 mb-12 text-lg max-w-2xl mx-auto">
+                    Spotted Santa? Help us build our digital memory book and share your photos!
+                </p>
+                <div class="w-full bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+                    <iframe id="memory-book-iframe" class="w-full h-[900px] border-none" title="Santa Memory Book" loading="lazy" allow="camera; microphone; geolocation"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Blueprint Section (Tuk Tuk specific) -->
+        <section id="blueprint" class="py-24 bg-brt-dark/80 backdrop-blur-md relative border-t border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Inside Santa's <span class="text-brt-gold">Workshop</span></h2>
+                <p class="font-body text-gray-300 mb-12 text-lg max-w-2xl mx-auto">
+                    Tap the glowing dots on the sleigh to see the magic under the hood!
+                </p>
+                <div class="max-w-4xl mx-auto w-full bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+                    <iframe id="sleigh-frame" class="w-full h-[600px] border-none" title="Santa Sleigh Blueprint" loading="lazy" scrolling="no"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Partners Section (Tuk Tuk specific) -->
+        <section id="partners" class="py-24 bg-[#151513]/90 relative border-t border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Build <span class="text-brt-gold">Partners</span></h2>
+                <p class="font-body text-gray-400 mb-16 text-lg max-w-3xl mx-auto">
+                    Meet the team behind the magic! These incredible partners provided the equipment, expertise, and storage to bring our new sleigh to life.
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Greens Signmakers -->
+                    <div class="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center hover:border-brt-gold/50 transition-all duration-300 group">
+                        <div class="h-24 flex items-center justify-center mb-6 w-full">
+                            <img src="https://santa.beverleyroundtable.co.uk/assets/images/image21.png" alt="Greens Signmakers" class="max-h-full max-w-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300">
+                        </div>
+                        <h3 class="font-heading font-bold text-xl text-white mb-3 text-center">Greens Signmakers</h3>
+                        <p class="font-body text-sm text-gray-400 flex-grow mb-6 text-center">Transforming our electric tuk-tuk into a show-stopping Santa Sleigh with a festive wrap.</p>
+                        <a href="https://greens-signmakers.co.uk/" target="_blank" class="text-brt-gold font-bold uppercase text-sm hover:text-white transition-colors">Visit Site <i class="fa-solid fa-arrow-right ml-1"></i></a>
+                    </div>
+
+                    <!-- Acklams -->
+                    <div class="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center hover:border-brt-gold/50 transition-all duration-300 group">
+                        <div class="h-24 flex items-center justify-center mb-6 w-full bg-white/10 rounded-xl p-3">
+                            <img src="https://santa.beverleyroundtable.co.uk/assets/images/image04.png" alt="Acklams" class="max-h-full max-w-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300">
+                        </div>
+                        <h3 class="font-heading font-bold text-xl text-white mb-3 text-center">Acklams</h3>
+                        <p class="font-body text-sm text-gray-400 flex-grow mb-6 text-center">Generously housing our sleigh to ensure Santa's ride is safe and secure year-round.</p>
+                        <a href="https://acklamscoaches.co.uk/" target="_blank" class="text-brt-gold font-bold uppercase text-sm hover:text-white transition-colors">Visit Site <i class="fa-solid fa-arrow-right ml-1"></i></a>
+                    </div>
+
+                    <!-- Beverley Town Council -->
+                    <div class="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center hover:border-brt-gold/50 transition-all duration-300 group">
+                        <div class="h-24 flex items-center justify-center mb-6 w-full bg-white/80 rounded-xl p-2">
+                            <img src="https://santa.beverleyroundtable.co.uk/assets/images/image23.png" alt="Beverley Town Council" class="max-h-full max-w-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300">
+                        </div>
+                        <h3 class="font-heading font-bold text-xl text-white mb-3 text-center">Beverley Town Council</h3>
+                        <p class="font-body text-sm text-gray-400 flex-grow mb-6 text-center">Generously funding the incredible new audio equipment for our Santa Sleigh.</p>
+                        <a href="https://www.beverley.gov.uk/" target="_blank" class="text-brt-gold font-bold uppercase text-sm hover:text-white transition-colors">Visit Site <i class="fa-solid fa-arrow-right ml-1"></i></a>
+                    </div>
+
+                    <!-- Zendure -->
+                    <div class="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center hover:border-brt-gold/50 transition-all duration-300 group">
+                        <div class="h-24 flex items-center justify-center mb-6 w-full bg-white/10 rounded-xl p-3">
+                            <img src="https://santa.beverleyroundtable.co.uk/assets/images/image22.png" alt="Zendure" class="max-h-full max-w-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300">
+                        </div>
+                        <h3 class="font-heading font-bold text-xl text-white mb-3 text-center">Zendure</h3>
+                        <p class="font-body text-sm text-gray-400 flex-grow mb-6 text-center">Providing portable power stations to keep the sleigh's lights and music running.</p>
+                        <a href="https://zendure.co.uk/" target="_blank" class="text-brt-gold font-bold uppercase text-sm hover:text-white transition-colors">Visit Site <i class="fa-solid fa-arrow-right ml-1"></i></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Sponsors (Hidden by default unless API populates) -->
+        <section id="sponsors" class="py-12 bg-brt-dark/50 relative border-t border-white/5" style="display: none;">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="font-heading font-bold text-2xl uppercase text-white mb-8">Our Generous <span class="text-brt-gold">Sponsors</span></h2>
+                <div id="sponsors-container" class="flex flex-wrap justify-center gap-6">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section id="faq" class="py-24 bg-brt-dark/80 backdrop-blur-md relative border-t border-white/5">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">FAQ & <span class="text-brt-gold">Safety Rules</span></h2>
+                    <p class="font-body text-gray-300 text-lg">Important information about the sleigh routes and how to enjoy the magic safely.</p>
+                </div>
+                
+                <div class="space-y-4 faq-accordion">
+                    <details class="faq-item bg-white/5 border border-white/10 rounded-2xl overflow-hidden group" name="faq">
+                        <summary class="flex justify-between items-center font-heading font-bold text-lg p-6 cursor-pointer text-white hover:bg-white/10 transition-colors list-none">
+                            Will you definitely come down my street tonight?
+                            <i class="faq-icon fa-solid fa-chevron-down text-brt-gold transition-transform duration-300 group-open:rotate-180"></i>
+                        </summary>
+                        <div class="faq-content p-6 pt-0 text-gray-400 font-body border-t border-white/10 mt-2 leading-relaxed">
+                            Our routes are a guide, not a guarantee. We are entirely run by volunteers and rely on good weather, clear traffic, and having enough people to safely operate the sleigh. Sometimes we have to cut a route short due to rain, ice, or time restrictions. Please use the live tracker to see exactly where we are!
+                        </div>
+                    </details>
+
+                    <details class="faq-item bg-white/5 border border-white/10 rounded-2xl overflow-hidden group" name="faq">
+                        <summary class="flex justify-between items-center font-heading font-bold text-lg p-6 cursor-pointer text-white hover:bg-white/10 transition-colors list-none">
+                            Why didn't you turn down my cul-de-sac?
+                            <i class="faq-icon fa-solid fa-chevron-down text-brt-gold transition-transform duration-300 group-open:rotate-180"></i>
+                        </summary>
+                        <div class="faq-content p-6 pt-0 text-gray-400 font-body border-t border-white/10 mt-2 leading-relaxed">
+                            The Santa Sleigh is large and difficult to manoeuvre. If there are parked cars blocking a turning circle, or if a cul-de-sac is too tight for us to safely turn around, the driver will make the decision to stay on the main road. If you live down a tight street, please come out to the nearest junction to wave to Santa!
+                        </div>
+                    </details>
+
+                    <details class="faq-item bg-white/5 border border-white/10 rounded-2xl overflow-hidden group" name="faq">
+                        <summary class="flex justify-between items-center font-heading font-bold text-lg p-6 cursor-pointer text-white hover:bg-white/10 transition-colors list-none">
+                            Can my children climb onto the sleigh for a photo?
+                            <i class="faq-icon fa-solid fa-chevron-down text-brt-gold transition-transform duration-300 group-open:rotate-180"></i>
+                        </summary>
+                        <div class="faq-content p-6 pt-0 text-gray-400 font-body border-t border-white/10 mt-2 leading-relaxed">
+                            For safety and insurance reasons, <strong class="text-white">no one is allowed on the sleigh</strong> while it is moving or during the street collections. You are very welcome to take photos of Santa from the pavement. Please ensure children do not run into the road towards the moving vehicle.
+                        </div>
+                    </details>
+
+                    <details class="faq-item bg-white/5 border border-white/10 rounded-2xl overflow-hidden group" name="faq">
+                        <summary class="flex justify-between items-center font-heading font-bold text-lg p-6 cursor-pointer text-white hover:bg-white/10 transition-colors list-none">
+                            Where does the donated money go?
+                            <i class="faq-icon fa-solid fa-chevron-down text-brt-gold transition-transform duration-300 group-open:rotate-180"></i>
+                        </summary>
+                        <div class="faq-content p-6 pt-0 text-gray-400 font-body border-t border-white/10 mt-2 leading-relaxed">
+                            Every single penny collected goes directly into our local Round Table charity fund. Throughout the year, we distribute this money to local good causes, community groups, food banks, and individuals in need right here in our town.
+                        </div>
+                    </details>
+
+                    <details class="faq-item bg-white/5 border border-white/10 rounded-2xl overflow-hidden group" name="faq">
+                        <summary class="flex justify-between items-center font-heading font-bold text-lg p-6 cursor-pointer text-white hover:bg-white/10 transition-colors list-none">
+                            Do you accept card donations?
+                            <i class="faq-icon fa-solid fa-chevron-down text-brt-gold transition-transform duration-300 group-open:rotate-180"></i>
+                        </summary>
+                        <div class="faq-content p-6 pt-0 text-gray-400 font-body border-t border-white/10 mt-2 leading-relaxed">
+                            Yes! Our elves carry contactless card readers alongside their traditional buckets. You can also donate right here on this website using the Donate button at the top of the page.
+                        </div>
+                    </details>
+                    
+                    <details class="faq-item bg-white/5 border border-white/10 rounded-2xl overflow-hidden group" name="faq">
+                        <summary class="flex justify-between items-center font-heading font-bold text-lg p-6 cursor-pointer text-white hover:bg-white/10 transition-colors list-none">
+                            Can I volunteer to help?
+                            <i class="faq-icon fa-solid fa-chevron-down text-brt-gold transition-transform duration-300 group-open:rotate-180"></i>
+                        </summary>
+                        <div class="faq-content p-6 pt-0 text-gray-400 font-body border-t border-white/10 mt-2 leading-relaxed">
+                            Absolutely! We are always looking for enthusiastic volunteers to help collect donations, act as safety walkers, or even drive the towing vehicle. Reach out to us via our social media channels to get involved.
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+        
+        <!-- About Us Section -->
+        <section id="about" class="py-24 bg-[#151513]/90 relative border-t border-white/5">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-8">Who <span class="text-brt-gold">We Are</span></h2>
+                <div class="bg-black/60 border border-white/10 rounded-3xl p-10 shadow-2xl backdrop-blur-sm">
+                    <p class="font-body text-xl text-white mb-6">
+                        The Santa Sleigh is proudly operated by <strong id="about-table-name" class="text-brt-gold">Round Table</strong>.
+                    </p>
+                    <p class="font-body text-gray-400 mb-8 leading-relaxed">
+                        Round Table is an events-based club for young men aged 18-45 focused on delivering a programme of social and community events. Whether it be trying a new sport, going on an adventure, or raising money for our communities, we aim to have fun, make friends, and live life to the fullest.
+                    </p>
+                    <p class="font-heading font-bold uppercase tracking-widest text-white mb-10">
+                        Find the friends you've been missing. <span class="text-brt-gold">Do More in <span id="current-year-text"></span>.</span>
+                    </p>
+                    <div id="social-links-container" class="flex flex-wrap justify-center gap-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-black py-10 border-t border-white/10 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="font-body text-gray-500 text-sm">
+                &copy; <span id="year"></span> <span id="footer-name" class="font-bold text-white">Santa Sleigh</span>. Powered by TurboSanta.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        const CFG = window.SLEIGH_CONFIG;
+        const $ = (id) => document.getElementById(id);
+        const DEFAULT_LOGO = 'https://brt-23f.pages.dev/icons/Beverley_Santa_Logo.png';
+        const DEFAULT_WEBSITE = 'https://www.roundtable.co.uk';
+        const FRAME_ORIGIN = (() => { try { return new URL(CFG.frameBase).origin; } catch (e) { return ''; } })();
+
+        const currentYear = new Date().getFullYear();
+        $('current-year-text').textContent = currentYear;
+        $('year').textContent = currentYear;
+
+        // Mobile Menu Toggle
+        const btn = $('mobile-menu-btn');
+        const menu = $('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+        if(btn && menu) {
+            btn.addEventListener('click', () => { menu.classList.toggle('hidden'); });
+            mobileLinks.forEach(link => { link.addEventListener('click', () => { menu.classList.add('hidden'); }); });
+        }
+
+        function safeUrl(u) {
+            if (!u) return '';
+            try {
+                const x = new URL(String(u).trim(), location.href);
+                return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : '';
+            } catch (e) { return ''; }
+        }
+
+        function el(tag, className, text) {
+            const n = document.createElement(tag);
+            if (className) n.className = className;
+            if (text !== undefined && text !== null) n.textContent = text;
+            return n;
+        }
+
+        function asArray(v) { return Array.isArray(v) ? v : []; }
+
+        function parseColor(v) {
+            if (typeof v !== 'string') return null;
+            const s = v.trim();
+            const hex = /^#([0-9a-f]{3,8})$/i.exec(s);
+            if (hex) {
+                let h = hex[1];
+                if (h.length === 3 || h.length === 4) h = h.split('').map(c => c + c).join('');
+                if (h.length !== 6 && h.length !== 8) return null;
+                return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+            }
+            return null;
+        }
+
+        function readableTextOn(rgb) {
+            const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+            const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+            return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
+        }
+
+        function parseRouteDate(v) {
+            if (!v) return null;
+            const s = String(v).trim();
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+            const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(s);
+            return isNaN(d) ? null : d;
+        }
+
+        function deriveTableName(siteName) {
+            return siteName.replace(/\bsanta(?:['\u2019]s)?\b/gi, '')
+                           .replace(/\bsleighs?\b/gi, '')
+                           .replace(/\bround\s+table\b/gi, '')
+                           .replace(/\s+/g, ' ').trim();
+        }
+
+        function showError(html, detail) {
+            const loaderText = $('loader-text');
+            const loaderError = $('loader-error');
+            const spinner = document.querySelector('.spinner');
+            if (spinner) spinner.style.display = 'none';
+
+            const target = (loaderText && loaderError) ? loaderError : $('announcement-bar');
+            target.innerHTML = html;
+            if (detail) {
+                const p = el('p', 'mt-3', detail);
+                target.appendChild(p);
+            }
+            if (target === loaderError) {
+                loaderText.textContent = 'Setup Required';
+                loaderText.classList.add('text-red-500');
+                loaderError.classList.remove('hidden');
+            } else {
+                target.classList.replace('bg-brt-gold', 'bg-red-600');
+                target.classList.replace('text-brt-onprimary', 'text-white');
+                target.classList.remove('hidden');
+            }
+        }
+
+        function removeLoader() {
+            const loader = $('loader');
+            if (loader) {
+                loader.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => loader.style.display = 'none', 500);
+            }
+        }
+
+        let netState = 'online';
+        let liveAnnouncement = '';
+
+        function paintBanner() {
+            const bar = $('announcement-bar');
+            let text = '';
+            let alert = false;
+            if (netState === 'offline') {
+                text = '\uD83D\uDCF6 Connection lost. Showing offline map and saved routes.';
+                alert = true;
+            } else if (netState === 'reconnecting') {
+                text = '\uD83D\uDCE1 Reconnected! Refreshing sleigh data...';
+            } else if (liveAnnouncement) {
+                text = '\uD83C\uDF85 ' + liveAnnouncement;
+            }
+            
+            if(alert) {
+                bar.classList.replace('bg-brt-gold', 'bg-red-600');
+                bar.classList.replace('text-brt-onprimary', 'text-white');
+            } else {
+                bar.classList.replace('bg-red-600', 'bg-brt-gold');
+                bar.classList.replace('text-white', 'text-brt-onprimary');
+            }
+            
+            bar.textContent = text;
+            if(text) bar.classList.remove('hidden');
+            else bar.classList.add('hidden');
+        }
+
+        function renderTheme(settings) {
+            const root = document.documentElement;
+            const primary = parseColor(settings.primary_color);
+            if (primary) {
+                root.style.setProperty('--primary-rgb', primary.join(' '));
+                root.style.setProperty('--on-primary', readableTextOn(primary));
+            } else {
+                root.style.removeProperty('--primary-rgb');
+                root.style.removeProperty('--on-primary');
+            }
+
+            const bgEl = $('site-bg');
+            const bg = safeUrl(settings.background_url) || 'https://brt-23f.pages.dev/icons/site_background_brt.png';
+            if (bgEl) {
+                bgEl.style.backgroundImage = `url("${bg}")`;
+            }
+        }
+
+        function setTitleParts(node, highlight, suffix) {
+            node.replaceChildren();
+            const span = el('span', 'text-brt-gold', highlight);
+            node.appendChild(span);
+            if (suffix) {
+                const s = el('span', 'text-white', ' ' + suffix);
+                node.appendChild(s);
+            }
+        }
+
+        function renderBranding(settings) {
+            const siteName = String(settings.sleigh_display_name || 'Santa Sleigh');
+            document.title = siteName;
+            $('footer-name').textContent = siteName;
+
+            const match = siteName.match(/(.*?\bRound Table\b)/i);
+            const tablePart = match ? match[1].trim() : siteName;
+            const suffix = match ? siteName.substring(match[0].length).trim() : '';
+            setTitleParts($('nav-title'), tablePart, suffix);
+            setTitleParts($('hero-title'), tablePart, suffix);
+
+            const logo = safeUrl(settings.logo_overlay_url) || DEFAULT_LOGO;
+            const navLogo = $('nav-logo');
+            navLogo.onerror = () => { navLogo.onerror = null; navLogo.src = DEFAULT_LOGO; };
+            navLogo.src = logo;
+            navLogo.alt = siteName + ' logo';
+            navLogo.style.display = 'block';
+
+            if (logo) {
+                const iconLink = document.querySelector("link[rel='icon']");
+                const appleIconLink = document.querySelector("link[rel='apple-touch-icon']");
+                if (iconLink) iconLink.href = logo;
+                if (appleIconLink) appleIconLink.href = logo;
+            }
+        }
+
+        function renderAnnouncement(settings) {
+            liveAnnouncement = settings.live_announcement ? String(settings.live_announcement) : '';
+            paintBanner();
+        }
+
+        let lazyObserver = null;
+        function observeLazyFrame(frame) {
+            if (!('IntersectionObserver' in window)) {
+                frame.src = frame.dataset.src;
+                frame.removeAttribute('data-src');
+                return;
+            }
+            if (!lazyObserver) {
+                lazyObserver = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(entry => {
+                        if (!entry.isIntersecting) return;
+                        const f = entry.target;
+                        if (f.dataset.src) {
+                            f.src = f.dataset.src;
+                            f.removeAttribute('data-src');
+                        }
+                        obs.unobserve(f);
+                    });
+                }, { rootMargin: '300px' });
+            }
+            lazyObserver.observe(frame);
+        }
+
+        function setFrameSrc(id, url, lazy) {
+            const frame = $(id);
+            if (!frame) return;
+            if (frame.getAttribute('src') === url || frame.dataset.src === url) return;
+            if (lazy && !frame.getAttribute('src')) {
+                frame.dataset.src = url;
+                observeLazyFrame(frame);
+            } else {
+                frame.src = url;
+            }
+        }
+
+        function frameUrl(page, api) {
+            let url = CFG.frameBase + '/' + page + '?api=' + encodeURIComponent(api) + '&proxy=' + encodeURIComponent(window.sleighProxyUrl(api));
+            if (page === 'address.html') {
+                const shareBase = prettyAddressesUrl();
+                if (shareBase) url += '&shareBase=' + encodeURIComponent(shareBase);
+            }
+            return url;
+        }
+
+        function bindFrameMessages() {
+            window.addEventListener('message', (e) => {
+                const addr = $('address-iframe');
+                if (!addr || e.source !== addr.contentWindow) return;
+                const h = e.data && Number(e.data.addressLookupHeight);
+                if (Number.isFinite(h) && h >= 100 && h <= 5000) addr.style.height = Math.round(h) + 'px';
+            });
+        }
+
+        function prettyTrackerUrl() {
+            const domain = String(CFG.prettyDomain || '').toLowerCase();
+            if (!domain) return '';
+            const host = location.hostname.toLowerCase();
+            const suffix = '.' + domain;
+            if (host.length <= suffix.length || host.slice(-suffix.length) !== suffix) return '';
+            const sub = host.slice(0, -suffix.length);
+            if (!/^[a-z0-9-]+$/.test(sub) || sub === 'www' || /tracker$/.test(sub)) return '';
+            return location.protocol + '//' + sub + 'tracker' + suffix;
+        }
+
+        function prettyCrewUrl() {
+            const domain = String(CFG.prettyDomain || '').toLowerCase();
+            if (!domain) return '';
+            const host = location.hostname.toLowerCase();
+            const suffix = '.' + domain;
+            if (host.length <= suffix.length || host.slice(-suffix.length) !== suffix) return '';
+            const sub = host.slice(0, -suffix.length);
+            if (!/^[a-z0-9-]+$/.test(sub) || sub === 'www' || /tracker$/.test(sub) || /crew$/.test(sub)) return '';
+            return location.protocol + '//' + sub + 'crew' + suffix;
+        }
+
+        function prettyAddressesUrl() {
+            const domain = String(CFG.prettyDomain || '').toLowerCase();
+            if (!domain) return '';
+            const host = location.hostname.toLowerCase();
+            const suffix = '.' + domain;
+            if (host.length <= suffix.length || host.slice(-suffix.length) !== suffix) return '';
+            const sub = host.slice(0, -suffix.length);
+            if (!/^[a-z0-9-]+$/.test(sub) || sub === 'www' || /tracker$/.test(sub) || /crew$/.test(sub) || /addresses$/.test(sub)) return '';
+            return location.protocol + '//' + sub + 'addresses' + suffix;
+        }
+
+        function renderFrames(api) {
+            const trackerUrl = frameUrl('tracker', api);
+            setFrameSrc('tracker-iframe', trackerUrl, false);
+            setFrameSrc('address-iframe', frameUrl('address.html', api), true);
+            setFrameSrc('memory-book-iframe', frameUrl('memory_book', api), true);
+            setFrameSrc('sleigh-frame', CFG.frameBase + '/blueprint.html', true);
+            const fs = $('tracker-fullscreen');
+            if (fs) { fs.href = prettyTrackerUrl() || trackerUrl; fs.hidden = false; }
+            bindFrameMessages();
+        }
+
+        let donationFillAnimated = false;
+        function renderDonations(donations, settings) {
+            const currency = donations.currency ? String(donations.currency) : '\u00A3';
+            const target = parseFloat(donations.target) || 0;
+            const current = parseFloat(donations.total) || 0;
+            const hasTarget = target > 0;
+            const donateUrl = safeUrl(settings.donate_url);
+            
+            const api = window.__sleighApiUrl;
+            const fallbackCrewUrl = CFG.frameBase + '/crew?api=' + encodeURIComponent(api);
+            const volunteerUrl = prettyCrewUrl() || fallbackCrewUrl;
+
+            const card = document.querySelector('.thermo-card');
+            [
+                card.querySelector('.thermo-title'),
+                card.querySelector('.progress-bar-bg'),
+                card.querySelector('.thermo-stats'),
+                $('donation-updated-wrap')
+            ].forEach(n => { if (n) n.style.display = hasTarget ? '' : 'none'; });
+
+            if (hasTarget) {
+                $('donation-current').textContent = currency + current.toLocaleString();
+                $('donation-target').textContent = 'OF ' + currency + target.toLocaleString();
+                $('donation-updated').textContent = donations.lastUpdatePretty ? String(donations.lastUpdatePretty) : 'Today';
+                const pct = Math.max(0, Math.min((current / target) * 100, 100));
+                setTimeout(() => { $('donation-fill').style.width = pct + '%'; }, donationFillAnimated ? 0 : 500);
+                donationFillAnimated = true;
+            }
+
+            const donateBtn = $('donate-btn');
+            if (donateUrl) {
+                donateBtn.href = donateUrl;
+                donateBtn.style.display = 'inline-block';
+            } else {
+                donateBtn.style.display = 'none';
+            }
+            card.style.display = (hasTarget || donateUrl) ? '' : 'none';
+
+            if (volunteerUrl) {
+                $('volunteer-btn').href = volunteerUrl;
+                $('volunteer-container').style.display = 'block';
+            } else {
+                $('volunteer-container').style.display = 'none';
+            }
+
+            const hasAny = hasTarget || !!donateUrl || !!volunteerUrl;
+            $('donate').style.display = hasAny ? '' : 'none';
+            const navDonate = $('nav-donate');
+            if (navDonate) navDonate.style.display = hasAny ? 'block' : 'none';
+        }
+
+        function renderRoutes(routes, sponsors = []) {
+            const container = $('routes-container');
+            container.replaceChildren();
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const allRoutes = routes
+                .filter(r => r && r.routeName)
+                .map(route => {
+                    const d = parseRouteDate(route.date);
+                    if (!d) return null;
+                    const day = new Date(d);
+                    day.setHours(0, 0, 0, 0);
+                    return { route, d, day };
+                })
+                .filter(Boolean)
+                .sort((a, b) => a.day - b.day);
+
+            if (!allRoutes.length) {
+                const p = el('p', 'text-gray-400 col-span-full', 'No routes scheduled yet. Check back soon!');
+                container.appendChild(p);
+                return;
+            }
+
+            allRoutes.forEach(({ route, d, day }) => {
+                const isPast = day < today;
+                const card = document.createElement('div');
+                card.className = 'bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-brt-gold/50 transition-all duration-300 flex flex-col text-left group';
+                
+                if (isPast) {
+                    card.classList.add('opacity-50', 'grayscale');
+                }
+
+                const start = route['Start Time'] || '';
+                const end = route['End Time'] || '';
+                const time = (start && end) ? start + ' - ' + end : '';
+                const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                
+                const dateWrapper = el('div', 'font-heading font-bold text-brt-gold uppercase text-sm mb-2 tracking-wide');
+                if (isPast) {
+                    const badge = el('span', 'text-white', '✓ COMPLETED | ');
+                    dateWrapper.appendChild(badge);
+                }
+                
+                dateWrapper.appendChild(document.createTextNode(time ? dateText + ' | ' + time : dateText));
+                card.appendChild(dateWrapper);
+                card.appendChild(el('h3', 'font-heading font-bold text-2xl text-white mb-3 group-hover:text-brt-gold transition-colors', String(route.routeName)));
+
+                if (route.streets) {
+                    const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
+                    if (streets.length) {
+                        let text = streets.slice(0, 8).join(', ');
+                        if (streets.length > 8) text += ' and more...';
+                        card.appendChild(el('div', 'font-body text-gray-400 text-sm flex-grow', text));
+                    }
+                }
+
+                if (route.sponsorName) {
+                    const s = el('div', 'mt-4 pt-4 border-t border-white/10 text-xs text-brt-gold flex items-center justify-between');
+                    s.appendChild(document.createTextNode('Sponsored by: '));
+                    
+                    const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
+                    const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
+                    
+                    if (sponsorLink) {
+                        const a = document.createElement('a');
+                        a.href = sponsorLink;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        a.textContent = String(route.sponsorName);
+                        a.className = 'text-white font-bold underline hover:text-brt-gold transition-colors block max-w-[150px] truncate text-right';
+                        s.appendChild(a);
+                    } else {
+                        const strong = el('strong', 'text-white block max-w-[150px] truncate text-right', String(route.sponsorName));
+                        s.appendChild(strong);
+                    }
+                    card.appendChild(s);
+                }
+
+                container.appendChild(card);
+            });
+        }
+
+        function renderSponsors(sponsors) {
+            const section = $('sponsors');
+            const container = $('sponsors-container');
+            container.replaceChildren();
+
+            const valid = sponsors.filter(s => s && safeUrl(s.sponsorUrl));
+            section.style.display = valid.length ? 'block' : 'none';
+
+            valid.forEach(sponsor => {
+                const wrap = el('div', 'bg-white/5 border border-white/10 rounded-xl p-4 w-40 h-24 flex items-center justify-center hover:border-brt-gold/50 transition-colors');
+                const img = document.createElement('img');
+                img.src = safeUrl(sponsor.sponsorUrl);
+                img.alt = sponsor.name ? String(sponsor.name) : 'Sponsor';
+                img.className = 'max-w-full max-h-full object-contain filter drop-shadow-md';
+                img.loading = 'lazy';
+                img.decoding = 'async';
+
+                const link = safeUrl(sponsor.sponsorLink);
+                if (link) {
+                    const a = document.createElement('a');
+                    a.href = link;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer sponsored';
+                    a.className = 'w-full h-full flex items-center justify-center';
+                    a.appendChild(img);
+                    wrap.appendChild(a);
+                } else {
+                    wrap.appendChild(img);
+                }
+                container.appendChild(wrap);
+            });
+        }
+
+        function renderAbout(settings) {
+            const siteName = String(settings.sleigh_display_name || 'Santa Sleigh');
+            const explicit = settings.table_name ? String(settings.table_name).trim() : '';
+            const derived = deriveTableName(siteName);
+            $('about-table-name').textContent = explicit || (derived ? derived + ' Round Table' : siteName);
+        }
+
+        function socialBtn(href, label, iconClass) {
+            const a = document.createElement('a');
+            a.href = href;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.className = 'flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white border border-white/20 hover:bg-brt-gold hover:text-black hover:border-brt-gold transition-all duration-300 transform hover:-translate-y-1 text-xl shadow-lg';
+            a.setAttribute('aria-label', label);
+            a.title = label;
+            const i = document.createElement('i');
+            i.className = iconClass;
+            i.setAttribute('aria-hidden', 'true');
+            a.appendChild(i);
+            return a;
+        }
+
+        function renderSocial(settings) {
+            const container = $('social-links-container');
+            container.replaceChildren();
+            [
+                [safeUrl(settings.table_website_url) || DEFAULT_WEBSITE, 'Website', 'fa-solid fa-globe'],
+                [safeUrl(settings.table_facebook_url), 'Facebook', 'fa-brands fa-facebook-f'],
+                [safeUrl(settings.table_instagram_url), 'Instagram', 'fa-brands fa-instagram'],
+                [safeUrl(settings.table_tiktok_url), 'TikTok', 'fa-brands fa-tiktok'],
+                [safeUrl(settings.table_youtube_url), 'YouTube', 'fa-brands fa-youtube']
+            ].forEach(([href, label, icon]) => {
+                if (href) container.appendChild(socialBtn(href, label, icon));
+            });
+        }
+
+        function safely(name, fn) {
+            try { fn(); } catch (err) { console.error('Render failed: ' + name, err); }
+        }
+
+        function applySettings(data, api) {
+            const settings = (data && data.settings) || {};
+            const donations = (data && data.donations) || {};
+            const routes = asArray(data && data.routes);
+            const sponsors = asArray(data && data.sponsors);
+
+            safely('theme', () => renderTheme(settings));
+            safely('branding', () => renderBranding(settings));
+            safely('announcement', () => renderAnnouncement(settings));
+            safely('frames', () => renderFrames(api));
+            safely('donations', () => renderDonations(donations, settings));
+            safely('routes', () => renderRoutes(routes, sponsors));
+            safely('sponsors', () => renderSponsors(sponsors));
+            safely('about', () => renderAbout(settings));
+            safely('social', () => renderSocial(settings));
+        }
+
+        function checkPayload(data) {
+            if (!data || typeof data !== 'object') throw new Error('The API returned an empty response.');
+            if (data.error) throw new Error(String(data.error));
+            return data;
+        }
+
+        function initializeSleighApp(retryCount = 0) {
+            const apiUrl = window.__sleighApiUrl || new URLSearchParams(location.search).get('api');
+
+            if (!apiUrl) {
+                if (retryCount < 10) {
+                    setTimeout(() => initializeSleighApp(retryCount + 1), 100);
+                    return;
+                }
+                showError("Welcome to the Universal Sleigh Template! <br><br> We couldn't find the sleigh data for this web address. If you are a Round Table chapter setting up a new tracker, please ensure your sleigh name is not null.");
+                return;
+            }
+
+            window.__sleighApiUrl = apiUrl;
+            if (!window.__sleighDataPromise) {
+                window.__sleighDataPromise = window.sleighFetchData(apiUrl);
+            }
+
+            window.__sleighDataPromise
+                .then(data => {
+                    applySettings(checkPayload(data), apiUrl);
+                    removeLoader();
+                })
+                .catch(err => {
+                    showError("Could not load data from the provided API. Please check the URL and ensure your Google Script is deployed as a Web App accessible to 'Anyone'.<br><br>", err && err.message);
+                    fetch(CFG.proxyBase + '/log?error=' + encodeURIComponent(err && err.message) + '&api=' + encodeURIComponent(apiUrl)).catch(()=>{});
+                });
+        }
+
+        function refreshSleighData() {
+            const api = window.__sleighApiUrl;
+            if (!api) return Promise.resolve();
+            return window.sleighFetchData(api).then(data => applySettings(checkPayload(data), api));
+        }
+
+        window.addEventListener('offline', () => {
+            netState = 'offline';
+            paintBanner();
+        });
+
+        window.addEventListener('online', () => {
+            netState = 'reconnecting';
+            paintBanner();
+            setTimeout(() => {
+                refreshSleighData()
+                    .catch(err => console.warn('Refresh after reconnect failed:', err))
+                    .finally(() => {
+                        if (netState === 'reconnecting') netState = 'online';
+                        paintBanner();
+                    });
+            }, 2000);
+        });
+
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.addEventListener('toggle', () => {
+                if (!item.open) return;
+                document.querySelectorAll('.faq-item[open]').forEach(other => {
+                    if (other !== item) other.open = false;
+                });
+            });
+        });
+
+        const shareBtn = $('share-btn');
+        if (shareBtn) {
+            if (navigator.share) {
+                shareBtn.addEventListener('click', () => {
+                    navigator.share({
+                        title: document.title,
+                        text: 'Santa is on his way! Track the sleigh live:',
+                        url: window.location.href
+                    }).catch(err => {
+                        if (err && err.name !== 'AbortError') console.error(err);
+                    });
+                });
+            } else {
+                shareBtn.style.display = 'none';
+            }
+        }
+
+        initializeSleighApp();
+    </script>
+</body>
+</html>
