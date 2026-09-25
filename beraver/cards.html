@@ -176,14 +176,14 @@
             <!-- Survey Controls -->
             <div class="flex flex-col gap-3 mt-auto flex-shrink-0">
                 <!-- Mode Toggle -->
-<div class="flex items-center justify-center gap-3 mb-2 bg-[#1a1a1a] border-2 border-gray-800 rounded-xl p-3">
-    <span class="text-sm font-bold uppercase tracking-wide text-[#ff007f]" id="label-adult">Adults</span>
-    <label class="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" id="mode-toggle" class="sr-only peer">
-        <div class="w-14 h-7 bg-[#ff007f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#4db8e8]"></div>
-    </label>
-    <span class="text-sm font-bold uppercase tracking-wide text-gray-500 opacity-50 transition-opacity" id="label-kids">Kids</span>
-</div>
+                <div class="flex items-center justify-center gap-3 mb-2 bg-[#1a1a1a] border-2 border-gray-800 rounded-xl p-3">
+                    <span class="text-sm font-bold uppercase tracking-wide text-[#ff007f]" id="label-adult">Adults</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="mode-toggle" class="sr-only peer">
+                        <div class="w-14 h-7 bg-[#ff007f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#4db8e8]"></div>
+                    </label>
+                    <span class="text-sm font-bold uppercase tracking-wide text-gray-500 opacity-50 transition-opacity" id="label-kids">Kids</span>
+                </div>
                 <button id="btn-generate-q" class="game-btn bg-[#4db8e8] hover:bg-[#3ba4d4] text-black text-xl lg:text-2xl font-bold py-3 lg:py-4 rounded-xl shadow-[0_6px_0_#2d80a8] active:shadow-[0_0px_0_#2d80a8] active:translate-y-[6px]">
                     Load Question
                 </button>
@@ -340,37 +340,37 @@
         }
 
         async function generateQuestion() {
-    // 1. Reset the survey UI
-    btnGenQ.disabled = true;
-    btnRevA.disabled = true;
-    aContainer.classList.add('scale-0');
-    aContainer.classList.remove('scale-100', 'flex');
-    aContainer.classList.add('hidden');
-    
-    // 2. Reset the deck to blank/facedown cards
-    gameActive = false;
-    setButtonsState(false);
-    cardsContainer.innerHTML = '';
-    for(let i=0; i<TOTAL_CARDS_IN_GAME; i++) {
-        cardsContainer.innerHTML += `
-            <div class="card-slot">
-                <div class="card-inner">
-                    <div class="card-back"></div>
-                </div>
-            </div>
-        `;
-    }
-    
-    // 3. Load the new question
-    if (nextQuestionData) {
-        displayQuestionData(nextQuestionData);
-        nextQuestionData = null; 
-        preFetchQuestion(); 
-    } else {
-        displayQuestionData(getFallbackQuestion());
-        preFetchQuestion();
-    }
-}
+            // 1. Reset the survey UI
+            btnGenQ.disabled = true;
+            btnRevA.disabled = true;
+            aContainer.classList.add('scale-0');
+            aContainer.classList.remove('scale-100', 'flex');
+            aContainer.classList.add('hidden');
+            
+            // 2. Reset the deck to blank/facedown cards
+            gameActive = false;
+            setButtonsState(false);
+            cardsContainer.innerHTML = '';
+            for(let i=0; i<TOTAL_CARDS_IN_GAME; i++) {
+                cardsContainer.innerHTML += `
+                    <div class="card-slot">
+                        <div class="card-inner">
+                            <div class="card-back"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 3. Load the new question
+            if (nextQuestionData) {
+                displayQuestionData(nextQuestionData);
+                nextQuestionData = null; 
+                preFetchQuestion(); 
+            } else {
+                displayQuestionData(getFallbackQuestion());
+                preFetchQuestion();
+            }
+        }
 
         // --- Card Game Logic ---
         function getCardValue(valueString) {
@@ -536,7 +536,6 @@
             document.getElementById('message-overlay').classList.add('hidden');
         });
 
-        // Keyboard Hotkeys
         // Mode Toggle Listener
         const modeToggle = document.getElementById('mode-toggle');
         const labelAdult = document.getElementById('label-adult');
