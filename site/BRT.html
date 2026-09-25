@@ -8,6 +8,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- We keep Montserrat as a strong fallback in case Eurostile isn't locally available -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -26,7 +27,8 @@
                         }
                     },
                     fontFamily: {
-                        heading: ['Montserrat', 'sans-serif'], /* Fallback for Eurostile */
+                        /* Prioritizing Eurostile, falling back to Montserrat */
+                        heading: ['Eurostile', 'Montserrat', 'sans-serif'], 
                         body: ['Open Sans', 'sans-serif'],
                     }
                 }
@@ -88,16 +90,14 @@
             <div class="flex justify-between items-center h-20">
                 <!-- Logo Area -->
                 <div class="flex-shrink-0 flex items-center">
-                    <a href="#" class="font-heading font-black text-2xl tracking-tighter text-brt-white flex items-center gap-2 group">
-                        <div class="w-10 h-10 bg-brt-gold rounded-full flex items-center justify-center text-brt-dark transition-transform group-hover:rotate-45">
-                            <i class="fa-solid fa-dharmachakra text-xl"></i>
-                        </div>
-                        <span class="uppercase">Round<span class="text-brt-gold">Table</span></span>
+                    <a href="#" class="font-heading font-black text-2xl tracking-tighter text-brt-white flex items-center gap-3 group">
+                        <img src="https://brt-23f.pages.dev/icons/BRTLogo.png" alt="BRT Logo" class="w-12 h-12 object-contain transition-transform group-hover:scale-105">
+                        <span class="uppercase">Round <span class="text-brt-gold">Table</span></span>
                     </a>
                 </div>
                 
                 <!-- Desktop Nav -->
-                <nav class="hidden md:flex space-x-8">
+                <nav class="hidden md:flex space-x-8 items-center">
                     <a href="#about" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-gold transition-colors duration-200">Who We Are</a>
                     <a href="#events" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-gold transition-colors duration-200">The Lineup</a>
                     <a href="#contact" class="font-heading uppercase font-bold text-sm text-brt-dark bg-brt-gold px-5 py-2 rounded-full hover:bg-white transition-all duration-200 transform hover:scale-105">Get Involved</a>
@@ -160,36 +160,42 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
                     <!-- Pillar 1 -->
-                    <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-gold/50 transition-colors duration-300 group">
+                    <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-gold/50 transition-colors duration-300 group flex flex-col">
                         <div class="w-16 h-16 bg-brt-gold rounded-2xl flex items-center justify-center text-brt-dark mb-6 transform group-hover:scale-110 transition-transform duration-300">
                             <i class="fa-solid fa-users text-3xl"></i>
                         </div>
                         <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-4">Find Friends</h3>
-                        <p class="font-body text-gray-400 leading-relaxed">
+                        <p class="font-body text-gray-400 leading-relaxed flex-grow">
                             Positive energy and camaraderie. Connect with a diverse group of guys and build friendships that last a lifetime. No funny handshakes, just mates doing cool stuff together.
                         </p>
                     </div>
 
                     <!-- Pillar 2 -->
-                    <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-gold/50 transition-colors duration-300 group">
+                    <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-gold/50 transition-colors duration-300 group flex flex-col">
                         <div class="w-16 h-16 bg-brt-gold rounded-2xl flex items-center justify-center text-brt-dark mb-6 transform group-hover:scale-110 transition-transform duration-300">
                             <i class="fa-solid fa-bolt text-3xl"></i>
                         </div>
                         <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-4">Shake Up Routine</h3>
-                        <p class="font-body text-gray-400 leading-relaxed">
+                        <p class="font-body text-gray-400 leading-relaxed flex-grow">
                             Adventure awaits. From axe throwing to white-water rafting, comedy clubs to brewery tours. Break free from the ordinary and ignite your social life.
                         </p>
                     </div>
 
                     <!-- Pillar 3 -->
-                    <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-gold/50 transition-colors duration-300 group">
+                    <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-gold/50 transition-colors duration-300 group flex flex-col">
                         <div class="w-16 h-16 bg-brt-gold rounded-2xl flex items-center justify-center text-brt-dark mb-6 transform group-hover:scale-110 transition-transform duration-300">
                             <i class="fa-solid fa-sleigh text-3xl"></i>
                         </div>
                         <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-4">Community</h3>
-                        <p class="font-body text-gray-400 leading-relaxed">
+                        <p class="font-body text-gray-400 leading-relaxed flex-grow">
                             Giving back feels good. We're proud to organise charitable events, including our much-loved Christmas Santa Sleigh tour around Beverley, making a tangible impact.
                         </p>
+                        <!-- Added subtle link for grants here -->
+                        <div class="mt-4 pt-4 border-t border-white/10">
+                            <a href="https://requests.beverleyroundtable.co.uk" target="_blank" rel="noopener noreferrer" class="font-body font-semibold text-brt-gold hover:text-white transition-colors duration-300 flex items-center gap-2 text-sm">
+                                Request Financial Aid / Grants <i class="fa-solid fa-arrow-right text-xs"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -209,7 +215,7 @@
                     <!-- Loading State -->
                     <div id="events-loader" class="col-span-full flex flex-col items-center justify-center py-20">
                         <div class="loader mb-4"></div>
-                        <p class="font-heading font-bold uppercase text-brt-gold tracking-widest">Fetching Schedule...</p>
+                        <p class="font-heading font-bold uppercase text-brt-gold tracking-widest mt-4">Fetching Schedule...</p>
                     </div>
                 </div>
                 
@@ -255,9 +261,16 @@
 
                     <!-- Socials Area -->
                     <div class="flex flex-col justify-center">
-                        <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-8 text-center lg:text-left">Or Connect With Us On Socials</h3>
+                        <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-8 text-center lg:text-left">Or Connect With Us Directly</h3>
                         
                         <div class="grid grid-cols-2 gap-4">
+                            <!-- Email -->
+                            <a href="mailto:beverley247@roundtable.org.uk" 
+                               class="col-span-2 flex items-center justify-center gap-3 p-6 bg-brt-gold/10 border border-brt-gold/30 rounded-2xl hover:bg-brt-gold hover:text-brt-dark transition-all duration-300 group text-brt-gold">
+                                <i class="fa-solid fa-envelope text-2xl"></i>
+                                <span class="font-heading font-bold uppercase tracking-wide truncate">beverley247@roundtable.org.uk</span>
+                            </a>
+
                             <!-- WhatsApp -->
                             <a href="https://chat.whatsapp.com/CjoA2cYnR5H9D9N8w1WeuR" target="_blank" rel="noopener noreferrer" 
                                class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-[#25D366]/20 hover:border-[#25D366] transition-all duration-300 group">
@@ -286,27 +299,36 @@
                                 <span class="font-heading font-bold uppercase tracking-wide text-gray-300 group-hover:text-white transition-colors duration-300">TikTok</span>
                             </a>
                         </div>
-                        
-                        <div class="mt-8 text-center lg:text-left">
-                            <a href="https://www.roundtable.co.uk/" target="_blank" class="font-body text-gray-400 hover:text-brt-gold underline transition-colors text-sm">
-                                Visit the National Round Table Website
-                            </a>
-                        </div>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="bg-black py-8 border-t border-white/10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-dharmachakra text-brt-gold"></i>
-                <span class="font-heading font-bold uppercase text-white tracking-widest text-sm">Beverley Round Table</span>
+    <footer class="bg-black py-10 border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
+                <div class="flex items-center gap-3">
+                    <img src="https://brt-23f.pages.dev/icons/BRTLogo.png" alt="BRT Logo" class="w-10 h-10 object-contain">
+                    <span class="font-heading font-bold uppercase text-white tracking-widest text-sm">Beverley Round Table</span>
+                </div>
+                
+                <!-- Quick Footer Links -->
+                <div class="flex flex-col sm:flex-row gap-4 sm:gap-8 text-center sm:text-left">
+                    <a href="https://requests.beverleyroundtable.co.uk" target="_blank" class="font-body text-gray-400 hover:text-brt-gold transition-colors text-sm font-semibold">
+                        Request a Grant
+                    </a>
+                    <a href="https://www.roundtable.co.uk/" target="_blank" class="font-body text-gray-400 hover:text-brt-gold transition-colors text-sm">
+                        National Website
+                    </a>
+                </div>
             </div>
-            <p class="font-body text-gray-500 text-sm">
-                &copy; <span id="year"></span> Beverley Round Table. Do More.
-            </p>
+            
+            <div class="text-center md:text-left border-t border-white/10 pt-6">
+                <p class="font-body text-gray-500 text-xs">
+                    &copy; <span id="year"></span> Beverley Round Table. Do More.
+                </p>
+            </div>
         </div>
     </footer>
 
