@@ -5,21 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Play Your Cards Right - Live TV Game</title>
     
-    <!-- Load Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Load Google Fonts for a game show aesthetic -->
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #000000; /* Pure Black Background */
+            background-color: #000000; 
             color: white;
-            user-select: none; /* Prevent text selection during fast clicks */
+            user-select: none; 
         }
         
-        /* Responsive Branding Styles */
+        /* Responsive Branding */
         .brand-logo {
             position: absolute;
             top: 10px;
@@ -60,20 +57,19 @@
             text-shadow: 2px 4px 6px rgba(0,0,0,0.8);
         }
 
-        /* Card flip animations and styling */
+        /* Dynamically scaling cards based on available height */
         .card-slot {
-            width: 16vw;
-            height: 22.5vw;
-            max-width: 226px;
-            max-height: 314px;
+            width: 14vw;
+            max-width: 200px;
+            aspect-ratio: 2.5 / 3.5;
             perspective: 1000px;
             margin: 0 4px;
         }
         
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) {
             .card-slot {
-                width: 14vw;
-                height: 19.5vw;
+                width: 12vw;
+                max-width: 220px;
                 margin: 0 10px;
             }
         }
@@ -107,7 +103,6 @@
         }
 
         .card-back {
-            /* Custom Cyan/Black pattern with Neon Pink border */
             background-color: #000000;
             background-image: repeating-linear-gradient(45deg, #4db8e8 25%, transparent 25%, transparent 75%, #4db8e8 75%, #4db8e8), repeating-linear-gradient(45deg, #4db8e8 25%, #000000 25%, #000000 75%, #4db8e8 75%, #4db8e8);
             background-position: 0 0, 10px 10px;
@@ -115,13 +110,11 @@
             border: 4px solid #ff007f;
         }
 
-        /* Message Overlay */
         #message-overlay {
             background: rgba(0, 0, 0, 0.90);
             backdrop-filter: blur(8px);
         }
 
-        /* Button hover effects */
         .game-btn {
             transition: transform 0.1s, filter 0.1s;
         }
@@ -130,47 +123,50 @@
         }
     </style>
 </head>
-<body class="flex flex-col min-h-screen w-full p-4 lg:p-6 overflow-x-hidden overflow-y-auto lg:overflow-hidden relative">
 
-    <!-- Branding -->
+<!-- min-h-screen for mobile scrolling, strictly h-screen for Desktop TV lock -->
+<body class="flex flex-col min-h-[100dvh] lg:h-screen w-full p-4 lg:p-6 overflow-x-hidden overflow-y-auto lg:overflow-hidden relative">
+
     <img src="https://brt-23f.pages.dev//icons/BERAVER.png" alt="Beverley Round Table" class="brand-logo">
     <div class="brand-text">EST. 1950</div>
 
-    <!-- Header Section -->
-    <header class="text-center mb-6 lg:mb-8 flex-shrink-0 mt-24 lg:mt-4">
+    <!-- Header -->
+    <header class="text-center mb-4 lg:mb-6 flex-shrink-0 mt-24 lg:mt-0">
         <h1 class="game-title text-4xl md:text-6xl font-bold tracking-wider uppercase drop-shadow-xl">
             <span class="text-[#4db8e8]">Play Your</span> <span class="text-[#ff007f]">Cards Right</span>
         </h1>
-        <p class="text-gray-400 text-sm md:text-xl mt-2 font-semibold">Hotkeys: [Space] Reveal Answer | [↑] Higher | [↓] Lower | [Enter] Draw Card</p>
+        <p class="text-gray-400 text-sm md:text-xl mt-1 font-semibold">Hotkeys: [Space] Reveal Answer | [↑] Higher | [↓] Lower | [Enter] Draw Card</p>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 flex flex-col lg:flex-row gap-6 lg:gap-8 items-stretch h-full w-full">
+    <!-- Main Content Area (min-h-0 ensures it shrinks to fit the screen) -->
+    <main class="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-8 items-stretch w-full min-h-0">
         
-        <!-- Left Column: Question Area -->
-        <section class="w-full lg:w-1/3 bg-[#0a0a0a] rounded-3xl p-6 lg:p-8 border-4 border-[#4db8e8] flex flex-col shadow-2xl relative min-h-[400px]">
-            <h2 class="game-title text-2xl lg:text-3xl text-[#4db8e8] mb-4 lg:mb-6 border-b-2 border-[#4db8e8] pb-2">The Survey</h2>
+        <!-- Left Column: Survey -->
+        <section class="w-full lg:w-1/3 bg-[#0a0a0a] rounded-3xl p-6 border-4 border-[#4db8e8] flex flex-col shadow-2xl relative min-h-0">
+            <h2 class="game-title text-2xl lg:text-3xl text-[#4db8e8] mb-4 border-b-2 border-[#4db8e8] pb-2 flex-shrink-0">The Survey</h2>
             
             <div id="loading-indicator" class="hidden absolute inset-0 bg-[#0a0a0a] rounded-3xl flex flex-col items-center justify-center z-10">
                 <svg class="animate-spin h-12 w-12 text-[#ff007f] mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span class="text-xl font-bold animate-pulse text-[#4db8e8]">Generating Question...</span>
+                <span class="text-xl font-bold animate-pulse text-[#4db8e8]">Loading Question...</span>
             </div>
 
-            <div class="flex-1 flex flex-col justify-center text-center">
-                <p id="question-text" class="text-xl lg:text-3xl font-bold text-white leading-tight mb-8">
+            <!-- Survey Text Area -->
+            <div class="flex-1 flex flex-col justify-center text-center min-h-0 overflow-y-auto my-2">
+                <p id="question-text" class="text-xl lg:text-3xl font-bold text-white leading-tight mb-4">
                     Click below to pull a new survey question for the crowd!
                 </p>
                 
-                <div id="answer-container" class="hidden flex-col items-center justify-center bg-black border-4 border-[#ff007f] rounded-xl p-4 lg:p-6 mb-8 transform scale-0 transition-transform duration-500">
+                <div id="answer-container" class="hidden flex-col items-center justify-center bg-black border-4 border-[#ff007f] rounded-xl p-4 lg:p-6 transform scale-0 transition-transform duration-500 flex-shrink-0">
                     <span class="text-gray-400 text-sm lg:text-lg uppercase tracking-widest font-bold">Survey Says:</span>
                     <span id="answer-text" class="game-title text-6xl lg:text-8xl text-[#4db8e8] font-bold">--</span>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-4 mt-auto">
+            <!-- Survey Controls -->
+            <div class="flex flex-col gap-3 mt-auto flex-shrink-0">
                 <button id="btn-generate-q" class="game-btn bg-[#4db8e8] hover:bg-[#3ba4d4] text-black text-xl lg:text-2xl font-bold py-3 lg:py-4 rounded-xl shadow-[0_6px_0_#2d80a8] active:shadow-[0_0px_0_#2d80a8] active:translate-y-[6px]">
                     Load Question
                 </button>
@@ -180,38 +176,38 @@
             </div>
         </section>
 
-        <!-- Right Column: Card Game Area -->
-        <section class="w-full lg:w-2/3 bg-[#0a0a0a] rounded-3xl p-6 lg:p-8 border-4 border-[#ff007f] flex flex-col shadow-2xl items-center justify-between relative overflow-hidden min-h-[400px]">
-            <h2 class="game-title text-2xl lg:text-3xl text-[#ff007f] mb-2 border-b-2 border-[#ff007f] pb-2 w-full text-left">The Board</h2>
+        <!-- Right Column: The Board -->
+        <section class="w-full lg:w-2/3 bg-[#0a0a0a] rounded-3xl p-6 border-4 border-[#ff007f] flex flex-col shadow-2xl items-center justify-between relative min-h-0">
+            <h2 class="game-title text-2xl lg:text-3xl text-[#ff007f] mb-2 border-b-2 border-[#ff007f] pb-2 w-full text-left flex-shrink-0">The Board</h2>
             
             <!-- Cards Container -->
-            <div id="cards-container" class="flex flex-row justify-center items-center w-full flex-1 my-6 lg:my-4 perspective-container">
-                <!-- Cards will be injected here via JS -->
+            <div id="cards-container" class="flex flex-row justify-center items-center w-full flex-1 min-h-0 my-4 perspective-container">
+                <!-- Cards injected via JS -->
             </div>
 
             <!-- Controls -->
-            <div class="flex flex-col sm:flex-row gap-4 lg:gap-8 w-full justify-center pb-2">
-                <button id="btn-higher" class="game-btn w-full sm:w-48 lg:w-64 bg-[#ff007f] hover:bg-[#e60073] text-white text-3xl lg:text-5xl font-bold py-4 lg:py-8 rounded-2xl shadow-[0_8px_0_#b30059] active:shadow-[0_0px_0_#b30059] active:translate-y-[8px] flex flex-col items-center opacity-50 cursor-not-allowed" disabled>
+            <div class="flex flex-col sm:flex-row gap-4 lg:gap-6 w-full justify-center flex-shrink-0">
+                <button id="btn-higher" class="game-btn w-full sm:w-48 lg:w-56 bg-[#ff007f] hover:bg-[#e60073] text-white text-3xl lg:text-4xl font-bold py-4 lg:py-6 rounded-2xl shadow-[0_8px_0_#b30059] active:shadow-[0_0px_0_#b30059] active:translate-y-[8px] flex flex-col items-center opacity-50 cursor-not-allowed" disabled>
                     <span>HIGHER</span>
-                    <span class="text-lg lg:text-2xl opacity-75 mt-1 lg:mt-2">↑ (Up Arrow)</span>
+                    <span class="text-sm lg:text-lg opacity-75 mt-1">↑ (Up Arrow)</span>
                 </button>
                 
-                <div class="flex flex-col justify-center items-center px-2 lg:px-4 order-last sm:order-none">
-                     <button id="btn-start-game" class="game-btn bg-white hover:bg-gray-200 text-black text-lg lg:text-xl font-bold py-3 lg:py-4 px-6 lg:px-8 rounded-xl shadow-[0_4px_0_#cccccc] active:shadow-[0_0px_0_#cccccc] active:translate-y-[4px]">
-                        Reset / New Deck
+                <div class="flex flex-col justify-center items-center px-2 order-last sm:order-none">
+                     <button id="btn-start-game" class="game-btn bg-white hover:bg-gray-200 text-black text-lg lg:text-xl font-bold py-3 px-6 rounded-xl shadow-[0_4px_0_#cccccc] active:shadow-[0_0px_0_#cccccc] active:translate-y-[4px]">
+                        Reset Deck
                     </button>
                 </div>
 
-                <button id="btn-lower" class="game-btn w-full sm:w-48 lg:w-64 bg-[#4db8e8] hover:bg-[#3ba4d4] text-black text-3xl lg:text-5xl font-bold py-4 lg:py-8 rounded-2xl shadow-[0_8px_0_#2d80a8] active:shadow-[0_0px_0_#2d80a8] active:translate-y-[8px] flex flex-col items-center opacity-50 cursor-not-allowed" disabled>
+                <button id="btn-lower" class="game-btn w-full sm:w-48 lg:w-56 bg-[#4db8e8] hover:bg-[#3ba4d4] text-black text-3xl lg:text-4xl font-bold py-4 lg:py-6 rounded-2xl shadow-[0_8px_0_#2d80a8] active:shadow-[0_0px_0_#2d80a8] active:translate-y-[8px] flex flex-col items-center opacity-50 cursor-not-allowed" disabled>
                     <span>LOWER</span>
-                    <span class="text-lg lg:text-2xl opacity-75 mt-1 lg:mt-2">↓ (Down Arrow)</span>
+                    <span class="text-sm lg:text-lg opacity-75 mt-1">↓ (Down Arrow)</span>
                 </button>
             </div>
         </section>
 
     </main>
 
-    <!-- Win/Loss Overlay -->
+    <!-- Overlay -->
     <div id="message-overlay" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center p-4">
         <h1 id="overlay-title" class="game-title text-6xl lg:text-9xl font-bold mb-4 text-center">WINNER!</h1>
         <p id="overlay-sub" class="text-2xl lg:text-4xl text-white mb-8 lg:mb-12 text-center font-bold">You played your cards right!</p>
@@ -231,9 +227,26 @@
         let currentCardIndex = -1; 
         let gameActive = false;
         
-        // Zero-latency pre-fetch state
         let nextQuestionData = null;
         let isFetching = false;
+
+        // --- Offline Fallback Data ---
+        // If the venue internet fails or Apps Script throws a CORS error, the game instantly falls back to these questions.
+        const fallbackQuestions = [
+            { question: "We asked 100 people: How many of them have lied about their age to get a discount?", answer: 32 },
+            { question: "We asked 100 people: How many check their phone within 5 minutes of waking up?", answer: 78 },
+            { question: "We asked 100 people: How many have snooped through a partner's phone?", answer: 41 },
+            { question: "We asked 100 people: How many have dropped food on the floor and still eaten it?", answer: 65 },
+            { question: "We asked 100 people: How many think they are a better than average driver?", answer: 82 },
+            { question: "We asked 100 people: How many have regifted a present they didn't like?", answer: 54 },
+            { question: "We asked 100 people: How many have worn the same underwear two days in a row?", answer: 28 },
+            { question: "We asked 100 people: How many admit to singing out loud in the car when driving alone?", answer: 91 }
+        ];
+
+        function getFallbackQuestion() {
+            const randomIndex = Math.floor(Math.random() * fallbackQuestions.length);
+            return fallbackQuestions[randomIndex];
+        }
 
         // --- DOM Elements ---
         const btnGenQ = document.getElementById('btn-generate-q');
@@ -242,29 +255,11 @@
         const aContainer = document.getElementById('answer-container');
         const aText = document.getElementById('answer-text');
         const loadingInd = document.getElementById('loading-indicator');
-        
         const cardsContainer = document.getElementById('cards-container');
         const btnHigher = document.getElementById('btn-higher');
         const btnLower = document.getElementById('btn-lower');
         const btnStart = document.getElementById('btn-start-game');
         
-        const overlay = document.getElementById('message-overlay');
-        const overlayTitle = document.getElementById('overlay-title');
-        const overlaySub = document.getElementById('overlay-sub');
-        const btnCloseOverlay = document.getElementById('btn-close-overlay');
-
-        // --- Helper: Get Numeric Value of Card ---
-        function getCardValue(valueString) {
-            if (!valueString) return 0;
-            const val = valueString.toUpperCase();
-            if (val === 'ACE') return 14; 
-            if (val === 'KING') return 13;
-            if (val === 'QUEEN') return 12;
-            if (val === 'JACK') return 11;
-            if (val === '0') return 10; 
-            return parseInt(val, 10);
-        }
-
         // --- Audio Context ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep(freq, type, duration, vol=0.1) {
@@ -281,18 +276,31 @@
             osc.stop(audioCtx.currentTime + duration);
         }
 
-        // --- Question Generation Logic (Zero-Latency Pre-fetch) ---
+        // --- Question Generation Logic ---
         async function preFetchQuestion() {
             if (isFetching) return;
             isFetching = true;
+            
             try {
-                const response = await fetch(APPS_SCRIPT_URL);
+                // Controller to timeout if the network hangs
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout
+
+                const response = await fetch(APPS_SCRIPT_URL, { 
+                    redirect: "follow",
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
                 const data = await response.json();
                 if (data.question && data.answer) {
                     nextQuestionData = data;
+                } else {
+                    throw new Error("Invalid response format");
                 }
             } catch (error) {
-                console.error("Background fetch failed:", error);
+                console.warn("Background API fetch failed, loading offline fallback.");
+                nextQuestionData = getFallbackQuestion(); // Instantly assign offline question
             } finally {
                 isFetching = false;
             }
@@ -314,36 +322,31 @@
             aContainer.classList.remove('scale-100', 'flex');
             aContainer.classList.add('hidden');
             
-            // 1. INSTANT LOAD: If we already have the data sitting in the background variable
+            // 1. INSTANT LOAD if background fetch succeeded (or hit fallback)
             if (nextQuestionData) {
                 displayQuestionData(nextQuestionData);
-                nextQuestionData = null; // Clear it out so we don't repeat questions
-                preFetchQuestion(); // Silently start fetching the NEXT question for the next round
+                nextQuestionData = null; 
+                preFetchQuestion(); 
             } 
-            // 2. FALLBACK: If the host clicked load before the background fetch finished
+            // 2. IMMEDIATE FALLBACK if the user clicked before anything loaded
             else {
-                loadingInd.classList.remove('hidden');
-                qText.innerText = "";
-                try {
-                    const response = await fetch(APPS_SCRIPT_URL);
-                    const data = await response.json();
-                    if (data.question && data.answer) {
-                        displayQuestionData(data);
-                    } else {
-                        throw new Error("Invalid response format");
-                    }
-                } catch (error) {
-                    console.error("Error fetching question:", error);
-                    qText.innerText = "Error loading question. Please check network and try again.";
-                    btnGenQ.disabled = false;
-                } finally {
-                    loadingInd.classList.add('hidden');
-                    preFetchQuestion(); // Start prepping for next round
-                }
+                displayQuestionData(getFallbackQuestion());
+                preFetchQuestion();
             }
         }
 
-        // --- Card Game Logic (Deck of Cards API) ---
+        // --- Card Game Logic ---
+        function getCardValue(valueString) {
+            if (!valueString) return 0;
+            const val = valueString.toUpperCase();
+            if (val === 'ACE') return 14; 
+            if (val === 'KING') return 13;
+            if (val === 'QUEEN') return 12;
+            if (val === 'JACK') return 11;
+            if (val === '0') return 10; 
+            return parseInt(val, 10);
+        }
+
         async function initializeGame() {
             gameActive = false;
             drawnCards = [];
@@ -393,7 +396,7 @@
 
             } catch(e) {
                 console.error("Error setting up deck:", e);
-                alert("Failed to connect to the card API. Please check your internet connection.");
+                alert("Failed to connect to the card API. Please check internet connection.");
             }
         }
 
@@ -420,6 +423,10 @@
         }
 
         function showMessage(title, sub, colorClass) {
+            const overlayTitle = document.getElementById('overlay-title');
+            const overlaySub = document.getElementById('overlay-sub');
+            const overlay = document.getElementById('message-overlay');
+            
             overlayTitle.innerText = title;
             overlayTitle.className = `game-title text-6xl lg:text-9xl font-bold mb-4 text-center ${colorClass}`;
             overlaySub.innerText = sub;
@@ -488,8 +495,8 @@
         btnHigher.addEventListener('click', () => handleGuess('higher'));
         btnLower.addEventListener('click', () => handleGuess('lower'));
         
-        btnCloseOverlay.addEventListener('click', () => {
-            overlay.classList.add('hidden');
+        document.getElementById('btn-close-overlay').addEventListener('click', () => {
+            document.getElementById('message-overlay').classList.add('hidden');
         });
 
         // Keyboard Hotkeys
@@ -498,8 +505,8 @@
                 e.preventDefault();
                 if (!btnRevA.disabled) {
                     btnRevA.click();
-                } else if (!overlay.classList.contains('hidden')) {
-                   btnCloseOverlay.click();
+                } else if (!document.getElementById('message-overlay').classList.contains('hidden')) {
+                   document.getElementById('btn-close-overlay').click();
                 }
             } else if (e.code === 'ArrowUp') {
                 e.preventDefault();
@@ -517,15 +524,13 @@
                 }
             } else if (e.code === 'Enter') {
                 e.preventDefault();
-                if (!gameActive && overlay.classList.contains('hidden')) {
+                if (!gameActive && document.getElementById('message-overlay').classList.contains('hidden')) {
                    btnStart.click();
                 }
             }
         });
 
-        // Initialize board and start pre-fetching the first question on page load
         window.addEventListener('load', () => {
-            // Trigger the background fetch immediately so it's ready when the game starts
             preFetchQuestion();
             
             cardsContainer.innerHTML = '';
