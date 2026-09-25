@@ -20,6 +20,27 @@
             user-select: none; /* Prevent text selection during fast clicks */
         }
         
+        /* Branding Styles */
+        .brand-logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            max-width: 150px;
+            z-index: 100;
+        }
+        .brand-text {
+            position: absolute;
+            top: 180px; 
+            left: 20px;
+            color: rgba(255, 255, 255, 0.5); 
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            z-index: 100;
+            text-align: center;
+            width: 150px;
+        }
+
         .game-title {
             font-family: 'Oswald', sans-serif;
             text-shadow: 2px 4px 6px rgba(0,0,0,0.5);
@@ -89,8 +110,12 @@
 </head>
 <body class="flex flex-col h-screen w-screen p-6">
 
+    <!-- Branding -->
+    <img src="https://brt-23f.pages.dev//icons/BRTLogo.png" alt="Beverley Round Table" class="brand-logo">
+    <div class="brand-text">EST. 1950</div>
+
     <!-- Header Section -->
-    <header class="text-center mb-8 flex-shrink-0">
+    <header class="text-center mb-8 flex-shrink-0 mt-4">
         <h1 class="game-title text-6xl font-bold text-yellow-400 tracking-wider uppercase">
             Play Your Cards Right
         </h1>
@@ -109,12 +134,12 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span class="text-xl font-bold animate-pulse text-blue-300">Generating Question...</span>
+                <span class="text-xl font-bold animate-pulse text-blue-300">Fetching Question...</span>
             </div>
 
             <div class="flex-1 flex flex-col justify-center text-center">
                 <p id="question-text" class="text-3xl font-bold text-white leading-tight mb-8">
-                    Click below to generate a new survey question for the crowd!
+                    Click below to pull a new survey question for the crowd!
                 </p>
                 
                 <div id="answer-container" class="hidden flex-col items-center justify-center bg-slate-900 border-4 border-yellow-500 rounded-xl p-6 mb-8 transform scale-0 transition-transform duration-500">
@@ -125,7 +150,7 @@
 
             <div class="flex flex-col gap-4 mt-auto">
                 <button id="btn-generate-q" class="game-btn bg-blue-600 hover:bg-blue-500 text-white text-2xl font-bold py-4 rounded-xl shadow-[0_6px_0_#1e3a8a] active:shadow-[0_0px_0_#1e3a8a] active:translate-y-[6px]">
-                    Generate Question
+                    Load Question
                 </button>
                 <button id="btn-reveal-a" class="game-btn bg-yellow-500 hover:bg-yellow-400 text-black text-2xl font-bold py-4 rounded-xl shadow-[0_6px_0_#b45309] active:shadow-[0_0px_0_#b45309] active:translate-y-[6px] opacity-50 cursor-not-allowed" disabled>
                     Reveal Answer (Space)
@@ -175,13 +200,13 @@
 
     <script>
         // --- Configuration & State ---
-        const GEMINI_API_KEY = ""; // Environment handles this
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxE4jbVRiy93bCHwugmWd6lqLb0eFHWECy1U93gNzf_e27lQkABUN2O51O3P60VDn8raQ/exec";
         const DECK_API_BASE = "https://deckofcardsapi.com/api/deck";
-        const TOTAL_CARDS_IN_GAME = 5; // How many cards they need to guess across
+        const TOTAL_CARDS_IN_GAME = 5; 
         
         let deckId = null;
-        let drawnCards = []; // Store fetched card objects
-        let currentCardIndex = -1; // Which card on the board we are currently comparing against
+        let drawnCards = []; 
+        let currentCardIndex = -1; 
         let gameActive = false;
 
         // --- DOM Elements ---
@@ -206,16 +231,15 @@
         function getCardValue(valueString) {
             if (!valueString) return 0;
             const val = valueString.toUpperCase();
-            if (val === 'ACE') return 14; // Ace is high
+            if (val === 'ACE') return 14; 
             if (val === 'KING') return 13;
             if (val === 'QUEEN') return 12;
             if (val === 'JACK') return 11;
-            if (val === '0') return 10; // Some APIs use 0 for 10
+            if (val === '0') return 10; 
             return parseInt(val, 10);
         }
 
-        // --- Audio Context (Optional: visual beeps without sound files) ---
-        // Creating a simple synth beep for UI feedback without external files
+        // --- Audio Context ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep(freq, type, duration, vol=0.1) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -231,7 +255,7 @@
             osc.stop(audioCtx.currentTime + duration);
         }
 
-        // --- Question Generation Logic (Gemini API) ---
+        // --- Question Generation Logic (Secure Apps Script Fetch) ---
         async function generateQuestion() {
             loadingInd.classList.remove('hidden');
             btnGenQ.disabled = true;
@@ -242,49 +266,25 @@
             qText.innerText = "";
 
             try {
-                const prompt = "You are a gameshow writer. Generate a completely random, fun 'We asked 100 people...' survey question suitable for a crowd pub game. The theoretical answer MUST be an integer between 1 and 100 representing the number of people who agreed or fit the criteria. Return the response as a strict JSON object with two keys: 'question' (string) and 'answer' (integer). Make the question interesting and varying topics (e.g. food, daily habits, funny opinions).";
-                
-                const payload = {
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "OBJECT",
-                            properties: {
-                                question: { type: "STRING" },
-                                answer: { type: "INTEGER" }
-                            },
-                            required: ["question", "answer"]
-                        }
-                    }
-                };
-
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
-                
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
+                // Call the secure Google Apps Script URL
+                const response = await fetch(APPS_SCRIPT_URL);
                 const data = await response.json();
                 
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
-                    const jsonRes = JSON.parse(data.candidates[0].content.parts[0].text);
-                    qText.innerText = jsonRes.question;
-                    aText.innerText = jsonRes.answer;
+                if (data.question && data.answer) {
+                    qText.innerText = data.question;
+                    aText.innerText = data.answer;
                     
                     // Enable reveal button
                     btnRevA.disabled = false;
                     btnRevA.classList.remove('opacity-50', 'cursor-not-allowed');
                     playBeep(600, 'sine', 0.1);
                 } else {
-                    throw new Error("Invalid response format from Gemini");
+                    throw new Error("Invalid response format from Apps Script");
                 }
 
             } catch (error) {
                 console.error("Error fetching question:", error);
-                qText.innerText = "Error generating question. Please check network and try again.";
+                qText.innerText = "Error loading question. Please check network and try again.";
             } finally {
                 loadingInd.classList.add('hidden');
                 btnGenQ.disabled = false;
@@ -317,26 +317,22 @@
             }
 
             try {
-                // Get a new shuffled deck
                 let res = await fetch(`${DECK_API_BASE}/new/shuffle/?deck_count=1`);
                 let data = await res.json();
                 deckId = data.deck_id;
 
-                // Draw exactly the number of cards needed for the board to prevent latency during gameplay
                 let drawRes = await fetch(`${DECK_API_BASE}/${deckId}/draw/?count=${TOTAL_CARDS_IN_GAME}`);
                 let drawData = await drawRes.json();
                 
                 drawnCards = drawData.cards;
                 
-                // Inject card images into the DOM (still hidden behind 'card-back')
                 drawnCards.forEach((card, index) => {
                     const slot = document.getElementById(`slot-${index}`);
                     const front = slot.querySelector('.card-front');
-                    front.innerHTML = ''; // remove spinner
+                    front.innerHTML = ''; 
                     front.style.backgroundImage = `url('${card.image}')`;
                 });
 
-                // Automatically reveal the first card
                 setTimeout(() => {
                     revealNextCard(0);
                     currentCardIndex = 0;
@@ -385,7 +381,7 @@
         function handleGuess(guess) {
             if (!gameActive || currentCardIndex >= TOTAL_CARDS_IN_GAME - 1) return;
 
-            setButtonsState(false); // Disable buttons temporarily to prevent double click
+            setButtonsState(false); 
             
             const currentCard = drawnCards[currentCardIndex];
             const nextCard = drawnCards[currentCardIndex + 1];
@@ -393,14 +389,12 @@
             const currentVal = getCardValue(currentCard.value);
             const nextVal = getCardValue(nextCard.value);
             
-            // Reveal the next card
             revealNextCard(currentCardIndex + 1);
             
             setTimeout(() => {
                 let wonRound = false;
                 
                 if (nextVal === currentVal) {
-                    // Tie is a loss in classic Play Your Cards Right ("You get nothing for a pair!")
                     showMessage("YOU LOSE!", "You get nothing for a pair, not in this game!", "text-red-500");
                     return;
                 }
@@ -413,16 +407,14 @@
                     if (currentCardIndex === TOTAL_CARDS_IN_GAME - 1) {
                         showMessage("WINNER!", "You played your cards right!", "text-green-500");
                     } else {
-                        // Continue playing
                         setButtonsState(true);
                         playBeep(1200, 'sine', 0.1);
                     }
                 } else {
                     showMessage("YOU LOSE!", `The card was ${nextCard.value.toLowerCase()}!`, "text-red-500");
                 }
-            }, 800); // Wait for flip animation before resolving logic
+            }, 800); 
         }
-
 
         // --- Event Listeners ---
         btnGenQ.addEventListener('click', generateQuestion);
@@ -430,7 +422,6 @@
         btnRevA.addEventListener('click', () => {
             if (!btnRevA.disabled) {
                 aContainer.classList.remove('hidden');
-                // slight delay to allow display block before transition
                 setTimeout(() => {
                     aContainer.classList.remove('scale-0');
                     aContainer.classList.add('flex', 'scale-100');
@@ -448,13 +439,10 @@
         
         btnCloseOverlay.addEventListener('click', () => {
             overlay.classList.add('hidden');
-            // Do not auto-restart here, let the host do it when ready
         });
 
         // Keyboard Hotkeys
         document.addEventListener('keydown', (e) => {
-            // Prevent default behavior for game keys if we aren't in an input (which we aren't, but good practice)
-            
             if (e.code === 'Space') {
                 e.preventDefault();
                 if (!btnRevA.disabled) {
@@ -465,7 +453,6 @@
             } else if (e.code === 'ArrowUp') {
                 e.preventDefault();
                 if (!btnHigher.disabled && gameActive) {
-                    // Visual feedback
                     btnHigher.classList.add('bg-green-400');
                     setTimeout(() => btnHigher.classList.remove('bg-green-400'), 150);
                     handleGuess('higher');
@@ -473,25 +460,19 @@
             } else if (e.code === 'ArrowDown') {
                 e.preventDefault();
                 if (!btnLower.disabled && gameActive) {
-                    // Visual feedback
                     btnLower.classList.add('bg-red-400');
                     setTimeout(() => btnLower.classList.remove('bg-red-400'), 150);
                     handleGuess('lower');
                 }
             } else if (e.code === 'Enter') {
                 e.preventDefault();
-                // Can be used to draw the first card / start game
                 if (!gameActive && overlay.classList.contains('hidden')) {
                    btnStart.click();
                 }
             }
         });
 
-        // Initial setup on load
         window.addEventListener('load', () => {
-            // We do not auto-initialize the game or API call to save rate limits
-            // The host will click the buttons when ready.
-            // Setup the empty board placeholder
             cardsContainer.innerHTML = '';
             for(let i=0; i<TOTAL_CARDS_IN_GAME; i++) {
                 cardsContainer.innerHTML += `
