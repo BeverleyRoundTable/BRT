@@ -49,15 +49,14 @@ caches your custom fonts for a year, drastically speeding up load times:
     </script>
     
     <style>
-        /* --- EUROSTILE FONT INJECTION (Direct from your Pages dev site) --- */
+        /* --- EUROSTILE FONT INJECTION --- */
         @font-face {
             font-family: 'Eurostile';
             src: url('https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.otf') format('opentype');
-            font-weight: 100 900; /* Tells the browser this font file can handle any weight you throw at it */
+            font-weight: 100 900;
             font-style: normal;
             font-display: swap;
         }
-        /* ------------------------------------------------------------------ */
 
         body {
             background-color: #1D1D1A;
@@ -164,7 +163,6 @@ caches your custom fonts for a year, drastically speeding up load times:
             </div>
         </section>
 
-        <!-- POLAROID BREAKER 1 -->
         <div class="w-full flex justify-center -my-16 relative z-20 pointer-events-none px-4">
             <div class="bg-[#f5f5f3] p-3 pb-10 rounded-sm shadow-2xl transform rotate-3 hover:rotate-0 transition-all duration-300 pointer-events-auto border border-gray-300">
                 <img id="polaroid-img-1" src="https://placehold.co/600x600/1D1D1A/FBAF33?text=Loading..." class="w-56 h-56 md:w-72 md:h-72 object-cover grayscale opacity-90 hover:grayscale-0 hover:opacity-100 transition-all duration-500 bg-brt-dark" alt="BRT Members">
@@ -219,7 +217,6 @@ caches your custom fonts for a year, drastically speeding up load times:
             </div>
         </section>
 
-        <!-- POLAROID BREAKER 2 -->
         <div class="w-full flex justify-center -my-16 relative z-20 pointer-events-none px-4">
             <div class="bg-[#f5f5f3] p-3 pb-10 rounded-sm shadow-2xl transform -rotate-2 hover:rotate-0 transition-all duration-300 pointer-events-auto border border-gray-300">
                 <img id="polaroid-img-2" src="https://placehold.co/600x600/1D1D1A/FBAF33?text=Loading..." class="w-56 h-56 md:w-72 md:h-72 object-cover grayscale opacity-90 hover:grayscale-0 hover:opacity-100 transition-all duration-500 bg-brt-dark" alt="BRT Members">
@@ -227,6 +224,20 @@ caches your custom fonts for a year, drastically speeding up load times:
         </div>
 
         <section id="events" class="py-24 bg-[#151513] relative border-t border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+                    <div>
+                        <h2 class="font-heading font-black text-5xl md:text-6xl uppercase text-white mb-2">The <span class="text-brt-gold">Lineup</span></h2>
+                        <p class="font-body text-xl text-gray-400">Upcoming Socials & Events pulled live from our calendar.</p>
+                    </div>
+                </div>
+
+                <div id="events-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 px-4">
+                    <div id="events-loader" class="col-span-full flex flex-col items-center justify-center py-20">
+                        <div class="loader mb-4"></div>
+                        <p class="font-heading font-bold uppercase text-brt-gold tracking-widest mt-4">Fetching Schedule...</p>
+                    </div>
+                </div>
                 
                 <div id="events-error" class="hidden text-center py-10 bg-red-900/20 border border-red-500/30 rounded-2xl">
                     <p class="font-body text-red-400">Unable to load events at this time. Please check our social media for updates.</p>
@@ -234,7 +245,6 @@ caches your custom fonts for a year, drastically speeding up load times:
             </div>
         </section>
 
-        <!-- POLAROID BREAKER 3 -->
         <div class="w-full flex justify-center -my-16 relative z-20 pointer-events-none px-4">
             <div class="bg-[#f5f5f3] p-3 pb-10 rounded-sm shadow-2xl transform rotate-2 hover:rotate-0 transition-all duration-300 pointer-events-auto border border-gray-300">
                 <img id="polaroid-img-3" src="https://placehold.co/600x600/1D1D1A/FBAF33?text=Loading..." class="w-56 h-56 md:w-72 md:h-72 object-cover grayscale opacity-90 hover:grayscale-0 hover:opacity-100 transition-all duration-500 bg-brt-dark" alt="BRT Members">
@@ -242,7 +252,53 @@ caches your custom fonts for a year, drastically speeding up load times:
         </div>
 
         <section id="contact" class="py-24 bg-brt-dark relative border-t border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Don't get <span class="text-brt-gold">FOMO</span></h2>
+                <p class="font-body text-gray-400 mb-12 text-lg max-w-2xl mx-auto">
+                    Ready to kickstart your adventure with Beverley Round Table? Drop us a message on WhatsApp or connect with us on our socials to get involved.
+                </p>
 
+                <div class="max-w-4xl mx-auto">
+                    <a href="https://chat.whatsapp.com/CjoA2cYnR5H9D9N8w1WeuR" target="_blank" rel="noopener noreferrer" 
+                       class="inline-flex items-center justify-center gap-4 bg-brt-gold text-brt-dark px-10 py-6 rounded-2xl hover:bg-white transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(251,175,51,0.3)] w-full sm:w-auto mb-16">
+                        <i class="fa-brands fa-whatsapp text-4xl"></i>
+                        <div class="text-left">
+                            <span class="block font-heading font-black uppercase tracking-wider text-xl">Join Our WhatsApp</span>
+                            <span class="block font-body font-semibold opacity-80">Tap to connect instantly</span>
+                        </div>
+                    </a>
+
+                    <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-8">Or Find Us Online</h3>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <a href="mailto:beverley247@roundtable.org.uk" 
+                           class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-brt-gold/20 hover:border-brt-gold transition-all duration-300 group">
+                            <i class="fa-solid fa-envelope text-4xl text-gray-400 group-hover:text-brt-gold mb-3 transition-colors duration-300"></i>
+                            <span class="font-heading font-bold uppercase tracking-wide text-gray-300 group-hover:text-white transition-colors duration-300">Email</span>
+                        </a>
+                        
+                        <a href="https://www.instagram.com/beverleyroundtable/" target="_blank" rel="noopener noreferrer" 
+                           class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-[#E1306C]/20 hover:border-[#E1306C] transition-all duration-300 group">
+                            <i class="fa-brands fa-instagram text-4xl text-gray-400 group-hover:text-[#E1306C] mb-3 transition-colors duration-300"></i>
+                            <span class="font-heading font-bold uppercase tracking-wide text-gray-300 group-hover:text-white transition-colors duration-300">Instagram</span>
+                        </a>
+
+                        <a href="https://www.facebook.com/BeverleyRoundtable" target="_blank" rel="noopener noreferrer" 
+                           class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-[#1877F2]/20 hover:border-[#1877F2] transition-all duration-300 group">
+                            <i class="fa-brands fa-facebook-f text-4xl text-gray-400 group-hover:text-[#1877F2] mb-3 transition-colors duration-300"></i>
+                            <span class="font-heading font-bold uppercase tracking-wide text-gray-300 group-hover:text-white transition-colors duration-300">Facebook</span>
+                        </a>
+
+                        <a href="https://www.tiktok.com/@beverleyroundtable" target="_blank" rel="noopener noreferrer" 
+                           class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/20 hover:border-white transition-all duration-300 group">
+                            <i class="fa-brands fa-tiktok text-4xl text-gray-400 group-hover:text-white mb-3 transition-colors duration-300"></i>
+                            <span class="font-heading font-bold uppercase tracking-wide text-gray-300 group-hover:text-white transition-colors duration-300">TikTok</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 
     <footer class="bg-black py-10 border-t border-white/10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -252,7 +308,6 @@ caches your custom fonts for a year, drastically speeding up load times:
                     <span class="font-heading font-bold uppercase text-white tracking-widest text-sm">Beverley Round Table</span>
                 </div>
                 
-                <!-- Quick Footer Links with EasyFundraising included -->
                 <div class="flex flex-col sm:flex-row gap-4 sm:gap-8 text-center sm:text-left items-center">
                     <a href="https://requests.beverleyroundtable.co.uk" target="_blank" class="font-body text-gray-400 hover:text-brt-gold transition-colors text-sm font-semibold">
                         Request a Grant
@@ -272,8 +327,25 @@ caches your custom fonts for a year, drastically speeding up load times:
                 </a>
             </div>
         </div>
+    </footer>
 
-        // Navbar scroll effect
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                menu.classList.add('hidden');
+            });
+        });
+
         const navbar = document.getElementById('navbar');
         window.addEventListener('scroll', () => {
             if (window.scrollY > 20) {
@@ -285,10 +357,8 @@ caches your custom fonts for a year, drastically speeding up load times:
             }
         });
 
-        // API URL
         const API_URL = 'https://script.google.com/macros/s/AKfycbyJjIbq-XZ9W8owbbp0PizZ2adE-Z3SK1bAxPDEjjDjmYhqpKXMwlHEuWrOUyNeTg/exec';
 
-        // Fetch and Render Gallery Polaroids
         async function fetchGallery() {
             try {
                 const response = await fetch(`${API_URL}?action=gallery`);
@@ -305,7 +375,6 @@ caches your custom fonts for a year, drastically speeding up load times:
             }
         }
 
-        // Fetch and Render Events (CLEAN CARD STYLE)
         async function fetchEvents() {
             const container = document.getElementById('events-container');
             const loader = document.getElementById('events-loader');
@@ -316,8 +385,6 @@ caches your custom fonts for a year, drastically speeding up load times:
                 if (!response.ok) throw new Error('Network response was not ok');
                 
                 const events = await response.json();
-                
-                // Hide Loader
                 loader.classList.add('hidden');
 
                 if (events.length === 0) {
@@ -325,10 +392,8 @@ caches your custom fonts for a year, drastically speeding up load times:
                     return;
                 }
 
-                // Sort chronologically just in case
                 events.sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
 
-                // Render Cards using the original Sleek UI
                 events.forEach(event => {
                     const dateObj = new Date(event.DateTime);
                     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -340,7 +405,6 @@ caches your custom fonts for a year, drastically speeding up load times:
                     const time = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
                     
                     const formattedDate = `${dayName} ${dateNum} ${monthName} @ ${time}`;
-                    
                     const hasImg = event.Img && event.Img.trim() !== "";
                     const imgUrl = hasImg ? event.Img : 'https://placehold.co/600x400/1D1D1A/FBAF33?text=BRT+Event';
 
@@ -384,7 +448,6 @@ caches your custom fonts for a year, drastically speeding up load times:
             }
         }
 
-        // Initialize both fetches on page load
         document.addEventListener('DOMContentLoaded', () => {
             fetchGallery();
             fetchEvents();
