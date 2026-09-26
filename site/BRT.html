@@ -360,20 +360,21 @@ caches your custom fonts for a year, drastically speeding up load times:
         const API_URL = 'https://script.google.com/macros/s/AKfycbyJjIbq-XZ9W8owbbp0PizZ2adE-Z3SK1bAxPDEjjDjmYhqpKXMwlHEuWrOUyNeTg/exec';
 
         async function fetchGallery() {
-            try {
-                const response = await fetch(`${API_URL}?action=gallery`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                
-                if (data.ok && data.images && data.images.length >= 3) {
-                    document.getElementById('polaroid-img-1').src = data.images[0];
-                    document.getElementById('polaroid-img-2').src = data.images[1];
-                    document.getElementById('polaroid-img-3').src = data.images[2];
-                }
-            } catch (error) {
-                console.error("Error fetching gallery images:", error);
-            }
+    try {
+        const response = await fetch(`${API_URL}?action=gallery`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        
+        if (data.ok && data.images) {
+            // Applies images dynamically so a missing image doesn't break the whole layout
+            if (data.images[0]) document.getElementById('polaroid-img-1').src = data.images[0];
+            if (data.images[1]) document.getElementById('polaroid-img-2').src = data.images[1];
+            if (data.images[2]) document.getElementById('polaroid-img-3').src = data.images[2];
         }
+    } catch (error) {
+        console.error("Error fetching gallery images:", error);
+    }
+}
 
         async function fetchEvents() {
             const container = document.getElementById('events-container');
