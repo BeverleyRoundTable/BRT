@@ -229,28 +229,28 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Don't get <span class="text-brt-gold">FOMO</span></h2>
                 <p class="font-body text-gray-400 mb-12 text-lg max-w-2xl mx-auto">
-                    Ready to kickstart your adventure with Beverley Round Table? Drop us an email or connect with us on our socials to get involved.
+                    Ready to kickstart your adventure with Beverley Round Table? Drop us a message on WhatsApp or connect with us on our socials to get involved.
                 </p>
 
                 <div class="max-w-4xl mx-auto">
-                    <!-- Prominent Email Action -->
-                    <a href="mailto:beverley247@roundtable.org.uk" 
+                    <!-- Prominent WhatsApp Action -->
+                    <a href="https://chat.whatsapp.com/CjoA2cYnR5H9D9N8w1WeuR" target="_blank" rel="noopener noreferrer" 
                        class="inline-flex items-center justify-center gap-4 bg-brt-gold text-brt-dark px-10 py-6 rounded-2xl hover:bg-white transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(251,175,51,0.3)] w-full sm:w-auto mb-16">
-                        <i class="fa-solid fa-envelope text-3xl"></i>
+                        <i class="fa-brands fa-whatsapp text-4xl"></i>
                         <div class="text-left">
-                            <span class="block font-heading font-black uppercase tracking-wider text-xl">Email Us Directly</span>
-                            <span class="block font-body font-semibold opacity-80">beverley247@roundtable.org.uk</span>
+                            <span class="block font-heading font-black uppercase tracking-wider text-xl">Join Our WhatsApp</span>
+                            <span class="block font-body font-semibold opacity-80">Tap to connect instantly</span>
                         </div>
                     </a>
 
                     <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-8">Or Find Us Online</h3>
                     
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <!-- WhatsApp -->
-                        <a href="https://chat.whatsapp.com/CjoA2cYnR5H9D9N8w1WeuR" target="_blank" rel="noopener noreferrer" 
-                           class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-[#25D366]/20 hover:border-[#25D366] transition-all duration-300 group">
-                            <i class="fa-brands fa-whatsapp text-4xl text-gray-400 group-hover:text-[#25D366] mb-3 transition-colors duration-300"></i>
-                            <span class="font-heading font-bold uppercase tracking-wide text-gray-300 group-hover:text-white transition-colors duration-300">WhatsApp</span>
+                        <!-- Email -->
+                        <a href="mailto:beverley247@roundtable.org.uk" 
+                           class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-brt-gold/20 hover:border-brt-gold transition-all duration-300 group">
+                            <i class="fa-solid fa-envelope text-4xl text-gray-400 group-hover:text-brt-gold mb-3 transition-colors duration-300"></i>
+                            <span class="font-heading font-bold uppercase tracking-wide text-gray-300 group-hover:text-white transition-colors duration-300">Email</span>
                         </a>
                         
                         <!-- Instagram -->
@@ -313,117 +313,4 @@
         // Mobile Menu Toggle
         const btn = document.getElementById('mobile-menu-btn');
         const menu = document.getElementById('mobile-menu');
-        const mobileLinks = document.querySelectorAll('.mobile-link');
-
-        btn.addEventListener('click', () => {
-            menu.classList.toggle('hidden');
-        });
-
-        // Close mobile menu on link click
-        mobileLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                menu.classList.add('hidden');
-            });
-        });
-
-        // Navbar scroll effect
-        const navbar = document.getElementById('navbar');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 20) {
-                navbar.classList.add('shadow-lg');
-                navbar.classList.replace('bg-brt-dark/95', 'bg-black/95');
-            } else {
-                navbar.classList.remove('shadow-lg');
-                navbar.classList.replace('bg-black/95', 'bg-brt-dark/95');
-            }
-        });
-
-        // Fetch and Render Events
-        async function fetchEvents() {
-            const container = document.getElementById('events-container');
-            const loader = document.getElementById('events-loader');
-            const errorDiv = document.getElementById('events-error');
-            
-            const apiUrl = 'https://script.google.com/macros/s/AKfycbyGXzNn8DhvLzDkqp2WkVJFbO_wWT05XhrdU9koeXD64YC2t7P3S-4GTngpDbwitIw/exec?type=upcoming';
-
-            try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const events = await response.json();
-                
-                // Hide Loader
-                loader.classList.add('hidden');
-
-                if (events.length === 0) {
-                    container.innerHTML = `<div class="col-span-full text-center py-10"><p class="font-body text-gray-400 text-lg">No upcoming events scheduled right now. Check back soon!</p></div>`;
-                    return;
-                }
-
-                // Sort chronologically just in case
-                events.sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
-
-                // Render Cards
-                events.forEach(event => {
-                    // Date parsing
-                    const dateObj = new Date(event.DateTime);
-                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                    
-                    const dayName = days[dateObj.getDay()];
-                    const dateNum = dateObj.getDate();
-                    const monthName = months[dateObj.getMonth()];
-                    const time = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-                    
-                    const formattedDate = `${dayName} ${dateNum} ${monthName} @ ${time}`;
-                    
-                    // Image Fallback
-                    const hasImg = event.Img && event.Img.trim() !== "";
-                    const imgUrl = hasImg ? event.Img : 'https://placehold.co/600x400/1D1D1A/FBAF33?text=BRT+Event';
-
-                    // Create Card HTML
-                    const card = document.createElement('div');
-                    card.className = 'bg-white/5 rounded-2xl overflow-hidden border border-white/10 flex flex-col group hover:border-brt-gold/50 transition-all duration-300 transform hover:-translate-y-2';
-                    
-                    card.innerHTML = `
-                        <div class="relative h-48 overflow-hidden">
-                            <img src="${imgUrl}" alt="${event.Title}" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" loading="lazy" onerror="this.src='https://placehold.co/600x400/1D1D1A/FBAF33?text=Event'">
-                            <div class="absolute inset-0 bg-gradient-to-t from-[#1D1D1A] to-transparent opacity-80"></div>
-                            <div class="absolute bottom-4 left-4">
-                                <span class="bg-brt-gold text-brt-dark font-heading font-bold text-xs uppercase px-3 py-1 rounded-full shadow-md">
-                                    Upcoming
-                                </span>
-                            </div>
-                        </div>
-                        <div class="p-6 flex-grow flex flex-col justify-between bg-brt-dark">
-                            <div>
-                                <h3 class="font-heading font-extrabold text-xl text-white mb-3 line-clamp-2 leading-tight">${event.Title}</h3>
-                                <div class="flex items-start gap-3 mb-2 text-gray-400">
-                                    <i class="fa-regular fa-calendar text-brt-gold mt-1 w-4"></i>
-                                    <span class="font-body text-sm">${formattedDate}</span>
-                                </div>
-                                <div class="flex items-start gap-3 text-gray-400 mb-6">
-                                    <i class="fa-solid fa-location-dot text-brt-gold mt-1 w-4"></i>
-                                    <span class="font-body text-sm line-clamp-2">${event.Location || 'Location TBC'}</span>
-                                </div>
-                            </div>
-                            <a href="#contact" class="inline-block text-center font-heading uppercase font-bold text-sm text-brt-gold border border-brt-gold rounded-xl py-3 hover:bg-brt-gold hover:text-brt-dark transition-colors duration-300">
-                                Get Involved
-                            </a>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-
-            } catch (error) {
-                console.error("Error fetching events:", error);
-                loader.classList.add('hidden');
-                errorDiv.classList.remove('hidden');
-            }
-        }
-
-        // Initialize fetch on page load
-        document.addEventListener('DOMContentLoaded', fetchEvents);
-    </script>
-</body>
-</html>
+        const mobileLinks = document.querySelectorAll('.mobile-l
