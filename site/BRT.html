@@ -1,3 +1,17 @@
+<!-- 
+========================================================================
+CLOUDFLARE PAGES CACHING CONFIGURATION 
+========================================================================
+Create a file named EXACTLY "_headers" (no .txt or any extension) 
+in the root directory of your GitHub repository.
+Paste the following 3 lines into that file to ensure Cloudflare 
+caches your custom fonts for a year, drastically speeding up load times:
+
+/*
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *
+========================================================================
+-->
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
@@ -8,7 +22,6 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- We keep Montserrat as a strong fallback in case Eurostile isn't locally available -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -27,7 +40,6 @@
                         }
                     },
                     fontFamily: {
-                        /* Prioritizing Eurostile, falling back to Montserrat */
                         heading: ['Eurostile', 'Montserrat', 'sans-serif'], 
                         body: ['Open Sans', 'sans-serif'],
                     }
@@ -37,7 +49,16 @@
     </script>
     
     <style>
-        /* Custom base styles for brand consistency */
+        /* --- EUROSTILE FONT INJECTION (Direct from your Pages dev site) --- */
+        @font-face {
+            font-family: 'Eurostile';
+            src: url('https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.otf') format('opentype');
+            font-weight: 100 900; /* Tells the browser this font file can handle any weight you throw at it */
+            font-style: normal;
+            font-display: swap;
+        }
+        /* ------------------------------------------------------------------ */
+
         body {
             background-color: #1D1D1A;
             color: #FFFFFF;
@@ -48,7 +69,6 @@
             color: #1D1D1A;
         }
 
-        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 10px;
         }
@@ -88,7 +108,6 @@
     <header class="fixed w-full top-0 z-50 bg-brt-dark/95 backdrop-blur-sm border-b border-white/10 transition-all duration-300" id="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
-                <!-- Logo Area -->
                 <div class="flex-shrink-0 flex items-center">
                     <a href="#" class="font-heading font-black text-2xl tracking-tighter text-brt-white flex items-center gap-3 group">
                         <img src="https://brt-23f.pages.dev/icons/BRTLogo.png" alt="BRT Logo" class="w-12 h-12 object-contain transition-transform group-hover:scale-105">
@@ -96,14 +115,12 @@
                     </a>
                 </div>
                 
-                <!-- Desktop Nav -->
                 <nav class="hidden md:flex space-x-8 items-center">
                     <a href="#about" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-gold transition-colors duration-200">Who We Are</a>
                     <a href="#events" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-gold transition-colors duration-200">The Lineup</a>
                     <a href="#contact" class="font-heading uppercase font-bold text-sm text-brt-dark bg-brt-gold px-5 py-2 rounded-full hover:bg-white transition-all duration-200 transform hover:scale-105">Get Involved</a>
                 </nav>
 
-                <!-- Mobile Menu Button -->
                 <div class="md:hidden flex items-center">
                     <button id="mobile-menu-btn" class="text-gray-300 hover:text-brt-gold focus:outline-none p-2">
                         <i class="fa-solid fa-bars text-2xl"></i>
@@ -112,7 +129,6 @@
             </div>
         </div>
 
-        <!-- Mobile Nav Dropdown -->
         <div id="mobile-menu" class="hidden md:hidden bg-brt-dark border-b border-white/10">
             <div class="px-2 pt-2 pb-4 space-y-1 sm:px-3 flex flex-col">
                 <a href="#about" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-base text-gray-300 hover:text-brt-gold hover:bg-white/5 rounded-md">Who We Are</a>
@@ -124,7 +140,6 @@
 
     <main class="flex-grow pt-20">
         <section id="hero" class="relative min-h-[85vh] flex items-center justify-center overflow-hidden hero-pattern">
-            <!-- Subtle background overlay for readability -->
             <div class="absolute inset-0 bg-gradient-to-b from-brt-dark/80 via-brt-dark/40 to-brt-dark"></div>
             
             <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -159,7 +174,6 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-                    <!-- Pillar 1 -->
                     <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-gold/50 transition-colors duration-300 group flex flex-col">
                         <div class="w-16 h-16 bg-brt-gold rounded-2xl flex items-center justify-center text-brt-dark mb-6 transform group-hover:scale-110 transition-transform duration-300">
                             <i class="fa-solid fa-users text-3xl"></i>
@@ -170,7 +184,6 @@
                         </p>
                     </div>
 
-                    <!-- Pillar 2 -->
                     <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-gold/50 transition-colors duration-300 group flex flex-col">
                         <div class="w-16 h-16 bg-brt-gold rounded-2xl flex items-center justify-center text-brt-dark mb-6 transform group-hover:scale-110 transition-transform duration-300">
                             <i class="fa-solid fa-bolt text-3xl"></i>
@@ -181,7 +194,6 @@
                         </p>
                     </div>
 
-                    <!-- Pillar 3 -->
                     <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-gold/50 transition-colors duration-300 group flex flex-col">
                         <div class="w-16 h-16 bg-brt-gold rounded-2xl flex items-center justify-center text-brt-dark mb-6 transform group-hover:scale-110 transition-transform duration-300">
                             <i class="fa-solid fa-sleigh text-3xl"></i>
@@ -190,7 +202,6 @@
                         <p class="font-body text-gray-400 leading-relaxed flex-grow">
                             Giving back feels good. We're proud to organise charitable events, including our much-loved Christmas Santa Sleigh tour around Beverley, making a tangible impact.
                         </p>
-                        <!-- Added subtle link for grants here -->
                         <div class="mt-4 pt-4 border-t border-white/10">
                             <a href="https://requests.beverleyroundtable.co.uk" target="_blank" rel="noopener noreferrer" class="font-body font-semibold text-brt-gold hover:text-white transition-colors duration-300 flex items-center gap-2 text-sm">
                                 Request Financial Aid / Grants <i class="fa-solid fa-arrow-right text-xs"></i>
@@ -210,9 +221,7 @@
                     </div>
                 </div>
 
-                <!-- Events Container -->
-                <div id="events-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Loading State -->
+                <div id="events-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 px-4">
                     <div id="events-loader" class="col-span-full flex flex-col items-center justify-center py-20">
                         <div class="loader mb-4"></div>
                         <p class="font-heading font-bold uppercase text-brt-gold tracking-widest mt-4">Fetching Schedule...</p>
@@ -233,7 +242,6 @@
                 </p>
 
                 <div class="max-w-4xl mx-auto">
-                    <!-- Prominent WhatsApp Action -->
                     <a href="https://chat.whatsapp.com/CjoA2cYnR5H9D9N8w1WeuR" target="_blank" rel="noopener noreferrer" 
                        class="inline-flex items-center justify-center gap-4 bg-brt-gold text-brt-dark px-10 py-6 rounded-2xl hover:bg-white transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(251,175,51,0.3)] w-full sm:w-auto mb-16">
                         <i class="fa-brands fa-whatsapp text-4xl"></i>
@@ -246,28 +254,24 @@
                     <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-8">Or Find Us Online</h3>
                     
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <!-- Email -->
                         <a href="mailto:beverley247@roundtable.org.uk" 
                            class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-brt-gold/20 hover:border-brt-gold transition-all duration-300 group">
                             <i class="fa-solid fa-envelope text-4xl text-gray-400 group-hover:text-brt-gold mb-3 transition-colors duration-300"></i>
                             <span class="font-heading font-bold uppercase tracking-wide text-gray-300 group-hover:text-white transition-colors duration-300">Email</span>
                         </a>
                         
-                        <!-- Instagram -->
                         <a href="https://www.instagram.com/beverleyroundtable/" target="_blank" rel="noopener noreferrer" 
                            class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-[#E1306C]/20 hover:border-[#E1306C] transition-all duration-300 group">
                             <i class="fa-brands fa-instagram text-4xl text-gray-400 group-hover:text-[#E1306C] mb-3 transition-colors duration-300"></i>
                             <span class="font-heading font-bold uppercase tracking-wide text-gray-300 group-hover:text-white transition-colors duration-300">Instagram</span>
                         </a>
 
-                        <!-- Facebook -->
                         <a href="https://www.facebook.com/BeverleyRoundtable" target="_blank" rel="noopener noreferrer" 
                            class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-[#1877F2]/20 hover:border-[#1877F2] transition-all duration-300 group">
                             <i class="fa-brands fa-facebook-f text-4xl text-gray-400 group-hover:text-[#1877F2] mb-3 transition-colors duration-300"></i>
                             <span class="font-heading font-bold uppercase tracking-wide text-gray-300 group-hover:text-white transition-colors duration-300">Facebook</span>
                         </a>
 
-                        <!-- TikTok -->
                         <a href="https://www.tiktok.com/@beverleyroundtable" target="_blank" rel="noopener noreferrer" 
                            class="flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/20 hover:border-white transition-all duration-300 group">
                             <i class="fa-brands fa-tiktok text-4xl text-gray-400 group-hover:text-white mb-3 transition-colors duration-300"></i>
@@ -287,7 +291,6 @@
                     <span class="font-heading font-bold uppercase text-white tracking-widest text-sm">Beverley Round Table</span>
                 </div>
                 
-                <!-- Quick Footer Links -->
                 <div class="flex flex-col sm:flex-row gap-4 sm:gap-8 text-center sm:text-left">
                     <a href="https://requests.beverleyroundtable.co.uk" target="_blank" class="font-body text-gray-400 hover:text-brt-gold transition-colors text-sm font-semibold">
                         Request a Grant
@@ -313,4 +316,123 @@
         // Mobile Menu Toggle
         const btn = document.getElementById('mobile-menu-btn');
         const menu = document.getElementById('mobile-menu');
-        const mobileLinks = document.querySelectorAll('.mobile-l
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu on link click
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                menu.classList.add('hidden');
+            });
+        });
+
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 20) {
+                navbar.classList.add('shadow-lg');
+                navbar.classList.replace('bg-brt-dark/95', 'bg-black/95');
+            } else {
+                navbar.classList.remove('shadow-lg');
+                navbar.classList.replace('bg-black/95', 'bg-brt-dark/95');
+            }
+        });
+
+        // Fetch and Render Events (POLAROID STYLE)
+        async function fetchEvents() {
+            const container = document.getElementById('events-container');
+            const loader = document.getElementById('events-loader');
+            const errorDiv = document.getElementById('events-error');
+            
+            const apiUrl = 'https://script.google.com/macros/s/AKfycbyGXzNn8DhvLzDkqp2WkVJFbO_wWT05XhrdU9koeXD64YC2t7P3S-4GTngpDbwitIw/exec?type=upcoming';
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const events = await response.json();
+                
+                // Hide Loader
+                loader.classList.add('hidden');
+
+                if (events.length === 0) {
+                    container.innerHTML = `<div class="col-span-full text-center py-10"><p class="font-body text-gray-400 text-lg">No upcoming events scheduled right now. Check back soon!</p></div>`;
+                    return;
+                }
+
+                // Sort chronologically
+                events.sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
+
+                // Array of slight rotations to make polaroids look casually scattered
+                const rotations = ['rotate-2', '-rotate-2', 'rotate-1', '-rotate-3', 'rotate-3', '-rotate-1'];
+
+                // Render Cards
+                events.forEach((event, index) => {
+                    // Date parsing
+                    const dateObj = new Date(event.DateTime);
+                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    
+                    const dayName = days[dateObj.getDay()];
+                    const dateNum = dateObj.getDate();
+                    const monthName = months[dateObj.getMonth()];
+                    const time = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                    
+                    const formattedDate = `${dayName} ${dateNum} ${monthName} @ ${time}`;
+                    
+                    // Image Fallback
+                    const hasImg = event.Img && event.Img.trim() !== "";
+                    const imgUrl = hasImg ? event.Img : 'https://placehold.co/600x600/1D1D1A/FBAF33?text=BRT+Event';
+
+                    // Select a rotation class based on index
+                    const randomRotation = rotations[index % rotations.length];
+
+                    const card = document.createElement('a');
+                    card.href = "#contact";
+                    
+                    // Polaroid Design Classes: Off-white BG, thick bottom padding, shadow, rotation
+                    card.className = `bg-[#f5f5f3] p-3 pb-8 rounded-sm shadow-xl flex flex-col group hover:scale-105 transition-all duration-300 transform ${randomRotation} hover:rotate-0 hover:z-10 relative cursor-pointer border border-gray-200`;
+                    
+                    card.innerHTML = `
+                        <div class="relative aspect-square overflow-hidden mb-4 bg-brt-dark border border-gray-300">
+                            <!-- Image starts slightly grayscale and goes full color on hover for a nostalgic feel -->
+                            <img src="${imgUrl}" alt="${event.Title}" class="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500" loading="lazy" onerror="this.src='https://placehold.co/600x600/1D1D1A/FBAF33?text=Event'">
+                            
+                            <div class="absolute top-2 right-2">
+                                <span class="bg-brt-gold text-brt-dark font-heading font-black text-xs uppercase px-2 py-1 rounded shadow-md border border-brt-dark/10">
+                                    ${monthName} ${dateNum}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex-grow flex flex-col justify-between px-2 text-center">
+                            <div>
+                                <h3 class="font-heading font-black text-xl text-brt-dark mb-2 line-clamp-2 leading-tight uppercase tracking-tight">${event.Title}</h3>
+                                <div class="flex items-center justify-center gap-2 mb-1 text-gray-700">
+                                    <i class="fa-regular fa-calendar text-brt-gold w-4"></i>
+                                    <span class="font-body text-sm font-semibold">${formattedDate}</span>
+                                </div>
+                                <div class="flex items-center justify-center gap-2 text-gray-600">
+                                    <i class="fa-solid fa-location-dot text-brt-gold w-4"></i>
+                                    <span class="font-body text-xs line-clamp-1">${event.Location || 'Location TBC'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error("Error fetching events:", error);
+                loader.classList.add('hidden');
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        // Initialize fetch on page load
+        document.addEventListener('DOMContentLoaded', fetchEvents);
+    </script>
+</body>
+</html>
