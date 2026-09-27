@@ -146,6 +146,7 @@ caches your custom fonts for a year, drastically speeding up load times:
                 <nav class="hidden md:flex space-x-8 items-center">
                     <a href="#tracker" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-red transition-colors duration-200">Live Tracker</a>
                     <a href="#routes" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-red transition-colors duration-200">Routes</a>
+                    <a href="#memory-book" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-red transition-colors duration-200">Memory Book</a>
                     <a href="#chat" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-red transition-colors duration-200">Call Santa</a>
                     <a href="#blueprint" class="font-heading uppercase font-bold text-sm text-gray-300 hover:text-brt-red transition-colors duration-200">Blueprint</a>
                     <a href="#donate" class="font-heading uppercase font-bold text-sm text-white bg-brt-red px-6 py-2 rounded-full hover:bg-white hover:text-brt-red transition-all duration-200 transform hover:scale-105 shadow-[0_4px_14px_0_rgba(211,28,28,0.39)]">Donate</a>
@@ -163,6 +164,7 @@ caches your custom fonts for a year, drastically speeding up load times:
             <div class="px-2 pt-2 pb-4 space-y-1 sm:px-3 flex flex-col">
                 <a href="#tracker" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-base text-gray-300 hover:text-brt-red hover:bg-white/5 rounded-xl">Live Tracker</a>
                 <a href="#routes" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-base text-gray-300 hover:text-brt-red hover:bg-white/5 rounded-xl">Routes</a>
+                <a href="#memory-book" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-base text-gray-300 hover:text-brt-red hover:bg-white/5 rounded-xl">Memory Book</a>
                 <a href="#chat" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-base text-gray-300 hover:text-brt-red hover:bg-white/5 rounded-xl">Call Santa</a>
                 <a href="#blueprint" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-base text-gray-300 hover:text-brt-red hover:bg-white/5 rounded-xl">Blueprint</a>
                 <a href="#donate" class="mobile-link font-heading uppercase font-bold block px-3 py-3 text-base text-white bg-brt-red hover:bg-white hover:text-brt-red rounded-xl shadow-lg mt-2 text-center">Donate</a>
@@ -267,7 +269,23 @@ caches your custom fonts for a year, drastically speeding up load times:
             </div>
         </section>
 
-        <section id="chat" class="py-24 bg-[#151513] relative border-t border-white/5 overflow-hidden">
+        <!-- DIGITAL MEMORY BOOK SECTION -->
+        <section id="memory-book" class="py-24 bg-[#151513] relative border-t border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Digital <span class="text-brt-red">Memory Book</span></h2>
+                    <p class="font-body text-lg text-gray-400 max-w-2xl mx-auto">
+                        Spotted Santa? Help us build our digital memory book and share your festive photos with the community!
+                    </p>
+                </div>
+                <div class="bg-white/5 p-2 md:p-4 rounded-[2.5rem] border border-brt-red/20 shadow-[0_0_40px_rgba(211,28,28,0.15)] relative">
+                    <div class="absolute inset-0 bg-brt-red/5 blur-2xl rounded-[2.5rem] -z-10 pointer-events-none"></div>
+                    <iframe id="memory-book-iframe" class="w-full h-[850px] min-h-[500px] rounded-[2rem] border-0 iframe-loading bg-[#151513]" allow="camera; microphone; geolocation" title="Santa Memory Book" loading="lazy"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <section id="chat" class="py-24 bg-brt-dark relative border-t border-white/5 overflow-hidden">
             <div class="absolute top-1/2 left-1/4 -translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-brt-red/10 blur-[100px] rounded-full pointer-events-none"></div>
 
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -306,7 +324,7 @@ caches your custom fonts for a year, drastically speeding up load times:
             </div>
         </section>
 
-        <section id="blueprint" class="py-24 bg-brt-dark relative border-t border-white/5">
+        <section id="blueprint" class="py-24 bg-[#151513] relative border-t border-white/5">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <div class="mb-12">
                     <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Inside Santa's <span class="text-brt-red">Workshop</span></h2>
@@ -320,7 +338,7 @@ caches your custom fonts for a year, drastically speeding up load times:
             </div>
         </section>
 
-        <section id="partners" class="py-24 bg-[#151513] relative border-t border-white/5">
+        <section id="partners" class="py-24 bg-brt-dark relative border-t border-white/5">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brt-red/20 text-brt-red mb-6">
@@ -561,33 +579,47 @@ caches your custom fonts for a year, drastically speeding up load times:
             // 1. Set Tracker Iframe
             const trackerUrl = `${FRAME_BASE}/tracker?api=${encodeURIComponent(GAS_API_URL)}&proxy=${encodeURIComponent(PROXY_URL)}`;
             const trackerFrame = document.getElementById('tracker-iframe');
-            trackerFrame.src = trackerUrl;
-            trackerFrame.onload = () => trackerFrame.classList.remove('iframe-loading');
+            if (trackerFrame) {
+                trackerFrame.src = trackerUrl;
+                trackerFrame.onload = () => trackerFrame.classList.remove('iframe-loading');
+            }
 
             // 2. Set Address Lookup Iframe
             const addressUrl = `${FRAME_BASE}/address.html?api=${encodeURIComponent(GAS_API_URL)}&proxy=${encodeURIComponent(PROXY_URL)}`;
             const addressFrame = document.getElementById('address-iframe');
-            addressFrame.src = addressUrl;
-            addressFrame.onload = () => addressFrame.classList.remove('iframe-loading');
+            if (addressFrame) {
+                addressFrame.src = addressUrl;
+                addressFrame.onload = () => addressFrame.classList.remove('iframe-loading');
+            }
 
-            // 3. Set Blueprint Iframe
+            // 3. Set Memory Book Iframe
+            const memoryBookUrl = `${FRAME_BASE}/memory_book?api=${encodeURIComponent(GAS_API_URL)}&proxy=${encodeURIComponent(PROXY_URL)}`;
+            const memoryBookFrame = document.getElementById('memory-book-iframe');
+            if (memoryBookFrame) {
+                memoryBookFrame.src = memoryBookUrl;
+                memoryBookFrame.onload = () => memoryBookFrame.classList.remove('iframe-loading');
+            }
+
+            // 4. Set Blueprint Iframe
             const blueprintUrl = `${FRAME_BASE}/blueprint?api=${encodeURIComponent(GAS_API_URL)}&proxy=${encodeURIComponent(PROXY_URL)}`;
             const blueprintFrame = document.getElementById('blueprint-iframe');
-            blueprintFrame.src = blueprintUrl;
-            blueprintFrame.onload = () => blueprintFrame.classList.remove('iframe-loading');
+            if (blueprintFrame) {
+                blueprintFrame.src = blueprintUrl;
+                blueprintFrame.onload = () => blueprintFrame.classList.remove('iframe-loading');
+            }
 
-            // 4. Initialize Donations Script
+            // 5. Initialize Donations Script
             window.BRT_DONATE_API = 'https://santaproxy.beverley247.workers.dev/?ttl=10&target=' + encodeURIComponent(GAS_API_URL);
             const script = document.createElement('script');
             script.src = 'https://brt-23f.pages.dev/sleigh/donations_v2.js';
             script.onload = () => { if (typeof BRT_DONATE_INIT === 'function') BRT_DONATE_INIT(); };
             document.head.appendChild(script);
 
-            // 5. Fetch the Routes list
+            // 6. Fetch the Routes list
             fetchSleighRoutes();
         });
 
-        // Listen for iframe resizing events (from address lookup and blueprint)
+        // Listen for iframe resizing events (from address lookup, memory book, and blueprint)
         window.addEventListener('message', (e) => {
             if (!e.data || typeof e.data !== 'object') return;
             
@@ -599,6 +631,14 @@ caches your custom fonts for a year, drastically speeding up load times:
                 }
             }
             
+            // Resize Memory Book Frame
+            if (e.data.memoryBookHeight) {
+                const mbFrame = document.getElementById('memory-book-iframe');
+                if (mbFrame) {
+                    mbFrame.style.height = Math.max(e.data.memoryBookHeight, 500) + 'px';
+                }
+            }
+
             // Resize Blueprint Frame
             if (e.data.frameHeight) {
                 const bpFrame = document.getElementById('blueprint-iframe');
