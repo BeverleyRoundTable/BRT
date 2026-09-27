@@ -291,6 +291,21 @@ caches your custom fonts for a year, drastically speeding up load times:
             </div>
         </section>
 
+        <!-- OUR GENEROUS SPONSORS SECTION (route-night sponsors from the API) -->
+        <section id="sponsors" class="py-24 bg-brt-dark relative border-t border-white/5" style="display: none;">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <div class="mb-12">
+                    <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white mb-4">Our Generous <span class="text-brt-red">Sponsors</span></h2>
+                    <p class="font-body text-lg text-gray-400 max-w-2xl mx-auto">
+                        Thank you to the local businesses keeping the sleigh on the road.
+                    </p>
+                </div>
+                <div id="sponsors-container" class="flex flex-wrap justify-center gap-6">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
         <section id="chat" class="py-24 bg-brt-dark relative border-t border-white/5 overflow-hidden">
             <div class="absolute top-1/2 left-1/4 -translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-brt-red/10 blur-[100px] rounded-full pointer-events-none"></div>
 
@@ -369,14 +384,14 @@ caches your custom fonts for a year, drastically speeding up load times:
                         </a>
                     </div>
 
-                    <!-- Acklams -->
+                    <!-- Zendure -->
                     <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-red/50 hover:bg-white/10 transition-all duration-300 flex flex-col group relative overflow-hidden">
                         <div class="absolute top-0 right-0 w-24 h-24 bg-brt-red/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-150 pointer-events-none"></div>
-                        <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-4 group-hover:text-brt-red transition-colors relative z-10">Acklams Coaches</h3>
+                        <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-4 group-hover:text-brt-red transition-colors relative z-10">Zendure</h3>
                         <p class="font-body text-gray-400 leading-relaxed mb-6 flex-grow relative z-10">
-                            A huge thank you for generously housing our sleigh! Knowing Santa’s ride is safe and secure means the world. Acklams provides highly reliable travel experiences, from bespoke coach hire to luxury holidays and event travel.
+                            Thank you for providing the portable power stations! We have all the clean, reliable energy needed to keep the lights glowing and music playing. Zendure is a global leader in smart, sustainable home and off-grid power solutions.
                         </p>
-                        <a href="https://acklamscoaches.co.uk/" target="_blank" rel="noopener noreferrer" class="text-brt-red hover:text-white font-heading font-bold uppercase text-sm inline-flex items-center gap-2 transition-colors relative z-10">
+                        <a href="https://zendure.co.uk/" target="_blank" rel="noopener noreferrer" class="text-brt-red hover:text-white font-heading font-bold uppercase text-sm inline-flex items-center gap-2 transition-colors relative z-10">
                             Visit Website <i class="fa-solid fa-arrow-right"></i>
                         </a>
                     </div>
@@ -393,14 +408,14 @@ caches your custom fonts for a year, drastically speeding up load times:
                         </a>
                     </div>
 
-                    <!-- Zendure -->
+                    <!-- Acklams -->
                     <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-brt-red/50 hover:bg-white/10 transition-all duration-300 flex flex-col group relative overflow-hidden">
                         <div class="absolute top-0 right-0 w-24 h-24 bg-brt-red/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-150 pointer-events-none"></div>
-                        <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-4 group-hover:text-brt-red transition-colors relative z-10">Zendure</h3>
+                        <h3 class="font-heading font-extrabold text-2xl uppercase text-white mb-4 group-hover:text-brt-red transition-colors relative z-10">Acklams Coaches</h3>
                         <p class="font-body text-gray-400 leading-relaxed mb-6 flex-grow relative z-10">
-                            Thank you for providing the portable power stations! We have all the clean, reliable energy needed to keep the lights glowing and music playing. Zendure is a global leader in smart, sustainable home and off-grid power solutions.
+                            A huge thank you for generously housing our sleigh! Knowing Santa’s ride is safe and secure means the world. Acklams provides highly reliable travel experiences, from bespoke coach hire to luxury holidays and event travel.
                         </p>
-                        <a href="https://zendure.co.uk/" target="_blank" rel="noopener noreferrer" class="text-brt-red hover:text-white font-heading font-bold uppercase text-sm inline-flex items-center gap-2 transition-colors relative z-10">
+                        <a href="https://acklamscoaches.co.uk/" target="_blank" rel="noopener noreferrer" class="text-brt-red hover:text-white font-heading font-bold uppercase text-sm inline-flex items-center gap-2 transition-colors relative z-10">
                             Visit Website <i class="fa-solid fa-arrow-right"></i>
                         </a>
                     </div>
@@ -487,6 +502,43 @@ caches your custom fonts for a year, drastically speeding up load times:
             } catch (e) { return ''; }
         }
 
+        // Renders the "Our Generous Sponsors" logo strip from the API sponsors array
+        function renderSponsors(sponsors) {
+            const section = document.getElementById('sponsors');
+            const container = document.getElementById('sponsors-container');
+            if (!section || !container) return;
+            container.innerHTML = '';
+
+            const valid = sponsors.filter(s => s && safeUrl(s.sponsorUrl));
+            section.style.display = valid.length ? 'block' : 'none';
+
+            valid.forEach(sponsor => {
+                const wrap = document.createElement('div');
+                wrap.className = 'bg-white rounded-2xl p-4 w-[180px] h-[100px] flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-105';
+
+                const img = document.createElement('img');
+                img.src = safeUrl(sponsor.sponsorUrl);
+                img.alt = sponsor.name ? String(sponsor.name) : 'Sponsor';
+                img.loading = 'lazy';
+                img.decoding = 'async';
+                img.className = 'max-w-full max-h-full object-contain';
+
+                const link = safeUrl(sponsor.sponsorLink);
+                if (link) {
+                    const a = document.createElement('a');
+                    a.href = link;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer sponsored';
+                    a.className = 'flex w-full h-full items-center justify-center';
+                    a.appendChild(img);
+                    wrap.appendChild(a);
+                } else {
+                    wrap.appendChild(img);
+                }
+                container.appendChild(wrap);
+            });
+        }
+
         async function fetchSleighRoutes() {
             const container = document.getElementById('routes-container');
             const loader = document.getElementById('routes-loader');
@@ -501,6 +553,9 @@ caches your custom fonts for a year, drastically speeding up load times:
                 
                 // Remove loader
                 if(loader) loader.remove();
+
+                // Populate the Our Generous Sponsors strip from the same payload
+                renderSponsors(sponsors);
 
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
