@@ -571,7 +571,7 @@ caches your custom fonts for a year, drastically speeding up load times:
             addressFrame.onload = () => addressFrame.classList.remove('iframe-loading');
 
             // 3. Set Blueprint Iframe
-            const blueprintUrl = `${FRAME_BASE}/blueprint?api=${encodeURIComponent(GAS_API_URL)}`;
+            const blueprintUrl = `${FRAME_BASE}/blueprint?api=${encodeURIComponent(GAS_API_URL)}&proxy=${encodeURIComponent(PROXY_URL)}`;
             const blueprintFrame = document.getElementById('blueprint-iframe');
             blueprintFrame.src = blueprintUrl;
             blueprintFrame.onload = () => blueprintFrame.classList.remove('iframe-loading');
