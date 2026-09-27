@@ -709,5 +709,53 @@ caches your custom fonts for a year, drastically speeding up load times:
             }
         });
     </script>
+
+    <!-- Carrd-era click tracking: logs internal nav taps and outbound sponsor/partner clicks to Google Sheets -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwyAk3IScj--iNDQUn0ddk5wUH99Gfh6kPnCGmxgHhb4dIOoPRGaRwGT1lD-E9jf8dv/exec";
+
+    document.addEventListener('click', function(event) {
+    const link = event.target.closest('a');
+    if (!link) return;
+
+    const href = link.getAttribute('href');
+    if (!href) return;
+
+    let payloadLabel = "";
+
+    // 1. AUTOMATICALLY CATCH ALL INTERNAL SECTION TAPS (Navigation & Logos)
+    if (href.startsWith('#') && href.length > 1) {
+    const partnerName = href.substring(1).replace(/[^a-zA-Z0-9]/g, '_');
+    payloadLabel = `Carrd_Tap_${partnerName}_Logo`;
+    }
+
+    // 2. AUTOMATICALLY CATCH ALL OUTBOUND CLICKS (Socials & Sponsors)
+    else if (href.startsWith('http') && !href.includes(window.location.hostname)) {
+    try {
+    const urlObj = new URL(href);
+    let domain = urlObj.hostname.replace('www.', '');
+    domain = domain.split('.')[0];
+    const cleanName = domain.charAt(0).toUpperCase() + domain.slice(1);
+    payloadLabel = `Carrd_Click_${cleanName}_Outbound`;
+    } catch (e) {
+    payloadLabel = 'Carrd_Click_Unknown_Outbound';
+    }
+    }
+
+    // Silently log EVERYTHING to Google Sheets
+    if (payloadLabel) {
+    fetch(WEB_APP_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ sponsorName: payloadLabel })
+    }).catch(err => console.error("Tracking failed"));
+    }
+    });
+
+    });
+    </script>
 </body>
 </html>
