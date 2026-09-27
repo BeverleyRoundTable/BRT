@@ -7,7 +7,7 @@ in the root directory of your GitHub repository.
 Paste the following 3 lines into that file to ensure Cloudflare 
 caches your custom fonts for a year, drastically speeding up load times:
 
-/fonts/*
+/*
   Cache-Control: public, max-age=31536000, immutable
   Access-Control-Allow-Origin: *
 ========================================================================
@@ -20,6 +20,12 @@ caches your custom fonts for a year, drastically speeding up load times:
     <title>Santa Sleigh Live Tracker | Beverley Round Table</title>
     <meta name="description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
     
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Santa Sleigh Live Tracker">
+    <meta property="og:description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
+    <meta property="og:image" content="https://brt-23f.pages.dev/icons/site_background.png"> 
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -52,20 +58,8 @@ caches your custom fonts for a year, drastically speeding up load times:
         /* --- EUROSTILE FONT INJECTION --- */
         @font-face {
             font-family: 'Eurostile';
-            src: url('/fonts/eurostile.woff2') format('woff2'),
-                 url('/fonts/eurostile.woff') format('woff'),
-                 url('/fonts/eurostile.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap;
-        }
-
-        @font-face {
-            font-family: 'Eurostile';
-            src: url('/fonts/eurostile-bold.woff2') format('woff2'),
-                 url('/fonts/eurostile-bold.woff') format('woff'),
-                 url('/fonts/eurostile-bold.ttf') format('truetype');
-            font-weight: bold;
+            src: url('https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.otf') format('opentype');
+            font-weight: 100 900;
             font-style: normal;
             font-display: swap;
         }
@@ -218,9 +212,10 @@ caches your custom fonts for a year, drastically speeding up load times:
                         Watch Santa's sleigh move in real-time as he visits the streets of Beverley!
                     </p>
                 </div>
+                <!-- Soft red glow behind the iframe -->
                 <div class="bg-white/5 p-2 md:p-4 rounded-[2.5rem] border border-brt-red/20 shadow-[0_0_40px_rgba(211,28,28,0.15)] relative">
                     <div class="absolute inset-0 bg-brt-red/5 blur-2xl rounded-[2.5rem] -z-10 pointer-events-none"></div>
-                    <iframe id="tracker-iframe" class="w-full h-[70vh] min-h-[500px] rounded-[2rem] border-0 iframe-loading bg-[#151513]" allow="geolocation; screen-wake-lock" title="Santa Tracker" scrolling="no"></iframe>
+                    <iframe id="tracker-iframe" class="w-full h-[75vh] min-h-[500px] rounded-[2rem] border-0 iframe-loading bg-[#151513]" allow="geolocation; screen-wake-lock" title="Santa Tracker" scrolling="no"></iframe>
                 </div>
             </div>
         </section>
@@ -239,7 +234,8 @@ caches your custom fonts for a year, drastically speeding up load times:
                     <div class="absolute -top-20 -right-20 w-64 h-64 bg-brt-red/10 rounded-full blur-[60px] pointer-events-none"></div>
                     
                     <div data-santa-thermo="">
-                        <div class="ts-donations-wrapper" style="--primary: #D31C1C; --primary-rgb: 211, 28, 28; --on-primary: #FFFFFF;">
+                        <!-- Theming applied via CSS vars to match Santa Red -->
+                        <div class="ts-donations-wrapper" style="--primary: #D31C1C; --primary-rgb: 211, 28, 28; --on-primary: #FFFFFF; --bg-card: #000000;">
                             <!-- Populated automatically by donations_v2.js -->
                         </div>
                     </div>
@@ -458,6 +454,15 @@ caches your custom fonts for a year, drastically speeding up load times:
             return isNaN(d) ? null : d;
         }
 
+        // Ensuring we safely parse and format urls
+        function safeUrl(u) {
+            if (!u) return '';
+            try {
+                const x = new URL(String(u).trim(), location.href);
+                return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : '';
+            } catch (e) { return ''; }
+        }
+
         async function fetchSleighRoutes() {
             const container = document.getElementById('routes-container');
             const loader = document.getElementById('routes-loader');
@@ -467,8 +472,8 @@ caches your custom fonts for a year, drastically speeding up load times:
                 if (!response.ok) throw new Error('Failed to load routes');
                 
                 const data = await response.json();
-                const routes = data.routes || [];
-                const sponsors = data.sponsors || [];
+                const routes = Array.isArray(data.routes) ? data.routes : [];
+                const sponsors = Array.isArray(data.sponsors) ? data.sponsors : [];
                 
                 // Remove loader
                 if(loader) loader.remove();
@@ -504,7 +509,7 @@ caches your custom fonts for a year, drastically speeding up load times:
                     let sponsorHtml = '';
                     if (route.sponsorName) {
                         const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
-                        const sponsorLink = sponsorMatch ? route.sponsorLink || sponsorMatch.sponsorLink : route.sponsorLink;
+                        const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
                         
                         if (sponsorLink) {
                             sponsorHtml = `<div class="mt-4 pt-4 border-t border-white/10 text-xs text-brt-red">
@@ -532,8 +537,8 @@ caches your custom fonts for a year, drastically speeding up load times:
                     card.className = `bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col transition-all duration-300 ${isPast ? 'opacity-50 grayscale hover:grayscale-0' : 'hover:border-brt-red/50 hover:bg-white/10'}`;
                     
                     card.innerHTML = `
-                        <div class="font-heading font-bold text-sm text-brt-red uppercase tracking-wider mb-2">
-                            ${isPast ? '<span class="text-white mr-2"><i class="fa-solid fa-check"></i> COMPLETED |</span>' : ''} 
+                        <div class="font-heading font-bold text-sm text-brt-red uppercase tracking-wider mb-2 flex items-center">
+                            ${isPast ? '<span class="text-white mr-2 flex items-center"><i class="fa-solid fa-check mr-1"></i> COMPLETED |</span>' : ''} 
                             ${dateText} ${time ? `| ${time}` : ''}
                         </div>
                         <h3 class="font-heading font-black text-2xl text-white mb-3 leading-tight">${route.routeName}</h3>
