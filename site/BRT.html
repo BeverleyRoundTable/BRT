@@ -23,6 +23,9 @@ caches your custom fonts for a year, drastically speeding up load times:
     <!-- Preload Custom Font -->
     <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
 
+      <!-- Preconnect to Google Drive Image Delivery CDN -->
+    <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>
+    <link rel="preconnect" href="https://drive.google.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -375,93 +378,126 @@ caches your custom fonts for a year, drastically speeding up load times:
         // API URL
         const API_URL = 'https://script.google.com/macros/s/AKfycbyJjIbq-XZ9W8owbbp0PizZ2adE-Z3SK1bAxPDEjjDjmYhqpKXMwlHEuWrOUyNeTg/exec';
 
-        // Fetch and Render Gallery Polaroids
-        async function fetchGallery() {
-            try {
-                const response = await fetch(`${API_URL}?action=gallery`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                
-                if (data.ok && data.images && data.images.length >= 3) {
-                    document.getElementById('polaroid-img-1').src = data.images[0];
-                    document.getElementById('polaroid-img-2').src = data.images[1];
-                    document.getElementById('polaroid-img-3').src = data.images[2];
-                }
-            } catch (error) {
-                console.error("Error fetching gallery images:", error);
-            }
+        // Fetch and Render Gallery Polaroids with instant Cache
+async function fetchGallery() {
+    const CACHE_KEY = 'brt_gallery_cache';
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    
+    // 1. Render instantly from cache if available
+    if (cached) {
+        const data = JSON.parse(cached);
+        applyGalleryImages(data);
+    }
+
+    // 2. Fetch fresh data in background
+    try {
+        const response = await fetch(`${API_URL}?action=gallery`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        
+        if (data.ok && data.images && data.images.length >= 3) {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            applyGalleryImages(data);
         }
+    } catch (error) {
+        console.error("Error fetching gallery images:", error);
+    }
+}
 
-        // Fetch and Render Events (CLEAN CARD STYLE)
-        async function fetchEvents() {
-            const container = document.getElementById('events-container');
-            const loader = document.getElementById('events-loader');
-            const errorDiv = document.getElementById('events-error');
-            
-            try {
-                const response = await fetch(`${API_URL}?type=upcoming`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const events = await response.json();
-                
-                // Hide Loader
-                loader.classList.add('hidden');
+function applyGalleryImages(data) {
+    if (data.ok && data.images && data.images.length >= 3) {
+        document.getElementById('polaroid-img-1').src = data.images[0];
+        document.getElementById('polaroid-img-2').src = data.images[1];
+        document.getElementById('polaroid-img-3').src = data.images[2];
+    }
+}
 
-                if (events.length === 0) {
-                    container.innerHTML = `<div class="col-span-full text-center py-10"><p class="font-body text-gray-400 text-lg">No upcoming events scheduled right now. Check back soon!</p></div>`;
-                    return;
-                }
+// Fetch and Render Events with instant Cache
+async function fetchEvents() {
+    const container = document.getElementById('events-container');
+    const loader = document.getElementById('events-loader');
+    const errorDiv = document.getElementById('events-error');
+    const CACHE_KEY = 'brt_events_cache';
+    
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+        loader.classList.add('hidden');
+        renderEventsCards(JSON.parse(cached), container);
+    }
 
-                // Sort chronologically just in case
-                events.sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
+    try {
+        const response = await fetch(`${API_URL}?type=upcoming`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const events = await response.json();
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(events));
+        
+        loader.classList.add('hidden');
+        container.innerHTML = ''; // Clear prior render
+        renderEventsCards(events, container);
 
-                // Render Cards using the original Sleek UI
-                events.forEach(event => {
-                    const dateObj = new Date(event.DateTime);
-                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                    
-                    const dayName = days[dateObj.getDay()];
-                    const dateNum = dateObj.getDate();
-                    const monthName = months[dateObj.getMonth()];
-                    const time = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-                    
-                    const formattedDate = `${dayName} ${dateNum} ${monthName} @ ${time}`;
-                    
-                    const hasImg = event.Img && event.Img.trim() !== "";
-                    const imgUrl = hasImg ? event.Img : 'https://placehold.co/600x400/1D1D1A/FBAF33?text=BRT+Event';
+    } catch (error) {
+        console.error("Error fetching events:", error);
+        if (!cached) {
+            loader.classList.add('hidden');
+            errorDiv.classList.remove('hidden');
+        }
+    }
+}
 
-                    const card = document.createElement('div');
-                    card.className = 'bg-white/5 rounded-2xl overflow-hidden border border-white/10 flex flex-col group hover:border-brt-gold/50 transition-all duration-300 transform hover:-translate-y-2';
-                    
-                    card.innerHTML = `
-                        <div class="relative h-48 overflow-hidden">
-                            <img src="${imgUrl}" alt="${event.Title}" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" loading="lazy" onerror="this.src='https://placehold.co/600x400/1D1D1A/FBAF33?text=Event'">
-                            <div class="absolute inset-0 bg-gradient-to-t from-[#1D1D1A] to-transparent opacity-80"></div>
-                            <div class="absolute bottom-4 left-4">
-                                <span class="bg-brt-gold text-brt-dark font-heading font-bold text-xs uppercase px-3 py-1 rounded-full shadow-md">
-                                    Upcoming
-                                </span>
-                            </div>
-                        </div>
-                        <div class="p-6 flex-grow flex flex-col justify-between bg-brt-dark">
-                            <div>
-                                <h3 class="font-heading font-extrabold text-xl text-white mb-3 line-clamp-2 leading-tight">${event.Title}</h3>
-                                <div class="flex items-start gap-3 mb-2 text-gray-400">
-                                    <i class="fa-regular fa-calendar text-brt-gold mt-1 w-4"></i>
-                                    <span class="font-body text-sm">${formattedDate}</span>
-                                </div>
-                                <div class="flex items-start gap-3 text-gray-400 mb-6">
-                                    <i class="fa-solid fa-location-dot text-brt-gold mt-1 w-4"></i>
-                                    <span class="font-body text-sm line-clamp-2">${event.Location || 'Location TBC'}</span>
-                                </div>
-                            </div>
-                            <a href="#contact" class="inline-block text-center font-heading uppercase font-bold text-sm text-brt-gold border border-brt-gold rounded-xl py-3 hover:bg-brt-gold hover:text-brt-dark transition-colors duration-300">
-                                Get Involved
-                            </a>
-                        </div>
-                    `;
-                    container.appendChild(card);
+function renderEventsCards(events, container) {
+    if (events.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-10"><p class="font-body text-gray-400 text-lg">No upcoming events scheduled right now. Check back soon!</p></div>`;
+        return;
+    }
+
+    events.sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
+
+    events.forEach(event => {
+        const dateObj = new Date(event.DateTime);
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        const formattedDate = `${days[dateObj.getDay()]} ${dateObj.getDate()} ${months[dateObj.getMonth()]} @ ${dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+        const imgUrl = (event.Img && event.Img.trim() !== "") ? event.Img : 'https://placehold.co/600x400/1D1D1A/FBAF33?text=BRT+Event';
+
+        const card = document.createElement('div');
+        card.className = 'bg-white/5 rounded-2xl overflow-hidden border border-white/10 flex flex-col group hover:border-brt-gold/50 transition-all duration-300 transform hover:-translate-y-2';
+        
+        card.innerHTML = `
+            <div class="relative h-48 overflow-hidden bg-brt-dark">
+                <img src="${imgUrl}" alt="${event.Title}" 
+                     decoding="async" 
+                     loading="lazy" 
+                     class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" 
+                     onerror="this.src='https://placehold.co/600x400/1D1D1A/FBAF33?text=Event'">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#1D1D1A] to-transparent opacity-80"></div>
+                <div class="absolute bottom-4 left-4">
+                    <span class="bg-brt-gold text-brt-dark font-heading font-bold text-xs uppercase px-3 py-1 rounded-full shadow-md">
+                        Upcoming
+                    </span>
+                </div>
+            </div>
+            <div class="p-6 flex-grow flex flex-col justify-between bg-brt-dark">
+                <div>
+                    <h3 class="font-heading font-extrabold text-xl text-white mb-3 line-clamp-2 leading-tight">${event.Title}</h3>
+                    <div class="flex items-start gap-3 mb-2 text-gray-400">
+                        <i class="fa-regular fa-calendar text-brt-gold mt-1 w-4"></i>
+                        <span class="font-body text-sm">${formattedDate}</span>
+                    </div>
+                    <div class="flex items-start gap-3 text-gray-400 mb-6">
+                        <i class="fa-solid fa-location-dot text-brt-gold mt-1 w-4"></i>
+                        <span class="font-body text-sm line-clamp-2">${event.Location || 'Location TBC'}</span>
+                    </div>
+                </div>
+                <a href="#contact" class="inline-block text-center font-heading uppercase font-bold text-sm text-brt-gold border border-brt-gold rounded-xl py-3 hover:bg-brt-gold hover:text-brt-dark transition-colors duration-300">
+                    Get Involved
+                </a>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
                 });
 
             } catch (error) {
