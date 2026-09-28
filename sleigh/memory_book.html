@@ -4,9 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TurboSanta — Memory Book</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700;800&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Preload Custom Font -->
+<link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   
   <style>
+    @font-face {
+    font-family: 'Eurostile';
+    src: url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+    
     :root {
       /* Brand colour. Default is Round Table gold; applyTheme() overrides these from the API
          (settings.primary_color), exactly like the Santa sleigh page does. */
@@ -26,7 +39,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Open Sans', sans-serif;
       /* FIXED: Made background transparent for seamless iframe embedding */
       background: transparent; 
       color: var(--text);
@@ -63,10 +76,10 @@
     .time-machine span { color: var(--text-dim); font-size: 13px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
     .time-machine select {
       background: transparent; color: var(--primary); border: none;
-      font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 1.5px;
+      font-family: 'Eurostile', sans-serif; font-size: 24px; letter-spacing: 1.5px;
       cursor: pointer; outline: none; appearance: none; padding-right: 4px;
     }
-    .time-machine select option { background: var(--surface); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 16px; }
+    .time-machine select option { background: var(--surface); color: #fff; font-family: 'Open Sans', sans-serif; font-size: 16px; }
     
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
@@ -123,7 +136,7 @@
     }
 
     .polaroid-caption {
-      font-family: 'Kalam', cursive;
+      font-family: 'Eurostile', 'Open Sans', sans-serif;
       color: #222;
       font-size: 20px;
       font-weight: 700;
@@ -160,7 +173,7 @@
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     
     .modal-title {
-      font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+      font-family: 'Eurostile', sans-serif; font-size: 32px;
       letter-spacing: 1.5px; margin: 0 0 12px 0; color: var(--primary); line-height: 1;
     }
     .modal-desc { font-size: 14px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.5; }
