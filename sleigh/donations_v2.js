@@ -6,8 +6,6 @@
     };
 
     // --- THEME CACHE (mirrors tracker.html) ---
-    // Remember the API colour per endpoint so repeat visits paint the right colour straight away.
-    // Storage can be blocked, so both helpers swallow errors.
     let themeApi = "";
 
     function loadCachedTheme(api) {
@@ -25,8 +23,6 @@
         } catch (e) {}
     }
 
-    // Widgets are injected hidden (opacity 0) and revealed once the theme is known,
-    // so the gold fallback never flashes before the API colour lands.
     function revealWidgets() {
         document.querySelectorAll('.ts-donations-wrapper.ts-theme-pending')
             .forEach(w => w.classList.remove('ts-theme-pending'));
@@ -34,8 +30,6 @@
 
     // --- ACTUAL START FUNCTION ---
     function startDonationsWidget() {
-
-        // 1. Get API base URL
         let apiBase = window.BRT_DONATE_API || null;
 
         if (!apiBase) {
@@ -53,20 +47,15 @@
 
         installCSS();
 
-        // Inject any mini or thermo elements present
         document.querySelectorAll("[data-santa-mini]").forEach(injectMini);
         document.querySelectorAll("[data-santa-thermo]").forEach(injectThermo);
 
-        // Repeat visit: paint the cached colour now and show the widgets.
-        // First visit: stay hidden until the API answers (or 3s passes) instead of flashing gold.
         if (loadCachedTheme(API_URL)) revealWidgets();
         setTimeout(revealWidgets, 3000);
 
-        // Fetch and update UI
         loadData(API_URL, 0);
     }
 
-    // Fetch with up to 2 retries, in case Apps Script is cold or briefly erroring
     function loadData(url, attempt) {
         fetch(url)
             .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
@@ -113,7 +102,6 @@
         const raw = settings && settings.primary_color;
         const rgb = parseColor(raw);
         
-        // Scope the custom properties strictly to the donation widgets
         document.querySelectorAll('.ts-donations-wrapper').forEach(wrapper => {
             if (rgb) {
                 wrapper.style.setProperty('--primary', String(raw).trim());
@@ -128,16 +116,38 @@
     }
 
     /* ---------------------------------------------------------
-       INSTALL SAFE CSS (TurboSanta National Styling)
+       INSTALL SAFE CSS & PRELOAD EUROSTILE
     --------------------------------------------------------- */
     function installCSS() {
-    if (document.getElementById("donations-v2-style")) return;
+        // Self-preload the Eurostile font on the host page if not already present
+        if (!document.getElementById("brt-eurostile-preload")) {
+            const preload = document.createElement("link");
+            preload.id = "brt-eurostile-preload";
+            preload.rel = "preload";
+            preload.href = "https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2";
+            preload.as = "font";
+            preload.type = "font/woff2";
+            preload.crossOrigin = "anonymous";
+            document.head.appendChild(preload);
+        }
 
-    const css = `
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap');
+        if (document.getElementById("donations-v2-style")) return;
+
+        const css = `
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
+
+@font-face {
+    font-family: 'Eurostile';
+    src: url('https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2') format('woff2'),
+         url('https://brt-23f.pages.dev/fonts/eurostile-bold.woff2') format('woff2'),
+         url('https://brt-23f.pages.dev/fonts/eurostile-bold.woff') format('woff'),
+         url('https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
 
 .ts-donations-wrapper {
-    /* Fallback variables, updated dynamically by applyTheme() */
     --primary: #FBAF33;
     --primary-rgb: 251, 175, 51;
     --on-primary: #000000;
@@ -152,7 +162,7 @@
     --text-muted: rgba(255,255,255,0.3);
     --red: #D31C1C;
 
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Open Sans', sans-serif;
     color: var(--text);
     margin: 1.2rem auto 40px; 
     max-width: 480px;
@@ -166,7 +176,6 @@
     box-sizing: border-box;
 }
 
-/* Hidden until the API theme is known (see revealWidgets) */
 .ts-donations-wrapper {
     transition: opacity 0.25s ease;
 }
@@ -182,7 +191,7 @@
     padding: 12px 28px;
     background: var(--primary);
     color: var(--on-primary);
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Eurostile', sans-serif;
     font-size: 22px;
     letter-spacing: 1.5px;
     text-decoration: none;
@@ -236,7 +245,7 @@
 }
 .ts-mini-val {
     margin-top: 10px;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Eurostile', sans-serif;
     font-size: 26px;
     letter-spacing: 1px;
     color: var(--text);
@@ -292,7 +301,7 @@
 }
 
 .ts-thermo-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Eurostile', sans-serif;
     font-size: 40px;
     letter-spacing: 2px;
     margin: 0 0 24px 0;
@@ -347,7 +356,7 @@
 }
 
 .ts-thermo-amount-val {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Eurostile', sans-serif;
     font-size: 56px;
     color: var(--primary);
     line-height: 1;
@@ -452,7 +461,6 @@
         const donations = fullData.donations || {};
         const settings = fullData.settings || {};
 
-        // Apply dynamic API theming, remember it for next visit, and show the widgets
         applyTheme(settings);
         saveTheme(themeApi, settings.primary_color);
         revealWidgets();
@@ -461,7 +469,6 @@
         const target = Number(donations.target || 0);
         const pct    = target > 0 ? Math.min(100, (total / target) * 100) : 0;
         
-        // Extract donate URL safely
         const donateUrl = settings.donate_url && settings.donate_url.trim() !== "" ? settings.donate_url.trim() : null;
 
         /* MINI BAR */
@@ -492,10 +499,8 @@
 
         if (tf) {
             tf.style.height = pct + "%";
-
-            // subtle pulse on update
             tf.classList.remove("pulse");
-            void tf.offsetWidth; // force reflow so animation can retrigger
+            void tf.offsetWidth;
             tf.classList.add("pulse");
         }
 
@@ -514,10 +519,9 @@
             }
         }
 
-        // dynamic logo support (Settings → logo_overlay_url)
         if (logo) {
             logo.src = donations.logo || settings.logo_overlay_url || "";
-            logo.style.display = logo.src ? "block" : "none"; // Hide if no source
+            logo.style.display = logo.src ? "block" : "none";
         }
     }
 
