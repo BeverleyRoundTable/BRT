@@ -513,20 +513,12 @@ function renderEventsCards(events, container) {
         container.appendChild(card);
     });
 }
-                });
 
-            } catch (error) {
-                console.error("Error fetching events:", error);
-                loader.classList.add('hidden');
-                errorDiv.classList.remove('hidden');
-            }
-        }
-
-        // Initialize both fetches on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchGallery();
-            fetchEvents();
-        });
+// Initialize both fetches on page load
+document.addEventListener('DOMContentLoaded', () => {
+    fetchGallery();
+    fetchEvents();
+});
     </script>
 </body>
 </html>
