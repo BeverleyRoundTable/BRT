@@ -1,93 +1,207 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en-GB" class="scroll-smooth">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Causes We've Funded — Beverley Round Table</title>
-<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png">
-<meta name="description" content="The local causes and projects Beverley Round Table has supported.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
-<style>
-:root{
-  --gold:#FBAF33;--gold-glow:rgba(251,175,51,.14);--grey-dark:#1D1D1A;--grey-card:#242421;
-  --grey-border:#39393455;--white:#fff;--text:#ecece7;--text-muted:#a3a39c;
-  --font-display:'Eurostile Extended','Eurostile','Michroma',sans-serif;--font-body:'Open Sans',-apple-system,sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-body);background:var(--grey-dark);color:var(--text);line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased;
-  background-image:radial-gradient(900px 500px at 50% -10%,rgba(251,175,51,.10),transparent 60%),linear-gradient(180deg,#1f1f1c,#1a1a17);background-attachment:fixed;min-height:100vh}
-.wrap{max-width:760px;margin:0 auto;padding:32px 20px 64px}
-.hero{text-align:center;padding:24px 8px 8px}
-.logo-slot{display:inline-flex;height:60px;margin-bottom:24px;align-items:center;justify-content:center}
-.logo-slot img{max-height:52px}
-.eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px}
-h1{font-family:var(--font-display);font-size:clamp(30px,7vw,50px);line-height:1.02;color:var(--white);text-transform:uppercase;letter-spacing:.5px}
-h1 .y{color:var(--gold)}
-.brush{width:120px;height:5px;background:var(--gold);border-radius:3px;margin:18px auto 0;transform:skewX(-12deg)}
-.lede{font-size:17px;color:var(--text-muted);max-width:480px;margin:22px auto 0}
-.grid{margin-top:36px;display:grid;gap:16px}
-.cause{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:14px;overflow:hidden;box-shadow:0 16px 40px -28px rgba(0,0,0,.7)}
-.cause img{width:100%;max-height:240px;object-fit:cover;display:block;border-bottom:1px solid var(--grey-border)}
-.cause .body{padding:20px 22px}
-.cause .top{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
-.cause .name{font-family:var(--font-display);font-size:17px;color:var(--white);letter-spacing:.3px;line-height:1.2}
-.cause .amt{margin-left:auto;font-family:var(--font-display);font-size:18px;color:var(--gold);white-space:nowrap}
-.cause .when{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
-.cause .what{font-size:14.5px;color:var(--text);margin-bottom:10px}
-.cause .report{font-size:14px;color:var(--text-muted);line-height:1.7;border-left:2px solid var(--gold);padding-left:14px}
-.loading,.empty{text-align:center;color:var(--text-muted);padding:48px 20px;font-size:15px}
-.foot{text-align:center;margin-top:36px;font-size:13px;color:var(--text-muted)}
-.foot a{color:var(--gold);text-decoration:none}
-.fade{opacity:0;transform:translateY(12px);animation:rise .6s ease forwards}@keyframes rise{to{opacity:1;transform:none}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Causes We've Funded | Beverley Round Table</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png">
+    <meta name="description" content="A look at the local causes and projects Beverley Round Table has supported.">
+
+    <!-- Preload Custom Font for Speed -->
+    <link rel="preload" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
+    
+    <!-- Preconnects & Google Fonts (Strictly Open Sans only) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brt: {
+                            dark: '#1D1D1A', 
+                            gold: '#FBAF33', 
+                            white: '#FFFFFF',
+                            black: '#000000',
+                            light: '#f5f5f3'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Eurostile', 'sans-serif'], /* Montserrat removed */
+                        body: ['Open Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- EUROSTILE FONT INJECTION --- */
+        @font-face {
+            font-family: 'Eurostile';
+            src: url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        body {
+            background-color: #1D1D1A;
+            color: #FFFFFF;
+        }
+
+        ::selection { background-color: #FBAF33; color: #1D1D1A; }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #1D1D1A; }
+        ::-webkit-scrollbar-thumb { background: #FBAF33; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d99326; }
+
+        .hero-pattern {
+            background-image: radial-gradient(rgba(251, 175, 51, 0.1) 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+
+        /* --- ANIMATIONS --- */
+        .fade-in { opacity: 0; transform: translateY(12px); animation: rise 0.6s ease forwards; }
+        .delay-1 { animation-delay: 0.1s; }
+        
+        @keyframes rise { to { opacity: 1; transform: none; } }
+        
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #FBAF33;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-<body>
-<div class="wrap">
-  <header class="hero fade">
-    <span class="logo-slot"><img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png" alt="Round Table"></span>
-    <div class="eyebrow">Beverley Round Table</div>
-    <h1>Causes We've<br><span class="y">Funded.</span></h1>
-    <div class="brush"></div>
-    <p class="lede">A look at the local causes and projects Beverley Round Table has been able to support — thanks to everyone who fundraises with us.</p>
-  </header>
+<body class="font-body antialiased min-h-screen flex flex-col relative hero-pattern">
 
-  <div id="grid" class="grid"><div class="loading">Loading…</div></div>
+    <!-- Gradient Overlay overlaying the pattern -->
+    <div class="fixed inset-0 bg-gradient-to-b from-brt-dark/80 via-brt-dark/40 to-brt-dark -z-10 pointer-events-none"></div>
 
-  <div class="foot fade">Run a local cause? <a href="/requests/">Apply for funding →</a></div>
-</div>
+    <div class="max-w-6xl mx-auto w-full px-4 py-12 md:py-20 relative z-10 flex-grow">
+        
+        <!-- HERO -->
+        <header class="text-center mb-16 fade-in">
+            <a href="https://beverleyroundtable.co.uk" class="inline-block group mb-8">
+                <img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png" alt="BRT Logo" class="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105">
+            </a>
+            <span class="font-heading font-extrabold uppercase tracking-widest text-sm text-brt-gold mb-3 block">
+                Beverley Round Table
+            </span>
+            <h1 class="font-heading font-black text-5xl md:text-6xl lg:text-7xl uppercase text-white mb-6 tracking-tight leading-none drop-shadow-lg">
+                Causes We've<br><span class="text-brt-gold">Funded.</span>
+            </h1>
+            <p class="font-body text-gray-300 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+                A look at the local causes and projects Beverley Round Table has been able to support — thanks to everyone who fundraises with us.
+            </p>
+        </header>
 
-<script>
-// ====== same deployed Apps Script /exec URL the form uses ======
-const API_URL = 'https://script.google.com/macros/s/AKfycbyY1kgyrfHGDS_zmDVcpo386oHKP5jGBPKm_bQS4X-k0fKDVPZvsT_AzzutGI6dcXrV/exec';
-// ================================================================
-const grid = document.getElementById('grid');
-const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const gbp = v => { const n=parseInt(v,10); return isNaN(n)?'':'£'+n.toLocaleString('en-GB'); };
-const whenLabel = iso => { const d=new Date(iso); return isNaN(d.getTime())?'':d.toLocaleDateString('en-GB',{month:'long',year:'numeric'}); };
-const isImg = u => /^https?:\/\/\S+\.(?:jpg|jpeg|png|webp|gif)(?:\?\S*)?$/i.test(String(u||''));
-
-(async function(){
-  try{
-    const r = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'public'}) });
-    const data = await r.json();
-    const causes = (data && data.ok && data.causes) || [];
-    if(!causes.length){ grid.className=''; grid.innerHTML = '<div class="empty">We\u2019ll be sharing the causes we\u2019ve funded here soon.</div>'; return; }
-    grid.innerHTML = causes.map(c => `
-      <article class="cause fade">
-        ${isImg(c.photo) ? `<img src="${esc(c.photo)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
-        <div class="body">
-          <div class="top"><span class="name">${esc(c.cause)}</span>${gbp(c.amount)?`<span class="amt">${gbp(c.amount)}</span>`:''}</div>
-          ${whenLabel(c.when)?`<div class="when">${esc(whenLabel(c.when))}</div>`:''}
-          ${c.summary?`<div class="what">${esc(c.summary)}</div>`:''}
-          ${c.report?`<div class="report">${esc(c.report)}</div>`:''}
+        <!-- CAUSES GRID -->
+        <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in delay-1">
+            <div class="col-span-full flex flex-col items-center justify-center py-20">
+                <div class="loader mb-4"></div>
+                <p class="font-heading font-bold uppercase text-brt-gold tracking-widest mt-4">Loading Causes...</p>
+            </div>
         </div>
-      </article>`).join('');
-  }catch(e){
-    grid.className=''; grid.innerHTML = '<div class="empty">Couldn\u2019t load right now — please check back shortly.</div>';
-  }
-})();
-</script>
+
+        <!-- FOOTER CALL TO ACTION -->
+        <div class="mt-20 text-center fade-in">
+            <div class="bg-white/5 border border-brt-gold/30 rounded-3xl p-10 backdrop-blur-sm max-w-2xl mx-auto shadow-[0_20px_50px_-15px_rgba(251,175,51,0.15)]">
+                <h3 class="font-heading font-black text-2xl uppercase text-white mb-3">Run a local cause?</h3>
+                <p class="font-body text-gray-400 mb-8">We back local projects that make a positive difference in and around Beverley.</p>
+                <a href="/requests/" class="inline-block bg-brt-gold text-brt-dark px-8 py-4 rounded-full font-heading font-extrabold uppercase tracking-widest hover:bg-white hover:shadow-[0_10px_20px_rgba(251,175,51,0.3)] transition-all duration-300 transform hover:-translate-y-1">
+                    Apply for funding <i class="fa-solid fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SIMPLE FOOTER -->
+    <footer class="bg-black py-8 border-t border-white/10 mt-auto relative z-10">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p class="font-body text-xs text-gray-500 font-semibold">
+                Beverley Round Table is a non-political, non-religious community group.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+    // ====== CONFIG — paste your deployed Apps Script web app URL (ends with /exec) ======
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyY1kgyrfHGDS_zmDVcpo386oHKP5jGBPKm_bQS4X-k0fKDVPZvsT_AzzutGI6dcXrV/exec';
+    // ====================================================================================
+    
+    const grid = document.getElementById('grid');
+    const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const gbp = v => { const n=parseInt(v,10); return isNaN(n)?'':'£'+n.toLocaleString('en-GB'); };
+    const whenLabel = iso => { const d=new Date(iso); return isNaN(d.getTime())?'':d.toLocaleDateString('en-GB',{month:'long',year:'numeric'}); };
+    const isImg = u => /^https?:\/\/\S+\.(?:jpg|jpeg|png|webp|gif)(?:\?\S*)?$/i.test(String(u||''));
+
+    (async function(){
+      try {
+        const r = await fetch(API_URL, { 
+            method:'POST', 
+            headers:{'Content-Type':'text/plain;charset=utf-8'}, 
+            body: JSON.stringify({action:'public'}) 
+        });
+        const data = await r.json();
+        const causes = (data && data.ok && data.causes) || [];
+        
+        if(!causes.length){ 
+            grid.innerHTML = '<div class="col-span-full text-center py-16"><p class="font-body text-gray-400 text-lg">We\u2019ll be sharing the causes we\u2019ve funded here soon.</p></div>'; 
+            return; 
+        }
+
+        // Generate Tailwind-styled cards
+        grid.innerHTML = causes.map(c => `
+          <article class="bg-white/5 rounded-2xl overflow-hidden border border-white/10 flex flex-col group hover:border-brt-gold/50 transition-all duration-300 transform hover:-translate-y-2 fade-in">
+            ${isImg(c.photo) ? `
+            <div class="relative h-48 overflow-hidden bg-brt-dark">
+                <img src="${esc(c.photo)}" alt="${esc(c.cause)}" loading="lazy" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" onerror="this.parentElement.remove()">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#1D1D1A] to-transparent opacity-80"></div>
+            </div>` : ''}
+            
+            <div class="p-6 flex-grow flex flex-col justify-between bg-[#151513]">
+                <div>
+                    <div class="flex justify-between items-start gap-3 mb-3">
+                        <h3 class="font-heading font-extrabold text-xl text-white leading-tight uppercase line-clamp-2">${esc(c.cause)}</h3>
+                        ${gbp(c.amount) ? `<span class="font-heading font-black text-lg text-brt-gold whitespace-nowrap bg-brt-gold/10 px-2 py-1 rounded-lg">${gbp(c.amount)}</span>` : ''}
+                    </div>
+                    
+                    ${whenLabel(c.when) ? `
+                    <div class="flex items-start gap-2 mb-4 text-gray-400">
+                        <i class="fa-regular fa-calendar text-brt-gold mt-1 w-4"></i>
+                        <span class="font-heading font-bold text-xs uppercase tracking-widest">${esc(whenLabel(c.when))}</span>
+                    </div>` : ''}
+                    
+                    ${c.summary ? `<p class="font-body text-gray-300 text-sm leading-relaxed mb-6">${esc(c.summary)}</p>` : ''}
+                </div>
+                
+                ${c.report ? `
+                <div class="mt-4 pt-4 border-t border-white/10 relative">
+                    <i class="fa-solid fa-quote-left absolute top-4 left-0 text-white/5 text-3xl"></i>
+                    <p class="font-body text-gray-400 text-sm leading-relaxed italic pl-6 border-l-2 border-brt-gold">${esc(c.report)}</p>
+                </div>` : ''}
+            </div>
+          </article>`).join('');
+          
+      } catch(e) {
+        grid.innerHTML = '<div class="col-span-full text-center py-16 bg-red-900/20 border border-red-500/30 rounded-2xl"><p class="font-body text-red-400">Couldn\u2019t load right now — please check back shortly.</p></div>';
+      }
+    })();
+    </script>
 </body>
 </html>
