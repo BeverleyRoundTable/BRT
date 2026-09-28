@@ -343,7 +343,7 @@ async function openDetail(id){
       <div class="tl">${log.length ? log.map(e=>`
         <div class="ev">
             <div class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">${fdt(e['Timestamp (ISO)'])} ·${esc(e['Officer']||'')}</div>
-            <div class="text-white font-bold text-sm mt-1">${esc(e['Event'] \vert{}\vert{} '')}</div>${e['Detail']?`<div class="text-gray-400 text-sm mt-1">${esc(e['Detail'])}</div>`:''}
+            <div class="text-white font-bold text-sm mt-1">${esc(e['Event']\vert{}\vert{}'')}</div>${e['Detail']?`<div class="text-gray-400 text-sm mt-1">${esc(e['Detail'])}</div>`:''}
             ${e['Notes']?`<div class="text-gray-400 text-sm italic mt-1 border-l-2 border-brt-gold pl-2">“${esc(e['Notes'])}”</div>`:''}
         </div>`).join('') : '<div class="text-gray-500 italic text-sm">No history yet.</div>'}
       </div>
