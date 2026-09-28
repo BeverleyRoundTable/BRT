@@ -1846,9 +1846,10 @@ function ensureNotifyPermission() {
           const rawElfCamUrl = latestApiData.settings?.elf_cam_url;
           if (rawElfCamUrl && rawElfCamUrl !== AppState.vars.lastElfCamUrl && Utils.isValidImageUrl(rawElfCamUrl)) { if (AppState.flags.pageVisible) { AppState.vars.lastElfCamUrl = rawElfCamUrl; let finalImgUrl = rawElfCamUrl; if (finalImgUrl.includes("drive.google.com")) { try { const urlObj = new URL(finalImgUrl); const fileId = urlObj.searchParams.get("id"); if (fileId) finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`; } catch(e) {} } triggerPolaroid(finalImgUrl, "Live from the Sleigh!"); } }
 
-          // 🛡️ SANTA PROXY: Fetch via Cloudflare Worker -> GAS Proxy
-const proxyScript = `${AppState.vars.apiUrl}${AppState.vars.apiUrl.includes('?') ? '&' : '?'}function=proxyFirebase`;
-const fastGpsUrl = `${WORKER_URL}?ttl=2&target=${encodeURIComponent(proxyScript)}`;
+          // 🚀 DIRECT FIREBASE: Fetch via Cloudflare Worker -> Firebase REST
+// Bypasses Google Apps Script entirely for zero-latency, quota-free tracking
+const firebaseUrl = `${AppState.vars.firebaseUrl}/location/current.json`;
+const fastGpsUrl = `${WORKER_URL}?ttl=2&target=${encodeURIComponent(firebaseUrl)}`;
           
 let data = await Utils.loadJSON(fastGpsUrl);
 
