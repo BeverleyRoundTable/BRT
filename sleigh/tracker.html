@@ -341,18 +341,101 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     #loadingSpinner { width: 52px; height: 52px; border-radius: 50%; border: 4px solid var(--border); border-top-color: var(--primary); animation: spin .9s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
-    .modal-box { background: var(--surface); padding: 24px; border-radius: 20px; width: 100%; max-width: 340px; text-align: center; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.6); animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: 1.5px; margin: 0 0 8px 0; color: var(--primary); }
-    .modal-desc { font-size: 0.9em; color: var(--text-dim); margin-bottom: 20px; line-height: 1.4; }
-    .modal-input { width: 100%; padding: 14px; margin-bottom: 20px; background: var(--surface-2); border: 2px solid var(--border); border-radius: 12px; color: var(--text); font-size: 16px; box-sizing: border-box; text-align: center; font-family: inherit; }
-    .modal-input:focus { outline: none; border-color: var(--primary); }
-    .modal-btns { display: flex; gap: 12px; }
-    .btn-full { flex: 1; padding: 12px; border-radius: 12px; font-weight: 800; font-size: 0.95em; cursor: pointer; border: none; transition: transform 0.1s; font-family: inherit; }
-    .btn-full:active { transform: scale(0.96); }
-    .btn-cancel { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
-    .btn-confirm { background: var(--primary); color: var(--on-primary); box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3); }
+    .modal-overlay { 
+  display: none; 
+  position: fixed; 
+  inset: 0; 
+  background: rgba(0,0,0,0.85); 
+  z-index: 5000; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 20px; 
+}
+
+.modal-box { 
+  background: var(--surface); 
+  padding: 24px; 
+  border-radius: 20px; 
+  width: 100%; 
+  max-width: 340px; 
+  text-align: center; 
+  border: 1px solid var(--border); 
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6); 
+  animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); 
+}
+
+@keyframes slideUp { 
+  from { transform: translateY(20px); opacity: 0; } 
+  to { transform: translateY(0); opacity: 1; } 
+}
+
+.modal-title { 
+  font-family: 'Eurostile', 'Bebas Neue', sans-serif;
+  font-size: 26px; 
+  font-weight: 800; 
+  letter-spacing: 1.5px; 
+  margin: 0 0 8px 0; 
+  color: var(--primary); 
+}
+
+.modal-desc { 
+  font-size: 0.9em; 
+  color: var(--text-dim); 
+  margin-bottom: 20px; 
+  line-height: 1.4; 
+}
+
+.modal-input { 
+  width: 100%; 
+  padding: 14px; 
+  margin-bottom: 20px; 
+  background: var(--surface-2); 
+  border: 2px solid var(--border); 
+  border-radius: 12px; 
+  color: var(--text); 
+  font-size: 16px; 
+  box-sizing: border-box; 
+  text-align: center; 
+  font-family: inherit; 
+}
+
+.modal-input:focus { 
+  outline: none; 
+  border-color: var(--primary); 
+}
+
+.modal-btns { 
+  display: flex; 
+  gap: 12px; 
+}
+
+.btn-full { 
+  flex: 1; 
+  padding: 12px; 
+  border-radius: 12px; 
+  font-weight: 800; 
+  font-size: 0.95em; 
+  cursor: pointer; 
+  border: none; 
+  transition: transform 0.1s; 
+  font-family: inherit; 
+}
+
+.btn-full:active { 
+  transform: scale(0.96); 
+}
+
+.btn-cancel { 
+  background: var(--surface-2); 
+  color: var(--text-dim); 
+  border: 1px solid var(--border); 
+}
+
+.btn-confirm { 
+  background: var(--primary); 
+  color: var(--on-primary); 
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3); 
+}
 
     /* ── SCHEDULE MODAL STYLES ── */
     .schedule-item {
