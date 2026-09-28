@@ -15,7 +15,9 @@
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="preconnect" href="https://tile.openstreetmap.org">
 
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- leaflet-gpx removed: never used (GPX is parsed manually in loadGpxRoute).
@@ -23,6 +25,14 @@
        lazy-loaded in init() when ?driver=1 — spectators skip them entirely. -->
 
   <style>
+    @font-face {
+        font-family: 'Eurostile';
+        src: url('https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+    }
+    
     :root {
       /* Brand colour. Default is Round Table gold; applyTheme() overrides these from the API
          (settings.primary_color), exactly like the Santa sleigh page does. */
@@ -60,7 +70,7 @@
       margin: 0; padding: 0; height: 100%; 
       background: var(--dark); 
       color: var(--text); 
-      font-family: 'DM Sans', sans-serif; 
+      font-family: 'Open Sans', sans-serif; 
       overflow: hidden; 
       -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
     }
@@ -190,7 +200,7 @@
     }
 
     .donate-btn { 
-      font-family: 'Bebas Neue', sans-serif;
+      font-family: 'Eurostile', sans-serif;
       font-size: 22px;
       letter-spacing: 1.5px;
       background: var(--primary); color: var(--on-primary); border: 2px solid var(--primary); 
@@ -307,7 +317,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     .install-overlay.visible { opacity: 1; pointer-events: auto; }
 
     .override-install-btn {
-      font-family: 'DM Sans', sans-serif; 
+      font-family: 'Open Sans', sans-serif; 
       font-size: 1.05em;
       letter-spacing: 0;
       border: 2px solid #fff;
@@ -370,7 +380,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
 }
 
 .modal-title { 
-  font-family: 'Eurostile', 'Bebas Neue', sans-serif;
+  font-family: 'Eurostile', sans-serif;
   font-size: 26px; 
   font-weight: 800; 
   letter-spacing: 1.5px; 
@@ -547,7 +557,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     @media (max-width: 600px) { .polaroid { max-width: 160px; padding: 5px 5px 16px 5px; } .polaroid-caption { font-size: 0.85em; margin-top: 6px; } }
     
     .driver-mode { max-width: 500px; margin: 0 auto; position: relative; border-left: 1px solid var(--border); border-right: 1px solid var(--border); box-shadow: 0 0 40px rgba(0,0,0,0.8); }
-    .driver-progress-box { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; display: none; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(29, 29, 26, 0.95); border: 3px solid var(--primary); color: var(--primary); padding: 14px 40px; font-size: 3em; font-weight: 900; border-radius: 24px; z-index: 5000; box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 15px rgba(var(--primary-rgb), 0.2); text-align: center; pointer-events: none; }
+    .driver-progress-box { font-family: 'Eurostile', sans-serif; letter-spacing: 2px; display: none; position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(29, 29, 26, 0.95); border: 3px solid var(--primary); color: var(--primary); padding: 14px 40px; font-size: 3em; font-weight: 900; border-radius: 24px; z-index: 5000; box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 15px rgba(var(--primary-rgb), 0.2); text-align: center; pointer-events: none; }
     body.driver-mode.nav-active .driver-progress-box { display: none; }
     body.driver-mode .donate-box, body.driver-mode .info-popup, body.driver-mode .install-overlay, body.driver-mode .ios-install-prompt { display: none !important; }
 
@@ -570,7 +580,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       padding: 0;
       display: none;
       z-index: 6000;
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Open Sans', sans-serif;
       border-bottom: 3px solid var(--primary);
       box-shadow: 0 6px 28px rgba(0,0,0,0.7), 0 2px 0 rgba(var(--primary-rgb), 0.15) inset;
       box-sizing: border-box;
@@ -598,7 +608,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     #navBanner .nav-body { flex: 1; min-width: 0; }
 
     #navBanner .nav-dist {
-      font-family: 'Bebas Neue', sans-serif;
+      font-family: 'Eurostile', sans-serif;
       letter-spacing: 3px;
       font-size: 2.6em;
       font-weight: 900;
@@ -696,12 +706,12 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       background: linear-gradient(90deg, var(--red), var(--primary));
     }
     .ws-title {
-      font-family: 'Bebas Neue', sans-serif; font-size: 42px;
+      font-family: 'Eurostile', sans-serif; font-size: 42px;
       color: #fff; letter-spacing: 2px; margin-bottom: 10px; line-height: 1;
     }
     .ws-title span { color: var(--primary); }
     .ws-countdown {
-      font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 700;
+      font-family: 'Open Sans', monospace; font-size: 28px; font-weight: 700;
       margin: 24px 0; color: #fff;
       background: var(--surface-2); padding: 16px; border-radius: 12px; border: 1px solid var(--border);
     }
@@ -789,7 +799,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
     </div>
   </div>
 
-  <a id="giftAidLink" href="#" target="_blank" style="display:none; position:fixed; bottom:calc(var(--donate-bottom) + 70px); left:50%; transform:translateX(-50%); font-family:'DM Sans',sans-serif; font-size:12px; color:#2ecc71; text-decoration:none; font-weight:700; z-index:2000; text-align:center; padding:6px 14px; background:rgba(13,13,11,0.85); border:1px solid rgba(46,204,113,0.2); border-radius:100px;">UK taxpayer? Boost your donation by 25%</a>
+  <a id="giftAidLink" href="#" target="_blank" style="display:none; position:fixed; bottom:calc(var(--donate-bottom) + 70px); left:50%; transform:translateX(-50%); font-family:'DOpen Sans',sans-serif; font-size:12px; color:#2ecc71; text-decoration:none; font-weight:700; z-index:2000; text-align:center; padding:6px 14px; background:rgba(13,13,11,0.85); border:1px solid rgba(46,204,113,0.2); border-radius:100px;">UK taxpayer? Boost your donation by 25%</a>
   
   <div id="iosPrompt" class="ios-install-prompt" role="dialog" aria-label="Install instructions for iOS">
     <button class="close-btn" id="iosCloseBtn" aria-label="Close install instructions">&times;</button>
@@ -2109,7 +2119,7 @@ function populateScheduleModal(routes) {
           document.body.classList.add("driver-mode");
           const navBtn = document.createElement("button");
           navBtn.innerHTML = "START SAT-NAV & BEACON";
-          navBtn.style.cssText = "position:absolute; bottom:80px; left:10%; width:80%; padding:20px; font-size:20px; font-weight:900; font-family:'Bebas Neue',sans-serif; letter-spacing:2px; background:var(--primary); color:var(--on-primary); border-radius:16px; z-index:9999; border:3px solid rgba(255,255,255,0.2); box-shadow:0 10px 40px rgba(0,0,0,0.6), 0 0 30px rgba(var(--primary-rgb), 0.3); cursor:pointer;";
+          navBtn.style.cssText = "position:absolute; bottom:80px; left:10%; width:80%; padding:20px; font-size:20px; font-weight:900; font-family:'Eurostile',sans-serif; letter-spacing:2px; background:var(--primary); color:var(--on-primary); border-radius:16px; z-index:9999; border:3px solid rgba(255,255,255,0.2); box-shadow:0 10px 40px rgba(0,0,0,0.6), 0 0 30px rgba(var(--primary-rgb), 0.3); cursor:pointer;";
           document.body.appendChild(navBtn);
           
           const BeaconDB = { db: null, sent: 0, depth: 0, init: () => new Promise((resolve) => { const req = indexedDB.open("TurboBeacon", 1); req.onupgradeneeded = e => { if(!e.target.result.objectStoreNames.contains("q")) e.target.result.createObjectStore("q", {keyPath:"id", autoIncrement:true}); }; req.onsuccess = () => { BeaconDB.db = req.result; resolve(); }; req.onerror = () => resolve(); }), add: (p) => new Promise(res => { if(!BeaconDB.db) return res(); const tx = BeaconDB.db.transaction("q","readwrite"); tx.objectStore("q").add({p, t:Date.now()}); tx.oncomplete=()=>{ BeaconDB.updateUI(); res(); }; }), getAll: () => new Promise(res => { if(!BeaconDB.db) return res([]); const tx = BeaconDB.db.transaction("q","readonly"); const req = tx.objectStore("q").getAll(); req.onsuccess=()=>res(req.result||[]); }), del: (id) => new Promise(res => { if(!BeaconDB.db) return res(); const tx = BeaconDB.db.transaction("q","readwrite"); tx.objectStore("q").delete(id); tx.oncomplete=res; }), updateUI: async () => { if(!BeaconDB.db) return; BeaconDB.depth = (await BeaconDB.getAll()).length; const qEl = document.getElementById('txQueued'); if(qEl) qEl.textContent = BeaconDB.depth; const pill = document.getElementById('txPill'); if(pill) { if (BeaconDB.depth > 0) { pill.style.borderColor = "var(--primary)"; pill.style.color = "var(--primary)"; document.getElementById('txState').textContent = "BUFFERING"; } else { pill.style.borderColor = "#00e676"; pill.style.color = "#00e676"; document.getElementById('txState').textContent = "LIVE"; } } }, flush: async (url) => { if (BeaconDB.depth === 0 || !navigator.onLine) return; const items = await BeaconDB.getAll(); if (!items.length) return; items.sort((a,b) => a.t - b.t); for (const it of items) { if (Date.now() - it.t > 90*60*1000) { await BeaconDB.del(it.id); continue; } try { const r = await fetch(url, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(it.p) }); if (r.ok) { await BeaconDB.del(it.id); BeaconDB.sent++; document.getElementById('txSent').textContent = BeaconDB.sent; } else break; } catch { break; } } BeaconDB.updateUI(); } };
@@ -2161,7 +2171,7 @@ try {
             // ── BRANDED TX STATUS PILL ──
             const txPill = document.createElement("div");
             txPill.id = "txPill";
-            txPill.style.cssText = "position:fixed; top:auto; bottom:50px; left:50%; transform:translateX(-50%); background:rgba(13, 13, 11, 0.95); border:2px solid #00e676; color:#00e676; padding:8px 16px; border-radius:14px; font-weight:900; font-size:0.8em; z-index:4500; box-shadow:0 4px 16px rgba(0,0,0,0.6); display:flex; gap:12px; pointer-events:none; font-family:'DM Sans',sans-serif;";
+            txPill.style.cssText = "position:fixed; top:auto; bottom:50px; left:50%; transform:translateX(-50%); background:rgba(13, 13, 11, 0.95); border:2px solid #00e676; color:#00e676; padding:8px 16px; border-radius:14px; font-weight:900; font-size:0.8em; z-index:4500; box-shadow:0 4px 16px rgba(0,0,0,0.6); display:flex; gap:12px; pointer-events:none; font-family:'Open Sans',sans-serif;";
             txPill.innerHTML = `<span id="txState">LIVE</span> <span>Tx: <span id="txSent">0</span></span> <span>Q: <span id="txQueued">0</span></span>`;
             document.body.appendChild(txPill);
             
@@ -2867,7 +2877,7 @@ document.getElementById('msgConfirmBtn').onclick = () => {
               const recenterBtnEl = document.createElement('button');
               recenterBtnEl.id = 'driverRecenterBtn';
               recenterBtnEl.innerHTML = 'RECENTER';
-              recenterBtnEl.style.cssText = "position:fixed; right:16px; bottom:130px; padding:14px 18px; background:var(--primary); color:var(--on-primary); border:3px solid rgba(255,255,255,0.2); border-radius:24px; font-family:'Bebas Neue',sans-serif; font-size:1.1em; font-weight:900; letter-spacing:2px; box-shadow:0 8px 24px rgba(0,0,0,0.6), 0 0 20px rgba(var(--primary-rgb), 0.3); z-index:5500; display:none; cursor:pointer;";
+              recenterBtnEl.style.cssText = "position:fixed; right:16px; bottom:130px; padding:14px 18px; background:var(--primary); color:var(--on-primary); border:3px solid rgba(255,255,255,0.2); border-radius:24px; font-family:'Eurostile',sans-serif; font-size:1.1em; font-weight:900; letter-spacing:2px; box-shadow:0 8px 24px rgba(0,0,0,0.6), 0 0 20px rgba(var(--primary-rgb), 0.3); z-index:5500; display:none; cursor:pointer;";
               document.body.appendChild(recenterBtnEl);
               recenterBtnEl.onclick = () => {
                 AppState.flags.driverFollow = true;
@@ -2958,7 +2968,7 @@ document.getElementById('msgConfirmBtn').onclick = () => {
                     el.innerHTML = `<img src="${stopImgUrl}" style="width:40px; height:40px; filter:drop-shadow(0 4px 10px rgba(0,0,0,0.8)); object-fit:contain; display:block;">`;
                     
                     const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
-                      .setHTML(`<div style="color:#000; font-weight:900; font-family:'DM Sans', sans-serif; font-size:14px; padding:4px;">${stop.name}</div>`);
+                      .setHTML(`<div style="color:#000; font-weight:900; font-family:'Open Sans', sans-serif; font-size:14px; padding:4px;">${stop.name}</div>`);
 
                     new maplibregl.Marker({ element: el, anchor: 'bottom' })
                       .setLngLat([stop.lng, stop.lat])
