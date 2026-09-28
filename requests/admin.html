@@ -1,166 +1,110 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en-GB" class="scroll-smooth">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beverley Round Table — Grants Admin</title>
-<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png">
-<meta name="robots" content="noindex">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
-<style>
-:root{
-  --gold:#FBAF33; --gold-glow:rgba(251,175,51,.14);
-  --grey-dark:#1D1D1A; --grey-card:#242421; --grey-mid:#2a2a27; --grey-border:#39393455;
-  --black:#000; --white:#fff; --text:#ecece7; --text-muted:#a3a39c;
-  --green:#2ecc71; --green-dim:#1e6b42; --red:#e05a5a; --blue:#5b9bd5;
-  --font-display:'Eurostile Extended','Eurostile','Michroma',sans-serif;
-  --font-body:'Open Sans',-apple-system,sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-body);background:var(--grey-dark);color:var(--text);line-height:1.6;font-size:15px;
-  -webkit-font-smoothing:antialiased;min-height:100vh;
-  background-image:radial-gradient(900px 500px at 50% -10%, rgba(251,175,51,.08), transparent 60%),linear-gradient(180deg,#1f1f1c,#1a1a17);
-  background-attachment:fixed}
-.wrap{max-width:760px;margin:0 auto;padding:20px 16px 64px}
-a{color:var(--gold)}
-button{font-family:var(--font-body);cursor:pointer}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grants Admin | Beverley Round Table</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png">
+    <meta name="robots" content="noindex">
 
-/* top bar */
-.topbar{display:flex;align-items:center;gap:12px;padding:12px 0 18px;border-bottom:1px solid var(--grey-border);margin-bottom:18px}
-.topbar img{height:34px}
-.topbar .title{font-family:var(--font-display);font-size:15px;text-transform:uppercase;letter-spacing:.5px;color:var(--white)}
-.topbar .who{margin-left:auto;font-size:12px;color:var(--text-muted);text-align:right}
-.topbar .who b{color:var(--text);display:block;font-weight:600}
-.linkbtn{background:none;border:none;color:var(--gold);font-size:12px;padding:0;text-decoration:underline}
+    <!-- Preload Custom Font for Speed -->
+    <link rel="preload" href="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
+    
+    <!-- Preconnects & Google Fonts (Strictly Open Sans only) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brt: {
+                            dark: '#1D1D1A', 
+                            gold: '#FBAF33', 
+                            white: '#FFFFFF',
+                            black: '#000000',
+                            light: '#f5f5f3'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Eurostile', 'sans-serif'], 
+                        body: ['Open Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
 
-/* nav */
-.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-.tab{background:var(--grey-card);border:1px solid var(--grey-border);color:var(--text-muted);border-radius:8px;
-  padding:7px 12px;font-size:12.5px;font-weight:600;letter-spacing:.2px;transition:.12s}
-.tab:hover{border-color:#55554d;color:var(--text)}
-.tab.active{background:var(--gold-glow);border-color:rgba(251,175,51,.5);color:var(--gold)}
-.tab .c{opacity:.7;font-variant-numeric:tabular-nums}
+    <style>
+        /* --- CUSTOM FONTS & BASE STYLES --- */
+        @font-face {
+            font-family: 'Eurostile';
+            src: url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
 
-/* list */
-.appcard{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:12px;padding:15px 16px;margin-bottom:10px;
-  cursor:pointer;transition:.12s}
-.appcard:hover{border-color:#55554d;transform:translateY(-1px)}
-.appcard .r1{display:flex;align-items:center;gap:10px;margin-bottom:5px}
-.appcard .id{font-family:var(--font-display);font-size:12.5px;color:var(--text-muted);letter-spacing:.5px}
-.appcard .amt{margin-left:auto;font-family:var(--font-display);font-size:16px;color:var(--gold)}
-.appcard .org{font-weight:600;color:var(--text)}
-.appcard .sum{font-size:13.5px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        body {
+            background-color: #1D1D1A;
+            color: #FFFFFF;
+        }
 
-/* badges + flags */
-.badge{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:3px 8px;border-radius:20px;white-space:nowrap}
-.badge.new{background:var(--gold-glow);color:var(--gold)}
-.badge.screening{background:#33332e;color:#c9c9c2}
-.badge.tabled{background:rgba(91,155,213,.16);color:var(--blue)}
-.badge.approved{background:rgba(46,204,113,.15);color:var(--green)}
-.badge.paid{background:var(--green-dim);color:#dffbe9}
-.badge.reported{background:rgba(91,155,213,.16);color:var(--blue)}
-.badge.declined{background:rgba(224,90,90,.15);color:var(--red)}
-.badge.closed{background:#33332e;color:#8f8f88}
-.flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.flag{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;border-radius:5px;
-  background:rgba(251,175,51,.12);color:var(--gold);border:1px solid rgba(251,175,51,.3)}
-.flag.danger{background:rgba(224,90,90,.12);color:#f0a0a0;border-color:rgba(224,90,90,.35)}
+        ::selection { background-color: #FBAF33; color: #1D1D1A; }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #1D1D1A; }
+        ::-webkit-scrollbar-thumb { background: #FBAF33; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d99326; }
 
-/* detail */
-.back{background:none;border:none;color:var(--gold);font-size:13px;font-weight:600;padding:0;margin-bottom:14px}
-.detail-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-.detail-head .id{font-family:var(--font-display);font-size:15px;color:var(--white);letter-spacing:.5px}
-.detail-amt{font-family:var(--font-display);font-size:26px;color:var(--gold);margin:6px 0 2px}
-.detail-sub{color:var(--text-muted);font-size:13px;margin-bottom:18px}
+        .hero-pattern {
+            background-image: radial-gradient(rgba(251, 175, 51, 0.1) 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
 
-.alertbar{border-radius:9px;padding:10px 14px;font-size:13px;margin-bottom:16px;font-weight:600}
-.alertbar.warn{background:rgba(224,90,90,.12);border:1px solid rgba(224,90,90,.35);color:#f0b3b3}
+        /* --- ANIMATIONS --- */
+        .fade-in { opacity: 0; transform: translateY(12px); animation: rise 0.6s ease forwards; }
+        @keyframes rise { to { opacity: 1; transform: none; } }
+        
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #FBAF33;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-.section{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:12px;padding:18px 18px;margin-bottom:14px}
-.section h3{font-family:var(--font-display);font-size:12.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--gold);margin-bottom:14px}
-.kv{display:grid;grid-template-columns:150px 1fr;gap:8px 14px;font-size:14px}
-.kv dt{color:var(--text-muted)}
-.kv dd{color:var(--text);word-break:break-word}
-.bankbox{margin-top:14px;background:#1b1b18;border:1px solid rgba(224,90,90,.25);border-radius:8px;padding:11px 13px;font-size:13.5px}
-.bankbox .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:#e0a0a0;font-weight:700;margin-bottom:4px}
-
-/* timeline */
-.tl{position:relative;padding-left:18px}
-.tl .ev{position:relative;padding-bottom:14px}
-.tl .ev:before{content:'';position:absolute;left:-13px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--gold)}
-.tl .ev:after{content:'';position:absolute;left:-9.5px;top:13px;bottom:-2px;width:1px;background:var(--grey-border)}
-.tl .ev:last-child:after{display:none}
-.tl .ev .when{font-size:11.5px;color:var(--text-muted)}
-.tl .ev .what{font-size:13.5px;color:var(--text);font-weight:600;margin-top:1px}
-.tl .ev .det{font-size:12.5px;color:var(--text-muted);margin-top:1px}
-
-/* forms */
-label{display:block;font-size:12.5px;font-weight:700;letter-spacing:.3px;margin:14px 0 6px;color:var(--text)}
-label:first-of-type{margin-top:0}
-input,textarea,select{width:100%;background:#1b1b18;border:1px solid var(--grey-border);border-radius:8px;
-  padding:11px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;transition:border-color .15s}
-input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold)}
-textarea{resize:vertical;min-height:48px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.money{position:relative}.money span{position:absolute;left:12px;top:11px;color:var(--text-muted)}.money input{padding-left:24px}
-
-.btn{background:var(--gold);color:var(--black);border:none;border-radius:9px;padding:13px 16px;font-family:var(--font-display);
-  font-size:13.5px;text-transform:uppercase;letter-spacing:.8px;transition:.15s}
-.btn:hover{background:#ffc04d}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn.block{width:100%;margin-top:18px}
-.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
-.btn.sec{background:transparent;color:var(--text);border:1px solid var(--grey-border)}
-.btn.sec:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-glow)}
-.btn.ok{background:var(--green);color:#06280f}.btn.ok:hover{background:#46e08a}
-.btn.danger{background:transparent;color:var(--red);border:1px solid rgba(224,90,90,.4)}.btn.danger:hover{background:rgba(224,90,90,.1)}
-
-.msg{border-radius:8px;padding:10px 13px;font-size:13px;margin-top:14px;display:none}
-.msg.show{display:block}
-.msg.ok{background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.35);color:#a8e8c4}
-.msg.err{background:rgba(224,90,90,.12);border:1px solid rgba(224,90,90,.4);color:#f3b0b0}
-
-.empty{text-align:center;color:var(--text-muted);padding:40px 20px;font-size:14px}
-.phint{font-size:12.5px;color:var(--text-muted);line-height:1.5;margin:-6px 0 16px}
-.listnote{font-size:12px;color:var(--text-muted);line-height:1.6;margin-top:18px;padding-top:14px;border-top:1px solid var(--grey-border)}
-.loading{text-align:center;color:var(--text-muted);padding:34px;font-size:14px}
-
-/* sign in */
-.signin{max-width:400px;margin:8vh auto 0;text-align:center}
-.signin img{height:50px;margin-bottom:22px}
-.signin h1{font-family:var(--font-display);font-size:26px;text-transform:uppercase;letter-spacing:.5px;color:var(--white);margin-bottom:8px}
-.signin p{color:var(--text-muted);font-size:14px;margin-bottom:24px}
-.signin .card{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:14px;padding:24px 22px;text-align:left}
-
-/* reconciliation */
-.recon-group{margin-bottom:8px}
-.recon-row{display:flex;align-items:center;gap:10px;background:var(--grey-card);border:1px solid var(--grey-border);
-  border-radius:9px;padding:11px 14px;margin-bottom:8px;font-size:13.5px}
-.recon-row .id{font-family:var(--font-display);font-size:12px;color:var(--text-muted)}
-.recon-row .amt{margin-left:auto;font-family:var(--font-display);color:var(--gold)}
-.recon-row .ref{color:var(--text-muted);font-size:12px}
-
-/* dashboard */
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-.stat{background:var(--grey-card);border:1px solid var(--grey-border);border-radius:12px;padding:16px 18px}
-.stat .v{font-family:var(--font-display);font-size:25px;color:var(--gold);letter-spacing:.5px;line-height:1.1}
-.stat .l{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-top:6px}
-.bar{margin-bottom:11px}
-.bar .top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:5px}
-.bar .top .lbl{color:var(--text)}
-.bar .top .val{color:var(--gold);font-family:var(--font-display);font-size:13px}
-.bar .track{height:8px;background:#1b1b18;border-radius:5px;overflow:hidden}
-.bar .fill{height:100%;background:linear-gradient(90deg,var(--gold),#ffcf6b);border-radius:5px;min-width:3px}
-.pipeline{display:flex;flex-wrap:wrap;gap:8px}
-.pill{background:#1b1b18;border:1px solid var(--grey-border);border-radius:20px;padding:6px 12px;font-size:12.5px;color:var(--text-muted)}
-.pill b{color:var(--text);font-family:var(--font-display);margin-right:6px}
-.context{font-size:13px;color:var(--text-muted);line-height:1.65}
-</style>
+        /* --- JS STATE TOGGLES --- */
+        .msg { display: none; }
+        .msg.show { display: block; animation: rise 0.3s ease forwards; }
+        
+        /* Timeline */
+        .tl { position: relative; padding-left: 1.25rem; }
+        .tl .ev { position: relative; padding-bottom: 1rem; }
+        .tl .ev:before { content: ''; position: absolute; left: -13px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: #FBAF33; }
+        .tl .ev:after { content: ''; position: absolute; left: -9.5px; top: 16px; bottom: -2px; width: 1px; background: rgba(255,255,255,0.1); }
+        .tl .ev:last-child:after { display: none; }
+    </style>
 </head>
-<body>
-<div class="wrap" id="app"><div class="loading">Loading…</div></div>
+<body class="font-body antialiased min-h-screen flex flex-col relative hero-pattern">
+
+    <!-- Gradient Overlay overlaying the pattern -->
+    <div class="fixed inset-0 bg-gradient-to-b from-brt-dark/80 via-brt-dark/40 to-brt-dark -z-10 pointer-events-none"></div>
+
+    <div class="max-w-4xl mx-auto w-full px-4 py-8 relative z-10 flex-grow flex flex-col" id="app">
+        <div class="flex flex-col items-center justify-center py-20">
+            <div class="loader mb-4"></div>
+            <p class="font-heading font-bold uppercase text-brt-gold tracking-widest mt-4">Loading...</p>
+        </div>
+    </div>
 
 <script>
 // ====== CONFIG — same deployed Apps Script /exec URL the form uses ======
@@ -188,14 +132,33 @@ const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&
 const gbp = v => { const n = parseInt(v,10); return isNaN(n) ? '—' : '£'+n.toLocaleString('en-GB'); };
 const fdate = iso => { if(!iso) return '—'; const d=new Date(iso); return isNaN(d.getTime())?'—':d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
 const fdt = iso => { if(!iso) return '—'; const d=new Date(iso); return isNaN(d.getTime())?'—':d.toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
-function badge(s){ return `<span class="badge ${esc(s)}">${esc(STATUS_LABEL[s]||s)}</span>`; }
+
+function badge(s){ 
+    const base = "font-heading text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap";
+    const styles = {
+        'new': 'bg-brt-gold/20 text-brt-gold',
+        'screening': 'bg-[#33332e] text-[#c9c9c2]',
+        'tabled': 'bg-blue-900/30 text-blue-400',
+        'approved': 'bg-green-900/30 text-green-400',
+        'paid': 'bg-green-800 text-green-100',
+        'reported': 'bg-blue-900/30 text-blue-400',
+        'declined': 'bg-red-900/30 text-red-400',
+        'closed': 'bg-[#33332e] text-[#8f8f88]'
+    };
+    return `<span class="${base} ${styles[s] || 'bg-gray-800 text-gray-300'}">${esc(STATUS_LABEL[s]||s)}</span>`; 
+}
+
 function flagsHtml(a){
   const out=[];
-  if(a['Safeguarding flag']) out.push('<span class="flag danger">Safeguarding</span>');
-  if(a['Conflict flag']) out.push('<span class="flag">Conflict</span>');
-  if(a['Area flag']) out.push('<span class="flag">'+esc(a['Area flag'])+'</span>');
-  if(a['Cap flag']) out.push('<span class="flag">'+esc(a['Cap flag'])+'</span>');
-  return out.length ? '<div class="flags">'+out.join('')+'</div>' : '';
+  const base = "font-heading text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border";
+  const standard = `${base} bg-brt-gold/10 text-brt-gold border-brt-gold/30`;
+  const danger = `${base} bg-red-900/20 text-red-300 border-red-500/30`;
+  
+  if(a['Safeguarding flag']) out.push(`<span class="${danger}">Safeguarding</span>`);
+  if(a['Conflict flag']) out.push(`<span class="${standard}">Conflict</span>`);
+  if(a['Area flag']) out.push(`<span class="${standard}">${esc(a['Area flag'])}</span>`);
+  if(a['Cap flag']) out.push(`<span class="${standard}">${esc(a['Cap flag'])}</span>`);
+  return out.length ? `<div class="flex flex-wrap gap-2 mt-3">${out.join('')}</div>` : '';
 }
 
 /* ---------- boot ---------- */
@@ -206,7 +169,7 @@ function flagsHtml(a){
 })();
 
 async function verifyAndStart(){
-  app.innerHTML = '<div class="loading">Signing you in…</div>';
+  app.innerHTML = '<div class="flex flex-col items-center justify-center py-20 fade-in"><div class="loader mb-4"></div><p class="font-heading font-bold uppercase text-brt-gold tracking-widest mt-4">Signing you in...</p></div>';
   try{
     const res = await api('verify', {});
     if(res && res.ok){ state.email = res.email; loadList(); }
@@ -217,24 +180,31 @@ async function verifyAndStart(){
 /* ---------- sign in ---------- */
 function renderSignIn(note){
   app.innerHTML = `
-    <div class="signin">
-      <img src="${LOGO}" alt="Round Table">
-      <h1>Grants Admin</h1>
-      <p>Committee sign-in. We'll email you a secure link.</p>
-      <div class="card">
-        <label for="em">Your committee email</label>
-        <input type="email" id="em" placeholder="you@roundtable.org.uk" autocomplete="email">
-        <button class="btn block" id="send">Email me a link</button>
-        <div class="msg ${note?'err show':''}" id="m">${note?esc(note):''}</div>
+    <div class="max-w-md mx-auto mt-[8vh] text-center w-full fade-in">
+      <img src="${LOGO}" alt="Round Table" class="h-16 mx-auto mb-6 object-contain">
+      <h1 class="font-heading font-black text-3xl uppercase tracking-wide text-white mb-2">Grants Admin</h1>
+      <p class="font-body text-gray-400 text-sm mb-8">Committee sign-in. We'll email you a secure link.</p>
+      
+      <div class="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm shadow-xl text-left">
+        <label for="em" class="block font-heading font-bold text-sm text-gray-200 uppercase tracking-wide mb-2">Your committee email</label>
+        <input type="email" id="em" placeholder="you@roundtable.org.uk" autocomplete="email" 
+               class="w-full bg-[#151513] border border-white/10 rounded-xl px-4 py-3 text-white font-body focus:outline-none focus:border-brt-gold transition-colors placeholder-gray-600 mb-6">
+        
+        <button class="w-full bg-brt-gold text-brt-dark px-6 py-4 rounded-xl font-heading font-extrabold uppercase tracking-widest hover:bg-white transition-all disabled:opacity-50" id="send">
+            Email me a link
+        </button>
+        
+        <div class="msg ${note ? 'show bg-red-900/20 border-red-500/30 text-red-400' : ''} border rounded-xl p-4 mt-4 text-sm text-center" id="m">${note?esc(note):''}</div>
       </div>
     </div>`;
+    
   const btn = document.getElementById('send'), m = document.getElementById('m');
   btn.onclick = async () => {
     const email = document.getElementById('em').value.trim();
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ m.className='msg err show'; m.textContent='Please enter a valid email.'; return; }
-    btn.disabled = true; btn.textContent = 'Sending…';
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ m.className='msg show bg-red-900/20 border border-red-500/30 text-red-400 rounded-xl p-4 mt-4 text-sm text-center'; m.textContent='Please enter a valid email.'; return; }
+    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Sending…';
     try{ await api('requestLink', {email}); }catch(e){}
-    m.className='msg ok show';
+    m.className='msg show bg-green-900/20 border border-green-500/30 text-green-400 rounded-xl p-4 mt-4 text-sm text-center';
     m.textContent = "If that address is on the committee list, a sign-in link is on its way. It expires in 30 minutes.";
     btn.textContent = 'Link sent';
   };
@@ -243,22 +213,34 @@ function renderSignIn(note){
 /* ---------- shell + nav ---------- */
 function shell(inner){
   return `
-    <div class="topbar">
-      <img src="${LOGO}" alt="">
-      <div class="title">Grants Admin</div>
-      <div class="who"><b>${esc(state.email||'')}</b><button class="linkbtn" id="signout">Sign out</button></div>
+    <div class="flex items-center gap-4 py-4 mb-6 border-b border-white/10 fade-in">
+      <img src="${LOGO}" alt="BRT Logo" class="h-10 object-contain">
+      <div class="font-heading font-extrabold text-lg uppercase tracking-wide text-white hidden sm:block">Grants Admin</div>
+      <div class="ml-auto text-right">
+          <div class="font-body text-sm font-bold text-gray-200">${esc(state.email||'')}</div>
+          <button class="font-heading text-xs uppercase tracking-widest text-brt-gold hover:text-white transition-colors underline decoration-brt-gold/30 hover:decoration-white" id="signout">Sign out</button>
+      </div>
     </div>
     <div id="body">${inner}</div>`;
 }
+
 function wireShell(){
   const so = document.getElementById('signout');
   if(so) so.onclick = () => { state.token=null; state.email=null; location.hash=''; renderSignIn(); };
 }
+
 function navHtml(active){
-  return '<div class="nav">' + STATUSES.map(s =>
-    `<button class="tab ${active===s.k?'active':''}" data-status="${s.k}">${s.label}</button>`
-  ).join('') + `<button class="tab ${active==='recon'?'active':''}" data-status="recon">Reconciliation</button><button class="tab ${active==='dashboard'?'active':''}" data-status="dashboard">Dashboard</button></div>`;
+  const activeClass = "bg-brt-gold/10 border-brt-gold/50 text-brt-gold shadow-md";
+  const inactiveClass = "bg-white/5 border-white/10 text-gray-400 hover:border-gray-500 hover:text-gray-200";
+  const baseClass = "tab border rounded-lg px-4 py-2 text-xs font-heading font-bold uppercase tracking-wider transition-all cursor-pointer";
+  
+  return '<div class="flex flex-wrap gap-2 mb-6 fade-in delay-1">' + STATUSES.map(s =>
+    `<button class="${baseClass} ${active===s.k ? activeClass : inactiveClass}" data-status="${s.k}">${s.label}</button>`
+  ).join('') + 
+  `<button class="${baseClass} ${active==='recon' ? activeClass : inactiveClass}" data-status="recon">Reconciliation</button>
+   <button class="${baseClass} ${active==='dashboard' ? activeClass : inactiveClass}" data-status="dashboard">Dashboard</button></div>`;
 }
+
 function wireNav(){
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
     const s = t.dataset.status;
@@ -269,28 +251,33 @@ function wireNav(){
 /* ---------- list ---------- */
 async function loadList(){
   state.view='list';
-  app.innerHTML = shell(navHtml(state.status) + '<div class="loading">Loading applications…</div>');
+  app.innerHTML = shell(navHtml(state.status) + '<div class="flex flex-col items-center justify-center py-16"><div class="loader mb-4"></div><p class="font-heading font-bold uppercase text-brt-gold tracking-widest mt-4">Loading applications...</p></div>');
   wireShell(); wireNav();
+  
   const body = document.getElementById('body');
   let res;
   try{ res = await api('list', {status: state.status}); }
-  catch(e){ body.innerHTML = navHtml(state.status)+'<div class="empty">Couldn\'t load. Try again.</div>'; wireNav(); return; }
-  if(!res || !res.ok){ body.innerHTML = navHtml(state.status)+'<div class="empty">'+esc((res&&res.error)||'Error loading')+'</div>'; wireNav(); return; }
+  catch(e){ body.innerHTML = navHtml(state.status)+'<div class="text-center py-16 text-gray-400">Couldn\'t load. Try again.</div>'; wireNav(); return; }
+  
+  if(!res || !res.ok){ body.innerHTML = navHtml(state.status)+'<div class="text-center py-16 text-red-400">'+esc((res&&res.error)||'Error loading')+'</div>'; wireNav(); return; }
+  
   const apps = res.applications||[];
   let list = apps.length
-    ? apps.map(a => `
-      <div class="appcard" data-id="${esc(a['Application ID'])}">
-        <div class="r1">
-          <span class="id">${esc(a['Application ID'])}</span>
+    ? `<div class="space-y-3 fade-in delay-2">` + apps.map(a => `
+      <div class="appcard bg-white/5 border border-white/10 rounded-2xl p-5 cursor-pointer hover:border-gray-500 hover:bg-white/10 transition-all transform hover:-translate-y-0.5" data-id="${esc(a['Application ID'])}">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="font-heading text-sm text-gray-400 tracking-wider">${esc(a['Application ID'])}</span>
           ${badge(a['Status'])}
-          <span class="amt">${gbp(a['Status']==='approved'||a['Status']==='paid' ? (a['Amount approved (GBP)']||a['Amount requested (GBP)']) : a['Amount requested (GBP)'])}</span>
+          <span class="ml-auto font-heading font-black text-lg text-brt-gold">${gbp(a['Status']==='approved'||a['Status']==='paid' ? (a['Amount approved (GBP)']||a['Amount requested (GBP)']) : a['Amount requested (GBP)'])}</span>
         </div>
-        <div class="org">${esc(a['Organisation']||a['Contact name']||'—')}</div>
-        <div class="sum">${esc(a['Summary']||'')}</div>
+        <div class="font-body font-bold text-white text-[15px] mb-1">${esc(a['Organisation']||a['Contact name']||'—')}</div>
+        <div class="font-body text-sm text-gray-400 truncate">${esc(a['Summary']||'')}</div>
         ${flagsHtml(a)}
-      </div>`).join('')
-    : '<div class="empty">Nothing here.</div>';
-  const note = '<div class="listnote">Decisions are recorded here for the audit trail \u2014 don\u2019t edit the sheet by hand. The sheet holds bank details until a grant is paid, so keep it shared with committee only.</div>';
+      </div>`).join('') + `</div>`
+    : '<div class="text-center py-16 text-gray-400 bg-white/5 border border-white/10 rounded-2xl fade-in delay-2">Nothing here.</div>';
+    
+  const note = '<div class="text-xs text-gray-500 mt-8 pt-4 border-t border-white/10 text-center fade-in delay-2">Decisions are recorded here for the audit trail \u2014 don\u2019t edit the sheet by hand. The sheet holds bank details until a grant is paid, so keep it shared with committee only.</div>';
+  
   body.innerHTML = navHtml(state.status) + list + note;
   wireNav();
   document.querySelectorAll('.appcard').forEach(c => c.onclick = () => openDetail(c.dataset.id));
@@ -300,10 +287,13 @@ async function loadList(){
 async function openDetail(id){
   state.view='detail';
   const body = document.getElementById('body');
-  if(body) body.innerHTML = '<div class="loading">Loading…</div>';
+  if(body) body.innerHTML = '<div class="flex flex-col items-center justify-center py-20 fade-in"><div class="loader mb-4"></div></div>';
+  
   let res;
-  try{ res = await api('get', {id}); }catch(e){ body.innerHTML='<div class="empty">Couldn\'t load. <button class="linkbtn" onclick="loadList()">Back</button></div>'; return; }
-  if(!res || !res.ok){ body.innerHTML='<div class="empty">'+esc((res&&res.error)||'Not found')+'</div>'; return; }
+  try{ res = await api('get', {id}); }catch(e){ body.innerHTML='<div class="text-center py-16">Couldn\'t load. <button class="text-brt-gold hover:underline" onclick="loadList()">Back</button></div>'; return; }
+  
+  if(!res || !res.ok){ body.innerHTML='<div class="text-center py-16 text-red-400">'+esc((res&&res.error)||'Not found')+'</div>'; return; }
+  
   const a = res.application, log = res.log||[], pays = res.payments||[];
   const s = a['Status'];
 
@@ -312,54 +302,81 @@ async function openDetail(id){
     const bits=[];
     if(a['Safeguarding flag']) bits.push('Involves children or vulnerable adults');
     if(a['Conflict flag']) bits.push('Conflict of interest: '+esc(a['Conflict flag']));
-    alert = '<div class="alertbar warn">⚠ '+bits.join(' · ')+'</div>';
+    alert = `<div class="bg-red-900/20 border border-red-500/30 rounded-xl p-4 text-sm font-bold text-red-300 mb-6 flex items-start gap-3 fade-in delay-1">
+        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+        <span>${bits.join(' · ')}</span>
+    </div>`;
   }
 
+  const sectionClass = "bg-white/5 border border-white/10 rounded-2xl p-6 mb-6 fade-in delay-1";
+  const h3Class = "font-heading font-extrabold text-sm uppercase tracking-widest text-brt-gold mb-5 border-b border-white/10 pb-2";
+  const dtClass = "text-gray-400 font-bold text-sm mt-1";
+  const ddClass = "text-gray-200 text-[15px] break-words mb-4 col-span-2";
+
   const details = `
-    <div class="section">
-      <h3>The request</h3>
-      <dl class="kv">
-        <dt>Summary</dt><dd>${esc(a['Summary']||'—')}</dd>
-        <dt>Amount requested</dt><dd>${gbp(a['Amount requested (GBP)'])}${a['Amount (raw)']&&String(a['Amount (raw)'])!==String(a['Amount requested (GBP)'])?' <span style="color:var(--text-muted)">(as entered: '+esc(a['Amount (raw)'])+')</span>':''}</dd>
-        <dt>Who benefits</dt><dd>${esc(a['Beneficiaries']||'—')}</dd>
-        <dt>People helped</dt><dd>${esc(a['People helped']||'—')}</dd>
-        <dt>Other funding / cost</dt><dd>${esc(a['Co-funding / shortfall']||'—')}</dd>
-        <dt>Postcode</dt><dd>${esc(a['Postcode']||'—')}</dd>
-        <dt>Submitted</dt><dd>${fdate(a['Submitted (ISO)'])}</dd>
+    <div class="${sectionClass}">
+      <h3 class="${h3Class}">The request</h3>
+      <dl class="grid grid-cols-3 gap-x-4">
+        <dt class="${dtClass}">Summary</dt><dd class="${ddClass}">${esc(a['Summary']||'—')}</dd>
+        <dt class="${dtClass}">Amount requested</dt><dd class="${ddClass}">${gbp(a['Amount requested (GBP)'])}${a['Amount (raw)']&&String(a['Amount (raw)'])!==String(a['Amount requested (GBP)'])?' <span class="text-gray-500 text-sm">(as entered: '+esc(a['Amount (raw)'])+')</span>':''}</dd>
+        <dt class="${dtClass}">Who benefits</dt><dd class="${ddClass}">${esc(a['Beneficiaries']||'—')}</dd>
+        <dt class="${dtClass}">People helped</dt><dd class="${ddClass}">${esc(a['People helped']||'—')}</dd>
+        <dt class="${dtClass}">Other funding</dt><dd class="${ddClass}">${esc(a['Co-funding / shortfall']||'—')}</dd>
+        <dt class="${dtClass}">Postcode</dt><dd class="${ddClass}">${esc(a['Postcode']||'—')}</dd>
+        <dt class="${dtClass}">Submitted</dt><dd class="${ddClass}">${fdate(a['Submitted (ISO)'])}</dd>
       </dl>
     </div>
-    <div class="section">
-      <h3>Applicant</h3>
-      <dl class="kv">
-        <dt>Contact</dt><dd>${esc(a['Contact name']||'—')}</dd>
-        <dt>Email</dt><dd>${a['Email']?'<a href="mailto:'+esc(a['Email'])+'">'+esc(a['Email'])+'</a>':'—'}</dd>
-        <dt>Phone</dt><dd>${esc(a['Phone']||'—')}</dd>
-        <dt>Organisation</dt><dd>${esc(a['Organisation']||'—')}</dd>
+    <div class="${sectionClass}">
+      <h3 class="${h3Class}">Applicant</h3>
+      <dl class="grid grid-cols-3 gap-x-4">
+        <dt class="${dtClass}">Contact</dt><dd class="${ddClass}">${esc(a['Contact name']||'—')}</dd>
+        <dt class="${dtClass}">Email</dt><dd class="${ddClass}">${a['Email']?'<a href="mailto:'+esc(a['Email'])+'" class="text-brt-gold hover:underline">'+esc(a['Email'])+'</a>':'—'}</dd>
+        <dt class="${dtClass}">Phone</dt><dd class="${ddClass}">${esc(a['Phone']||'—')}</dd>
+        <dt class="${dtClass}">Organisation</dt><dd class="${ddClass}">${esc(a['Organisation']||'—')}</dd>
       </dl>
-      ${a['Bank details'] ? '<div class="bankbox"><div class="lbl">Bank details — sensitive, used only to pay an approved grant</div>'+esc(a['Bank details'])+'</div>' : ''}
+      ${a['Bank details'] ? `<div class="mt-4 bg-[#151513] border border-red-500/30 rounded-xl p-4 text-sm"><div class="font-heading font-bold text-[10px] uppercase tracking-widest text-red-400 mb-2">Bank details — sensitive, used only to pay an approved grant</div><div class="text-white">${esc(a['Bank details'])}</div></div>` : ''}
     </div>`;
 
   const timeline = `
-    <div class="section">
-      <h3>History</h3>
+    <div class="${sectionClass}">
+      <h3 class="${h3Class}">History</h3>
       <div class="tl">${log.length ? log.map(e=>`
-        <div class="ev"><div class="when">${fdt(e['Timestamp (ISO)'])} · ${esc(e['Officer']||'')}</div>
-        <div class="what">${esc(e['Event']||'')}</div>
-        ${e['Detail']?'<div class="det">'+esc(e['Detail'])+'</div>':''}
-        ${e['Notes']?'<div class="det">“'+esc(e['Notes'])+'”</div>':''}</div>`).join('') : '<div class="det">No history yet.</div>'}</div>
+        <div class="ev">
+            <div class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">${fdt(e['Timestamp (ISO)'])} ·${esc(e['Officer']||'')}</div>
+            <div class="text-white font-bold text-sm mt-1">${esc(e['Event']\vert{}\vert{}'')}</div>${e['Detail']?`<div class="text-gray-400 text-sm mt-1">${esc(e['Detail'])}</div>`:''}
+            ${e['Notes']?`<div class="text-gray-400 text-sm italic mt-1 border-l-2 border-brt-gold pl-2">“${esc(e['Notes'])}”</div>`:''}
+        </div>`).join('') : '<div class="text-gray-500 italic text-sm">No history yet.</div>'}
+      </div>
     </div>`;
 
   app.innerHTML = shell(`
-    <button class="back" id="back">← All applications</button>
-    <div class="detail-head"><span class="id">${esc(a['Application ID'])}</span>${badge(s)}</div>
-    <div class="detail-amt">${gbp(s==='approved'||s==='paid'?(a['Amount approved (GBP)']||a['Amount requested (GBP)']):a['Amount requested (GBP)'])}</div>
-    <div class="detail-sub">${esc(a['Organisation']||a['Contact name']||'')}</div>
+    <button class="flex items-center gap-2 font-heading font-bold text-xs uppercase tracking-widest text-brt-gold hover:text-white transition-colors mb-6 group fade-in" id="back">
+        <i class="fa-solid fa-arrow-left transform group-hover:-translate-x-1 transition-transform"></i> All applications
+    </button>
+    
+    <div class="fade-in">
+        <div class="flex items-center gap-3 mb-1">
+            <span class="font-heading font-extrabold text-xl text-white tracking-wider">${esc(a['Application ID'])}</span>
+            ${badge(s)}
+        </div>
+        <div class="font-heading font-black text-4xl text-brt-gold mb-1">
+            ${gbp(s==='approved'||s==='paid'?(a['Amount approved (GBP)']||a['Amount requested (GBP)']):a['Amount requested (GBP)'])}
+        </div>
+        <div class="font-body text-gray-400 text-base mb-8">${esc(a['Organisation']||a['Contact name']||'')}</div>
+    </div>
+    
     ${alert}
-    ${actionPanel(a)}
-    ${emailPanel(a)}
-    ${reportPanel(a)}
-    ${details}
-    ${timeline}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+            ${actionPanel(a)}
+            ${emailPanel(a)}
+            ${reportPanel(a)}
+        </div>
+        <div>
+            ${details}
+            ${timeline}
+        </div>
+    </div>
   `);
   wireShell();
   document.getElementById('back').onclick = loadList;
@@ -371,75 +388,109 @@ async function openDetail(id){
 /* ---------- action panels by status ---------- */
 function actionPanel(a){
   const s = a['Status'];
+  const sectionClass = "bg-white/5 border border-white/10 rounded-2xl p-6 mb-6 fade-in delay-1";
+  const h3Class = "font-heading font-extrabold text-sm uppercase tracking-widest text-brt-gold mb-3 border-b border-white/10 pb-2";
+  const pClass = "text-xs text-gray-400 mb-4 leading-relaxed";
+  const labelClass = "block font-heading font-bold text-xs text-gray-200 uppercase tracking-wide mb-1";
+  const inputClass = "w-full bg-[#151513] border border-white/10 rounded-xl px-4 py-2.5 text-white font-body text-sm focus:outline-none focus:border-brt-gold transition-colors placeholder-gray-600 mb-4";
+  
   if(s==='new' || s==='screening'){
-    return `<div class="section"><h3>Screen</h3>
-      <p class="phint">Check it's in our area, an eligible cause, and complete. <b>Eligible</b> tables it for the next meeting; <b>park</b> it if you need more from the applicant first.</p>
-      <label for="screenReason">Reason / note (optional)</label>
-      <input type="text" id="screenReason" placeholder="e.g. needs a quote before we can table it">
-      <div class="btnrow" style="margin-top:14px">
-        <button class="btn ok" data-screen="eligible">Eligible → Table it</button>
-        <button class="btn sec" data-screen="parked">Park (needs info)</button>
-        <button class="btn danger" data-screen="ineligible">Ineligible → Close</button>
+    return `<div class="${sectionClass}"><h3 class="${h3Class}">Screen</h3>
+      <p class="${pClass}">Check it's in our area, an eligible cause, and complete. <b class="text-white">Eligible</b> tables it for the next meeting; <b class="text-white">park</b> it if you need more from the applicant first.</p>
+      
+      <label for="screenReason" class="${labelClass}">Reason / note <span class="text-gray-500 normal-case tracking-normal">(optional)</span></label>
+      <input type="text" id="screenReason" class="${inputClass}" placeholder="e.g. needs a quote before we can table it">
+      
+      <div class="flex flex-col gap-3 mt-2">
+        <button class="w-full bg-green-600 text-white px-4 py-3 rounded-xl font-heading font-bold uppercase tracking-wider hover:bg-green-500 transition-colors" data-screen="eligible">Eligible → Table it</button>
+        <button class="w-full bg-transparent border border-white/20 text-white px-4 py-3 rounded-xl font-heading font-bold uppercase tracking-wider hover:border-brt-gold hover:text-brt-gold transition-colors" data-screen="parked">Park (needs info)</button>
+        <button class="w-full bg-transparent border border-red-500/30 text-red-400 px-4 py-3 rounded-xl font-heading font-bold uppercase tracking-wider hover:bg-red-900/20 transition-colors" data-screen="ineligible">Ineligible → Close</button>
       </div>
-      <div class="msg" id="amsg"></div></div>`;
+      <div class="msg mt-4 rounded-xl p-3 text-sm text-center" id="amsg"></div></div>`;
   }
   if(s==='tabled'){
-    return `<div class="section"><h3>Record the meeting's decision</h3>
-      <p class="phint">Record this <b>after the meeting</b>, from the minutes. Always add the minute reference — the for/against/abstain is the show-of-hands. Deferred sends it back to Tabled for next time.</p>
-      <label for="outcome">Outcome</label>
-      <select id="outcome">
+    return `<div class="${sectionClass}"><h3 class="${h3Class}">Record the meeting's decision</h3>
+      <p class="${pClass}">Record this <b class="text-white">after the meeting</b>, from the minutes. Always add the minute reference — the for/against/abstain is the show-of-hands. Deferred sends it back to Tabled for next time.</p>
+      
+      <label for="outcome" class="${labelClass}">Outcome</label>
+      <select id="outcome" class="${inputClass}">
         <option value="approved">Approved</option>
         <option value="declined">Declined</option>
         <option value="deferred">Deferred to a later meeting</option>
       </select>
-      <div id="approvedAmt"><label for="amountApproved">Amount approved</label>
-        <div class="money"><span>£</span><input type="text" id="amountApproved" inputmode="numeric" value="${esc(a['Amount requested (GBP)']||'')}"></div></div>
-      <label for="minuteRef">Minute reference</label>
-      <input type="text" id="minuteRef" placeholder="e.g. 2026-06 item 4">
-      <div class="grid3">
-        <div><label for="proposer">Proposer</label><input type="text" id="proposer"></div>
-        <div><label for="seconder">Seconder</label><input type="text" id="seconder"></div>
-        <div></div>
+      
+      <div id="approvedAmt">
+          <label for="amountApproved" class="${labelClass}">Amount approved</label>
+          <div class="relative mb-4">
+            <span class="absolute left-4 top-2.5 text-gray-400 font-bold">£</span>
+            <input type="text" id="amountApproved" inputmode="numeric" class="w-full bg-[#151513] border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white font-body text-sm focus:outline-none focus:border-brt-gold transition-colors" value="${esc(a['Amount requested (GBP)']||'')}">
+          </div>
       </div>
-      <div class="grid3">
-        <div><label for="vf">Votes for</label><input type="text" id="vf" inputmode="numeric" value="0"></div>
-        <div><label for="va">Against</label><input type="text" id="va" inputmode="numeric" value="0"></div>
-        <div><label for="vab">Abstain</label><input type="text" id="vab" inputmode="numeric" value="0"></div>
+      
+      <label for="minuteRef" class="${labelClass}">Minute reference</label>
+      <input type="text" id="minuteRef" class="${inputClass}" placeholder="e.g. 2026-06 item 4">
+      
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div><label for="proposer" class="${labelClass}">Proposer</label><input type="text" id="proposer" class="${inputClass.replace('mb-4','')}"></div>
+        <div><label for="seconder" class="${labelClass}">Seconder</label><input type="text" id="seconder" class="${inputClass.replace('mb-4','')}"></div>
       </div>
-      <label for="notes">Notes / conditions</label>
-      <textarea id="notes" rows="2"></textarea>
-      <button class="btn block" id="recordDecision">Record decision</button>
-      <div class="msg" id="amsg"></div></div>`;
+      
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div><label for="vf" class="${labelClass}">For</label><input type="text" id="vf" inputmode="numeric" class="${inputClass.replace('mb-4','')} text-center" value="0"></div>
+        <div><label for="va" class="${labelClass}">Against</label><input type="text" id="va" inputmode="numeric" class="${inputClass.replace('mb-4','')} text-center" value="0"></div>
+        <div><label for="vab" class="${labelClass}">Abstain</label><input type="text" id="vab" inputmode="numeric" class="${inputClass.replace('mb-4','')} text-center" value="0"></div>
+      </div>
+      
+      <label for="notes" class="${labelClass}">Notes / conditions</label>
+      <textarea id="notes" rows="2" class="${inputClass} resize-y"></textarea>
+      
+      <button class="w-full bg-brt-gold text-brt-dark px-4 py-4 rounded-xl font-heading font-extrabold uppercase tracking-widest hover:bg-white transition-colors mt-2" id="recordDecision">Record decision</button>
+      <div class="msg mt-4 rounded-xl p-3 text-sm text-center" id="amsg"></div></div>`;
   }
   if(s==='approved'){
     const today = new Date().toISOString().slice(0,10);
-    return `<div class="section"><h3>Log payment</h3>
-      <p class="phint">Only after the money has actually left NatWest. The reference is for matching the bank statement. Logging this <b>clears the applicant's bank details</b>.</p>
-      <label for="amountPaid">Amount paid</label>
-      <div class="money"><span>£</span><input type="text" id="amountPaid" inputmode="numeric" value="${esc(a['Amount approved (GBP)']||'')}"></div>
-      <label for="datePaid">Date paid</label>
-      <input type="date" id="datePaid" value="${today}">
-      <label for="natwestRef">NatWest reference</label>
-      <input type="text" id="natwestRef" placeholder="Statement reference">
-      <label for="method">Method</label>
-      <input type="text" id="method" value="Bank transfer">
-      <button class="btn block ok" id="logPayment">Log payment · clears bank details</button>
-      <div class="msg" id="amsg"></div></div>`;
+    return `<div class="${sectionClass}"><h3 class="${h3Class}">Log payment</h3>
+      <p class="${pClass}">Only after the money has actually left NatWest. The reference is for matching the bank statement. Logging this <b class="text-red-400">clears the applicant's bank details</b>.</p>
+      
+      <label for="amountPaid" class="${labelClass}">Amount paid</label>
+      <div class="relative mb-4">
+        <span class="absolute left-4 top-2.5 text-gray-400 font-bold">£</span>
+        <input type="text" id="amountPaid" inputmode="numeric" class="w-full bg-[#151513] border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white font-body text-sm focus:outline-none focus:border-brt-gold transition-colors" value="${esc(a['Amount approved (GBP)']||'')}">
+      </div>
+      
+      <label for="datePaid" class="${labelClass}">Date paid</label>
+      <input type="date" id="datePaid" class="${inputClass}" value="${today}">
+      
+      <label for="natwestRef" class="${labelClass}">NatWest reference</label>
+      <input type="text" id="natwestRef" class="${inputClass}" placeholder="Statement reference">
+      
+      <label for="method" class="${labelClass}">Method</label>
+      <input type="text" id="method" class="${inputClass}" value="Bank transfer">
+      
+      <button class="w-full bg-green-600 text-white px-4 py-4 rounded-xl font-heading font-extrabold uppercase tracking-widest hover:bg-green-500 transition-colors mt-2" id="logPayment">Log payment</button>
+      <div class="msg mt-4 rounded-xl p-3 text-sm text-center" id="amsg"></div></div>`;
   }
-  return ''; // paid / declined / closed — no further action
+  return ''; 
 }
 
 function wireActions(a){
   const s = a['Status'], id = a['Application ID'];
   const msg = () => document.getElementById('amsg');
-  const show = (cls,txt) => { const m=msg(); if(m){ m.className='msg show '+cls; m.textContent=txt; } };
+  const show = (cls,txt) => { 
+      const m = msg(); 
+      if(m) { 
+          m.className = `msg show border rounded-xl p-3 text-sm text-center mt-4 ${cls === 'err' ? 'bg-red-900/20 border-red-500/30 text-red-400' : 'bg-green-900/20 border-green-500/30 text-green-400'}`; 
+          m.textContent = txt; 
+      } 
+  };
 
   // screen
   document.querySelectorAll('[data-screen]').forEach(b => b.onclick = async () => {
     const decision = b.dataset.screen;
     b.disabled = true;
+    b.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
     const res = await api('screen', {id, decision, reason: (document.getElementById('screenReason')||{}).value || ''}).catch(()=>null);
-    if(res && res.ok){ openDetail(id); } else { b.disabled=false; show('err',(res&&res.error)||'Failed'); }
+    if(res && res.ok){ openDetail(id); } else { b.disabled=false; b.textContent = b.innerText; show('err',(res&&res.error)||'Failed'); }
   });
 
   // decision
@@ -450,7 +501,7 @@ function wireActions(a){
     const v = id => (document.getElementById(id)||{}).value || '';
     const payload = {id, outcome:v('outcome'), amountApproved:v('amountApproved'), minuteRef:v('minuteRef'),
       proposer:v('proposer'), seconder:v('seconder'), votesFor:v('vf'), votesAgainst:v('va'), abstentions:v('vab'), notes:v('notes')};
-    dec.disabled = true; dec.textContent='Recording…';
+    dec.disabled = true; dec.innerHTML='<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Recording…';
     const res = await api('decide', payload).catch(()=>null);
     if(res && res.ok){ openDetail(id); } else { dec.disabled=false; dec.textContent='Record decision'; show('err',(res&&res.error)||'Failed'); }
   };
@@ -459,12 +510,11 @@ function wireActions(a){
   const pay = document.getElementById('logPayment');
   if(pay) pay.onclick = async () => {
     const v = id => (document.getElementById(id)||{}).value || '';
-    dec_disable(pay,'Logging…');
+    pay.disabled=true; pay.innerHTML='<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Logging…';
     const res = await api('pay', {id, amountPaid:v('amountPaid'), datePaid:v('datePaid'), natwestRef:v('natwestRef'), method:v('method')}).catch(()=>null);
-    if(res && res.ok){ openDetail(id); } else { pay.disabled=false; pay.textContent='Log payment · clears bank details'; show('err',(res&&res.error)||'Failed'); }
+    if(res && res.ok){ openDetail(id); } else { pay.disabled=false; pay.textContent='Log payment'; show('err',(res&&res.error)||'Failed'); }
   };
 }
-function dec_disable(btn,txt){ btn.disabled=true; btn.textContent=txt; }
 
 /* ---------- email the applicant ---------- */
 function firstName(a){ return (String(a['Contact name']||'').trim().split(/\s+/)[0]) || 'there'; }
@@ -494,22 +544,32 @@ function emailTemplate(kind, a){
 }
 
 function emailPanel(a){
-  return `<div class="section"><h3>Email the applicant</h3>
-    <p class="phint">Pick a template, edit it to suit, then send. It goes to ${esc(a['Email']||'\u2014')} and is logged in the history below. Nothing sends until you tap Send.</p>
-    <label for="emKind">Template</label>
-    <select id="emKind">
+  const sectionClass = "bg-white/5 border border-white/10 rounded-2xl p-6 mb-6 fade-in delay-1";
+  const h3Class = "font-heading font-extrabold text-sm uppercase tracking-widest text-brt-gold mb-3 border-b border-white/10 pb-2";
+  const pClass = "text-xs text-gray-400 mb-4 leading-relaxed";
+  const labelClass = "block font-heading font-bold text-xs text-gray-200 uppercase tracking-wide mb-1";
+  const inputClass = "w-full bg-[#151513] border border-white/10 rounded-xl px-4 py-2.5 text-white font-body text-sm focus:outline-none focus:border-brt-gold transition-colors placeholder-gray-600 mb-4";
+
+  return `<div class="${sectionClass}"><h3 class="${h3Class}">Email the applicant</h3>
+    <p class="${pClass}">Pick a template, edit it to suit, then send. It goes to <b class="text-white">${esc(a['Email']||'\u2014')}</b> and is logged in the history below. Nothing sends until you tap Send.</p>
+    
+    <label for="emKind" class="${labelClass}">Template</label>
+    <select id="emKind" class="${inputClass}">
       <option value="ack">Acknowledge receipt</option>
       <option value="moreinfo">More information needed</option>
       <option value="approved">Approved \u2013 good news</option>
       <option value="declined">Declined</option>
       <option value="custom">Custom (blank)</option>
     </select>
-    <label for="emSubject">Subject</label>
-    <input type="text" id="emSubject">
-    <label for="emBody">Message</label>
-    <textarea id="emBody" rows="10"></textarea>
-    <button class="btn block" id="emSend">Send email</button>
-    <div class="msg" id="emMsg"></div></div>`;
+    
+    <label for="emSubject" class="${labelClass}">Subject</label>
+    <input type="text" id="emSubject" class="${inputClass}">
+    
+    <label for="emBody" class="${labelClass}">Message</label>
+    <textarea id="emBody" rows="10" class="${inputClass} resize-y"></textarea>
+    
+    <button class="w-full bg-brt-gold text-brt-dark px-4 py-4 rounded-xl font-heading font-extrabold uppercase tracking-widest hover:bg-white transition-colors mt-2" id="emSend">Send email</button>
+    <div class="msg mt-4 rounded-xl p-3 text-sm text-center" id="emMsg"></div></div>`;
 }
 
 function wireEmail(a){
@@ -523,19 +583,27 @@ function wireEmail(a){
             : s==='new' ? 'ack' : 'custom';
   fill();
   sel.onchange = fill;
+  
   const send = document.getElementById('emSend'), msg = document.getElementById('emMsg');
+  const showMsg = (cls, txt) => {
+      msg.className = `msg show border rounded-xl p-3 text-sm text-center mt-4 ${cls === 'err' ? 'bg-red-900/20 border-red-500/30 text-red-400' : 'bg-green-900/20 border-green-500/30 text-green-400'}`; 
+      msg.textContent = txt;
+  };
+
   send.onclick = async () => {
     const subject = subj.value.trim(), message = bodyEl.value.trim();
-    if(!a['Email']){ msg.className='msg err show'; msg.textContent='No applicant email on file.'; return; }
-    if(!subject || !message){ msg.className='msg err show'; msg.textContent='Add a subject and a message first.'; return; }
-    send.disabled = true; send.textContent = 'Sending…';
+    if(!a['Email']){ showMsg('err','No applicant email on file.'); return; }
+    if(!subject || !message){ showMsg('err','Add a subject and a message first.'); return; }
+    
+    send.disabled = true; send.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Sending…';
+    
     const res = await api('email', {id: a['Application ID'], kind: sel.value, subject, message}).catch(()=>null);
     if(res && res.ok){
-      msg.className='msg ok show'; msg.textContent='Sent to ' + a['Email'] + '.'; send.textContent='Sent';
+      showMsg('ok','Sent to ' + a['Email'] + '.'); send.textContent='Sent';
       setTimeout(() => openDetail(a['Application ID']), 900);
     } else {
       send.disabled = false; send.textContent = 'Send email';
-      msg.className='msg err show'; msg.textContent = (res && res.error) || 'Failed to send.';
+      showMsg('err',(res && res.error) || 'Failed to send.');
     }
   };
 }
@@ -543,110 +611,176 @@ function wireEmail(a){
 /* ---------- reconciliation ---------- */
 async function loadRecon(){
   state.view='recon';
-  app.innerHTML = shell(navHtml('recon') + '<div class="loading">Loading…</div>');
+  app.innerHTML = shell(navHtml('recon') + '<div class="flex flex-col items-center justify-center py-16"><div class="loader mb-4"></div></div>');
   wireShell(); wireNav();
+  
   const body = document.getElementById('body');
   let res;
-  try{ res = await api('reconciliation', {}); }catch(e){ body.innerHTML = navHtml('recon')+'<div class="empty">Couldn\'t load.</div>'; wireNav(); return; }
-  if(!res || !res.ok){ body.innerHTML = navHtml('recon')+'<div class="empty">Error.</div>'; wireNav(); return; }
+  try{ res = await api('reconciliation', {}); }catch(e){ body.innerHTML = navHtml('recon')+'<div class="text-center py-16 text-gray-400">Couldn\'t load.</div>'; wireNav(); return; }
+  
+  if(!res || !res.ok){ body.innerHTML = navHtml('recon')+'<div class="text-center py-16 text-red-400">Error.</div>'; wireNav(); return; }
+  
   const pending = res.pending||[], paid = res.paid||[];
+  const rowClass = "flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-4 mb-2 text-sm";
+  
   const pendHtml = pending.length ? pending.map(p=>`
-    <div class="recon-row"><span class="id">${esc(p.id)}</span><span>${esc(p.organisation||'')}</span>
-    <span class="amt">${gbp(p.amountApproved)}</span></div>`).join('') : '<div class="empty">None awaiting payment.</div>';
+    <div class="${rowClass}">
+        <span class="font-heading text-xs text-gray-400 tracking-wider w-24">${esc(p.id)}</span>
+        <span class="text-white font-bold">${esc(p.organisation||'')}</span>
+        <span class="ml-auto font-heading font-bold text-brt-gold text-base">${gbp(p.amountApproved)}</span>
+    </div>`).join('') : '<div class="text-center py-8 text-gray-500 italic bg-white/5 rounded-xl border border-white/10">None awaiting payment.</div>';
+    
   const paidHtml = paid.length ? paid.map(p=>`
-    <div class="recon-row"><span class="id">${esc(p['Application ID'])}</span>
-    <span class="ref">${esc(p['NatWest reference']||'—')} · ${fdate(p['Date paid (ISO)'])}</span>
-    <span class="amt">${gbp(p['Amount paid (GBP)'])}</span></div>`).join('') : '<div class="empty">No payments logged yet.</div>';
+    <div class="${rowClass}">
+        <span class="font-heading text-xs text-gray-400 tracking-wider w-24">${esc(p['Application ID'])}</span>
+        <span class="text-gray-400"><b class="text-white">${esc(p['NatWest reference']||'—')}</b> · ${fdate(p['Date paid (ISO)'])}</span>
+        <span class="ml-auto font-heading font-bold text-brt-gold text-base">${gbp(p['Amount paid (GBP)'])}</span>
+    </div>`).join('') : '<div class="text-center py-8 text-gray-500 italic bg-white/5 rounded-xl border border-white/10">No payments logged yet.</div>';
+    
   body.innerHTML = navHtml('recon') + `
-    <p class="phint">The giving side of the books: grants approved but not yet paid (expected debits), and grants already paid — match these against the NatWest statement.</p>
-    <div class="section"><h3>Approved · awaiting payment (expected debits)</h3><div class="recon-group">${pendHtml}</div></div>
-    <div class="section"><h3>Paid (match against NatWest)</h3><div class="recon-group">${paidHtml}</div></div>`;
+    <p class="text-sm text-gray-400 mb-6 fade-in delay-2">The giving side of the books: grants approved but not yet paid (expected debits), and grants already paid — match these against the NatWest statement.</p>
+    
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6 fade-in delay-2">
+        <h3 class="font-heading font-extrabold text-sm uppercase tracking-widest text-white mb-4 border-b border-white/10 pb-2">Approved · awaiting payment <span class="text-gray-500 normal-case tracking-normal">(expected debits)</span></h3>
+        <div>${pendHtml}</div>
+    </div>
+    
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6 fade-in delay-2">
+        <h3 class="font-heading font-extrabold text-sm uppercase tracking-widest text-white mb-4 border-b border-white/10 pb-2">Paid <span class="text-gray-500 normal-case tracking-normal">(match against NatWest)</span></h3>
+        <div>${paidHtml}</div>
+    </div>`;
   wireNav();
 }
+
 /* ---------- report-back & publishing ---------- */
 function reportPanel(a){
   const s = a['Status'];
   const hasReport = !!a['Report'];
   if(!(s==='paid' || s==='reported' || String(a['Published']).toLowerCase()==='yes' || hasReport)) return '';
+  
   const published = String(a['Published']).toLowerCase()==='yes';
+  const sectionClass = "bg-white/5 border border-white/10 rounded-2xl p-6 mb-6 fade-in delay-1";
+  const h3Class = "font-heading font-extrabold text-sm uppercase tracking-widest text-brt-gold mb-3 border-b border-white/10 pb-2";
+  const dtClass = "text-gray-400 font-bold text-sm mt-1";
+  const ddClass = "text-gray-200 text-sm break-words mb-4 col-span-2";
+
   const reportBlock = hasReport
-    ? `<dl class="kv">
-        <dt>How it went</dt><dd>${esc(a['Report'])}</dd>
-        ${a['Report photo'] ? `<dt>Photo</dt><dd><a href="${esc(a['Report photo'])}" target="_blank" rel="noopener">view</a></dd>` : ''}
-        <dt>Reported</dt><dd>${fdate(a['Reported (ISO)'])}</dd>
-        <dt>Consent to share</dt><dd>${a['Publish consent'] ? 'Yes' : 'Not given'}</dd>
+    ? `<dl class="grid grid-cols-3 gap-x-4 mb-4">
+        <dt class="${dtClass}">How it went</dt><dd class="${ddClass}">${esc(a['Report'])}</dd>
+        ${a['Report photo'] ? `<dt class="${dtClass}">Photo</dt><dd class="${ddClass}"><a href="${esc(a['Report photo'])}" target="_blank" rel="noopener" class="text-brt-gold hover:underline">view</a></dd>` : ''}
+        <dt class="${dtClass}">Reported</dt><dd class="${ddClass}">${fdate(a['Reported (ISO)'])}</dd>
+        <dt class="${dtClass}">Consent to share</dt><dd class="${ddClass}">${a['Publish consent'] ? '<span class="text-green-400 font-bold">Yes</span>' : '<span class="text-red-400 font-bold">Not given</span>'}</dd>
       </dl>`
-    : `<p class="phint">No report-back yet. The beneficiary submits one at the report-back page using their reference and email. You can still publish the basics now if you'd like.</p>`;
+    : `<p class="text-xs text-gray-400 mb-4 leading-relaxed">No report-back yet. The beneficiary submits one at the report-back page using their reference and email. You can still publish the basics now if you'd like.</p>`;
+    
   const consentWarn = (!published && hasReport && !a['Publish consent'])
-    ? `<p class="phint" style="margin-top:10px">Heads-up: the beneficiary didn\u2019t tick consent to share \u2014 check with them before publishing.</p>` : '';
-  return `<div class="section"><h3>Report-back &amp; public page</h3>
+    ? `<div class="bg-red-900/20 border border-red-500/30 rounded-xl p-3 text-xs font-bold text-red-300 mt-4 flex items-start gap-2">
+        <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+        <span>Heads-up: the beneficiary didn't tick consent to share — check with them before publishing.</span>
+       </div>` : '';
+       
+  const btnClass = published 
+      ? "w-full bg-transparent border border-white/20 text-white px-4 py-4 rounded-xl font-heading font-bold uppercase tracking-wider hover:border-red-500 hover:text-red-500 transition-colors"
+      : "w-full bg-green-600 text-white px-4 py-4 rounded-xl font-heading font-extrabold uppercase tracking-widest hover:bg-green-500 transition-colors";
+
+  return `<div class="${sectionClass}"><h3 class="${h3Class}">Report-back &amp; public page</h3>
     ${reportBlock}
-    <p class="phint" style="margin-top:12px">${published ? 'This is live on the public \u201Ccauses we\u2019ve funded\u201D page.' : 'Publishing shows the cause, what it was for, the amount and any report-back \u2014 never the applicant\u2019s name or contact details.'}</p>
-    <div class="btnrow">
-      <button class="btn ${published?'sec':'ok'}" id="pubToggle" data-pub="${published?'0':'1'}">${published?'Remove from public page':'Publish to public page'}</button>
-    </div>
+    <p class="text-xs text-gray-400 mb-4 leading-relaxed">${published ? 'This is live on the public “causes we’ve funded” page.' : 'Publishing shows the cause, what it was for, the amount and any report-back — never the applicant’s name or contact details.'}</p>
+    
+    <button class="${btnClass}" id="pubToggle" data-pub="${published?'0':'1'}">${published?'Remove from public page':'Publish to public page'}</button>
     ${consentWarn}
-    <div class="msg" id="pubMsg"></div></div>`;
+    
+    <div class="msg mt-4 rounded-xl p-3 text-sm text-center" id="pubMsg"></div></div>`;
 }
+
 function wireReport(a){
   const btn = document.getElementById('pubToggle'); if(!btn) return;
   const msg = document.getElementById('pubMsg');
+  
   btn.onclick = async () => {
-    btn.disabled = true; btn.textContent = 'Saving…';
+    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Saving…';
     const res = await api('publish', {id: a['Application ID'], publish: btn.dataset.pub==='1'}).catch(()=>null);
     if(res && res.ok){ openDetail(a['Application ID']); }
-    else { btn.disabled = false; msg.className='msg err show'; msg.textContent = (res && res.error) || 'Failed.'; }
+    else { 
+        btn.disabled = false; 
+        btn.textContent = btn.dataset.pub==='1' ? 'Publish to public page' : 'Remove from public page';
+        msg.className='msg show bg-red-900/20 border border-red-500/30 text-red-400 rounded-xl p-3 text-sm text-center mt-4'; 
+        msg.textContent = (res && res.error) || 'Failed.'; 
+    }
   };
 }
 
 /* ---------- dashboard ---------- */
 function bar(label, val, max){
   const pct = Math.max(2, Math.round(val / (max||1) * 100));
-  return `<div class="bar"><div class="top"><span class="lbl">${esc(label)}</span><span class="val">${gbp(val)}</span></div>
-    <div class="track"><div class="fill" style="width:${pct}%"></div></div></div>`;
+  return `<div class="mb-3">
+    <div class="flex justify-between items-baseline text-sm mb-1">
+        <span class="text-gray-300">${esc(label)}</span>
+        <span class="font-heading font-bold text-brt-gold">${gbp(val)}</span>
+    </div>
+    <div class="h-2 bg-[#151513] rounded-full overflow-hidden border border-white/5">
+        <div class="h-full bg-gradient-to-r from-brt-gold to-yellow-200 rounded-full min-w-[4px]" style="width:${pct}%"></div>
+    </div>
+  </div>`;
 }
+
 function monthLabel(key){
   const p = String(key).split('-'); const d = new Date(parseInt(p[0],10), parseInt(p[1],10)-1, 1);
   return isNaN(d.getTime()) ? key : d.toLocaleDateString('en-GB',{month:'short',year:'numeric'});
 }
+
 async function loadDashboard(){
   state.view='dashboard';
-  app.innerHTML = shell(navHtml('dashboard') + '<div class="loading">Crunching the numbers…</div>');
+  app.innerHTML = shell(navHtml('dashboard') + '<div class="flex flex-col items-center justify-center py-16"><div class="loader mb-4"></div><p class="font-heading font-bold uppercase text-brt-gold tracking-widest mt-4">Crunching the numbers...</p></div>');
   wireShell(); wireNav();
+  
   const body = document.getElementById('body');
   let res;
-  try{ res = await api('dashboard', {}); }catch(e){ body.innerHTML = navHtml('dashboard')+'<div class="empty">Couldn\'t load.</div>'; wireNav(); return; }
-  if(!res || !res.ok){ body.innerHTML = navHtml('dashboard')+'<div class="empty">'+esc((res&&res.error)||'Error')+'</div>'; wireNav(); return; }
+  try{ res = await api('dashboard', {}); }catch(e){ body.innerHTML = navHtml('dashboard')+'<div class="text-center py-16 text-gray-400">Couldn\'t load.</div>'; wireNav(); return; }
+  
+  if(!res || !res.ok){ body.innerHTML = navHtml('dashboard')+'<div class="text-center py-16 text-red-400">'+esc((res&&res.error)||'Error')+'</div>'; wireNav(); return; }
+  
   const d = res.stats;
   const decided = (d.fundedCount||0) + (d.declinedCount||0);
   const rate = decided ? Math.round(d.fundedCount/decided*100)+'%' : '—';
 
-  const cards = `<div class="stats">
-    <div class="stat"><div class="v">${gbp(d.totalPaid)}</div><div class="l">Given to date</div></div>
-    <div class="stat"><div class="v">${d.fundedCount}</div><div class="l">Causes funded</div></div>
-    <div class="stat"><div class="v">${(d.peopleHelped||0).toLocaleString('en-GB')}</div><div class="l">People helped</div></div>
-    <div class="stat"><div class="v">${gbp(d.avgGrant)}</div><div class="l">Average grant</div></div>
-    <div class="stat"><div class="v">${rate}</div><div class="l">Requests funded</div></div>
+  const statClass = "bg-white/5 border border-white/10 rounded-2xl p-5";
+  const valClass = "font-heading font-black text-3xl text-brt-gold mb-1";
+  const lblClass = "font-heading text-[10px] font-bold uppercase tracking-widest text-gray-400";
+
+  const cards = `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6 fade-in delay-2">
+    <div class="${statClass}"><div class="${valClass}">${gbp(d.totalPaid)}</div><div class="${lblClass}">Given to date</div></div>
+    <div class="${statClass}"><div class="${valClass}">${d.fundedCount}</div><div class="${lblClass}">Causes funded</div></div>
+    <div class="${statClass}"><div class="${valClass}">${(d.peopleHelped||0).toLocaleString('en-GB')}</div><div class="${lblClass}">People helped</div></div>
+    <div class="${statClass}"><div class="${valClass}">${gbp(d.avgGrant)}</div><div class="${lblClass}">Average grant</div></div>
+    <div class="${statClass}"><div class="${valClass}">${rate}</div><div class="${lblClass}">Requests funded</div></div>
   </div>`;
 
-  const context = `<p class="context">${gbp(d.totalRequested)} requested across ${d.totalApps} application${d.totalApps===1?'':'s'} · ${gbp(d.totalApproved)} approved · ${gbp(d.totalPaid)} paid out${d.distinctOrgs?` · ${d.distinctOrgs} organisation${d.distinctOrgs===1?'':'s'} supported`:''}.</p>`;
+  const context = `<div class="text-sm text-gray-400 mb-6 bg-white/5 border border-white/10 rounded-xl p-4 fade-in delay-2 text-center">
+    <strong class="text-white">${gbp(d.totalRequested)}</strong> requested across ${d.totalApps} application${d.totalApps===1?'':'s'} · <strong class="text-white">${gbp(d.totalApproved)}</strong> approved · <strong class="text-white">${gbp(d.totalPaid)}</strong> paid out${d.distinctOrgs?` · ${d.distinctOrgs} organisation${d.distinctOrgs===1?'':'s'} supported`:''}.
+  </div>`;
 
   const months = Object.keys(d.byMonth).sort();
   const mMax = Math.max(1, ...months.map(m=>d.byMonth[m]));
-  const monthBars = months.length ? months.map(m=>bar(monthLabel(m), d.byMonth[m], mMax)).join('') : '<div class="empty">No payments logged yet.</div>';
+  const monthBars = months.length ? months.map(m=>bar(monthLabel(m), d.byMonth[m], mMax)).join('') : '<div class="text-center py-8 text-gray-500 italic bg-[#151513] rounded-xl border border-white/5">No payments logged yet.</div>';
 
   const areas = Object.keys(d.byArea).sort((a,b)=>d.byArea[b]-d.byArea[a]);
   const aMax = Math.max(1, ...areas.map(a=>d.byArea[a]));
-  const areaBars = areas.length ? areas.map(a=>bar(a, d.byArea[a], aMax)).join('') : '<div class="empty">No payments logged yet.</div>';
+  const areaBars = areas.length ? areas.map(a=>bar(a, d.byArea[a], aMax)).join('') : '<div class="text-center py-8 text-gray-500 italic bg-[#151513] rounded-xl border border-white/5">No payments logged yet.</div>';
 
   const order = ['new','screening','tabled','approved','paid','reported','declined','closed'];
-  const pipeline = order.filter(k=>d.statusCounts[k]).map(k=>`<span class="pill"><b>${d.statusCounts[k]}</b>${STATUS_LABEL[k]}</span>`).join('') || '<span class="pill">No applications yet</span>';
+  const pipeline = order.filter(k=>d.statusCounts[k]).map(k=>`<span class="bg-[#151513] border border-white/10 rounded-full px-4 py-1.5 text-xs font-heading uppercase tracking-wider text-gray-400"><b class="text-white mr-2">${d.statusCounts[k]}</b>${STATUS_LABEL[k]}</span>`).join('') || '<span class="text-gray-500 italic">No applications yet</span>';
+
+  const sectionClass = "bg-white/5 border border-white/10 rounded-2xl p-6 mb-6 fade-in delay-2";
+  const h3Class = "font-heading font-extrabold text-sm uppercase tracking-widest text-white mb-5 border-b border-white/10 pb-2";
 
   body.innerHTML = navHtml('dashboard') + cards + context
-    + `<div class="section"><h3>Giving over time</h3><div class="bars">${monthBars}</div></div>`
-    + `<div class="section"><h3>Where it's gone · by postcode area</h3><div class="bars">${areaBars}</div></div>`
-    + `<div class="section"><h3>Pipeline</h3><div class="pipeline">${pipeline}</div></div>`
-    + `<p class="context">Totals are anonymised, so this view is safe to share at an AGM or with sponsors. <b>People helped</b> is the applicants' own estimates, summed across funded causes — a guide, not an exact count.</p>`;
+    + `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="${sectionClass}"><h3 class="${h3Class}">Giving over time</h3><div>${monthBars}</div></div>
+        <div class="${sectionClass}"><h3 class="${h3Class}">Where it's gone <span class="text-gray-500 normal-case tracking-normal">(by postcode area)</span></h3><div>${areaBars}</div></div>
+       </div>`
+    + `<div class="${sectionClass}"><h3 class="${h3Class}">Pipeline</h3><div class="flex flex-wrap gap-2">${pipeline}</div></div>`
+    + `<p class="text-xs text-gray-500 mt-4 text-center fade-in delay-2">Totals are anonymised, so this view is safe to share at an AGM or with sponsors. <b class="text-gray-400">People helped</b> is the applicants' own estimates, summed across funded causes — a guide, not an exact count.</p>`;
   wireNav();
 }
 </script>
