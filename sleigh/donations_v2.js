@@ -5,6 +5,33 @@
         startDonationsWidget();
     };
 
+    // --- THEME CACHE (mirrors tracker.html) ---
+    // Remember the API colour per endpoint so repeat visits paint the right colour straight away.
+    // Storage can be blocked, so both helpers swallow errors.
+    let themeApi = "";
+
+    function loadCachedTheme(api) {
+        try {
+            const c = localStorage.getItem('SANTA_THEME:' + api);
+            if (c) { applyTheme({ primary_color: c }); return true; }
+        } catch (e) {}
+        return false;
+    }
+
+    function saveTheme(api, color) {
+        try {
+            if (parseColor(color)) localStorage.setItem('SANTA_THEME:' + api, String(color).trim());
+            else localStorage.removeItem('SANTA_THEME:' + api);
+        } catch (e) {}
+    }
+
+    // Widgets are injected hidden (opacity 0) and revealed once the theme is known,
+    // so the gold fallback never flashes before the API colour lands.
+    function revealWidgets() {
+        document.querySelectorAll('.ts-donations-wrapper.ts-theme-pending')
+            .forEach(w => w.classList.remove('ts-theme-pending'));
+    }
+
     // --- ACTUAL START FUNCTION ---
     function startDonationsWidget() {
 
@@ -22,6 +49,7 @@
         }
 
         const API_URL = apiBase;
+        themeApi = API_URL;
 
         installCSS();
 
@@ -29,11 +57,25 @@
         document.querySelectorAll("[data-santa-mini]").forEach(injectMini);
         document.querySelectorAll("[data-santa-thermo]").forEach(injectThermo);
 
+        // Repeat visit: paint the cached colour now and show the widgets.
+        // First visit: stay hidden until the API answers (or 3s passes) instead of flashing gold.
+        if (loadCachedTheme(API_URL)) revealWidgets();
+        setTimeout(revealWidgets, 3000);
+
         // Fetch and update UI
-        fetch(API_URL)
-            .then(r => r.json())
+        loadData(API_URL, 0);
+    }
+
+    // Fetch with up to 2 retries, in case Apps Script is cold or briefly erroring
+    function loadData(url, attempt) {
+        fetch(url)
+            .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
             .then(updateUI)
-            .catch(err => console.error("TurboSanta Donations error:", err));
+            .catch(err => {
+                console.error("TurboSanta Donations error:", err);
+                if (attempt < 2) setTimeout(() => loadData(url, attempt + 1), 2000 * (attempt + 1));
+                else revealWidgets();
+            });
     }
 
     // --- THEME & COLOUR PARSING ---
@@ -122,6 +164,15 @@
 
 .ts-donations-wrapper * {
     box-sizing: border-box;
+}
+
+/* Hidden until the API theme is known (see revealWidgets) */
+.ts-donations-wrapper {
+    transition: opacity 0.25s ease;
+}
+.ts-donations-wrapper.ts-theme-pending {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* ---------- DONATE BUTTON STYLES ---------- */
@@ -355,7 +406,7 @@
     --------------------------------------------------------- */
     function injectMini(el) {
         el.innerHTML = `
-            <div class="ts-donations-wrapper">
+            <div class="ts-donations-wrapper ts-theme-pending">
                 <div class="ts-mini-card">
                     <div class="ts-mini-label">Together we've raised</div>
                     <div class="ts-mini-track">
@@ -373,7 +424,7 @@
     --------------------------------------------------------- */
     function injectThermo(el) {
         el.innerHTML = `
-            <div class="ts-donations-wrapper">
+            <div class="ts-donations-wrapper ts-theme-pending">
                 <div class="ts-thermo-card">
                     <div class="ts-hero-badge">🎄 Fundraiser</div>
                     <h3 class="ts-thermo-title">SANTA <span>SLEIGH</span></h3>
@@ -401,8 +452,10 @@
         const donations = fullData.donations || {};
         const settings = fullData.settings || {};
 
-        // Apply dynamic API theming
+        // Apply dynamic API theming, remember it for next visit, and show the widgets
         applyTheme(settings);
+        saveTheme(themeApi, settings.primary_color);
+        revealWidgets();
 
         const total  = Number(donations.total  || 0);
         const target = Number(donations.target || 0);
