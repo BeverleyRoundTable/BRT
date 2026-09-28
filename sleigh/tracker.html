@@ -1847,17 +1847,28 @@ function ensureNotifyPermission() {
           if (rawElfCamUrl && rawElfCamUrl !== AppState.vars.lastElfCamUrl && Utils.isValidImageUrl(rawElfCamUrl)) { if (AppState.flags.pageVisible) { AppState.vars.lastElfCamUrl = rawElfCamUrl; let finalImgUrl = rawElfCamUrl; if (finalImgUrl.includes("drive.google.com")) { try { const urlObj = new URL(finalImgUrl); const fileId = urlObj.searchParams.get("id"); if (fileId) finalImgUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`; } catch(e) {} } triggerPolaroid(finalImgUrl, "Live from the Sleigh!"); } }
 
           // 🛡️ SANTA PROXY: Fetch via Cloudflare Worker -> GAS Proxy
-          const proxyScript = `${AppState.vars.apiUrl}${AppState.vars.apiUrl.includes('?') ? '&' : '?'}function=proxyFirebase`;
-          const fastGpsUrl = `${WORKER_URL}?ttl=2&target=${encodeURIComponent(proxyScript)}`;
+const proxyScript = `${AppState.vars.apiUrl}${AppState.vars.apiUrl.includes('?') ? '&' : '?'}function=proxyFirebase`;
+const fastGpsUrl = `${WORKER_URL}?ttl=2&target=${encodeURIComponent(proxyScript)}`;
           
-          let data = await Utils.loadJSON(fastGpsUrl);
-          if (data && typeof data === "object" && !data.lat) { const first = Object.values(data)[0]; if (first && typeof first === "object") data = first; }
-          if (!data || !Utils.validPos(data.lat, data.lng)) throw new Error("Invalid Coords");
+let data = await Utils.loadJSON(fastGpsUrl);
 
-          AppState.vars.consecutiveErrors = 0;
-          setConnectionState("live");
+if (data && typeof data === "object" && !data.lat) { 
+  const first = Object.values(data)[0]; 
+  if (first && typeof first === "object") data = first; 
+}
 
-          const ts = new Date(data.ts).getTime(), age = Date.now() - ts, isFresh = age <= AppConfig.API.STALE_MS;
+// If data is empty or coords aren't valid, don't throw an error — handle gracefully:
+if (!data || !Utils.validPos(data.lat, data.lng)) {
+  AppState.dom.statusBox.textContent = getScheduledPinEtaText() || "Santa is preparing in Lapland!";
+  AppState.dom.statusDot.style.display = "none";
+  scheduleNextPoll();
+  return;
+}
+
+AppState.vars.consecutiveErrors = 0;
+setConnectionState("live");
+
+const ts = new Date(data.ts).getTime(), age = Date.now() - ts, isFresh = age <= AppConfig.API.STALE_MS;
 
           const rs = document.getElementById('routeSponsor');
 if (rs) rs.classList.toggle('visible', !!AppState.vars.sponsorReady && !AppState.flags.isKiosk && !AppState.flags.isDriver);
