@@ -710,7 +710,7 @@ caches your custom fonts for a year, drastically speeding up load times:
         });
     </script>
 
-    <!-- Carrd-era click tracking: logs internal nav taps and outbound sponsor/partner clicks to Google Sheets -->
+    <!-- Click tracking: logs internal nav taps and outbound sponsor/partner clicks to Google Sheets -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
 
@@ -728,7 +728,7 @@ caches your custom fonts for a year, drastically speeding up load times:
     // 1. AUTOMATICALLY CATCH ALL INTERNAL SECTION TAPS (Navigation & Logos)
     if (href.startsWith('#') && href.length > 1) {
     const partnerName = href.substring(1).replace(/[^a-zA-Z0-9]/g, '_');
-    payloadLabel = `Carrd_Tap_${partnerName}_Logo`;
+    payloadLabel = `Site_Tap_${partnerName}_Logo`;
     }
 
     // 2. AUTOMATICALLY CATCH ALL OUTBOUND CLICKS (Socials & Sponsors)
@@ -738,9 +738,9 @@ caches your custom fonts for a year, drastically speeding up load times:
     let domain = urlObj.hostname.replace('www.', '');
     domain = domain.split('.')[0];
     const cleanName = domain.charAt(0).toUpperCase() + domain.slice(1);
-    payloadLabel = `Carrd_Click_${cleanName}_Outbound`;
+    payloadLabel = `Site_Click_${cleanName}_Outbound`;
     } catch (e) {
-    payloadLabel = 'Carrd_Click_Unknown_Outbound';
+    payloadLabel = 'Site_Click_Unknown_Outbound';
     }
     }
 
