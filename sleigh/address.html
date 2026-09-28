@@ -7,7 +7,12 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Preload Custom Font -->
+<link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -17,6 +22,14 @@
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <style>
+    @font-face {
+    font-family: 'Eurostile';
+    src: url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+    
     :root {
       /* Brand colour. Defaults are Round Table gold; applyTheme() overrides these from the API
          (settings.primary_color), exactly like the Santa sleigh page does. */
@@ -44,7 +57,7 @@
       padding: 24px 12px 60px; 
       background: transparent; 
       color: var(--text);
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Open Sans', sans-serif;
       -webkit-font-smoothing: antialiased;
       overflow-y: auto;
     }
@@ -77,7 +90,7 @@
       background: var(--primary);
       color: var(--on-primary);
       font-weight: 900;
-      font-family: 'Bebas Neue', sans-serif;
+      font-family: 'Eurostile', 'Open Sans', sans-serif;
       font-size: 24px;
       letter-spacing: 1.5px;
       cursor: pointer;
@@ -147,7 +160,7 @@
 
     .addr-route-title {
       margin: 0 0 4px;
-      font-family: 'Bebas Neue', sans-serif;
+      font-family: 'Eurostile', 'Open Sans', sans-serif;
       font-size: 32px;
       letter-spacing: 1.5px;
       color: #fff;
@@ -156,7 +169,7 @@
 
     .addr-route-date {
       margin: 0;
-      font-family: 'DM Mono', monospace;
+      font-family: 'Open Sans', sans-serif;
       font-size: 14px;
       font-weight: 700;
       color: var(--primary);
@@ -183,14 +196,14 @@
       border: 1px solid var(--border);
       border-radius: 16px;
       color: #fff;
-      font-family: 'DM Mono', monospace;
+      font-family: 'Open Sans', sans-serif;
       font-size: 16px;
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
     .addr-search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
     .addr-search-input:disabled { opacity: 0.6; cursor: not-allowed; }
-    .addr-search-input::placeholder { color: var(--text-muted); font-family: 'DM Sans', sans-serif; }
+    .addr-search-input::placeholder { color: var(--text-muted); font-family: 'Open Sans', sans-serif; }
 
     .addr-search-icon {
       position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
@@ -219,7 +232,7 @@
     .addr-suggest-item:hover, .addr-suggest-item:focus { background: var(--primary-dim); color: #fff; outline: none; }
 
     .addr-suggest-route {
-      font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+      font-family: 'Open Sans', sans-serif; font-size: 11px; font-weight: 500;
       color: var(--text-muted); text-transform: uppercase; text-align: right;
     }
     .addr-suggest-item:hover .addr-suggest-route { color: var(--primary); }
@@ -231,7 +244,7 @@
 
     .addr-btn {
       flex: 1; padding: 12px; border-radius: 12px; border: none;
-      font-weight: 900; font-size: 20px; letter-spacing: 1.5px; font-family: 'Bebas Neue', sans-serif;
+      font-weight: 900; font-size: 20px; letter-spacing: 1.5px; font-family: 'Eurostile', 'Open Sans', sans-serif;
       cursor: pointer; text-align: center;
       transition: transform 0.1s, background 0.2s, filter 0.2s;
     }
@@ -254,7 +267,7 @@
       text-align: center;
       text-decoration: none;
       color: #fff;
-      font-family: 'Bebas Neue', sans-serif;
+      font-family: 'Eurostile', 'Open Sans', sans-serif;
       font-size: 22px;
       letter-spacing: 1.5px;
       transition: background 0.2s, transform 0.1s, border-color 0.2s;
