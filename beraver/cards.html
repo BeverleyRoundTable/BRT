@@ -5,13 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Play Your Cards Right - Live TV Game</title>
     
+    <!-- Preload BRT Custom Font -->
+    <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        heading: ['Eurostile', 'sans-serif'], 
+                        body: ['Open Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        beraverBlue: '#4db8e8',
+                        beraverPink: '#ff007f',
+                        beraverDark: '#1D1D1A',
+                    }
+                }
+            }
+        }
+    </script>
     
     <style>
+        /* BRT Eurostile Font Injection */
+        @font-face {
+            font-family: 'Eurostile';
+            src: url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #000000; 
+            font-family: 'Open Sans', sans-serif;
+            background-color: #1D1D1A; 
             color: white;
             user-select: none; 
         }
@@ -34,7 +63,8 @@
         }
 
         .game-title {
-            font-family: 'Oswald', sans-serif;
+            font-family: 'Eurostile', sans-serif;
+            font-weight: 700;
             text-shadow: 2px 4px 6px rgba(0,0,0,0.8);
         }
 
@@ -84,8 +114,8 @@
         }
 
         .card-back {
-            background-color: #000000;
-            background-image: repeating-linear-gradient(45deg, #4db8e8 25%, transparent 25%, transparent 75%, #4db8e8 75%, #4db8e8), repeating-linear-gradient(45deg, #4db8e8 25%, #000000 25%, #000000 75%, #4db8e8 75%, #4db8e8);
+            background-color: #1D1D1A;
+            background-image: repeating-linear-gradient(45deg, #4db8e8 25%, transparent 25%, transparent 75%, #4db8e8 75%, #4db8e8), repeating-linear-gradient(45deg, #4db8e8 25%, #1D1D1A 25%, #1D1D1A 75%, #4db8e8 75%, #4db8e8);
             background-position: 0 0, 10px 10px;
             background-size: 20px 20px;
             border: 4px solid #ff007f;
@@ -128,74 +158,78 @@
     </style>
 </head>
 
-<!-- min-h-screen for mobile scrolling, strictly h-screen for Desktop TV lock -->
-<body class="flex flex-col min-h-[100dvh] lg:h-screen w-full p-4 lg:p-6 overflow-x-hidden overflow-y-auto lg:overflow-hidden relative">
+<!-- min-h-[100dvh] for mobile scrolling, strictly h-screen for Desktop TV lock -->
+<body class="flex flex-col min-h-[100dvh] lg:h-screen w-full p-4 lg:p-6 overflow-x-hidden overflow-y-auto lg:overflow-hidden relative bg-beraverDark">
 
-    <img src="https://brt-23f.pages.dev//icons/BERAVER.png" alt="Beverley Round Table" class="brand-logo">
+    <!-- Background Pattern & Overlay -->
+    <div class="absolute inset-0 z-0 opacity-20" style="background-image: repeating-linear-gradient(45deg, #4db8e8 25%, transparent 25%, transparent 75%, #4db8e8 75%, #4db8e8), repeating-linear-gradient(45deg, #4db8e8 25%, #1D1D1A 25%, #1D1D1A 75%, #4db8e8 75%, #4db8e8); background-position: 0 0, 20px 20px; background-size: 40px 40px;"></div>
+    <div class="absolute inset-0 z-0 bg-beraverDark/85 backdrop-blur-sm"></div>
+
+    <img src="https://brt-23f.pages.dev//icons/BERAVER.png" alt="Beverley Round Table" class="brand-logo drop-shadow-2xl">
 
     <div class="sponsor-container">
-        <span class="text-gray-400 text-[10px] lg:text-xs font-bold uppercase tracking-widest mb-1">Sponsored By</span>
-        <img src="https://brt-23f.pages.dev//icons/card_sponsor.png" alt="Sponsor" class="sponsor-logo" onerror="this.parentElement.style.display='none'">
+        <span class="text-gray-400 font-heading text-[10px] lg:text-xs font-bold uppercase tracking-widest mb-1">Sponsored By</span>
+        <img src="https://brt-23f.pages.dev//icons/card_sponsor.png" alt="Sponsor" class="sponsor-logo drop-shadow-xl" onerror="this.parentElement.style.display='none'">
     </div>
 
     <!-- Header -->
-    <header class="text-center mb-4 lg:mb-6 flex-shrink-0 mt-24 lg:mt-0">
-        <h1 class="game-title text-4xl md:text-6xl font-bold tracking-wider uppercase drop-shadow-xl">
-            <span class="text-[#4db8e8]">Play Your</span> <span class="text-[#ff007f]">Cards Right</span>
+    <header class="relative z-10 text-center mb-4 lg:mb-6 flex-shrink-0 mt-24 lg:mt-0">
+        <h1 class="game-title text-4xl md:text-6xl font-black tracking-wider uppercase drop-shadow-xl">
+            <span class="text-beraverBlue">Play Your</span> <span class="text-beraverPink">Cards Right</span>
         </h1>
-        <p class="text-gray-400 text-sm md:text-xl mt-1 font-semibold">Hotkeys: [Q] Load Question | [Space] Reveal Answer | [Enter] Draw Card | [↑] Higher | [↓] Lower | [M] Toggle Mode</p>
+        <p class="text-gray-400 font-body text-sm md:text-xl mt-1 font-semibold">Hotkeys: [Q] Load Question | [Space] Reveal Answer | [Enter] Draw Card | [↑] Higher | [↓] Lower | [M] Toggle Mode</p>
     </header>
 
-    <!-- Main Content Area (min-h-0 ensures it shrinks to fit the screen) -->
-    <main class="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-8 items-stretch w-full min-h-0">
+    <!-- Main Content Area -->
+    <main class="relative z-10 flex-1 flex flex-col lg:flex-row gap-4 lg:gap-8 items-stretch w-full min-h-0">
         
         <!-- Left Column: Survey -->
-        <section class="w-full lg:w-1/3 bg-[#0a0a0a] rounded-3xl p-6 border-4 border-[#4db8e8] flex flex-col shadow-2xl relative min-h-0">
-            <h2 class="game-title text-2xl lg:text-3xl text-[#4db8e8] mb-4 border-b-2 border-[#4db8e8] pb-2 flex-shrink-0">The Survey</h2>
+        <section class="w-full lg:w-1/3 bg-black/50 backdrop-blur-md rounded-3xl p-6 border-4 border-beraverBlue flex flex-col shadow-2xl relative min-h-0">
+            <h2 class="game-title text-2xl lg:text-3xl text-beraverBlue mb-4 border-b-2 border-beraverBlue pb-2 flex-shrink-0 uppercase">The Survey</h2>
             
-            <div id="loading-indicator" class="hidden absolute inset-0 bg-[#0a0a0a] rounded-3xl flex flex-col items-center justify-center z-10">
-                <svg class="animate-spin h-12 w-12 text-[#ff007f] mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <div id="loading-indicator" class="hidden absolute inset-0 bg-beraverDark/90 rounded-3xl flex flex-col items-center justify-center z-10">
+                <svg class="animate-spin h-12 w-12 text-beraverPink mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span class="text-xl font-bold animate-pulse text-[#4db8e8]">Loading Question...</span>
+                <span class="font-heading text-xl font-bold animate-pulse text-beraverBlue uppercase tracking-widest">Loading Question...</span>
             </div>
 
             <!-- Survey Text Area -->
             <div class="flex-1 flex flex-col justify-center text-center min-h-0 overflow-y-auto my-2">
-                <p id="question-text" class="text-xl lg:text-3xl font-bold text-white leading-tight mb-4">
+                <p id="question-text" class="font-body text-xl lg:text-3xl font-bold text-white leading-tight mb-4">
                     Click below to pull a new survey question for the crowd!
                 </p>
                 
-                <div id="answer-container" class="hidden flex-col items-center justify-center bg-black border-4 border-[#ff007f] rounded-xl p-4 lg:p-6 transform scale-0 transition-transform duration-500 flex-shrink-0">
-                    <span class="text-gray-400 text-sm lg:text-lg uppercase tracking-widest font-bold">Survey Says:</span>
-                    <span id="answer-text" class="game-title text-6xl lg:text-8xl text-[#4db8e8] font-bold">--</span>
+                <div id="answer-container" class="hidden flex-col items-center justify-center bg-black/60 border-4 border-beraverPink rounded-xl p-4 lg:p-6 transform scale-0 transition-transform duration-500 flex-shrink-0">
+                    <span class="text-gray-400 font-heading text-sm lg:text-lg uppercase tracking-widest font-bold">Survey Says:</span>
+                    <span id="answer-text" class="game-title text-6xl lg:text-8xl text-beraverBlue font-black">--</span>
                 </div>
             </div>
 
             <!-- Survey Controls -->
             <div class="flex flex-col gap-3 mt-auto flex-shrink-0">
                 <!-- Mode Toggle -->
-                <div class="flex items-center justify-center gap-3 mb-2 bg-[#1a1a1a] border-2 border-gray-800 rounded-xl p-3">
-                    <span class="text-sm font-bold uppercase tracking-wide text-[#ff007f]" id="label-adult">Adults</span>
+                <div class="flex items-center justify-center gap-3 mb-2 bg-black/40 border-2 border-white/10 rounded-xl p-3">
+                    <span class="font-heading text-sm font-bold uppercase tracking-wide text-beraverPink" id="label-adult">Adults</span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="mode-toggle" class="sr-only peer">
-                        <div class="w-14 h-7 bg-[#ff007f] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#4db8e8]"></div>
+                        <div class="w-14 h-7 bg-beraverPink peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-beraverBlue"></div>
                     </label>
-                    <span class="text-sm font-bold uppercase tracking-wide text-gray-500 opacity-50 transition-opacity" id="label-kids">Kids</span>
+                    <span class="font-heading text-sm font-bold uppercase tracking-wide text-gray-500 opacity-50 transition-opacity" id="label-kids">Kids</span>
                 </div>
-                <button id="btn-generate-q" class="game-btn bg-[#4db8e8] hover:bg-[#3ba4d4] text-black text-xl lg:text-2xl font-bold py-3 lg:py-4 rounded-xl shadow-[0_6px_0_#2d80a8] active:shadow-[0_0px_0_#2d80a8] active:translate-y-[6px]">
+                <button id="btn-generate-q" class="game-btn font-heading bg-beraverBlue hover:bg-[#3ba4d4] text-beraverDark text-xl lg:text-2xl font-black uppercase tracking-wider py-3 lg:py-4 rounded-xl shadow-[0_6px_0_#2d80a8] active:shadow-[0_0px_0_#2d80a8] active:translate-y-[6px]">
                     Load Question
                 </button>
-                <button id="btn-reveal-a" class="game-btn bg-[#ff007f] hover:bg-[#e60073] text-white text-xl lg:text-2xl font-bold py-3 lg:py-4 rounded-xl shadow-[0_6px_0_#b30059] active:shadow-[0_0px_0_#b30059] active:translate-y-[6px] opacity-50 cursor-not-allowed" disabled>
+                <button id="btn-reveal-a" class="game-btn font-heading bg-beraverPink hover:bg-[#e60073] text-white text-xl lg:text-2xl font-black uppercase tracking-wider py-3 lg:py-4 rounded-xl shadow-[0_6px_0_#b30059] active:shadow-[0_0px_0_#b30059] active:translate-y-[6px] opacity-50 cursor-not-allowed" disabled>
                     Reveal Answer (Space)
                 </button>
             </div>
         </section>
 
         <!-- Right Column: The Board -->
-        <section class="w-full lg:w-2/3 bg-[#0a0a0a] rounded-3xl p-6 border-4 border-[#ff007f] flex flex-col shadow-2xl items-center justify-between relative min-h-0">
-            <h2 class="game-title text-2xl lg:text-3xl text-[#ff007f] mb-2 border-b-2 border-[#ff007f] pb-2 w-full text-left flex-shrink-0">The Board</h2>
+        <section class="w-full lg:w-2/3 bg-black/50 backdrop-blur-md rounded-3xl p-6 border-4 border-beraverPink flex flex-col shadow-2xl items-center justify-between relative min-h-0">
+            <h2 class="game-title text-2xl lg:text-3xl text-beraverPink mb-2 border-b-2 border-beraverPink pb-2 w-full text-left flex-shrink-0 uppercase">The Board</h2>
             
             <!-- Cards Container -->
             <div id="cards-container" class="flex flex-row justify-center items-center w-full flex-1 min-h-0 my-4 perspective-container">
@@ -204,20 +238,20 @@
 
             <!-- Controls -->
             <div class="flex flex-col sm:flex-row gap-4 lg:gap-6 w-full justify-center flex-shrink-0">
-                <button id="btn-higher" class="game-btn w-full sm:w-48 lg:w-56 bg-[#ff007f] hover:bg-[#e60073] text-white text-3xl lg:text-4xl font-bold py-4 lg:py-6 rounded-2xl shadow-[0_8px_0_#b30059] active:shadow-[0_0px_0_#b30059] active:translate-y-[8px] flex flex-col items-center opacity-50 cursor-not-allowed" disabled>
+                <button id="btn-higher" class="game-btn w-full sm:w-48 lg:w-56 bg-beraverPink hover:bg-[#e60073] text-white font-heading text-3xl lg:text-4xl font-black uppercase tracking-wider py-4 lg:py-6 rounded-2xl shadow-[0_8px_0_#b30059] active:shadow-[0_0px_0_#b30059] active:translate-y-[8px] flex flex-col items-center opacity-50 cursor-not-allowed" disabled>
                     <span>HIGHER</span>
-                    <span class="text-sm lg:text-lg opacity-75 mt-1">↑ (Up Arrow)</span>
+                    <span class="font-body text-sm lg:text-lg font-semibold opacity-75 mt-1 tracking-normal">↑ (Up Arrow)</span>
                 </button>
                 
                 <div class="flex flex-col justify-center items-center px-2 order-last sm:order-none">
-                     <button id="btn-start-game" class="game-btn bg-white hover:bg-gray-200 text-black text-lg lg:text-xl font-bold py-3 px-6 rounded-xl shadow-[0_4px_0_#cccccc] active:shadow-[0_0px_0_#cccccc] active:translate-y-[4px]">
+                     <button id="btn-start-game" class="game-btn bg-white hover:bg-gray-200 text-beraverDark font-heading text-lg lg:text-xl font-black uppercase tracking-wider py-3 px-6 rounded-xl shadow-[0_4px_0_#cccccc] active:shadow-[0_0px_0_#cccccc] active:translate-y-[4px]">
                         Reset Deck
                     </button>
                 </div>
 
-                <button id="btn-lower" class="game-btn w-full sm:w-48 lg:w-56 bg-[#4db8e8] hover:bg-[#3ba4d4] text-black text-3xl lg:text-4xl font-bold py-4 lg:py-6 rounded-2xl shadow-[0_8px_0_#2d80a8] active:shadow-[0_0px_0_#2d80a8] active:translate-y-[8px] flex flex-col items-center opacity-50 cursor-not-allowed" disabled>
+                <button id="btn-lower" class="game-btn w-full sm:w-48 lg:w-56 bg-beraverBlue hover:bg-[#3ba4d4] text-beraverDark font-heading text-3xl lg:text-4xl font-black uppercase tracking-wider py-4 lg:py-6 rounded-2xl shadow-[0_8px_0_#2d80a8] active:shadow-[0_0px_0_#2d80a8] active:translate-y-[8px] flex flex-col items-center opacity-50 cursor-not-allowed" disabled>
                     <span>LOWER</span>
-                    <span class="text-sm lg:text-lg opacity-75 mt-1">↓ (Down Arrow)</span>
+                    <span class="font-body text-sm lg:text-lg font-semibold opacity-75 mt-1 tracking-normal">↓ (Down Arrow)</span>
                 </button>
             </div>
         </section>
@@ -226,9 +260,9 @@
 
     <!-- Overlay -->
     <div id="message-overlay" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center p-4">
-        <h1 id="overlay-title" class="game-title text-6xl lg:text-9xl font-bold mb-4 text-center">WINNER!</h1>
-        <p id="overlay-sub" class="text-2xl lg:text-4xl text-white mb-8 lg:mb-12 text-center font-bold">You played your cards right!</p>
-        <button id="btn-close-overlay" class="game-btn bg-[#4db8e8] text-black text-xl lg:text-3xl font-bold py-4 px-8 lg:px-12 rounded-full shadow-[0_6px_0_#2d80a8] hover:bg-[#3ba4d4]">
+        <h1 id="overlay-title" class="game-title text-6xl lg:text-9xl font-black mb-4 text-center">WINNER!</h1>
+        <p id="overlay-sub" class="font-body text-2xl lg:text-4xl text-white mb-8 lg:mb-12 text-center font-bold">You played your cards right!</p>
+        <button id="btn-close-overlay" class="game-btn font-heading uppercase tracking-wider bg-beraverBlue text-beraverDark text-xl lg:text-3xl font-black py-4 px-8 lg:px-12 rounded-full shadow-[0_6px_0_#2d80a8] hover:bg-[#3ba4d4]">
             Continue / Next Player
         </button>
     </div>
@@ -396,7 +430,7 @@
                     <div class="card-slot" id="slot-${i}">
                         <div class="card-inner">
                             <div class="card-front flex items-center justify-center text-gray-300 bg-white border border-gray-200">
-                                <svg class="animate-spin h-8 w-8 text-[#ff007f]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg class="animate-spin h-8 w-8 text-beraverPink" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
@@ -465,7 +499,7 @@
             const overlay = document.getElementById('message-overlay');
             
             overlayTitle.innerText = title;
-            overlayTitle.className = `game-title text-6xl lg:text-9xl font-bold mb-4 text-center ${colorClass}`;
+            overlayTitle.className = `game-title text-6xl lg:text-9xl font-black mb-4 text-center ${colorClass}`;
             overlaySub.innerText = sub;
             overlay.classList.remove('hidden');
             setButtonsState(false);
@@ -490,7 +524,7 @@
                 let wonRound = false;
                 
                 if (nextVal === currentVal) {
-                    showMessage("YOU LOSE!", "You get nothing for a pair, not in this game!", "text-[#ff007f]");
+                    showMessage("YOU LOSE!", "You get nothing for a pair, not in this game!", "text-beraverPink");
                     return;
                 }
                 
@@ -500,13 +534,13 @@
                 if (wonRound) {
                     currentCardIndex++;
                     if (currentCardIndex === TOTAL_CARDS_IN_GAME - 1) {
-                        showMessage("WINNER!", "You played your cards right!", "text-[#4db8e8]");
+                        showMessage("WINNER!", "You played your cards right!", "text-beraverBlue");
                     } else {
                         setButtonsState(true);
                         playBeep(1200, 'sine', 0.1);
                     }
                 } else {
-                    showMessage("YOU LOSE!", `The card was ${nextCard.value.toLowerCase()}!`, "text-[#ff007f]");
+                    showMessage("YOU LOSE!", `The card was ${nextCard.value.toLowerCase()}!`, "text-beraverPink");
                 }
             }, 800); 
         }
@@ -546,14 +580,14 @@
             
             if (isKidsMode) {
                 labelKids.classList.remove('opacity-50', 'text-gray-500');
-                labelKids.classList.add('text-[#4db8e8]');
+                labelKids.classList.add('text-beraverBlue');
                 labelAdult.classList.add('opacity-50', 'text-gray-500');
-                labelAdult.classList.remove('text-[#ff007f]');
+                labelAdult.classList.remove('text-beraverPink');
             } else {
                 labelAdult.classList.remove('opacity-50', 'text-gray-500');
-                labelAdult.classList.add('text-[#ff007f]');
+                labelAdult.classList.add('text-beraverPink');
                 labelKids.classList.add('opacity-50', 'text-gray-500');
-                labelKids.classList.remove('text-[#4db8e8]');
+                labelKids.classList.remove('text-beraverBlue');
             }
 
             // Dump cached question and fetch a new one for the correct mode
