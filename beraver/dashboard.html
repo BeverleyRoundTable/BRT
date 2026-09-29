@@ -5,14 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BeRaver Live Drop Dashboard</title>
     
+    <!-- Preload BRT Custom Font -->
+    <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        heading: ['Eurostile', 'sans-serif'], 
+                        body: ['Open Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        beraverBlue: '#4db8e8',
+                        beraverPink: '#ff007f',
+                        beraverDark: '#1D1D1A',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
+        /* BRT Eurostile Font Injection */
+        @font-face {
+            font-family: 'Eurostile';
+            src: url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #000000;
-            color: white;
+            font-family: 'Open Sans', sans-serif;
+            background-color: #1D1D1A;
+            color: #FFFFFF;
             overflow: hidden; /* Lock screen for monitor display */
             user-select: none;
         }
@@ -21,13 +50,8 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            max-width: 200px;
+            max-width: 250px;
             z-index: 10;
-        }
-
-        .game-title {
-            font-family: 'Oswald', sans-serif;
-            text-shadow: 2px 4px 6px rgba(0,0,0,0.8);
         }
 
         .neon-text-blue {
@@ -57,26 +81,19 @@
         .donor-list::-webkit-scrollbar {
             display: none; /* Chrome/Safari */
         }
-
-        /* Number counting animation class */
-        .count-up {
-            transition: transform 0.1s ease-out;
-            transform: scale(1.1);
-            color: #ff007f;
-        }
     </style>
 </head>
 
-<body class="h-screen w-full flex flex-col relative bg-[#0a0a0a]">
+<body class="h-screen w-full flex flex-col relative bg-beraverDark">
 
-    <!-- Background Pattern from Cards Game -->
-    <div class="absolute inset-0 z-0 opacity-30" style="background-image: repeating-linear-gradient(45deg, #4db8e8 25%, transparent 25%, transparent 75%, #4db8e8 75%, #4db8e8), repeating-linear-gradient(45deg, #4db8e8 25%, #000000 25%, #000000 75%, #4db8e8 75%, #4db8e8); background-position: 0 0, 20px 20px; background-size: 40px 40px;"></div>
-    <div class="absolute inset-0 z-0 bg-black/80 backdrop-blur-sm"></div>
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 z-0 opacity-20" style="background-image: repeating-linear-gradient(45deg, #4db8e8 25%, transparent 25%, transparent 75%, #4db8e8 75%, #4db8e8), repeating-linear-gradient(45deg, #4db8e8 25%, #1D1D1A 25%, #1D1D1A 75%, #4db8e8 75%, #4db8e8); background-position: 0 0, 20px 20px; background-size: 40px 40px;"></div>
+    <div class="absolute inset-0 z-0 bg-beraverDark/85 backdrop-blur-sm"></div>
 
-    <!-- Logo & Test Button (Updated Z-Index) -->
-    <img src="https://github.com/BeverleyRoundTable/BRT/blob/main/icons/BERAVER.png?raw=true" alt="BeRaver Logo" class="brand-logo drop-shadow-2xl">
+    <!-- Logo & Test Button -->
+    <img src="https://brt-23f.pages.dev/images/BERAVER.png" alt="BeRaver Logo" class="brand-logo drop-shadow-2xl">
     
-    <button onclick="triggerDonationDrop('Ben Watts', 20.00, 'Keep the tunes coming!')" class="absolute top-6 right-6 z-50 bg-white/10 hover:bg-white/20 text-white text-sm font-bold py-2 px-4 rounded border border-white/30 transition-all cursor-pointer">
+    <button onclick="triggerDonationDrop('Ben Watts', 20.00, 'Keep the tunes coming!')" class="absolute top-6 right-6 z-50 bg-white/10 hover:bg-white/20 text-white font-body text-sm font-bold py-2 px-4 rounded-full border border-white/30 transition-all cursor-pointer shadow-[0_0_15px_rgba(255,255,255,0.1)]">
         Test Webhook Drop
     </button>
 
@@ -84,21 +101,21 @@
     <main class="relative z-10 flex-1 flex flex-col items-center justify-center w-full px-8 pb-12 pt-24">
         
         <!-- Massive Total Raised Section -->
-        <div class="w-full max-w-5xl bg-[#000000] rounded-3xl p-8 border-4 border-[#4db8e8] shadow-[0_0_50px_rgba(77,184,232,0.3)] flex flex-col items-center mb-8">
-            <h1 class="game-title text-4xl md:text-5xl text-gray-300 uppercase tracking-widest mb-2">Total Raised for Beverley Charities</h1>
-            <div id="total-display" class="game-title text-7xl md:text-[9rem] font-bold text-[#4db8e8] neon-text-blue transition-all duration-300">
+        <div class="w-full max-w-5xl bg-black/50 rounded-3xl p-8 border-4 border-beraverBlue shadow-[0_0_50px_rgba(77,184,232,0.3)] flex flex-col items-center mb-8 backdrop-blur-md">
+            <h1 class="font-heading font-black text-4xl md:text-5xl text-gray-300 uppercase tracking-widest mb-2">Total Raised for Beverley Charities</h1>
+            <div class="font-heading font-black text-7xl md:text-[9rem] text-beraverBlue neon-text-blue transition-all duration-300">
                 £<span id="total-amount">0</span>
             </div>
         </div>
 
         <!-- Recent Drops Feed -->
-        <div class="w-full max-w-5xl bg-[#000000] rounded-3xl p-6 border-4 border-[#ff007f] shadow-[0_0_40px_rgba(255,0,127,0.2)] flex flex-col">
-            <h2 class="game-title text-3xl text-[#ff007f] border-b-2 border-[#ff007f] pb-2 mb-4">Live Drops (Zeffy)</h2>
+        <div class="w-full max-w-5xl bg-black/50 rounded-3xl p-6 border-4 border-beraverPink shadow-[0_0_40px_rgba(255,0,127,0.2)] flex flex-col backdrop-blur-md">
+            <h2 class="font-heading font-black text-3xl text-beraverPink border-b-2 border-beraverPink pb-2 mb-4 uppercase tracking-wide">Live Drops (Zeffy)</h2>
             
-            <div id="donor-feed" class="donor-list flex flex-col gap-4">
+            <div id="donor-feed" class="donor-list flex flex-col gap-4 font-body">
                 <!-- Initial placeholder state -->
-                <div class="text-gray-500 text-xl font-bold text-center py-8">
-                    Awaiting incoming donations...
+                <div class="text-gray-500 text-xl font-bold text-center py-8" id="feed-placeholder">
+                    Listening for incoming drops...
                 </div>
             </div>
         </div>
@@ -106,49 +123,75 @@
     </main>
 
     <!-- Footer details -->
-    <footer class="absolute bottom-4 w-full text-center z-10 text-gray-500 font-bold tracking-widest text-sm uppercase">
+    <footer class="absolute bottom-4 w-full text-center z-10 text-gray-500 font-heading font-bold tracking-widest text-sm uppercase">
         Beverley Round Table • Est. 1950 • Powered by Zendure
     </footer>
 
     <!-- THE DROP OVERLAY (Hidden by default) -->
     <div id="drop-overlay" class="fixed inset-0 z-50 hidden flex-col items-center justify-center p-8 text-center">
-        <h1 class="game-title text-7xl md:text-9xl font-bold text-white uppercase tracking-widest drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] mb-4 scale-0 transition-transform duration-300 ease-out" id="drop-title">
+        <h1 class="font-heading font-black text-7xl md:text-9xl text-white uppercase tracking-widest drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] mb-4 scale-0 transition-transform duration-300 ease-out" id="drop-title">
             NEW DONATION!
         </h1>
         
-        <div id="drop-details" class="bg-black/80 border-4 border-white rounded-3xl p-12 shadow-2xl scale-0 transition-transform duration-500 delay-100 ease-out">
-            <p class="text-4xl md:text-5xl text-gray-300 font-bold mb-4">Incoming Drop From</p>
-            <p id="drop-name" class="game-title text-6xl md:text-8xl text-[#4db8e8] neon-text-blue mb-6">NAME</p>
-            <div class="inline-block bg-[#ff007f] text-white text-5xl md:text-7xl font-bold py-4 px-8 rounded-full shadow-[0_0_30px_rgba(255,0,127,0.8)] mb-6">
+        <div id="drop-details" class="bg-black/90 border-4 border-white rounded-3xl p-12 shadow-2xl scale-0 transition-transform duration-500 delay-100 ease-out">
+            <p class="font-heading font-bold text-4xl md:text-5xl text-gray-300 uppercase tracking-wider mb-4">Incoming Drop From</p>
+            <p id="drop-name" class="font-heading font-black text-6xl md:text-8xl text-beraverBlue neon-text-blue mb-6">NAME</p>
+            <div class="inline-block bg-beraverPink text-white font-heading font-black text-5xl md:text-7xl py-4 px-8 rounded-full shadow-[0_0_30px_rgba(255,0,127,0.8)] mb-6">
                 £<span id="drop-amount-text">0.00</span>
             </div>
-            <p id="drop-msg" class="text-2xl md:text-3xl text-gray-200 italic">"Message goes here"</p>
+            <p id="drop-msg" class="font-body font-bold text-2xl md:text-3xl text-gray-200 italic">"Message goes here"</p>
         </div>
     </div>
 
     <script>
-        // --- State ---
+        // ==========================================
+        // WAKELOCK (Screen Saver Prevention)
+        // ==========================================
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try {
+                if ("wakeLock" in navigator) {
+                    wakeLock = await navigator.wakeLock.request("screen");
+                    wakeLock.addEventListener("release", () => setTimeout(requestWakeLock, 2000));
+                    console.log("Wake Lock active: Screen will not sleep.");
+                }
+            } catch (err) {
+                console.warn("Wake Lock failed (interaction may be required):", err);
+            }
+        }
+        
+        // Re-request when tab becomes visible
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") requestWakeLock();
+        });
+        
+        // Attempt initial lock
+        requestWakeLock();
+
+
+        // ==========================================
+        // DASHBOARD STATE & AUDIO
+        // ==========================================
         let currentTotal = 0;
+        let lastDonationId = null;
+        let isInitialLoad = true;
+
         const totalAmountEl = document.getElementById('total-amount');
         const donorFeedEl = document.getElementById('donor-feed');
+        const feedPlaceholder = document.getElementById('feed-placeholder');
         const overlay = document.getElementById('drop-overlay');
         const overlayTitle = document.getElementById('drop-title');
         const overlayDetails = document.getElementById('drop-details');
 
-        // --- Synthesized Rave Airhorn Audio (Updated for Mobile) ---
-        let audioCtx; // Define it empty first
+        let audioCtx; 
 
         function playRaveHorn() {
             try {
-                // Only create the context once the user actually taps
                 if (!audioCtx) {
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
                     audioCtx = new AudioContext();
                 }
-                
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 
                 // Rapid stuttering rave horn effect
                 for(let i = 0; i < 4; i++) {
@@ -160,21 +203,20 @@
                         osc.frequency.setValueAtTime(300, audioCtx.currentTime);
                         osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.3);
                         
-                        gain.gain.setValueAtTime(0.3, audioCtx.currentTime); // Volume
+                        gain.gain.setValueAtTime(0.3, audioCtx.currentTime); 
                         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
                         
                         osc.connect(gain);
                         gain.connect(audioCtx.destination);
                         osc.start();
                         osc.stop(audioCtx.currentTime + 0.3);
-                    }, i * 150); // Stutter timing
+                    }, i * 150);
                 }
             } catch (e) {
-                console.warn("Mobile browser blocked audio autoplay, but visuals will continue.", e);
+                console.warn("Audio blocked, visually proceeding.", e);
             }
         }
 
-        // --- Core Functions ---
         function animateValue(obj, start, end, duration) {
             let startTimestamp = null;
             const step = (timestamp) => {
@@ -184,48 +226,46 @@
                 obj.innerHTML = current.toLocaleString();
                 if (progress < 1) {
                     window.requestAnimationFrame(step);
+                } else {
+                    obj.innerHTML = end.toLocaleString(); // Ensure final exact value
                 }
             };
             window.requestAnimationFrame(step);
         }
 
-        function triggerDonationDrop(name, amount, message) {
-            // 1. Play Audio
-            playRaveHorn();
-
-            // 2. Populate Overlay Data
-            document.getElementById('drop-name').innerText = name || "Anonymous Raver";
-            document.getElementById('drop-amount-text').innerText = parseFloat(amount).toFixed(2);
-            document.getElementById('drop-msg').innerText = message ? `"${message}"` : "";
-
-            // 3. Show Overlay & Strobe
-            overlay.classList.remove('hidden');
-            overlay.classList.add('flex', 'strobe-active');
-            
-            // Trigger popup animations
-            setTimeout(() => overlayTitle.classList.replace('scale-0', 'scale-100'), 50);
-            setTimeout(() => overlayDetails.classList.replace('scale-0', 'scale-100'), 150);
-
-            // 4. Update the Feed in the background
-            if (currentTotal === 0) donorFeedEl.innerHTML = ''; // Clear placeholder
+        // Helper to silently add drops to feed (used on initial load)
+        function addDonationToFeed(name, amount, message) {
+            if (feedPlaceholder) feedPlaceholder.style.display = 'none';
             
             const entry = document.createElement('div');
-            entry.className = 'flex justify-between items-center bg-[#1a1a1a] p-4 rounded-xl border border-gray-700 animate-[pulse_1s_ease-in-out]';
+            entry.className = 'flex justify-between items-center bg-black/60 p-4 rounded-xl border border-white/10 animate-[pulse_1s_ease-in-out]';
             entry.innerHTML = `
                 <div class="flex flex-col">
                     <span class="text-2xl font-bold text-white">${name || "Anonymous Raver"}</span>
                     <span class="text-gray-400 italic">${message ? `"${message}"` : ""}</span>
                 </div>
-                <div class="game-title text-4xl text-[#4db8e8]">£${parseFloat(amount).toFixed(2)}</div>
+                <div class="font-heading font-black text-4xl text-beraverBlue">£${parseFloat(amount).toFixed(2)}</div>
             `;
             donorFeedEl.insertBefore(entry, donorFeedEl.firstChild);
+        }
 
-            // 5. Update Total
-            const newTotal = currentTotal + parseFloat(amount);
-            animateValue(totalAmountEl, currentTotal, newTotal, 1000);
-            currentTotal = newTotal;
+        // Full cinematic drop for live donations
+        function triggerDonationDrop(name, amount, message) {
+            playRaveHorn();
 
-            // 6. Hide Overlay after 6 seconds
+            document.getElementById('drop-name').innerText = name || "Anonymous Raver";
+            document.getElementById('drop-amount-text').innerText = parseFloat(amount).toFixed(2);
+            document.getElementById('drop-msg').innerText = message ? `"${message}"` : "";
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex', 'strobe-active');
+            
+            setTimeout(() => overlayTitle.classList.replace('scale-0', 'scale-100'), 50);
+            setTimeout(() => overlayDetails.classList.replace('scale-0', 'scale-100'), 150);
+
+            addDonationToFeed(name, amount, message);
+
+            // Hide Overlay after 6 seconds
             setTimeout(() => {
                 overlayTitle.classList.replace('scale-100', 'scale-0');
                 overlayDetails.classList.replace('scale-100', 'scale-0');
@@ -233,38 +273,53 @@
                 setTimeout(() => {
                     overlay.classList.remove('flex', 'strobe-active');
                     overlay.classList.add('hidden');
-                }, 300); // Wait for scale down
+                }, 300);
             }, 6000);
         }
 
         // ==========================================
-        // CLOUDFLARE WORKER / ZEFFY INTEGRATION LOGIC
+        // ZEFFY LIVE POLLING
         // ==========================================
+        const WORKER_URL = "https://zeffywebhook.beverley247.workers.dev";
         
-        /* 
-        To make this live, your Cloudflare Worker should accept the Zeffy Webhook, 
-        and then this dashboard can poll that worker every 5 seconds for new drops.
-        
-        async function fetchLiveDrops() {
+        async function pollLatestDonation() {
             try {
-                // Replace with your Cloudflare Worker URL
-                const response = await fetch('https://your-worker-url.workers.dev/latest-drop');
+                const response = await fetch(WORKER_URL);
+                if (!response.ok) return;
+                
                 const data = await response.json();
                 
-                // If the worker returns a new donation ID we haven't seen yet:
-                if (data.id && data.id !== lastSeenDonationId) {
-                    lastSeenDonationId = data.id;
-                    triggerDonationDrop(data.name, data.amount, data.message);
+                // 1. Sync the total raised directly from the worker
+                if (typeof data.total === 'number') {
+                    if (currentTotal !== data.total) {
+                        animateValue(totalAmountEl, currentTotal, data.total, 1000);
+                        currentTotal = data.total;
+                    }
                 }
+                
+                // 2. Process new individual drops
+                if (data.id && data.id !== lastDonationId) {
+                    const donorName = data.name || "Anonymous Raver";
+                    const donorAmount = data.amount || 0;
+                    const donorMessage = data.message || "";
+
+                    if (!isInitialLoad) {
+                        triggerDonationDrop(donorName, donorAmount, donorMessage);
+                    } else {
+                        // Just seed the feed on page load without blowing the horns
+                        addDonationToFeed(donorName, donorAmount, donorMessage);
+                    }
+                    lastDonationId = data.id; 
+                }
+                isInitialLoad = false;
             } catch (error) {
-                console.error("Error fetching live drops:", error);
+                console.error("Worker fetch failed:", error);
             }
         }
-        
-        // Poll every 5 seconds
-        setInterval(fetchLiveDrops, 5000);
-        */
 
+        // Poll every 5 seconds
+        setInterval(pollLatestDonation, 5000);
+        pollLatestDonation(); 
     </script>
 </body>
 </html>
