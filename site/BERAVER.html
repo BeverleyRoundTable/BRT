@@ -275,18 +275,15 @@
     <script>
         const WORKER_URL = "https://zeffywebhook.beverley247.workers.dev";
         
-        let totalRaised = 0; // Starts at 0, builds purely from live webhooks
+        let totalRaised = 0;
         let lastDonationId = null;
+        let isInitialLoad = true;
 
         const raisedEl = document.getElementById('total-raised');
         const raisedContainer = document.getElementById('total-raised-container');
         const latestEl = document.getElementById('latest-donation');
 
-        raisedEl.innerText = totalRaised;
-
         function triggerDonationAlert(name, amount) {
-            totalRaised += amount;
-            
             // Pop effect on the total
             raisedEl.innerText = totalRaised;
             raisedContainer.classList.add('scale-110', 'text-beraverPink');
@@ -307,14 +304,20 @@
                 
                 const data = await response.json();
                 
-                // If there's a valid donation ID from the worker
+                // Sync total raised from worker KV
+                if (typeof data.total === 'number') {
+                    totalRaised = data.total;
+                    raisedEl.innerText = totalRaised;
+                }
+                
+                // If there's a new donation ID
                 if (data.id && data.id !== lastDonationId) {
-                    // On first page load, sync the ID silently so it doesn't replay old history
-                    if (lastDonationId !== null) {
+                    if (!isInitialLoad) {
                         triggerDonationAlert(data.name, data.amount);
                     }
                     lastDonationId = data.id; 
                 }
+                isInitialLoad = false;
             } catch (error) {
                 console.error("Worker fetch failed:", error);
             }
