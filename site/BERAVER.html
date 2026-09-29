@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeRaver Summer Festival | Beverley Round Table</title>
+    
+    <!-- Preload BRT Custom Font -->
+    <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        heading: ['Eurostile', 'sans-serif'], 
+                        body: ['Open Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        beraverBlue: '#4db8e8',
+                        beraverPink: '#ff007f',
+                        beraverDark: '#1D1D1A', /* Aligned with BRT Table Grey */
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* BRT Eurostile Font Injection */
+        @font-face {
+            font-family: 'Eurostile';
+            src: url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        body {
+            background-color: #1D1D1A;
+            color: #FFFFFF;
+        }
+        
+        .neon-text-blue {
+            text-shadow: 0 0 10px rgba(77, 184, 232, 0.7), 0 0 20px rgba(77, 184, 232, 0.5);
+        }
+        .neon-text-pink {
+            text-shadow: 0 0 10px rgba(255, 0, 127, 0.7), 0 0 20px rgba(255, 0, 127, 0.5);
+        }
+    </style>
+</head>
+<body class="font-body antialiased flex flex-col min-h-screen">
+
+    <!-- Navigation / Header (BRT Style) -->
+    <header class="fixed w-full top-0 z-50 bg-beraverDark/95 backdrop-blur-sm border-b border-white/10">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center h-20">
+            <div class="font-heading font-black text-2xl tracking-tighter text-white uppercase">
+                Beverley <span class="text-beraverBlue">Round Table</span>
+            </div>
+            <a href="#donate" class="font-heading uppercase font-bold text-sm text-beraverDark bg-beraverPink px-6 py-2 rounded-full hover:bg-white transition-all duration-200 transform hover:scale-105 shadow-[0_0_15px_rgba(255,0,127,0.5)]">
+                DONATE NOW
+            </a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex flex-col justify-center items-center text-center px-4 pt-20 relative overflow-hidden">
+        
+        <!-- Top 1/3 Looping Video Container -->
+        <div class="absolute top-0 left-0 w-full h-[35vh] md:h-[45vh] z-0 overflow-hidden">
+            <!-- Add 'playsinline' for iOS support, 'muted' is required for autoplay -->
+            <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-70">
+                <source src="https://your-hosting-provider.com/beraver-hero.webm" type="video/webm">
+                <source src="https://your-hosting-provider.com/beraver-hero.mp4" type="video/mp4">
+            </video>
+            <!-- Gradient to fade video seamlessly into the dark background -->
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-beraverDark/60 to-beraverDark"></div>
+        </div>
+
+        <!-- Decorative Glow -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-beraverBlue/10 blur-[120px] rounded-full z-0 pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col items-center mt-10 md:mt-20">
+            <!-- Logo replaced with GIF -->
+            <img src="https://your-hosting-provider.com/BERAVER.gif" alt="BeRaver Logo" class="w-full max-w-lg md:max-w-3xl mb-8 drop-shadow-2xl">
+            
+            <h1 class="text-4xl md:text-6xl font-heading font-black uppercase tracking-wide mb-6">
+                Clean Energy. <br class="md:hidden"><span class="text-beraverPink neon-text-pink">Loud Vibrations.</span>
+            </h1>
+            
+            <!-- BRT Style Glassmorphism Date Card -->
+            <div class="flex flex-col md:flex-row gap-6 text-lg md:text-xl font-bold bg-white/5 border border-white/10 hover:border-beraverBlue/50 transition-colors duration-300 px-8 py-6 rounded-3xl mb-10 backdrop-blur-sm">
+                <div class="flex items-center gap-3">
+                    <span class="text-beraverPink">📅</span>
+                    <span class="font-heading tracking-wide">Sunday, 06/06/27</span>
+                </div>
+                <div class="hidden md:block text-white/30">|</div>
+                <div class="flex items-center gap-3">
+                    <span class="text-beraverPink">⏰</span>
+                    <span class="font-heading tracking-wide">11:00 AM - 4:00 PM</span>
+                </div>
+                <div class="hidden md:block text-white/30">|</div>
+                <div class="flex items-center gap-3">
+                    <span class="text-beraverPink">📍</span>
+                    <span class="font-heading tracking-wide">Saturday Market</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Setup Section (BRT Style Cards) -->
+    <section id="whatson" class="py-24 bg-beraverDark relative border-t border-white/5">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-heading font-black mb-4 uppercase">Powered by <span class="text-beraverBlue neon-text-blue">Zendure</span></h2>
+                <p class="text-lg text-gray-400 max-w-2xl mx-auto">Experience a fully off-grid festival. No noisy generators, no fumes. Just pure energy and incredible sound.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-12 items-stretch">
+                <!-- Main Stage Card -->
+                <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-beraverBlue/50 transition-colors duration-300 group relative overflow-hidden flex flex-col">
+                    <div class="absolute top-0 right-0 bg-beraverBlue text-beraverDark font-heading font-bold text-sm px-4 py-1 rounded-bl-xl z-10 uppercase tracking-widest">The Main Stage</div>
+                    <h3 class="text-3xl font-heading font-black text-white mb-4 mt-2 uppercase">The Treo DJ Booth</h3>
+                    <p class="text-gray-400 mb-6 flex-grow">Our custom Mahindra Treo Tuk-Tuk transformed into a rolling DJ booth, pumping out classic dance anthems and driving basslines through heavy-duty JBL 320s.</p>
+                    <ul class="space-y-3 text-gray-300 text-sm font-semibold">
+                        <li class="flex items-center gap-2"><span class="text-beraverBlue">⚡</span> 100% powered by the Zendure SolarFlow</li>
+                        <li class="flex items-center gap-2"><span class="text-beraverBlue">🎵</span> Live DJ Peak Set from 1:00 PM - 3:00 PM</li>
+                    </ul>
+                </div>
+
+                <!-- Roaming Hub Card -->
+                <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-beraverPink/50 transition-colors duration-300 group relative overflow-hidden flex flex-col">
+                    <div class="absolute top-0 right-0 bg-beraverPink text-white font-heading font-bold text-sm px-4 py-1 rounded-bl-xl z-10 uppercase tracking-widest">The Roaming Hub</div>
+                    <h3 class="text-3xl font-heading font-black text-white mb-4 mt-2 uppercase">Zendure E-Cargo</h3>
+                    <p class="text-gray-400 mb-6 flex-grow">Catch our mobile interactive game station moving through the Saturday Market queues. Powered entirely by Zendure e-mobility.</p>
+                    <ul class="space-y-3 text-gray-300 text-sm font-semibold">
+                        <li class="flex items-center gap-2"><span class="text-beraverPink">🎤</span> Live wireless MC & JBL audio</li>
+                        <li class="flex items-center gap-2"><span class="text-beraverPink">🃏</span> Hosting the giant "Play Your Cards Right"</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>
