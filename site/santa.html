@@ -539,20 +539,108 @@ caches your custom fonts for a year, drastically speeding up load times:
             });
         }
 
-        async function fetchSleighRoutes() {
-            const container = document.getElementById('routes-container');
-            const loader = document.getElementById('routes-loader');
+      // NEW: Native Donations Renderer
+function renderDonations(donations, settings) {
+    const wrapper = document.querySelector('.ts-donations-wrapper');
+    if (!wrapper) return;
+
+    const currency = donations.currency ? String(donations.currency) : '£';
+    const target = parseFloat(donations.target) || 0;
+    const current = parseFloat(donations.total) || 0;
+    const hasTarget = target > 0;
+    const donateUrl = settings.donate_url ? String(settings.donate_url) : '';
+    const updated = donations.lastUpdatePretty ? String(donations.lastUpdatePretty) : 'Recently';
+
+    // Calculate percentage, capped between 0 and 100
+    const pct = hasTarget ? Math.max(0, Math.min((current / target) * 100, 100)) : 0;
+    
+    let html = `<div class="text-center">`;
+    
+    if (hasTarget) {
+        html += `
+            <h3 class="font-heading font-black text-2xl md:text-3xl uppercase text-white mb-6 tracking-wide">
+                Fundraiser <span class="text-brt-red">Target</span>
+            </h3>
             
-            try {
-                const response = await fetch(PROXY_URL);
-                if (!response.ok) throw new Error('Failed to load routes');
-                
-                const data = await response.json();
-                const routes = Array.isArray(data.routes) ? data.routes : [];
-                const sponsors = Array.isArray(data.sponsors) ? data.sponsors : [];
-                
-                // Remove loader
-                if(loader) loader.remove();
+            <!-- Progress Bar Track -->
+            <div class="w-full bg-black/60 border border-white/10 rounded-full h-8 overflow-hidden mb-4 shadow-inner">
+                <!-- Progress Bar Fill -->
+                <div id="brt-progress-fill" class="h-full bg-brt-red rounded-full w-0 transition-[width] duration-[1500ms] ease-out relative">
+                    <div class="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent"></div>
+                </div>
+            </div>
+            
+            <!-- Stats Mapping -->
+            <div class="flex justify-between items-center mb-6 px-2 font-heading">
+                <span class="text-brt-red font-black text-3xl md:text-4xl drop-shadow-md">${currency}${current.toLocaleString()}</span>
+                <span class="text-gray-400 font-bold text-xl md:text-2xl uppercase">OF ${currency}${target.toLocaleString()}</span>
+            </div>
+            
+            <p class="font-body text-sm text-gray-500 mb-8">Last updated: <span class="text-gray-300 font-semibold">${updated}</span></p>
+        `;
+    }
+
+    if (donateUrl) {
+        html += `
+            <a href="${donateUrl}" target="_blank" rel="noopener noreferrer" 
+               class="inline-flex items-center gap-3 font-heading uppercase font-bold text-lg bg-brt-red text-white px-10 py-4 rounded-full hover:bg-white hover:text-brt-red transition-all duration-300 transform hover:-translate-y-1 shadow-[0_10px_25px_rgba(211,28,28,0.4)]">
+                Donate Now <i class="fa-solid fa-gift"></i>
+            </a>
+        `;
+    }
+    
+    html += `</div>`;
+
+    // Dynamic Volunteer Banner Logic
+    const api = encodeURIComponent(GAS_API_URL);
+    const fallbackCrewUrl = `${FRAME_BASE}/crew?api=${api}`;
+    const volunteerLink = window.location.hostname.includes('beverleyroundtable.co.uk') 
+        ? 'https://crew.beverleyroundtable.co.uk' 
+        : fallbackCrewUrl;
+
+    html += `
+        <div class="mt-10 bg-black/40 border border-brt-red/20 rounded-[1.5rem] p-6 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all hover:bg-black/60 hover:border-brt-red/40">
+            <div class="text-center sm:text-left flex-1">
+                <h4 class="font-heading font-black text-xl text-brt-red uppercase mb-1">Help Keep The Sleigh Moving!</h4>
+                <p class="font-body text-sm text-gray-400 leading-relaxed">We need drivers, navigators, and bucket collectors. Volunteer as an elf this year!</p>
+            </div>
+            <a href="${volunteerLink}" target="_blank" rel="noopener noreferrer" class="font-heading uppercase font-bold text-sm border-2 border-brt-red text-brt-red px-6 py-3 rounded-full hover:bg-brt-red hover:text-white transition-all duration-300 whitespace-nowrap">
+                Volunteer Now <i class="fa-solid fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+    `;
+
+    wrapper.innerHTML = html;
+
+    // Trigger animation after DOM injection
+    if (hasTarget) {
+        setTimeout(() => {
+            const fill = document.getElementById('brt-progress-fill');
+            if (fill) fill.style.width = pct + '%';
+        }, 50);
+    }
+}
+
+        async function fetchSleighRoutes() {
+    const container = document.getElementById('routes-container');
+    const loader = document.getElementById('routes-loader');
+    
+    try {
+        const response = await fetch(PROXY_URL);
+        if (!response.ok) throw new Error('Failed to load routes');
+        
+        const data = await response.json();
+        
+        // --- ADD THIS LINE HERE ---
+        // Pass the donations and settings objects directly to the new renderer
+        renderDonations(data.donations || {}, data.settings || {});
+        // --------------------------
+
+        const routes = Array.isArray(data.routes) ? data.routes : [];
+        const sponsors = Array.isArray(data.sponsors) ? data.sponsors : [];
+        
+        // Remove loader
+        if(loader) loader.remove();
 
                 // Populate the Our Generous Sponsors strip from the same payload
                 renderSponsors(sponsors);
@@ -669,14 +757,7 @@ caches your custom fonts for a year, drastically speeding up load times:
                 blueprintFrame.onload = () => blueprintFrame.classList.remove('iframe-loading');
             }
 
-            // 5. Initialize Donations Script
-            window.BRT_DONATE_API = 'https://santaproxy.beverley247.workers.dev/?ttl=10&target=' + encodeURIComponent(GAS_API_URL);
-            const script = document.createElement('script');
-            script.src = 'https://brt-23f.pages.dev/sleigh/donations_v2.js';
-            script.onload = () => { if (typeof BRT_DONATE_INIT === 'function') BRT_DONATE_INIT(); };
-            document.head.appendChild(script);
-
-            // 6. Fetch the Routes list
+            // 5. Fetch the Routes list
             fetchSleighRoutes();
         });
 
