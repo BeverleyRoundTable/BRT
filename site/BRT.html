@@ -327,6 +327,22 @@ caches your custom fonts for a year, drastically speeding up load times:
         </section>
     </main>
 
+  <!-- Live Webhook Ticker Bar -->
+<section class="bg-black border-t border-white/10 py-4 relative z-20 overflow-hidden shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-brt-gold animate-pulse shadow-[0_0_10px_#FBAF33]"></div>
+            <span class="font-heading font-bold uppercase tracking-widest text-sm text-gray-300">Live Webhook</span>
+        </div>
+        <div class="font-heading font-black text-2xl text-white transition-transform duration-300" id="brt-total-raised-container">
+            £<span id="brt-total-raised">0</span> <span class="text-brt-gold text-lg">Raised</span>
+        </div>
+        <div id="brt-latest-donation" class="text-sm font-bold h-6 overflow-hidden transition-opacity duration-300 text-gray-400">
+            Listening for Zeffy drops...
+        </div>
+    </div>
+</section>
+
     <footer class="bg-black py-10 border-t border-white/10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
@@ -519,5 +535,64 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchEvents();
 });
     </script>
+
+  <script>
+    const WEBHOOK_WORKER_URL = "https://zeffywebhook.beverley247.workers.dev"; // Replace with your Worker URL if different
+    
+    let currentTotal = 0;
+    let recentDonationId = null;
+    let firstLoad = true;
+
+    // Use unique IDs based on the page context or generic selectors
+    const totalEl = document.getElementById('santa-total-raised') || document.getElementById('brt-total-raised');
+    const totalContainer = document.getElementById('santa-total-raised-container') || document.getElementById('brt-total-raised-container');
+    const latestEl = document.getElementById('santa-latest-donation') || document.getElementById('brt-latest-donation');
+    const accentColorClass = document.querySelector('link[href*="santa"]') ? 'text-brt-red' : 'text-brt-gold';
+
+    function fireDonationAlert(supporterName, donationAmount) {
+        if (totalEl && totalContainer) {
+            totalEl.innerText = currentTotal;
+            totalContainer.classList.add('scale-110', accentColorClass);
+            setTimeout(() => totalContainer.classList.remove('scale-110', accentColorClass), 400);
+        }
+
+        if (latestEl) {
+            latestEl.style.opacity = 0;
+            setTimeout(() => {
+                latestEl.innerHTML = `⚡ NEW: <span class="text-white">${supporterName}</span> donated <span class="${accentColorClass} font-bold">£${donationAmount}</span>!`;
+                latestEl.style.opacity = 1;
+            }, 300);
+        }
+    }
+
+    async function pollWebhookFeed() {
+        try {
+            const res = await fetch(WEBHOOK_WORKER_URL);
+            if (!res.ok) return;
+            
+            const payload = await res.json();
+            
+            if (typeof payload.total === 'number' && totalEl) {
+                currentTotal = payload.total;
+                totalEl.innerText = currentTotal;
+            }
+            
+            if (payload.id && payload.id !== recentDonationId) {
+                if (!firstLoad) {
+                    fireDonationAlert(payload.name || 'Supporter', payload.amount || 0);
+                }
+                recentDonationId = payload.id; 
+            }
+            firstLoad = false;
+        } catch (err) {
+            console.error("Webhook polling error:", err);
+        }
+    }
+
+    // Poll every 5 seconds
+    setInterval(pollWebhookFeed, 5000);
+    pollWebhookFeed();
+</script>
+  
 </body>
 </html>
