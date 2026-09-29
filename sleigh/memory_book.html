@@ -546,7 +546,12 @@
       }
 
       try {
-        // Fetch Sleigh Name
+        const currentYear = new Date().getFullYear();
+        
+        // ⭐ OPTIMIZATION: Fire the gallery fetch immediately, don't wait for the years list
+        loadGallery(currentYear);
+
+        // Fetch Sleigh Name in background
         fetch(`${apiUrl}${sep}function=getRoutes`).then(r => r.json()).then(data => {
             if(data && data.settings) {
                 try { applyTheme(data.settings); saveTheme(apiUrl, data.settings.primary_color); } catch (e) { console.warn('Theme not applied:', e); }
@@ -556,26 +561,28 @@
             }
         }).catch(e => { subtext.textContent = "Magical moments captured by you!"; });
 
-        // Fetch Available Years
-        const yearRes = await fetch(`${apiUrl}${sep}function=getMemoryYears`);
-        const availableYears = await yearRes.json();
-        
-        if (availableYears.length > 0) {
-          availableYears.forEach(y => {
-            const opt = document.createElement('option');
-            opt.value = y;
-            opt.textContent = y;
-            yearSelect.appendChild(opt);
-          });
-          
-          // Only show the time machine if there's more than 1 year!
-          if (availableYears.length > 1) {
-             timeMachineBox.style.display = 'inline-flex';
-          }
-          
-          // Load the newest year by default
-          loadGallery(availableYears[0]);
-        }
+        // Fetch Available Years in background (No 'await')
+        fetch(`${apiUrl}${sep}function=getMemoryYears`).then(r => r.json()).then(availableYears => {
+            if (availableYears.length > 0) {
+              availableYears.forEach(y => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                yearSelect.appendChild(opt);
+              });
+              
+              if (availableYears.length > 1) {
+                 timeMachineBox.style.display = 'inline-flex';
+              }
+              
+              // If the newest year ISN'T the current year, correct the display
+              if (availableYears[0] !== currentYear && !yearSelect.hasAttribute('data-loaded')) {
+                  yearSelect.value = availableYears[0];
+                  loadGallery(availableYears[0]);
+              }
+              yearSelect.setAttribute('data-loaded', 'true');
+            }
+        });
         
         // Listen for year changes
         yearSelect.addEventListener('change', (e) => {
