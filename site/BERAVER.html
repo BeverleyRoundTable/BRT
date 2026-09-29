@@ -48,26 +48,55 @@
         .neon-text-pink {
             text-shadow: 0 0 10px rgba(255, 0, 127, 0.7), 0 0 20px rgba(255, 0, 127, 0.5);
         }
+
+        /* Electric Pulse Animation */
+        @keyframes pulse-travel {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        .electric-separator {
+            position: relative;
+            width: 100%;
+            height: 2px;
+            background: rgba(255,255,255,0.05);
+            overflow: hidden;
+            margin: 4rem 0;
+            border-radius: 2px;
+        }
+        .electric-pulse {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #4db8e8, #ff007f, transparent);
+            box-shadow: 0 0 15px #4db8e8, 0 0 20px #ff007f;
+            animation: pulse-travel 3s infinite linear;
+        }
+        
     </style>
 </head>
 <body class="font-body antialiased flex flex-col min-h-screen">
 
-    <!-- Navigation / Header -->
-<header class="fixed w-full top-0 z-50 bg-beraverDark/95 backdrop-blur-sm border-b border-white/10">
-    <div class="container mx-auto px-6 py-4 flex justify-between items-center h-20">
+    <header class="fixed w-full top-0 z-50 bg-beraverDark/95 backdrop-blur-sm border-b border-white/10">
+    <div class="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center h-20">
         
-        <!-- Updated Top Left Logo & Text -->
+        <!-- Logo -->
         <a href="#" class="flex items-center gap-3 group flex-shrink-0">
-            <!-- Pulling the logo directly from your main site's assets -->
             <img src="https://brt-23f.pages.dev/icons/BRTLogo.png" alt="BRT Logo" class="w-10 h-10 md:w-12 md:h-12 object-contain transition-transform duration-300 group-hover:scale-105">
-            <div class="font-heading font-black text-xl md:text-2xl tracking-tighter text-white uppercase">
+            <div class="hidden md:block font-heading font-black text-xl md:text-2xl tracking-tighter text-white uppercase">
                 Beverley <span class="text-beraverBlue">Round Table</span>
             </div>
         </a>
 
+        <!-- Sticky Anchors -->
+        <nav class="flex gap-4 md:gap-8 font-heading font-bold text-xs md:text-sm tracking-widest uppercase">
+            <a href="#whatson" class="text-gray-300 hover:text-beraverBlue transition-colors">What's On</a>
+            <a href="#funzone" class="text-gray-300 hover:text-beraverPink transition-colors">Fun Zone</a>
+        </nav>
+
         <!-- Donate Button -->
-        <a href="https://donate.beverleyroundtable.co.uk" target="_blank" rel="noopener noreferrer" class="font-heading uppercase font-bold text-sm text-beraverDark bg-beraverPink px-6 py-2 rounded-full hover:bg-white transition-all duration-200 transform hover:scale-105 shadow-[0_0_15px_rgba(255,0,127,0.5)]">
-            DONATE NOW
+        <a href="https://donate.beverleyroundtable.co.uk" target="_blank" rel="noopener noreferrer" class="font-heading uppercase font-bold text-xs md:text-sm text-beraverDark bg-beraverPink px-4 md:px-6 py-2 rounded-full hover:bg-white transition-all duration-200 transform hover:scale-105 shadow-[0_0_15px_rgba(255,0,127,0.5)] whitespace-nowrap">
+            DONATE
         </a>
     </div>
 </header>
@@ -149,6 +178,14 @@
             </div>
         </div>
 
+        <!-- Animated Electric Separator -->
+            <div class="electric-separator">
+                <div class="electric-pulse"></div>
+            </div>
+
+            <!-- RT Marketplace & Fun Zone Header -->
+            <div id="funzone" class="text-center mb-16 scroll-mt-24">
+                
         <!-- RT Marketplace & Fun Zone Header -->
             <div class="text-center mt-24 mb-16">
                 <h2 class="text-4xl md:text-5xl font-heading font-black mb-4 uppercase">The BeRaver <span class="text-beraverPink neon-text-pink">Fun Zone</span></h2>
@@ -190,15 +227,39 @@
         
     </section>
 
+    <!-- Live Donation Ticker -->
+    <section class="bg-black border-t border-white/10 py-4 relative z-20 overflow-hidden shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+        <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-red-600 animate-pulse shadow-[0_0_10px_red]"></div>
+                <span class="font-heading font-bold uppercase tracking-widest text-sm text-gray-300">Live Webhook</span>
+            </div>
+            <div class="font-heading font-black text-2xl text-white transition-transform duration-300" id="total-raised-container">
+                £<span id="total-raised">0</span> <span class="text-beraverBlue text-lg">Raised Today</span>
+            </div>
+            <div id="latest-donation" class="text-sm font-bold h-6 overflow-hidden transition-opacity duration-300 text-gray-400">
+                Listening for Zeffy drops...
+            </div>
+        </div>
+    </section>
+
     <!-- Footer / CTA Section -->
-    <footer id="donate" class="bg-beraverDark border-t border-white/10 py-16">
+    <footer id="donate" class="bg-beraverDark py-16">
         <div class="container mx-auto px-6 text-center">
             <h2 class="text-3xl md:text-4xl font-heading font-black mb-6 uppercase">Support Your Local Community</h2>
-            <p class="text-gray-400 max-w-xl mx-auto mb-8 text-lg">Can't make the event but want to support Beverley Round Table? Drop a digital donation. Every penny helps us fund local charities and causes.</p>
+            <p class="text-gray-400 max-w-xl mx-auto mb-10 text-lg">Can't make the event but want to support Beverley Round Table? Drop a digital donation, or step up and volunteer for a shift on the day.</p>
             
-            <a href="https://donate.beverleyroundtable.co.uk" target="_blank" rel="noopener noreferrer" class="inline-block bg-beraverBlue hover:bg-[#3ba4d4] text-beraverDark font-heading font-black px-8 py-4 rounded-full text-xl uppercase transition-all shadow-[0_0_20px_rgba(77,184,232,0.4)] hover:shadow-[0_0_30px_rgba(77,184,232,0.6)] transform hover:-translate-y-1">
-                Donate Online Now
-            </a>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <!-- Donate Link -->
+                <a href="https://donate.beverleyroundtable.co.uk" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-beraverBlue hover:bg-[#3ba4d4] text-beraverDark font-heading font-black px-8 py-4 rounded-full text-xl uppercase transition-all shadow-[0_0_20px_rgba(77,184,232,0.4)] hover:shadow-[0_0_30px_rgba(77,184,232,0.6)] transform hover:-translate-y-1">
+                    Donate Online Now
+                </a>
+                
+                <!-- Volunteer CTA -->
+                <a href="mailto:beverley247@roundtable.org.uk?subject=Volunteer%20-%20BeRaver%20Festival" class="w-full sm:w-auto bg-transparent border-2 border-beraverPink text-white hover:bg-beraverPink font-heading font-black px-8 py-3.5 rounded-full text-xl uppercase transition-all hover:shadow-[0_0_20px_rgba(255,0,127,0.5)] transform hover:-translate-y-1">
+                    Join the Crew
+                </a>
+            </div>
             
             <div class="mt-12 text-sm text-gray-500 font-body">
                 <p>&copy; 2026 Beverley Round Table. All rights reserved.</p>
@@ -206,6 +267,44 @@
             </div>
         </div>
     </footer>
+
+    <!-- Ticker JS Logic -->
+    <script>
+        // Placeholder logic for Cloudflare / Zeffy Webhooks
+        let totalRaised = 120;
+        const raisedEl = document.getElementById('total-raised');
+        const raisedContainer = document.getElementById('total-raised-container');
+        const latestEl = document.getElementById('latest-donation');
+
+        raisedEl.innerText = totalRaised;
+
+        function triggerDonationAlert(name, amount) {
+            totalRaised += amount;
+            
+            // Pop effect on the total
+            raisedEl.innerText = totalRaised;
+            raisedContainer.classList.add('scale-110', 'text-beraverPink');
+            setTimeout(() => raisedContainer.classList.remove('scale-110', 'text-beraverPink'), 400);
+
+            // Update ticker text
+            latestEl.style.opacity = 0;
+            setTimeout(() => {
+                latestEl.innerHTML = `⚡ NEW: <span class="text-white">${name}</span> dropped <span class="text-beraverPink neon-text-pink">£${amount}</span>!`;
+                latestEl.style.opacity = 1;
+            }, 300);
+        }
+
+        // Simulate incoming webhook data for demonstration
+        setInterval(() => {
+            if(Math.random() > 0.6) {
+                const names = ["Local Raver", "Smith Family", "BRT Supporter", "Anonymous", "Bass Head"];
+                const amounts = [5, 10, 20, 50];
+                const randomName = names[Math.floor(Math.random() * names.length)];
+                const randomAmount = amounts[Math.floor(Math.random() * amounts.length)];
+                triggerDonationAlert(randomName, randomAmount);
+            }
+        }, 8000);
+    </script>
 
 </body>
 </html>
