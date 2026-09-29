@@ -273,8 +273,11 @@
 
     <!-- Ticker JS Logic -->
     <script>
-        // Placeholder logic for Cloudflare / Zeffy Webhooks
-        let totalRaised = 120;
+        const WORKER_URL = "https://zeffywebhook.beverley247.workers.dev";
+        
+        let totalRaised = 120; // Set this to any offline starting total if needed
+        let lastDonationId = null;
+
         const raisedEl = document.getElementById('total-raised');
         const raisedContainer = document.getElementById('total-raised-container');
         const latestEl = document.getElementById('latest-donation');
@@ -297,16 +300,29 @@
             }, 300);
         }
 
-        // Simulate incoming webhook data for demonstration
-        setInterval(() => {
-            if(Math.random() > 0.6) {
-                const names = ["Local Raver", "Smith Family", "BRT Supporter", "Anonymous", "Bass Head"];
-                const amounts = [5, 10, 20, 50];
-                const randomName = names[Math.floor(Math.random() * names.length)];
-                const randomAmount = amounts[Math.floor(Math.random() * amounts.length)];
-                triggerDonationAlert(randomName, randomAmount);
+        async function pollLatestDonation() {
+            try {
+                const response = await fetch(WORKER_URL);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                
+                // Trigger alert if it's a new donation id
+                if (data.id && data.id !== lastDonationId) {
+                    // Prevent it from popping the very first time the page loads
+                    if (lastDonationId !== null) {
+                        triggerDonationAlert(data.name, data.amount);
+                    }
+                    lastDonationId = data.id; 
+                }
+            } catch (error) {
+                console.error("Worker fetch failed:", error);
             }
-        }, 8000);
+        }
+
+        // Poll every 5 seconds
+        setInterval(pollLatestDonation, 5000);
+        pollLatestDonation(); 
     </script>
 
 </body>
