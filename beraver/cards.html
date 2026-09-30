@@ -354,7 +354,8 @@
             
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 4000); 
+                // Increased timeout to 12 seconds because Gemini + Apps Script cold starts take 5-8 seconds
+                const timeoutId = setTimeout(() => controller.abort(), 12000); 
 
                 // Append the mode to the Apps Script URL
                 const fetchUrl = `${APPS_SCRIPT_URL}?mode=${isKidsMode ? 'kids' : 'adult'}`;
@@ -372,7 +373,7 @@
                     throw new Error("Invalid response format");
                 }
             } catch (error) {
-                console.warn("Background API fetch failed, loading offline fallback.");
+                console.warn("Background API fetch failed, loading offline fallback.", error);
                 nextQuestionData = getFallbackQuestion(); 
             } finally {
                 isFetching = false;
@@ -425,11 +426,22 @@
                 `;
             }
             
-            // 3. Load the new question
+            // 3. Show Loading Indicator while waiting for Gemini
+            document.getElementById('loading-indicator').classList.remove('hidden');
+
+            // 4. Wait for background fetch to finish if it's still running
+            while (isFetching) {
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            // 5. Hide Loading Indicator
+            document.getElementById('loading-indicator').classList.add('hidden');
+            
+            // 6. Load the new question
             if (nextQuestionData) {
                 displayQuestionData(nextQuestionData);
                 nextQuestionData = null; 
-                preFetchQuestion(); 
+                preFetchQuestion(); // queue up the next one
             } else {
                 displayQuestionData(getFallbackQuestion());
                 preFetchQuestion();
