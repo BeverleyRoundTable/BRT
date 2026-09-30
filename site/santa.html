@@ -842,14 +842,15 @@ function renderDonations(donations, settings) {
     }
 
     // Silently log EVERYTHING to Google Sheets
-    if (payloadLabel) {
+if (payloadLabel) {
     fetch(WEB_APP_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ sponsorName: payloadLabel })
+        method: 'POST',
+        mode: 'no-cors',
+        keepalive: true, // Forces the browser to finish the request in the background
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ sponsorName: payloadLabel })
     }).catch(err => console.error("Tracking failed"));
-    }
+}
     });
 
     });
