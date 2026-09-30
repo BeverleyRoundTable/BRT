@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Updated viewport to disable mobile auto-zoom on tap -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>BERAVER Crew Sign-Up</title>
     
     <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
@@ -38,6 +39,8 @@
         body {
             background-color: #1D1D1A;
             color: #FFFFFF;
+            /* Prevents double-tap to zoom behavior globally */
+            touch-action: manipulation; 
         }
         
         .neon-text-blue { text-shadow: 0 0 10px rgba(77, 184, 232, 0.7), 0 0 20px rgba(77, 184, 232, 0.5); }
@@ -58,55 +61,59 @@
         select option { background-color: #1D1D1A; color: white; }
     </style>
 </head>
-<body class="font-body antialiased min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+<!-- Reduced outer padding on mobile (p-4) to allow more width -->
+<body class="font-body antialiased min-h-screen flex items-center justify-center p-4 md:p-6 relative overflow-hidden">
 
     <!-- Decorative Glow Background -->
     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-beraverBlue/5 blur-[150px] rounded-full z-0 pointer-events-none"></div>
 
-    <div class="w-full max-w-xl relative z-10 my-8">
+    <!-- Removed my-8 for true flex centering -->
+    <div class="w-full max-w-xl relative z-10">
         
-        <header class="text-center mb-10 flex flex-col items-center">
-            <!-- BeRaver Logo -->
-            <img src="https://brt-23f.pages.dev/images/BERAVER.png" alt="BeRaver Logo" class="w-64 md:w-80 mb-8 drop-shadow-[0_0_15px_rgba(77,184,232,0.4)]">
+        <header class="text-center mb-6 md:mb-10 flex flex-col items-center">
+            <!-- Scaled down logo slightly on mobile so it fits on screen -->
+            <img src="https://brt-23f.pages.dev/images/BERAVER.png" alt="BeRaver Logo" class="w-48 md:w-64 mb-6 drop-shadow-[0_0_15px_rgba(77,184,232,0.4)]">
             
-            <h1 class="text-4xl md:text-5xl font-heading font-black uppercase tracking-wide mb-2">
+            <h1 class="text-3xl md:text-5xl font-heading font-black uppercase tracking-wide mb-2">
                 JOIN THE <span class="text-beraverBlue neon-text-blue">CREW</span>
             </h1>
-            <p class="text-gray-400 text-lg">Volunteer Sign-Up</p>
+            <p class="text-gray-400 text-base md:text-lg">Volunteer Sign-Up</p>
         </header>
 
-        <div class="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-3xl shadow-2xl">
+        <!-- Reduced inner padding on mobile (p-5) to maximize input width -->
+        <div class="bg-white/5 backdrop-blur-md border border-white/10 p-5 md:p-8 rounded-3xl shadow-2xl">
             
-            <form id="volunteerForm" onsubmit="submitForm(event)" class="space-y-6">
+            <form id="volunteerForm" onsubmit="submitForm(event)" class="space-y-5 md:space-y-6">
                 
+                <!-- ALL INPUTS updated to text-base (16px) to stop iOS/Android auto-zoom -->
                 <div>
                     <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Full Name</label>
                     <input type="text" id="volName" required placeholder="e.g. John Smith" 
-                           class="glass-input w-full px-4 py-3 rounded-xl font-body text-sm placeholder-gray-500">
+                           class="glass-input w-full px-4 py-3 rounded-xl font-body text-base placeholder-gray-500">
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
                     <div>
                         <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Phone</label>
                         <input type="tel" id="volPhone" required placeholder="07..." 
-                               class="glass-input w-full px-4 py-3 rounded-xl font-body text-sm placeholder-gray-500">
+                               class="glass-input w-full px-4 py-3 rounded-xl font-body text-base placeholder-gray-500">
                     </div>
                     <div>
                         <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Email</label>
                         <input type="email" id="volEmail" required placeholder="name@example.com" 
-                               class="glass-input w-full px-4 py-3 rounded-xl font-body text-sm placeholder-gray-500">
+                               class="glass-input w-full px-4 py-3 rounded-xl font-body text-base placeholder-gray-500">
                     </div>
                 </div>
 
                 <div>
                     <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Organisation (Optional)</label>
                     <input type="text" id="volOrg" placeholder="e.g. Scouts, Guides, or leave blank" 
-                           class="glass-input w-full px-4 py-3 rounded-xl font-body text-sm placeholder-gray-500">
+                           class="glass-input w-full px-4 py-3 rounded-xl font-body text-base placeholder-gray-500">
                 </div>
 
                 <div>
                     <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Preferred Role</label>
-                    <select id="volRole" required class="glass-input w-full px-4 py-3 rounded-xl font-body text-sm cursor-pointer">
+                    <select id="volRole" required class="glass-input w-full px-4 py-3 rounded-xl font-body text-base cursor-pointer">
                         <option value="">Select an assignment...</option>
                         <option value="Any">General Crew (Put me anywhere!)</option>
                         <option value="Bucket Collection">Bucket Collection / Fundraiser</option>
@@ -117,15 +124,15 @@
 
                 <div class="pt-4 mt-6 border-t border-white/10">
                     <label class="flex items-start gap-4 cursor-pointer group">
-                        <input type="checkbox" required class="mt-1 w-5 h-5 accent-beraverPink bg-white/10 border-white/20 rounded cursor-pointer">
+                        <input type="checkbox" required class="mt-1 flex-shrink-0 w-5 h-5 accent-beraverPink bg-white/10 border-white/20 rounded cursor-pointer">
                         <span class="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
-                            I agree to volunteer for the festival shift and follow the safety instructions and guidance provided by the Round Table organizers.
+                            I agree to volunteer for the festival shift and follow the safety instructions and guidance provided by Beverley Round Table organisers.
                         </span>
                     </label>
                 </div>
 
                 <button type="submit" id="submitBtn" 
-                        class="w-full mt-8 bg-beraverPink hover:bg-white text-beraverDark font-heading font-black px-8 py-4 rounded-xl text-xl uppercase transition-all shadow-[0_0_15px_rgba(255,0,127,0.4)] hover:shadow-[0_0_25px_rgba(255,255,255,0.6)] transform hover:-translate-y-1">
+                        class="w-full mt-6 bg-beraverPink hover:bg-white text-beraverDark font-heading font-black px-8 py-4 rounded-xl text-lg md:text-xl uppercase transition-all shadow-[0_0_15px_rgba(255,0,127,0.4)] hover:shadow-[0_0_25px_rgba(255,255,255,0.6)] transform hover:-translate-y-1">
                     Sign Up Now
                 </button>
                 
@@ -135,7 +142,6 @@
     </div>
 
     <script>
-        // REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
         const API_URL = "https://script.google.com/macros/s/YOUR_ACTUAL_SCRIPT_ID/exec";
 
         async function submitForm(e) {
