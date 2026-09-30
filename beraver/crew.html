@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeRaver Crew Sign-Up</title>
+    
+    <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        heading: ['Eurostile', 'sans-serif'], 
+                        body: ['Open Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        beraverBlue: '#4db8e8',
+                        beraverPink: '#ff007f',
+                        beraverDark: '#1D1D1A',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @font-face {
+            font-family: 'Eurostile';
+            src: url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        body {
+            background-color: #1D1D1A;
+            color: #FFFFFF;
+        }
+        
+        .neon-text-blue { text-shadow: 0 0 10px rgba(77, 184, 232, 0.7), 0 0 20px rgba(77, 184, 232, 0.5); }
+        .neon-text-pink { text-shadow: 0 0 10px rgba(255, 0, 127, 0.7), 0 0 20px rgba(255, 0, 127, 0.5); }
+        
+        .glass-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus {
+            outline: none;
+            border-color: #ff007f;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        select option { background-color: #1D1D1A; color: white; }
+    </style>
+</head>
+<body class="font-body antialiased min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+
+    <!-- Decorative Glow Background -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-beraverBlue/5 blur-[150px] rounded-full z-0 pointer-events-none"></div>
+
+    <div class="w-full max-w-xl relative z-10 my-8">
+        
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-heading font-black uppercase tracking-wide mb-2">
+                JOIN THE <span class="text-beraverBlue neon-text-blue">CREW</span>
+            </h1>
+            <p class="text-gray-400 text-lg">BeRaver Summer Festival Volunteer Sign-Up</p>
+        </header>
+
+        <div class="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-3xl shadow-2xl">
+            
+            <form id="volunteerForm" onsubmit="submitForm(event)" class="space-y-6">
+                
+                <div>
+                    <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Full Name</label>
+                    <input type="text" id="volName" required placeholder="e.g. John Smith" 
+                           class="glass-input w-full px-4 py-3 rounded-xl font-body text-sm placeholder-gray-500">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Phone</label>
+                        <input type="tel" id="volPhone" required placeholder="07..." 
+                               class="glass-input w-full px-4 py-3 rounded-xl font-body text-sm placeholder-gray-500">
+                    </div>
+                    <div>
+                        <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Email</label>
+                        <input type="email" id="volEmail" required placeholder="name@example.com" 
+                               class="glass-input w-full px-4 py-3 rounded-xl font-body text-sm placeholder-gray-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Organisation (Optional)</label>
+                    <input type="text" id="volOrg" placeholder="e.g. Scouts, Guides, or leave blank" 
+                           class="glass-input w-full px-4 py-3 rounded-xl font-body text-sm placeholder-gray-500">
+                </div>
+
+                <div>
+                    <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Preferred Role</label>
+                    <select id="volRole" required class="glass-input w-full px-4 py-3 rounded-xl font-body text-sm cursor-pointer">
+                        <option value="">Select an assignment...</option>
+                        <option value="Any">General Crew (Put me anywhere!)</option>
+                        <option value="Bucket Collection">Bucket Collection / Fundraiser</option>
+                        <option value="Games Operator">Games Operator (Crack the Safe, Tombola)</option>
+                        <option value="Stall Assistant">Stall Assistant (Boba, Candy Floss)</option>
+                    </select>
+                </div>
+
+                <div class="pt-4 mt-6 border-t border-white/10">
+                    <label class="flex items-start gap-4 cursor-pointer group">
+                        <input type="checkbox" required class="mt-1 w-5 h-5 accent-beraverPink bg-white/10 border-white/20 rounded cursor-pointer">
+                        <span class="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                            I agree to volunteer for the festival shift and follow the safety instructions and guidance provided by the Round Table organizers.
+                        </span>
+                    </label>
+                </div>
+
+                <button type="submit" id="submitBtn" 
+                        class="w-full mt-8 bg-beraverPink hover:bg-white text-beraverDark font-heading font-black px-8 py-4 rounded-xl text-xl uppercase transition-all shadow-[0_0_15px_rgba(255,0,127,0.4)] hover:shadow-[0_0_25px_rgba(255,255,255,0.6)] transform hover:-translate-y-1">
+                    Sign Up Now
+                </button>
+                
+                <div id="statusMessage" class="hidden text-center mt-4 font-bold text-sm"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+        async function submitForm(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const status = document.getElementById('statusMessage');
+            
+            btn.innerText = "TRANSMITTING...";
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            status.classList.add('hidden');
+
+            const payload = {
+                name: document.getElementById('volName').value,
+                phone: document.getElementById('volPhone').value,
+                email: document.getElementById('volEmail').value,
+                org: document.getElementById('volOrg').value,
+                role: document.getElementById('volRole').value,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                // In production, swap this to fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+                console.log("Sending payload to Google Sheet:", payload);
+                
+                // Simulate network request
+                await new Promise(r => setTimeout(r, 1200)); 
+
+                status.innerText = "You're on the list! We'll be in touch with details soon.";
+                status.className = "text-center mt-4 font-bold text-sm text-green-400 neon-text-blue block";
+                document.getElementById('volunteerForm').reset();
+                
+            } catch (err) {
+                status.innerText = "Connection failed. Please try again.";
+                status.className = "text-center mt-4 font-bold text-sm text-red-400 block";
+            } finally {
+                btn.innerText = "SIGN UP NOW";
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
+    </script>
+</body>
+</html>
