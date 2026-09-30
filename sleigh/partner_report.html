@@ -205,7 +205,7 @@
     </div>
     <div class="card">
       <div class="number gold" id="valCTR">0.0%</div>
-      <div class="subtext">Clicks ÷ Views Ratio</div>
+      <div class="subtext" id="valCTRBreakdown">Clicks ÷ Views Ratio</div>
       <div class="label">Engagement Rate</div>
     </div>
   </div>
@@ -235,9 +235,11 @@
           logoImg.src = data.logoUrl;
         }
 
-        // Clicks Population
+       // Clicks Population
         document.getElementById('valClicks').innerText = (data.sponsorClicks || 0).toLocaleString();
-        document.getElementById('valClicksBreakdown').innerText = `Site: ${data.carrdClicks || 0} | Tracker Map: ${data.trackerClicks || 0}`;
+        const siteC = data.carrdClicks || 0;
+        const appC = data.trackerClicks || 0;
+        document.getElementById('valClicksBreakdown').innerText = `Site: ${siteC} | Tracker Map: ${appC}`;
         
         // Split Views Logic Applied Here
         document.getElementById('valViews').innerText = (data.totalViews || 0).toLocaleString();
@@ -250,9 +252,31 @@
         document.getElementById('valRoute').innerText = data.popularRoute || 'TBC';
         document.getElementById('valDevice').innerText = data.deviceSplit || '0%';
 
-        // True CTR Calculation (Combined Clicks / Combined Views)
-        const ctr = data.totalViews > 0 ? ((data.sponsorClicks / data.totalViews) * 100).toFixed(2) : "0.00";
-        document.getElementById('valCTR').innerText = `${ctr}%`;
+        // ----------------------------------------------------
+        // TRUE ISOLATED ENGAGEMENT RATE (CTR) LOGIC
+        // ----------------------------------------------------
+        const siteCTR = siteV > 0 ? ((siteC / siteV) * 100).toFixed(2) : "0.00";
+        const appCTR = appV > 0 ? ((appC / appV) * 100).toFixed(2) : "0.00";
+
+        const ctrCard = document.getElementById('valCTR');
+        const ctrSubtext = document.getElementById('valCTRBreakdown');
+
+        // 1. Sponsor is ONLY on the Main Site (Build Partners)
+        if (siteC > 0 && appC === 0) {
+            ctrCard.innerText = `${siteCTR}%`;
+            ctrSubtext.innerText = `Based purely on Site Views`;
+        } 
+        // 2. Sponsor is ONLY in the Tracker App (Route Sponsors)
+        else if (appC > 0 && siteC === 0) {
+            ctrCard.innerText = `${appCTR}%`;
+            ctrSubtext.innerText = `Based purely on App Views`;
+        } 
+        // 3. Sponsor is on BOTH (or neither yet)
+        else {
+            const blendedCTR = data.totalViews > 0 ? ((data.sponsorClicks / data.totalViews) * 100).toFixed(2) : "0.00";
+            ctrCard.innerText = `${blendedCTR}%`;
+            ctrSubtext.innerText = `Site: ${siteCTR}% | App: ${appCTR}%`;
+        }
 
         document.getElementById('statsGrid').style.display = 'grid';
 
