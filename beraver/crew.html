@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BERAVER Crew Sign-Up</title>
+    <title>BeRaver Crew Sign-Up</title>
     
     <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -65,11 +65,14 @@
 
     <div class="w-full max-w-xl relative z-10 my-8">
         
-        <header class="text-center mb-10">
+        <header class="text-center mb-10 flex flex-col items-center">
+            <!-- BeRaver Logo -->
+            <img src="https://brt-23f.pages.dev/images/BERAVER.png" alt="BeRaver Logo" class="w-64 md:w-80 mb-8 drop-shadow-[0_0_15px_rgba(77,184,232,0.4)]">
+            
             <h1 class="text-4xl md:text-5xl font-heading font-black uppercase tracking-wide mb-2">
                 JOIN THE <span class="text-beraverBlue neon-text-blue">CREW</span>
             </h1>
-            <p class="text-gray-400 text-lg">BERAVER Summer Festival Volunteer Sign-Up</p>
+            <p class="text-gray-400 text-lg">Volunteer Sign-Up</p>
         </header>
 
         <div class="bg-white/5 backdrop-blur-md border border-white/10 p-8 rounded-3xl shadow-2xl">
@@ -116,7 +119,7 @@
                     <label class="flex items-start gap-4 cursor-pointer group">
                         <input type="checkbox" required class="mt-1 w-5 h-5 accent-beraverPink bg-white/10 border-white/20 rounded cursor-pointer">
                         <span class="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
-                            I agree to volunteer for the festival shift and follow the safety instructions and guidance provided by Beverley Round Table organisers.
+                            I agree to volunteer for the festival shift and follow the safety instructions and guidance provided by the Round Table organizers.
                         </span>
                     </label>
                 </div>
@@ -132,7 +135,8 @@
     </div>
 
     <script>
-        const API_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+        // REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
+        const API_URL = "https://script.google.com/macros/s/YOUR_ACTUAL_SCRIPT_ID/exec";
 
         async function submitForm(e) {
             e.preventDefault();
@@ -155,17 +159,26 @@
             };
 
             try {
-                // In production, swap this to fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
-                console.log("Sending payload to Google Sheet:", payload);
-                
-                // Simulate network request
-                await new Promise(r => setTimeout(r, 1200)); 
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/plain;charset=utf-8",
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.status !== "success") {
+                    throw new Error(result.message);
+                }
 
                 status.innerText = "You're on the list! We'll be in touch with details soon.";
                 status.className = "text-center mt-4 font-bold text-sm text-green-400 neon-text-blue block";
                 document.getElementById('volunteerForm').reset();
                 
             } catch (err) {
+                console.error(err);
                 status.innerText = "Connection failed. Please try again.";
                 status.className = "text-center mt-4 font-bold text-sm text-red-400 block";
             } finally {
