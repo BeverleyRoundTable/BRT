@@ -23,8 +23,7 @@
 
     body { 
       background-color: #1D1D1A;
-      /* Brings in your BRT subtle gold dot pattern */
-      background-image: radial-gradient(rgba(251, 175, 51, 0.05) 2px, transparent 2px);
+      background-image: radial-gradient(rgba(251, 175, 51, 0.1) 2px, transparent 2px);
       background-size: 30px 30px;
       background-attachment: fixed;
       color: #FFFFFF; 
@@ -231,12 +230,7 @@
     fetch(`${API_URL}?sponsor=${encodeURIComponent(sponsor)}`)
       .then(res => res.json())
       .then(data => {
-        // 1. Apply Dynamic Custom Branding 
-        // Only overwrites the BRT default if a custom image is provided in the API
-        if (data.bgImageUrl) {
-          document.body.style.backgroundImage = `linear-gradient(rgba(29, 29, 26, 0.85), rgba(29, 29, 26, 0.85)), url('${data.bgImageUrl}')`;
-        }
-    
+            
         // 2. Update Stat Cards
         document.getElementById('valClicks').innerText = data.sponsorClicks.toLocaleString();
         document.getElementById('valClicksBreakdown').innerText = `Site: ${data.carrdClicks || 0} | Tracker Map: ${data.trackerClicks || 0}`;
