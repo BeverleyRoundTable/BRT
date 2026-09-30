@@ -97,6 +97,7 @@
       padding: 25px 20px; 
       box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
       transition: border-color 0.3s ease, transform 0.3s ease;
+      container-type: inline-size;
     }
     
     .card:hover {
@@ -106,16 +107,18 @@
     /* Base responsive size for all standard numbers */
     .card .number { 
       font-family: 'Eurostile', sans-serif; 
-      font-size: clamp(28px, 5vw, 42px);
+      font-size: clamp(24px, 15cqi, 42px);
       color: #FFFFFF; 
       line-height: 1.1; 
       margin-bottom: 5px; 
       text-transform: uppercase;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     /* Specific class for heavy text to ensure it wraps safely */
     .card .number.text-long {
-      font-size: clamp(18px, 4vw, 26px);
+      font-size: clamp(16px, 10cqi, 26px);
       word-wrap: break-word; 
       white-space: normal;
       padding-top: 8px;
@@ -166,9 +169,9 @@
     }
 
     /* Responsive scaling for percentage/decimal stats like Engagement Rate */
-.card .number.percentage {
-  font-size: clamp(24px, 4vw, 42px);
-}
+    .card .number.percentage {
+      font-size: clamp(20px, 12cqi, 36px);
+    }
     
   </style>
 </head>
