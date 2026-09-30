@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crack the Safe Tracker | BeRaver</title>
+    <title>Crack the Safe Tracker | BERAVER</title>
     
     <!-- Preload BRT Custom Font -->
     <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
@@ -186,6 +186,50 @@
         let currentInput = "";
         let wrongGuesses = new Set(); // Stores marked-off strings like "0123"
 
+        // --- Session Persistence (survives refresh, cleared when the tab closes) ---
+        const STORAGE_KEY = 'beraver-safecracker-v1';
+
+        function saveState() {
+            try {
+                if (masterCode.length !== 4) return; // nothing to save during setup
+                if (!document.getElementById('win-modal').classList.contains('hidden')) return; // game over
+                sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    masterCode: masterCode,
+                    currentInput: currentInput,
+                    wrongGuesses: Array.from(wrongGuesses)
+                }));
+            } catch (e) { /* storage unavailable - game still works, just won't persist */ }
+        }
+
+        function clearSavedState() {
+            try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        }
+
+        function restoreState() {
+            try {
+                const raw = sessionStorage.getItem(STORAGE_KEY);
+                if (!raw) return false;
+                const saved = JSON.parse(raw);
+                if (!saved || !/^\d{4}$/.test(saved.masterCode || "")) return false;
+
+                masterCode = saved.masterCode;
+                currentInput = /^\d{0,3}$/.test(saved.currentInput || "") ? saved.currentInput : "";
+                wrongGuesses = new Set(
+                    (Array.isArray(saved.wrongGuesses) ? saved.wrongGuesses : [])
+                        .filter(c => /^\d{4}$/.test(c) && c !== masterCode)
+                );
+
+                document.getElementById('setup-modal').classList.add('hidden');
+                initTrackerUI();
+                Array.from(wrongGuesses).sort().forEach(addBadgeToTracker);
+                document.getElementById('tracker-count').innerText = `${wrongGuesses.size} / 10000 Marked Off`;
+                updateDisplay();
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
         // --- Audio Setup (Festival Sound Vibes) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep(freq, type, duration, vol=0.1) {
@@ -225,6 +269,7 @@
                 masterCode = input;
                 document.getElementById('setup-modal').classList.add('hidden');
                 initTrackerUI();
+                saveState();
                 playBeep(800, 'sine', 0.2);
                 
                 // Focus out so physical keyboard works immediately for playing
@@ -253,6 +298,7 @@
             } else {
                 submitBtn.classList.add('opacity-50');
             }
+            saveState();
         }
 
         function inputDigit(digit) {
@@ -302,6 +348,7 @@
 
             if (currentInput === masterCode) {
                 // WIN!
+                clearSavedState();
                 playBeep(1200, 'sine', 1.0, 0.2);
                 setTimeout(() => playBeep(1500, 'sine', 1.0, 0.2), 200);
                 document.getElementById('win-modal').classList.remove('hidden');
@@ -363,6 +410,7 @@
             masterCode = "";
             currentInput = "";
             wrongGuesses.clear();
+            clearSavedState();
             
             updateDisplay();
             setStatus("Awaiting Input...", "text-gray-400");
@@ -402,10 +450,100 @@
 
         // Focus master code input on load
         window.onload = () => {
+            if (restoreState()) return; // resumed a game in progress
             updateDisplay();
             document.getElementById('master-code-input').focus();
         };
 
+    </script>
+    <!-- ==========================================
+         KEEP AWAKE (blocks screensaver / screen sleep)
+         1. Native Screen Wake Lock API (Chrome, Edge, Safari 16.4+, Firefox 126+)
+         2. Fallback: hidden looping video for browsers without the API
+         Needs HTTPS. Some browsers only grant it after a first tap/click/keypress.
+         ========================================== -->
+    <script>
+    (function () {
+        var wakeLock = null;
+        var fallbackVideo = null;
+        var wantAwake = true;
+
+        function log(msg) { console.log('[KeepAwake] ' + msg); }
+
+        async function requestNativeLock() {
+            if (!('wakeLock' in navigator)) return false;
+            if (wakeLock && !wakeLock.released) return true;
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', function () {
+                    log('lock released');
+                    if (wantAwake && document.visibilityState === 'visible') setTimeout(acquire, 1000);
+                });
+                log('native wake lock active');
+                return true;
+            } catch (err) {
+                log('native lock refused (' + err.name + '), will retry on next interaction');
+                return false;
+            }
+        }
+
+        function startFallbackVideo() {
+            if (fallbackVideo) {
+                if (fallbackVideo.paused) fallbackVideo.play().catch(function () {});
+                return;
+            }
+            var v = document.createElement('video');
+            v.setAttribute('playsinline', '');
+            v.setAttribute('muted', '');
+            v.muted = true;
+            v.loop = true;
+            v.setAttribute('title', 'keep-awake');
+            v.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none;z-index:-1;';
+            var webm = document.createElement('source');
+            webm.src = 'data:video/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZwEAAAAAAALCEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHYTbuMU6uEElTDZ1OsggEeTbuMU6uEHFO7a1OsggKs7AEAAAAAAABZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmsirXsYMPQkBNgI1MYXZmNjAuMTYuMTAwV0GNTGF2ZjYwLjE2LjEwMESJiECPQAAAAAAAFlSua8GuAQAAAAAAADjXgQFzxYj9Mps5+/YtkJyBACK1nIN1bmSIgQCGhVZfVlA4g4EBI+ODhAX14QDgibCBQLqBQJqBAhJUw2f8c3OgY8CAZ8iaRaOHRU5DT0RFUkSHjUxhdmY2MC4xNi4xMDBzc9ZjwItjxYj9Mps5+/YtkGfIoUWjh0VOQ09ERVJEh5RMYXZjNjAuMzEuMTAyIGxpYnZweGfIoUWjiERVUkFUSU9ORIeTMDA6MDA6MDEuMDAwMDAwMDAwAB9DtnVBB+eBAKOqgQAAgPACAJ0BKkAAQAAARwiFhYiFhIgCAgAGcDxCYAqyIPcwAP7/q1CAo5aBAGQA0QEABRCsABgAGFgv9AAIjoAAo5aBAMgA0QEABRCsABgAGFgv9AAIjoAAo5aBASwA0QEABRCsABgAGFgv9AAIjoAAo5aBAZAA0QEABRCsABgAGFgv9AAIjoAAo5aBAfQA0QEABRCsABgAGFgv9AAIjoAAo5aBAlgA0QEABRCsABgAGFgv9AAIjoAAo5aBArwA0QEABRAQFGAAYWC/0AAiOgAAo5aBAyAA0QEABRCsABgAGFgv9AAIjoAAo5aBA4QA0QEABRCsABgAGFgv9AAIjoAAHFO7a5G7j7OBALeK94EB8YIBn/CBAw==';
+            webm.type = 'video/webm';
+            var mp4 = document.createElement('source');
+            mp4.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAOybW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAA+gAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAtx0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAA+gAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAEAAAABAAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAPoAAAIAAABAAAAAAJUbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAoAAAAKABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAAB/21pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAb9zdGJsAAAAv3N0c2QAAAAAAAAAAQAAAK9hdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAEAAQABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAANWF2Y0MBZAAK/+EAGGdkAAqs2UQmwEQAAAMABAAAAwBQPEiWWAEABmjr48siwP34+AAAAAAQcGFzcAAAAAEAAAABAAAAFGJ0cnQAAAAAAAAauAAAGrgAAAAYc3R0cwAAAAAAAAABAAAACgAABAAAAAAUc3RzcwAAAAAAAAABAAAAAQAAAGBjdHRzAAAAAAAAAAoAAAABAAAIAAAAAAEAABQAAAAAAQAACAAAAAABAAAAAAAAAAEAAAQAAAAAAQAAFAAAAAABAAAIAAAAAAEAAAAAAAAAAQAABAAAAAABAAAIAAAAABxzdHNjAAAAAAAAAAEAAAABAAAACgAAAAEAAAA8c3RzegAAAAAAAAAAAAAACgAAAtcAAAAOAAAADAAAAAwAAAAMAAAAFAAAAA4AAAAMAAAADAAAABQAAAAUc3RjbwAAAAAAAAABAAAD4gAAAGJ1ZHRhAAAAWm1ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAG1kaXJhcHBsAAAAAAAAAAAAAAAALWlsc3QAAAAlqXRvbwAAAB1kYXRhAAAAAQAAAABMYXZmNjAuMTYuMTAwAAAACGZyZWUAAANfbWRhdAAAAq4GBf//qtxF6b3m2Ui3lizYINkj7u94MjY0IC0gY29yZSAxNjQgcjMxMDggMzFlMTlmOSAtIEguMjY0L01QRUctNCBBVkMgY29kZWMgLSBDb3B5bGVmdCAyMDAzLTIwMjMgLSBodHRwOi8vd3d3LnZpZGVvbGFuLm9yZy94MjY0Lmh0bWwgLSBvcHRpb25zOiBjYWJhYz0xIHJlZj0zIGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDM6MHgxMTMgbWU9aGV4IHN1Ym1lPTcgcHN5PTEgcHN5X3JkPTEuMDA6MC4wMCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0xNiBjaHJvbWFfbWU9MSB0cmVsbGlzPTEgOHg4ZGN0PTEgY3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhyZWFkcz0xIGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MyBiX3B5cmFtaWQ9MiBiX2FkYXB0PTEgYl9iaWFzPTAgZGlyZWN0PTEgd2VpZ2h0Yj0xIG9wZW5fZ29wPTAgd2VpZ2h0cD0yIGtleWludD0yNTAga2V5aW50X21pbj0xMCBzY2VuZWN1dD00MCBpbnRyYV9yZWZyZXNoPTAgcmNfbG9va2FoZWFkPTQwIHJjPWNyZiBtYnRyZWU9MSBjcmY9MjMuMCBxY29tcD0wLjYwIHFwbWluPTAgcXBtYXg9NjkgcXBzdGVwPTQgaXBfcmF0aW89MS40MCBhcT0xOjEuMDAAgAAAACFliIQAEf/+94gfMstvnGrXchHnrFT9RiMZbXPnZroYp3kAAAAKQZokbEEP/qpX3gAAAAhBnkJ4h38FvQAAAAgBnmF0Q38HfAAAAAgBnmNqQ38HfQAAABBBmmhJqEFomUwId//+qZ01AAAACkGehkURLDv/Bb0AAAAIAZ6ldEN/B30AAAAIAZ6nakN/B3wAAAAQQZqpSahBbJlMCG///qePiA==';
+            mp4.type = 'video/mp4';
+            v.appendChild(webm);
+            v.appendChild(mp4);
+            document.body.appendChild(v);
+            fallbackVideo = v;
+            v.play().then(function () { log('fallback video playing'); })
+                    .catch(function () { log('fallback video blocked until user interaction'); });
+        }
+
+        async function acquire() {
+            if (!wantAwake) return;
+            var ok = await requestNativeLock();
+            if (!ok) startFallbackVideo();
+        }
+
+        // Re-acquire whenever the tab comes back (locks are dropped when hidden)
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') acquire();
+        });
+
+        // Retry on first user gesture (needed by iOS and some desktop browsers)
+        ['pointerdown', 'touchend', 'click', 'keydown'].forEach(function (evt) {
+            document.addEventListener(evt, function () { acquire(); }, { passive: true });
+        });
+
+        window.addEventListener('pageshow', acquire);
+        window.addEventListener('focus', acquire);
+
+        // Safety net: heartbeat in case the lock silently drops
+        setInterval(function () {
+            if (document.visibilityState !== 'visible') return;
+            if ('wakeLock' in navigator) {
+                if (!wakeLock || wakeLock.released) acquire();
+            } else if (fallbackVideo && fallbackVideo.paused) {
+                fallbackVideo.play().catch(function () {});
+            }
+        }, 15000);
+
+        acquire();
+    })();
     </script>
 </body>
 </html>
