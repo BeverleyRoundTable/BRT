@@ -23,6 +23,7 @@
 
     body { 
       background-color: #1D1D1A;
+      /* Matched perfectly to main BRT site hero-pattern (0.1 opacity) */
       background-image: radial-gradient(rgba(251, 175, 51, 0.1) 2px, transparent 2px);
       background-size: 30px 30px;
       background-attachment: fixed;
@@ -56,7 +57,7 @@
     .header-logo {
       max-height: 80px;
       margin-bottom: 15px;
-      display: inline-block; /* Now shown by default */
+      display: inline-block; 
       filter: drop-shadow(0 0 10px rgba(251, 175, 51, 0.2)); 
     }
     
@@ -105,14 +106,14 @@
     /* Base responsive size for all standard numbers */
     .card .number { 
       font-family: 'Eurostile', sans-serif; 
-      font-size: clamp(28px, 5vw, 42px); /* Shrinks dynamically on mobile */
+      font-size: clamp(28px, 5vw, 42px);
       color: #FFFFFF; 
       line-height: 1.1; 
       margin-bottom: 5px; 
       text-transform: uppercase;
     }
 
-    /* Specific class for heavy text like Popular Route to ensure it wraps safely */
+    /* Specific class for heavy text to ensure it wraps safely */
     .card .number.text-long {
       font-size: clamp(18px, 4vw, 26px);
       word-wrap: break-word; 
@@ -181,9 +182,10 @@
       <div class="label">Total Link Clicks</div>
     </div>
     <div class="card">
+      <!-- Split Views HTML Applied Here -->
       <div class="number" id="valViews">0</div>
-      <div class="subtext">Sleigh Tracker App</div>
-      <div class="label">Live Tracker Views</div>
+      <div class="subtext" id="valViewsBreakdown">Site: 0 | Map: 0</div>
+      <div class="label">Total Combined Views</div>
     </div>
     <div class="card">
       <div class="number" id="valSocial">0</div>
@@ -217,35 +219,44 @@
   </div>
 
   <script>
-    const API_URL = "/api";
+    const API_URL = "/api"; // Replace with your actual Google Apps Script Web App URL
     
-    // Extract ?sponsor= from URL
     const urlParams = new URLSearchParams(window.location.search);
     const sponsor = urlParams.get('sponsor') || 'Global Partner';
 
-    // Set Title
     document.getElementById('sponsorName').innerText = `${sponsor} x Beverley Round Table`;
 
-    // Fetch and Build
     fetch(`${API_URL}?sponsor=${encodeURIComponent(sponsor)}`)
       .then(res => res.json())
       .then(data => {
-            
-        // 2. Update Stat Cards
-        document.getElementById('valClicks').innerText = data.sponsorClicks.toLocaleString();
-        document.getElementById('valClicksBreakdown').innerText = `Site: ${data.carrdClicks || 0} | Tracker Map: ${data.trackerClicks || 0}`;
-        document.getElementById('valViews').innerText = data.totalViews.toLocaleString();
-        document.getElementById('valSocial').innerText = data.socialReach.toLocaleString();
-        document.getElementById('valRoute').innerText = data.popularRoute || 'TBC';
-        document.getElementById('valDevice').innerText = data.deviceSplit;
+        // Only swap the top logo if they provided a custom one in the sheet
+        if (data.logoUrl) {
+          const logoImg = document.getElementById('headerLogo');
+          logoImg.src = data.logoUrl;
+        }
 
-        // Calculate Click-Through-Rate (CTR)
+        // Clicks Population
+        document.getElementById('valClicks').innerText = (data.sponsorClicks || 0).toLocaleString();
+        document.getElementById('valClicksBreakdown').innerText = `Site: ${data.carrdClicks || 0} | Tracker Map: ${data.trackerClicks || 0}`;
+        
+        // Split Views Logic Applied Here
+        document.getElementById('valViews').innerText = (data.totalViews || 0).toLocaleString();
+        const siteV = data.siteViews || 0;
+        const appV = data.trackerViews || 0;
+        document.getElementById('valViewsBreakdown').innerText = `Site: ${siteV.toLocaleString()} | Map: ${appV.toLocaleString()}`;
+        
+        // Remaining Data Population
+        document.getElementById('valSocial').innerText = (data.socialReach || 0).toLocaleString();
+        document.getElementById('valRoute').innerText = data.popularRoute || 'TBC';
+        document.getElementById('valDevice').innerText = data.deviceSplit || '0%';
+
+        // True CTR Calculation (Combined Clicks / Combined Views)
         const ctr = data.totalViews > 0 ? ((data.sponsorClicks / data.totalViews) * 100).toFixed(2) : "0.00";
         document.getElementById('valCTR').innerText = `${ctr}%`;
 
         document.getElementById('statsGrid').style.display = 'grid';
 
-        // 3. Render Chart
+        // Render Chart
         if (data.chartLabels && data.chartLabels.length > 0) {
           document.getElementById('chartCard').style.display = 'block';
           
