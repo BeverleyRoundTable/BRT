@@ -144,6 +144,11 @@
         }
         .sponsor-logo {
             max-width: 100px;
+            object-fit: contain;
+            background: #ffffff;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
         }
         @media (min-width: 1024px) {
             .sponsor-container {
@@ -151,7 +156,7 @@
                 right: 20px;
             }
             .sponsor-logo {
-                max-width: 200px;
+                max-width: 216px;
             }
         }
         
@@ -169,7 +174,7 @@
 
     <div class="sponsor-container">
         <span class="text-gray-400 font-heading text-[10px] lg:text-xs font-bold uppercase tracking-widest mb-1">Sponsored By</span>
-        <img src="https://brt-23f.pages.dev//images/zendure.png" alt="Sponsor" class="sponsor-logo drop-shadow-xl" onerror="this.parentElement.style.display='none'">
+        <img src="https://brt-23f.pages.dev//images/zendure.png" alt="Sponsor" class="sponsor-logo" onerror="this.parentElement.style.display='none'">
     </div>
 
     <!-- Header -->
@@ -688,7 +693,7 @@
 
         function startFallbackVideo() {
             if (fallbackVideo) {
-                if (fallbackVideo.paused) { var r = fallbackVideo.play(); if (r && r.catch) r.catch(function () {}); }
+                if (fallbackVideo.paused) fallbackVideo.play().catch(function () {});
                 return;
             }
             var v = document.createElement('video');
@@ -708,11 +713,8 @@
             v.appendChild(mp4);
             document.body.appendChild(v);
             fallbackVideo = v;
-            var p = v.play();
-            if (p && typeof p.then === 'function') {
-                p.then(function () { log('fallback video playing'); })
-                 .catch(function () { log('fallback video blocked until user interaction'); });
-            }
+            v.play().then(function () { log('fallback video playing'); })
+                    .catch(function () { log('fallback video blocked until user interaction'); });
         }
 
         async function acquire() {
@@ -740,7 +742,7 @@
             if ('wakeLock' in navigator) {
                 if (!wakeLock || wakeLock.released) acquire();
             } else if (fallbackVideo && fallbackVideo.paused) {
-                var r2 = fallbackVideo.play(); if (r2 && r2.catch) r2.catch(function () {});
+                fallbackVideo.play().catch(function () {});
             }
         }, 15000);
 
