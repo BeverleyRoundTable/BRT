@@ -238,12 +238,7 @@
     fetch(`${API_URL}?sponsor=${encodeURIComponent(sponsor)}`)
       .then(res => res.json())
       .then(data => {
-        // Only swap the top logo if they provided a custom one in the sheet
-        if (data.logoUrl) {
-          const logoImg = document.getElementById('headerLogo');
-          logoImg.src = data.logoUrl;
-        }
-
+        
        // Clicks Population
         document.getElementById('valClicks').innerText = (data.sponsorClicks || 0).toLocaleString();
         const siteC = data.carrdClicks || 0;
