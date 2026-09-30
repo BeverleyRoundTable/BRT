@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Updated viewport to disable mobile auto-zoom on tap -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>BERAVER Crew Sign-Up</title>
     
@@ -39,7 +38,6 @@
         body {
             background-color: #1D1D1A;
             color: #FFFFFF;
-            /* Prevents double-tap to zoom behavior globally */
             touch-action: manipulation; 
         }
         
@@ -61,18 +59,15 @@
         select option { background-color: #1D1D1A; color: white; }
     </style>
 </head>
-<!-- Reduced outer padding on mobile (p-4) to allow more width -->
-<body class="font-body antialiased min-h-screen flex items-center justify-center p-4 md:p-6 relative overflow-hidden">
+<!-- Reduced body padding to p-2 on mobile, scales to p-6 on desktop -->
+<body class="font-body antialiased min-h-screen flex items-center justify-center p-2 md:p-6 relative overflow-hidden">
 
-    <!-- Decorative Glow Background -->
     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-beraverBlue/5 blur-[150px] rounded-full z-0 pointer-events-none"></div>
 
-    <!-- Removed my-8 for true flex centering -->
     <div class="w-full max-w-xl relative z-10">
         
         <header class="text-center mb-6 md:mb-10 flex flex-col items-center">
-            <!-- Scaled down logo slightly on mobile so it fits on screen -->
-            <img src="https://brt-23f.pages.dev/images/BERAVER.png" alt="BeRaver Logo" class="w-48 md:w-64 mb-6 drop-shadow-[0_0_15px_rgba(77,184,232,0.4)]">
+            <img src="https://brt-23f.pages.dev/images/BERAVER.png" alt="BeRaver Logo" class="w-48 md:w-64 mb-4 md:mb-6 drop-shadow-[0_0_15px_rgba(77,184,232,0.4)]">
             
             <h1 class="text-3xl md:text-5xl font-heading font-black uppercase tracking-wide mb-2">
                 JOIN THE <span class="text-beraverBlue neon-text-blue">CREW</span>
@@ -80,12 +75,11 @@
             <p class="text-gray-400 text-base md:text-lg">Volunteer Sign-Up</p>
         </header>
 
-        <!-- Reduced inner padding on mobile (p-5) to maximize input width -->
-        <div class="bg-white/5 backdrop-blur-md border border-white/10 p-5 md:p-8 rounded-3xl shadow-2xl">
+        <!-- Reduced inner box padding to p-4 on mobile, scales to p-8 on desktop -->
+        <div class="bg-white/5 backdrop-blur-md border border-white/10 p-4 sm:p-6 md:p-8 rounded-2xl md:rounded-3xl shadow-2xl">
             
             <form id="volunteerForm" onsubmit="submitForm(event)" class="space-y-5 md:space-y-6">
                 
-                <!-- ALL INPUTS updated to text-base (16px) to stop iOS/Android auto-zoom -->
                 <div>
                     <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Full Name</label>
                     <input type="text" id="volName" required placeholder="e.g. John Smith" 
