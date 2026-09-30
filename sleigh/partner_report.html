@@ -2,42 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Partner Impact Report</title>
+  <title>Partner Impact Report | Beverley Round Table</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Fonts & Chart.js -->
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   
   <style>
+    /* --- EUROSTILE FONT INJECTION --- */
+    @font-face {
+        font-family: 'Eurostile';
+        src: url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+    }
+
     body { 
-      background: #0d0d0b; 
+      background: #1D1D1A; 
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
-      color: #eaeae5; 
-      font-family: 'DM Sans', sans-serif; 
+      color: #FFFFFF; 
+      font-family: 'Open Sans', sans-serif; 
       text-align: center; 
       padding: 40px 20px; 
       margin: 0;
       min-height: 100vh;
     }
+
+    ::selection {
+        background-color: #FBAF33;
+        color: #1D1D1A;
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #1D1D1A;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #FBAF33;
+        border-radius: 5px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #d99326;
+    }
+
     .header-logo {
       max-height: 70px;
       margin-bottom: 15px;
       display: none;
     }
     h1 { 
-      font-family: 'Bebas Neue', sans-serif; 
+      font-family: 'Eurostile', sans-serif; 
       font-size: 64px; 
       color: #FBAF33; 
+      text-transform: uppercase;
       letter-spacing: 2px; 
       margin: 0 0 5px 0; 
       line-height: 1;
       text-shadow: 0 2px 10px rgba(0,0,0,0.6);
     }
     .subtitle { 
-      color: #a0a09a; 
+      color: #9ca3af; 
       font-size: 18px; 
       margin-bottom: 40px; 
       text-transform: uppercase; 
@@ -52,51 +84,55 @@
       margin: 0 auto 30px; 
     }
     .card { 
-      background: rgba(22, 22, 20, 0.88); 
+      background: rgba(255, 255, 255, 0.05); 
       backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.1); 
-      border-radius: 16px; 
+      border: 1px solid rgba(255, 255, 255, 0.1); 
+      border-radius: 24px; 
       padding: 25px 20px; 
       box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
+      transition: border-color 0.3s ease, transform 0.3s ease;
+    }
+    .card:hover {
+      border-color: rgba(251, 175, 51, 0.5);
     }
     .card .number { 
-      font-family: 'Bebas Neue', sans-serif; 
+      font-family: 'Eurostile', sans-serif; 
       font-size: 52px; 
-      color: #fff; 
+      color: #FFFFFF; 
       line-height: 1; 
       margin-bottom: 5px; 
+      text-transform: uppercase;
     }
     .card .number.gold { color: #FBAF33; }
     .card .subtext {
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  color: #a0a09a; /* Solid crisp grey instead of transparent white */
-  margin-bottom: 8px;
-}
-.card .label { 
-  font-family: 'DM Mono', monospace;
-  font-size: 13px; 
-  color: #d1d1cc; /* Higher contrast text */
-  text-transform: uppercase; 
-  font-weight: 700; 
-  letter-spacing: 1px; 
-}
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+    .card .label { 
+      font-size: 13px; 
+      color: #d1d5db; 
+      text-transform: uppercase; 
+      font-weight: 700; 
+      letter-spacing: 1px; 
+    }
     
     .chart-container { 
       max-width: 1000px; 
       margin: 0 auto; 
-      background: rgba(22, 22, 20, 0.88); 
+      background: rgba(255, 255, 255, 0.05); 
       backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.1); 
-      border-radius: 16px; 
+      border: 1px solid rgba(255, 255, 255, 0.1); 
+      border-radius: 24px; 
       padding: 30px; 
       box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
       text-align: left; 
     }
     .chart-container h2 { 
-      font-family: 'Bebas Neue', sans-serif; 
+      font-family: 'Eurostile', sans-serif; 
       font-size: 32px; 
-      color: #fff; 
+      color: #FFFFFF; 
+      text-transform: uppercase;
       margin-top: 0; 
       margin-bottom: 20px; 
       letter-spacing: 1px; 
@@ -166,15 +202,15 @@
     const sponsor = urlParams.get('sponsor') || 'Global Partner';
 
     // Set Title
-    document.getElementById('sponsorName').innerText = `${sponsor} x Santa Sleigh`;
+    document.getElementById('sponsorName').innerText = `${sponsor} x BRT`;
 
     // Fetch and Build
     fetch(`${API_URL}?sponsor=${encodeURIComponent(sponsor)}`)
       .then(res => res.json())
       .then(data => {
-        // 1. Apply Dynamic Custom Branding
+        // 1. Apply Dynamic Custom Branding (Updated to Table Grey Overlay)
         if (data.bgImageUrl) {
-          document.body.style.backgroundImage = `linear-gradient(rgba(13,13,11,0.85), rgba(13,13,11,0.85)), url('${data.bgImageUrl}')`;
+          document.body.style.backgroundImage = `linear-gradient(rgba(29, 29, 26, 0.85), rgba(29, 29, 26, 0.85)), url('${data.bgImageUrl}')`;
         }
         if (data.logoUrl) {
           const logoImg = document.getElementById('headerLogo');
@@ -202,7 +238,7 @@
           
           const ctx = document.getElementById('clickChart').getContext('2d');
           
-          Chart.defaults.font.family = "'DM Mono', monospace";
+          Chart.defaults.font.family = "'Open Sans', sans-serif";
           Chart.defaults.color = 'rgba(255,255,255,0.5)';
           
           new Chart(ctx, {
@@ -232,7 +268,7 @@
                   beginAtZero: true,
                   ticks: { 
                     stepSize: 1,
-                    font: { family: "'DM Sans', sans-serif", weight: '600' }
+                    font: { family: "'Open Sans', sans-serif", weight: '600' }
                   }
                 }
               }
