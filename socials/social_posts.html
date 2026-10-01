@@ -3,12 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0A1828">
-  <title>RT — Social Post Generator</title>
+  <meta name="theme-color" content="#1D1D1A">
+  <title>Beverley Round Table | Social Post Generator</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;600;700;800;900&family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
 
   <!-- JSZip — used to bundle batch PNG exports into a single .zip download -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -20,6 +22,16 @@
     /* (set in <script> tag at bottom of body)                      */
     /* ============================================================ */
 
+    /* --- EUROSTILE (same face as the BRT site) --- */
+    @font-face {
+      font-family: 'Eurostile';
+      src: url('https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2') format('woff2'),
+           url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
     :root {
       /* Official RT brand palette */
       --rt-yellow:    #FBAF33;  /* Golden Yellow */
@@ -28,36 +40,45 @@
       --rt-white:     #FFFFFF;
 
       /* UI palette derived from brand */
-      --bg:           #0E0E0C;
-      --bg-elevated:  #1D1D1A;
-      --bg-card:      #161614;
-      --border:       #2E2E29;
+      --bg:           #1D1D1A;
+      --bg-elevated:  rgba(255,255,255,0.08);
+      --bg-card:      rgba(255,255,255,0.05);
+      --border:       rgba(255,255,255,0.10);
       --text:         #FFFFFF;
-      --text-dim:     #B5B5AE;
-      --text-muted:   #75756E;
+      --text-dim:     #D1D5DB;
+      --text-muted:   #9CA3AF;
       --accent:       #FBAF33;
-      --accent-hover: #FFC358;
+      --accent-hover: #FFFFFF;
       --danger:       #E85D5D;
       --success:      #6FCF97;
 
-      --font-display: 'Saira', system-ui, sans-serif;
+      --font-display: 'Eurostile', system-ui, sans-serif;
       --font-body:    'Open Sans', system-ui, sans-serif;
 
-      --radius:       2px;
-      --radius-lg:    4px;
+      --radius:       8px;
+      --radius-lg:    16px;
       --shadow:       0 1px 0 rgba(255,255,255,0.04), 0 8px 24px rgba(0,0,0,0.6);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
-    body { min-height: 100vh; padding: 24px 16px 80px; background-image: radial-gradient(circle at 20% -10%, rgba(251, 175, 51, 0.08), transparent 50%), radial-gradient(circle at 90% 20%, rgba(251, 175, 51, 0.04), transparent 40%); }
+    body { min-height: 100vh; padding: 24px 16px 80px; background-image: radial-gradient(rgba(251, 175, 51, 0.1) 2px, transparent 2px); background-size: 30px 30px; }
+
+    ::selection { background-color: #FBAF33; color: #1D1D1A; }
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: #1D1D1A; }
+    ::-webkit-scrollbar-thumb { background: #FBAF33; border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: #d99326; }
 
     .wrap { max-width: 880px; margin: 0 auto; }
+    .brand-lockup { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .brand-lockup img { width: 48px; height: 48px; object-fit: contain; }
+    .brand-lockup .eyebrow { margin-bottom: 0; }
 
     /* HEADER */
     header { padding: 32px 0 56px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
     .eyebrow { font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
-    h1 { font-family: var(--font-display); font-size: clamp(40px, 8vw, 72px); font-weight: 800; line-height: 0.95; letter-spacing: -0.01em; text-transform: uppercase; font-stretch: 110%; }
+    h1 { font-family: var(--font-display); font-size: clamp(28px, 6vw, 52px); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; text-transform: uppercase; }
     h1 .yellow { color: var(--accent); }
     .tagline { color: var(--text-dim); font-size: 16px; margin-top: 20px; max-width: 560px; }
 
@@ -65,7 +86,7 @@
     section { margin-bottom: 48px; }
     .step-label { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
     .step-num { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 0.15em; font-feature-settings: 'tnum'; }
-    .step-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: 0.01em; text-transform: uppercase; font-stretch: 110%; }
+    .step-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }
 
     /* CARD */
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow); }
@@ -79,18 +100,18 @@
     label .hint { color: var(--text-muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
 
     input[type=text], input[type=date], input[type=time], textarea { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; font-family: var(--font-body); font-size: 15px; transition: border-color 0.15s, box-shadow 0.15s; }
-    input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241, 180, 0, 0.15); }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(251, 175, 51, 0.15); }
     textarea { resize: vertical; min-height: 80px; font-family: var(--font-body); }
     input[list] { font-feature-settings: 'tnum'; }
 
     /* BUTTONS */
-    button { font-family: var(--font-display); font-size: 13px; font-weight: 700; padding: 12px 20px; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; transition: transform 0.05s, background 0.15s, border-color 0.15s; letter-spacing: 0.06em; text-transform: uppercase; }
+    button { font-family: var(--font-display); font-size: 13px; font-weight: 700; padding: 12px 20px; border: 1px solid transparent; border-radius: 999px; cursor: pointer; transition: transform 0.05s, background 0.15s, border-color 0.15s; letter-spacing: 0.06em; text-transform: uppercase; }
     button:active { transform: translateY(1px); }
     .btn-primary { background: var(--accent); color: var(--rt-grey); }
     .btn-primary:hover { background: var(--accent-hover); }
     .btn-primary:disabled { background: var(--text-muted); cursor: not-allowed; opacity: 0.6; }
-    .btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
-    .btn-secondary:hover { background: var(--bg-elevated); border-color: var(--text-dim); }
+    .btn-secondary { background: transparent; color: var(--accent); border-color: var(--accent); }
+    .btn-secondary:hover { background: var(--accent); color: var(--rt-grey); }
     .btn-tab { background: transparent; color: var(--text-dim); border: 1px solid var(--border); padding: 8px 16px; font-size: 12px; }
     .btn-tab.active { background: var(--accent); color: var(--rt-grey); border-color: var(--accent); }
     .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -103,7 +124,7 @@
     .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 16px; }
     .image-tile { position: relative; aspect-ratio: 1; background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
     .image-tile:hover { border-color: var(--accent); transform: scale(1.02); }
-    .image-tile.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(241, 180, 0, 0.25); }
+    .image-tile.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(251, 175, 51, 0.25); }
     .image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .image-tile .meta { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 8px; background: linear-gradient(transparent, rgba(0,0,0,0.85)); font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
     .image-tile .meta .match { color: var(--accent); font-size: 9px; }
@@ -176,7 +197,7 @@
     /* RESET BUTTON inside control blocks */
     .control-block .block-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .control-block .block-head h4 { margin: 0; }
-    .btn-reset { background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 4px 10px; font-size: 10px; font-family: var(--font-display); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: var(--radius); transition: color 0.15s, border-color 0.15s; }
+    .btn-reset { background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 4px 10px; font-size: 10px; font-family: var(--font-display); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: 999px; transition: color 0.15s, border-color 0.15s; }
     .btn-reset:hover { color: var(--text); border-color: var(--text-dim); }
 
     /* BATCH PROGRESS — shown while building the ZIP */
@@ -220,7 +241,7 @@
     /* MODAL */
     .modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; }
     .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
-    .modal-card { position: relative; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; max-width: 1100px; width: 100%; max-height: 90vh; overflow: auto; box-shadow: var(--shadow); }
+    .modal-card { position: relative; background: #1D1D1A; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; max-width: 1100px; width: 100%; max-height: 90vh; overflow: auto; box-shadow: var(--shadow); }
     .modal-card h3 { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; margin-bottom: 8px; }
     .modal-card .modal-close { position: absolute; top: 12px; right: 12px; background: transparent; color: var(--text-dim); border: 1px solid var(--border); padding: 4px 10px; font-size: 11px; }
     .modal-card .modal-close:hover { color: var(--text); border-color: var(--text-dim); }
@@ -264,7 +285,7 @@
   <div class="wrap">
 
     <header>
-      <div class="eyebrow">Round Table · Social Tools</div>
+      <div class="brand-lockup"><img src="https://brt-23f.pages.dev/icons/BRTLogo.png" alt="Round Table logo"><div class="eyebrow">Round Table · Social Tools</div></div>
       <h1>Make a <span class="yellow">post</span> for your next event.</h1>
       <p class="tagline">Pick an event. Pick a photo. Get ready-to-share images and captions in three clicks.</p>
     </header>
@@ -745,8 +766,10 @@ function showComposer() {
   document.getElementById('step-compose').hidden = false;
   setTimeout(() => document.getElementById('step-compose').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   // Ensure custom fonts are loaded before rendering canvas — otherwise it'll use system fallback
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => drawCanvas());
+  if (document.fonts && document.fonts.load) {
+    Promise.all([document.fonts.load('700 40px Eurostile'), document.fonts.load("500 20px 'Open Sans'")])
+      .catch(() => {})
+      .then(() => drawCanvas());
   } else {
     drawCanvas();
   }
@@ -1053,7 +1076,7 @@ function drawCanvas(targetCanvas = null) {
   // [TABLE NAME + NUMBER eyebrow]
 
   // Bottom-most: small CTA tag
-  ctx.font = `700 ${Math.round(W * 0.018)}px Saira, system-ui, sans-serif`;
+  ctx.font = `700 ${Math.round(W * 0.018)}px Eurostile, system-ui, sans-serif`;
   ctx.fillStyle = '#FBAF33';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'bottom';
@@ -1088,12 +1111,19 @@ function drawCanvas(targetCanvas = null) {
   }
 
   // EVENT TITLE — first word in yellow (DO MORE style), rest in white
-  const titleSize = Math.round(W * (state.aspect === 'portrait' ? 0.085 : 0.075));
-  ctx.font = `800 ${titleSize}px Saira, system-ui, sans-serif`;
+  let titleSize = Math.round(W * (state.aspect === 'portrait' ? 0.062 : 0.054));
   const titleUpper = eventName.toUpperCase();
   const words = titleUpper.split(' ');
   const firstWord = words[0];
   const restText = words.slice(1).join(' ');
+  // Eurostile Extended is very wide — shrink until the longest word fits the safe area
+  const maxTitleW = W - padding * 2;
+  while (titleSize > W * 0.03) {
+    ctx.font = `700 ${titleSize}px Eurostile, system-ui, sans-serif`;
+    if (words.every(w => ctx.measureText(w).width <= maxTitleW)) break;
+    titleSize -= 2;
+  }
+  ctx.font = `700 ${titleSize}px Eurostile, system-ui, sans-serif`;
 
   // Wrap the rest of the title if needed (first word always sits on its own line)
   const titleLines = [firstWord];
@@ -1102,7 +1132,7 @@ function drawCanvas(targetCanvas = null) {
     titleLines.push(...restLines);
   }
 
-  const titleLineHeight = titleSize * 0.92;
+  const titleLineHeight = titleSize * 1.0;
   for (let i = titleLines.length - 1; i >= 0; i--) {
     const line = titleLines[i];
     ctx.fillStyle = (i === 0) ? '#FBAF33' : '#FFFFFF'; // first line (first word) yellow
@@ -1114,7 +1144,7 @@ function drawCanvas(targetCanvas = null) {
   // EYEBROW: TABLE NAME + NUMBER (above title)
   if (tableName) {
     const eyebrowText = `${tableName.toUpperCase()} ROUND TABLE`;
-    ctx.font = `700 ${Math.round(W * 0.018)}px Saira, system-ui, sans-serif`;
+    ctx.font = `700 ${Math.round(W * 0.018)}px Eurostile, system-ui, sans-serif`;
     ctx.fillStyle = '#FFFFFF';
     drawSpacedText(ctx, eyebrowText, padding, cy, W * 0.002);
   }
@@ -1226,7 +1256,7 @@ function drawLogo(ctx, aspect) {
     ctx.arc(0, 0, logoSize / 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#1D1D1A';
-    ctx.font = `800 ${Math.round(logoSize * 0.42)}px Saira, system-ui, sans-serif`;
+    ctx.font = `700 ${Math.round(logoSize * 0.42)}px Eurostile, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('RT', 0, logoSize * 0.02);
