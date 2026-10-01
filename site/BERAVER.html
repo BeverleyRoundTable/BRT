@@ -2,7 +2,8 @@
 <html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Updated viewport to prevent mobile form zooming -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>BERAVER Summer Festival | Beverley Round Table</title>
     
     <!-- Preload BRT Custom Font -->
@@ -21,7 +22,7 @@
                     colors: {
                         beraverBlue: '#4db8e8',
                         beraverPink: '#ff007f',
-                        beraverDark: '#1D1D1A', /* Aligned with BRT Table Grey */
+                        beraverDark: '#1D1D1A', 
                     }
                 }
             }
@@ -40,14 +41,11 @@
         body {
             background-color: #1D1D1A;
             color: #FFFFFF;
+            touch-action: manipulation;
         }
         
-        .neon-text-blue {
-            text-shadow: 0 0 10px rgba(77, 184, 232, 0.7), 0 0 20px rgba(77, 184, 232, 0.5);
-        }
-        .neon-text-pink {
-            text-shadow: 0 0 10px rgba(255, 0, 127, 0.7), 0 0 20px rgba(255, 0, 127, 0.5);
-        }
+        .neon-text-blue { text-shadow: 0 0 10px rgba(77, 184, 232, 0.7), 0 0 20px rgba(77, 184, 232, 0.5); }
+        .neon-text-pink { text-shadow: 0 0 10px rgba(255, 0, 127, 0.7), 0 0 20px rgba(255, 0, 127, 0.5); }
 
         /* Electric Pulse Animation */
         @keyframes pulse-travel {
@@ -72,50 +70,59 @@
             box-shadow: 0 0 15px #4db8e8, 0 0 20px #ff007f;
             animation: pulse-travel 3s infinite linear;
         }
-        
+
+        /* Glass Input for Modal */
+        .glass-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus {
+            outline: none;
+            border-color: #ff007f;
+            box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        select option { background-color: #1D1D1A; color: white; }
     </style>
 </head>
 <body class="font-body antialiased flex flex-col min-h-screen">
 
-    <header class="fixed w-full top-0 z-50 bg-beraverDark/95 backdrop-blur-sm border-b border-white/10">
-    <div class="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center h-20">
-        
-        <!-- Logo -->
-        <a href="#" class="flex items-center gap-3 group flex-shrink-0">
-            <img src="https://brt-23f.pages.dev/icons/BRTLogo.png" alt="BRT Logo" class="w-10 h-10 md:w-12 md:h-12 object-contain transition-transform duration-300 group-hover:scale-105">
-            <div class="hidden md:block font-heading font-black text-xl md:text-2xl tracking-tighter text-white uppercase">
-                Beverley <span class="text-beraverBlue">Round Table</span>
-            </div>
-        </a>
+    <header class="fixed w-full top-0 z-40 bg-beraverDark/95 backdrop-blur-sm border-b border-white/10">
+        <div class="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center h-20">
+            <!-- Logo -->
+            <a href="#" class="flex items-center gap-3 group flex-shrink-0">
+                <img src="https://brt-23f.pages.dev/icons/BRTLogo.png" alt="BRT Logo" class="w-10 h-10 md:w-12 md:h-12 object-contain transition-transform duration-300 group-hover:scale-105">
+                <div class="hidden md:block font-heading font-black text-xl md:text-2xl tracking-tighter text-white uppercase">
+                    Beverley <span class="text-beraverBlue">Round Table</span>
+                </div>
+            </a>
 
-        <!-- Sticky Anchors -->
-        <nav class="flex gap-4 md:gap-8 font-heading font-bold text-xs md:text-sm tracking-widest uppercase">
-            <a href="#whatson" class="text-gray-300 hover:text-beraverBlue transition-colors">What's On</a>
-            <a href="#funzone" class="text-gray-300 hover:text-beraverPink transition-colors">Fun Zone</a>
-        </nav>
+            <!-- Sticky Anchors -->
+            <nav class="flex gap-4 md:gap-8 font-heading font-bold text-xs md:text-sm tracking-widest uppercase">
+                <a href="#whatson" class="text-gray-300 hover:text-beraverBlue transition-colors">What's On</a>
+                <a href="#funzone" class="text-gray-300 hover:text-beraverPink transition-colors">Fun Zone</a>
+            </nav>
 
-        <!-- Donate Button -->
-        <a href="https://donate.beverleyroundtable.co.uk" target="_blank" rel="noopener noreferrer" class="font-heading uppercase font-bold text-xs md:text-sm text-beraverDark bg-beraverPink px-4 md:px-6 py-2 rounded-full hover:bg-white transition-all duration-200 transform hover:scale-105 shadow-[0_0_15px_rgba(255,0,127,0.5)] whitespace-nowrap">
-            DONATE
-        </a>
-    </div>
-</header>
+            <!-- Donate Button -->
+            <a href="https://donate.beverleyroundtable.co.uk" target="_blank" rel="noopener noreferrer" class="font-heading uppercase font-bold text-xs md:text-sm text-beraverDark bg-beraverPink px-4 md:px-6 py-2 rounded-full hover:bg-white transition-all duration-200 transform hover:scale-105 shadow-[0_0_15px_rgba(255,0,127,0.5)] whitespace-nowrap">
+                DONATE
+            </a>
+        </div>
+    </header>
 
     <!-- Hero Section -->
     <section class="min-h-screen flex flex-col justify-center items-center text-center px-4 pt-20 relative overflow-hidden">
         
-        <!-- Top 1/3 Looping Video Container -->
         <div class="absolute top-0 left-0 w-full h-[35vh] md:h-[45vh] z-0 overflow-hidden">
-            <!-- Add 'playsinline' for iOS support, 'muted' is required for autoplay -->
             <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-70">
                 <source src="https://brt-23f.pages.dev//images/vid.webm" type="video/webm">
                 <source src="https://brt-23f.pages.dev//images/vid.mp4" type="video/mp4">
             </video>
-            <!-- Gradient to fade video seamlessly into the dark background -->
             <div class="absolute inset-0 bg-gradient-to-b from-transparent via-beraverDark/60 to-beraverDark"></div>
         </div>
 
-        <!-- Decorative Glow -->
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-beraverBlue/10 blur-[120px] rounded-full z-0 pointer-events-none"></div>
 
         <div class="relative z-10 flex flex-col items-center mt-10 md:mt-20">
@@ -125,7 +132,6 @@
                 Clean Energy. <br class="md:hidden"><span class="text-beraverPink neon-text-pink">Loud Vibrations.</span>
             </h1>
             
-            <!-- Interactive Calendar Card -->
             <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=BeRaver+Summer+Festival&dates=20270606T100000Z/20270606T140000Z&details=Clean+Energy.+Loud+Vibrations.+Powered+by+Zendure.&location=Saturday+Market,+Beverley" target="_blank" rel="noopener noreferrer" class="group flex flex-col md:flex-row gap-6 text-lg md:text-xl font-bold bg-white/5 border border-white/10 hover:border-beraverPink transition-all duration-300 px-8 py-6 rounded-3xl mb-10 backdrop-blur-sm cursor-pointer hover:bg-white/10 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,0,127,0.3)]">
                 <div class="flex items-center gap-3">
                     <span class="text-beraverPink group-hover:animate-pulse">📅</span>
@@ -147,11 +153,10 @@
                     <span class="text-xl">→</span>
                 </div>
             </a>
-            </div>
         </div>
     </section>
 
-    <!-- The Setup Section (BRT Style Cards) -->
+    <!-- The Setup Section -->
     <section id="whatson" class="py-24 bg-beraverDark relative border-t border-white/5">
         <div class="container mx-auto px-6">
             <div class="text-center mb-16">
@@ -184,50 +189,43 @@
             </div>
         </div>
 
-        <!-- Animated Electric Separator -->
-            <div class="electric-separator">
-                <div class="electric-pulse"></div>
+        <div class="electric-separator">
+            <div class="electric-pulse"></div>
+        </div>
+
+        <!-- Fun Zone -->
+        <div id="funzone" class="text-center mt-24 mb-16 scroll-mt-24">
+            <h2 class="text-4xl md:text-5xl font-heading font-black mb-4 uppercase">The BeRaver <span class="text-beraverPink neon-text-pink">Fun Zone</span></h2>
+            <p class="text-lg text-gray-400 max-w-2xl mx-auto">Explore our marketplace for festival food, high-voltage games, and eco-friendly rave gear.</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 px-6 container mx-auto">
+            <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-beraverBlue/50 transition-colors duration-300">
+                <h3 class="text-2xl font-heading font-black text-white mb-4 uppercase">Festival Fuel</h3>
+                <ul class="space-y-4 text-gray-400 text-sm">
+                    <li><strong class="text-white block mb-1">Boba & Lemonade</strong> Refreshing popping boba lemonades to keep you cool.</li>
+                    <li><strong class="text-white block mb-1">Fresh Confections</strong> Hot candy floss freshly spun on-site.</li>
+                    <li><strong class="text-white block mb-1">Local Food Trucks</strong> Independent vendors serving up hot festival bites.</li>
+                </ul>
             </div>
 
-            <!-- RT Marketplace & Fun Zone Header -->
-            <div id="funzone" class="text-center mt-24 mb-16 scroll-mt-24">
-                <h2 class="text-4xl md:text-5xl font-heading font-black mb-4 uppercase">The BeRaver <span class="text-beraverPink neon-text-pink">Fun Zone</span></h2>
-                <p class="text-lg text-gray-400 max-w-2xl mx-auto">Explore our marketplace for festival food, high-voltage games, and eco-friendly rave gear.</p>
+            <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-beraverPink/50 transition-colors duration-300">
+                <h3 class="text-2xl font-heading font-black text-white mb-4 uppercase">High-Voltage Games</h3>
+                <ul class="space-y-4 text-gray-400 text-sm">
+                    <li><strong class="text-white block mb-1">Crack the Safe (£2)</strong> Guess the 4-digit code to win a premium prize!</li>
+                    <li><strong class="text-white block mb-1">Spin the Decks</strong> A DJ-deck themed wheel of fortune for instant wins.</li>
+                    <li><strong class="text-white block mb-1">Play Your Cards Right</strong> Catch our giant game board roaming the market.</li>
+                </ul>
             </div>
 
-            <!-- Stalls and Games Grid -->
-            <div class="grid md:grid-cols-3 gap-8">
-                
-                <!-- Food & Drink -->
-                <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-beraverBlue/50 transition-colors duration-300">
-                    <h3 class="text-2xl font-heading font-black text-white mb-4 uppercase">Festival Fuel</h3>
-                    <ul class="space-y-4 text-gray-400 text-sm">
-                        <li><strong class="text-white block mb-1">Boba & Lemonade</strong> Refreshing popping boba lemonades to keep you cool.</li>
-                        <li><strong class="text-white block mb-1">Fresh Confections</strong> Hot candy floss freshly spun on-site.</li>
-                        <li><strong class="text-white block mb-1">Local Food Trucks</strong> Independent vendors serving up hot festival bites.</li>
-                    </ul>
-                </div>
-
-                <!-- Games -->
-                <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-beraverPink/50 transition-colors duration-300">
-                    <h3 class="text-2xl font-heading font-black text-white mb-4 uppercase">High-Voltage Games</h3>
-                    <ul class="space-y-4 text-gray-400 text-sm">
-                        <li><strong class="text-white block mb-1">Crack the Safe (£2)</strong> Guess the 4-digit code to win a premium prize, like a £50 restaurant voucher!</li>
-                        <li><strong class="text-white block mb-1">Spin the Decks</strong> A DJ-deck themed wheel of fortune for instant wins like lollipops and glow sticks.</li>
-                        <li><strong class="text-white block mb-1">Play Your Cards Right</strong> Catch our giant interactive game board roaming on the Zendure E-Cargo bike.</li>
-                    </ul>
-                </div>
-
-                <!-- Festival Gear -->
-                <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-beraverBlue/50 transition-colors duration-300">
-                    <h3 class="text-2xl font-heading font-black text-white mb-4 uppercase">Rave Ready</h3>
-                    <ul class="space-y-4 text-gray-400 text-sm">
-                        <li><strong class="text-white block mb-1">"Rave Survival" Tombola</strong> Win bucket hats, neon sunglasses, inflatable guitars, and glow batons for the main stage.</li>
-                        <li><strong class="text-white block mb-1">Bio-Glitter Bar</strong> Get festival-ready in seconds with chunky, eco-friendly biodegradable glitter applied with aloe vera gel.</li>
-                    </ul>
-                </div>
+            <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-beraverBlue/50 transition-colors duration-300">
+                <h3 class="text-2xl font-heading font-black text-white mb-4 uppercase">Rave Ready</h3>
+                <ul class="space-y-4 text-gray-400 text-sm">
+                    <li><strong class="text-white block mb-1">"Rave Survival" Tombola</strong> Win bucket hats, neon sunglasses, and glow batons.</li>
+                    <li><strong class="text-white block mb-1">Bio-Glitter Bar</strong> Get festival-ready with eco-friendly biodegradable glitter.</li>
+                </ul>
             </div>
-        
+        </div>
     </section>
 
     <!-- Live Donation Ticker -->
@@ -258,10 +256,10 @@
                     Donate Online Now
                 </a>
                 
-                <!-- Volunteer CTA -->
-                <a href="mailto:beverley247@roundtable.org.uk?subject=Volunteer%20-%20BeRaver%20Festival" class="w-full sm:w-auto bg-transparent border-2 border-beraverPink text-white hover:bg-beraverPink font-heading font-black px-8 py-3.5 rounded-full text-xl uppercase transition-all hover:shadow-[0_0_20px_rgba(255,0,127,0.5)] transform hover:-translate-y-1">
+                <!-- NEW Modal Trigger -->
+                <button onclick="openVolunteerModal()" class="w-full sm:w-auto bg-transparent border-2 border-beraverPink text-white hover:bg-beraverPink font-heading font-black px-8 py-3.5 rounded-full text-xl uppercase transition-all hover:shadow-[0_0_20px_rgba(255,0,127,0.5)] transform hover:-translate-y-1">
                     Join the Crew
-                </a>
+                </button>
             </div>
             
             <div class="mt-16 pt-10 border-t border-white/10">
@@ -289,25 +287,97 @@
         </div>
     </footer>
 
-    <!-- Ticker JS Logic -->
-    <script>
-        const WORKER_URL = "https://zeffywebhook.beverley247.workers.dev";
+    <!-- VOLUNTEER MODAL -->
+    <div id="volunteerModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
         
+        <div class="bg-beraverDark border border-white/10 p-5 md:p-8 rounded-2xl md:rounded-3xl max-w-xl w-full relative overflow-y-auto max-h-[90vh] shadow-[0_0_40px_rgba(77,184,232,0.2)] transform scale-95 transition-transform duration-300" id="modalContent">
+            
+            <!-- Close Button -->
+            <button onclick="closeVolunteerModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <header class="text-center mb-6 flex flex-col items-center">
+                <h2 class="text-3xl md:text-4xl font-heading font-black uppercase tracking-wide mb-2 mt-4">
+                    JOIN THE <span class="text-beraverBlue neon-text-blue">CREW</span>
+                </h2>
+                <p class="text-gray-400 text-base">Volunteer Sign-Up</p>
+            </header>
+
+            <form id="volunteerForm" onsubmit="submitForm(event)" class="space-y-5">
+                
+                <div>
+                    <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Full Name</label>
+                    <input type="text" id="volName" required placeholder="e.g. John Smith" 
+                           class="glass-input w-full px-4 py-3 rounded-xl font-body text-base placeholder-gray-500">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Phone</label>
+                        <input type="tel" id="volPhone" required placeholder="07..." 
+                               class="glass-input w-full px-4 py-3 rounded-xl font-body text-base placeholder-gray-500">
+                    </div>
+                    <div>
+                        <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Email</label>
+                        <input type="email" id="volEmail" required placeholder="name@example.com" 
+                               class="glass-input w-full px-4 py-3 rounded-xl font-body text-base placeholder-gray-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Organisation (Optional)</label>
+                    <input type="text" id="volOrg" placeholder="e.g. Scouts, Guides, or leave blank" 
+                           class="glass-input w-full px-4 py-3 rounded-xl font-body text-base placeholder-gray-500">
+                </div>
+
+                <div>
+                    <label class="block font-heading uppercase text-xs tracking-widest text-gray-400 mb-2">Preferred Role</label>
+                    <select id="volRole" required class="glass-input w-full px-4 py-3 rounded-xl font-body text-base cursor-pointer">
+                        <option value="">Select an assignment...</option>
+                        <option value="Any">General Crew (Put me anywhere!)</option>
+                        <option value="Bucket Collection">Bucket Collection / Fundraiser</option>
+                        <option value="Games Operator">Games Operator (Crack the Safe, Tombola)</option>
+                        <option value="Stall Assistant">Stall Assistant (Boba, Candy Floss)</option>
+                    </select>
+                </div>
+
+                <div class="pt-4 mt-4 border-t border-white/10">
+                    <label class="flex items-start gap-4 cursor-pointer group">
+                        <input type="checkbox" required class="mt-1 flex-shrink-0 w-5 h-5 accent-beraverPink bg-white/10 border-white/20 rounded cursor-pointer">
+                        <span class="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                            I agree to volunteer for the festival shift and follow safety instructions from the Round Table organisers.
+                        </span>
+                    </label>
+                </div>
+
+                <button type="submit" id="submitBtn" 
+                        class="w-full mt-6 bg-beraverPink hover:bg-white text-beraverDark font-heading font-black px-8 py-4 rounded-xl text-lg uppercase transition-all shadow-[0_0_15px_rgba(255,0,127,0.4)] hover:shadow-[0_0_25px_rgba(255,255,255,0.6)] transform hover:-translate-y-1">
+                    Sign Up Now
+                </button>
+                
+                <div id="statusMessage" class="hidden text-center mt-4 font-bold text-sm"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // --- Zeffy Webhook Ticker ---
+        const WORKER_URL = "https://zeffywebhook.beverley247.workers.dev";
         let totalRaised = 0;
         let lastDonationId = null;
         let isInitialLoad = true;
-
         const raisedEl = document.getElementById('total-raised');
         const raisedContainer = document.getElementById('total-raised-container');
         const latestEl = document.getElementById('latest-donation');
 
         function triggerDonationAlert(name, amount) {
-            // Pop effect on the total
             raisedEl.innerText = totalRaised;
             raisedContainer.classList.add('scale-110', 'text-beraverPink');
             setTimeout(() => raisedContainer.classList.remove('scale-110', 'text-beraverPink'), 400);
-
-            // Update ticker text
             latestEl.style.opacity = 0;
             setTimeout(() => {
                 latestEl.innerHTML = `⚡ NEW: <span class="text-white">${name}</span> dropped <span class="text-beraverPink neon-text-pink">£${amount}</span>!`;
@@ -319,32 +389,101 @@
             try {
                 const response = await fetch(WORKER_URL);
                 if (!response.ok) return;
-                
                 const data = await response.json();
-                
-                // Sync total raised from worker KV
                 if (typeof data.total === 'number') {
                     totalRaised = data.total;
                     raisedEl.innerText = totalRaised;
                 }
-                
-                // If there's a new donation ID
                 if (data.id && data.id !== lastDonationId) {
-                    if (!isInitialLoad) {
-                        triggerDonationAlert(data.name, data.amount);
-                    }
+                    if (!isInitialLoad) triggerDonationAlert(data.name, data.amount);
                     lastDonationId = data.id; 
                 }
                 isInitialLoad = false;
-            } catch (error) {
-                console.error("Worker fetch failed:", error);
-            }
+            } catch (error) {}
         }
-
-        // Poll every 5 seconds
         setInterval(pollLatestDonation, 5000);
         pollLatestDonation(); 
-    </script>
 
+        // --- Volunteer Modal UI Logic ---
+        const modal = document.getElementById('volunteerModal');
+        const modalContent = document.getElementById('modalContent');
+
+        function openVolunteerModal() {
+            modal.classList.remove('hidden');
+            // Slight delay to allow CSS transitions to pop the modal in
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+            document.body.style.overflow = 'hidden'; // Stop background scrolling
+        }
+
+        function closeVolunteerModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = ''; // Restore scrolling
+            }, 300);
+        }
+
+        // Close on clicking the dark background
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeVolunteerModal();
+        });
+
+        // --- Volunteer Form Submission Logic ---
+        const API_URL = "https://script.google.com/macros/s/YOUR_ACTUAL_SCRIPT_ID/exec";
+
+        async function submitForm(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const status = document.getElementById('statusMessage');
+            
+            btn.innerText = "TRANSMITTING...";
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            status.classList.add('hidden');
+
+            const payload = {
+                name: document.getElementById('volName').value,
+                phone: document.getElementById('volPhone').value,
+                email: document.getElementById('volEmail').value,
+                org: document.getElementById('volOrg').value,
+                role: document.getElementById('volRole').value,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.status !== "success") throw new Error(result.message);
+
+                status.innerText = "You're on the list! We'll be in touch with details soon.";
+                status.className = "text-center mt-4 font-bold text-sm text-green-400 neon-text-blue block";
+                document.getElementById('volunteerForm').reset();
+                
+                // Auto-close modal after 3 seconds on success
+                setTimeout(closeVolunteerModal, 3000);
+                
+            } catch (err) {
+                console.error(err);
+                status.innerText = "Connection failed. Please try again.";
+                status.className = "text-center mt-4 font-bold text-sm text-red-400 block";
+            } finally {
+                btn.innerText = "SIGN UP NOW";
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
+    </script>
 </body>
 </html>
