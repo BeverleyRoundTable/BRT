@@ -265,51 +265,12 @@ $('qty').onblur    = ()=> renderQty();
 renderQty();
 
 // ---- live pot ----
+// Replace the existing (async function loadStatus(){...})(); block with:
 (async function loadStatus(){
-  try{
-    const r = await fetch(WORKER_URL + '/status');
-    const s = await r.json();
-
-    // [FIX 11] Config drives the displayed price and prize percentage, so the
-    // page can never disagree with what the backend will actually charge/pay.
-    if (s.ticket_price_pence){
-      TICKET_PRICE = Number(s.ticket_price_pence);
-      renderQty();
-      document.querySelectorAll('[data-price]').forEach(el =>
-        el.textContent = gbp(TICKET_PRICE).replace(/\.00$/,''));
-      document.querySelectorAll('[data-price-long]').forEach(el =>
-        el.textContent = gbp(TICKET_PRICE));
-    }
-    if (s.prize_pct){
-      document.querySelectorAll('[data-pct]').forEach(el =>
-        el.textContent = Number(s.prize_pct) + '%');
-    }
-
-    $('prize').textContent   = gbp(s.estimated_prize_pence||0);
-    $('pot').textContent     = gbp(s.pot_pence||0);
-    $('tickets').textContent = (s.ticket_count||0).toLocaleString('en-GB');
-    if (s.current_draw_id) $('month').textContent = monthName(s.current_draw_id);
-    if (s.society_name) $('societyName').textContent = s.society_name;
-    if (s.promoter_name) $('promoterInfo').textContent =
-      s.promoter_name + (s.promoter_address ? ', ' + s.promoter_address : '');
-    if (s.registration_no)
-      $('regNo').textContent = 'East Riding of Yorkshire Council reg. no. ' + s.registration_no;
-
-    // [FIX 2] Build the winner strip with textContent, never innerHTML — the
-    // display name derives from a buyer-typed name, and unescaped user input
-    // in innerHTML is stored XSS for every visitor to this page.
-    if (s.last_winner && s.last_winner.winner_display){
-      const w = s.last_winner;
-      const box = $('winner');
-      box.textContent = '';
-      const b1 = document.createElement('b'); b1.textContent = w.winner_display;
-      const b2 = document.createElement('b'); b2.textContent = gbp(Number(w.prize_pence)||0);
-      box.append('🏆 Last month ', b1, ' (ticket #' + (Number(w.winning_ticket_no)||'?') + ') won ', b2, '. You could be next!');
-      box.style.display = 'flex';
-    }
-  }catch(e){
-    $('prizeSub').textContent = 'Live pot unavailable right now — you can still enter below.';
-  }
+  $('prizeSub').textContent = 'The monthly draw is currently suspended.';
+  $('buy').disabled = true;
+  $('buy').textContent = 'Draw Suspended';
+  $('month').textContent = 'Paused';
 })();
 
 // ---- buy ----
