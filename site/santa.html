@@ -211,10 +211,22 @@ caches your custom fonts for a year, drastically speeding up load times:
 
     <main class="flex-grow pt-20">
         <section id="hero" class="relative min-h-[75vh] flex items-center justify-center overflow-hidden bg-brt-dark">
-            <!-- Festive Backgrounds -->
-            <div class="absolute inset-0 bg-gradient-to-b from-[#3a0a0a] via-[#1a0505] to-brt-dark"></div>
-            <div class="absolute inset-0 snow-pattern opacity-60 pointer-events-none"></div>
             
+            <!-- 1. Video Background (Base Layer) -->
+            <div class="absolute inset-0 z-0 overflow-hidden">
+                <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-60">
+                    <source src="https://brt-23f.pages.dev//images/vid.webm" type="video/webm">
+                    <source src="https://brt-23f.pages.dev//images/vid.mp4" type="video/mp4">
+                </video>
+            </div>
+
+            <!-- 2. Gradient Overlay (Festive Tint + Fade to Dark at the bottom) -->
+            <div class="absolute inset-0 bg-gradient-to-b from-[#3a0a0a]/70 via-[#1a0505]/80 to-brt-dark z-0 pointer-events-none"></div>
+
+            <!-- 3. Festive Snow Pattern (Top Background Layer) -->
+            <div class="absolute inset-0 snow-pattern opacity-60 pointer-events-none z-0"></div>
+            
+            <!-- 4. Hero Content -->
             <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mt-10">
                 <div class="inline-block bg-white/5 backdrop-blur-md border border-brt-red/30 px-6 py-2 rounded-full mb-6">
                     <span class="font-heading font-extrabold uppercase tracking-widest text-sm md:text-base text-white/90 flex items-center gap-2">
@@ -240,6 +252,7 @@ caches your custom fonts for a year, drastically speeding up load times:
                 </div>
             </div>
             
+            <!-- Bottom fade to seamlessly blend into the tracker section -->
             <div class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-brt-dark to-transparent z-10 pointer-events-none"></div>
         </section>
 
