@@ -1016,27 +1016,43 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       const WorkshopManager = {
         timerId: null,
         init(routes) {
-            if (!routes || routes.length === 0) return false;
             const now = new Date();
-now.setHours(0, 0, 0, 0);
-let targetDate = null;
-const futureRouteObjects = routes
-    .filter(r => new Date(r.date) >= now)
-                .sort((a,b) => new Date(a.date) - new Date(b.date));
-            if (futureRouteObjects.length > 0) {
-                targetDate = new Date(futureRouteObjects[0].date);
-            } else {
-                targetDate = new Date(now.getFullYear() + 1, 11, 1);
+            now.setHours(0, 0, 0, 0);
+            
+            let futureRouteObjects = [];
+            // 1. Only process routes if they exist and contain a valid future date
+            if (routes && routes.length > 0) {
+                futureRouteObjects = routes
+                    .filter(r => r.date && !isNaN(new Date(r.date)) && new Date(r.date) >= now)
+                    .sort((a,b) => new Date(a.date) - new Date(b.date));
             }
-            const startDate = new Date(targetDate.getFullYear(), 0, 1);
-            const daysUntil = (targetDate - now) / (1000 * 60 * 60 * 24);
-            if (daysUntil < 10) return false; 
-            document.getElementById('workshopOverlay').style.display = 'flex';
+            
+            let targetDate = null;
+            let hasValidDates = false;
             
             if (futureRouteObjects.length > 0) {
-              const scheduleEl = document.getElementById('wsSchedule');
-              const listEl = document.getElementById('wsScheduleList');
+                targetDate = new Date(futureRouteObjects[0].date);
+                hasValidDates = true;
+            } else {
+                // 2. Set an invisible fallback target for the progress bar math only
+                targetDate = new Date(now.getFullYear(), 11, 1);
+                if (targetDate < now) targetDate = new Date(now.getFullYear() + 1, 11, 1);
+            }
+            
+            const startDate = new Date(targetDate.getFullYear(), 0, 1);
+            const daysUntil = (targetDate - now) / (1000 * 60 * 60 * 24);
+            
+            // If we have a valid date and it's less than 10 days away, drop the overlay
+            if (hasValidDates && daysUntil < 10) return false; 
+            
+            document.getElementById('workshopOverlay').style.display = 'flex';
+            
+            const scheduleEl = document.getElementById('wsSchedule');
+            const listEl = document.getElementById('wsScheduleList');
+            
+            if (hasValidDates) {
               scheduleEl.style.display = 'block';
+              listEl.innerHTML = '';
               const toShow = futureRouteObjects.slice(0, 3);
               for (const r of toShow) {
                 const d = new Date(r.date);
@@ -1047,31 +1063,42 @@ const futureRouteObjects = routes
                 listEl.appendChild(item);
               }
               if (futureRouteObjects.length > 3) {
-              const more = document.createElement('div');
-              more.style.cssText = 'text-align:center; color:var(--text-dim); font-size:11px; margin-top:6px; font-style:italic;';
-              more.textContent = `+ ${futureRouteObjects.length - 3} more routes`;
-              listEl.appendChild(more);
-            }
+                const more = document.createElement('div');
+                more.style.cssText = 'text-align:center; color:var(--text-dim); font-size:11px; margin-top:6px; font-style:italic;';
+                more.textContent = `+ ${futureRouteObjects.length - 3} more routes`;
+                listEl.appendChild(more);
+              }
+            } else {
+              // Hide the schedule preview if there are no valid dates
+              scheduleEl.style.display = 'none';
             }
 
-            this.startLoop(startDate, targetDate);
+            // Pass the hasValidDates flag into the loop
+            this.startLoop(startDate, targetDate, hasValidDates);
             return true;
         },
-        startLoop(start, end) {
+        startLoop(start, end, hasValidDates) {
             const update = () => {
                 const now = new Date();
                 const totalMs = end.getTime() - start.getTime();
                 const elapsedMs = now.getTime() - start.getTime();
                 let pct = Math.max(0, Math.min(100, (elapsedMs / totalMs) * 100));
-                const diff = end.getTime() - now.getTime();
-                if (diff > 0) {
-                    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-                    const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-                    const m = Math.floor((diff / 1000 / 60) % 60);
-                    document.getElementById('wsCountdown').textContent = `${d}d ${h}h ${m}m`;
+                
+                // 3. Swap the countdown for text if no valid dates exist
+                if (!hasValidDates) {
+                    document.getElementById('wsCountdown').textContent = "DATES COMING SOON";
                 } else {
-                    document.getElementById('wsCountdown').textContent = "Ready for takeoff!";
+                    const diff = end.getTime() - now.getTime();
+                    if (diff > 0) {
+                        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                        const m = Math.floor((diff / 1000 / 60) % 60);
+                        document.getElementById('wsCountdown').textContent = `${d}d ${h}h ${m}m`;
+                    } else {
+                        document.getElementById('wsCountdown').textContent = "Ready for takeoff!";
+                    }
                 }
+                
                 const motPct = Math.min(100, pct * 1.05).toFixed(1);
                 document.getElementById('wsMotBar').style.width = motPct + '%';
                 document.getElementById('wsMotPct').textContent = Math.floor(motPct) + '%';
