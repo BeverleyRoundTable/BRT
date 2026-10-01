@@ -283,8 +283,9 @@ const ERRORS = {
   draw_full:"This month's draw has reached its £20,000 limit — please come back next month!",
 };
 
-$('buy').onclick = async function(){
-  errBox.style.display='none';
+$('buy').onclick = function(){
+  showErr("The draw is currently suspended and is not accepting new entries.");
+};
   const name = $('name').value.trim();
   const email = $('email').value.trim();
   if(!name || !email){ showErr(ERRORS.missing_details); return; }
