@@ -126,31 +126,65 @@
 
     </main>
 
-    <!-- Zeffy Live Ticker (Imported from your main site) -->
-    <section class="bg-black border-t border-white/10 py-4 mt-auto">
+    <!-- Live Donation Ticker (Identical to BERAVER main site) -->
+    <section class="bg-black border-t border-white/10 py-4 relative z-20 overflow-hidden shadow-[0_-5px_20px_rgba(0,0,0,0.5)] mt-auto">
         <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-3 h-3 rounded-full bg-red-600 animate-pulse shadow-[0_0_10px_red]"></div>
-                <span class="font-heading font-bold uppercase tracking-widest text-sm text-gray-300">Live Donations</span>
+                <span class="font-heading font-bold uppercase tracking-widest text-sm text-gray-300">Live Webhook</span>
             </div>
-            <div class="font-heading font-black text-2xl text-white">
-                £<span id="total-raised">0</span> <span class="text-beraverPink text-lg">Raised Today</span>
+            <div class="font-heading font-black text-2xl text-white transition-transform duration-300" id="total-raised-container">
+                £<span id="total-raised">0</span> <span class="text-beraverBlue text-lg">Raised This Year</span>
+            </div>
+            <div id="latest-donation" class="text-sm font-bold h-6 overflow-hidden transition-opacity duration-300 text-gray-400">
+                Listening for Zeffy drops...
             </div>
         </div>
     </section>
 
-    <!-- Script to Fetch Spotify Data -->
     <script>
-        // --- TICKER LOGIC ---
-        // You can drop your existing Zeffy KV fetch logic here to update the total-raised span.
-        
-        // --- SPOTIFY QUEUE LOGIC ---
-        // Because grabbing the live queue requires Spotify Access Tokens, it is insecure to put your API keys in public HTML.
-        // The safest architecture is to add a new `GET` route to your existing Cloudflare Worker that fetches the Spotify queue securely, and this HTML page simply pings that Worker every 10 seconds.
-        
+        // --- ZEFFY WEBHOOK TICKER LOGIC ---
+        const WORKER_URL = "https://zeffywebhook.beverley247.workers.dev";
+        let totalRaised = 0;
+        let lastDonationId = null;
+        let isInitialLoad = true;
+        const raisedEl = document.getElementById('total-raised');
+        const raisedContainer = document.getElementById('total-raised-container');
+        const latestEl = document.getElementById('latest-donation');
+
+        function triggerDonationAlert(name, amount) {
+            raisedEl.innerText = totalRaised;
+            raisedContainer.classList.add('scale-110', 'text-beraverPink');
+            setTimeout(() => raisedContainer.classList.remove('scale-110', 'text-beraverPink'), 400);
+            latestEl.style.opacity = 0;
+            setTimeout(() => {
+                latestEl.innerHTML = `⚡ NEW: <span class="text-white">${name}</span> dropped <span class="text-beraverPink neon-text-pink">£${amount}</span>!`;
+                latestEl.style.opacity = 1;
+            }, 300);
+        }
+
+        async function pollLatestDonation() {
+            try {
+                const response = await fetch(WORKER_URL);
+                if (!response.ok) return;
+                const data = await response.json();
+                if (typeof data.total === 'number') {
+                    totalRaised = data.total;
+                    raisedEl.innerText = totalRaised;
+                }
+                if (data.id && data.id !== lastDonationId) {
+                    if (!isInitialLoad) triggerDonationAlert(data.name, data.amount);
+                    lastDonationId = data.id; 
+                }
+                isInitialLoad = false;
+            } catch (error) {}
+        }
+        setInterval(pollLatestDonation, 5000);
+        pollLatestDonation(); 
+
+        // --- SPOTIFY LIVE QUEUE LOGIC ---
         async function fetchLiveQueue() {
             try {
-                // Example: Replace with your actual Worker URL once the GET route is set up
                 const response = await fetch('https://zeffywebhook.beverley247.workers.dev/queue'); 
                 const data = await response.json();
                 
@@ -166,7 +200,7 @@
                 // Update Queue List
                 const queueContainer = document.getElementById('queue-container');
                 if (data.queue && data.queue.length > 0) {
-                    queueContainer.innerHTML = ''; // clear placeholder
+                    queueContainer.innerHTML = '';
                     data.queue.slice(0, 5).forEach((track, index) => {
                         queueContainer.innerHTML += `
                             <div class="track-card rounded-xl p-3 flex items-center gap-4">
@@ -185,8 +219,8 @@
             }
         }
 
-        // Poll every 10 seconds
         setInterval(fetchLiveQueue, 10000);
+        fetchLiveQueue();
     </script>
 </body>
 </html>
