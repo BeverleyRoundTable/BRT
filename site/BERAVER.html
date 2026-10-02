@@ -85,6 +85,35 @@
             background: rgba(255, 255, 255, 0.1);
         }
         select option { background-color: #1D1D1A; color: white; }
+
+        /* Traveling Border Pulse for Twitch Widget */
+@keyframes spin-border {
+    100% { transform: rotate(360deg); }
+}
+.pulse-border-wrapper {
+    position: relative;
+    border-radius: 1rem;
+    overflow: hidden;
+    padding: 2px; /* Thickness of the electric border */
+    z-index: 50;
+}
+.pulse-border-wrapper::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%; width: 200%; height: 200%;
+    background: conic-gradient(transparent, transparent, transparent, #4db8e8, #ff007f);
+    animation: spin-border 3s linear infinite;
+    z-index: -1;
+}
+.pulse-border-inner {
+    background: #1D1D1A;
+    border-radius: calc(1rem - 2px);
+    height: 100%;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+        
     </style>
 </head>
 <body class="font-body antialiased flex flex-col min-h-screen">
@@ -493,6 +522,57 @@
                 btn.classList.remove('opacity-70', 'cursor-not-allowed');
             }
         }
+
+        // --- Twitch Widget Toggle Logic ---
+function toggleTwitch() {
+    const expanded = document.getElementById('twitchExpanded');
+    const collapsed = document.getElementById('twitchCollapsed');
+    
+    if (expanded.classList.contains('hidden')) {
+        expanded.classList.remove('hidden');
+        collapsed.classList.add('hidden');
+    } else {
+        expanded.classList.add('hidden');
+        collapsed.classList.remove('hidden');
+    }
+}
+        
     </script>
+
+    <!-- Twitch Live Floating Widget -->
+<div id="twitchWidget" class="fixed bottom-4 right-4 z-50 flex flex-col items-end transition-all duration-300">
+    
+    <!-- Expanded Feed (Hidden by default) -->
+    <div id="twitchExpanded" class="hidden mb-4 pulse-border-wrapper w-[90vw] max-w-[400px] aspect-video shadow-[0_0_30px_rgba(255,0,127,0.3)]">
+        <div class="pulse-border-inner flex flex-col overflow-hidden">
+            <div class="flex justify-between items-center px-3 py-2 bg-black/50 border-b border-white/10">
+                <span class="font-heading text-sm uppercase text-beraverBlue flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div> Live from BERAVER
+                </span>
+                <button onclick="toggleTwitch()" class="text-gray-400 hover:text-white font-bold text-lg leading-none">&times;</button>
+            </div>
+            <!-- Update the parent= parameters to match your actual domains -->
+            <iframe 
+                src="https://player.twitch.tv/?channel=beverleyroundtable&parent=brt-23f.pages.dev&parent=beverleyroundtable.co.uk" 
+                frameborder="0" 
+                allowfullscreen="true" 
+                scrolling="no" 
+                class="w-full h-full">
+            </iframe>
+        </div>
+    </div>
+
+    <!-- Minimized Pulse Button -->
+    <button id="twitchCollapsed" onclick="toggleTwitch()" class="pulse-border-wrapper shadow-[0_0_20px_rgba(77,184,232,0.4)] hover:scale-105 transition-transform duration-200">
+        <div class="pulse-border-inner px-4 py-3 flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-red-600 animate-pulse shadow-[0_0_10px_red]"></div>
+            <div class="text-left">
+                <div class="font-heading font-black text-white uppercase text-sm leading-tight tracking-wide">We Are Live</div>
+                <div class="text-[11px] text-gray-400 font-body">Can't make it? Watch here.</div>
+            </div>
+        </div>
+    </button>
+</div>
+    
 </body>
 </html>
