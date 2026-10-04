@@ -1200,19 +1200,25 @@
         }
 
         function frameUrl(page, api) {
-            let url = CFG.frameBase + '/' + page +
-                '?api=' + encodeURIComponent(api) +
-                '&proxy=' + encodeURIComponent(window.sleighProxyUrl(api));
-            
-            // Pass the pleasant addresses URL down to the iframe for sharing
-            if (page === 'address.html') {
-                const shareBase = prettyAddressesUrl();
-                if (shareBase) {
-                    url += '&shareBase=' + encodeURIComponent(shareBase);
-                }
-            }
-            return url;
+    let url = CFG.frameBase + '/' + page +
+        '?api=' + encodeURIComponent(api) +
+        '&proxy=' + encodeURIComponent(window.sleighProxyUrl(api));
+    
+    // Pass the pleasant addresses URL down to the iframe for sharing
+    if (page === 'address.html') {
+        const shareBase = prettyAddressesUrl();
+        if (shareBase) {
+            url += '&shareBase=' + encodeURIComponent(shareBase);
         }
+    } else if (page === 'tracker') {
+        // ADD THIS: Pass the pleasant tracker URL down to the iframe for sharing
+        const shareBase = prettyTrackerUrl();
+        if (shareBase) {
+            url += '&shareBase=' + encodeURIComponent(shareBase);
+        }
+    }
+    return url;
+}
 
         let frameMessageBound = false;
         function bindFrameMessages() {
