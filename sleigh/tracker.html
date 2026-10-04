@@ -2761,18 +2761,26 @@ if ('ResizeObserver' in window) {
 window.layoutOverlays();
 
             if (!AppState.flags.isKiosk && !AppState.flags.isDriver) {
-              const shareBtn = AppState.dom.shareBtn;
-              shareBtn.style.display = "inline-block";
-              shareBtn.onclick = async () => {
-                // Dynamically build share URL with pin coordinates if active
-                const urlObj = new URL(window.location.href);
-                if (AppState.vars.notifyLatLng) {
-                  urlObj.searchParams.set("pin", `${AppState.vars.notifyLatLng.lat.toFixed(6)},${AppState.vars.notifyLatLng.lng.toFixed(6)}`);
-                } else {
-                  urlObj.searchParams.delete("pin");
-                }
-                const shareUrl = urlObj.toString();
-                const shareText = `Track Santa's sleigh LIVE! ${AppState.vars.sleighName}`;
+        const shareBtn = AppState.dom.shareBtn;
+        shareBtn.style.display = "inline-block";
+        shareBtn.onclick = async () => {
+          
+          // 1. Grab the shareBase passed from santasleigh.html (if inside an iframe)
+          const params = new URLSearchParams(location.search);
+          const shareBase = params.get("shareBase");
+          
+          // 2. Use shareBase if it exists, otherwise use actual window URL (if standalone)
+          const baseUrl = shareBase ? shareBase : window.location.href;
+          const urlObj = new URL(baseUrl);
+          
+          // Dynamically build share URL with pin coordinates if active
+          if (AppState.vars.notifyLatLng) {
+            urlObj.searchParams.set("pin", `${AppState.vars.notifyLatLng.lat.toFixed(6)},${AppState.vars.notifyLatLng.lng.toFixed(6)}`);
+          } else {
+            urlObj.searchParams.delete("pin");
+          }
+          const shareUrl = urlObj.toString();
+          const shareText = `Track Santa's sleigh LIVE! ${AppState.vars.sleighName}`;
                 
                 const copyFallback = async () => {
                   try {
