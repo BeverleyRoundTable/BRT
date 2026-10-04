@@ -687,11 +687,11 @@
     };
 
     window.sleighFetchData = function (api) {
-        return fetch(window.sleighProxyUrl(api)).then(function (response) {
-            if (!response.ok) throw new Error('Failed to load API data (HTTP ' + response.status + ')');
-            return response.json();
-        });
-    };
+    return fetch(window.sleighProxyUrl(api), { cache: 'no-store' }).then(function (response) {
+        if (!response.ok) throw new Error('Failed to load API data (HTTP ' + response.status + ')');
+        return response.json();
+    });
+};
 
     window.__sleighApiUrl = new URLSearchParams(location.search).get('api');
 
