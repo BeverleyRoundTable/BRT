@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sleigh-shell-v4'; // Bumped to v4 to force clients to update
+const CACHE_NAME = 'sleigh-shell-v5'; // Bumped to v4 to force clients to update
 const API_CACHE = 'sleigh-api-cache-v1';
 const STATIC_ASSETS = [
     'https://brt-23f.pages.dev/icons/site_background.png',
