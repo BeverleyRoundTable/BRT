@@ -2568,8 +2568,10 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
         AppState.vars.firebaseUrl = apiData.tracker?.firebase_url ? apiData.tracker.firebase_url.replace(/\/$/, "") : null;
         const settings = apiData.settings || {};
         AppState.vars.sleighName = settings.sleigh_display_name || "Santa Sleigh";
-        const today = new Date().toISOString().slice(0, 10);
-        const route = (apiData.routes || []).find(r => r.date === today && r.gpxUrl) || null;
+        
+        // TEST TRACKER OVERRIDE: Ignore the date and force the first route with a GPX file to load
+        const route = (apiData.routes || []).find(r => r.gpxUrl) || null;
+        
         AppState.vars.todayRoute = route;
 
         if (!AppState.flags.isDriver && !AppState.flags.isKiosk && !route) {
