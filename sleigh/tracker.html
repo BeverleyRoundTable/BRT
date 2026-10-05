@@ -1255,7 +1255,7 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
         API: { REFRESH_MS: 6000, REFRESH_MAX_MS: 60000, STALE_MS: 5 * 60 * 1000, MOTION_WINDOW_MS: 60 * 1000, MOVE_THRESHOLD_METERS: 8, MIN_FIXES_FOR_ETA: 3, MIN_ETA_WINDOW_MS: 15 * 1000 },
         
         NOTIFICATIONS: { NEAR_DISTANCE_METERS: 250, PASSED_DISTANCE_OFFSET: 150 },
-        GPX: { AHEAD: 80, BACK: 5, EARLY_EXIT_METERS: 25 },
+        GPX: { AHEAD: 80, BACK: 5, EARLY_EXIT_METERS: 25, TAIL_METERS: 150 },
         SNOW: { ETA_MINUTES_MAX: 15, LEVELS: { LIGHT: 1, HEAVY: 2, BLIZZARD: 3 }, MOBILE_BASE_COUNT: 30, DESKTOP_BASE_COUNT: 60, MULTIPLIERS: [0, 1, 2.5, 5] },
         BATTERY: { LOW: 0.4, CRITICAL: 0.2, FRAME_SKIP: { LOW: 2, CRITICAL: 3 } },
         LOCATIONS: { LAPLAND: [66.5436, 25.8473] },
@@ -1335,6 +1335,43 @@ body.dim-ui .route-sponsor:hover { opacity: 0.85; }
       const pts = [...xml.getElementsByTagName("trkpt")]; if (pts.length < 2) throw new Error("GPX too short"); let dist = 0; let route = []; for (let i = 0; i < pts.length; i++) { const lat = parseFloat(pts[i].getAttribute("lat")); const lng = parseFloat(pts[i].getAttribute("lon")); const nameEl = pts[i].getElementsByTagName("name")[0]; const roadName = nameEl ? (nameEl.textContent || '').trim() : ''; if (i > 0) dist += Utils.haversineMeters(route[i - 1], { lat, lng }); route.push({ lat, lng, dist, index: i, roadName }); } AppState.gpxRoute = route; AppState.flags.gpxLoaded = true; AppState.vars.lastSnapIndex = 0; } catch (e) { AppState.flags.gpxLoaded = false; AppState.dom.notifyBtn.style.display = "none"; } }
 
       function snapToGpxIndex(pos, searchOpts) { if (!AppState.gpxRoute) return null; const { AHEAD, BACK, EARLY_EXIT_METERS } = searchOpts || AppConfig.GPX; const isGlobalSearch = !searchOpts; const start = isGlobalSearch ? 0 : Math.max(0, AppState.vars.lastSnapIndex - BACK); const end = isGlobalSearch ? AppState.gpxRoute.length - 1 : Math.min(AppState.gpxRoute.length - 1, AppState.vars.lastSnapIndex + AHEAD); let bestIndex = isGlobalSearch ? 0 : AppState.vars.lastSnapIndex; let bestDist = Infinity; for (let i = start; i <= end; i++) { const d = Utils.haversineMeters(pos, AppState.gpxRoute[i]); if (d < bestDist) { bestDist = d; bestIndex = i; } if (!isGlobalSearch && i > AppState.vars.lastSnapIndex && d > bestDist + EARLY_EXIT_METERS) break; } if (!isGlobalSearch) AppState.vars.lastSnapIndex = bestIndex; return { point: AppState.gpxRoute[bestIndex], distance: bestDist }; }
+
+      // ── GPX-FOLLOWING PAST + TAIL ──
+      // The gold "past" is the GPX itself, start -> the pin's snapped vertex: every vertex, so it can never
+      // cut a corner. The tail is the same idea: the last TAIL_METERS of GPX vertices behind the pin.
+      function gpxPastCoords(idx, lngFirst) {
+        const r = AppState.gpxRoute; if (!r || idx < 1) return [];
+        return r.slice(0, idx + 1).map(p => lngFirst ? [p.lng, p.lat] : [p.lat, p.lng]);
+      }
+      function gpxTailPoints(idx, meters) {
+        const r = AppState.gpxRoute; if (!r || idx < 1 || !r[idx]) return [];
+        const endDist = r[idx].dist; let s = idx;
+        while (s > 0 && endDist - r[s].dist < meters) s--; // stops on the first vertex at least `meters` behind
+        return r.slice(s, idx + 1);
+      }
+      function setLeafletPastRoute(idx) {
+        if (!AppState.dynamicRoutePastMain) return;
+        const c = gpxPastCoords(idx, false);
+        AppState.dynamicRoutePastMain.setLatLngs(c); AppState.dynamicRoutePastGlow.setLatLngs(c);
+      }
+      function setMlPastRoute(idx) {
+        const src = AppState.mlMap && AppState.mlMap.getSource('gpx-route-past'); if (!src) return;
+        const c = gpxPastCoords(idx, true);
+        src.setData(c.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: c } } : { type: 'FeatureCollection', features: [] });
+      }
+      // Leaflet fade tail: every GPX segment goes into one of segs.length opacity bands by distance behind the pin.
+      function renderLeafletGpxTail(pts, segs) {
+        const n = segs.length, bands = Array.from({ length: n }, () => []);
+        if (pts.length > 1) {
+          const d0 = pts[0].dist, span = (pts[pts.length - 1].dist - d0) || 1;
+          for (let j = 1; j < pts.length; j++) {
+            const b = Math.min(n - 1, Math.floor(n * (pts[j].dist - d0) / span)), band = bands[b];
+            if (!band.length) band.push([pts[j - 1].lat, pts[j - 1].lng]);
+            band.push([pts[j].lat, pts[j].lng]);
+          }
+        }
+        segs.forEach((seg, k) => seg.setLatLngs(bands[k]));
+      }
 
       // ── PIN ETA HELPERS ──────────────────────────────────────────
       // Snap the notify pin to the GPX once and cache it (pin is static;
@@ -1914,8 +1951,8 @@ if (window.layoutOverlays) window.layoutOverlays();
           if (AppState.flags.gpxLoaded) {
             const snap = snapToGpxIndex(visualPos, AppConfig.GPX); if (snap && snap.distance < 50) visualPos = snap.point;
             if (AppState.gpxRoute && AppState.gpxRoute.length > 1) { const bestPoint = (snap && snap.distance < 50) ? snap : snapToGpxIndex(visualPos, null); /* reuse windowed snap when it hit — pay for a full-route scan only on a miss */ if (bestPoint && bestPoint.distance <= 50) { const percentComplete = Math.min(100, Math.round((bestPoint.point.index || AppState.vars.lastSnapIndex) / (AppState.gpxRoute.length - 1) * 100)); AppState.dom.statusBox.style.setProperty('--progress', `${percentComplete}%`); if (AppState.flags.isDriver) { const bigBox = document.getElementById("driverProgressBox"); if (bigBox) bigBox.textContent = `${percentComplete}%`; } } else { AppState.dom.statusBox.style.setProperty('--progress', `0%`); if (AppState.flags.isDriver) { const bigBox = document.getElementById("driverProgressBox"); if (bigBox) bigBox.textContent = `OFF ROUTE`; } } }
-            if (AppState.dynamicRouteRemainingMain && AppState.vars.lastLeafletRouteIdx !== AppState.vars.lastSnapIndex) { const idx = AppState.vars.lastSnapIndex; const remaining = AppState.gpxRoute.slice(idx).map(p => [p.lat, p.lng]); AppState.dynamicRouteRemainingMain.setLatLngs(remaining); AppState.dynamicRouteRemainingGlow.setLatLngs(remaining); AppState.vars.lastLeafletRouteIdx = idx; }
-            if (AppState.mlMap && !AppState.flags.beaconActive && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.vars.lastMlRouteIdx !== AppState.vars.lastSnapIndex) { const idx = AppState.vars.lastSnapIndex; const rSrc = AppState.mlMap.getSource('gpx-route-remaining'); if (rSrc) { const rCoords = AppState.gpxRoute.slice(idx).map(p => [p.lng, p.lat]); rSrc.setData(rCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: rCoords } } : { type: 'FeatureCollection', features: [] }); AppState.vars.lastMlRouteIdx = idx; } }
+            if (AppState.dynamicRouteRemainingMain && AppState.vars.lastLeafletRouteIdx !== AppState.vars.lastSnapIndex) { const idx = AppState.vars.lastSnapIndex; const remaining = AppState.gpxRoute.slice(idx).map(p => [p.lat, p.lng]); AppState.dynamicRouteRemainingMain.setLatLngs(remaining); AppState.dynamicRouteRemainingGlow.setLatLngs(remaining); setLeafletPastRoute(idx); AppState.vars.lastLeafletRouteIdx = idx; }
+            if (AppState.mlMap && !AppState.flags.beaconActive && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.vars.lastMlRouteIdx !== AppState.vars.lastSnapIndex) { const idx = AppState.vars.lastSnapIndex; const rSrc = AppState.mlMap.getSource('gpx-route-remaining'); if (rSrc) { const rCoords = AppState.gpxRoute.slice(idx).map(p => [p.lng, p.lat]); rSrc.setData(rCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: rCoords } } : { type: 'FeatureCollection', features: [] }); setMlPastRoute(idx); AppState.vars.lastMlRouteIdx = idx; } }
           }
 
           animateMarkerTo(visualPos.lat, visualPos.lng);
@@ -1931,8 +1968,14 @@ if (window.layoutOverlays) window.layoutOverlays();
               if (AppState.tailFixes.length > 25) AppState.tailFixes.shift(); // Max 25 coordinates
           }
 
+          // On-route (visualPos was snapped to a GPX vertex, so it carries .index): tail = the GPX's own vertices.
+          // Off-route: fall back to the raw-fix tail below.
+          const gpxTailPts = (typeof visualPos.index === 'number') ? gpxTailPoints(visualPos.index, AppConfig.GPX.TAIL_METERS) : null;
+
           // Render Leaflet segmented tail (draw backwards so newest point always has highest opacity)
-          if (AppState.tailSegments && AppState.tailFixes.length > 1) {
+          if (AppState.tailSegments && gpxTailPts) {
+              renderLeafletGpxTail(gpxTailPts, AppState.tailSegments);
+          } else if (AppState.tailSegments && AppState.tailFixes.length > 1) {
               const maxSegs = AppState.tailSegments.length;
               const tailLen = AppState.tailFixes.length;
               
@@ -1948,9 +1991,10 @@ if (window.layoutOverlays) window.layoutOverlays();
 
           // Render MapLibre gradient tail
           if (AppState.mlMap && AppState.mlMap.getSource('sleigh-tail')) {
+              const mlTailCoords = gpxTailPts ? gpxTailPts.map(p => [p.lng, p.lat]) : AppState.tailFixes.map(p => [p[1], p[0]]);
               AppState.mlMap.getSource('sleigh-tail').setData(
-                  AppState.tailFixes.length >= 2 
-                  ? { type: 'Feature', geometry: { type: 'LineString', coordinates: AppState.tailFixes.map(p => [p[1], p[0]]) } } 
+                  mlTailCoords.length >= 2
+                  ? { type: 'Feature', geometry: { type: 'LineString', coordinates: mlTailCoords } }
                   : { type: 'FeatureCollection', features: [] }
               );
           }
@@ -2421,7 +2465,7 @@ try {
               // Uses the LIVE GPS snap index (not the poll-lagged lastSnapIndex) so the red line
               // shrinks under the arrow in real time, Waze-style. Off-route: hold last progression.
               const liveRouteIdx = (isOnRoute && snapResult && snapResult.point && typeof snapResult.point.index === 'number') ? snapResult.point.index : AppState.vars.lastSnapIndex;
-              if (AppState.mlMap && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.vars.lastMlRouteIdx !== liveRouteIdx) { const idx = liveRouteIdx; const rSrc = AppState.mlMap.getSource('gpx-route-remaining'); if (rSrc) { const rCoords = AppState.gpxRoute.slice(idx).map(p => [p.lng, p.lat]); rSrc.setData(rCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: rCoords } } : { type: 'FeatureCollection', features: [] }); AppState.vars.lastMlRouteIdx = idx; } }
+              if (AppState.mlMap && AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.vars.lastMlRouteIdx !== liveRouteIdx) { const idx = liveRouteIdx; const rSrc = AppState.mlMap.getSource('gpx-route-remaining'); if (rSrc) { const rCoords = AppState.gpxRoute.slice(idx).map(p => [p.lng, p.lat]); rSrc.setData(rCoords.length >= 2 ? { type: 'Feature', geometry: { type: 'LineString', coordinates: rCoords } } : { type: 'FeatureCollection', features: [] }); setMlPastRoute(idx); AppState.vars.lastMlRouteIdx = idx; } }
               
               // Position the driver arrow — MapLibre uses [lng, lat], Leaflet uses [lat, lng]
               if (AppState.mlMap) {
@@ -2657,7 +2701,7 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
         window.initTrackerMap = function() {
     AppState.map = L.map("map", { zoomControl: !AppState.flags.isKiosk && !AppState.flags.isDriver, rotate: !!AppState.flags.isDriver, touchRotate: false, shiftKeyRotate: false, rotateControl: false }).setView(AppConfig.LOCATIONS.LAPLAND, AppState.flags.isKiosk ? 6 : 5);
     
-    AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); const tailWeight = z >= 17 ? 7 : z >= 15 ? 5 : 4; if (AppState.tailSegments) AppState.tailSegments.forEach(seg => seg.setStyle({ weight: tailWeight })); });
+    AppState.map.on("zoomend", () => { if (!AppState.dynamicRouteRemainingMain) return; const z = AppState.map.getZoom(); const mainWeight = z >= 17 ? 5 : z >= 15 ? 4 : 3; AppState.dynamicRouteRemainingMain.setStyle({ weight: mainWeight }); AppState.dynamicRouteRemainingGlow.setStyle({ weight: mainWeight + 3 }); if (AppState.dynamicRoutePastMain) { AppState.dynamicRoutePastMain.setStyle({ weight: mainWeight }); AppState.dynamicRoutePastGlow.setStyle({ weight: mainWeight + 3 }); } const tailWeight = z >= 17 ? 7 : z >= 15 ? 5 : 4; if (AppState.tailSegments) AppState.tailSegments.forEach(seg => seg.setStyle({ weight: tailWeight })); });
     
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(AppState.map);
     
@@ -2667,6 +2711,8 @@ AppState.vars.dataUrl = AppState.vars.proxyUrl || AppState.vars.apiUrl;
         const allLatLngs = AppState.gpxRoute.map(p => [p.lat, p.lng]); 
         AppState.dynamicRouteRemainingGlow = L.polyline(allLatLngs, { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(AppState.map); 
         AppState.dynamicRouteRemainingMain = L.polyline(allLatLngs, { color: "#d31c1c", weight: 4, opacity: 0.95 }).addTo(AppState.map); 
+        AppState.dynamicRoutePastGlow = L.polyline([], { color: "#ffd700", weight: 7, opacity: 0.45 }).addTo(AppState.map);
+        AppState.dynamicRoutePastMain = L.polyline([], { color: "#ffd700", weight: 4, opacity: 0.95 }).addTo(AppState.map); 
         
         // Initialize the 24 dynamic tail segments (fading out from index 23 down to 0)
         AppState.tailFixes = [];
@@ -2961,7 +3007,7 @@ document.getElementById('msgConfirmBtn').onclick = () => {
 
               mlMap.on('load', () => {
                 // Add the GPX route as 3 layers mirroring the original Leaflet polylines:
-                // completed (grey dashed, behind driver), remaining glow (gold), remaining main (red).
+                // past (gold, GPX start -> pin), remaining glow (gold), remaining main (red).
                 // The two sources are updated each tick alongside the Leaflet setLatLngs calls.
                 if (AppState.flags.gpxLoaded && AppState.gpxRoute && AppState.gpxRoute.length > 1) {
                   const coords = AppState.gpxRoute.map(p => [p.lng, p.lat]);
@@ -2970,6 +3016,12 @@ document.getElementById('msgConfirmBtn').onclick = () => {
                     data: { type: 'Feature', geometry: { type: 'LineString', coordinates: coords } }
                   });
                   
+                  // Gold "past": the GPX from the start up to the pin (empty until the pin moves)
+                  mlMap.addSource('gpx-route-past', {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: [] }
+                  });
+
                   // Add the dynamic tail source (requires lineMetrics for gradient)
                   mlMap.addSource('sleigh-tail', {
                     type: 'geojson',
@@ -2993,6 +3045,21 @@ document.getElementById('msgConfirmBtn').onclick = () => {
                     paint: { 'line-color': '#d31c1c', 'line-width': 6, 'line-opacity': 0.95 }
                   });
                   
+                  mlMap.addLayer({
+                    id: 'gpx-route-past-glow',
+                    type: 'line',
+                    source: 'gpx-route-past',
+                    layout: { 'line-cap': 'round', 'line-join': 'round' },
+                    paint: { 'line-color': '#ffd700', 'line-width': 12, 'line-opacity': 0.45, 'line-blur': 4 }
+                  });
+                  mlMap.addLayer({
+                    id: 'gpx-route-past',
+                    type: 'line',
+                    source: 'gpx-route-past',
+                    layout: { 'line-cap': 'round', 'line-join': 'round' },
+                    paint: { 'line-color': '#ffd700', 'line-width': 6, 'line-opacity': 0.95 }
+                  });
+
                   // Fading Gradient Tail Layer
                   mlMap.addLayer({
                     id: 'sleigh-tail-layer',
