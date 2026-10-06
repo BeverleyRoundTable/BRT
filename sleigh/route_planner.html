@@ -1038,6 +1038,92 @@ function copyCSV() {
   if (!detectedStreets.length) return;
   navigator.clipboard.writeText(`#,Street\n${detectedStreets.map((s,i)=>`${i+1},"${s}"`).join('\n')}`).then(() => alert('Copied as CSV.'));
 }
+
+// ═══════════════════════════════════════
+// EXISTING ROUTES (API INTEGRATION)
+// ═══════════════════════════════════════
+const params = new URLSearchParams(location.search);
+let API_URL = params.get("api") || localStorage.getItem("SANTA_API") || sessionStorage.getItem("SANTA_API");
+
+if (API_URL) {
+  localStorage.setItem("SANTA_API", API_URL); 
+  sessionStorage.setItem("SANTA_API", API_URL);
+}
+
+const WORKER_URL = "https://santaproxy.beverley247.workers.dev/";
+const DATA_URL = API_URL ? `${WORKER_URL}?ttl=30&target=${encodeURIComponent(API_URL)}` : null;
+
+function normaliseUrl(url) {
+  const u = String(url || '').trim();
+  if (!u) return '';
+  if (/^https?:\/\//i.test(u)) return u;
+  if (u.startsWith('//')) return 'https:' + u;
+  return 'https://' + u.replace(/^\/+/, '');
+}
+
+const COLOUR_TIERS = [
+  { s: 90, l: 55 }, { s: 85, l: 38 }, { s: 80, l: 70 }, { s: 95, l: 46 }
+];
+function routeColour(index) {
+  const hue = Math.round((index * 137.508) % 360);
+  const tier = COLOUR_TIERS[Math.floor(index / 8) % COLOUR_TIERS.length];
+  return `hsl(${hue}, ${tier.s}%, ${tier.l}%)`;
+}
+
+async function loadExistingRoutes() {
+  if (!DATA_URL) return;
+  try {
+    const res = await fetch(DATA_URL, { cache: "no-store" });
+    const data = await res.json();
+    const routes = (data.routes || []).filter(r => r.gpxUrl);
+
+    for (let i = 0; i < routes.length; i++) {
+      const route = routes[i];
+      try {
+        const gpxRes = await fetch(normaliseUrl(route.gpxUrl), { cache: "no-store" });
+        if (!gpxRes.ok) continue;
+        const gpxText = await gpxRes.text();
+
+        const parser = new DOMParser();
+        const gpx = parser.parseFromString(gpxText, 'text/xml');
+        const pts = [];
+        
+        const nodes = gpx.querySelectorAll('trkpt').length ? gpx.querySelectorAll('trkpt') : (gpx.querySelectorAll('rtept').length ? gpx.querySelectorAll('rtept') : gpx.querySelectorAll('wpt'));
+        
+        nodes.forEach(pt => {
+          const lat = parseFloat(pt.getAttribute('lat'));
+          const lon = parseFloat(pt.getAttribute('lon'));
+          if (!isNaN(lat) && !isNaN(lon)) pts.push([lat, lon]);
+        });
+
+        if (pts.length > 1) {
+          const strokeColor = routeColour(i);
+          
+          const layer = L.polyline(pts, { 
+            color: strokeColor, 
+            weight: 4,
+            opacity: 0.65,
+            dashArray: '8 6' 
+          }).addTo(map);
+          
+          layer.bindTooltip(route.routeName || 'Existing route', { sticky: true });
+          existingRouteLayers.push(layer);
+        }
+      } catch(e) {
+        console.error('Failed to load specific route GPX:', route.routeName, e);
+      }
+    }
+
+    if (existingRouteLayers.length > 0) {
+      const featureGroup = L.featureGroup(existingRouteLayers);
+      map.fitBounds(featureGroup.getBounds(), { padding: [40, 40] });
+    }
+  } catch(e) {
+    console.error('Failed to load routes from API:', e);
+  }
+}
+
+loadExistingRoutes();
 </script>
 </body>
 </html>
