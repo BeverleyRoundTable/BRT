@@ -1401,17 +1401,31 @@
                 }
 
                 if (route.sponsorName) {
-                    const sponsorBox = el('div');
-                    sponsorBox.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);';
+                    // Check if this specific route card is today's route
+                    const isToday = day.getTime() === today.getTime();
                     
-                    const sponsorLabel = el('div', '', 'Sponsored by:');
-                    sponsorLabel.style.cssText = 'font-size: 11px; color: var(--primary); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; letter-spacing: 0.5px;';
+                    const sponsorBox = el('div');
+                    
+                    if (isToday) {
+                        // VIP Treatment: Gold box, glow effect, padding
+                        sponsorBox.style.cssText = 'margin-top: 20px; padding: 15px; background: rgba(251, 175, 51, 0.05); border: 1px solid var(--primary); border-radius: 8px; box-shadow: 0 0 15px rgba(251, 175, 51, 0.2);';
+                    } else {
+                        // Standard Treatment: Simple top separator line
+                        sponsorBox.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);';
+                    }
+                    
+                    // Dynamic Label
+                    const sponsorLabel = el('div', '', isToday ? "⭐ TONIGHT'S SPONSOR:" : "SPONSORED BY:");
+                    sponsorLabel.style.cssText = isToday 
+                        ? 'font-size: 12px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 12px; letter-spacing: 0.5px;'
+                        : 'font-size: 11px; color: var(--primary); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; letter-spacing: 0.5px; opacity: 0.8;';
+                    
                     sponsorBox.appendChild(sponsorLabel);
 
                     const contentFlex = el('div');
                     contentFlex.style.cssText = 'display: flex; gap: 15px; align-items: center;';
 
-                    // 1. Render Logo if it exists
+                    // 1. Render Logo
                     if (route.sponsorUrl) {
                         const img = document.createElement('img');
                         img.src = safeUrl(route.sponsorUrl);
@@ -1423,7 +1437,7 @@
                     const textFlex = el('div');
                     textFlex.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
 
-                    // 2. Render Sponsor Name (As Link if available)
+                    // 2. Render Sponsor Name
                     const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
                     const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
                     
@@ -1443,10 +1457,10 @@
                         textFlex.appendChild(strong);
                     }
 
-                    // 3. Render the New Strapline
-                    if (route.sponsorDescription) {
+                    // 3. Render Strapline (ONLY if the route is today)
+                    if (route.sponsorDescription && isToday) {
                         const desc = el('div', '', String(route.sponsorDescription));
-                        desc.style.cssText = 'font-size: 13px; color: var(--text-muted); line-height: 1.4;';
+                        desc.style.cssText = 'font-size: 13px; color: var(--text-muted); line-height: 1.4; margin-top: 4px;';
                         textFlex.appendChild(desc);
                     }
 
