@@ -436,6 +436,25 @@
             }
         }
 
+        /* --- Routes Section ---*/
+        <section id="routes">
+            <div class="section-header">
+                <h2>ROUTE <span style="color: var(--primary);">SCHEDULE</span></h2>
+                <p>Find out exactly when Santa is coming to your neighbourhood.</p>
+            </div>
+            
+            <div class="iframe-container" style="margin-bottom: 40px;">
+                <iframe id="address-iframe" height="500" title="Address Lookup" scrolling="no" loading="lazy" allow="geolocation"></iframe>
+            </div>
+        
+            <!-- NEW: Dedicated Spotlight for Today's Route -->
+            <div id="today-route-container"></div>
+        
+            <div class="routes-grid" id="routes-container">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+        
         /* --- ROUTES GRID --- */
         .routes-grid {
             display: grid;
@@ -659,6 +678,54 @@
                 animation-iteration-count: infinite !important;
             }
         }
+
+        /* --- TONIGHT'S FEATURED ROUTE SPOTLIGHT --- */
+.today-spotlight-card {
+    background: var(--bg-card);
+    border: 2px solid var(--primary);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 35px;
+    box-shadow: 0 0 25px rgba(251, 175, 51, 0.2), 0 10px 30px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .today-spotlight-card {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 30px;
+        align-items: center;
+        padding: 28px 32px;
+    }
+}
+
+.today-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    width: fit-content;
+}
+
+.today-sponsor-box {
+    background: rgba(251, 175, 51, 0.06);
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 0 15px rgba(251, 175, 51, 0.15);
+}
+        
     </style>
 </head>
 <body>
@@ -1344,174 +1411,224 @@
             if (navDonate) navDonate.style.display = hasAny ? '' : 'none';
         }
 
-        // --- Routes ---------------------------------------------------------
-        function renderRoutes(routes, sponsors = []) {
-            const container = $('routes-container');
-            container.replaceChildren();
+        // --- Routes Rendering ---
+function renderRoutes(routes, sponsors = []) {
+    const container = $('routes-container');
+    container.replaceChildren();
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+    // Auto-create or clear the today container
+    let todayContainer = $('today-route-container');
+    if (!todayContainer) {
+        todayContainer = el('div');
+        todayContainer.id = 'today-route-container';
+        container.parentNode.insertBefore(todayContainer, container);
+    }
+    todayContainer.replaceChildren();
 
-            const allRoutes = routes
-                .filter(r => r && r.routeName)
-                .map(route => {
-                    const d = parseRouteDate(route.date);
-                    if (!d) return null;
-                    const day = new Date(d);
-                    day.setHours(0, 0, 0, 0);
-                    return { route, d, day };
-                })
-                .filter(Boolean) // We no longer filter out past days
-                .sort((a, b) => a.day - b.day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-            if (!allRoutes.length) {
-                const p = el('p', '', 'No routes scheduled yet. Check back soon!');
-                p.style.color = 'var(--text-muted)';
-                container.appendChild(p);
-                return;
+    const allRoutes = routes
+        .filter(r => r && r.routeName)
+        .map(route => {
+            const d = parseRouteDate(route.date);
+            if (!d) return null;
+            const day = new Date(d);
+            day.setHours(0, 0, 0, 0);
+            return { route, d, day };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.day - b.day);
+
+    if (!allRoutes.length) {
+        const p = el('p', '', 'No routes scheduled yet. Check back soon!');
+        p.style.color = 'var(--text-muted)';
+        container.appendChild(p);
+        return;
+    }
+
+    // Check if there is an active route for today
+    const todayItem = allRoutes.find(item => item.day.getTime() === today.getTime());
+    const otherRoutes = allRoutes.filter(item => item !== todayItem);
+
+    // 1. Render Today's Route as the Hero Spotlight Banner
+    if (todayItem) {
+        renderTodaySpotlight(todayItem, sponsors, todayContainer);
+    }
+
+    // 2. Render all other routes in the uniform schedule grid
+    otherRoutes.forEach(({ route, d, day }) => {
+        const isPast = day < today;
+        const card = el('div', 'route-card');
+        
+        if (isPast) {
+            card.style.opacity = '0.5';
+            card.style.border = '1px solid var(--bg-dark)';
+        }
+
+        const start = route['Start Time'] || '';
+        const end = route['End Time'] || '';
+        const time = (start && end) ? start + ' - ' + end : '';
+        const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+        
+        const dateWrapper = el('div', 'route-date');
+        if (isPast) {
+            const badge = el('span', '', '✓ COMPLETED | ');
+            badge.style.color = 'var(--text-main)';
+            dateWrapper.appendChild(badge);
+        }
+        
+        dateWrapper.appendChild(document.createTextNode(time ? dateText + ' | ' + time : dateText));
+        card.appendChild(dateWrapper);
+        card.appendChild(el('h3', 'brand-font', String(route.routeName)));
+
+        if (route.streets) {
+            const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
+            if (streets.length) {
+                let text = streets.slice(0, 8).join(', ');
+                if (streets.length > 8) text += ' and more...';
+                card.appendChild(el('div', 'route-streets', text));
+            }
+        }
+
+        // Standard compact sponsor display for schedule cards
+        if (route.sponsorName) {
+            const sponsorBox = el('div');
+            sponsorBox.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);';
+            
+            const sponsorLabel = el('div', '', 'SPONSORED BY:');
+            sponsorLabel.style.cssText = 'font-size: 11px; color: var(--primary); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; letter-spacing: 0.5px; opacity: 0.8;';
+            sponsorBox.appendChild(sponsorLabel);
+
+            const contentFlex = el('div');
+            contentFlex.style.cssText = 'display: flex; gap: 12px; align-items: center;';
+
+            if (route.sponsorUrl) {
+                const img = document.createElement('img');
+                img.src = safeUrl(route.sponsorUrl);
+                img.alt = String(route.sponsorName);
+                img.style.cssText = 'width: 50px; height: 50px; object-fit: contain; background: #fff; border-radius: 6px; padding: 4px; flex-shrink: 0;';
+                contentFlex.appendChild(img);
             }
 
-            allRoutes.forEach(({ route, d, day }) => {
-                const isPast = day < today;
-                const card = el('div', 'route-card');
-                
-                // Fade out completed routes visually
-                if (isPast) {
-                    card.style.opacity = '0.5';
-                    card.style.border = '1px solid var(--bg-dark)';
-                }
+            const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
+            const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
+            
+            if (sponsorLink) {
+                const a = document.createElement('a');
+                a.href = sponsorLink;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.textContent = String(route.sponsorName);
+                a.style.cssText = 'color: var(--text-main); font-weight: bold; text-decoration: none; font-size: 15px;';
+                a.onmouseover = () => a.style.textDecoration = 'underline';
+                a.onmouseout = () => a.style.textDecoration = 'none';
+                contentFlex.appendChild(a);
+            } else {
+                const strong = el('strong', '', String(route.sponsorName));
+                strong.style.cssText = 'color: var(--text-main); font-size: 15px;';
+                contentFlex.appendChild(strong);
+            }
 
-                const start = route['Start Time'] || '';
-                const end = route['End Time'] || '';
-                const time = (start && end) ? start + ' - ' + end : '';
-                const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-                
-                const dateWrapper = el('div', 'route-date');
-                if (isPast) {
-                    const badge = el('span', '', '✓ COMPLETED | ');
-                    badge.style.color = 'var(--text-main)';
-                    dateWrapper.appendChild(badge);
-                }
-                
-                dateWrapper.appendChild(document.createTextNode(time ? dateText + ' | ' + time : dateText));
-                card.appendChild(dateWrapper);
-                card.appendChild(el('h3', 'brand-font', String(route.routeName)));
-
-                if (route.streets) {
-                    const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
-                    if (streets.length) {
-                        let text = streets.slice(0, 8).join(', ');
-                        if (streets.length > 8) text += ' and more...';
-                        card.appendChild(el('div', 'route-streets', text));
-                    }
-                }
-
-                if (route.sponsorName) {
-                    // Check if this specific route card is today's route
-                    const isToday = day.getTime() === today.getTime();
-                    
-                    const sponsorBox = el('div');
-                    
-                    if (isToday) {
-                        // VIP Treatment: Gold box, glow effect, padding
-                        sponsorBox.style.cssText = 'margin-top: 20px; padding: 15px; background: rgba(251, 175, 51, 0.05); border: 1px solid var(--primary); border-radius: 8px; box-shadow: 0 0 15px rgba(251, 175, 51, 0.2);';
-                    } else {
-                        // Standard Treatment: Simple top separator line
-                        sponsorBox.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);';
-                    }
-                    
-                    // Dynamic Label
-                    const sponsorLabel = el('div', '', isToday ? "⭐ TONIGHT'S SPONSOR:" : "SPONSORED BY:");
-                    sponsorLabel.style.cssText = isToday 
-                        ? 'font-size: 12px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 12px; letter-spacing: 0.5px;'
-                        : 'font-size: 11px; color: var(--primary); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; letter-spacing: 0.5px; opacity: 0.8;';
-                    
-                    sponsorBox.appendChild(sponsorLabel);
-
-                    const contentFlex = el('div');
-                    contentFlex.style.cssText = 'display: flex; gap: 15px; align-items: center;';
-
-                    // 1. Render Logo
-                    if (route.sponsorUrl) {
-                        const img = document.createElement('img');
-                        img.src = safeUrl(route.sponsorUrl);
-                        img.alt = String(route.sponsorName);
-                        img.style.cssText = 'width: 70px; height: 70px; object-fit: contain; background: #fff; border-radius: 6px; padding: 4px; flex-shrink: 0;';
-                        contentFlex.appendChild(img);
-                    }
-
-                    const textFlex = el('div');
-                    textFlex.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
-
-                    // 2. Render Sponsor Name
-                    const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
-                    const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
-                    
-                    if (sponsorLink) {
-                        const a = document.createElement('a');
-                        a.href = sponsorLink;
-                        a.target = '_blank';
-                        a.rel = 'noopener noreferrer';
-                        a.textContent = String(route.sponsorName);
-                        a.style.cssText = 'color: var(--text-main); font-weight: bold; text-decoration: none; font-size: 16px;';
-                        a.onmouseover = () => a.style.textDecoration = 'underline';
-                        a.onmouseout = () => a.style.textDecoration = 'none';
-                        textFlex.appendChild(a);
-                    } else {
-                        const strong = el('strong', '', String(route.sponsorName));
-                        strong.style.cssText = 'color: var(--text-main); font-size: 16px;';
-                        textFlex.appendChild(strong);
-                    }
-
-                    // 3. Render Strapline (ONLY if the route is today)
-                    if (route.sponsorDescription && isToday) {
-                        const desc = el('div', '', String(route.sponsorDescription));
-                        desc.style.cssText = 'font-size: 13px; color: var(--text-muted); line-height: 1.4; margin-top: 4px;';
-                        textFlex.appendChild(desc);
-                    }
-
-                    contentFlex.appendChild(textFlex);
-                    sponsorBox.appendChild(contentFlex);
-                    card.appendChild(sponsorBox);
-                }
-
-                container.appendChild(card);
-            });
+            sponsorBox.appendChild(contentFlex);
+            card.appendChild(sponsorBox);
         }
 
-        // --- Sponsors -------------------------------------------------------
-        function renderSponsors(sponsors) {
-            const section = $('sponsors');
-            const container = $('sponsors-container');
-            container.replaceChildren();
+        container.appendChild(card);
+    });
+}
 
-            const valid = sponsors.filter(s => s && safeUrl(s.sponsorUrl));
-            section.style.display = valid.length ? 'block' : 'none';
+// --- Render Tonight's Hero Spotlight ---
+function renderTodaySpotlight({ route, d }, sponsors, parent) {
+    const card = el('div', 'today-spotlight-card');
 
-            valid.forEach(sponsor => {
-                const wrap = el('div', 'sponsor-card');
-                const img = document.createElement('img');
-                img.src = safeUrl(sponsor.sponsorUrl);       // sponsorUrl is the logo image
-                img.alt = sponsor.name ? String(sponsor.name) : 'Sponsor';
-                img.loading = 'lazy';
-                img.decoding = 'async';
+    const start = route['Start Time'] || '';
+    const end = route['End Time'] || '';
+    const time = (start && end) ? start + ' - ' + end : '';
+    const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
-                const link = safeUrl(sponsor.sponsorLink);
-                if (link) {
-                    const a = document.createElement('a');
-                    a.href = link;
-                    a.target = '_blank';
-                    a.rel = 'noopener noreferrer sponsored';
-                    a.style.cssText = 'display:flex; width:100%; height:100%; justify-content:center;';
-                    a.appendChild(img);
-                    wrap.appendChild(a);
-                } else {
-                    wrap.appendChild(img);
-                }
-                container.appendChild(wrap);
-            });
+    // Left Column: Route details
+    const routeInfo = el('div');
+    
+    const badge = el('div', 'today-badge');
+    badge.innerHTML = '<i class="fa-solid fa-star"></i> TONIGHT\'S ROUTE';
+    routeInfo.appendChild(badge);
+
+    const dateEl = el('div', 'route-date', time ? dateText + ' | ' + time : dateText);
+    dateEl.style.fontSize = '15px';
+    routeInfo.appendChild(dateEl);
+
+    const title = el('h3', 'brand-font', String(route.routeName));
+    title.style.fontSize = '30px';
+    title.style.margin = '4px 0 10px 0';
+    routeInfo.appendChild(title);
+
+    if (route.streets) {
+        const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
+        if (streets.length) {
+            let text = streets.slice(0, 10).join(', ');
+            if (streets.length > 10) text += ' and more...';
+            const streetsEl = el('div', 'route-streets', text);
+            streetsEl.style.fontSize = '14px';
+            routeInfo.appendChild(streetsEl);
+        }
+    }
+
+    card.appendChild(routeInfo);
+
+    // Right Column: Tonight's Sponsor Spotlight
+    if (route.sponsorName) {
+        const sponsorBox = el('div', 'today-sponsor-box');
+
+        const label = el('div', '', "⭐ TONIGHT'S SPONSOR:");
+        label.style.cssText = 'font-size: 12px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 12px; letter-spacing: 0.5px;';
+        sponsorBox.appendChild(label);
+
+        const contentFlex = el('div');
+        contentFlex.style.cssText = 'display: flex; gap: 15px; align-items: center; margin-bottom: 8px;';
+
+        if (route.sponsorUrl) {
+            const img = document.createElement('img');
+            img.src = safeUrl(route.sponsorUrl);
+            img.alt = String(route.sponsorName);
+            img.style.cssText = 'width: 65px; height: 65px; object-fit: contain; background: #fff; border-radius: 8px; padding: 4px; flex-shrink: 0;';
+            contentFlex.appendChild(img);
         }
 
+        const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
+        const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
+
+        const textFlex = el('div');
+        if (sponsorLink) {
+            const a = document.createElement('a');
+            a.href = sponsorLink;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = String(route.sponsorName);
+            a.style.cssText = 'color: var(--text-main); font-weight: bold; text-decoration: none; font-size: 18px;';
+            a.onmouseover = () => a.style.textDecoration = 'underline';
+            a.onmouseout = () => a.style.textDecoration = 'none';
+            textFlex.appendChild(a);
+        } else {
+            const strong = el('strong', '', String(route.sponsorName));
+            strong.style.cssText = 'color: var(--text-main); font-size: 18px;';
+            textFlex.appendChild(strong);
+        }
+        contentFlex.appendChild(textFlex);
+        sponsorBox.appendChild(contentFlex);
+
+        // Strapline / Description
+        if (route.sponsorDescription) {
+            const desc = el('div', '', String(route.sponsorDescription));
+            desc.style.cssText = 'font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-top: 10px;';
+            sponsorBox.appendChild(desc);
+        }
+
+        card.appendChild(sponsorBox);
+    }
+
+    parent.appendChild(card);
+}
         // --- About + social -------------------------------------------------
         function renderAbout(settings) {
             const siteName = String(settings.sleigh_display_name || 'Santa Sleigh');
