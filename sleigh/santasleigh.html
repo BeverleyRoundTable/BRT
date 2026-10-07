@@ -1355,13 +1355,12 @@
                 card.appendChild(el('h3', 'brand-font', String(route.routeName)));
 
                 if (route.streets) {
-                    const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
-                    if (streets.length) {
-                        let text = streets.slice(0, 8).join(', ');
-                        if (streets.length > 8) text += ' and more...';
-                        card.appendChild(el('div', 'route-streets', text));
-                    }
+                const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
+                if (streets.length) {
+                    // Shows all street names and expands the box naturally
+                    card.appendChild(el('div', 'route-streets', streets.join(', ')));
                 }
+            }
 
                 if (route.sponsorName) {
                     const sponsorBox = el('div');
@@ -1434,15 +1433,14 @@
             routeInfo.appendChild(title);
 
             if (route.streets) {
-                const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
-                if (streets.length) {
-                    let text = streets.slice(0, 10).join(', ');
-                    if (streets.length > 10) text += ' and more...';
-                    const streetsEl = el('div', 'route-streets', text);
-                    streetsEl.style.fontSize = '14px';
-                    routeInfo.appendChild(streetsEl);
-                }
+            const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
+            if (streets.length) {
+                // Shows all street names in full
+                const streetsEl = el('div', 'route-streets', streets.join(', '));
+                streetsEl.style.fontSize = '14px';
+                routeInfo.appendChild(streetsEl);
             }
+        }
 
             card.appendChild(routeInfo);
 
