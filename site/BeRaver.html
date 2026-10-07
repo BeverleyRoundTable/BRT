@@ -446,7 +446,13 @@
                     raisedEl.innerText = totalRaised;
                 }
                 if (data.id && data.id !== lastDonationId) {
-                    if (!isInitialLoad) triggerDonationAlert(data.name, data.amount);
+                    if (isInitialLoad) {
+                        if (latestEl) {
+                            latestEl.innerHTML = `LATEST: <span class="text-white">${data.name || 'Supporter'}</span> dropped <span class="text-beraverPink neon-text-pink">£${data.amount || 0}</span>!`;
+                        }
+                    } else {
+                        triggerDonationAlert(data.name || 'Supporter', data.amount || 0);
+                    }
                     lastDonationId = data.id; 
                 }
                 isInitialLoad = false;
