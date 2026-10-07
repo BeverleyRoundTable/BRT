@@ -329,13 +329,16 @@ caches your custom fonts for a year, drastically speeding up load times:
                     </p>
                 </div>
                 
-                <!-- Address Lookup Map -->
-                <div class="max-w-4xl mx-auto bg-white/5 p-2 rounded-[2rem] border border-brt-red/20 shadow-lg mb-16 relative">
-                    <iframe id="address-iframe" class="w-full h-[550px] rounded-[1.5rem] border-0 iframe-loading bg-[#151513]" title="Address Lookup" scrolling="no" loading="lazy" allow="geolocation"></iframe>
-                </div>
-
-                <!-- Dynamic Routes Grid -->
-                <div id="routes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Address Lookup Map -->
+                  <div class="max-w-4xl mx-auto bg-white/5 p-2 rounded-[2rem] border border-brt-red/20 shadow-lg mb-16 relative">
+                      <iframe id="address-iframe" class="w-full h-[550px] rounded-[1.5rem] border-0 iframe-loading bg-[#151513]" title="Address Lookup" scrolling="no" loading="lazy" allow="geolocation"></iframe>
+                  </div>
+              
+                  <!-- NEW: Dedicated Red Halo Spotlight for Today's Route -->
+                  <div id="today-route-container" class="mb-10"></div>
+              
+                  <!-- Dynamic Routes Grid -->
+                  <div id="routes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div class="col-span-full flex flex-col items-center justify-center py-10" id="routes-loader">
                         <div class="loader-spinner mb-4"></div>
                         <p class="font-heading font-bold uppercase text-brt-red tracking-widest mt-4">Loading Routes...</p>
@@ -707,28 +710,97 @@ function renderDonations(donations, settings) {
     }
 }
 
+                // --- RENDER TONIGHT'S HERO SPOTLIGHT ---
+        function renderTodaySpotlight({ route, d }, sponsors, parent) {
+            const start = route['Start Time'] || '';
+            const end = route['End Time'] || '';
+            const time = (start && end) ? `${start} - ${end}` : '';
+            const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+
+            const streetsArray = route.streets 
+                ? String(route.streets).split(',').map(s => s.trim()).filter(Boolean) 
+                : [];
+            const streetsText = streetsArray.join(', ');
+
+            const hasSponsor = Boolean(route.sponsorName);
+            const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
+            const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
+
+            parent.innerHTML = `
+                <div class="bg-gradient-to-br from-brt-red/15 via-[#181815] to-black/90 border-2 border-brt-red rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 shadow-[0_0_35px_rgba(211,28,28,0.35)] relative overflow-hidden transition-all duration-300">
+                    <!-- Subtle Festive Ambient Glow -->
+                    <div class="absolute -top-16 -right-16 w-56 h-56 bg-brt-red/15 rounded-full blur-[70px] pointer-events-none"></div>
+
+                    <div class="grid grid-cols-1 ${hasSponsor ? 'lg:grid-cols-12' : ''} gap-6 lg:gap-8 items-center relative z-10">
+                        <!-- Route Details -->
+                        <div class="${hasSponsor ? 'lg:col-span-7' : 'w-full'}">
+                            <div class="inline-flex items-center gap-2 bg-brt-red text-white text-xs font-heading font-black uppercase px-3.5 py-1.5 rounded-full mb-3 tracking-wider shadow-[0_0_12px_rgba(211,28,28,0.6)]">
+                                <i class="fa-solid fa-star"></i> Tonight's Route
+                            </div>
+                            <div class="font-heading font-bold text-sm sm:text-base text-brt-red uppercase tracking-wider mb-1">
+                                ${dateText} ${time ? `| ${time}` : ''}
+                            </div>
+                            <h3 class="font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-white uppercase mb-3 leading-tight tracking-tight">
+                                ${route.routeName}
+                            </h3>
+                            ${streetsText ? `
+                                <p class="font-body text-gray-300 text-sm sm:text-base leading-relaxed">
+                                    ${streetsText}
+                                </p>
+                            ` : ''}
+                        </div>
+
+                        <!-- Tonight's Sponsor Showcase (if present) -->
+                        ${hasSponsor ? `
+                            <div class="lg:col-span-5 bg-black/60 border border-brt-red/40 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-sm">
+                                <div class="text-[11px] font-heading font-black text-brt-red uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-star text-xs"></i> Tonight's Featured Sponsor
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    ${route.sponsorUrl ? `
+                                        <img src="${safeUrl(route.sponsorUrl)}" alt="${route.sponsorName}" class="w-16 h-16 sm:w-20 sm:h-20 object-contain bg-white rounded-xl p-2 shrink-0 shadow-md">
+                                    ` : ''}
+                                    <div class="flex-1">
+                                        ${sponsorLink ? `
+                                            <a href="${sponsorLink}" target="_blank" rel="noopener noreferrer" class="font-heading font-bold text-lg sm:text-xl text-white hover:text-brt-red hover:underline transition-colors block leading-snug">
+                                                ${route.sponsorName} <i class="fa-solid fa-arrow-up-right-from-square text-xs ml-1 opacity-70"></i>
+                                            </a>
+                                        ` : `
+                                            <div class="font-heading font-bold text-lg sm:text-xl text-white leading-snug">
+                                                ${route.sponsorName}
+                                            </div>
+                                        `}
+                                        ${route.sponsorDescription ? `
+                                            <p class="font-body text-xs sm:text-sm text-gray-300 mt-2 leading-relaxed">
+                                                ${route.sponsorDescription}
+                                            </p>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
         async function fetchSleighRoutes() {
-    const container = document.getElementById('routes-container');
-    const loader = document.getElementById('routes-loader');
-    
-    try {
-        const response = await fetch(PROXY_URL);
-        if (!response.ok) throw new Error('Failed to load routes');
-        
-        const data = await response.json();
-        
-        // --- ADD THIS LINE HERE ---
-        // Pass the donations and settings objects directly to the new renderer
-        renderDonations(data.donations || {}, data.settings || {});
-        // --------------------------
+            const container = document.getElementById('routes-container');
+            const loader = document.getElementById('routes-loader');
+            
+            try {
+                const response = await fetch(PROXY_URL);
+                if (!response.ok) throw new Error('Failed to load routes');
+                
+                const data = await response.json();
+                
+                renderDonations(data.donations || {}, data.settings || {});
 
-        const routes = Array.isArray(data.routes) ? data.routes : [];
-        const sponsors = Array.isArray(data.sponsors) ? data.sponsors : [];
-        
-        // Remove loader
-        if(loader) loader.remove();
+                const routes = Array.isArray(data.routes) ? data.routes : [];
+                const sponsors = Array.isArray(data.sponsors) ? data.sponsors : [];
+                
+                if(loader) loader.remove();
 
-                // Populate the Our Generous Sponsors strip from the same payload
                 renderSponsors(sponsors);
 
                 const today = new Date();
@@ -751,7 +823,27 @@ function renderDonations(donations, settings) {
                     return;
                 }
 
-                allRoutes.forEach(({ route, d, day }) => {
+                // Check for Today's Route
+                const todayItem = allRoutes.find(item => item.day.getTime() === today.getTime());
+                const otherRoutes = allRoutes.filter(item => item !== todayItem);
+
+                // Setup or clear the spotlight container
+                let todayContainer = document.getElementById('today-route-container');
+                if (!todayContainer) {
+                    todayContainer = document.createElement('div');
+                    todayContainer.id = 'today-route-container';
+                    todayContainer.className = 'mb-10';
+                    container.parentNode.insertBefore(todayContainer, container);
+                }
+                todayContainer.innerHTML = '';
+
+                // 1. Render Red Halo Spotlight if today is a route day
+                if (todayItem) {
+                    renderTodaySpotlight(todayItem, sponsors, todayContainer);
+                }
+
+                // 2. Render all other routes in the regular grid
+                otherRoutes.forEach(({ route, d, day }) => {
                     const isPast = day < today;
                     
                     const start = route['Start Time'] || '';
@@ -764,29 +856,26 @@ function renderDonations(donations, settings) {
                         const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
                         const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
                         
-                        if (sponsorLink) {
-                            sponsorHtml = `<div class="mt-4 pt-4 border-t border-white/10 text-xs text-brt-red">
-                                Sponsored by: <a href="${sponsorLink}" target="_blank" rel="noopener" class="text-white font-bold hover:underline">${route.sponsorName}</a>
-                            </div>`;
-                        } else {
-                            sponsorHtml = `<div class="mt-4 pt-4 border-t border-white/10 text-xs text-brt-red">
-                                Sponsored by: <strong class="text-white">${route.sponsorName}</strong>
-                            </div>`;
-                        }
+                        sponsorHtml = `
+                            <div class="mt-auto pt-4 border-t border-white/10 flex items-center gap-3">
+                                ${route.sponsorUrl ? `<img src="${safeUrl(route.sponsorUrl)}" alt="${route.sponsorName}" class="w-8 h-8 object-contain bg-white rounded-lg p-1 shrink-0 shadow-sm">` : ''}
+                                <div class="text-xs text-brt-red font-heading uppercase tracking-wide">
+                                    Sponsored by: ${sponsorLink ? `<a href="${sponsorLink}" target="_blank" rel="noopener noreferrer" class="text-white font-bold hover:underline normal-case">${route.sponsorName}</a>` : `<strong class="text-white normal-case">${route.sponsorName}</strong>`}
+                                </div>
+                            </div>
+                        `;
                     }
 
+                    // Show ALL street names: slice(0, 8) and line-clamp-3 removed
                     let streetsHtml = '';
                     if (route.streets) {
                         const streetsArray = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
                         if (streetsArray.length) {
-                            let text = streetsArray.slice(0, 8).join(', ');
-                            if (streetsArray.length > 8) text += ' and more...';
-                            streetsHtml = `<p class="font-body text-gray-400 text-sm flex-grow line-clamp-3 leading-relaxed">${text}</p>`;
+                            streetsHtml = `<p class="font-body text-gray-400 text-sm leading-relaxed mb-4 flex-grow">${streetsArray.join(', ')}</p>`;
                         }
                     }
 
                     const card = document.createElement('div');
-                    // Style logic: if past, drop opacity. Otherwise show full style with hover effects.
                     card.className = `bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col transition-all duration-300 ${isPast ? 'opacity-50 grayscale hover:grayscale-0' : 'hover:border-brt-red/50 hover:bg-white/10'}`;
                     
                     card.innerHTML = `
