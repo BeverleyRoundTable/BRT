@@ -1401,11 +1401,29 @@
                 }
 
                 if (route.sponsorName) {
-                    const s = el('div');
-                    s.style.cssText = 'margin-top: 15px; font-size: 12px; color: var(--primary);';
-                    s.appendChild(document.createTextNode('Sponsored by: '));
+                    const sponsorBox = el('div');
+                    sponsorBox.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);';
                     
-                    // Check the sponsors array for a matching name to grab the link
+                    const sponsorLabel = el('div', '', 'Sponsored by:');
+                    sponsorLabel.style.cssText = 'font-size: 11px; color: var(--primary); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; letter-spacing: 0.5px;';
+                    sponsorBox.appendChild(sponsorLabel);
+
+                    const contentFlex = el('div');
+                    contentFlex.style.cssText = 'display: flex; gap: 15px; align-items: center;';
+
+                    // 1. Render Logo if it exists
+                    if (route.sponsorUrl) {
+                        const img = document.createElement('img');
+                        img.src = safeUrl(route.sponsorUrl);
+                        img.alt = String(route.sponsorName);
+                        img.style.cssText = 'width: 70px; height: 70px; object-fit: contain; background: #fff; border-radius: 6px; padding: 4px; flex-shrink: 0;';
+                        contentFlex.appendChild(img);
+                    }
+
+                    const textFlex = el('div');
+                    textFlex.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
+
+                    // 2. Render Sponsor Name (As Link if available)
                     const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
                     const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
                     
@@ -1415,16 +1433,26 @@
                         a.target = '_blank';
                         a.rel = 'noopener noreferrer';
                         a.textContent = String(route.sponsorName);
-                        // Inherit text color and weight, adding an underline so it looks clickable
-                        a.style.cssText = 'color: var(--text-main); font-weight: bold; text-decoration: underline;';
-                        s.appendChild(a);
+                        a.style.cssText = 'color: var(--text-main); font-weight: bold; text-decoration: none; font-size: 16px;';
+                        a.onmouseover = () => a.style.textDecoration = 'underline';
+                        a.onmouseout = () => a.style.textDecoration = 'none';
+                        textFlex.appendChild(a);
                     } else {
-                        // Fallback to plain text if no URL exists
                         const strong = el('strong', '', String(route.sponsorName));
-                        strong.style.color = 'var(--text-main)';
-                        s.appendChild(strong);
+                        strong.style.cssText = 'color: var(--text-main); font-size: 16px;';
+                        textFlex.appendChild(strong);
                     }
-                    card.appendChild(s);
+
+                    // 3. Render the New Strapline
+                    if (route.sponsorDescription) {
+                        const desc = el('div', '', String(route.sponsorDescription));
+                        desc.style.cssText = 'font-size: 13px; color: var(--text-muted); line-height: 1.4;';
+                        textFlex.appendChild(desc);
+                    }
+
+                    contentFlex.appendChild(textFlex);
+                    sponsorBox.appendChild(contentFlex);
+                    card.appendChild(sponsorBox);
                 }
 
                 container.appendChild(card);
