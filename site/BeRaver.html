@@ -94,6 +94,21 @@
             background: rgba(255, 255, 255, 0.1);
         }
         select option { background-color: #1D1D1A; color: white; }
+
+        ::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: #1D1D1A; 
+}
+::-webkit-scrollbar-thumb {
+    background: #ff007f; /* beraverPink */
+    border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #4db8e8; /* beraverBlue */
+}
+        
     </style>
 </head>
 <body class="font-body antialiased flex flex-col min-h-screen">
@@ -171,6 +186,8 @@
 
     <!-- The Setup Section -->
     <section id="whatson" class="py-24 bg-beraverDark relative border-t border-white/5">
+        <div class="absolute top-20 left-10 w-96 h-96 bg-beraverPink/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
+        <div class="absolute bottom-20 right-10 w-96 h-96 bg-beraverBlue/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
         <div class="container mx-auto px-6">
             <div class="text-center mb-16">
                 <h2 class="text-4xl md:text-5xl font-heading font-black mb-4 uppercase">Powered by <span class="text-beraverBlue neon-text-blue">Zendure</span></h2>
@@ -179,7 +196,7 @@
 
             <div class="grid md:grid-cols-2 gap-12 items-stretch">
                 <!-- Main Stage Card -->
-                <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-beraverBlue/50 transition-colors duration-300 group relative overflow-hidden flex flex-col">
+                <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:shadow-[0_0_30px_rgba(77,184,232,0.2)] hover:-translate-y-1 transform transition-all duration-300 transition-colors duration-300 group relative overflow-hidden flex flex-col">
                     <div class="absolute top-0 right-0 bg-beraverBlue text-beraverDark font-heading font-bold text-sm px-4 py-1 rounded-bl-xl z-10 uppercase tracking-widest">The Main Stage</div>
                     <h3 class="text-3xl font-heading font-black text-white mb-4 mt-2 uppercase">The Treo DJ Booth</h3>
                     <p class="text-gray-400 mb-6 flex-grow">Our custom Mahindra Treo Tuk-Tuk transformed into a rolling DJ booth, pumping out family-friendly dance anthems and driving basslines.</p>
@@ -190,7 +207,7 @@
                 </div>
 
                 <!-- Roaming Hub Card -->
-                <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:border-beraverPink/50 transition-colors duration-300 group relative overflow-hidden flex flex-col">
+                <div class="bg-white/5 rounded-3xl p-8 border border-white/10 hover:shadow-[0_0_30px_rgba(255,0,127,0.2)] hover:-translate-y-1 transform transition-all duration-300 transition-colors duration-300 group relative overflow-hidden flex flex-col">
                     <div class="absolute top-0 right-0 bg-beraverPink text-white font-heading font-bold text-sm px-4 py-1 rounded-bl-xl z-10 uppercase tracking-widest">The Gaming Hub</div>
                     <h3 class="text-3xl font-heading font-black text-white mb-4 mt-2 uppercase">Zendure E-Cargo</h3>
                     <p class="text-gray-400 mb-6 flex-grow">Check out our interactive game station anchored right in the heart of the festival. Powered entirely by Zendure e-mobility.</p>
@@ -271,7 +288,7 @@
             
             <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
                 <!-- Donate Link -->
-                <a href="https://donate.beverleyroundtable.co.uk" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-beraverBlue hover:bg-[#3ba4d4] text-beraverDark font-heading font-black px-8 py-4 rounded-full text-xl uppercase transition-all shadow-[0_0_20px_rgba(77,184,232,0.4)] hover:shadow-[0_0_30px_rgba(77,184,232,0.6)] transform hover:-translate-y-1">
+                <a href="https://donate.beverleyroundtable.co.uk" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto bg-gradient-to-r from-beraverBlue to-beraverPink text-white hover:bg-[#3ba4d4] text-beraverDark font-heading font-black px-8 py-4 rounded-full text-xl uppercase transition-all shadow-[0_0_20px_rgba(77,184,232,0.4)] hover:shadow-[0_0_30px_rgba(77,184,232,0.6)] transform hover:-translate-y-1">
                     Donate Online Now
                 </a>
                 
