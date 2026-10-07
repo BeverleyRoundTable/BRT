@@ -8,9 +8,6 @@
     <!-- Primary Meta Tags -->
     <meta name="description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
     
-    <!-- Canonical link is added at runtime (renderBranding) so every table gets its own
-         URL. It used to be a hardcoded placeholder domain. -->
-
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="Santa Sleigh Live Tracker">
@@ -40,21 +37,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Perf: only the families actually used (solid + brands), not the full bundle -->
+    <!-- Font Awesome -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/brands.min.css">
 
-    <!-- Perf: warm the connections the personalised-content path depends on -->
+    <!-- API Preconnections -->
     <link rel="preconnect" href="https://santaproxy.beverley247.workers.dev">
     <link rel="preconnect" href="https://brt-23f.pages.dev">
 
     <style>
-        /* ====================================================================
-           CUSTOM BRAND FONT INJECTION
-           Pulls Eurostile from your Cloudflare Pages repo for global use
-        ==================================================================== */
         @font-face {
             font-family: 'Eurostile';
             src: url('https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2') format('woff2'),
@@ -71,15 +64,14 @@
         }
         
         :root {
-            /* Official Round Table Brand Guidelines 2024 Colors */
-            --primary: #FBAF33; /* Golden Yellow */
-            --accent: #FFFFFF; /* White */
-            --bg-dark: #1D1D1A; /* Table Grey */
-            --bg-card: #000000; /* Black */
+            --primary: #FBAF33;
+            --accent: #FFFFFF;
+            --bg-dark: #1D1D1A;
+            --bg-card: #000000;
             --text-main: #FFFFFF;
             --text-muted: rgba(255, 255, 255, 0.7);
             --border: rgba(255, 255, 255, 0.15);
-            --on-primary: #000000; /* Text colour on --primary; auto-picked in JS for custom brand colours */
+            --on-primary: #000000;
         }
 
         * {
@@ -89,7 +81,6 @@
         }
 
         body {
-            /* Official Body Font */
             font-family: 'Open Sans', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
@@ -101,12 +92,10 @@
             .thermo-card {
                 padding: 25px 15px; 
             }
-            
             .thermo-title {
-                font-size: 16px; /* Compact mobile size prevents wide text wrapping */
+                font-size: 16px;
                 letter-spacing: 0px;
             }
-
             .thermo-stats {
                 font-size: 18px;
                 padding: 0 5px;
@@ -125,7 +114,6 @@
             z-index: -1;
         }
 
-        /* --- FLOATING ACTION BUTTON --- */
         .fab-map {
             position: fixed;
             bottom: 20px;
@@ -134,7 +122,7 @@
             color: var(--on-primary);
             padding: 15px 20px;
             border-radius: 50px;
-            font-family: 'Eurostile', 'Open Sans', sans-serif; /* Updated Font */
+            font-family: 'Eurostile', 'Open Sans', sans-serif;
             font-size: 16px;
             text-transform: uppercase;
             text-decoration: none;
@@ -154,14 +142,12 @@
             transform: translateY(0);
         }
 
-        /* Official Header Font */
         h1, h2, h3, .brand-font {
-            font-family: 'Eurostile', 'Open Sans', sans-serif; /* Updated Font */
+            font-family: 'Eurostile', 'Open Sans', sans-serif;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* --- LOADER OVERLAY --- */
         .loader-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -183,7 +169,6 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* --- NAVBAR --- */
         nav {
             background: var(--bg-card);
             border-bottom: 1px solid var(--border);
@@ -207,7 +192,7 @@
             width: 50px;
             object-fit: contain;
             border-radius: 50%;
-            background: var(--accent); /* Helps pop against dark background */
+            background: var(--accent);
             padding: 2px;
         }
         .nav-title {
@@ -231,7 +216,6 @@
             color: var(--primary);
         }
 
-        /* --- ANNOUNCEMENT BAR --- */
         #announcement-bar {
             background: var(--primary);
             color: var(--on-primary);
@@ -246,11 +230,9 @@
             color: #ffffff;
         }
 
-        /* --- HERO --- */
         .hero {
             padding: 60px 20px;
             text-align: center;
-            /* Subtle highlight to make text pop off the background image */
             background: radial-gradient(circle at center, rgba(0,0,0,0.4) 0%, transparent 70%);
         }
         .hero h1 {
@@ -267,13 +249,12 @@
             text-shadow: 0 2px 5px rgba(0,0,0,0.8);
         }
 
-        /* --- BUTTONS --- */
         .btn {
             display: inline-block;
             padding: 12px 28px;
             background: var(--primary);
             color: var(--on-primary);
-            font-family: 'Eurostile', 'Open Sans', sans-serif; /* Updated Font */
+            font-family: 'Eurostile', 'Open Sans', sans-serif;
             font-size: 20px;
             text-decoration: none;
             border-radius: 8px;
@@ -288,7 +269,6 @@
             filter: brightness(1.1);
         }
         
-        /* --- SECTIONS --- */
         section {
             padding: 60px 20px;
             max-width: 1000px;
@@ -308,7 +288,6 @@
              text-shadow: 0 2px 5px rgba(0,0,0,0.8);
         }
 
-        /* --- IFRAME CONTAINERS --- */
         .iframe-container {
             width: 100%;
             background: var(--bg-card);
@@ -323,12 +302,10 @@
             display: block;
         }
         
-        /* --- TRACKER --- */
         #tracker-iframe {
             height: 75svh;
             min-height: 500px;
         }
-
         @media(min-width: 601px) {
             #tracker-iframe {
                 height: 80svh;
@@ -336,7 +313,6 @@
             }
         }
 
-        /* --- DONATIONS --- */
         .thermo-card {
             background: var(--bg-card);
             border-radius: 16px;
@@ -374,21 +350,20 @@
             font-size: 24px;
         }
 
-        /* --- VOLUNTEER BANNER --- */
         .volunteer-banner {
-    background: linear-gradient(135deg, rgba(29,29,26,0.9) 0%, rgba(0,0,0,0.95) 100%);
-    border: 1px solid var(--primary);
-    border-radius: 12px;
-    padding: 25px;
-    margin-top: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-    text-align: left;
-}
+            background: linear-gradient(135deg, rgba(29,29,26,0.9) 0%, rgba(0,0,0,0.95) 100%);
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            text-align: left;
+        }
         .volunteer-text {
             flex: 1;
         }
@@ -412,7 +387,7 @@
             background: transparent;
             color: var(--primary);
             border: 2px solid var(--primary);
-            font-family: 'Eurostile', 'Open Sans', sans-serif; /* Updated Font */
+            font-family: 'Eurostile', 'Open Sans', sans-serif;
             font-size: 18px;
             text-decoration: none;
             border-radius: 8px;
@@ -436,25 +411,53 @@
             }
         }
 
-        /* --- Routes Section ---*/
-        <section id="routes">
-            <div class="section-header">
-                <h2>ROUTE <span style="color: var(--primary);">SCHEDULE</span></h2>
-                <p>Find out exactly when Santa is coming to your neighbourhood.</p>
-            </div>
-            
-            <div class="iframe-container" style="margin-bottom: 40px;">
-                <iframe id="address-iframe" height="500" title="Address Lookup" scrolling="no" loading="lazy" allow="geolocation"></iframe>
-            </div>
-        
-            <!-- NEW: Dedicated Spotlight for Today's Route -->
-            <div id="today-route-container"></div>
-        
-            <div class="routes-grid" id="routes-container">
-                <!-- Populated by JS -->
-            </div>
-        </section>
-        
+        /* --- TONIGHT'S FEATURED ROUTE SPOTLIGHT --- */
+        .today-spotlight-card {
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 35px;
+            box-shadow: 0 0 25px rgba(251, 175, 51, 0.2), 0 10px 30px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .today-spotlight-card {
+                display: grid;
+                grid-template-columns: 1.1fr 1fr;
+                gap: 30px;
+                align-items: center;
+                padding: 28px 32px;
+            }
+        }
+
+        .today-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary);
+            color: var(--on-primary);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            width: fit-content;
+        }
+
+        .today-sponsor-box {
+            background: rgba(251, 175, 51, 0.06);
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 0 15px rgba(251, 175, 51, 0.15);
+        }
+
         /* --- ROUTES GRID --- */
         .routes-grid {
             display: grid;
@@ -473,8 +476,6 @@
             color: var(--text-main);
             font-size: 24px;
             margin-bottom: 10px;
-            
-            /* Prevent long single words from escaping the card */
             overflow-wrap: break-word;
             word-wrap: break-word;
             word-break: break-word;
@@ -548,7 +549,6 @@
             transition: all 0.2s ease;
             border: 1px solid var(--border);
         }
-        /* Unified hover transform scale across interactive elements */
         .social-btn:hover {
             background: var(--primary);
             color: var(--on-primary);
@@ -597,7 +597,6 @@
             font-size: 20px;
             transition: transform 0.3s ease;
         }
-        /* Native <details>: no max-height cap, so long custom answers are never cut off */
         .faq-content {
             padding: 20px;
             border-top: 1px solid var(--border);
@@ -633,7 +632,6 @@
                 white-space: nowrap;
                 padding-bottom: 5px;
                 justify-content: flex-start;
-                /* Hides the scrollbar visually but keeps functionality */
                 -ms-overflow-style: none;  
                 scrollbar-width: none;  
             }
@@ -643,7 +641,6 @@
             .hero h1 { font-size: 40px; }
         }
 
-        /* --- TRACKER FULL-SCREEN LINK --- */
         .tracker-fs {
             display: block;
             text-align: center;
@@ -656,7 +653,6 @@
         .tracker-fs:hover { text-decoration: underline; }
         .tracker-fs[hidden] { display: none; }
 
-        /* --- KEYBOARD FOCUS --- */
         a:focus-visible,
         button:focus-visible,
         summary:focus-visible {
@@ -664,7 +660,6 @@
             outline-offset: 3px;
         }
 
-        /* --- REDUCED MOTION --- */
         @media (prefers-reduced-motion: reduce) {
             html { scroll-behavior: auto; }
             *, *::before, *::after {
@@ -672,86 +667,28 @@
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
             }
-            /* Keep the loader visibly "working", just slower */
             .spinner {
                 animation-duration: 2.5s !important;
                 animation-iteration-count: infinite !important;
             }
         }
-
-        /* --- TONIGHT'S FEATURED ROUTE SPOTLIGHT --- */
-.today-spotlight-card {
-    background: var(--bg-card);
-    border: 2px solid var(--primary);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 35px;
-    box-shadow: 0 0 25px rgba(251, 175, 51, 0.2), 0 10px 30px rgba(0, 0, 0, 0.6);
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-@media (min-width: 768px) {
-    .today-spotlight-card {
-        display: grid;
-        grid-template-columns: 1.1fr 1fr;
-        gap: 30px;
-        align-items: center;
-        padding: 28px 32px;
-    }
-}
-
-.today-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--primary);
-    color: var(--on-primary);
-    font-size: 12px;
-    font-weight: 800;
-    text-transform: uppercase;
-    padding: 4px 12px;
-    border-radius: 20px;
-    letter-spacing: 0.5px;
-    margin-bottom: 10px;
-    width: fit-content;
-}
-
-.today-sponsor-box {
-    background: rgba(251, 175, 51, 0.06);
-    border: 1px solid var(--primary);
-    border-radius: 12px;
-    padding: 18px;
-    box-shadow: 0 0 15px rgba(251, 175, 51, 0.15);
-}
-        
     </style>
 </head>
 <body>
     <div id="site-bg"></div>
-    <!-- Perf: kick off the sleigh-data fetch as early as possible, but only
-         once we're past </head> — the router (for pretty-subdomain sites)
-         injects a script at the end of <head> that patches
-         URLSearchParams.prototype.get('api') to return the resolved API URL.
-         Reading it any earlier (e.g. from <head>) captures the real,
-         un-patched, empty query string instead. -->
 
     <!-- Loading Overlay -->
-<div id="loader" class="loader-overlay" role="status" aria-live="polite">
-    <div class="spinner"></div>
-    <h2 id="loader-text" class="brand-font">Loading Sleigh Data...</h2>
-    <div id="loader-error" style="display: none; color: #d31c1c; text-align: center; max-width: 80%; margin-top: 20px;"></div>
-</div>
+    <div id="loader" class="loader-overlay" role="status" aria-live="polite">
+        <div class="spinner"></div>
+        <h2 id="loader-text" class="brand-font">Loading Sleigh Data...</h2>
+        <div id="loader-error" style="display: none; color: #d31c1c; text-align: center; max-width: 80%; margin-top: 20px;"></div>
+    </div>
     
     <script>
-    // Deployment config. A router/worker can pre-define window.SLEIGH_CONFIG
-    // (before this script runs) to override any of these without editing the page.
     window.SLEIGH_CONFIG = Object.assign({
         proxyBase: 'https://santaproxy.beverley247.workers.dev',
         frameBase: 'https://brt-23f.pages.dev/sleigh',
         assetBase: 'https://brt-23f.pages.dev/icons',
-        // Domain the router serves pretty per-table hosts on (<table>.<domain>, <table>tracker.<domain>)
         prettyDomain: 'roundtablesantasleigh.co.uk'
     }, window.SLEIGH_CONFIG || {});
 
@@ -760,29 +697,21 @@
     };
 
     window.sleighFetchData = function (api) {
-    return fetch(window.sleighProxyUrl(api), { cache: 'no-store' }).then(function (response) {
-        if (!response.ok) throw new Error('Failed to load API data (HTTP ' + response.status + ')');
-        return response.json();
-    });
-};
+        return fetch(window.sleighProxyUrl(api), { cache: 'no-store' }).then(function (response) {
+            if (!response.ok) throw new Error('Failed to load API data (HTTP ' + response.status + ')');
+            return response.json();
+        });
+    };
 
     window.__sleighApiUrl = new URLSearchParams(location.search).get('api');
 
     if (window.__sleighPrefetchedData) {
-        // Data was injected by the router, use it immediately
         window.__sleighDataPromise = Promise.resolve(window.__sleighPrefetchedData);
     } else if (window.__sleighApiUrl) {
-        // Direct load with ?api= : start the request as early as possible
         window.__sleighDataPromise = window.sleighFetchData(window.__sleighApiUrl);
     }
-    // Otherwise __sleighDataPromise is deliberately left undefined. initializeSleighApp()
-    // creates it once the API URL is known (it may arrive late via the router patch).
-    // It used to be Promise.resolve(null), which made a late-arriving URL crash on
-    // `data.error` and show a misleading "could not load data" message.
 
     if (window.__sleighDataPromise) {
-        // Mark as handled so an early network failure isn't reported as an unhandled
-        // rejection before initializeSleighApp() attaches its own .catch().
         window.__sleighDataPromise.catch(function () {});
     }
     </script>
@@ -805,14 +734,14 @@
     </nav>
 
     <!-- Hero Section -->
-<header class="hero">
-    <h1><span id="hero-title">Santa Sleigh</span></h1>
-    <p>Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!</p>
-    <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-        <a href="#tracker" class="btn">Track Santa Live</a>
-        <button id="share-btn" type="button" aria-label="Share this page" class="btn" style="background: transparent; border: 2px solid var(--border); color: var(--text-main);"><i class="fa-solid fa-share-nodes"></i></button>
-    </div>
-</header>
+    <header class="hero">
+        <h1><span id="hero-title">Santa Sleigh</span></h1>
+        <p>Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!</p>
+        <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+            <a href="#tracker" class="btn">Track Santa Live</a>
+            <button id="share-btn" type="button" aria-label="Share this page" class="btn" style="background: transparent; border: 2px solid var(--border); color: var(--text-main);"><i class="fa-solid fa-share-nodes"></i></button>
+        </div>
+    </header>
 
     <!-- Tracker Section -->
     <section id="tracker">
@@ -821,8 +750,8 @@
             <p>Watch Santa's sleigh move in real-time as he visits the streets!</p>
         </div>
         <div class="iframe-container">
-    <iframe id="tracker-iframe" height="600" title="Santa Tracker" allow="geolocation; screen-wake-lock" scrolling="no"></iframe>
-</div>
+            <iframe id="tracker-iframe" height="600" title="Santa Tracker" allow="geolocation; screen-wake-lock" scrolling="no"></iframe>
+        </div>
         <a id="tracker-fullscreen" class="tracker-fs" href="#" target="_blank" rel="noopener" hidden>Open the tracker full-screen</a>
     </section>
 
@@ -833,7 +762,6 @@
             <p>Every penny raised goes directly back into supporting our local community.</p>
         </div>
         
-        <!-- Thermometer Card -->
         <div class="thermo-card">
             <h3 class="thermo-title brand-font" style="color: var(--text-main);">FUNDRAISER <span style="color: var(--primary);">TARGET</span></h3>
             <div class="progress-bar-bg">
@@ -847,7 +775,6 @@
             <a href="#" id="donate-btn" class="btn" target="_blank" rel="noopener noreferrer" style="display: none;">Donate Now</a>
         </div>
 
-        <!-- VOLUNTEER BANNER -->
         <div id="volunteer-container" style="display: none; max-width: 600px; margin: 0 auto;">
             <div class="volunteer-banner">
                 <div class="volunteer-text">
@@ -867,9 +794,11 @@
         </div>
         
         <div class="iframe-container" style="margin-bottom: 40px;">
-            <!-- Added lazy loading -->
             <iframe id="address-iframe" height="500" title="Address Lookup" scrolling="no" loading="lazy" allow="geolocation"></iframe>
         </div>
+
+        <!-- Dedicated Spotlight for Today's Route -->
+        <div id="today-route-container"></div>
 
         <div class="routes-grid" id="routes-container">
             <!-- Populated by JS -->
@@ -883,7 +812,6 @@
             <p>Spotted Santa? Help us build our digital memory book and share your photos!</p>
         </div>
         <div class="iframe-container">
-            <!-- Added device permission allowances for camera and location -->
             <iframe id="memory-book-iframe" height="900" title="Santa Memory Book" loading="lazy" allow="camera; microphone; geolocation"></iframe>
         </div>
     </section>
@@ -907,7 +835,6 @@
         </div>
         
         <div class="faq-accordion">
-            <!-- FAQ 1 -->
             <details class="faq-item" name="faq">
                 <summary class="faq-header">
                     <h3 class="faq-title">Will you definitely come down my street tonight?</h3>
@@ -918,7 +845,6 @@
                 </div>
             </details>
 
-            <!-- FAQ 2 -->
             <details class="faq-item" name="faq">
                 <summary class="faq-header">
                     <h3 class="faq-title">Why didn't you turn down my cul-de-sac?</h3>
@@ -929,7 +855,6 @@
                 </div>
             </details>
 
-            <!-- FAQ 3 -->
             <details class="faq-item" name="faq">
                 <summary class="faq-header">
                     <h3 class="faq-title">Can my children climb onto the sleigh for a photo?</h3>
@@ -940,7 +865,6 @@
                 </div>
             </details>
 
-            <!-- FAQ 4 -->
             <details class="faq-item" name="faq">
                 <summary class="faq-header">
                     <h3 class="faq-title">Where does the donated money go?</h3>
@@ -951,7 +875,6 @@
                 </div>
             </details>
 
-            <!-- FAQ 5 -->
             <details class="faq-item" name="faq">
                 <summary class="faq-header">
                     <h3 class="faq-title">Do you accept card donations?</h3>
@@ -962,7 +885,6 @@
                 </div>
             </details>
             
-             <!-- FAQ 6 -->
             <details class="faq-item" name="faq">
                 <summary class="faq-header">
                     <h3 class="faq-title">Can I volunteer to help?</h3>
@@ -991,9 +913,7 @@
                 Find the friends you've been missing. <span style="color: var(--primary);">Do More in <span id="current-year-text"></span>.</span>
             </p>
             
-            <div class="social-links" id="social-links-container">
-                <!-- Social links populated by JS -->
-            </div>
+            <div class="social-links" id="social-links-container"></div>
         </div>
     </section>
 
@@ -1006,9 +926,6 @@
     </footer>
 
     <script>
-        // ------------------------------------------------------------------
-        // Config + small helpers
-        // ------------------------------------------------------------------
         const CFG = window.SLEIGH_CONFIG;
         const $ = (id) => document.getElementById(id);
         const DEFAULT_LOGO = CFG.assetBase + '/RTBI_Santa.png';
@@ -1016,12 +933,10 @@
         const BG_OVERLAY = 'linear-gradient(180deg, rgba(29, 29, 26, 0.85) 0%, rgba(0, 0, 0, 0.95) 100%)';
         const FRAME_ORIGIN = (() => { try { return new URL(CFG.frameBase).origin; } catch (e) { return ''; } })();
 
-        // Set dynamic years
         const currentYear = new Date().getFullYear();
         $('current-year-text').textContent = currentYear;
         $('year').textContent = currentYear;
 
-        // Anything that ends up in an href/src must be plain http(s). Blocks javascript:, data: etc.
         function safeUrl(u) {
             if (!u) return '';
             try {
@@ -1030,7 +945,6 @@
             } catch (e) { return ''; }
         }
 
-        // Build elements with textContent, never innerHTML, for anything that came from the API.
         function el(tag, className, text) {
             const n = document.createElement(tag);
             if (className) n.className = className;
@@ -1040,7 +954,6 @@
 
         function asArray(v) { return Array.isArray(v) ? v : []; }
 
-        // Returns [r, g, b] for a valid CSS colour, otherwise null.
         function parseColor(v) {
             if (typeof v !== 'string') return null;
             const s = v.trim();
@@ -1064,15 +977,12 @@
             } catch (e) { return null; }
         }
 
-        // Black or white, whichever reads better on the given colour (WCAG contrast ratio).
         function readableTextOn(rgb) {
             const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
             const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
             return ((L + 0.05) / 0.05) >= (1.05 / (L + 0.05)) ? '#000000' : '#ffffff';
         }
 
-        // Date-only strings (YYYY-MM-DD) are read as LOCAL dates so they can't slip a day
-        // across timezones. Anything else goes through the normal Date parser.
         function parseRouteDate(v) {
             if (!v) return null;
             const s = String(v).trim();
@@ -1081,9 +991,6 @@
             return isNaN(d) ? null : d;
         }
 
-        // Derive "Ellon Round Table" from a display name like "Ellon Round Table Santa Sleigh".
-        // Handles "Santa's Sleigh" and plural "Sleighs" (the old regex left "'s" / "s" behind).
-        // Set settings.table_name in the API to skip this guesswork entirely.
         function deriveTableName(siteName) {
             return siteName
                 .replace(/\bsanta(?:['\u2019]s)?\b/gi, '')
@@ -1093,11 +1000,6 @@
                 .trim();
         }
 
-        // ------------------------------------------------------------------
-        // Loader / error UI
-        // ------------------------------------------------------------------
-        // `html` must be static markup written in this file. `detail` may be untrusted
-        // (e.g. an error message from the API) and is always inserted as text.
         function showError(html, detail) {
             const loaderText = $('loader-text');
             const loaderError = $('loader-error');
@@ -1130,10 +1032,7 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Banner: one place decides between offline / reconnecting / live announcement
-        // ------------------------------------------------------------------
-        let netState = 'online';        // 'online' | 'offline' | 'reconnecting'
+        let netState = 'online';
         let liveAnnouncement = '';
 
         function paintBanner() {
@@ -1153,10 +1052,6 @@
             bar.style.display = text ? 'block' : 'none';
         }
 
-        // ------------------------------------------------------------------
-        // Renderers. Every one of these is idempotent: safe to call again with
-        // fresh data (reconnect, future polling) without duplicating anything.
-        // ------------------------------------------------------------------
         function renderTheme(settings) {
             const root = document.documentElement;
             const primary = parseColor(settings.primary_color);
@@ -1173,7 +1068,6 @@
                 root.style.removeProperty('--accent');
             }
 
-            // Apply background to the fixed element to prevent mobile zooming
             const bgEl = $('site-bg');
             const bg = safeUrl(settings.background_url);
             if (bgEl) {
@@ -1196,14 +1090,12 @@
             document.title = siteName;
             $('footer-name').textContent = siteName;
 
-            // Highlight "<Town> Round Table" in gold, keep the rest white
             const match = siteName.match(/(.*?\bRound Table\b)/i);
             const tablePart = match ? match[1].trim() : siteName;
             const suffix = match ? siteName.substring(match[0].length).trim() : '';
             setTitleParts($('nav-title'), tablePart, suffix);
             setTitleParts($('hero-title'), tablePart, suffix);
 
-            // Logo, falling back to the default if the table's own image fails to load
             const logo = safeUrl(settings.logo_overlay_url);
             const navLogo = $('nav-logo');
             navLogo.onerror = () => { navLogo.onerror = null; navLogo.src = DEFAULT_LOGO; };
@@ -1218,7 +1110,6 @@
                 if (appleIconLink) appleIconLink.href = logo;
             }
 
-            // Canonical: per-table, never a placeholder
             if (location.protocol === 'http:' || location.protocol === 'https:') {
                 let canon = document.querySelector('link[rel="canonical"]');
                 if (!canon) {
@@ -1235,7 +1126,6 @@
             paintBanner();
         }
 
-        // --- Iframes -------------------------------------------------------
         let lazyObserver = null;
         function observeLazyFrame(frame) {
             if (!('IntersectionObserver' in window)) {
@@ -1248,18 +1138,17 @@
                     entries.forEach(entry => {
                         if (!entry.isIntersecting) return;
                         const f = entry.target;
-                        if (f.dataset.src) {          // Start the network load
+                        if (f.dataset.src) {
                             f.src = f.dataset.src;
                             f.removeAttribute('data-src');
                         }
                         obs.unobserve(f);
                     });
-                }, { rootMargin: '300px' });          // Start loading 300px before it enters the screen
+                }, { rootMargin: '300px' });
             }
             lazyObserver.observe(frame);
         }
 
-        // Never reassign an unchanged src: doing so reloads the iframe (and would wipe the tracker).
         function setFrameSrc(id, url, lazy) {
             const frame = $(id);
             if (!frame) return;
@@ -1273,25 +1162,19 @@
         }
 
         function frameUrl(page, api) {
-    let url = CFG.frameBase + '/' + page +
-        '?api=' + encodeURIComponent(api) +
-        '&proxy=' + encodeURIComponent(window.sleighProxyUrl(api));
-    
-    // Pass the pleasant addresses URL down to the iframe for sharing
-    if (page === 'address.html') {
-        const shareBase = prettyAddressesUrl();
-        if (shareBase) {
-            url += '&shareBase=' + encodeURIComponent(shareBase);
+            let url = CFG.frameBase + '/' + page +
+                '?api=' + encodeURIComponent(api) +
+                '&proxy=' + encodeURIComponent(window.sleighProxyUrl(api));
+            
+            if (page === 'address.html') {
+                const shareBase = prettyAddressesUrl();
+                if (shareBase) url += '&shareBase=' + encodeURIComponent(shareBase);
+            } else if (page === 'tracker') {
+                const shareBase = prettyTrackerUrl();
+                if (shareBase) url += '&shareBase=' + encodeURIComponent(shareBase);
+            }
+            return url;
         }
-    } else if (page === 'tracker') {
-        // ADD THIS: Pass the pleasant tracker URL down to the iframe for sharing
-        const shareBase = prettyTrackerUrl();
-        if (shareBase) {
-            url += '&shareBase=' + encodeURIComponent(shareBase);
-        }
-    }
-    return url;
-}
 
         let frameMessageBound = false;
         function bindFrameMessages() {
@@ -1306,9 +1189,6 @@
             });
         }
 
-        // On a pretty table host such as ellon.roundtablesantasleigh.co.uk the router also serves
-        // the standalone tracker at ellontracker.roundtablesantasleigh.co.uk. Returns '' on any
-        // other host (direct ?api= loads, pages.dev previews) so callers fall back to the raw URL.
         function prettyTrackerUrl() {
             const domain = String(CFG.prettyDomain || '').toLowerCase();
             if (!domain) return '';
@@ -1320,7 +1200,6 @@
             return location.protocol + '//' + sub + 'tracker' + suffix;
         }
 
-        // Generate the dynamic [town]crew URL using the active subdomain
         function prettyCrewUrl() {
             const domain = String(CFG.prettyDomain || '').toLowerCase();
             if (!domain) return '';
@@ -1328,12 +1207,10 @@
             const suffix = '.' + domain;
             if (host.length <= suffix.length || host.slice(-suffix.length) !== suffix) return '';
             const sub = host.slice(0, -suffix.length);
-            // Ensure we aren't appending 'crew' to a string that already ends in it
             if (!/^[a-z0-9-]+$/.test(sub) || sub === 'www' || /tracker$/.test(sub) || /crew$/.test(sub)) return '';
             return location.protocol + '//' + sub + 'crew' + suffix;
         }
 
-        // Generate the dynamic [town]addresses URL using the active subdomain
         function prettyAddressesUrl() {
             const domain = String(CFG.prettyDomain || '').toLowerCase();
             if (!domain) return '';
@@ -1341,7 +1218,6 @@
             const suffix = '.' + domain;
             if (host.length <= suffix.length || host.slice(-suffix.length) !== suffix) return '';
             const sub = host.slice(0, -suffix.length);
-            // Ensure we aren't appending to a string that already ends in one of our suffixes
             if (!/^[a-z0-9-]+$/.test(sub) || sub === 'www' || /tracker$/.test(sub) || /crew$/.test(sub) || /addresses$/.test(sub)) return '';
             return location.protocol + '//' + sub + 'addresses' + suffix;
         }
@@ -1356,7 +1232,6 @@
             bindFrameMessages();
         }
 
-        // --- Donations + volunteer -----------------------------------------
         let donationFillAnimated = false;
         function renderDonations(donations, settings) {
             const currency = donations.currency ? String(donations.currency) : '\u00A3';
@@ -1365,7 +1240,6 @@
             const hasTarget = target > 0;
             const donateUrl = safeUrl(settings.donate_url);
             
-            // Build the dynamic crew signup URL (fallback to the raw pages.dev + api url if they aren't using a pretty domain yet)
             const api = window.__sleighApiUrl;
             const fallbackCrewUrl = CFG.frameBase + '/crew?api=' + encodeURIComponent(api);
             const volunteerUrl = prettyCrewUrl() || fallbackCrewUrl;
@@ -1394,7 +1268,6 @@
             } else {
                 donateBtn.style.display = 'none';
             }
-            // Hide the whole card if there's neither a thermometer nor a donate button
             card.style.display = (hasTarget || donateUrl) ? '' : 'none';
 
             if (volunteerUrl) {
@@ -1404,7 +1277,6 @@
                 $('volunteer-container').style.display = 'none';
             }
 
-            // Hide the whole Donate section (and its nav link) if nothing in it is configured
             const hasAny = hasTarget || !!donateUrl || !!volunteerUrl;
             $('donate').style.display = hasAny ? '' : 'none';
             const navDonate = $('nav-donate');
@@ -1412,224 +1284,252 @@
         }
 
         // --- Routes Rendering ---
-function renderRoutes(routes, sponsors = []) {
-    const container = $('routes-container');
-    container.replaceChildren();
+        function renderRoutes(routes, sponsors = []) {
+            const container = $('routes-container');
+            container.replaceChildren();
 
-    // Auto-create or clear the today container
-    let todayContainer = $('today-route-container');
-    if (!todayContainer) {
-        todayContainer = el('div');
-        todayContainer.id = 'today-route-container';
-        container.parentNode.insertBefore(todayContainer, container);
-    }
-    todayContainer.replaceChildren();
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const allRoutes = routes
-        .filter(r => r && r.routeName)
-        .map(route => {
-            const d = parseRouteDate(route.date);
-            if (!d) return null;
-            const day = new Date(d);
-            day.setHours(0, 0, 0, 0);
-            return { route, d, day };
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.day - b.day);
-
-    if (!allRoutes.length) {
-        const p = el('p', '', 'No routes scheduled yet. Check back soon!');
-        p.style.color = 'var(--text-muted)';
-        container.appendChild(p);
-        return;
-    }
-
-    // Check if there is an active route for today
-    const todayItem = allRoutes.find(item => item.day.getTime() === today.getTime());
-    const otherRoutes = allRoutes.filter(item => item !== todayItem);
-
-    // 1. Render Today's Route as the Hero Spotlight Banner
-    if (todayItem) {
-        renderTodaySpotlight(todayItem, sponsors, todayContainer);
-    }
-
-    // 2. Render all other routes in the uniform schedule grid
-    otherRoutes.forEach(({ route, d, day }) => {
-        const isPast = day < today;
-        const card = el('div', 'route-card');
-        
-        if (isPast) {
-            card.style.opacity = '0.5';
-            card.style.border = '1px solid var(--bg-dark)';
-        }
-
-        const start = route['Start Time'] || '';
-        const end = route['End Time'] || '';
-        const time = (start && end) ? start + ' - ' + end : '';
-        const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-        
-        const dateWrapper = el('div', 'route-date');
-        if (isPast) {
-            const badge = el('span', '', '✓ COMPLETED | ');
-            badge.style.color = 'var(--text-main)';
-            dateWrapper.appendChild(badge);
-        }
-        
-        dateWrapper.appendChild(document.createTextNode(time ? dateText + ' | ' + time : dateText));
-        card.appendChild(dateWrapper);
-        card.appendChild(el('h3', 'brand-font', String(route.routeName)));
-
-        if (route.streets) {
-            const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
-            if (streets.length) {
-                let text = streets.slice(0, 8).join(', ');
-                if (streets.length > 8) text += ' and more...';
-                card.appendChild(el('div', 'route-streets', text));
+            let todayContainer = $('today-route-container');
+            if (!todayContainer) {
+                todayContainer = el('div');
+                todayContainer.id = 'today-route-container';
+                container.parentNode.insertBefore(todayContainer, container);
             }
+            todayContainer.replaceChildren();
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const allRoutes = routes
+                .filter(r => r && r.routeName)
+                .map(route => {
+                    const d = parseRouteDate(route.date);
+                    if (!d) return null;
+                    const day = new Date(d);
+                    day.setHours(0, 0, 0, 0);
+                    return { route, d, day };
+                })
+                .filter(Boolean)
+                .sort((a, b) => a.day - b.day);
+
+            if (!allRoutes.length) {
+                const p = el('p', '', 'No routes scheduled yet. Check back soon!');
+                p.style.color = 'var(--text-muted)';
+                container.appendChild(p);
+                return;
+            }
+
+            const todayItem = allRoutes.find(item => item.day.getTime() === today.getTime());
+            const otherRoutes = allRoutes.filter(item => item !== todayItem);
+
+            // 1. Render Today's Route as the Hero Spotlight Banner
+            if (todayItem) {
+                renderTodaySpotlight(todayItem, sponsors, todayContainer);
+            }
+
+            // 2. Render all other routes in the uniform schedule grid
+            otherRoutes.forEach(({ route, d, day }) => {
+                const isPast = day < today;
+                const card = el('div', 'route-card');
+                
+                if (isPast) {
+                    card.style.opacity = '0.5';
+                    card.style.border = '1px solid var(--bg-dark)';
+                }
+
+                const start = route['Start Time'] || '';
+                const end = route['End Time'] || '';
+                const time = (start && end) ? start + ' - ' + end : '';
+                const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                
+                const dateWrapper = el('div', 'route-date');
+                if (isPast) {
+                    const badge = el('span', '', '✓ COMPLETED | ');
+                    badge.style.color = 'var(--text-main)';
+                    dateWrapper.appendChild(badge);
+                }
+                
+                dateWrapper.appendChild(document.createTextNode(time ? dateText + ' | ' + time : dateText));
+                card.appendChild(dateWrapper);
+                card.appendChild(el('h3', 'brand-font', String(route.routeName)));
+
+                if (route.streets) {
+                    const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
+                    if (streets.length) {
+                        let text = streets.slice(0, 8).join(', ');
+                        if (streets.length > 8) text += ' and more...';
+                        card.appendChild(el('div', 'route-streets', text));
+                    }
+                }
+
+                if (route.sponsorName) {
+                    const sponsorBox = el('div');
+                    sponsorBox.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);';
+                    
+                    const sponsorLabel = el('div', '', 'SPONSORED BY:');
+                    sponsorLabel.style.cssText = 'font-size: 11px; color: var(--primary); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; letter-spacing: 0.5px; opacity: 0.8;';
+                    sponsorBox.appendChild(sponsorLabel);
+
+                    const contentFlex = el('div');
+                    contentFlex.style.cssText = 'display: flex; gap: 12px; align-items: center;';
+
+                    if (route.sponsorUrl) {
+                        const img = document.createElement('img');
+                        img.src = safeUrl(route.sponsorUrl);
+                        img.alt = String(route.sponsorName);
+                        img.style.cssText = 'width: 50px; height: 50px; object-fit: contain; background: #fff; border-radius: 6px; padding: 4px; flex-shrink: 0;';
+                        contentFlex.appendChild(img);
+                    }
+
+                    const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
+                    const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
+                    
+                    if (sponsorLink) {
+                        const a = document.createElement('a');
+                        a.href = sponsorLink;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        a.textContent = String(route.sponsorName);
+                        a.style.cssText = 'color: var(--text-main); font-weight: bold; text-decoration: none; font-size: 15px;';
+                        a.onmouseover = () => a.style.textDecoration = 'underline';
+                        a.onmouseout = () => a.style.textDecoration = 'none';
+                        contentFlex.appendChild(a);
+                    } else {
+                        const strong = el('strong', '', String(route.sponsorName));
+                        strong.style.cssText = 'color: var(--text-main); font-size: 15px;';
+                        contentFlex.appendChild(strong);
+                    }
+
+                    sponsorBox.appendChild(contentFlex);
+                    card.appendChild(sponsorBox);
+                }
+
+                container.appendChild(card);
+            });
         }
 
-        // Standard compact sponsor display for schedule cards
-        if (route.sponsorName) {
-            const sponsorBox = el('div');
-            sponsorBox.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);';
+        // --- Render Tonight's Hero Spotlight ---
+        function renderTodaySpotlight({ route, d }, sponsors, parent) {
+            const card = el('div', 'today-spotlight-card');
+
+            const start = route['Start Time'] || '';
+            const end = route['End Time'] || '';
+            const time = (start && end) ? start + ' - ' + end : '';
+            const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+
+            const routeInfo = el('div');
             
-            const sponsorLabel = el('div', '', 'SPONSORED BY:');
-            sponsorLabel.style.cssText = 'font-size: 11px; color: var(--primary); text-transform: uppercase; font-weight: 700; margin-bottom: 10px; letter-spacing: 0.5px; opacity: 0.8;';
-            sponsorBox.appendChild(sponsorLabel);
+            const badge = el('div', 'today-badge');
+            badge.innerHTML = '<i class="fa-solid fa-star"></i> TONIGHT\'S ROUTE';
+            routeInfo.appendChild(badge);
 
-            const contentFlex = el('div');
-            contentFlex.style.cssText = 'display: flex; gap: 12px; align-items: center;';
+            const dateEl = el('div', 'route-date', time ? dateText + ' | ' + time : dateText);
+            dateEl.style.fontSize = '15px';
+            routeInfo.appendChild(dateEl);
 
-            if (route.sponsorUrl) {
+            const title = el('h3', 'brand-font', String(route.routeName));
+            title.style.fontSize = '30px';
+            title.style.margin = '4px 0 10px 0';
+            routeInfo.appendChild(title);
+
+            if (route.streets) {
+                const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
+                if (streets.length) {
+                    let text = streets.slice(0, 10).join(', ');
+                    if (streets.length > 10) text += ' and more...';
+                    const streetsEl = el('div', 'route-streets', text);
+                    streetsEl.style.fontSize = '14px';
+                    routeInfo.appendChild(streetsEl);
+                }
+            }
+
+            card.appendChild(routeInfo);
+
+            if (route.sponsorName) {
+                const sponsorBox = el('div', 'today-sponsor-box');
+
+                const label = el('div', '', "⭐ TONIGHT'S SPONSOR:");
+                label.style.cssText = 'font-size: 12px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 12px; letter-spacing: 0.5px;';
+                sponsorBox.appendChild(label);
+
+                const contentFlex = el('div');
+                contentFlex.style.cssText = 'display: flex; gap: 15px; align-items: center; margin-bottom: 8px;';
+
+                if (route.sponsorUrl) {
+                    const img = document.createElement('img');
+                    img.src = safeUrl(route.sponsorUrl);
+                    img.alt = String(route.sponsorName);
+                    img.style.cssText = 'width: 65px; height: 65px; object-fit: contain; background: #fff; border-radius: 8px; padding: 4px; flex-shrink: 0;';
+                    contentFlex.appendChild(img);
+                }
+
+                const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
+                const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
+
+                const textFlex = el('div');
+                if (sponsorLink) {
+                    const a = document.createElement('a');
+                    a.href = sponsorLink;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    a.textContent = String(route.sponsorName);
+                    a.style.cssText = 'color: var(--text-main); font-weight: bold; text-decoration: none; font-size: 18px;';
+                    a.onmouseover = () => a.style.textDecoration = 'underline';
+                    a.onmouseout = () => a.style.textDecoration = 'none';
+                    textFlex.appendChild(a);
+                } else {
+                    const strong = el('strong', '', String(route.sponsorName));
+                    strong.style.cssText = 'color: var(--text-main); font-size: 18px;';
+                    textFlex.appendChild(strong);
+                }
+                contentFlex.appendChild(textFlex);
+                sponsorBox.appendChild(contentFlex);
+
+                if (route.sponsorDescription) {
+                    const desc = el('div', '', String(route.sponsorDescription));
+                    desc.style.cssText = 'font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-top: 10px;';
+                    sponsorBox.appendChild(desc);
+                }
+
+                card.appendChild(sponsorBox);
+            }
+
+            parent.appendChild(card);
+        }
+
+        // --- Sponsors (RESTORED) ---
+        function renderSponsors(sponsors) {
+            const section = $('sponsors');
+            const container = $('sponsors-container');
+            container.replaceChildren();
+
+            const valid = sponsors.filter(s => s && safeUrl(s.sponsorUrl));
+            section.style.display = valid.length ? 'block' : 'none';
+
+            valid.forEach(sponsor => {
+                const wrap = el('div', 'sponsor-card');
                 const img = document.createElement('img');
-                img.src = safeUrl(route.sponsorUrl);
-                img.alt = String(route.sponsorName);
-                img.style.cssText = 'width: 50px; height: 50px; object-fit: contain; background: #fff; border-radius: 6px; padding: 4px; flex-shrink: 0;';
-                contentFlex.appendChild(img);
-            }
+                img.src = safeUrl(sponsor.sponsorUrl);
+                img.alt = sponsor.name ? String(sponsor.name) : 'Sponsor';
+                img.loading = 'lazy';
+                img.decoding = 'async';
 
-            const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
-            const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
-            
-            if (sponsorLink) {
-                const a = document.createElement('a');
-                a.href = sponsorLink;
-                a.target = '_blank';
-                a.rel = 'noopener noreferrer';
-                a.textContent = String(route.sponsorName);
-                a.style.cssText = 'color: var(--text-main); font-weight: bold; text-decoration: none; font-size: 15px;';
-                a.onmouseover = () => a.style.textDecoration = 'underline';
-                a.onmouseout = () => a.style.textDecoration = 'none';
-                contentFlex.appendChild(a);
-            } else {
-                const strong = el('strong', '', String(route.sponsorName));
-                strong.style.cssText = 'color: var(--text-main); font-size: 15px;';
-                contentFlex.appendChild(strong);
-            }
-
-            sponsorBox.appendChild(contentFlex);
-            card.appendChild(sponsorBox);
+                const link = safeUrl(sponsor.sponsorLink);
+                if (link) {
+                    const a = document.createElement('a');
+                    a.href = link;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer sponsored';
+                    a.style.cssText = 'display:flex; width:100%; height:100%; justify-content:center;';
+                    a.appendChild(img);
+                    wrap.appendChild(a);
+                } else {
+                    wrap.appendChild(img);
+                }
+                container.appendChild(wrap);
+            });
         }
 
-        container.appendChild(card);
-    });
-}
-
-// --- Render Tonight's Hero Spotlight ---
-function renderTodaySpotlight({ route, d }, sponsors, parent) {
-    const card = el('div', 'today-spotlight-card');
-
-    const start = route['Start Time'] || '';
-    const end = route['End Time'] || '';
-    const time = (start && end) ? start + ' - ' + end : '';
-    const dateText = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-
-    // Left Column: Route details
-    const routeInfo = el('div');
-    
-    const badge = el('div', 'today-badge');
-    badge.innerHTML = '<i class="fa-solid fa-star"></i> TONIGHT\'S ROUTE';
-    routeInfo.appendChild(badge);
-
-    const dateEl = el('div', 'route-date', time ? dateText + ' | ' + time : dateText);
-    dateEl.style.fontSize = '15px';
-    routeInfo.appendChild(dateEl);
-
-    const title = el('h3', 'brand-font', String(route.routeName));
-    title.style.fontSize = '30px';
-    title.style.margin = '4px 0 10px 0';
-    routeInfo.appendChild(title);
-
-    if (route.streets) {
-        const streets = String(route.streets).split(',').map(s => s.trim()).filter(Boolean);
-        if (streets.length) {
-            let text = streets.slice(0, 10).join(', ');
-            if (streets.length > 10) text += ' and more...';
-            const streetsEl = el('div', 'route-streets', text);
-            streetsEl.style.fontSize = '14px';
-            routeInfo.appendChild(streetsEl);
-        }
-    }
-
-    card.appendChild(routeInfo);
-
-    // Right Column: Tonight's Sponsor Spotlight
-    if (route.sponsorName) {
-        const sponsorBox = el('div', 'today-sponsor-box');
-
-        const label = el('div', '', "⭐ TONIGHT'S SPONSOR:");
-        label.style.cssText = 'font-size: 12px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 12px; letter-spacing: 0.5px;';
-        sponsorBox.appendChild(label);
-
-        const contentFlex = el('div');
-        contentFlex.style.cssText = 'display: flex; gap: 15px; align-items: center; margin-bottom: 8px;';
-
-        if (route.sponsorUrl) {
-            const img = document.createElement('img');
-            img.src = safeUrl(route.sponsorUrl);
-            img.alt = String(route.sponsorName);
-            img.style.cssText = 'width: 65px; height: 65px; object-fit: contain; background: #fff; border-radius: 8px; padding: 4px; flex-shrink: 0;';
-            contentFlex.appendChild(img);
-        }
-
-        const sponsorMatch = sponsors.find(sp => sp.name === route.sponsorName);
-        const sponsorLink = sponsorMatch ? safeUrl(sponsorMatch.sponsorLink) : safeUrl(route.sponsorLink);
-
-        const textFlex = el('div');
-        if (sponsorLink) {
-            const a = document.createElement('a');
-            a.href = sponsorLink;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            a.textContent = String(route.sponsorName);
-            a.style.cssText = 'color: var(--text-main); font-weight: bold; text-decoration: none; font-size: 18px;';
-            a.onmouseover = () => a.style.textDecoration = 'underline';
-            a.onmouseout = () => a.style.textDecoration = 'none';
-            textFlex.appendChild(a);
-        } else {
-            const strong = el('strong', '', String(route.sponsorName));
-            strong.style.cssText = 'color: var(--text-main); font-size: 18px;';
-            textFlex.appendChild(strong);
-        }
-        contentFlex.appendChild(textFlex);
-        sponsorBox.appendChild(contentFlex);
-
-        // Strapline / Description
-        if (route.sponsorDescription) {
-            const desc = el('div', '', String(route.sponsorDescription));
-            desc.style.cssText = 'font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-top: 10px;';
-            sponsorBox.appendChild(desc);
-        }
-
-        card.appendChild(sponsorBox);
-    }
-
-    parent.appendChild(card);
-}
-        // --- About + social -------------------------------------------------
+        // --- About + social ---
         function renderAbout(settings) {
             const siteName = String(settings.sleigh_display_name || 'Santa Sleigh');
             const explicit = settings.table_name ? String(settings.table_name).trim() : '';
@@ -1666,7 +1566,6 @@ function renderTodaySpotlight({ route, d }, sponsors, parent) {
             });
         }
 
-        // One bad row or setting shouldn't take the whole page down with it
         function safely(name, fn) {
             try { fn(); } catch (err) { console.error('Render failed: ' + name, err); }
         }
@@ -1688,9 +1587,6 @@ function renderTodaySpotlight({ route, d }, sponsors, parent) {
             safely('social', () => renderSocial(settings));
         }
 
-        // ------------------------------------------------------------------
-        // Data loading
-        // ------------------------------------------------------------------
         const SETUP_ERROR_HTML = "Could not load data from the provided API. Please check the URL and ensure your Google Script is deployed as a Web App accessible to 'Anyone'.";
 
         function checkPayload(data) {
@@ -1700,11 +1596,9 @@ function renderTodaySpotlight({ route, d }, sponsors, parent) {
         }
 
         function initializeSleighApp(retryCount = 0) {
-            // Re-check for the API URL in case the router was delayed
             const apiUrl = window.__sleighApiUrl || new URLSearchParams(location.search).get('api');
 
             if (!apiUrl) {
-                // If the router script is still loading, wait 100ms and try again (up to 10 times)
                 if (retryCount < 10) {
                     setTimeout(() => initializeSleighApp(retryCount + 1), 100);
                     return;
@@ -1713,7 +1607,7 @@ function renderTodaySpotlight({ route, d }, sponsors, parent) {
                 return;
             }
 
-            window.__sleighApiUrl = apiUrl;   // reconnect refresh reads this
+            window.__sleighApiUrl = apiUrl;
             if (!window.__sleighDataPromise) {
                 window.__sleighDataPromise = window.sleighFetchData(apiUrl);
             }
@@ -1725,12 +1619,10 @@ function renderTodaySpotlight({ route, d }, sponsors, parent) {
                 })
                 .catch(err => {
                     showError(SETUP_ERROR_HTML + '<br><br>', err && err.message);
-                    // Fire-and-forget telemetry ping to the proxy
                     fetch(CFG.proxyBase + '/log?error=' + encodeURIComponent(err && err.message) + '&api=' + encodeURIComponent(apiUrl)).catch(()=>{});
                 });
         }
 
-        // Re-fetch after a reconnect. Quiet on failure: the page is already showing data.
         function refreshSleighData() {
             const api = window.__sleighApiUrl;
             if (!api) return Promise.resolve();
@@ -1755,10 +1647,6 @@ function renderTodaySpotlight({ route, d }, sponsors, parent) {
             }, 2000);
         });
 
-        // ------------------------------------------------------------------
-        // FAQ: native <details>. `name="faq"` makes it a one-open-at-a-time accordion in
-        // modern browsers; this keeps that behaviour in older ones too.
-        // ------------------------------------------------------------------
         document.querySelectorAll('.faq-item').forEach(item => {
             item.addEventListener('toggle', () => {
                 if (!item.open) return;
@@ -1768,7 +1656,6 @@ function renderTodaySpotlight({ route, d }, sponsors, parent) {
             });
         });
 
-        // Register Service Worker for Offline Fallback
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').catch(err => {
@@ -1777,7 +1664,6 @@ function renderTodaySpotlight({ route, d }, sponsors, parent) {
             });
         }
 
-        // --- Web Share API ---
         const shareBtn = $('share-btn');
         if (shareBtn) {
             if (navigator.share) {
@@ -1787,20 +1673,17 @@ function renderTodaySpotlight({ route, d }, sponsors, parent) {
                         text: 'Santa is on his way! Track the sleigh live:',
                         url: window.location.href
                     }).catch(err => {
-                        if (err && err.name !== 'AbortError') console.error(err);   // AbortError = user closed the share sheet
+                        if (err && err.name !== 'AbortError') console.error(err);
                     });
                 });
             } else {
-                // Hide the button on older browsers that don't support native sharing
                 shareBtn.style.display = 'none';
             }
         }
 
-        // Floating Action Button Scroll Logic
         const fab = $('fab-map');
         if (fab) {
             window.addEventListener('scroll', () => {
-                // Show the button if they scroll past the tracker section (approx 800px)
                 if (window.scrollY > 800) {
                     fab.classList.add('visible');
                 } else {
