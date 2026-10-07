@@ -576,7 +576,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             if (payload.id && payload.id !== recentDonationId) {
-                if (!firstLoad) {
+                if (firstLoad) {
+                    if (latestEl) {
+                        latestEl.innerHTML = `LATEST: <span class="text-white">${payload.name || 'Supporter'}</span> donated <span class="${accentColorClass} font-bold">£${payload.amount || 0}</span>!`;
+                    }
+                } else {
                     fireDonationAlert(payload.name || 'Supporter', payload.amount || 0);
                 }
                 recentDonationId = payload.id; 
