@@ -91,7 +91,7 @@
     <!-- Header -->
     <header class="relative z-10 flex justify-between items-center mb-6 flex-shrink-0">
         <div class="flex items-center gap-4">
-            <img src="https://brt-23f.pages.dev/icons/BRTLogo.png" alt="BRT Logo" class="w-12 h-12 drop-shadow-xl">
+            <img src="https://brt-23f.pages.dev/icons/BRTLogo.png" alt="BRT Logo" class="w-12 h-12 drop-shadow-xl cursor-pointer" onclick="findClosestGuess()">
             <h1 class="game-title text-3xl md:text-4xl font-black uppercase tracking-wider">
                 Crack The <span class="text-beraverPink neon-text-pink">Safe</span>
             </h1>
@@ -547,6 +547,31 @@
 
         acquire();
     })();
+
+        // --- Secret End of Day Function ---
+function findClosestGuess() {
+    if (wrongGuesses.size === 0) {
+        alert("No guesses have been made yet!");
+        return;
+    }
+    
+    const target = parseInt(masterCode);
+    let closestGuess = null;
+    let minDifference = Infinity;
+    
+    wrongGuesses.forEach(guess => {
+        const guessNum = parseInt(guess);
+        const diff = Math.abs(guessNum - target);
+        
+        if (diff < minDifference) {
+            minDifference = diff;
+            closestGuess = guess;
+        }
+    });
+    
+    alert(`FESTIVAL OVER!\n\nMaster Code: ${masterCode}\nClosest Guess: ${closestGuess}\nDifference: ${minDifference}`);
+}
+        
     </script>
 </body>
 </html>
