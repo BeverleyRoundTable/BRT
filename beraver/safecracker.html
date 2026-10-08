@@ -585,37 +585,6 @@
             
             alert(`FESTIVAL OVER!\n\nMaster Code: ${masterCode}\nClosest Guess: ${closestGuess}\nDifference: ${minDifference}`);
         }
-
-        // --- Keyboard Support ---
-        document.addEventListener('keydown', (e) => {
-            // Only process if setup modal is hidden
-            if (document.getElementById('setup-modal').classList.contains('hidden')) {
-                if (e.key >= '0' && e.key <= '9') {
-                    inputDigit(e.key);
-                } else if (e.key === 'Backspace' || e.key === 'Delete') {
-                    if (currentInput.length > 0) {
-                        currentInput = currentInput.slice(0, -1);
-                        playBeep(300, 'sawtooth', 0.1);
-                        updateDisplay();
-                    }
-                } else if (e.key === 'Enter') {
-                    submitGuess();
-                } else if (e.key === 'Escape') {
-                    clearInput();
-                }
-            } else if (e.key === 'Enter') {
-                // If in setup mode, enter submits the master code
-                lockSafe();
-            }
-        });
-
-        // Focus master code input on load
-        window.onload = () => {
-            if (restoreState()) return; // resumed a game in progress
-            updateDisplay();
-            document.getElementById('master-code-input').focus();
-        };
-
     </script>
 </body>
 </html>
