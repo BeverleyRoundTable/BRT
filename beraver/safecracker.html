@@ -549,28 +549,39 @@
     })();
 
         // --- Secret End of Day Function ---
-function findClosestGuess() {
-    if (wrongGuesses.size === 0) {
-        alert("No guesses have been made yet!");
-        return;
-    }
-    
-    const target = parseInt(masterCode);
-    let closestGuess = null;
-    let minDifference = Infinity;
-    
-    wrongGuesses.forEach(guess => {
-        const guessNum = parseInt(guess);
-        const diff = Math.abs(guessNum - target);
-        
-        if (diff < minDifference) {
-            minDifference = diff;
-            closestGuess = guess;
+        function findClosestGuess() {
+            // 1. Password Protection Check
+            const pin = prompt("Enter Admin PIN to end game:");
+            if (pin !== "2026") {
+                alert("Incorrect PIN. Access denied.");
+                return;
+            }
+
+            // 2. Execute the Math
+            if (wrongGuesses.size === 0) {
+                alert("No guesses have been made yet!");
+                return;
+            }
+            
+            const target = parseInt(masterCode);
+            let closestGuess = null;
+            let minDifference = Infinity;
+            
+            wrongGuesses.forEach(guess => {
+                const guessNum = parseInt(guess);
+                const diff = Math.abs(guessNum - target);
+                
+                if (diff < minDifference) {
+                    minDifference = diff;
+                    closestGuess = guess;
+                }
+            });
+            
+            alert(`FESTIVAL OVER!\n\nMaster Code: ${masterCode}\nClosest Guess: ${closestGuess}\nDifference: ${minDifference}`);
         }
-    });
-    
-    alert(`FESTIVAL OVER!\n\nMaster Code: ${masterCode}\nClosest Guess: ${closestGuess}\nDifference: ${minDifference}`);
-}
+
+        // --- Keyboard Support ---
+        document.addEventListener('keydown', (e) => {
         
     </script>
 </body>
