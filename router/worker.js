@@ -14,26 +14,26 @@ export default {
     // -------------------------------------------
     const donatePaths = ["/donate", "/donate/", "/donation", "/donations-form"];
     if (subdomain === "donate" || donatePaths.includes(url.pathname.toLowerCase())) {
-      const fallbackUrl = "https://www.zeffy.com/en-GB/organizations/beverley-round-table";
+      const fallbackUrl = "https://www.zeffy.com/en-GB/donation-form/beverley-round-table-for-our-community";
       let activeDonateUrl = fallbackUrl;
 
       try {
-        // Increased cache to 12 hours (43200 seconds) and forced cache matching
-        const apiRes = await fetch("https://script.google.com/macros/s/AKfycbwl88G_1QGwp6uN1JEGV2Abd7FAwQg7Id3_ufSNW_n1e7rsPAw-ZUor5vlqL8_GBfCK/exec", {
+        const apiRes = await fetch("https://turbosanta-api.beverley247.workers.dev/api/payload?table=beverley", {
           cf: { 
-            cacheTtl: 43200, 
+            cacheTtl: 3600, 
             cacheEverything: true 
           }
         });
         
         if (apiRes.ok) {
           const data = await apiRes.json();
-          if (data.settings && data.settings.donate_url) {
-            activeDonateUrl = data.settings.donate_url;
+          const targetUrl = data.table?.donate_url || data.settings?.donate_url;
+          if (targetUrl) {
+            activeDonateUrl = targetUrl;
           }
         }
       } catch (err) {
-        console.error("API lookup failed, using fallback");
+        console.error("D1 lookup failed, using fallback:", err);
       }
 
       return Response.redirect(activeDonateUrl, 302);
@@ -90,14 +90,14 @@ export default {
     }
 
     // -------------------------------------------
-    // Route 1.5: Santa Site (no API injection)
+    // Route 1.5: Santa Site (Turbo Santa 2.0 direct)
     // -------------------------------------------
     if (url.hostname === "santa.beverleyroundtable.co.uk") {
       const path = url.pathname;
-      if (path === "/" || path === "") {
-        return fetch(`${brtPages}/site/santa`);  // ← santa.html clean URL
+      if (path === "/" || path === "" || path === "/site/santa") {
+        return fetch(`${turboSantaPages}/?table=beverley`);
       }
-      return fetch(`${brtPages}/site/santa${path}`);  // ← subpaths/assets pass through
+      return fetch(`${turboSantaPages}${path}${url.search}`);
     }
 
     // -------------------------------------------
@@ -128,9 +128,8 @@ export default {
     const sleighSubdomains = ["crew", "tracker", "float", "santatracker", "driver", "lead"];
 
     if (url.hostname.endsWith(".beverleyroundtable.co.uk") && sleighSubdomains.includes(subdomain)) {
-      const defaultGasEndpoint = "https://script.google.com/macros/s/AKfycbwl88G_1QGwp6uN1JEGV2Abd7FAwQg7Id3_ufSNW_n1e7rsPAw-ZUor5vlqL8_GBfCK/exec";
-      const apiParam = url.searchParams.get("api") || defaultGasEndpoint;
       const isDriver = url.searchParams.get("driver") === "1" || subdomain === "driver";
+      const explicitApi = url.searchParams.get("api");
 
       let targetHtmlUrl = `${turboSantaPages}${url.pathname}`;
 
@@ -140,42 +139,54 @@ export default {
         else targetHtmlUrl = `${turboSantaPages}/${subdomain}.html`;
       }
 
-      const htmlRes = await fetch(targetHtmlUrl);
-      const contentType = htmlRes.headers.get("content-type") || "";
-
-      if (!contentType.includes("text/html")) {
-        return htmlRes;
+      const targetUrlObj = new URL(targetHtmlUrl);
+      if (!targetUrlObj.searchParams.has("table")) {
+        targetUrlObj.searchParams.set("table", "beverley");
+      }
+      if (isDriver) {
+        targetUrlObj.searchParams.set("driver", "1");
+      }
+      for (const [key, val] of url.searchParams.entries()) {
+        targetUrlObj.searchParams.set(key, val);
       }
 
-      const scriptToInject = `
-        <script>
-          (function() {
-            const _originalGet = URLSearchParams.prototype.get;
-            const _originalHas = URLSearchParams.prototype.has;
-            const targetApi = ${JSON.stringify(apiParam).replace(/</g, '\\u003c')};
-            const isDriver = ${isDriver ? 'true' : 'false'};
+      if (explicitApi) {
+        const htmlRes = await fetch(targetUrlObj.toString());
+        const contentType = htmlRes.headers.get("content-type") || "";
+        if (!contentType.includes("text/html")) return htmlRes;
 
-            URLSearchParams.prototype.get = function(name) {
-              if (name === 'api') return targetApi;
-              if (name === 'driver' && isDriver) return '1';
-              return _originalGet.call(this, name);
-            };
-            URLSearchParams.prototype.has = function(name) {
-              if (name === 'api') return true;
-              if (name === 'driver' && isDriver) return true;
-              return _originalHas.call(this, name);
-            };
-          })();
-        </script>
-      `;
+        const scriptToInject = `
+          <script>
+            (function() {
+              const _originalGet = URLSearchParams.prototype.get;
+              const _originalHas = URLSearchParams.prototype.has;
+              const targetApi = ${JSON.stringify(explicitApi).replace(/</g, '\\u003c')};
+              const isDriver = ${isDriver ? 'true' : 'false'};
 
-      return new HTMLRewriter()
-        .on("head", {
-          element(el) {
-            el.prepend(scriptToInject, { html: true });
-          }
-        })
-        .transform(htmlRes);
+              URLSearchParams.prototype.get = function(name) {
+                if (name === 'api') return targetApi;
+                if (name === 'driver' && isDriver) return '1';
+                return _originalGet.call(this, name);
+              };
+              URLSearchParams.prototype.has = function(name) {
+                if (name === 'api') return true;
+                if (name === 'driver' && isDriver) return true;
+                return _originalHas.call(this, name);
+              };
+            })();
+          </script>
+        `;
+
+        return new HTMLRewriter()
+          .on("head", {
+            element(el) {
+              el.prepend(scriptToInject, { html: true });
+            }
+          })
+          .transform(htmlRes);
+      }
+
+      return fetch(targetUrlObj.toString());
     }
 
     // -------------------------------------------

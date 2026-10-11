@@ -26,7 +26,7 @@ caches your custom fonts for a year, drastically speeding up load times:
     <meta property="og:type" content="website">
     <meta property="og:title" content="Santa Sleigh Live Tracker">
     <meta property="og:description" content="Follow Santa live on his journey, check when he is visiting your street, and help us raise vital funds for the local community this Christmas!">
-    <meta property="og:image" content="https://brt-23f.pages.dev/icons/site_background.png"> 
+    <meta property="og:image" content="https://turbosanta-app.pages.dev/icons/site_background.png"> 
 
     <!-- Preload Custom Font -->
     <link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
@@ -174,7 +174,7 @@ caches your custom fonts for a year, drastically speeding up load times:
             <div class="flex justify-between items-center gap-8 h-20">
                 <div class="flex-shrink-0 flex items-center">
                     <a href="https://santa.beverleyroundtable.co.uk" class="font-heading font-black text-2xl tracking-tighter text-brt-white flex items-center gap-3 group">
-                        <img src="https://brt-23f.pages.dev/icons/Beverley_Santa_Logo.png" alt="BRT Logo" class="w-12 h-12 object-contain transition-transform group-hover:scale-105 filter drop-shadow-[0_0_8px_rgba(211,28,28,0.5)]">
+                        <img src="https://turbosanta-app.pages.dev/icons/Beverley_Santa_Logo.png" alt="BRT Logo" class="w-12 h-12 object-contain transition-transform group-hover:scale-105 filter drop-shadow-[0_0_8px_rgba(211,28,28,0.5)]">
                         <span class="uppercase">Santa <span class="text-brt-red">Sleigh</span></span>
                     </a>
                 </div>
@@ -217,8 +217,8 @@ caches your custom fonts for a year, drastically speeding up load times:
             <!-- 1. Video Background (Base Layer) -->
             <div class="absolute inset-0 z-0 overflow-hidden">
                 <video autoplay loop muted playsinline disablePictureInPicture class="w-full h-full object-cover opacity-60 pointer-events-none">
-                    <source src="https://brt-23f.pages.dev//images/santa.webm" type="video/webm">
-                    <source src="https://brt-23f.pages.dev//images/santa.mp4" type="video/mp4">
+                    <source src="https://brt-23f.pages.dev/media/santa.webm" type="video/webm">
+                    <source src="https://brt-23f.pages.dev/media/santa.mp4" type="video/mp4">
                 </video>
             </div>
 
@@ -275,7 +275,7 @@ caches your custom fonts for a year, drastically speeding up load times:
                     <!-- Top Row (Mobile) / Left Section (Desktop) -->
                     <div class="flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto">
                         <span class="font-heading font-bold uppercase text-[10px] sm:text-sm text-gray-400 tracking-widest">Powered by</span>
-                        <img src="https://brt-23f.pages.dev/images/zendure.png" alt="Zendure" class="h-8 sm:h-11 object-contain bg-white px-2 py-1 rounded-lg shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                        <img src="https://brt-23f.pages.dev/media/zendure.png" alt="Zendure" class="h-8 sm:h-11 object-contain bg-white px-2 py-1 rounded-lg shadow-[0_0_10px_rgba(255,255,255,0.1)]">
                     </div>
                     
                     <!-- Bottom Row (Mobile) / Right Section (Desktop) -->
@@ -516,7 +516,7 @@ caches your custom fonts for a year, drastically speeding up load times:
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
                 <div class="flex items-center gap-3">
-                    <img src="https://brt-23f.pages.dev/icons/BRTLogo.png" alt="BRT Logo" class="w-10 h-10 object-contain filter drop-shadow-[0_0_5px_rgba(211,28,28,0.8)]">
+                    <img src="https://turbosanta-app.pages.dev/icons/BRTLogo.png" alt="BRT Logo" class="w-10 h-10 object-contain filter drop-shadow-[0_0_5px_rgba(211,28,28,0.8)]">
                     <span class="font-heading font-bold uppercase text-white tracking-widest text-sm">Beverley Round Table</span>
                 </div>
                 
@@ -536,7 +536,7 @@ caches your custom fonts for a year, drastically speeding up load times:
                     </p>
                 </div>
                 <a href="https://elevenlabs.io/" target="_blank" rel="noopener noreferrer" class="opacity-50 hover:opacity-100 transition-opacity duration-300">
-                    <img src="https://brt-23f.pages.dev/images/elevenlabs-logo-white.png" alt="ElevenLabs Impact Programme" class="h-6 object-contain">
+                    <img src="https://brt-23f.pages.dev/media/elevenlabs-logo-white.png" alt="ElevenLabs Impact Programme" class="h-6 object-contain">
                 </a>
             </div>
         </div>
@@ -569,8 +569,7 @@ caches your custom fonts for a year, drastically speeding up load times:
         // ---------------------------------------------------------
         // SLEIGH CONFIGURATION & IFRAME INJECTION
         // ---------------------------------------------------------
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwl88G_1QGwp6uN1JEGV2Abd7FAwQg7Id3_ufSNW_n1e7rsPAw-ZUor5vlqL8_GBfCK/exec';
-        const PROXY_URL = 'https://santaproxy.beverley247.workers.dev/?ttl=30&target=' + encodeURIComponent(GAS_API_URL);
+        const D1_API_URL = 'https://turbosanta-api.beverley247.workers.dev/api/payload?table=beverley';
         const FRAME_BASE = 'https://turbosanta-app.pages.dev';
 
         // Helper to parse route dates safely
@@ -681,8 +680,7 @@ function renderDonations(donations, settings) {
     html += `</div>`;
 
     // Dynamic Volunteer Banner Logic
-    const api = encodeURIComponent(GAS_API_URL);
-    const fallbackCrewUrl = `${FRAME_BASE}/crew?api=${api}`;
+    const fallbackCrewUrl = `${FRAME_BASE}/crew.html?table=beverley`;
     const volunteerLink = window.location.hostname.includes('beverleyroundtable.co.uk') 
         ? 'https://crew.beverleyroundtable.co.uk' 
         : fallbackCrewUrl;
@@ -789,15 +787,21 @@ function renderDonations(donations, settings) {
             const loader = document.getElementById('routes-loader');
             
             try {
-                const response = await fetch(PROXY_URL);
-                if (!response.ok) throw new Error('Failed to load routes');
+                const response = await fetch(D1_API_URL);
+                if (!response.ok) throw new Error('Failed to load routes from D1');
                 
                 const data = await response.json();
+                const tableSettings = data.table || data.settings || {};
                 
-                renderDonations(data.donations || {}, data.settings || {});
+                renderDonations({
+                    total: tableSettings.total_raised || 0,
+                    target: tableSettings.fundraising_goal || 0,
+                    currency: '£',
+                    lastUpdatePretty: 'Live'
+                }, tableSettings);
 
                 const routes = Array.isArray(data.routes) ? data.routes : [];
-                const sponsors = Array.isArray(data.sponsors) ? data.sponsors : [];
+                const sponsors = Array.isArray(data.partners) ? data.partners : (Array.isArray(tableSettings.partners) ? tableSettings.partners : (Array.isArray(data.sponsors) ? data.sponsors : []));
                 
                 if(loader) loader.remove();
 
@@ -807,13 +811,25 @@ function renderDonations(donations, settings) {
                 today.setHours(0, 0, 0, 0);
 
                 const allRoutes = routes
-                    .filter(r => r && r.routeName)
+                    .filter(r => r && (r.name || r.routeName))
                     .map(route => {
                         const d = parseRouteDate(route.date);
                         if (!d) return null;
                         const day = new Date(d);
                         day.setHours(0, 0, 0, 0);
-                        return { route, d, day };
+                        return {
+                            route: {
+                                ...route,
+                                routeName: route.name || route.routeName || '',
+                                'Start Time': route.start_time || route['Start Time'] || '',
+                                'End Time': route.end_time || route['End Time'] || '',
+                                sponsorName: route.sponsor_name || route.sponsorName || '',
+                                sponsorUrl: route.sponsor_logo || route.sponsorUrl || '',
+                                sponsorLink: route.sponsor_url || route.sponsorLink || ''
+                            },
+                            d,
+                            day
+                        };
                     })
                     .filter(Boolean)
                     .sort((a, b) => a.day - b.day);
@@ -901,7 +917,7 @@ function renderDonations(donations, settings) {
 
         document.addEventListener('DOMContentLoaded', () => {
             // 1. Set Tracker Iframe
-            const trackerUrl = `${FRAME_BASE}/tracker?api=${encodeURIComponent(GAS_API_URL)}&proxy=${encodeURIComponent(PROXY_URL)}`;
+            const trackerUrl = `${FRAME_BASE}/tracker.html?table=beverley`;
             const trackerFrame = document.getElementById('tracker-iframe');
             if (trackerFrame) {
                 trackerFrame.src = trackerUrl;
@@ -909,7 +925,7 @@ function renderDonations(donations, settings) {
             }
 
             // 2. Set Address Lookup Iframe
-            const addressUrl = `${FRAME_BASE}/address.html?api=${encodeURIComponent(GAS_API_URL)}&proxy=${encodeURIComponent(PROXY_URL)}`;
+            const addressUrl = `${FRAME_BASE}/address.html?table=beverley`;
             const addressFrame = document.getElementById('address-iframe');
             if (addressFrame) {
                 addressFrame.src = addressUrl;
@@ -917,7 +933,7 @@ function renderDonations(donations, settings) {
             }
 
             // 3. Set Memory Book Iframe
-            const memoryBookUrl = `${FRAME_BASE}/memory_book?api=${encodeURIComponent(GAS_API_URL)}&proxy=${encodeURIComponent(PROXY_URL)}`;
+            const memoryBookUrl = `${FRAME_BASE}/memory_book.html?table=beverley`;
             const memoryBookFrame = document.getElementById('memory-book-iframe');
             if (memoryBookFrame) {
                 memoryBookFrame.src = memoryBookUrl;
@@ -925,7 +941,7 @@ function renderDonations(donations, settings) {
             }
 
             // 4. Set Blueprint Iframe
-            const blueprintUrl = `${FRAME_BASE}/blueprint?api=${encodeURIComponent(GAS_API_URL)}&proxy=${encodeURIComponent(PROXY_URL)}`;
+            const blueprintUrl = `${FRAME_BASE}/blueprint.html?table=beverley`;
             const blueprintFrame = document.getElementById('blueprint-iframe');
             if (blueprintFrame) {
                 blueprintFrame.src = blueprintUrl;
@@ -966,54 +982,7 @@ function renderDonations(donations, settings) {
         });
     </script>
 
-    <!-- Click tracking: logs internal nav taps and outbound sponsor/partner clicks to Google Sheets -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwyAk3IScj--iNDQUn0ddk5wUH99Gfh6kPnCGmxgHhb4dIOoPRGaRwGT1lD-E9jf8dv/exec";
-
-    document.addEventListener('click', function(event) {
-    const link = event.target.closest('a');
-    if (!link) return;
-
-    const href = link.getAttribute('href');
-    if (!href) return;
-
-    let payloadLabel = "";
-
-    // 1. AUTOMATICALLY CATCH ALL INTERNAL SECTION TAPS (Navigation & Logos)
-    if (href.startsWith('#') && href.length > 1) {
-    const partnerName = href.substring(1).replace(/[^a-zA-Z0-9]/g, '_');
-    payloadLabel = `Site_Tap_${partnerName}_Logo`;
-    }
-
-    // 2. AUTOMATICALLY CATCH ALL OUTBOUND CLICKS (Socials & Sponsors)
-    else if (href.startsWith('http') && !href.includes(window.location.hostname)) {
-    try {
-    const urlObj = new URL(href);
-    let domain = urlObj.hostname.replace('www.', '');
-    domain = domain.split('.')[0];
-    const cleanName = domain.charAt(0).toUpperCase() + domain.slice(1);
-    payloadLabel = `Site_Click_${cleanName}_Outbound`;
-    } catch (e) {
-    payloadLabel = 'Site_Click_Unknown_Outbound';
-    }
-    }
-
-    // Silently log EVERYTHING to Google Sheets
-if (payloadLabel) {
-    fetch(WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        keepalive: true, // Forces the browser to finish the request in the background
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ sponsorName: payloadLabel })
-    }).catch(err => console.error("Tracking failed"));
-}
-    });
-
-    });
-    </script>
+    <!-- Historical Google Sheet tracking detached -->
 
   <script>
     const WEBHOOK_WORKER_URL = "https://zeffywebhook.beverley247.workers.dev"; // Replace with your Worker URL if different
