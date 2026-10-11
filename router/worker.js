@@ -90,14 +90,14 @@ export default {
     }
 
     // -------------------------------------------
-    // Route 1.5: Santa Site (Turbo Santa 2.0 direct)
+    // Route 1.5: Santa Site (Custom BRT Santa Page)
     // -------------------------------------------
     if (url.hostname === "santa.beverleyroundtable.co.uk") {
       const path = url.pathname;
-      if (path === "/" || path === "" || path === "/site/santa") {
-        return fetch(`${turboSantaPages}/?table=beverley`);
+      if (path === "/" || path === "") {
+        return fetch(`${brtPages}/site/santa`);  // ← santa.html clean URL
       }
-      return fetch(`${turboSantaPages}${path}${url.search}`);
+      return fetch(`${brtPages}/site/santa${path}`);  // ← subpaths/assets pass through
     }
 
     // -------------------------------------------
