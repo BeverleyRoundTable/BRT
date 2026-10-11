@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event Reference & Payment — Beverley Round Table 247</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  /* ============ CONFIG: nothing to edit here — see the <script> at the bottom ============ */
+
+  :root{
+    --navy:#11203A;        /* the dark counter the ticket sits on */
+    --ink:#1C2B45;         /* heading text */
+    --paper:#FBF7EE;       /* ticket paper */
+    --paper-edge:#EFE7D5;  /* notch / edge shade */
+    --go:#126E54;          /* pay = go */
+    --go-press:#0E5C46;
+    --stamp:#B23A2E;       /* ticket-stamp red, used with restraint */
+    --muted:#6B7280;
+    --line:#D9CFBA;
+    --field:#FFFFFF;
+    --field-line:#C9BFA8;
+    --radius:18px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Space Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--navy);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100dvh;
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:28px 16px 48px;
+  }
+  #bg{
+    position:fixed;inset:0;z-index:-1;
+    background-image:radial-gradient(1200px 600px at 50% -10%, #1B3157 0%, var(--navy) 55%);
+    background-size:cover;background-position:center center;background-repeat:no-repeat;
+  }
+
+  .stage{width:100%;max-width:480px}
+
+  /* ---------- the ticket ---------- */
+  .ticket{
+    position:relative;
+    background:var(--paper);
+    border-radius:var(--radius);
+    box-shadow:0 24px 60px rgba(0,0,0,.38), 0 2px 0 rgba(255,255,255,.4) inset;
+    padding:30px 26px 28px;
+    overflow:hidden;
+  }
+  /* faint guilloché texture */
+  .ticket::before{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.05;
+    background-image:repeating-linear-gradient(135deg, var(--stamp) 0 1px, transparent 1px 9px);
+  }
+  .ticket > *{position:relative}
+
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;
+    color:var(--stamp);margin:0 0 14px;
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--stamp);display:inline-block}
+  .logo{height:52px;width:auto;display:block;margin:0 0 14px}
+
+  .title{font-size:30px;line-height:1.05;font-weight:700;margin:0 0 8px;letter-spacing:-.01em}
+  .meta{font-size:14px;color:var(--muted);margin:0 0 4px}
+  .amount-line{font-size:14px;color:var(--ink);font-weight:500;margin:10px 0 0}
+  .notice{
+    margin:14px 0 0;font-size:13px;line-height:1.45;color:var(--ink);
+    background:#FBEEEA;border:1px solid #ECCFC8;border-left:3px solid var(--stamp);
+    border-radius:9px;padding:9px 12px;
+  }
+
+  /* ---------- perforation divider ---------- */
+  .perf{position:relative;height:30px;margin:22px -26px}
+  .perf::before{
+    content:"";position:absolute;left:26px;right:26px;top:50%;
+    border-top:2px dashed var(--line);
+  }
+  .perf .notch{position:absolute;top:50%;width:26px;height:26px;border-radius:50%;
+    background:var(--navy);transform:translateY(-50%)}
+  .perf .notch.l{left:-13px}
+  .perf .notch.r{right:-13px}
+
+  /* ---------- steps ---------- */
+  .step-label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+    color:var(--muted);margin:0 0 12px}
+
+  .field{margin:0 0 12px}
+  .field label{display:block;font-size:13px;font-weight:500;margin:0 0 5px;color:var(--ink)}
+  .opt{color:var(--muted);font-weight:400}
+  .places{font-size:13px;font-weight:700;color:var(--stamp);margin:0 0 12px;letter-spacing:.01em}
+  .closed-msg{font-size:15px;line-height:1.55;color:var(--ink);margin:0 0 4px}
+  .field input{
+    width:100%;font:inherit;font-size:16px;padding:13px 14px;
+    background:var(--field);border:1.5px solid var(--field-line);border-radius:11px;color:var(--ink);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input::placeholder{color:#9AA1AC}
+  .field input:focus{outline:none;border-color:var(--go);box-shadow:0 0 0 3px rgba(18,110,84,.18)}
+
+  .btn{
+    width:100%;font:inherit;font-weight:700;font-size:16px;letter-spacing:.01em;
+    border:none;border-radius:12px;padding:15px 18px;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    transition:transform .06s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.6;cursor:progress}
+  .btn--navy{background:var(--navy);color:#fff}
+  .btn--navy:hover{background:#0C1A30}
+  .btn--pay{background:var(--go);color:#fff;box-shadow:0 8px 22px rgba(18,110,84,.32)}
+  .btn--pay:hover{background:var(--go-press)}
+  .btn:focus-visible{outline:3px solid #8FB9FF;outline-offset:2px}
+
+  .linkrow{margin:14px 0 0;text-align:center;font-size:13px;color:var(--muted)}
+  .linkbtn{background:none;border:none;font:inherit;font-size:13px;color:var(--stamp);
+    font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:4px}
+  .linkbtn:focus-visible{outline:2px solid var(--stamp);outline-offset:2px;border-radius:4px}
+
+  /* ---------- the code chip (signature) ---------- */
+  .code-block{margin:2px 0 2px}
+  .code-cap{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+    color:var(--muted);margin:0 0 10px}
+  .code-wrap{display:flex;align-items:stretch;gap:10px}
+  .code{
+    flex:1;font-family:"DM Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:30px;font-weight:500;letter-spacing:.14em;color:var(--stamp);
+    text-align:center;padding:16px 10px;background:#fff;
+    border:2px dashed var(--stamp);border-radius:12px;user-select:all;
+  }
+  .copy{
+    flex:0 0 auto;width:58px;border:1.5px solid var(--field-line);border-radius:12px;
+    background:#fff;cursor:pointer;font:inherit;font-size:12px;font-weight:600;color:var(--ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  }
+  .copy:hover{background:#FAF6EC}
+  .copy:focus-visible{outline:3px solid #8FB9FF;outline-offset:2px}
+  .copy svg{width:18px;height:18px}
+
+  .pay-instr{margin:18px 0 16px}
+  .pay-instr p{margin:0 0 12px;font-size:14.5px;line-height:1.5}
+  .pay-instr strong{color:var(--stamp)}
+  ol.steps{margin:0;padding:0;list-style:none;counter-reset:s}
+  ol.steps li{
+    counter-increment:s;position:relative;padding:7px 0 7px 34px;font-size:14.5px;line-height:1.4;
+    border-top:1px solid var(--line);
+  }
+  ol.steps li:first-child{border-top:none}
+  ol.steps li::before{
+    content:counter(s);position:absolute;left:0;top:8px;
+    width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;
+    font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  }
+
+  .reassure{margin:18px 0 0;font-size:12.5px;color:var(--muted);text-align:center;line-height:1.5}
+  .reassure a{color:var(--muted)}
+
+  .status{margin:12px 0 0;font-size:14px;text-align:center;min-height:20px}
+  .status.err{color:var(--stamp);font-weight:500}
+  .status.ok{color:var(--go);font-weight:500}
+
+  .hidden{display:none}
+  .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;
+    border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .foot{text-align:center;color:rgba(255,255,255,.55);font-size:11.5px;margin:18px 0 0;letter-spacing:.02em}
+  .help{text-align:center;color:rgba(255,255,255,.72);font-size:12.5px;line-height:1.55;margin:10px auto 0;max-width:340px}
+  .help a{color:#CFE0FF;text-decoration:underline;text-underline-offset:2px;font-weight:600}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+  }
+
+  /* ---------- bank fallback ---------- */
+  .fallback{margin:16px 0 0;border:1px solid var(--line);border-radius:11px;background:#fff;overflow:hidden}
+  .fallback summary{cursor:pointer;list-style:none;padding:12px 14px;font-size:14px;font-weight:600;color:var(--ink);
+    display:flex;align-items:center;justify-content:space-between}
+  .fallback summary::-webkit-details-marker{display:none}
+  .fallback summary::after{content:"+";font-size:20px;color:var(--muted);line-height:1}
+  .fallback[open] summary::after{content:"\2013"}
+  .fallback .body{padding:2px 14px 14px;font-size:13.5px;line-height:1.5;color:var(--ink)}
+  .fallback .body p{margin:0 0 10px}
+  .fallback strong{color:var(--stamp)}
+  .bankrow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+  .bankrow:first-of-type{border-top:none}
+  .bankrow .k{color:var(--muted)}
+  .bankrow .v{font-family:"DM Mono",ui-monospace,monospace;font-weight:500;letter-spacing:.04em}
+
+  /* ---------- counterfoil stub ---------- */
+  .stub{position:relative;background:var(--paper);border-radius:var(--radius);margin-top:16px;padding:28px 26px 24px;
+    box-shadow:0 18px 44px rgba(0,0,0,.30)}
+  .stub .tear{position:absolute;left:0;right:0;top:0;height:0}
+  .stub .tear::before{content:"";position:absolute;left:26px;right:26px;top:0;border-top:2px dashed var(--line)}
+  .stub .tear .notch{position:absolute;top:0;width:24px;height:24px;border-radius:50%;background:var(--navy);transform:translateY(-50%)}
+  .stub .tear .notch.l{left:-12px}
+  .stub .tear .notch.r{right:-12px}
+  .stub h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted);margin:4px 0 18px}
+  .block{margin:0 0 20px}
+  .block:last-child{margin-bottom:0}
+  .blabel{font-size:13px;font-weight:600;color:var(--ink);margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .blabel svg{flex:0 0 auto}
+  .pillrow{display:flex;gap:9px;flex-wrap:wrap}
+  .pill{flex:1 1 0;min-width:130px;text-align:center;text-decoration:none;font-size:13.5px;font-weight:600;
+    padding:12px;border:1.5px solid var(--field-line);border-radius:10px;color:var(--ink);background:#fff;
+    display:inline-flex;align-items:center;justify-content:center;gap:7px}
+  .pill:hover{background:#FAF6EC}
+  .pill:focus-visible{outline:3px solid #8FB9FF;outline-offset:2px}
+  .pill svg{width:16px;height:16px;flex:0 0 auto}
+  .wa{display:flex;align-items:center;justify-content:center;gap:9px;text-decoration:none;
+    background:#1FA855;color:#fff;font-weight:700;font-size:15px;padding:13px;border-radius:11px}
+  .wa:hover{background:#188F47}
+  .wa:focus-visible{outline:3px solid #8FB9FF;outline-offset:2px}
+  .parking{display:flex;flex-direction:column}
+  .park{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+  .park:first-child{border-top:none}
+  .pname{font-size:14px;font-weight:600;color:var(--ink)}
+  .pnote{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .pmap{flex:0 0 auto;font-size:13px;font-weight:600;color:var(--go);text-decoration:none;white-space:nowrap;padding-top:1px}
+  .pmap:focus-visible{outline:2px solid var(--go);outline-offset:2px;border-radius:4px}
+  .games{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 11px}
+  .chip{font-size:12.5px;font-weight:600;color:var(--ink);background:#fff;border:1.5px solid var(--field-line);
+    border-radius:999px;padding:6px 11px;white-space:nowrap}
+  .morelink{font-size:13px;font-weight:600;color:var(--go);text-decoration:none}
+  .morelink:focus-visible{outline:2px solid var(--go);outline-offset:2px;border-radius:4px}
+</style>
+</head>
+<body>
+  <div id="bg" aria-hidden="true"></div>
+  <div class="stage">
+    <!-- RETRO AUDIO PLAYER CONSOLE -->
+    <div style="background: var(--ink); border: 1.5px solid var(--go); border-radius: var(--radius); padding: 12px 20px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 8px 22px rgba(0,0,0,0.3);">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 14px; font-family: 'DM Mono', monospace; font-size: 11px; color: #0ff; letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 0 5px #0ff;">
+        <span style="display: flex; align-items: center; gap: 6px;">
+          <span class="spin" style="width: 8px; height: 8px; border-width: 1.5px; border-color: rgba(0,255,255,0.3); border-top-color: #0ff;"></span> 
+          BGM_UPLINK_ESTABLISHED
+        </span>
+        <span style="white-space: nowrap;">Quixotic - Schwarzenegger</span>
+      </div>
+      
+      <!-- Native HTML5 Audio Player -->
+      <audio id="bg-audio" controls loop style="width: 100%; height: 32px; outline: none; border-radius: 8px;">
+        <source src="quixotic.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+    <div class="ticket" role="main">
+      <img class="logo" id="logo" alt="Beverley Round Table 247" hidden>
+      <span class="eyebrow"><span class="dot"></span><span id="org">Beverley Round Table 247</span></span>
+      <h1 class="title" id="eventName">Event name</h1>
+      <p class="meta" id="eventSubtitle">Date · venue</p>
+      <p class="amount-line" id="amountLine"></p>
+      <p class="notice" id="eventNote" hidden></p>
+
+      <div class="perf"><span class="notch l"></span><span class="notch r"></span></div>
+
+      <!-- STATE A: register -->
+      <section id="registerView">
+        <p class="places" id="placesLeft" hidden></p>
+        <p class="step-label">Step 1 — get your reference</p>
+        <div class="field">
+          <label for="name">Your name</label>
+          <input id="name" type="text" autocomplete="name" placeholder="e.g. Jimmy Smith" maxlength="80">
+        </div>
+        <div class="field">
+          <label for="phone">Contact number</label>
+          <input id="phone" type="tel" autocomplete="tel" placeholder="07700 900123" inputmode="tel" maxlength="20">
+        </div>
+        <div class="field">
+          <label for="table">Which table? <span class="opt">(or guest)</span></label>
+          <input id="table" type="text" list="tableList" placeholder="Start typing…" autocomplete="off" maxlength="60">
+          <datalist id="tableList"></datalist>
+        </div>
+        <div class="field" id="guestsField" hidden>
+          <label for="guests">How many in your party?</label>
+          <input id="guests" type="number" min="1" max="20" inputmode="numeric" placeholder="1">
+        </div>
+        <div class="field" id="dietaryField" hidden>
+          <label for="dietary">Dietary / access needs <span class="opt">(optional)</span></label>
+          <input id="dietary" type="text" placeholder="e.g. vegetarian, step-free access" maxlength="120">
+        </div>
+        <div class="field">
+          <label for="email">Email <span class="opt">(optional — to fetch your code again)</span></label>
+          <input id="email" type="email" autocomplete="email" placeholder="jimmy@example.com" inputmode="email">
+        </div>
+        <button class="btn btn--navy" id="getBtn">Get my reference</button>
+        <p class="status" id="regStatus" aria-live="polite"></p>
+
+        <p class="linkrow">Already registered? <button class="linkbtn" id="toLookup">Retrieve my code</button></p>
+      </section>
+
+      <!-- STATE B: lookup -->
+      <section id="lookupView" class="hidden">
+        <p class="step-label">Retrieve your reference</p>
+        <div class="field">
+          <label for="lq">Phone or email you used</label>
+          <input id="lq" type="text" autocomplete="off" placeholder="07700 900123 or jimmy@example.com" maxlength="60">
+        </div>
+        <button class="btn btn--navy" id="lookupBtn">Find my code</button>
+        <p class="status" id="lookupStatus" aria-live="polite"></p>
+        <p class="linkrow"><button class="linkbtn" id="backToReg">← Back to sign up</button></p>
+      </section>
+
+      <!-- STATE C: success / pay -->
+      <section id="payView" class="hidden">
+        <div class="code-block">
+          <p class="code-cap" id="codeCap">Your reference</p>
+          <div class="code-wrap">
+            <div class="code" id="codeValue" aria-label="Your payment reference">——————</div>
+            <button class="copy" id="copyBtn" title="Copy reference">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span id="copyLabel">Copy</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pay-instr">
+          <p>Pay <strong id="payAmount">your contribution</strong> bank-to-bank, and put <strong id="payCodeInline">your code</strong> in the reference field so we can tick you off the list.</p>
+          <ol class="steps">
+            <li>Tap <strong>Pay now</strong> below — it opens NatWest Payit.</li>
+            <li>Enter the amount.</li>
+            <li>In the <strong>reference / message</strong> box, type <strong id="payCodeInline2">your code</strong>.</li>
+            <li>Confirm in your own banking app.</li>
+          </ol>
+        </div>
+
+        <a class="btn btn--pay" id="payBtn" href="#" target="_blank" rel="noopener">
+          Pay now
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+
+        <details class="fallback">
+          <summary>Payment link not working?</summary>
+          <div class="body">
+            <p>You can pay by ordinary bank transfer instead. Please still put <strong id="bankRef">your code</strong> in the payment reference so we can match it to you.</p>
+            <div id="bankDetails"></div>
+          </div>
+        </details>
+
+        <p class="reassure">Payments go straight to the Round Table bank account via Open Banking (NatWest Payit) — no card details needed. You'll be marked as paid once we reconcile the bank statement.</p>
+        <p class="linkrow"><button class="linkbtn" id="addAnother">Register someone else</button></p>
+      </section>
+
+      <!-- STATE D: closed (full / finished) -->
+      <section id="closedView" class="hidden">
+        <p class="step-label" id="closedLabel">Sign-up closed</p>
+        <p class="closed-msg" id="closedMsg"></p>
+        <p class="linkrow" id="closedRetrieveRow" hidden>Already signed up? <button class="linkbtn" id="toLookup2">Retrieve your code</button></p>
+      </section>
+    </div>
+
+    <section class="stub" id="stub" hidden>
+      <span class="tear"><span class="notch l"></span><span class="notch r"></span></span>
+      <h2>Event details</h2>
+
+      <div class="block" id="gamesBlock" hidden>
+        <p class="blabel">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="9" r="6.5"/><path d="M8.5 14.5L5 20"/></svg>
+          What's on at the venue
+        </p>
+        <div class="games" id="games"></div>
+        <a class="morelink" id="gamesLink" target="_blank" rel="noopener">See the full games list ↗</a>
+      </div>
+
+      <div class="block" id="calBlock" hidden>
+        <p class="blabel">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 9.5h18"/></svg>
+          Add to your calendar
+        </p>
+        <div class="pillrow">
+          <a class="pill" id="gcal" target="_blank" rel="noopener">Google Calendar</a>
+          <a class="pill" id="ical" download="event.ics">Apple / Outlook</a>
+        </div>
+      </div>
+
+      <div class="block" id="waBlock" hidden>
+        <a class="wa" id="waLink" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2Zm5.5 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4.1.6.5l.8 1.9c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.2-.3.3-.1.6.1.2.6 1 1.4 1.6.9.8 1.7 1 2 1.1.2.1.4.1.5-.1l.6-.8c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.5.3.1.2.1.7-.1 1.3Z"/></svg>
+          Join the WhatsApp group
+        </a>
+      </div>
+
+      <div class="block" id="parkBlock" hidden>
+        <p class="blabel">
+          <svg viewBox="0 0 24 24" width="15" height="15"><rect x="3" y="3" width="18" height="18" rx="4" fill="#1C2B45"/><text x="12" y="17" font-size="13" font-weight="700" text-anchor="middle" fill="#fff" font-family="system-ui,sans-serif">P</text></svg>
+          Parking nearby
+        </p>
+        <div class="parking" id="parking"></div>
+      </div>
+    </section>
+
+    <p class="foot" id="foot">Beverley Round Table 247</p>
+    <p class="help" id="help" hidden></p>
+  </div>
+
+  <!-- SECRET RULES MODAL -->
+    <dialog id="secretRulesModal" style="border: none; border-radius: var(--radius); padding: 30px 26px; width: 90%; max-width: 400px; background: var(--paper); color: var(--ink); box-shadow: 0 24px 60px rgba(0,0,0,.5); margin: auto;">
+      <h2 style="margin: 0 0 16px; font-size: 22px; color: var(--stamp); font-weight: 700; letter-spacing: -0.01em;">The Beverley Bounty</h2>
+      
+      <div style="font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
+        <p style="margin: 0 0 12px;"><strong>1. The Bank:</strong> Beverley RT holds all the stickers. To get on the board, you must challenge a host.</p>
+        <ul style="margin: 0 0 12px; padding-left: 20px;">
+          <li style="margin-bottom: 6px;"><strong>Bronze (1 pt):</strong> Valiant effort (lose to a host).</li>
+          <li style="margin-bottom: 6px;"><strong>Silver (2 pts):</strong> Giant killer (beat a host).</li>
+          <li style="margin-bottom: 6px;"><strong>Gold (3 pts):</strong> The Humiliator (an absolute thrashing / flawless victory).</li>
+        </ul>
+        <p style="margin: 0 0 12px;"><strong>2. The "Pink Slip" Wager:</strong> Guest vs. Guest matches don't generate new points. You must agree to wager your existing stickers (e.g., Bronze for Bronze). The winner physically peels it off the loser.</p>
+        <p style="margin: 0;"><strong>3. The Final Showdown:</strong> In the last 30 minutes, wagers are completely uncapped. You can bet your entire chest of stickers on a single grudge match against another guest!</p>
+      </div>
+
+      <button id="closeRulesBtn" class="btn btn--navy">Got it</button>
+    </dialog>
+  
+<script>
+/* ======================================================================
+   EDIT THESE FIVE LINES, then push to GitHub Pages.
+   ====================================================================== */
+const CONFIG = {
+  ORG_NAME:        "Beverley Round Table 247",
+  LOGO_URL:        "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/icons/BRTLogo.png",  // "" to hide
+  EVENT_NAME:      "Ping Pong Club Takeover",                         // ← your event
+  EVENT_SUBTITLE:  "Wednesday 4th November 26 · Ping Pong Club Hull, 6:30pm", // ← date / venue / blurb
+  AMOUNT:          "15",     // the amount, e.g. "15" → "£15". "" hides it.
+  AMOUNT_IS_FIXED: true,     // true = "£15 to attend"  ·  false = "suggested · pay what you like"
+  NATWEST_LINK:    "https://paymentrequest.natwestpayit.com/reusable-link/2f1fd0ee-360a-4bbd-8e9a-fd07e641970e",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxAkEKeAbOCT8ILUmew3ChJGRHqkhb6izmeLGKChesSqXTXD4rqRlTuwgNIM1dUEETx/exec",     // ← from the Apps Script deploy step
+
+  // ── Optional extras — blank "" (or [] for parking) to hide any of these ──
+  WHATSAPP_LINK:     "https://chat.whatsapp.com/JR3KSaRZ8RAFCcvMpCkwWy?s=cl&p=a&ilr=2",  // group invite
+  CONTACT_EMAIL:     "beverley247@roundtable.org.uk",  // shown in the footer help line ("" to hide)
+  EVENT_START_LOCAL: "2026-11-04T18:30",          // UK local time, 24h — powers "Add to calendar"
+  EVENT_DURATION_MIN:180,                         // minutes
+  EVENT_LOCATION:    "The Ping Pong Club, 129-131 Beverley Road, Hull HU3 1TS",
+  EVENT_DETAILS:     "Beverley Round Table 247 Area Social.",
+  EVENT_NOTE:        "Private Round Table event — the venue's closed to the public that night, so don't worry if Google says it's shut.",  // "" to hide
+
+  BANK_NAME:         "Beverley Round Table",  // shown if the Payit link fails
+  BANK_SORT:         "60-02-23",                  // e.g. 60-00-01  (leave blank to hide bank details)
+  BANK_ACC:          "08225893",                  // e.g. 12345678
+
+  PARKING: [
+    { name:"On-street, Beverley Road", note:"Closest · usually free after 6pm (check signs)", maps:"https://www.google.com/maps/search/?api=1&query=Beverley+Road+Hull+HU3+1TS" },
+    { name:"St Stephen's / Spring Street", note:"~10 min walk · cheap · MiPermit app", maps:"https://www.google.com/maps/search/?api=1&query=St+Stephens+Square+Car+Park+Spring+St+Hull" },
+    { name:"Francis Street car park", note:"~10 min · ~£3 all day · open 24h", maps:"https://www.google.com/maps/search/?api=1&query=Francis+Street+Car+Park+Hull+HU2+8DT" },
+    { name:"Albion Street car park", note:"~12 min · often free after 6pm", maps:"https://www.google.com/maps/search/?api=1&query=Albion+Street+Car+Park+Hull" }
+  ],
+
+  VENUE_GAMES_URL: "https://pingpongclubhull.co.uk/games/",   // full games page ("" to hide the link)
+  VENUE_GAMES: [   // shown as chips — what's on at the venue (edit freely)
+    "Ping pong ×3","American pool","Air hockey ×2","Darts","Sub Soccer","Super Kixx football ×2","Arcade machines","Games consoles"
+  ],
+
+  BG_IMAGE_URL:  "https://assets.beverleyroundtable.co.uk/images/ping.png",   // optional full-screen background ("" = gradient)
+
+  TABLES: [            // suggestions for the "which table?" box — people can also type their own
+    "Barnsley 60",
+    "Beverley 247",
+    "Bridlington 42",
+    "Doncaster 7",
+    "Elland 658",
+    "Halifax 14",
+    "Harrogate 168",
+    "Huddersfield 68",
+    "Ilkley District 232",
+    "Mirfield 652",
+    "Penistone 1094",
+    "Rotherham 24",
+    "Scarborough 88",
+    "Sheffield 28",
+    "Todwick & Anston 1292",
+    "Wakefield District 1088",
+    "York, Ebor & County 65",
+    "Guest / not a member"
+  ],
+  
+  ASK_GUESTS:  false,  // true → adds a "how many in your party?" field
+  ASK_DIETARY: false   // true → adds a "dietary / access needs" field
+};
+/* ====================================================================== */
+
+// --- paint config into the page ---
+const $ = id => document.getElementById(id);
+$("org").textContent = CONFIG.ORG_NAME;
+$("eventName").textContent = CONFIG.EVENT_NAME;
+$("eventSubtitle").textContent = CONFIG.EVENT_SUBTITLE;
+document.title = CONFIG.EVENT_NAME + " — " + CONFIG.ORG_NAME;
+$("payBtn").href = CONFIG.NATWEST_LINK;
+
+const amountText = CONFIG.AMOUNT ? ("£" + CONFIG.AMOUNT) : "";
+const fixed = !!CONFIG.AMOUNT_IS_FIXED;
+const payWord = amountText ? (fixed ? amountText : amountText + " (suggested)") : (fixed ? "the entry fee" : "your contribution");
+if (amountText){
+  $("amountLine").textContent = fixed
+    ? amountText + " per person to attend"
+    : "Suggested contribution: " + amountText + " — but pay whatever you like.";
+}
+$("payAmount").textContent = payWord;
+$("foot").textContent = CONFIG.ORG_NAME + (fixed ? "" : " · voluntary contributions");
+if (CONFIG.LOGO_URL){ $("logo").src = CONFIG.LOGO_URL; $("logo").hidden = false; }
+(function setupHelp(){
+  const email = CONFIG.CONTACT_EMAIL, wa = CONFIG.WHATSAPP_LINK, el = $("help");
+  if ((!email && !wa) || !el) return;
+  const bits = [];
+  if (email) bits.push('email <a href="mailto:' + email + '">' + email + '</a>');
+  if (wa) bits.push('ask in the <a href="' + wa + '" target="_blank" rel="noopener">WhatsApp group</a>');
+  el.innerHTML = "Trouble signing up or paying? You can " + bits.join(" or ") + ".";
+  el.hidden = false;
+})();
+if (CONFIG.EVENT_NOTE){ $("eventNote").textContent = CONFIG.EVENT_NOTE; $("eventNote").hidden = false; }
+
+// --- background image + adaptive form ---
+(function setupForm(){
+  if (CONFIG.BG_IMAGE_URL){
+    $("bg").style.backgroundImage =
+      "linear-gradient(rgba(9,16,30,.58), rgba(9,16,30,.58)), url('" + CONFIG.BG_IMAGE_URL + "')";
+  }
+  if (Array.isArray(CONFIG.TABLES)){
+    $("tableList").innerHTML = CONFIG.TABLES
+      .map(t => '<option value="' + String(t).replace(/"/g,"&quot;") + '">').join("");
+  }
+  if (CONFIG.ASK_GUESTS)  $("guestsField").hidden = false;
+  if (CONFIG.ASK_DIETARY) $("dietaryField").hidden = false;
+})();
+
+// --- view switching ---
+function show(view){
+  ["registerView","lookupView","payView","closedView"].forEach(v => $(v).classList.toggle("hidden", v !== view));
+}
+$("toLookup").onclick   = () => show("lookupView");
+$("toLookup2").onclick  = () => show("lookupView");
+$("backToReg").onclick  = () => show("registerView");
+$("addAnother").onclick = () => {
+  ["name","phone","table","email","guests","dietary"].forEach(id => { const el=$(id); if(el) el.value=""; });
+  $("regStatus").textContent=""; show("registerView");
+};
+
+// --- networking helper (text/plain avoids a CORS preflight; Apps Script returns readable JSON) ---
+async function call(payload){
+  if (CONFIG.APPS_SCRIPT_URL.indexOf("PASTE_YOUR") === 0)
+    throw new Error("This page isn't connected yet — the organiser still needs to add the script link.");
+  const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+    method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=utf-8" },
+    body: JSON.stringify(payload),
+    redirect:"follow"
+  });
+  return res.json();
+}
+
+function loading(btn, on, label){
+  btn.disabled = on;
+  btn.dataset.label = btn.dataset.label || btn.textContent;
+  btn.innerHTML = on ? '<span class="spin"></span>' + (label||"Working…") : btn.dataset.label;
+}
+
+function showCode(code){
+  $("codeValue").textContent = code;
+  $("payCodeInline").textContent = code;
+  $("payCodeInline2").textContent = code;
+  const br = $("bankRef"); if (br) br.textContent = code;
+  show("payView");
+}
+
+// --- register ---
+$("getBtn").onclick = async () => {
+  const name  = $("name").value.trim();
+  const phone = $("phone").value.trim();
+  const table = $("table").value.trim();
+  const email = $("email").value.trim();
+  const guests  = CONFIG.ASK_GUESTS  ? $("guests").value.trim()  : "";
+  const dietary = CONFIG.ASK_DIETARY ? $("dietary").value.trim() : "";
+  const status = $("regStatus");
+  status.className = "status";
+  if (name.length < 2){ status.classList.add("err"); status.textContent = "Pop your name in first."; $("name").focus(); return; }
+  if (phone.replace(/\D/g,"").length < 7){ status.classList.add("err"); status.textContent = "Add a contact number so we can reach you."; $("phone").focus(); return; }
+  const btn = $("getBtn");
+  loading(btn, true, "Getting your code…");
+  try{
+    const r = await call({ action:"register", name, phone, table, email, guests, dietary,
+      ctx:{ eventName:CONFIG.EVENT_NAME, amount:CONFIG.AMOUNT, payLink:CONFIG.NATWEST_LINK, contactEmail:CONFIG.CONTACT_EMAIL, orgName:CONFIG.ORG_NAME } });
+    if (!r.ok){
+      if (r.full){ showClosed("full"); return; }
+      throw new Error(r.error || "Something went wrong.");
+    }
+    $("codeCap").textContent = r.returning ? "Welcome back — your reference"
+      : (r.emailed ? "Your reference — also emailed to you" : "Your reference");
+    showCode(r.code);
+  }catch(err){
+    status.classList.add("err");
+    status.textContent = err.message;
+  }finally{
+    loading(btn, false);
+  }
+};
+
+// --- lookup ---
+$("lookupBtn").onclick = async () => {
+  const q = $("lq").value.trim();
+  const status = $("lookupStatus");
+  status.className = "status";
+  if (!q){ status.classList.add("err"); status.textContent = "Enter your phone or email."; return; }
+  const btn = $("lookupBtn");
+  loading(btn, true, "Looking…");
+  try{
+    const r = await call({ action:"lookup", q });
+    if (!r.ok) throw new Error(r.error || "No registration found.");
+    $("codeCap").textContent = "Your reference";
+    showCode(r.code);
+  }catch(err){
+    status.classList.add("err");
+    status.textContent = err.message;
+  }finally{
+    loading(btn, false);
+  }
+};
+
+// --- copy ---
+$("copyBtn").onclick = async () => {
+  const code = $("codeValue").textContent;
+  try{
+    await navigator.clipboard.writeText(code);
+  }catch(e){
+    const t=document.createElement("textarea"); t.value=code; document.body.appendChild(t);
+    t.select(); document.execCommand("copy"); t.remove();
+  }
+  $("copyLabel").textContent = "Copied";
+  setTimeout(()=> $("copyLabel").textContent = "Copy", 1600);
+};
+
+// Enter-to-submit
+["name","phone","table","email","guests","dietary"].forEach(id => {
+  const el = $(id); if (el) el.addEventListener("keydown", e => { if(e.key==="Enter") $("getBtn").click(); });
+});
+$("lq").addEventListener("keydown", e => { if(e.key==="Enter") $("lookupBtn").click(); });
+
+// ---------- event-details counterfoil ----------
+(function setupStub(){
+  const enc = encodeURIComponent;
+  const pad = n => String(n).padStart(2,'0');
+  const z = d => d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+'T'+pad(d.getUTCHours())+pad(d.getUTCMinutes())+'00Z';
+  let any = false;
+
+  if (CONFIG.VENUE_GAMES_URL || (Array.isArray(CONFIG.VENUE_GAMES) && CONFIG.VENUE_GAMES.length)){
+    const gw = $("games");
+    (CONFIG.VENUE_GAMES||[]).forEach(g => {
+      const s = document.createElement("span"); s.className = "chip"; s.textContent = g; gw.appendChild(s);
+    });
+    if (CONFIG.VENUE_GAMES_URL){ $("gamesLink").href = CONFIG.VENUE_GAMES_URL; }
+    else { $("gamesLink").style.display = "none"; }
+    $("gamesBlock").hidden = false; any = true;
+  }
+
+  if (CONFIG.EVENT_START_LOCAL){
+    const start = new Date(CONFIG.EVENT_START_LOCAL);
+    if (!isNaN(start.getTime())){
+      const end = new Date(start.getTime() + (CONFIG.EVENT_DURATION_MIN||60)*60000);
+      const s = z(start), e = z(end);
+      const title = CONFIG.EVENT_NAME||"Event", loc = CONFIG.EVENT_LOCATION||"", det = [CONFIG.EVENT_DETAILS, CONFIG.EVENT_NOTE].filter(Boolean).join(" — ");
+      $("gcal").href = "https://calendar.google.com/calendar/render?action=TEMPLATE"
+        + "&text=" + enc(title) + "&dates=" + s + "/" + e
+        + "&details=" + enc(det) + "&location=" + enc(loc);
+      const esc = t => String(t).replace(/\\/g,"\\\\").replace(/[,;]/g,m=>"\\"+m).replace(/\n/g,"\\n");
+      const ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//BRT//Event//EN",
+        "BEGIN:VEVENT","UID:"+Date.now()+"@beverleyroundtable","DTSTAMP:"+z(new Date()),
+        "DTSTART:"+s,"DTEND:"+e,"SUMMARY:"+esc(title),"DESCRIPTION:"+esc(det),"LOCATION:"+esc(loc),
+        "END:VEVENT","END:VCALENDAR"].join("\r\n");
+      $("ical").href = URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
+      $("calBlock").hidden = false; any = true;
+    }
+  }
+
+  if (CONFIG.WHATSAPP_LINK){
+    $("waLink").href = CONFIG.WHATSAPP_LINK;
+    $("waBlock").hidden = false; any = true;
+  }
+
+  if (Array.isArray(CONFIG.PARKING) && CONFIG.PARKING.length){
+    const wrap = $("parking");
+    CONFIG.PARKING.forEach(p => {
+      const row = document.createElement("div"); row.className = "park";
+      const left = document.createElement("div");
+      const nm = document.createElement("div"); nm.className = "pname"; nm.textContent = p.name||"";
+      left.appendChild(nm);
+      if (p.note){ const nt = document.createElement("div"); nt.className = "pnote"; nt.textContent = p.note; left.appendChild(nt); }
+      row.appendChild(left);
+      if (p.maps){
+        const a = document.createElement("a"); a.className = "pmap"; a.href = p.maps;
+        a.target = "_blank"; a.rel = "noopener"; a.textContent = "Map \u2197"; row.appendChild(a);
+      }
+      wrap.appendChild(row);
+    });
+    $("parkBlock").hidden = false; any = true;
+  }
+
+  if (any) $("stub").hidden = false;
+})();
+
+// ---------- bank-transfer fallback ----------
+(function setupBank(){
+  const el = $("bankDetails");
+  if (!el) return;
+  if (CONFIG.BANK_SORT || CONFIG.BANK_ACC){
+    const rows = [["Account name",CONFIG.BANK_NAME||""],["Sort code",CONFIG.BANK_SORT||""],["Account number",CONFIG.BANK_ACC||""]];
+    el.innerHTML = rows.filter(r => r[1])
+      .map(r => '<div class="bankrow"><span class="k">'+r[0]+'</span><span class="v">'+r[1]+'</span></div>').join("");
+  } else {
+    el.innerHTML = '<p style="color:var(--muted);margin:0">Get in touch with the organiser and we\'ll sort it out.</p>';
+  }
+})();
+
+// ---------- gate: finished / full / places-left ----------
+function showClosed(reason){
+  if (reason === "passed"){
+    $("closedLabel").textContent = "This event has finished";
+    $("closedMsg").textContent = (CONFIG.EVENT_NAME || "This event") + " has now taken place. Thanks to everyone who came along.";
+    $("closedRetrieveRow").hidden = true;
+  } else {
+    $("closedLabel").textContent = "This event is full";
+    $("closedMsg").textContent = (CONFIG.EVENT_NAME || "This event") + " is fully booked. If you've already signed up you can still fetch your code below.";
+    $("closedRetrieveRow").hidden = false;
+  }
+  show("closedView");
+}
+
+(function setupGate(){
+  // event finished? (client-side, from your start time + duration)
+  if (CONFIG.EVENT_START_LOCAL){
+    const start = new Date(CONFIG.EVENT_START_LOCAL);
+    if (!isNaN(start.getTime())){
+      const end = new Date(start.getTime() + (CONFIG.EVENT_DURATION_MIN||60)*60000);
+      if (Date.now() > end.getTime()){ showClosed("passed"); return; }
+    }
+  }
+  // capacity — the count is authoritative on the server
+  call({ action:"count" }).then(r => {
+    if (!r || !r.ok) return;
+    if (r.full){ showClosed("full"); return; }
+    if (r.capacity > 0 && (r.capacity - r.count) <= 10){
+      const left = r.capacity - r.count;
+      $("placesLeft").textContent = left === 1 ? "Just 1 place left" : ("Only " + left + " places left");
+      $("placesLeft").hidden = false;
+    }
+  }).catch(() => {});
+})();
+
+  // ---------- SECRET RULES EASTER EGG (NOW ON LOGO) ----------
+(function setupSecretRules(){
+  const logoElement = document.getElementById('logo');
+  const modal = document.getElementById('secretRulesModal');
+  const closeBtn = document.getElementById('closeRulesBtn');
+
+  if (logoElement && modal && closeBtn) {
+    logoElement.style.cursor = 'pointer';
+    logoElement.title = "View the secret rules";
+    
+    logoElement.addEventListener('click', () => {
+      modal.showModal();
+      document.querySelector('.ticket').style.filter = 'blur(2px)';
+    });
+
+    closeBtn.addEventListener('click', () => {
+      modal.close();
+      document.querySelector('.ticket').style.filter = 'none';
+    });
+    
+    modal.addEventListener('click', (e) => {
+      const dialogDimensions = modal.getBoundingClientRect();
+      if (
+        e.clientX < dialogDimensions.left ||
+        e.clientX > dialogDimensions.right ||
+        e.clientY < dialogDimensions.top ||
+        e.clientY > dialogDimensions.bottom
+      ) {
+        modal.close();
+        document.querySelector('.ticket').style.filter = 'none';
+      }
+    });
+  }
+})();
+</script> <!-- THIS WAS MISSING! -->
+
+<!-- SECRET DOOR LIST UI -->
+<div id="secret-door-list" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 25, 0.95); z-index: 9999; color: #0ff; font-family: 'Courier New', Courier, monospace; padding: 20px; overflow-y: auto; backdrop-filter: blur(5px);">
+  <div style="max-width: 600px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #f0f; padding-bottom: 10px; margin-bottom: 20px;">
+      <h2 style="margin: 0; color: #f0f; text-shadow: 0 0 10px #f0f;">[ SYSTEM_OVERRIDE : DOOR_LIST ]</h2>
+      <button onclick="document.getElementById('secret-door-list').style.display='none'" style="background: none; border: 1px solid #0ff; color: #0ff; padding: 5px 10px; cursor: pointer; text-shadow: 0 0 5px #0ff; box-shadow: 0 0 5px #0ff;">CLOSE</button>
+    </div>
+    <div id="door-list-content">Loading database...</div>
+  </div>
+</div>
+
+<script>
+  // --- Secret Trigger Logic (NOW ON RED DOT) ---
+  let clickCount = 0;
+  let clickTimer = null;
+
+  const adminDot = document.querySelector('.eyebrow .dot');
+  if (adminDot) {
+    adminDot.style.cursor = 'crosshair';
+    adminDot.title = "System Override";
+    adminDot.addEventListener('click', secretAdminTrigger);
+  }
+
+  function secretAdminTrigger() {
+    clickCount++;
+    if (clickTimer) clearTimeout(clickTimer);
+    
+    if (clickCount >= 5) {
+      document.getElementById('secret-door-list').style.display = 'block';
+      fetchDoorList();
+      clickCount = 0;
+    } else {
+      clickTimer = setTimeout(() => { clickCount = 0; }, 1500); 
+    }
+  }
+
+  // MAKE SURE TO PASTE YOUR ACTUAL APPS SCRIPT URL HERE
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxAkEKeAbOCT8ILUmew3ChJGRHqkhb6izmeLGKChesSqXTXD4rqRlTuwgNIM1dUEETx/exec'; 
+
+  async function fetchDoorList() {
+    const container = document.getElementById('door-list-content');
+    container.innerHTML = 'Establishing uplink...';
+    
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'list' })
+      });
+      const data = await res.json();
+      
+      if (!data.ok) throw new Error("Data fetch failed");
+      
+      let html = `<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <tr style="text-align: left; border-bottom: 1px solid #0ff; color: #fff;">
+                      <th style="padding: 10px 5px;">ENTERED</th>
+                      <th style="padding: 10px 5px;">NAME</th>
+                      <th style="padding: 10px 5px;">CODE</th>
+                      <th style="padding: 10px 5px;">PAID</th>
+                    </tr>`;
+      
+      data.attendees.forEach(att => {
+        const paidColor = String(att.paid).toLowerCase() === 'yes' ? '#0f0' : '#f00';
+        html += `<tr style="border-bottom: 1px dashed rgba(0, 255, 255, 0.3);">
+                  <td style="padding: 10px 5px;">
+                    <input type="checkbox" style="transform: scale(1.5); cursor: pointer;" 
+                           ${att.checkedIn ? 'checked' : ''} 
+                           onchange="updateCheckIn(${att.row}, this.checked)">
+                  </td>
+                  <td style="padding: 10px 5px;">${att.name}</td>
+                  <td style="padding: 10px 5px; font-weight: bold; color: #ff0;">${att.code}</td>
+                  <td style="padding: 10px 5px; color: ${paidColor}; text-transform: uppercase;">${att.paid || 'NO'}</td>
+                 </tr>`;
+      });
+      html += '</table>';
+      container.innerHTML = html;
+      
+    } catch (err) {
+      container.innerHTML = `<span style="color: red;">Error: ${err.message}</span>`;
+    }
+  }
+
+  async function updateCheckIn(rowNum, isChecked) {
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'checkin', row: rowNum, status: isChecked })
+    }).catch(err => console.error("Check-in update failed", err));
+  }
+  // --- Audio Autoplay Hack ---
+  // Browsers block unmuted autoplay on load. This script listens for the user's 
+  // first physical interaction with the page (a click) and starts the music.
+  document.body.addEventListener('click', function() {
+    const audio = document.getElementById('bg-audio');
+    if (audio && audio.paused) {
+      audio.play().catch(() => {
+        // If the browser still strictly blocks it, the user can just hit the native play button
+        console.log("Audio requires manual playback.");
+      });
+    }
+  }, { once: true }); // The { once: true } ensures this only fires on the very first click
+</script>
+</body>
+</html>
