@@ -2,8 +2,9 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     
-    // Master Pages URL
+    // Master Pages URLs
     const brtPages = "https://brt-23f.pages.dev"; 
+    const turboSantaPages = "https://turbosanta-app.pages.dev"; 
 
     // Extract the subdomain early 
     const subdomain = url.hostname.split('.')[0].toLowerCase(); 
@@ -74,7 +75,7 @@ export default {
         }
       }
 
-      const REPORT_HTML_URL = `${brtPages}/sleigh/partner_report.html`;
+      const REPORT_HTML_URL = `${turboSantaPages}/partner_report.html`;
       try {
         const reportRes = await fetch(REPORT_HTML_URL);
         return new Response(await reportRes.text(), {
@@ -131,12 +132,12 @@ export default {
       const apiParam = url.searchParams.get("api") || defaultGasEndpoint;
       const isDriver = url.searchParams.get("driver") === "1" || subdomain === "driver";
 
-      let targetHtmlUrl = `${brtPages}/sleigh${url.pathname}`;
+      let targetHtmlUrl = `${turboSantaPages}${url.pathname}`;
 
       if (url.pathname === "/" || url.pathname === "") {
-        if (subdomain === "lead") targetHtmlUrl = `${brtPages}/sleigh/god_mode.html`;
-        else if (subdomain === "driver" || subdomain === "tracker" || subdomain === "santatracker") targetHtmlUrl = `${brtPages}/sleigh/tracker.html`;
-        else targetHtmlUrl = `${brtPages}/sleigh/${subdomain}.html`;
+        if (subdomain === "lead") targetHtmlUrl = `${turboSantaPages}/god_mode.html`;
+        else if (subdomain === "driver" || subdomain === "tracker" || subdomain === "santatracker") targetHtmlUrl = `${turboSantaPages}/tracker.html`;
+        else targetHtmlUrl = `${turboSantaPages}/${subdomain}.html`;
       }
 
       const htmlRes = await fetch(targetHtmlUrl);
