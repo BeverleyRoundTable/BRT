@@ -121,6 +121,31 @@ export default {
       }
       return fetch(`${brtPages}/beraver/jukebox${path}`);
     }
+
+    // -------------------------------------------
+    // Route 1.8: Virtual Fridays (VF)
+    // -------------------------------------------
+    const vfSubdomains = ["virtualfridays", "virtualfriday", "vf", "fridays"];
+    const vfRootPaths = [
+      "/", "", "/vf", "/vf/", "/vf.html",
+      "/virtualfridays", "/virtualfridays/", "/virtualfridays.html",
+      "/virtual-fridays", "/virtual-fridays/",
+      "/site/vf", "/site/vf/", "/site/vf.html"
+    ];
+
+    if (vfSubdomains.includes(subdomain) || vfRootPaths.includes(url.pathname.toLowerCase())) {
+      const lowerPath = url.pathname.toLowerCase();
+      if (vfRootPaths.includes(lowerPath)) {
+        return fetch(`${brtPages}/site/VF`);
+      }
+      if (url.pathname.startsWith("/assets/")) {
+        return fetch(`${brtPages}${url.pathname}`);
+      }
+      if (url.pathname.startsWith("/media/")) {
+        return fetch(`${brtPages}${url.pathname}`);
+      }
+      return fetch(`${brtPages}/site/VF${url.pathname}`);
+    }
     
     // -------------------------------------------
     // Route 2: Project Sleigh (Turbo Santa)
