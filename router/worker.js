@@ -126,16 +126,19 @@ export default {
     // Route 1.8: Virtual Fridays (VF)
     // -------------------------------------------
     const vfSubdomains = ["virtualfridays", "virtualfriday", "vf", "fridays"];
-    const vfRootPaths = [
-      "/", "", "/vf", "/vf/", "/vf.html",
+    const vfPaths = [
+      "/vf", "/vf/", "/vf.html",
       "/virtualfridays", "/virtualfridays/", "/virtualfridays.html",
       "/virtual-fridays", "/virtual-fridays/",
       "/site/vf", "/site/vf/", "/site/vf.html"
     ];
 
-    if (vfSubdomains.includes(subdomain) || vfRootPaths.includes(url.pathname.toLowerCase())) {
+    const isVfSubdomain = vfSubdomains.includes(subdomain);
+    const isVfPath = vfPaths.includes(url.pathname.toLowerCase());
+
+    if (isVfSubdomain || isVfPath) {
       const lowerPath = url.pathname.toLowerCase();
-      if (vfRootPaths.includes(lowerPath)) {
+      if (lowerPath === "/" || lowerPath === "" || vfPaths.includes(lowerPath)) {
         return fetch(`${brtPages}/site/VF`);
       }
       if (url.pathname.startsWith("/assets/")) {
