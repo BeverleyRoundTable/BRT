@@ -1,449 +1,1908 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en-GB" class="scroll-smooth">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Event Reference & Payment — Beverley Round Table 247</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Ping Pong Club Takeover — Beverley Round Table 247</title>
+<meta name="description" content="Beverley Round Table 247 Area Social — Ping Pong Club Takeover on Wednesday 6th October 2027. Get your payment reference, view the live photo feed, and join the night.">
+
+<!-- Open Graph / Social Sharing -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Ping Pong Club Takeover | Beverley Round Table 247">
+<meta property="og:description" content="Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm. Register and grab your entry reference.">
+<meta property="og:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png">
+<meta property="og:url" content="https://takeover.beverleyroundtable.co.uk">
+
+<!-- Preload BRT Custom Eurostile Font -->
+<link rel="preload" href="https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2" as="font" type="font/woff2" crossorigin>
+
+<!-- Preconnect to Google Drive Image Delivery CDN & Google Fonts -->
+<link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>
+<link rel="preconnect" href="https://drive.google.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Open+Sans:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <style>
-  /* ============ CONFIG: nothing to edit here — see the <script> at the bottom ============ */
-
-  :root{
-    --navy:#11203A;        /* the dark counter the ticket sits on */
-    --ink:#1C2B45;         /* heading text */
-    --paper:#FBF7EE;       /* ticket paper */
-    --paper-edge:#EFE7D5;  /* notch / edge shade */
-    --go:#126E54;          /* pay = go */
-    --go-press:#0E5C46;
-    --stamp:#B23A2E;       /* ticket-stamp red, used with restraint */
-    --muted:#6B7280;
-    --line:#D9CFBA;
-    --field:#FFFFFF;
-    --field-line:#C9BFA8;
-    --radius:18px;
+  /* ============ BRT EUROSTILE FONT INJECTION ============ */
+  @font-face {
+    font-family: 'Eurostile';
+    src: url('https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2') format('woff2'),
+         url('https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
   }
 
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
-  body{
-    font-family:"Space Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    background:var(--navy);
-    color:var(--ink);
-    -webkit-font-smoothing:antialiased;
-    min-height:100dvh;
-    display:flex;align-items:flex-start;justify-content:center;
-    padding:28px 16px 48px;
-  }
-  #bg{
-    position:fixed;inset:0;z-index:-1;
-    background-image:radial-gradient(1200px 600px at 50% -10%, #1B3157 0%, var(--navy) 55%);
-    background-size:cover;background-position:center center;background-repeat:no-repeat;
-  }
-
-  .stage{width:100%;max-width:480px}
-
-  /* ---------- the ticket ---------- */
-  .ticket{
-    position:relative;
-    background:var(--paper);
-    border-radius:var(--radius);
-    box-shadow:0 24px 60px rgba(0,0,0,.38), 0 2px 0 rgba(255,255,255,.4) inset;
-    padding:30px 26px 28px;
-    overflow:hidden;
-  }
-  /* faint guilloché texture */
-  .ticket::before{
-    content:"";position:absolute;inset:0;pointer-events:none;opacity:.05;
-    background-image:repeating-linear-gradient(135deg, var(--stamp) 0 1px, transparent 1px 9px);
-  }
-  .ticket > *{position:relative}
-
-  .eyebrow{
-    display:inline-flex;align-items:center;gap:8px;
-    font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;
-    color:var(--stamp);margin:0 0 14px;
-  }
-  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--stamp);display:inline-block}
-  .logo{height:52px;width:auto;display:block;margin:0 0 14px}
-
-  .title{font-size:30px;line-height:1.05;font-weight:700;margin:0 0 8px;letter-spacing:-.01em}
-  .meta{font-size:14px;color:var(--muted);margin:0 0 4px}
-  .amount-line{font-size:14px;color:var(--ink);font-weight:500;margin:10px 0 0}
-  .notice{
-    margin:14px 0 0;font-size:13px;line-height:1.45;color:var(--ink);
-    background:#FBEEEA;border:1px solid #ECCFC8;border-left:3px solid var(--stamp);
-    border-radius:9px;padding:9px 12px;
+  /* ============ RETRO-FUTURISTIC NEON PALETTE ============
+     National Round Table: Table Dark (#1D1D1A), Gold (#FBAF33), White (#FFFFFF)
+     Beverley 247 Table Blue: #4db8e8
+     BeRaver Synthwave Accent: #ff007f
+  ========================================================== */
+  :root {
+    --brt-dark: #1D1D1A;
+    --brt-void: #0D0E12;
+    --brt-panel: rgba(29, 29, 26, 0.84);
+    --brt-panel-solid: #18191C;
+    --brt-card: rgba(255, 255, 255, 0.045);
+    --brt-gold: #FBAF33;
+    --table-blue: #4db8e8;
+    --neon-pink: #ff007f;
+    --neon-green: #00f5a0;
+    --go: #00d68f;
+    --go-press: #00b377;
+    --text: #FFFFFF;
+    --muted: #9CA3AF;
+    --line: rgba(255, 255, 255, 0.12);
+    --blue-line: rgba(77, 184, 232, 0.35);
+    --gold-line: rgba(251, 175, 51, 0.35);
+    --field: rgba(13, 14, 18, 0.78);
+    --field-line: rgba(77, 184, 232, 0.32);
+    --radius: 20px;
   }
 
-  /* ---------- perforation divider ---------- */
-  .perf{position:relative;height:30px;margin:22px -26px}
-  .perf::before{
-    content:"";position:absolute;left:26px;right:26px;top:50%;
-    border-top:2px dashed var(--line);
-  }
-  .perf .notch{position:absolute;top:50%;width:26px;height:26px;border-radius:50%;
-    background:var(--navy);transform:translateY(-50%)}
-  .perf .notch.l{left:-13px}
-  .perf .notch.r{right:-13px}
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
 
-  /* ---------- steps ---------- */
-  .step-label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
-    color:var(--muted);margin:0 0 12px}
-
-  .field{margin:0 0 12px}
-  .field label{display:block;font-size:13px;font-weight:500;margin:0 0 5px;color:var(--ink)}
-  .opt{color:var(--muted);font-weight:400}
-  .places{font-size:13px;font-weight:700;color:var(--stamp);margin:0 0 12px;letter-spacing:.01em}
-  .closed-msg{font-size:15px;line-height:1.55;color:var(--ink);margin:0 0 4px}
-  .field input{
-    width:100%;font:inherit;font-size:16px;padding:13px 14px;
-    background:var(--field);border:1.5px solid var(--field-line);border-radius:11px;color:var(--ink);
-    transition:border-color .15s ease, box-shadow .15s ease;
-  }
-  .field input::placeholder{color:#9AA1AC}
-  .field input:focus{outline:none;border-color:var(--go);box-shadow:0 0 0 3px rgba(18,110,84,.18)}
-
-  .btn{
-    width:100%;font:inherit;font-weight:700;font-size:16px;letter-spacing:.01em;
-    border:none;border-radius:12px;padding:15px 18px;cursor:pointer;
-    display:inline-flex;align-items:center;justify-content:center;gap:9px;
-    transition:transform .06s ease, background .15s ease, box-shadow .15s ease;
-  }
-  .btn:active{transform:translateY(1px)}
-  .btn:disabled{opacity:.6;cursor:progress}
-  .btn--navy{background:var(--navy);color:#fff}
-  .btn--navy:hover{background:#0C1A30}
-  .btn--pay{background:var(--go);color:#fff;box-shadow:0 8px 22px rgba(18,110,84,.32)}
-  .btn--pay:hover{background:var(--go-press)}
-  .btn:focus-visible{outline:3px solid #8FB9FF;outline-offset:2px}
-
-  .linkrow{margin:14px 0 0;text-align:center;font-size:13px;color:var(--muted)}
-  .linkbtn{background:none;border:none;font:inherit;font-size:13px;color:var(--stamp);
-    font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px;padding:4px}
-  .linkbtn:focus-visible{outline:2px solid var(--stamp);outline-offset:2px;border-radius:4px}
-
-  /* ---------- the code chip (signature) ---------- */
-  .code-block{margin:2px 0 2px}
-  .code-cap{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
-    color:var(--muted);margin:0 0 10px}
-  .code-wrap{display:flex;align-items:stretch;gap:10px}
-  .code{
-    flex:1;font-family:"DM Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-    font-size:30px;font-weight:500;letter-spacing:.14em;color:var(--stamp);
-    text-align:center;padding:16px 10px;background:#fff;
-    border:2px dashed var(--stamp);border-radius:12px;user-select:all;
-  }
-  .copy{
-    flex:0 0 auto;width:58px;border:1.5px solid var(--field-line);border-radius:12px;
-    background:#fff;cursor:pointer;font:inherit;font-size:12px;font-weight:600;color:var(--ink);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  }
-  .copy:hover{background:#FAF6EC}
-  .copy:focus-visible{outline:3px solid #8FB9FF;outline-offset:2px}
-  .copy svg{width:18px;height:18px}
-
-  .pay-instr{margin:18px 0 16px}
-  .pay-instr p{margin:0 0 12px;font-size:14.5px;line-height:1.5}
-  .pay-instr strong{color:var(--stamp)}
-  ol.steps{margin:0;padding:0;list-style:none;counter-reset:s}
-  ol.steps li{
-    counter-increment:s;position:relative;padding:7px 0 7px 34px;font-size:14.5px;line-height:1.4;
-    border-top:1px solid var(--line);
-  }
-  ol.steps li:first-child{border-top:none}
-  ol.steps li::before{
-    content:counter(s);position:absolute;left:0;top:8px;
-    width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;
-    font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  body {
+    font-family: "Space Grotesk", "Open Sans", system-ui, -apple-system, sans-serif;
+    background-color: var(--brt-dark);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    touch-action: manipulation;
   }
 
-  .reassure{margin:18px 0 0;font-size:12.5px;color:var(--muted);text-align:center;line-height:1.5}
-  .reassure a{color:var(--muted)}
-
-  .status{margin:12px 0 0;font-size:14px;text-align:center;min-height:20px}
-  .status.err{color:var(--stamp);font-weight:500}
-  .status.ok{color:var(--go);font-weight:500}
-
-  .hidden{display:none}
-  .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;
-    border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
-  @keyframes spin{to{transform:rotate(360deg)}}
-
-  .foot{text-align:center;color:rgba(255,255,255,.55);font-size:11.5px;margin:18px 0 0;letter-spacing:.02em}
-  .help{text-align:center;color:rgba(255,255,255,.72);font-size:12.5px;line-height:1.55;margin:10px auto 0;max-width:340px}
-  .help a{color:#CFE0FF;text-decoration:underline;text-underline-offset:2px;font-weight:600}
-
-  @media (prefers-reduced-motion: reduce){
-    *{animation:none !important;transition:none !important}
+  ::selection {
+    background-color: var(--table-blue);
+    color: var(--brt-void);
   }
 
-  /* ---------- bank fallback ---------- */
-  .fallback{margin:16px 0 0;border:1px solid var(--line);border-radius:11px;background:#fff;overflow:hidden}
-  .fallback summary{cursor:pointer;list-style:none;padding:12px 14px;font-size:14px;font-weight:600;color:var(--ink);
-    display:flex;align-items:center;justify-content:space-between}
-  .fallback summary::-webkit-details-marker{display:none}
-  .fallback summary::after{content:"+";font-size:20px;color:var(--muted);line-height:1}
-  .fallback[open] summary::after{content:"\2013"}
-  .fallback .body{padding:2px 14px 14px;font-size:13.5px;line-height:1.5;color:var(--ink)}
-  .fallback .body p{margin:0 0 10px}
-  .fallback strong{color:var(--stamp)}
-  .bankrow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
-  .bankrow:first-of-type{border-top:none}
-  .bankrow .k{color:var(--muted)}
-  .bankrow .v{font-family:"DM Mono",ui-monospace,monospace;font-weight:500;letter-spacing:.04em}
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: var(--brt-dark); }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--table-blue), var(--brt-gold));
+    border-radius: 5px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--neon-pink); }
 
-  /* ---------- counterfoil stub ---------- */
-  .stub{position:relative;background:var(--paper);border-radius:var(--radius);margin-top:16px;padding:28px 26px 24px;
-    box-shadow:0 18px 44px rgba(0,0,0,.30)}
-  .stub .tear{position:absolute;left:0;right:0;top:0;height:0}
-  .stub .tear::before{content:"";position:absolute;left:26px;right:26px;top:0;border-top:2px dashed var(--line)}
-  .stub .tear .notch{position:absolute;top:0;width:24px;height:24px;border-radius:50%;background:var(--navy);transform:translateY(-50%)}
-  .stub .tear .notch.l{left:-12px}
-  .stub .tear .notch.r{right:-12px}
-  .stub h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted);margin:4px 0 18px}
-  .block{margin:0 0 20px}
-  .block:last-child{margin-bottom:0}
-  .blabel{font-size:13px;font-weight:600;color:var(--ink);margin:0 0 10px;display:flex;align-items:center;gap:8px}
-  .blabel svg{flex:0 0 auto}
-  .pillrow{display:flex;gap:9px;flex-wrap:wrap}
-  .pill{flex:1 1 0;min-width:130px;text-align:center;text-decoration:none;font-size:13.5px;font-weight:600;
-    padding:12px;border:1.5px solid var(--field-line);border-radius:10px;color:var(--ink);background:#fff;
-    display:inline-flex;align-items:center;justify-content:center;gap:7px}
-  .pill:hover{background:#FAF6EC}
-  .pill:focus-visible{outline:3px solid #8FB9FF;outline-offset:2px}
-  .pill svg{width:16px;height:16px;flex:0 0 auto}
-  .wa{display:flex;align-items:center;justify-content:center;gap:9px;text-decoration:none;
-    background:#1FA855;color:#fff;font-weight:700;font-size:15px;padding:13px;border-radius:11px}
-  .wa:hover{background:#188F47}
-  .wa:focus-visible{outline:3px solid #8FB9FF;outline-offset:2px}
-  .parking{display:flex;flex-direction:column}
-  .park{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
-  .park:first-child{border-top:none}
-  .pname{font-size:14px;font-weight:600;color:var(--ink)}
-  .pnote{font-size:12.5px;color:var(--muted);margin-top:2px}
-  .pmap{flex:0 0 auto;font-size:13px;font-weight:600;color:var(--go);text-decoration:none;white-space:nowrap;padding-top:1px}
-  .pmap:focus-visible{outline:2px solid var(--go);outline-offset:2px;border-radius:4px}
-  .games{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 11px}
-  .chip{font-size:12.5px;font-weight:600;color:var(--ink);background:#fff;border:1.5px solid var(--field-line);
-    border-radius:999px;padding:6px 11px;white-space:nowrap}
-  .morelink{font-size:13px;font-weight:600;color:var(--go);text-decoration:none}
-  .morelink:focus-visible{outline:2px solid var(--go);outline-offset:2px;border-radius:4px}
+  /* ============ STYLISED RETRO-FUTURISTIC BACKGROUND ============ */
+  #bg {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background:
+      radial-gradient(circle at 50% 14%, rgba(77, 184, 232, 0.20) 0%, transparent 48%),
+      radial-gradient(circle at 15% 35%, rgba(255, 0, 127, 0.12) 0%, transparent 45%),
+      radial-gradient(circle at 85% 60%, rgba(251, 175, 51, 0.14) 0%, transparent 48%),
+      linear-gradient(180deg, #0b0d14 0%, #15171e 48%, #1D1D1A 100%);
+    overflow: hidden;
+  }
+
+  /* Retro Synth Sun / Hologram Horizon Disc */
+  .synth-sun {
+    position: fixed;
+    top: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(560px, 88vw);
+    height: min(560px, 88vw);
+    border-radius: 50%;
+    background: linear-gradient(180deg,
+      rgba(251, 175, 51, 0.22) 0%,
+      rgba(255, 0, 127, 0.16) 52%,
+      rgba(77, 184, 232, 0.04) 100%);
+    filter: blur(2px);
+    opacity: 0.65;
+    z-index: -2;
+    pointer-events: none;
+    -webkit-mask-image: repeating-linear-gradient(
+      to bottom,
+      #000 0px,
+      #000 14px,
+      transparent 14px,
+      transparent 20px
+    );
+    mask-image: repeating-linear-gradient(
+      to bottom,
+      #000 0px,
+      #000 14px,
+      transparent 14px,
+      transparent 20px
+    );
+  }
+
+  /* Perspective 3D Neon Laser Floor Grid */
+  .retro-grid-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 56vh;
+    perspective: 420px;
+    z-index: -2;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .retro-grid {
+    position: absolute;
+    inset: -60% -50% 0 -50%;
+    transform: rotateX(68deg);
+    transform-origin: center bottom;
+    background-image:
+      linear-gradient(to right, rgba(77, 184, 232, 0.28) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(251, 175, 51, 0.22) 1px, transparent 1px);
+    background-size: 56px 56px;
+    animation: gridScroll 8s linear infinite;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.85) 45%, #000 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.85) 45%, #000 100%);
+  }
+  @keyframes gridScroll {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 56px; }
+  }
+
+  /* Subtle CRT Scanline & Dot Matrix Overlay */
+  .crt-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.015) 0px,
+        rgba(255, 255, 255, 0.015) 1px,
+        transparent 1px,
+        transparent 3px
+      ),
+      radial-gradient(rgba(77, 184, 232, 0.08) 1px, transparent 1px);
+    background-size: 100% 3px, 28px 28px;
+  }
+
+  /* ============ NEON TYPOGRAPHY & GLOW HELPERS ============ */
+  .font-heading {
+    font-family: 'Eurostile', "Space Grotesk", sans-serif;
+    letter-spacing: 0.03em;
+  }
+  .neon-blue {
+    color: var(--table-blue);
+    text-shadow: 0 0 10px rgba(77, 184, 232, 0.7), 0 0 22px rgba(77, 184, 232, 0.4);
+  }
+  .neon-gold {
+    color: var(--brt-gold);
+    text-shadow: 0 0 10px rgba(251, 175, 51, 0.65), 0 0 22px rgba(251, 175, 51, 0.35);
+  }
+  .neon-pink {
+    color: var(--neon-pink);
+    text-shadow: 0 0 10px rgba(255, 0, 127, 0.7), 0 0 22px rgba(255, 0, 127, 0.4);
+  }
+
+  /* BeRaver Electric Laser Separator */
+  @keyframes pulse-travel {
+    0% { left: -40%; }
+    100% { left: 110%; }
+  }
+  .electric-separator {
+    position: relative;
+    width: 100%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    margin: 28px 0;
+    border-radius: 2px;
+  }
+  .electric-pulse {
+    position: absolute;
+    top: 0;
+    width: 35%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--neon-pink), #ffffff, var(--table-blue), var(--brt-gold), transparent);
+    box-shadow: -10px 0 20px var(--neon-pink), 10px 0 20px var(--table-blue), 0 0 15px #ffffff;
+    animation: pulse-travel 2.2s infinite ease-in-out;
+  }
+
+  /* ============ STICKY TOP NAVBAR (BRT.html / BeRaver.html style) ============ */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(29, 29, 26, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(77, 184, 232, 0.25);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.45);
+  }
+  .nav-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 18px;
+    height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .brand-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: #fff;
+  }
+  .brand-link img {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(77, 184, 232, 0.55));
+    transition: transform 0.25s ease;
+    cursor: pointer;
+  }
+  .brand-link:hover img { transform: scale(1.07); }
+  .brand-text {
+    font-family: 'Eurostile', sans-serif;
+    font-weight: 700;
+    font-size: clamp(15px, 2.5vw, 21px);
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .brand-sub {
+    display: block;
+    font-family: "DM Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--table-blue);
+    margin-top: 2px;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .nav-links a {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #D1D5DB;
+    text-decoration: none;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+  }
+  .nav-links a:hover {
+    color: var(--table-blue);
+    text-shadow: 0 0 10px rgba(77, 184, 232, 0.6);
+  }
+  .nav-cta {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--brt-void) !important;
+    background: linear-gradient(135deg, var(--table-blue), var(--brt-gold));
+    padding: 9px 16px;
+    border-radius: 999px;
+    text-decoration: none;
+    box-shadow: 0 0 16px rgba(77, 184, 232, 0.45);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+  }
+  .nav-cta:hover {
+    transform: translateY(-1px) scale(1.03);
+    box-shadow: 0 0 24px rgba(251, 175, 51, 0.65);
+  }
+  @media (max-width: 720px) {
+    .nav-links a.hide-mobile { display: none; }
+    .nav-inner { height: 66px; }
+  }
+
+  /* ============ MAIN CONTAINER LAYOUT ============ */
+  .page-wrap {
+    width: 100%;
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 24px 16px 64px;
+    flex: 1;
+  }
+
+  /* ============ HERO BANNER ============ */
+  .hero-header {
+    text-align: center;
+    margin: 8px auto 26px;
+    max-width: 840px;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(77, 184, 232, 0.12);
+    border: 1px solid rgba(77, 184, 232, 0.45);
+    font-family: "DM Mono", monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--table-blue);
+    box-shadow: 0 0 20px rgba(77, 184, 232, 0.2);
+    margin-bottom: 14px;
+  }
+  .hero-title {
+    font-family: 'Eurostile', sans-serif;
+    font-size: clamp(32px, 6.2vw, 64px);
+    line-height: 0.98;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-shadow: 0 0 18px rgba(77, 184, 232, 0.45);
+  }
+  .hero-pills {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px 18px;
+    margin-top: 8px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(251, 175, 51, 0.35);
+    box-shadow: 0 0 25px rgba(251, 175, 51, 0.12);
+    font-family: 'Eurostile', sans-serif;
+    font-size: clamp(12px, 1.8vw, 15px);
+    text-transform: uppercase;
+  }
+  .hero-pill-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .hero-pill-sep {
+    color: rgba(255, 255, 255, 0.25);
+  }
+  @media (max-width: 600px) {
+    .hero-pills {
+      border-radius: 18px;
+      padding: 12px 16px;
+      gap: 8px 14px;
+    }
+    .hero-pill-sep { display: none; }
+  }
+
+  /* ============ RETRO-FUTURISTIC GOOGLE DRIVE PHOTO ROTATION DECK ============
+     Shows 3 photos on Mobile (<768px) and 5 photos on Desktop (>=768px)
+  ============================================================================== */
+  .photo-deck-section {
+    margin: 0 auto 32px;
+    background: linear-gradient(180deg, rgba(29, 29, 26, 0.88) 0%, rgba(15, 17, 23, 0.92) 100%);
+    border: 1.5px solid rgba(77, 184, 232, 0.38);
+    border-radius: 22px;
+    padding: 18px 18px 20px;
+    box-shadow:
+      0 20px 50px rgba(0, 0, 0, 0.55),
+      0 0 30px rgba(77, 184, 232, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    position: relative;
+    overflow: hidden;
+  }
+  .photo-deck-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .deck-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .live-led {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--table-blue);
+    box-shadow: 0 0 10px var(--table-blue), 0 0 18px var(--table-blue);
+    animation: ledPulse 1.6s infinite ease-in-out;
+  }
+  @keyframes ledPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.85); }
+  }
+  .deck-title {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #fff;
+    margin: 0;
+  }
+  .deck-sub {
+    font-family: "DM Mono", monospace;
+    font-size: 11px;
+    color: var(--table-blue);
+    letter-spacing: 0.08em;
+  }
+  .deck-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .deck-btn {
+    background: rgba(77, 184, 232, 0.1);
+    border: 1px solid rgba(77, 184, 232, 0.35);
+    color: var(--table-blue);
+    font-family: "DM Mono", monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 6px 11px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .deck-btn:hover {
+    background: var(--table-blue);
+    color: var(--brt-void);
+    box-shadow: 0 0 14px rgba(77, 184, 232, 0.55);
+  }
+  .deck-btn--gold {
+    background: rgba(251, 175, 51, 0.1);
+    border-color: rgba(251, 175, 51, 0.4);
+    color: var(--brt-gold);
+  }
+  .deck-btn--gold:hover {
+    background: var(--brt-gold);
+    color: var(--brt-void);
+    box-shadow: 0 0 14px rgba(251, 175, 51, 0.55);
+  }
+
+  /* Responsive Grid: 3 columns on mobile, 5 columns on desktop */
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    align-items: stretch;
+  }
+  @media (min-width: 768px) {
+    .photo-grid {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+  }
+
+  /* Cyber-Polaroid Holo-Frame Card */
+  .holo-card {
+    position: relative;
+    background: #12141a;
+    border: 1.5px solid rgba(77, 184, 232, 0.35);
+    border-radius: 14px;
+    padding: 7px 7px 26px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+    overflow: hidden;
+    aspect-ratio: 4 / 4.6;
+    display: flex;
+    flex-direction: column;
+  }
+  .holo-card:nth-child(odd) {
+    transform: rotate(-1.2deg);
+  }
+  .holo-card:nth-child(even) {
+    transform: rotate(1.2deg);
+    border-color: rgba(251, 175, 51, 0.35);
+  }
+  .holo-card:nth-child(3n) {
+    border-color: rgba(255, 0, 127, 0.38);
+  }
+  .holo-card:hover {
+    transform: rotate(0deg) translateY(-5px) scale(1.03);
+    border-color: var(--table-blue);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(77, 184, 232, 0.45);
+    z-index: 5;
+  }
+  /* Hide slots 4 and 5 on mobile (<768px) so mobile strictly shows 3 and desktop shows 5 */
+  .holo-card.desktop-only-slot {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .holo-card.desktop-only-slot {
+      display: flex;
+    }
+  }
+
+  .holo-img-wrap {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    border-radius: 9px;
+    overflow: hidden;
+    background: #0b0d12;
+  }
+  .holo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: saturate(1.08) contrast(1.04);
+    transition: opacity 0.38s ease, transform 0.45s ease, filter 0.38s ease;
+  }
+  .holo-card:hover .holo-img {
+    transform: scale(1.06);
+  }
+  .holo-img.swapping {
+    opacity: 0.15;
+    filter: hue-rotate(90deg) brightness(1.5) blur(3px);
+  }
+  /* Holographic Scanline Glaze over each photo */
+  .holo-img-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(77, 184, 232, 0.08) 0%, transparent 40%, rgba(0, 0, 0, 0.35) 100%);
+    pointer-events: none;
+  }
+  .holo-caption {
+    position: absolute;
+    bottom: 6px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: "DM Mono", monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.68);
+    text-transform: uppercase;
+  }
+  .holo-caption .tag {
+    color: var(--table-blue);
+  }
+  .holo-card:nth-child(even) .holo-caption .tag {
+    color: var(--brt-gold);
+  }
+  .holo-card:nth-child(3n) .holo-caption .tag {
+    color: var(--neon-pink);
+  }
+
+  /* Rotation Progress Bar */
+  .rotation-bar-track {
+    margin-top: 14px;
+    height: 3px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .rotation-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--table-blue), var(--brt-gold), var(--neon-pink));
+    box-shadow: 0 0 10px var(--table-blue);
+    transition: width 0.1s linear;
+  }
+
+  /* ============ STAGE & TICKET COLUMN ============ */
+  .stage {
+    width: 100%;
+    max-width: 540px;
+    margin: 0 auto;
+  }
+
+  /* ---------- RETRO AUDIO PLAYER CONSOLE ---------- */
+  .audio-console {
+    background: linear-gradient(135deg, rgba(17, 20, 28, 0.95), rgba(29, 29, 26, 0.92));
+    border: 1.5px solid var(--table-blue);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 22px rgba(77, 184, 232, 0.18);
+  }
+  .audio-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px 12px;
+    font-family: "DM Mono", monospace;
+    font-size: 11px;
+    color: var(--table-blue);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .audio-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-shadow: 0 0 8px rgba(77, 184, 232, 0.7);
+  }
+  .audio-track-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .track-title {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 13px;
+    color: var(--brt-gold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(251, 175, 51, 0.5);
+  }
+  .audio-toggle-btn {
+    background: rgba(77, 184, 232, 0.15);
+    border: 1px solid var(--table-blue);
+    color: #fff;
+    font-family: 'Eurostile', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 0 12px rgba(77, 184, 232, 0.35);
+    transition: all 0.2s ease;
+  }
+  .audio-toggle-btn:hover {
+    background: var(--table-blue);
+    color: var(--brt-void);
+    box-shadow: 0 0 18px rgba(77, 184, 232, 0.75);
+  }
+  .audio-toggle-btn.playing {
+    background: var(--neon-pink);
+    border-color: var(--neon-pink);
+    box-shadow: 0 0 16px rgba(255, 0, 127, 0.65);
+  }
+  /* Animated Synth Equalizer Bars */
+  .eq-bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+  }
+  .eq-bar {
+    width: 3px;
+    height: 4px;
+    background: var(--table-blue);
+    border-radius: 2px;
+    transition: height 0.15s ease;
+  }
+  .eq-bars.active .eq-bar:nth-child(1) { animation: eqBounce 0.55s infinite ease-in-out 0.0s; background: var(--table-blue); }
+  .eq-bars.active .eq-bar:nth-child(2) { animation: eqBounce 0.45s infinite ease-in-out 0.15s; background: var(--brt-gold); }
+  .eq-bars.active .eq-bar:nth-child(3) { animation: eqBounce 0.62s infinite ease-in-out 0.08s; background: var(--neon-pink); }
+  .eq-bars.active .eq-bar:nth-child(4) { animation: eqBounce 0.50s infinite ease-in-out 0.22s; background: var(--table-blue); }
+  .eq-bars.active .eq-bar:nth-child(5) { animation: eqBounce 0.42s infinite ease-in-out 0.12s; background: var(--brt-gold); }
+  @keyframes eqBounce {
+    0%, 100% { height: 3px; }
+    50% { height: 14px; }
+  }
+
+  /* ---------- THE HOLO-TICKET ---------- */
+  .ticket {
+    position: relative;
+    background: linear-gradient(165deg, rgba(28, 30, 36, 0.94) 0%, rgba(20, 21, 25, 0.96) 100%);
+    border: 1.5px solid rgba(77, 184, 232, 0.42);
+    border-radius: var(--radius);
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.65),
+      0 0 35px rgba(77, 184, 232, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    padding: 30px 26px 28px;
+    overflow: hidden;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  /* Top Neon Accent Bar on Ticket */
+  .ticket::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--table-blue), var(--brt-gold), var(--neon-pink), var(--table-blue));
+    box-shadow: 0 0 15px var(--table-blue);
+  }
+  /* Faint Cyber Grid Guilloché Texture */
+  .ticket::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.06;
+    background-image: repeating-linear-gradient(135deg, var(--table-blue) 0 1px, transparent 1px 10px);
+  }
+  .ticket > * { position: relative; }
+
+  .ticket-head-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: "DM Mono", monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--brt-gold);
+    margin: 0;
+  }
+  .eyebrow .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--neon-pink);
+    box-shadow: 0 0 10px var(--neon-pink), 0 0 18px var(--neon-pink);
+    display: inline-block;
+    cursor: crosshair;
+  }
+  .logo {
+    height: 52px;
+    width: auto;
+    display: block;
+    filter: drop-shadow(0 0 10px rgba(77, 184, 232, 0.5));
+    transition: transform 0.2s ease, filter 0.2s ease;
+  }
+  .logo:hover {
+    transform: scale(1.08) rotate(-3deg);
+    filter: drop-shadow(0 0 16px rgba(251, 175, 51, 0.8));
+  }
+
+  .title {
+    font-family: 'Eurostile', sans-serif;
+    font-size: clamp(24px, 5vw, 32px);
+    line-height: 1.08;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+    letter-spacing: 0.01em;
+    color: #FFFFFF;
+  }
+  .meta {
+    font-size: 14.5px;
+    color: var(--table-blue);
+    font-weight: 600;
+    margin: 0 0 4px;
+    text-shadow: 0 0 10px rgba(77, 184, 232, 0.35);
+  }
+  .amount-line {
+    display: inline-block;
+    font-family: 'Eurostile', sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--brt-void);
+    background: var(--brt-gold);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+    margin: 10px 0 0;
+    box-shadow: 0 0 15px rgba(251, 175, 51, 0.4);
+  }
+  .notice {
+    margin: 16px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #E5E7EB;
+    background: rgba(77, 184, 232, 0.09);
+    border: 1px solid rgba(77, 184, 232, 0.32);
+    border-left: 3.5px solid var(--table-blue);
+    border-radius: 11px;
+    padding: 10px 13px;
+  }
+
+  /* ---------- PERFORATION DIVIDER ---------- */
+  .perf {
+    position: relative;
+    height: 30px;
+    margin: 22px -26px;
+  }
+  .perf::before {
+    content: "";
+    position: absolute;
+    left: 26px;
+    right: 26px;
+    top: 50%;
+    border-top: 2px dashed rgba(77, 184, 232, 0.35);
+  }
+  .perf .notch {
+    position: absolute;
+    top: 50%;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #121318;
+    border: 1.5px solid rgba(77, 184, 232, 0.42);
+    transform: translateY(-50%);
+  }
+  .perf .notch.l { left: -14px; }
+  .perf .notch.r { right: -14px; }
+
+  /* ---------- FORM STEPS & INPUTS ---------- */
+  .step-label {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 12.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--table-blue);
+    margin: 0 0 14px;
+  }
+
+  .field { margin: 0 0 14px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    color: #E5E7EB;
+    letter-spacing: 0.02em;
+  }
+  .opt { color: var(--muted); font-weight: 400; }
+  .places {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--neon-pink);
+    text-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+    margin: 0 0 12px;
+    letter-spacing: 0.05em;
+  }
+  .closed-msg {
+    font-size: 15px;
+    line-height: 1.55;
+    color: #E5E7EB;
+    margin: 0 0 4px;
+  }
+  .field input {
+    width: 100%;
+    font: inherit;
+    font-size: 16px;
+    padding: 13px 14px;
+    background: var(--field);
+    border: 1.5px solid var(--field-line);
+    border-radius: 12px;
+    color: #FFFFFF;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .field input::placeholder { color: #6B7280; }
+  .field input:focus {
+    outline: none;
+    border-color: var(--table-blue);
+    background: rgba(13, 14, 18, 0.95);
+    box-shadow: 0 0 0 3px rgba(77, 184, 232, 0.22), 0 0 18px rgba(77, 184, 232, 0.35);
+  }
+
+  .btn {
+    width: 100%;
+    font-family: 'Eurostile', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 18px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: 0.6; cursor: progress; }
+  .btn--navy {
+    background: linear-gradient(135deg, var(--table-blue) 0%, #2a9fd6 100%);
+    color: var(--brt-void);
+    box-shadow: 0 8px 25px rgba(77, 184, 232, 0.4);
+  }
+  .btn--navy:hover {
+    background: linear-gradient(135deg, var(--brt-gold) 0%, #ffc45c 100%);
+    box-shadow: 0 8px 28px rgba(251, 175, 51, 0.55);
+    transform: translateY(-1px);
+  }
+  .btn--pay {
+    background: linear-gradient(135deg, var(--go) 0%, var(--table-blue) 100%);
+    color: var(--brt-void);
+    box-shadow: 0 8px 26px rgba(0, 214, 143, 0.4);
+  }
+  .btn--pay:hover {
+    background: linear-gradient(135deg, #20ffB3 0%, #68c9f5 100%);
+    box-shadow: 0 10px 30px rgba(0, 214, 143, 0.6);
+    transform: translateY(-1px);
+  }
+  .btn:focus-visible {
+    outline: 3px solid var(--brt-gold);
+    outline-offset: 2px;
+  }
+
+  .linkrow {
+    margin: 16px 0 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .linkbtn {
+    background: none;
+    border: none;
+    font: inherit;
+    font-size: 13px;
+    color: var(--brt-gold);
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 4px;
+    transition: color 0.15s ease;
+  }
+  .linkbtn:hover { color: var(--table-blue); }
+  .linkbtn:focus-visible {
+    outline: 2px solid var(--brt-gold);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* ---------- THE CODE CHIP (SIGNATURE) ---------- */
+  .code-block { margin: 2px 0 2px; }
+  .code-cap {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--table-blue);
+    margin: 0 0 10px;
+  }
+  .code-wrap { display: flex; align-items: stretch; gap: 10px; }
+  .code {
+    flex: 1;
+    font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: var(--brt-gold);
+    text-shadow: 0 0 14px rgba(251, 175, 51, 0.6);
+    text-align: center;
+    padding: 16px 10px;
+    background: rgba(13, 14, 18, 0.9);
+    border: 2px dashed var(--brt-gold);
+    border-radius: 12px;
+    user-select: all;
+    box-shadow: inset 0 0 20px rgba(251, 175, 51, 0.1);
+  }
+  .copy {
+    flex: 0 0 auto;
+    width: 64px;
+    border: 1.5px solid var(--field-line);
+    border-radius: 12px;
+    background: rgba(77, 184, 232, 0.1);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--table-blue);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.18s ease;
+  }
+  .copy:hover {
+    background: var(--table-blue);
+    color: var(--brt-void);
+    box-shadow: 0 0 16px rgba(77, 184, 232, 0.5);
+  }
+  .copy:focus-visible { outline: 3px solid var(--table-blue); outline-offset: 2px; }
+  .copy svg { width: 18px; height: 18px; }
+
+  .pay-instr { margin: 18px 0 16px; }
+  .pay-instr p { margin: 0 0 12px; font-size: 14.5px; line-height: 1.5; color: #E5E7EB; }
+  .pay-instr strong { color: var(--brt-gold); }
+  ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+  ol.steps li {
+    counter-increment: s;
+    position: relative;
+    padding: 9px 0 9px 36px;
+    font-size: 14.5px;
+    line-height: 1.4;
+    border-top: 1px solid var(--line);
+    color: #D1D5DB;
+  }
+  ol.steps li:first-child { border-top: none; }
+  ol.steps li::before {
+    content: counter(s);
+    position: absolute;
+    left: 0;
+    top: 9px;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    background: rgba(77, 184, 232, 0.18);
+    border: 1px solid var(--table-blue);
+    color: var(--table-blue);
+    font-family: "DM Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .reassure {
+    margin: 18px 0 0;
+    font-size: 12.5px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.5;
+  }
+  .reassure a { color: var(--table-blue); }
+
+  .status {
+    margin: 12px 0 0;
+    font-size: 14px;
+    text-align: center;
+    min-height: 20px;
+  }
+  .status.err { color: #ff4d88; font-weight: 600; text-shadow: 0 0 10px rgba(255, 0, 127, 0.35); }
+  .status.ok { color: var(--neon-green); font-weight: 600; }
+
+  .hidden { display: none !important; }
+  .spin {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(13, 14, 18, 0.35);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- BANK FALLBACK ---------- */
+  .fallback {
+    margin: 16px 0 0;
+    border: 1px solid rgba(77, 184, 232, 0.3);
+    border-radius: 12px;
+    background: rgba(13, 14, 18, 0.65);
+    overflow: hidden;
+  }
+  .fallback summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .fallback summary::-webkit-details-marker { display: none; }
+  .fallback summary::after { content: "+"; font-size: 20px; color: var(--table-blue); line-height: 1; }
+  .fallback[open] summary::after { content: "\2013"; }
+  .fallback .body {
+    padding: 2px 14px 14px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #D1D5DB;
+  }
+  .fallback .body p { margin: 0 0 10px; }
+  .fallback strong { color: var(--brt-gold); }
+  .bankrow {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 0;
+    border-top: 1px solid var(--line);
+  }
+  .bankrow:first-of-type { border-top: none; }
+  .bankrow .k { color: var(--muted); }
+  .bankrow .v {
+    font-family: "DM Mono", ui-monospace, monospace;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--table-blue);
+  }
+
+  /* ---------- COUNTERFOIL STUB (EVENT DETAILS) ---------- */
+  .stub {
+    position: relative;
+    background: linear-gradient(165deg, rgba(28, 30, 36, 0.94) 0%, rgba(18, 20, 25, 0.96) 100%);
+    border: 1.5px solid rgba(251, 175, 51, 0.36);
+    border-radius: var(--radius);
+    margin-top: 18px;
+    padding: 28px 26px 24px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55), 0 0 28px rgba(251, 175, 51, 0.1);
+  }
+  .stub .tear {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 0;
+  }
+  .stub .tear::before {
+    content: "";
+    position: absolute;
+    left: 26px;
+    right: 26px;
+    top: 0;
+    border-top: 2px dashed rgba(251, 175, 51, 0.35);
+  }
+  .stub .tear .notch {
+    position: absolute;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #121318;
+    border: 1.5px solid rgba(251, 175, 51, 0.36);
+    transform: translateY(-50%);
+  }
+  .stub .tear .notch.l { left: -13px; }
+  .stub .tear .notch.r { right: -13px; }
+  .stub h2 {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--brt-gold);
+    margin: 4px 0 18px;
+  }
+  .block { margin: 0 0 22px; }
+  .block:last-child { margin-bottom: 0; }
+  .blabel {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--table-blue);
+    margin: 0 0 11px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .blabel svg { flex: 0 0 auto; }
+  .pillrow { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pill {
+    flex: 1 1 0;
+    min-width: 130px;
+    text-align: center;
+    text-decoration: none;
+    font-family: 'Eurostile', sans-serif;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    padding: 13px 12px;
+    border: 1.5px solid rgba(77, 184, 232, 0.4);
+    border-radius: 11px;
+    color: #FFFFFF;
+    background: rgba(77, 184, 232, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: all 0.2s ease;
+  }
+  .pill:hover {
+    background: var(--table-blue);
+    color: var(--brt-void);
+    box-shadow: 0 0 18px rgba(77, 184, 232, 0.5);
+  }
+  .pill:focus-visible { outline: 3px solid var(--table-blue); outline-offset: 2px; }
+
+  .wa {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    font-family: 'Eurostile', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: linear-gradient(135deg, #1FA855, #128C7E);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(31, 168, 85, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+  }
+  .wa:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(31, 168, 85, 0.55);
+  }
+  .wa:focus-visible { outline: 3px solid var(--table-blue); outline-offset: 2px; }
+
+  .parking { display: flex; flex-direction: column; }
+  .park {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 0;
+    border-top: 1px solid var(--line);
+  }
+  .park:first-child { border-top: none; }
+  .pname { font-size: 14px; font-weight: 600; color: #FFFFFF; }
+  .pnote { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .pmap {
+    flex: 0 0 auto;
+    font-family: "DM Mono", monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--brt-gold);
+    text-decoration: none;
+    white-space: nowrap;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(251, 175, 51, 0.1);
+    border: 1px solid rgba(251, 175, 51, 0.3);
+    transition: all 0.18s ease;
+  }
+  .pmap:hover {
+    background: var(--brt-gold);
+    color: var(--brt-void);
+  }
+
+  .games { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+  .chip {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #E5E7EB;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(77, 184, 232, 0.32);
+    border-radius: 999px;
+    padding: 6px 12px;
+    white-space: nowrap;
+  }
+  .morelink {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--brt-gold);
+    text-decoration: none;
+  }
+  .morelink:hover { color: var(--table-blue); text-decoration: underline; }
+
+  .foot {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: 'Eurostile', sans-serif;
+    text-transform: uppercase;
+    font-size: 11px;
+    margin: 22px 0 0;
+    letter-spacing: 0.1em;
+  }
+  .help {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12.5px;
+    line-height: 1.55;
+    margin: 10px auto 0;
+    max-width: 380px;
+  }
+  .help a {
+    color: var(--table-blue);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-weight: 600;
+  }
+
+  /* ============ BRT SITE FOOTER (Matches BRT.html & BeRaver.html) ============ */
+  .site-footer {
+    background: rgba(10, 11, 14, 0.94);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 36px 18px 28px;
+    margin-top: auto;
+  }
+  .footer-inner {
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+  .footer-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .footer-brand img {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(77, 184, 232, 0.5));
+  }
+  .footer-brand span {
+    font-family: 'Eurostile', sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #fff;
+  }
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 26px;
+  }
+  .footer-links a {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #9CA3AF;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .footer-links a:hover { color: var(--table-blue); }
+  .footer-bottom {
+    padding-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #6B7280;
+  }
+
+  /* ============ LIGHTBOX MODAL FOR GOOGLE DRIVE PHOTOS ============ */
+  .lightbox-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    background: rgba(8, 10, 15, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+  }
+  .lightbox-card {
+    position: relative;
+    max-width: 900px;
+    width: 100%;
+    background: #14161d;
+    border: 1.5px solid var(--table-blue);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 0 45px rgba(77, 184, 232, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .lightbox-img-box {
+    width: 100%;
+    max-height: 75vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #08090c;
+  }
+  .lightbox-img-box img {
+    max-width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    display: block;
+  }
+  .lightbox-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-family: "DM Mono", monospace;
+    font-size: 12px;
+    color: var(--table-blue);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
 </style>
 </head>
 <body>
+  <!-- STYLISED RETRO-FUTURISTIC NEON BACKGROUND -->
   <div id="bg" aria-hidden="true"></div>
-  <div class="stage">
-    <!-- RETRO AUDIO PLAYER CONSOLE -->
-    <div style="background: var(--ink); border: 1.5px solid var(--go); border-radius: var(--radius); padding: 12px 20px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 8px 22px rgba(0,0,0,0.3);">
-      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 14px; font-family: 'DM Mono', monospace; font-size: 11px; color: #0ff; letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 0 5px #0ff;">
-        <span style="display: flex; align-items: center; gap: 6px;">
-          <span class="spin" style="width: 8px; height: 8px; border-width: 1.5px; border-color: rgba(0,255,255,0.3); border-top-color: #0ff;"></span> 
-          BGM_UPLINK_ESTABLISHED
-        </span>
-        <span style="white-space: nowrap;">Neon Nox - Prelude</span>
+  <div class="synth-sun" aria-hidden="true"></div>
+  <div class="retro-grid-wrap" aria-hidden="true">
+    <div class="retro-grid"></div>
+  </div>
+  <div class="crt-overlay" aria-hidden="true"></div>
+
+  <!-- STICKY HEADER (Blends with beverleyroundtable.co.uk & BeRaver.html) -->
+  <header class="site-header">
+    <div class="nav-inner">
+      <div class="brand-link">
+        <img id="navLogo" src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png" alt="Beverley Round Table 247" title="View the secret rules">
+        <div>
+          <div class="brand-text">Beverley <span class="neon-blue">Round Table</span> <span class="neon-gold">247</span></div>
+          <span class="brand-sub">SYS_247 // AREA SOCIAL TAKEOVER</span>
+        </div>
       </div>
-      
-      <!-- Native HTML5 Audio Player -->
-      <audio id="bg-audio" controls loop style="width: 100%; height: 32px; outline: none; border-radius: 8px;">
-        <source src="prelude.mp3" type="audio/mpeg">
-        Your browser does not support the audio element.
-      </audio>
+
+      <nav class="nav-links">
+        <a href="#photosSection" class="hide-mobile">Photo Feed</a>
+        <a href="#ticketSection">Sign Up</a>
+        <a href="#stub" class="hide-mobile">Venue Info</a>
+        <a href="https://beverleyroundtable.co.uk" target="_blank" rel="noopener" class="nav-cta">Main Site ↗</a>
+      </nav>
     </div>
-    <div class="ticket" role="main">
-      <img class="logo" id="logo" alt="Beverley Round Table 247" hidden>
-      <span class="eyebrow"><span class="dot"></span><span id="org">Beverley Round Table 247</span></span>
-      <h1 class="title" id="eventName">Event name</h1>
-      <p class="meta" id="eventSubtitle">Date · venue</p>
-      <p class="amount-line" id="amountLine"></p>
-      <p class="notice" id="eventNote" hidden></p>
+  </header>
 
-      <div class="perf"><span class="notch l"></span><span class="notch r"></span></div>
-
-      <!-- STATE A: register -->
-      <section id="registerView">
-        <p class="places" id="placesLeft" hidden></p>
-        <p class="step-label">Step 1 — get your reference</p>
-        <div class="field">
-          <label for="name">Your name</label>
-          <input id="name" type="text" autocomplete="name" placeholder="e.g. Jimmy Smith" maxlength="80">
-        </div>
-        <div class="field">
-          <label for="phone">Contact number</label>
-          <input id="phone" type="tel" autocomplete="tel" placeholder="07700 900123" inputmode="tel" maxlength="20">
-        </div>
-        <div class="field">
-          <label for="table">Which table? <span class="opt">(or guest)</span></label>
-          <input id="table" type="text" list="tableList" placeholder="Start typing…" autocomplete="off" maxlength="60">
-          <datalist id="tableList"></datalist>
-        </div>
-        <div class="field" id="guestsField" hidden>
-          <label for="guests">How many in your party?</label>
-          <input id="guests" type="number" min="1" max="20" inputmode="numeric" placeholder="1">
-        </div>
-        <div class="field" id="dietaryField" hidden>
-          <label for="dietary">Dietary / access needs <span class="opt">(optional)</span></label>
-          <input id="dietary" type="text" placeholder="e.g. vegetarian, step-free access" maxlength="120">
-        </div>
-        <div class="field">
-          <label for="email">Email <span class="opt">(optional — to fetch your code again)</span></label>
-          <input id="email" type="email" autocomplete="email" placeholder="jimmy@example.com" inputmode="email">
-        </div>
-        <button class="btn btn--navy" id="getBtn">Get my reference</button>
-        <p class="status" id="regStatus" aria-live="polite"></p>
-
-        <p class="linkrow">Already registered? <button class="linkbtn" id="toLookup">Retrieve my code</button></p>
-      </section>
-
-      <!-- STATE B: lookup -->
-      <section id="lookupView" class="hidden">
-        <p class="step-label">Retrieve your reference</p>
-        <div class="field">
-          <label for="lq">Phone or email you used</label>
-          <input id="lq" type="text" autocomplete="off" placeholder="07700 900123 or jimmy@example.com" maxlength="60">
-        </div>
-        <button class="btn btn--navy" id="lookupBtn">Find my code</button>
-        <p class="status" id="lookupStatus" aria-live="polite"></p>
-        <p class="linkrow"><button class="linkbtn" id="backToReg">← Back to sign up</button></p>
-      </section>
-
-      <!-- STATE C: success / pay -->
-      <section id="payView" class="hidden">
-        <div class="code-block">
-          <p class="code-cap" id="codeCap">Your reference</p>
-          <div class="code-wrap">
-            <div class="code" id="codeValue" aria-label="Your payment reference">——————</div>
-            <button class="copy" id="copyBtn" title="Copy reference">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <span id="copyLabel">Copy</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="pay-instr">
-          <p>Pay <strong id="payAmount">your contribution</strong> bank-to-bank, and put <strong id="payCodeInline">your code</strong> in the reference field so we can tick you off the list.</p>
-          <ol class="steps">
-            <li>Tap <strong>Pay now</strong> below — it opens NatWest Payit.</li>
-            <li>Enter the amount.</li>
-            <li>In the <strong>reference / message</strong> box, type <strong id="payCodeInline2">your code</strong>.</li>
-            <li>Confirm in your own banking app.</li>
-          </ol>
-        </div>
-
-        <a class="btn btn--pay" id="payBtn" href="#" target="_blank" rel="noopener">
-          Pay now
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-
-        <details class="fallback">
-          <summary>Payment link not working?</summary>
-          <div class="body">
-            <p>You can pay by ordinary bank transfer instead. Please still put <strong id="bankRef">your code</strong> in the payment reference so we can match it to you.</p>
-            <div id="bankDetails"></div>
-          </div>
-        </details>
-
-        <p class="reassure">Payments go straight to the Round Table bank account via Open Banking (NatWest Payit) — no card details needed. You'll be marked as paid once we reconcile the bank statement.</p>
-        <p class="linkrow"><button class="linkbtn" id="addAnother">Register someone else</button></p>
-      </section>
-
-      <!-- STATE D: closed (full / finished) -->
-      <section id="closedView" class="hidden">
-        <p class="step-label" id="closedLabel">Sign-up closed</p>
-        <p class="closed-msg" id="closedMsg"></p>
-        <p class="linkrow" id="closedRetrieveRow" hidden>Already signed up? <button class="linkbtn" id="toLookup2">Retrieve your code</button></p>
-      </section>
-    </div>
-
-    <section class="stub" id="stub" hidden>
-      <span class="tear"><span class="notch l"></span><span class="notch r"></span></span>
-      <h2>Event details</h2>
-
-      <div class="block" id="gamesBlock" hidden>
-        <p class="blabel">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="9" r="6.5"/><path d="M8.5 14.5L5 20"/></svg>
-          What's on at the venue
-        </p>
-        <div class="games" id="games"></div>
-        <a class="morelink" id="gamesLink" target="_blank" rel="noopener">See the full games list ↗</a>
+  <main class="page-wrap">
+    <!-- RETRO-FUTURISTIC HERO -->
+    <section class="hero-header">
+      <div class="hero-badge">
+        <span class="live-led"></span>
+        <span>BEVERLEY ROUND TABLE 247 · AREA SOCIAL</span>
       </div>
-
-      <div class="block" id="calBlock" hidden>
-        <p class="blabel">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 9.5h18"/></svg>
-          Add to your calendar
-        </p>
-        <div class="pillrow">
-          <a class="pill" id="gcal" target="_blank" rel="noopener">Google Calendar</a>
-          <a class="pill" id="ical" download="event.ics">Apple / Outlook</a>
-        </div>
-      </div>
-
-      <div class="block" id="waBlock" hidden>
-        <a class="wa" id="waLink" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2Zm5.5 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4.1.6.5l.8 1.9c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.2-.3.3-.1.6.1.2.6 1 1.4 1.6.9.8 1.7 1 2 1.1.2.1.4.1.5-.1l.6-.8c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.5.3.1.2.1.7-.1 1.3Z"/></svg>
-          Join the WhatsApp group
-        </a>
-      </div>
-
-      <div class="block" id="parkBlock" hidden>
-        <p class="blabel">
-          <svg viewBox="0 0 24 24" width="15" height="15"><rect x="3" y="3" width="18" height="18" rx="4" fill="#1C2B45"/><text x="12" y="17" font-size="13" font-weight="700" text-anchor="middle" fill="#fff" font-family="system-ui,sans-serif">P</text></svg>
-          Parking nearby
-        </p>
-        <div class="parking" id="parking"></div>
+      <h1 class="hero-title">
+        <span class="neon-blue">PING PONG CLUB</span> <span class="neon-gold">TAKEOVER</span>
+      </h1>
+      <div class="hero-pills">
+        <span class="hero-pill-item"><span class="neon-pink">📅</span> <span>WED 06/10/2027</span></span>
+        <span class="hero-pill-sep">|</span>
+        <span class="hero-pill-item"><span class="neon-blue">⏰</span> <span>6:30 PM — 9:30 PM</span></span>
+        <span class="hero-pill-sep">|</span>
+        <span class="hero-pill-item"><span class="neon-gold">📍</span> <span>PING PONG CLUB HULL</span></span>
       </div>
     </section>
 
-    <p class="foot" id="foot">Beverley Round Table 247</p>
-    <p class="help" id="help" hidden></p>
-  </div>
-
-  <!-- SECRET RULES MODAL -->
-    <dialog id="secretRulesModal" style="border: none; border-radius: var(--radius); padding: 30px 26px; width: 90%; max-width: 400px; background: var(--paper); color: var(--ink); box-shadow: 0 24px 60px rgba(0,0,0,.5); margin: auto;">
-      <h2 style="margin: 0 0 16px; font-size: 22px; color: var(--stamp); font-weight: 700; letter-spacing: -0.01em;">The Beverley Bounty</h2>
-      
-      <div style="font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
-        <p style="margin: 0 0 12px;"><strong>1. The Bank:</strong> Beverley RT holds all the stickers. To get on the board, you must challenge a host.</p>
-        <ul style="margin: 0 0 12px; padding-left: 20px;">
-          <li style="margin-bottom: 6px;"><strong>Bronze (1 pt):</strong> Valiant effort (lose to a host).</li>
-          <li style="margin-bottom: 6px;"><strong>Silver (2 pts):</strong> Giant killer (beat a host).</li>
-          <li style="margin-bottom: 6px;"><strong>Gold (3 pts):</strong> The Humiliator (an absolute thrashing / flawless victory).</li>
-        </ul>
-        <p style="margin: 0 0 12px;"><strong>2. The "Pink Slip" Wager:</strong> Guest vs. Guest matches don't generate new points. You must agree to wager your existing stickers (e.g., Bronze for Bronze). The winner physically peels it off the loser.</p>
-        <p style="margin: 0;"><strong>3. The Final Showdown:</strong> In the last 30 minutes, wagers are completely uncapped. You can bet your entire chest of stickers on a single grudge match against another guest!</p>
+    <!-- GOOGLE DRIVE PHOTO ROTATION SHOWCASE (3 ON MOBILE / 5 ON DESKTOP) -->
+    <section class="photo-deck-section" id="photosSection" aria-label="Takeover Photo Feed">
+      <div class="photo-deck-header">
+        <div class="deck-title-group">
+          <span class="live-led"></span>
+          <div>
+            <h2 class="deck-title">HOLO-FEED // <span class="neon-blue">TAKEOVER ARCHIVE</span></h2>
+            <div class="deck-sub" id="deckCounter">ROTATING DRIVE FEED · 3 MOBILE / 5 DESKTOP</div>
+          </div>
+        </div>
+        <div class="deck-controls">
+          <button type="button" class="deck-btn" id="prevPhotosBtn" title="Previous batch">◄ Prev</button>
+          <button type="button" class="deck-btn" id="shufflePhotosBtn" title="Shuffle photos">⟳ Shuffle</button>
+          <button type="button" class="deck-btn" id="nextPhotosBtn" title="Next batch">Next ►</button>
+          <a class="deck-btn deck-btn--gold" id="driveFolderLink" href="https://drive.google.com/drive/folders/1dAyOr-QU0ITVI-vsbDmAlLu1gmjIIqI_?usp=sharing" target="_blank" rel="noopener">Drive Folder ↗</a>
+        </div>
       </div>
 
-      <button id="closeRulesBtn" class="btn btn--navy">Got it</button>
-    </dialog>
-  
+      <!-- 5 slots total: slots 1-3 visible on all screens, slots 4-5 visible on desktop (>=768px) -->
+      <div class="photo-grid" id="photoGrid">
+        <div class="holo-card" data-slot="0">
+          <div class="holo-img-wrap">
+            <img class="holo-img" id="holo-img-0" src="https://placehold.co/600x600/1D1D1A/4db8e8?text=BRT+247" alt="Beverley Round Table Takeover Photo 1" fetchpriority="high" decoding="async">
+          </div>
+          <div class="holo-caption">
+            <span class="tag">CAM_01</span>
+            <span id="holo-label-0">BRT // 247</span>
+          </div>
+        </div>
+
+        <div class="holo-card" data-slot="1">
+          <div class="holo-img-wrap">
+            <img class="holo-img" id="holo-img-1" src="https://placehold.co/600x600/1D1D1A/FBAF33?text=BRT+247" alt="Beverley Round Table Takeover Photo 2" fetchpriority="high" decoding="async">
+          </div>
+          <div class="holo-caption">
+            <span class="tag">CAM_02</span>
+            <span id="holo-label-1">BRT // 247</span>
+          </div>
+        </div>
+
+        <div class="holo-card" data-slot="2">
+          <div class="holo-img-wrap">
+            <img class="holo-img" id="holo-img-2" src="https://placehold.co/600x600/1D1D1A/ff007f?text=BRT+247" alt="Beverley Round Table Takeover Photo 3" fetchpriority="high" decoding="async">
+          </div>
+          <div class="holo-caption">
+            <span class="tag">CAM_03</span>
+            <span id="holo-label-2">BRT // 247</span>
+          </div>
+        </div>
+
+        <div class="holo-card desktop-only-slot" data-slot="3">
+          <div class="holo-img-wrap">
+            <img class="holo-img" id="holo-img-3" src="https://placehold.co/600x600/1D1D1A/4db8e8?text=BRT+247" alt="Beverley Round Table Takeover Photo 4" loading="lazy" decoding="async">
+          </div>
+          <div class="holo-caption">
+            <span class="tag">CAM_04</span>
+            <span id="holo-label-3">BRT // 247</span>
+          </div>
+        </div>
+
+        <div class="holo-card desktop-only-slot" data-slot="4">
+          <div class="holo-img-wrap">
+            <img class="holo-img" id="holo-img-4" src="https://placehold.co/600x600/1D1D1A/FBAF33?text=BRT+247" alt="Beverley Round Table Takeover Photo 5" loading="lazy" decoding="async">
+          </div>
+          <div class="holo-caption">
+            <span class="tag">CAM_05</span>
+            <span id="holo-label-4">BRT // 247</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rotation-bar-track" aria-hidden="true">
+        <div class="rotation-bar-fill" id="rotationBar"></div>
+      </div>
+    </section>
+
+    <!-- BeRaver-Inspired Electric Laser Divider -->
+    <div class="electric-separator" aria-hidden="true">
+      <div class="electric-pulse"></div>
+    </div>
+
+    <!-- CENTER STAGE: AUDIO CONSOLE + REGISTRATION TICKET + COUNTERFOIL -->
+    <div class="stage" id="ticketSection">
+      <!-- RETRO AUDIO PLAYER CONSOLE -->
+      <div class="audio-console">
+        <div class="audio-top">
+          <span class="audio-status">
+            <span class="spin" style="width: 9px; height: 9px; border-width: 1.5px; border-color: rgba(77,184,232,0.3); border-top-color: #4db8e8;"></span>
+            <span id="audioStatusLabel">BGM_UPLINK_READY</span>
+          </span>
+          <span class="eq-bars" id="eqBars" aria-hidden="true">
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+            <span class="eq-bar"></span>
+          </span>
+        </div>
+
+        <div class="audio-track-row">
+          <span class="track-title">🎵 Neon Nox — Prelude</span>
+          <button type="button" class="audio-toggle-btn" id="audioToggleBtn">▶ Play Track</button>
+        </div>
+
+        <!-- Native HTML5 Audio Player (Local relative file + GitHub CDN fallback) -->
+        <audio id="bg-audio" controls loop preload="auto" style="width: 100%; height: 34px; outline: none; border-radius: 8px;">
+          <source src="prelude.mp3" type="audio/mpeg">
+          <source src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/f71c124974ce47f37d0bbcbe062addd3dae9a357/areyouin/prelude.mp3" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+
+      <!-- MAIN HOLO-TICKET -->
+      <div class="ticket" role="main">
+        <div class="ticket-head-row">
+          <span class="eyebrow"><span class="dot" title="System Override"></span><span id="org">Beverley Round Table 247</span></span>
+          <img class="logo" id="logo" alt="Beverley Round Table 247" hidden>
+        </div>
+        <h2 class="title" id="eventName">Ping Pong Club Takeover</h2>
+        <p class="meta" id="eventSubtitle">Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm</p>
+        <p class="amount-line" id="amountLine"></p>
+        <p class="notice" id="eventNote" hidden></p>
+
+        <div class="perf"><span class="notch l"></span><span class="notch r"></span></div>
+
+        <!-- STATE A: register -->
+        <section id="registerView">
+          <p class="places" id="placesLeft" hidden></p>
+          <p class="step-label">Step 1 — Get Your Reference</p>
+          <div class="field">
+            <label for="name">Your name</label>
+            <input id="name" type="text" autocomplete="name" placeholder="e.g. Jimmy Smith" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="phone">Contact number</label>
+            <input id="phone" type="tel" autocomplete="tel" placeholder="07700 900123" inputmode="tel" maxlength="20">
+          </div>
+          <div class="field">
+            <label for="table">Which table? <span class="opt">(or guest)</span></label>
+            <input id="table" type="text" list="tableList" placeholder="Start typing…" autocomplete="off" maxlength="60">
+            <datalist id="tableList"></datalist>
+          </div>
+          <div class="field" id="guestsField" hidden>
+            <label for="guests">How many in your party?</label>
+            <input id="guests" type="number" min="1" max="20" inputmode="numeric" placeholder="1">
+          </div>
+          <div class="field" id="dietaryField" hidden>
+            <label for="dietary">Dietary / access needs <span class="opt">(optional)</span></label>
+            <input id="dietary" type="text" placeholder="e.g. vegetarian, step-free access" maxlength="120">
+          </div>
+          <div class="field">
+            <label for="email">Email <span class="opt">(optional — to fetch your code again)</span></label>
+            <input id="email" type="email" autocomplete="email" placeholder="jimmy@example.com" inputmode="email">
+          </div>
+          <button class="btn btn--navy" id="getBtn">Get My Reference</button>
+          <p class="status" id="regStatus" aria-live="polite"></p>
+
+          <p class="linkrow">Already registered? <button class="linkbtn" id="toLookup">Retrieve my code</button></p>
+        </section>
+
+        <!-- STATE B: lookup -->
+        <section id="lookupView" class="hidden">
+          <p class="step-label">Retrieve Your Reference</p>
+          <div class="field">
+            <label for="lq">Phone or email you used</label>
+            <input id="lq" type="text" autocomplete="off" placeholder="07700 900123 or jimmy@example.com" maxlength="60">
+          </div>
+          <button class="btn btn--navy" id="lookupBtn">Find My Code</button>
+          <p class="status" id="lookupStatus" aria-live="polite"></p>
+          <p class="linkrow"><button class="linkbtn" id="backToReg">← Back to sign up</button></p>
+        </section>
+
+        <!-- STATE C: success / pay -->
+        <section id="payView" class="hidden">
+          <div class="code-block">
+            <p class="code-cap" id="codeCap">Your reference</p>
+            <div class="code-wrap">
+              <div class="code" id="codeValue" aria-label="Your payment reference">——————</div>
+              <button class="copy" id="copyBtn" title="Copy reference">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span id="copyLabel">Copy</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="pay-instr">
+            <p>Pay <strong id="payAmount">your contribution</strong> bank-to-bank, and put <strong id="payCodeInline">your code</strong> in the reference field so we can tick you off the list.</p>
+            <ol class="steps">
+              <li>Tap <strong>Pay now</strong> below — it opens NatWest Payit.</li>
+              <li>Enter the amount.</li>
+              <li>In the <strong>reference / message</strong> box, type <strong id="payCodeInline2">your code</strong>.</li>
+              <li>Confirm in your own banking app.</li>
+            </ol>
+          </div>
+
+          <a class="btn btn--pay" id="payBtn" href="#" target="_blank" rel="noopener">
+            Pay Now
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+
+          <details class="fallback">
+            <summary>Payment link not working?</summary>
+            <div class="body">
+              <p>You can pay by ordinary bank transfer instead. Please still put <strong id="bankRef">your code</strong> in the payment reference so we can match it to you.</p>
+              <div id="bankDetails"></div>
+            </div>
+          </details>
+
+          <p class="reassure">Payments go straight to the Round Table bank account via Open Banking (NatWest Payit) — no card details needed. You'll be marked as paid once we reconcile the bank statement.</p>
+          <p class="linkrow"><button class="linkbtn" id="addAnother">Register someone else</button></p>
+        </section>
+
+        <!-- STATE D: closed (full / finished) -->
+        <section id="closedView" class="hidden">
+          <p class="step-label" id="closedLabel">Sign-up closed</p>
+          <p class="closed-msg" id="closedMsg"></p>
+          <p class="linkrow" id="closedRetrieveRow" hidden>Already signed up? <button class="linkbtn" id="toLookup2">Retrieve your code</button></p>
+        </section>
+      </div>
+
+      <!-- COUNTERFOIL STUB: EVENT DETAILS -->
+      <section class="stub" id="stub" hidden>
+        <span class="tear"><span class="notch l"></span><span class="notch r"></span></span>
+        <h2>Event Details & Telemetry</h2>
+
+        <div class="block" id="gamesBlock" hidden>
+          <p class="blabel">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="9" r="6.5"/><path d="M8.5 14.5L5 20"/></svg>
+            What's on at the venue
+          </p>
+          <div class="games" id="games"></div>
+          <a class="morelink" id="gamesLink" target="_blank" rel="noopener">See the full games list ↗</a>
+        </div>
+
+        <div class="block" id="calBlock" hidden>
+          <p class="blabel">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 9.5h18"/></svg>
+            Add to your calendar
+          </p>
+          <div class="pillrow">
+            <a class="pill" id="gcal" target="_blank" rel="noopener">Google Calendar</a>
+            <a class="pill" id="ical" download="takeover-2027.ics">Apple / Outlook</a>
+          </div>
+        </div>
+
+        <div class="block" id="waBlock" hidden>
+          <a class="wa" id="waLink" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2Zm5.5 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.3.5-.3.7-.3h.5c.2 0 .4.1.6.5l.8 1.9c.1.2.1.4 0 .5l-.4.5-.3.3c-.1.2-.3.3-.1.6.1.2.6 1 1.4 1.6.9.8 1.7 1 2 1.1.2.1.4.1.5-.1l.6-.8c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.5.3.1.2.1.7-.1 1.3Z"/></svg>
+            Join the WhatsApp Group
+          </a>
+        </div>
+
+        <div class="block" id="parkBlock" hidden>
+          <p class="blabel">
+            <svg viewBox="0 0 24 24" width="15" height="15"><rect x="3" y="3" width="18" height="18" rx="4" fill="#4db8e8"/><text x="12" y="17" font-size="13" font-weight="700" text-anchor="middle" fill="#0D0E12" font-family="system-ui,sans-serif">P</text></svg>
+            Parking nearby
+          </p>
+          <div class="parking" id="parking"></div>
+        </div>
+      </section>
+
+      <p class="foot" id="foot">Beverley Round Table 247</p>
+      <p class="help" id="help" hidden></p>
+    </div>
+  </main>
+
+  <!-- BRT BRAND FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png" alt="BRT Logo">
+          <span>Beverley Round Table 247</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://beverleyroundtable.co.uk" target="_blank" rel="noopener">beverleyroundtable.co.uk</a>
+          <a href="https://roundtable.co.uk" target="_blank" rel="noopener">Round Table GBI ↗</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; <span id="year">2026</span> Beverley Round Table 247 · Do More.</span>
+        <span>Round Table Area Social</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- LIGHTBOX MODAL FOR FULL-SIZE DRIVE PHOTOS -->
+  <div id="photoLightbox" class="lightbox-backdrop hidden" role="dialog" aria-modal="true" aria-label="Photo preview">
+    <div class="lightbox-card">
+      <div class="lightbox-bar">
+        <span id="lightboxCaption">ARCHIVE_FRAME</span>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="deck-btn" id="lightboxPrev">◄ Prev</button>
+          <button type="button" class="deck-btn" id="lightboxNext">Next ►</button>
+          <button type="button" class="deck-btn deck-btn--gold" id="lightboxClose">✕ Close</button>
+        </div>
+      </div>
+      <div class="lightbox-img-box">
+        <img id="lightboxImg" src="" alt="Takeover full size photo">
+      </div>
+    </div>
+  </div>
+
+  <!-- SECRET RULES MODAL ("THE BEVERLEY BOUNTY") -->
+  <dialog id="secretRulesModal" style="border: 1.5px solid var(--table-blue); border-radius: var(--radius); padding: 30px 26px; width: 92%; max-width: 420px; background: #16181f; color: #fff; box-shadow: 0 24px 60px rgba(0,0,0,.8), 0 0 35px rgba(77,184,232,0.3); margin: auto;">
+    <h2 class="font-heading" style="margin: 0 0 16px; font-size: 22px; color: var(--brt-gold); font-weight: 700; text-transform: uppercase;">⚡ The Beverley Bounty</h2>
+    
+    <div style="font-size: 14px; line-height: 1.55; margin-bottom: 22px; color: #E5E7EB;">
+      <p style="margin: 0 0 12px;"><strong style="color: var(--table-blue);">1. The Bank:</strong> Beverley RT holds all the stickers. To get on the board, you must challenge a host.</p>
+      <ul style="margin: 0 0 12px; padding-left: 20px;">
+        <li style="margin-bottom: 6px;"><strong style="color: #cd7f32;">Bronze (1 pt):</strong> Valiant effort (lose to a host).</li>
+        <li style="margin-bottom: 6px;"><strong style="color: #e5e7eb;">Silver (2 pts):</strong> Giant killer (beat a host).</li>
+        <li style="margin-bottom: 6px;"><strong style="color: var(--brt-gold);">Gold (3 pts):</strong> The Humiliator (an absolute thrashing / flawless victory).</li>
+      </ul>
+      <p style="margin: 0 0 12px;"><strong style="color: var(--neon-pink);">2. The "Pink Slip" Wager:</strong> Guest vs. Guest matches don't generate new points. You must agree to wager your existing stickers (e.g., Bronze for Bronze). The winner physically peels it off the loser.</p>
+      <p style="margin: 0;"><strong style="color: var(--table-blue);">3. The Final Showdown:</strong> In the last 30 minutes, wagers are completely uncapped. You can bet your entire chest of stickers on a single grudge match against another guest!</p>
+    </div>
+
+    <button id="closeRulesBtn" class="btn btn--navy">Got It</button>
+  </dialog>
+
+  <!-- SECRET DOOR LIST UI -->
+  <div id="secret-door-list" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 25, 0.95); z-index: 9999; color: #4db8e8; font-family: 'DM Mono', 'Courier New', monospace; padding: 20px; overflow-y: auto; backdrop-filter: blur(8px);">
+    <div style="max-width: 640px; margin: 0 auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ff007f; padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="margin: 0; color: #ff007f; text-shadow: 0 0 10px #ff007f; font-size: 18px;">[ SYSTEM_OVERRIDE : DOOR_LIST ]</h2>
+        <button onclick="document.getElementById('secret-door-list').style.display='none'" style="background: none; border: 1px solid #4db8e8; color: #4db8e8; padding: 6px 12px; border-radius: 6px; cursor: pointer; text-shadow: 0 0 5px #4db8e8; box-shadow: 0 0 8px rgba(77,184,232,0.5);">CLOSE</button>
+      </div>
+      <div id="door-list-content">Loading database...</div>
+    </div>
+  </div>
+
 <script>
 /* ======================================================================
-   EDIT THESE FIVE LINES, then push to GitHub Pages.
+   EDIT THESE CONFIG LINES, then push to GitHub Pages.
    ====================================================================== */
 const CONFIG = {
-  ORG_NAME:        "Beverley Round Table 247",
-  LOGO_URL:        "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png",  // "" to hide
-  EVENT_NAME:      "Ping Pong Club Takeover",                         // ← your event
-  EVENT_SUBTITLE:  "Wednesday 4th November 26 · Ping Pong Club Hull, 6:30pm", // ← date / venue / blurb
-  AMOUNT:          "15",     // the amount, e.g. "15" → "£15". "" hides it.
-  AMOUNT_IS_FIXED: true,     // true = "£15 to attend"  ·  false = "suggested · pay what you like"
-  NATWEST_LINK:    "https://paymentrequest.natwestpayit.com/reusable-link/2f1fd0ee-360a-4bbd-8e9a-fd07e641970e",
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxAkEKeAbOCT8ILUmew3ChJGRHqkhb6izmeLGKChesSqXTXD4rqRlTuwgNIM1dUEETx/exec",     // ← from the Apps Script deploy step
+  ORG_NAME:          "Beverley Round Table 247",
+  LOGO_URL:          "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png",
+  EVENT_NAME:        "Ping Pong Club Takeover",
+  EVENT_SUBTITLE:    "Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm",
+  AMOUNT:            "15",     // "15" → "£15". "" hides it.
+  AMOUNT_IS_FIXED:   true,     // true = "£15 per person to attend"
+  NATWEST_LINK:      "https://paymentrequest.natwestpayit.com/reusable-link/2f1fd0ee-360a-4bbd-8e9a-fd07e641970e",
+  APPS_SCRIPT_URL:   "https://script.google.com/macros/s/AKfycbxAkEKeAbOCT8ILUmew3ChJGRHqkhb6izmeLGKChesSqXTXD4rqRlTuwgNIM1dUEETx/exec",
 
-  // ── Optional extras — blank "" (or [] for parking) to hide any of these ──
-  WHATSAPP_LINK:     "https://chat.whatsapp.com/JR3KSaRZ8RAFCcvMpCkwWy?s=cl&p=a&ilr=2",  // group invite
-  CONTACT_EMAIL:     "beverley247@roundtable.org.uk",  // shown in the footer help line ("" to hide)
-  EVENT_START_LOCAL: "2026-11-04T18:30",          // UK local time, 24h — powers "Add to calendar"
-  EVENT_DURATION_MIN:180,                         // minutes
+  // ── Event schedule & details (Updated for Wednesday 06/10/2027) ──
+  WHATSAPP_LINK:     "https://chat.whatsapp.com/JR3KSaRZ8RAFCcvMpCkwWy?s=cl&p=a&ilr=2",
+  CONTACT_EMAIL:     "beverley247@roundtable.org.uk",
+  EVENT_START_LOCAL: "2027-10-06T18:30",          // Wednesday 6th October 2027, 6:30pm UK local time
+  EVENT_DURATION_MIN: 180,                        // 3 hours
   EVENT_LOCATION:    "The Ping Pong Club, 129-131 Beverley Road, Hull HU3 1TS",
   EVENT_DETAILS:     "Beverley Round Table 247 Area Social.",
-  EVENT_NOTE:        "Private Round Table event — the venue's closed to the public that night, so don't worry if Google says it's shut.",  // "" to hide
+  EVENT_NOTE:        "Private Round Table event — the venue's closed to the public that night, so don't worry if Google says it's shut.",
 
-  BANK_NAME:         "Beverley Round Table",  // shown if the Payit link fails
-  BANK_SORT:         "60-02-23",                  // e.g. 60-00-01  (leave blank to hide bank details)
-  BANK_ACC:          "08225893",                  // e.g. 12345678
+  // ── Google Drive Rotating Photo Feed ──
+  DRIVE_FOLDER_ID:   "1dAyOr-QU0ITVI-vsbDmAlLu1gmjIIqI_",
+  ROTATION_MS:       4500,     // Rotate photos every 4.5 seconds
+  DRIVE_PHOTO_IDS: [
+    "1ZZ4of273e1rMZV7Xd0XNYKeS8aSuBbGO",
+    "126VtDXQ0hoGmOOCc2_EY0NBrnbF6J9Nj",
+    "1Sxrq1zpdjYPKCyH91vMUss5s-nT2W_qK",
+    "1IgXUnTV0ee9xx-HWYYvhIAd3_8fiX5jx",
+    "19Zhl8Pcjc3lrC_e3m_HL-vNpu4cf8KMJ",
+    "1kHuxsM9EVynetHKIfpL9popcDre6ZAw5",
+    "1vEXFx8sR6hdgsG39n5cklTlbg2DWxZ8K",
+    "1IUxssleUawsVNzgJg_rXVxOnrBwsRuiY",
+    "1QTI3KvUuGXqLXlP3LV2rh0HhZ_toUoYm",
+    "1HB7_wiPS0HyqQ7nODik8sLVwpsAuS7WJ",
+    "1qqrMObdtBQoql9VGh-QrDWFBZtGqY_uc",
+    "1CFR2KUnkYp2s2boRfD2TSe_H4MaLElaW",
+    "1t1ZNa7m6b01whpJAWuWrXRirTRq1jeAT",
+    "1X55p8nf4pSX3waMKcERZc7YRmg99LgDx",
+    "1yw6dzCAsaCdYraobRMf5rT23k6kpoUZu",
+    "1cv02eMKp-3h2p_HIAYAR4Fl9dBmqxxrJ",
+    "1CaamGkJ0x2e7J3weaqTOPRGmUrn-jzPQ",
+    "1S0ZAuSXD5OmrKGSk2AxlAZOUJ6z4_4Wt",
+    "13hhqiulKB0WQLzNR2BNcJI0ZwQzafXrA",
+    "1G_jvvGBuXAxzCU7fatHCtW8t7SbLGVdL",
+    "1UEXvEj7RFpJXkM7weka2WT8mZDHgNm4D"
+  ],
+
+  BANK_NAME:         "Beverley Round Table",
+  BANK_SORT:         "60-02-23",
+  BANK_ACC:          "08225893",
 
   PARKING: [
     { name:"On-street, Beverley Road", note:"Closest · usually free after 6pm (check signs)", maps:"https://www.google.com/maps/search/?api=1&query=Beverley+Road+Hull+HU3+1TS" },
@@ -452,14 +1911,14 @@ const CONFIG = {
     { name:"Albion Street car park", note:"~12 min · often free after 6pm", maps:"https://www.google.com/maps/search/?api=1&query=Albion+Street+Car+Park+Hull" }
   ],
 
-  VENUE_GAMES_URL: "https://pingpongclubhull.co.uk/games/",   // full games page ("" to hide the link)
-  VENUE_GAMES: [   // shown as chips — what's on at the venue (edit freely)
+  VENUE_GAMES_URL: "https://pingpongclubhull.co.uk/games/",
+  VENUE_GAMES: [
     "Ping pong ×3","American pool","Air hockey ×2","Darts","Sub Soccer","Super Kixx football ×2","Arcade machines","Games consoles"
   ],
 
-  BG_IMAGE_URL:  "https://assets.beverleyroundtable.co.uk/images/ping.png",   // optional full-screen background ("" = gradient)
+  BG_IMAGE_URL: "", // Stylised retro-futuristic neon background is now active by default
 
-  TABLES: [            // suggestions for the "which table?" box — people can also type their own
+  TABLES: [
     "Barnsley 60",
     "Beverley 247",
     "Bridlington 42",
@@ -480,31 +1939,40 @@ const CONFIG = {
     "Guest / not a member"
   ],
   
-  ASK_GUESTS:  false,  // true → adds a "how many in your party?" field
-  ASK_DIETARY: false   // true → adds a "dietary / access needs" field
+  ASK_GUESTS:  false,
+  ASK_DIETARY: false
 };
 /* ====================================================================== */
 
-// --- paint config into the page ---
 const $ = id => document.getElementById(id);
+$("year").textContent = new Date().getFullYear();
 $("org").textContent = CONFIG.ORG_NAME;
 $("eventName").textContent = CONFIG.EVENT_NAME;
 $("eventSubtitle").textContent = CONFIG.EVENT_SUBTITLE;
 document.title = CONFIG.EVENT_NAME + " — " + CONFIG.ORG_NAME;
 $("payBtn").href = CONFIG.NATWEST_LINK;
 
+if (CONFIG.DRIVE_FOLDER_ID) {
+  $("driveFolderLink").href = "https://drive.google.com/drive/folders/" + CONFIG.DRIVE_FOLDER_ID + "?usp=sharing";
+}
+
 const amountText = CONFIG.AMOUNT ? ("£" + CONFIG.AMOUNT) : "";
 const fixed = !!CONFIG.AMOUNT_IS_FIXED;
 const payWord = amountText ? (fixed ? amountText : amountText + " (suggested)") : (fixed ? "the entry fee" : "your contribution");
-if (amountText){
+if (amountText) {
   $("amountLine").textContent = fixed
     ? amountText + " per person to attend"
     : "Suggested contribution: " + amountText + " — but pay whatever you like.";
 }
 $("payAmount").textContent = payWord;
 $("foot").textContent = CONFIG.ORG_NAME + (fixed ? "" : " · voluntary contributions");
-if (CONFIG.LOGO_URL){ $("logo").src = CONFIG.LOGO_URL; $("logo").hidden = false; }
-(function setupHelp(){
+if (CONFIG.LOGO_URL) {
+  $("logo").src = CONFIG.LOGO_URL;
+  $("logo").hidden = false;
+  $("navLogo").src = CONFIG.LOGO_URL;
+}
+
+(function setupHelp() {
   const email = CONFIG.CONTACT_EMAIL, wa = CONFIG.WHATSAPP_LINK, el = $("help");
   if ((!email && !wa) || !el) return;
   const bits = [];
@@ -513,58 +1981,242 @@ if (CONFIG.LOGO_URL){ $("logo").src = CONFIG.LOGO_URL; $("logo").hidden = false;
   el.innerHTML = "Trouble signing up or paying? You can " + bits.join(" or ") + ".";
   el.hidden = false;
 })();
-if (CONFIG.EVENT_NOTE){ $("eventNote").textContent = CONFIG.EVENT_NOTE; $("eventNote").hidden = false; }
 
-// --- background image + adaptive form ---
-(function setupForm(){
-  if (CONFIG.BG_IMAGE_URL){
+if (CONFIG.EVENT_NOTE) {
+  $("eventNote").textContent = CONFIG.EVENT_NOTE;
+  $("eventNote").hidden = false;
+}
+
+(function setupForm() {
+  if (CONFIG.BG_IMAGE_URL) {
     $("bg").style.backgroundImage =
-      "linear-gradient(rgba(9,16,30,.58), rgba(9,16,30,.58)), url('" + CONFIG.BG_IMAGE_URL + "')";
+      "linear-gradient(rgba(13,14,18,.78), rgba(13,14,18,.88)), url('" + CONFIG.BG_IMAGE_URL + "')";
   }
-  if (Array.isArray(CONFIG.TABLES)){
+  if (Array.isArray(CONFIG.TABLES)) {
     $("tableList").innerHTML = CONFIG.TABLES
-      .map(t => '<option value="' + String(t).replace(/"/g,"&quot;") + '">').join("");
+      .map(t => '<option value="' + String(t).replace(/"/g, "&quot;") + '">').join("");
   }
   if (CONFIG.ASK_GUESTS)  $("guestsField").hidden = false;
   if (CONFIG.ASK_DIETARY) $("dietaryField").hidden = false;
 })();
 
-// --- view switching ---
-function show(view){
+/* ======================================================================
+   GOOGLE DRIVE PHOTO ROTATION ENGINE (3 ON MOBILE / 5 ON DESKTOP)
+   ====================================================================== */
+(function setupDrivePhotoDeck() {
+  const ids = Array.isArray(CONFIG.DRIVE_PHOTO_IDS) ? [...CONFIG.DRIVE_PHOTO_IDS] : [];
+  if (!ids.length) return;
+
+  const driveImgUrl = (id, width = 700) => `https://lh3.googleusercontent.com/d/${id}=w${width}`;
+  const driveFallbackUrl = (id, width = 700) => `https://drive.google.com/thumbnail?id=${id}&sz=w${width}`;
+
+  // Shuffle copy for initial variety
+  let deckOrder = ids.map((id, idx) => ({ id, num: idx + 1 }));
+  let cursor = 0;
+  let activeSlots = [];
+  let lightboxIndex = 0;
+  let isPaused = false;
+  let progressPct = 0;
+  const intervalMs = CONFIG.ROTATION_MS || 4500;
+  const tickMs = 90;
+
+  function getVisibleSlotCount() {
+    return window.innerWidth >= 768 ? 5 : 3;
+  }
+
+  function preloadImage(id) {
+    const img = new Image();
+    img.src = driveImgUrl(id, 700);
+  }
+
+  function renderSlots(animate = true) {
+    const visibleCount = getVisibleSlotCount();
+    activeSlots = [];
+
+    for (let i = 0; i < 5; i++) {
+      const item = deckOrder[(cursor + i) % deckOrder.length];
+      activeSlots.push(item);
+
+      const imgEl = $("holo-img-" + i);
+      const labelEl = $("holo-label-" + i);
+      if (!imgEl) continue;
+
+      if (animate) imgEl.classList.add("swapping");
+
+      const nextUrl = driveImgUrl(item.id, 700);
+      const fallbackUrl = driveFallbackUrl(item.id, 700);
+
+      setTimeout(() => {
+        imgEl.onerror = function() {
+          if (this.src !== fallbackUrl) this.src = fallbackUrl;
+        };
+        imgEl.src = nextUrl;
+        imgEl.dataset.photoId = item.id;
+        imgEl.dataset.photoNum = item.num;
+        if (labelEl) {
+          labelEl.textContent = "IMG_" + String(item.num).padStart(2, "0") + "/" + String(deckOrder.length).padStart(2, "0");
+        }
+        imgEl.onload = () => imgEl.classList.remove("swapping");
+        setTimeout(() => imgEl.classList.remove("swapping"), 260);
+      }, animate ? i * 55 : 0);
+
+      // Preload next batch in background
+      const upcoming = deckOrder[(cursor + 5 + i) % deckOrder.length];
+      if (upcoming) preloadImage(upcoming.id);
+    }
+
+    const counterEl = $("deckCounter");
+    if (counterEl) {
+      counterEl.textContent = `SHOWING ${visibleCount} OF ${deckOrder.length} DRIVE PHOTOS · AUTO-ROTATION`;
+    }
+  }
+
+  function stepNext() {
+    const step = getVisibleSlotCount();
+    cursor = (cursor + step) % deckOrder.length;
+    progressPct = 0;
+    renderSlots(true);
+  }
+
+  function stepPrev() {
+    const step = getVisibleSlotCount();
+    cursor = (cursor - step + deckOrder.length * 10) % deckOrder.length;
+    progressPct = 0;
+    renderSlots(true);
+  }
+
+  function shuffleDeck() {
+    for (let i = deckOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deckOrder[i], deckOrder[j]] = [deckOrder[j], deckOrder[i]];
+    }
+    cursor = 0;
+    progressPct = 0;
+    renderSlots(true);
+  }
+
+  $("nextPhotosBtn").addEventListener("click", stepNext);
+  $("prevPhotosBtn").addEventListener("click", stepPrev);
+  $("shufflePhotosBtn").addEventListener("click", shuffleDeck);
+
+  // Pause rotation when hovering over photo deck
+  const section = $("photosSection");
+  section.addEventListener("mouseenter", () => { isPaused = true; });
+  section.addEventListener("mouseleave", () => { isPaused = false; });
+
+  // Auto-rotation progress timer
+  const barEl = $("rotationBar");
+  setInterval(() => {
+    if (isPaused || !$("photoLightbox").classList.contains("hidden")) return;
+    progressPct += (tickMs / intervalMs) * 100;
+    if (barEl) barEl.style.width = Math.min(100, progressPct) + "%";
+    if (progressPct >= 100) {
+      stepNext();
+    }
+  }, tickMs);
+
+  window.addEventListener("resize", () => {
+    const counterEl = $("deckCounter");
+    if (counterEl) {
+      counterEl.textContent = `SHOWING ${getVisibleSlotCount()} OF ${deckOrder.length} DRIVE PHOTOS · AUTO-ROTATION`;
+    }
+  });
+
+  // Lightbox click-to-expand
+  const lightbox = $("photoLightbox");
+  const lightboxImg = $("lightboxImg");
+  const lightboxCaption = $("lightboxCaption");
+
+  function openLightboxById(photoId) {
+    const idx = deckOrder.findIndex(x => x.id === photoId);
+    lightboxIndex = idx >= 0 ? idx : 0;
+    updateLightbox();
+    lightbox.classList.remove("hidden");
+  }
+
+  function updateLightbox() {
+    const item = deckOrder[lightboxIndex];
+    if (!item) return;
+    const hiRes = driveImgUrl(item.id, 1400);
+    const fb = driveFallbackUrl(item.id, 1200);
+    lightboxImg.onerror = function() {
+      if (this.src !== fb) this.src = fb;
+    };
+    lightboxImg.src = hiRes;
+    lightboxCaption.textContent = `ARCHIVE_FRAME // IMG_${String(item.num).padStart(2, "0")} OF ${deckOrder.length}`;
+  }
+
+  document.querySelectorAll(".holo-card").forEach((card, slotIdx) => {
+    card.addEventListener("click", () => {
+      const img = $("holo-img-" + slotIdx);
+      if (img && img.dataset.photoId) {
+        openLightboxById(img.dataset.photoId);
+      }
+    });
+  });
+
+  $("lightboxClose").addEventListener("click", () => lightbox.classList.add("hidden"));
+  $("lightboxPrev").addEventListener("click", () => {
+    lightboxIndex = (lightboxIndex - 1 + deckOrder.length) % deckOrder.length;
+    updateLightbox();
+  });
+  $("lightboxNext").addEventListener("click", () => {
+    lightboxIndex = (lightboxIndex + 1) % deckOrder.length;
+    updateLightbox();
+  });
+  lightbox.addEventListener("click", (e) => {
+    if (e.target === lightbox) lightbox.classList.add("hidden");
+  });
+  document.addEventListener("keydown", (e) => {
+    if (lightbox.classList.contains("hidden")) return;
+    if (e.key === "Escape") lightbox.classList.add("hidden");
+    if (e.key === "ArrowLeft") $("lightboxPrev").click();
+    if (e.key === "ArrowRight") $("lightboxNext").click();
+  });
+
+  // Initial render
+  renderSlots(false);
+})();
+
+/* ======================================================================
+   REGISTRATION, LOOKUP & PAYMENT VIEW LOGIC
+   ====================================================================== */
+function show(view) {
   ["registerView","lookupView","payView","closedView"].forEach(v => $(v).classList.toggle("hidden", v !== view));
 }
 $("toLookup").onclick   = () => show("lookupView");
 $("toLookup2").onclick  = () => show("lookupView");
 $("backToReg").onclick  = () => show("registerView");
 $("addAnother").onclick = () => {
-  ["name","phone","table","email","guests","dietary"].forEach(id => { const el=$(id); if(el) el.value=""; });
-  $("regStatus").textContent=""; show("registerView");
+  ["name","phone","table","email","guests","dietary"].forEach(id => { const el = $(id); if (el) el.value = ""; });
+  $("regStatus").textContent = "";
+  show("registerView");
 };
 
-// --- networking helper (text/plain avoids a CORS preflight; Apps Script returns readable JSON) ---
-async function call(payload){
+async function call(payload) {
   if (CONFIG.APPS_SCRIPT_URL.indexOf("PASTE_YOUR") === 0)
     throw new Error("This page isn't connected yet — the organiser still needs to add the script link.");
   const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
-    method:"POST",
-    headers:{ "Content-Type":"text/plain;charset=utf-8" },
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(payload),
-    redirect:"follow"
+    redirect: "follow"
   });
   return res.json();
 }
 
-function loading(btn, on, label){
+function loading(btn, on, label) {
   btn.disabled = on;
   btn.dataset.label = btn.dataset.label || btn.textContent;
-  btn.innerHTML = on ? '<span class="spin"></span>' + (label||"Working…") : btn.dataset.label;
+  btn.innerHTML = on ? '<span class="spin"></span>' + (label || "Working…") : btn.dataset.label;
 }
 
-function showCode(code){
+function showCode(code) {
   $("codeValue").textContent = code;
   $("payCodeInline").textContent = code;
   $("payCodeInline2").textContent = code;
-  const br = $("bankRef"); if (br) br.textContent = code;
+  const br = $("bankRef");
+  if (br) br.textContent = code;
   show("payView");
 }
 
@@ -578,24 +2230,43 @@ $("getBtn").onclick = async () => {
   const dietary = CONFIG.ASK_DIETARY ? $("dietary").value.trim() : "";
   const status = $("regStatus");
   status.className = "status";
-  if (name.length < 2){ status.classList.add("err"); status.textContent = "Pop your name in first."; $("name").focus(); return; }
-  if (phone.replace(/\D/g,"").length < 7){ status.classList.add("err"); status.textContent = "Add a contact number so we can reach you."; $("phone").focus(); return; }
+  if (name.length < 2) {
+    status.classList.add("err");
+    status.textContent = "Pop your name in first.";
+    $("name").focus();
+    return;
+  }
+  if (phone.replace(/\D/g, "").length < 7) {
+    status.classList.add("err");
+    status.textContent = "Add a contact number so we can reach you.";
+    $("phone").focus();
+    return;
+  }
   const btn = $("getBtn");
   loading(btn, true, "Getting your code…");
-  try{
-    const r = await call({ action:"register", name, phone, table, email, guests, dietary,
-      ctx:{ eventName:CONFIG.EVENT_NAME, amount:CONFIG.AMOUNT, payLink:CONFIG.NATWEST_LINK, contactEmail:CONFIG.CONTACT_EMAIL, orgName:CONFIG.ORG_NAME } });
-    if (!r.ok){
-      if (r.full){ showClosed("full"); return; }
+  try {
+    const r = await call({
+      action: "register", name, phone, table, email, guests, dietary,
+      ctx: {
+        eventName: CONFIG.EVENT_NAME,
+        amount: CONFIG.AMOUNT,
+        payLink: CONFIG.NATWEST_LINK,
+        contactEmail: CONFIG.CONTACT_EMAIL,
+        orgName: CONFIG.ORG_NAME
+      }
+    });
+    if (!r.ok) {
+      if (r.full) { showClosed("full"); return; }
       throw new Error(r.error || "Something went wrong.");
     }
-    $("codeCap").textContent = r.returning ? "Welcome back — your reference"
+    $("codeCap").textContent = r.returning
+      ? "Welcome back — your reference"
       : (r.emailed ? "Your reference — also emailed to you" : "Your reference");
     showCode(r.code);
-  }catch(err){
+  } catch (err) {
     status.classList.add("err");
     status.textContent = err.message;
-  }finally{
+  } finally {
     loading(btn, false);
   }
 };
@@ -605,18 +2276,22 @@ $("lookupBtn").onclick = async () => {
   const q = $("lq").value.trim();
   const status = $("lookupStatus");
   status.className = "status";
-  if (!q){ status.classList.add("err"); status.textContent = "Enter your phone or email."; return; }
+  if (!q) {
+    status.classList.add("err");
+    status.textContent = "Enter your phone or email.";
+    return;
+  }
   const btn = $("lookupBtn");
   loading(btn, true, "Looking…");
-  try{
-    const r = await call({ action:"lookup", q });
+  try {
+    const r = await call({ action: "lookup", q });
     if (!r.ok) throw new Error(r.error || "No registration found.");
     $("codeCap").textContent = "Your reference";
     showCode(r.code);
-  }catch(err){
+  } catch (err) {
     status.classList.add("err");
     status.textContent = err.message;
-  }finally{
+  } finally {
     loading(btn, false);
   }
 };
@@ -624,100 +2299,112 @@ $("lookupBtn").onclick = async () => {
 // --- copy ---
 $("copyBtn").onclick = async () => {
   const code = $("codeValue").textContent;
-  try{
+  try {
     await navigator.clipboard.writeText(code);
-  }catch(e){
-    const t=document.createElement("textarea"); t.value=code; document.body.appendChild(t);
-    t.select(); document.execCommand("copy"); t.remove();
+  } catch (e) {
+    const t = document.createElement("textarea");
+    t.value = code;
+    document.body.appendChild(t);
+    t.select();
+    document.execCommand("copy");
+    t.remove();
   }
   $("copyLabel").textContent = "Copied";
-  setTimeout(()=> $("copyLabel").textContent = "Copy", 1600);
+  setTimeout(() => $("copyLabel").textContent = "Copy", 1600);
 };
 
 // Enter-to-submit
 ["name","phone","table","email","guests","dietary"].forEach(id => {
-  const el = $(id); if (el) el.addEventListener("keydown", e => { if(e.key==="Enter") $("getBtn").click(); });
+  const el = $(id);
+  if (el) el.addEventListener("keydown", e => { if (e.key === "Enter") $("getBtn").click(); });
 });
-$("lq").addEventListener("keydown", e => { if(e.key==="Enter") $("lookupBtn").click(); });
+$("lq").addEventListener("keydown", e => { if (e.key === "Enter") $("lookupBtn").click(); });
 
 // ---------- event-details counterfoil ----------
-(function setupStub(){
+(function setupStub() {
   const enc = encodeURIComponent;
-  const pad = n => String(n).padStart(2,'0');
-  const z = d => d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+'T'+pad(d.getUTCHours())+pad(d.getUTCMinutes())+'00Z';
+  const pad = n => String(n).padStart(2, '0');
+  const z = d => d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + '00Z';
   let any = false;
 
-  if (CONFIG.VENUE_GAMES_URL || (Array.isArray(CONFIG.VENUE_GAMES) && CONFIG.VENUE_GAMES.length)){
+  if (CONFIG.VENUE_GAMES_URL || (Array.isArray(CONFIG.VENUE_GAMES) && CONFIG.VENUE_GAMES.length)) {
     const gw = $("games");
-    (CONFIG.VENUE_GAMES||[]).forEach(g => {
-      const s = document.createElement("span"); s.className = "chip"; s.textContent = g; gw.appendChild(s);
+    (CONFIG.VENUE_GAMES || []).forEach(g => {
+      const s = document.createElement("span");
+      s.className = "chip";
+      s.textContent = g;
+      gw.appendChild(s);
     });
-    if (CONFIG.VENUE_GAMES_URL){ $("gamesLink").href = CONFIG.VENUE_GAMES_URL; }
+    if (CONFIG.VENUE_GAMES_URL) { $("gamesLink").href = CONFIG.VENUE_GAMES_URL; }
     else { $("gamesLink").style.display = "none"; }
-    $("gamesBlock").hidden = false; any = true;
+    $("gamesBlock").hidden = false;
+    any = true;
   }
 
-  if (CONFIG.EVENT_START_LOCAL){
+  if (CONFIG.EVENT_START_LOCAL) {
     const start = new Date(CONFIG.EVENT_START_LOCAL);
-    if (!isNaN(start.getTime())){
-      const end = new Date(start.getTime() + (CONFIG.EVENT_DURATION_MIN||60)*60000);
+    if (!isNaN(start.getTime())) {
+      const end = new Date(start.getTime() + (CONFIG.EVENT_DURATION_MIN || 60) * 60000);
       const s = z(start), e = z(end);
-      const title = CONFIG.EVENT_NAME||"Event", loc = CONFIG.EVENT_LOCATION||"", det = [CONFIG.EVENT_DETAILS, CONFIG.EVENT_NOTE].filter(Boolean).join(" — ");
+      const title = CONFIG.EVENT_NAME || "Event", loc = CONFIG.EVENT_LOCATION || "", det = [CONFIG.EVENT_DETAILS, CONFIG.EVENT_NOTE].filter(Boolean).join(" — ");
       $("gcal").href = "https://calendar.google.com/calendar/render?action=TEMPLATE"
         + "&text=" + enc(title) + "&dates=" + s + "/" + e
         + "&details=" + enc(det) + "&location=" + enc(loc);
-      const esc = t => String(t).replace(/\\/g,"\\\\").replace(/[,;]/g,m=>"\\"+m).replace(/\n/g,"\\n");
+      const esc = t => String(t).replace(/\\/g, "\\\\").replace(/[,;]/g, m => "\\" + m).replace(/\n/g, "\\n");
       const ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//BRT//Event//EN",
-        "BEGIN:VEVENT","UID:"+Date.now()+"@beverleyroundtable","DTSTAMP:"+z(new Date()),
-        "DTSTART:"+s,"DTEND:"+e,"SUMMARY:"+esc(title),"DESCRIPTION:"+esc(det),"LOCATION:"+esc(loc),
+        "BEGIN:VEVENT","UID:" + Date.now() + "@beverleyroundtable","DTSTAMP:" + z(new Date()),
+        "DTSTART:" + s,"DTEND:" + e,"SUMMARY:" + esc(title),"DESCRIPTION:" + esc(det),"LOCATION:" + esc(loc),
         "END:VEVENT","END:VCALENDAR"].join("\r\n");
-      $("ical").href = URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
-      $("calBlock").hidden = false; any = true;
+      $("ical").href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+      $("calBlock").hidden = false;
+      any = true;
     }
   }
 
-  if (CONFIG.WHATSAPP_LINK){
+  if (CONFIG.WHATSAPP_LINK) {
     $("waLink").href = CONFIG.WHATSAPP_LINK;
-    $("waBlock").hidden = false; any = true;
+    $("waBlock").hidden = false;
+    any = true;
   }
 
-  if (Array.isArray(CONFIG.PARKING) && CONFIG.PARKING.length){
+  if (Array.isArray(CONFIG.PARKING) && CONFIG.PARKING.length) {
     const wrap = $("parking");
     CONFIG.PARKING.forEach(p => {
       const row = document.createElement("div"); row.className = "park";
       const left = document.createElement("div");
-      const nm = document.createElement("div"); nm.className = "pname"; nm.textContent = p.name||"";
+      const nm = document.createElement("div"); nm.className = "pname"; nm.textContent = p.name || "";
       left.appendChild(nm);
-      if (p.note){ const nt = document.createElement("div"); nt.className = "pnote"; nt.textContent = p.note; left.appendChild(nt); }
+      if (p.note) { const nt = document.createElement("div"); nt.className = "pnote"; nt.textContent = p.note; left.appendChild(nt); }
       row.appendChild(left);
-      if (p.maps){
+      if (p.maps) {
         const a = document.createElement("a"); a.className = "pmap"; a.href = p.maps;
         a.target = "_blank"; a.rel = "noopener"; a.textContent = "Map \u2197"; row.appendChild(a);
       }
       wrap.appendChild(row);
     });
-    $("parkBlock").hidden = false; any = true;
+    $("parkBlock").hidden = false;
+    any = true;
   }
 
   if (any) $("stub").hidden = false;
 })();
 
 // ---------- bank-transfer fallback ----------
-(function setupBank(){
+(function setupBank() {
   const el = $("bankDetails");
   if (!el) return;
-  if (CONFIG.BANK_SORT || CONFIG.BANK_ACC){
-    const rows = [["Account name",CONFIG.BANK_NAME||""],["Sort code",CONFIG.BANK_SORT||""],["Account number",CONFIG.BANK_ACC||""]];
+  if (CONFIG.BANK_SORT || CONFIG.BANK_ACC) {
+    const rows = [["Account name", CONFIG.BANK_NAME || ""],["Sort code", CONFIG.BANK_SORT || ""],["Account number", CONFIG.BANK_ACC || ""]];
     el.innerHTML = rows.filter(r => r[1])
-      .map(r => '<div class="bankrow"><span class="k">'+r[0]+'</span><span class="v">'+r[1]+'</span></div>').join("");
+      .map(r => '<div class="bankrow"><span class="k">' + r[0] + '</span><span class="v">' + r[1] + '</span></div>').join("");
   } else {
     el.innerHTML = '<p style="color:var(--muted);margin:0">Get in touch with the organiser and we\'ll sort it out.</p>';
   }
 })();
 
 // ---------- gate: finished / full / places-left ----------
-function showClosed(reason){
-  if (reason === "passed"){
+function showClosed(reason) {
+  if (reason === "passed") {
     $("closedLabel").textContent = "This event has finished";
     $("closedMsg").textContent = (CONFIG.EVENT_NAME || "This event") + " has now taken place. Thanks to everyone who came along.";
     $("closedRetrieveRow").hidden = true;
@@ -729,76 +2416,67 @@ function showClosed(reason){
   show("closedView");
 }
 
-(function setupGate(){
-  // event finished? (client-side, from your start time + duration)
-  if (CONFIG.EVENT_START_LOCAL){
+(function setupGate() {
+  if (CONFIG.EVENT_START_LOCAL) {
     const start = new Date(CONFIG.EVENT_START_LOCAL);
-    if (!isNaN(start.getTime())){
-      const end = new Date(start.getTime() + (CONFIG.EVENT_DURATION_MIN||60)*60000);
-      if (Date.now() > end.getTime()){ showClosed("passed"); return; }
+    if (!isNaN(start.getTime())) {
+      const end = new Date(start.getTime() + (CONFIG.EVENT_DURATION_MIN || 60) * 60000);
+      if (Date.now() > end.getTime()) { showClosed("passed"); return; }
     }
   }
-  // capacity — the count is authoritative on the server
-  call({ action:"count" }).then(r => {
+  call({ action: "count" }).then(r => {
     if (!r || !r.ok) return;
-    if (r.full){ showClosed("full"); return; }
-    if (r.capacity > 0 && (r.capacity - r.count) <= 10){
+    if (r.full) { showClosed("full"); return; }
+    if (r.capacity > 0 && (r.capacity - r.count) <= 10) {
       const left = r.capacity - r.count;
-      $("placesLeft").textContent = left === 1 ? "Just 1 place left" : ("Only " + left + " places left");
+      $("placesLeft").textContent = left === 1 ? "⚡ Just 1 place left" : ("⚡ Only " + left + " places left");
       $("placesLeft").hidden = false;
     }
   }).catch(() => {});
 })();
 
-  // ---------- SECRET RULES EASTER EGG (NOW ON LOGO) ----------
-(function setupSecretRules(){
+// ---------- SECRET RULES EASTER EGG (ON LOGO & NAV LOGO) ----------
+(function setupSecretRules() {
   const logoElement = document.getElementById('logo');
+  const navLogoElement = document.getElementById('navLogo');
   const modal = document.getElementById('secretRulesModal');
   const closeBtn = document.getElementById('closeRulesBtn');
 
-  if (logoElement && modal && closeBtn) {
-    logoElement.style.cursor = 'pointer';
-    logoElement.title = "View the secret rules";
-    
-    logoElement.addEventListener('click', () => {
-      modal.showModal();
-      document.querySelector('.ticket').style.filter = 'blur(2px)';
+  function openRules() {
+    if (!modal) return;
+    modal.showModal();
+    const ticket = document.querySelector('.ticket');
+    if (ticket) ticket.style.filter = 'blur(3px)';
+  }
+
+  function closeRules() {
+    if (!modal) return;
+    modal.close();
+    const ticket = document.querySelector('.ticket');
+    if (ticket) ticket.style.filter = 'none';
+  }
+
+  if (modal && closeBtn) {
+    [logoElement, navLogoElement].forEach(el => {
+      if (!el) return;
+      el.style.cursor = 'pointer';
+      el.title = "View the secret rules";
+      el.addEventListener('click', openRules);
     });
 
-    closeBtn.addEventListener('click', () => {
-      modal.close();
-      document.querySelector('.ticket').style.filter = 'none';
-    });
-    
+    closeBtn.addEventListener('click', closeRules);
+
     modal.addEventListener('click', (e) => {
-      const dialogDimensions = modal.getBoundingClientRect();
-      if (
-        e.clientX < dialogDimensions.left ||
-        e.clientX > dialogDimensions.right ||
-        e.clientY < dialogDimensions.top ||
-        e.clientY > dialogDimensions.bottom
-      ) {
-        modal.close();
-        document.querySelector('.ticket').style.filter = 'none';
+      const rect = modal.getBoundingClientRect();
+      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+        closeRules();
       }
     });
   }
 })();
-</script> <!-- THIS WAS MISSING! -->
 
-<!-- SECRET DOOR LIST UI -->
-<div id="secret-door-list" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 25, 0.95); z-index: 9999; color: #0ff; font-family: 'Courier New', Courier, monospace; padding: 20px; overflow-y: auto; backdrop-filter: blur(5px);">
-  <div style="max-width: 600px; margin: 0 auto;">
-    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #f0f; padding-bottom: 10px; margin-bottom: 20px;">
-      <h2 style="margin: 0; color: #f0f; text-shadow: 0 0 10px #f0f;">[ SYSTEM_OVERRIDE : DOOR_LIST ]</h2>
-      <button onclick="document.getElementById('secret-door-list').style.display='none'" style="background: none; border: 1px solid #0ff; color: #0ff; padding: 5px 10px; cursor: pointer; text-shadow: 0 0 5px #0ff; box-shadow: 0 0 5px #0ff;">CLOSE</button>
-    </div>
-    <div id="door-list-content">Loading database...</div>
-  </div>
-</div>
-
-<script>
-  // --- Secret Trigger Logic (NOW ON RED DOT) ---
+// ---------- SECRET DOOR LIST TRIGGER (5 CLICKS ON EYEBROW DOT) ----------
+(function setupDoorList() {
   let clickCount = 0;
   let clickTimer = null;
 
@@ -806,85 +2484,114 @@ function showClosed(reason){
   if (adminDot) {
     adminDot.style.cursor = 'crosshair';
     adminDot.title = "System Override";
-    adminDot.addEventListener('click', secretAdminTrigger);
+    adminDot.addEventListener('click', () => {
+      clickCount++;
+      if (clickTimer) clearTimeout(clickTimer);
+      if (clickCount >= 5) {
+        document.getElementById('secret-door-list').style.display = 'block';
+        fetchDoorList();
+        clickCount = 0;
+      } else {
+        clickTimer = setTimeout(() => { clickCount = 0; }, 1500);
+      }
+    });
   }
+})();
 
-  function secretAdminTrigger() {
-    clickCount++;
-    if (clickTimer) clearTimeout(clickTimer);
-    
-    if (clickCount >= 5) {
-      document.getElementById('secret-door-list').style.display = 'block';
-      fetchDoorList();
-      clickCount = 0;
-    } else {
-      clickTimer = setTimeout(() => { clickCount = 0; }, 1500); 
-    }
-  }
+const SCRIPT_URL = CONFIG.APPS_SCRIPT_URL;
 
-  // MAKE SURE TO PASTE YOUR ACTUAL APPS SCRIPT URL HERE
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxAkEKeAbOCT8ILUmew3ChJGRHqkhb6izmeLGKChesSqXTXD4rqRlTuwgNIM1dUEETx/exec'; 
-
-  async function fetchDoorList() {
-    const container = document.getElementById('door-list-content');
-    container.innerHTML = 'Establishing uplink...';
-    
-    try {
-      const res = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'list' })
-      });
-      const data = await res.json();
-      
-      if (!data.ok) throw new Error("Data fetch failed");
-      
-      let html = `<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                    <tr style="text-align: left; border-bottom: 1px solid #0ff; color: #fff;">
-                      <th style="padding: 10px 5px;">ENTERED</th>
-                      <th style="padding: 10px 5px;">NAME</th>
-                      <th style="padding: 10px 5px;">CODE</th>
-                      <th style="padding: 10px 5px;">PAID</th>
-                    </tr>`;
-      
-      data.attendees.forEach(att => {
-        const paidColor = String(att.paid).toLowerCase() === 'yes' ? '#0f0' : '#f00';
-        html += `<tr style="border-bottom: 1px dashed rgba(0, 255, 255, 0.3);">
-                  <td style="padding: 10px 5px;">
-                    <input type="checkbox" style="transform: scale(1.5); cursor: pointer;" 
-                           ${att.checkedIn ? 'checked' : ''} 
-                           onchange="updateCheckIn(${att.row}, this.checked)">
-                  </td>
-                  <td style="padding: 10px 5px;">${att.name}</td>
-                  <td style="padding: 10px 5px; font-weight: bold; color: #ff0;">${att.code}</td>
-                  <td style="padding: 10px 5px; color: ${paidColor}; text-transform: uppercase;">${att.paid || 'NO'}</td>
-                 </tr>`;
-      });
-      html += '</table>';
-      container.innerHTML = html;
-      
-    } catch (err) {
-      container.innerHTML = `<span style="color: red;">Error: ${err.message}</span>`;
-    }
-  }
-
-  async function updateCheckIn(rowNum, isChecked) {
-    fetch(SCRIPT_URL, {
+async function fetchDoorList() {
+  const container = document.getElementById('door-list-content');
+  container.innerHTML = 'Establishing uplink...';
+  
+  try {
+    const res = await fetch(SCRIPT_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'checkin', row: rowNum, status: isChecked })
-    }).catch(err => console.error("Check-in update failed", err));
+      body: JSON.stringify({ action: 'list' })
+    });
+    const data = await res.json();
+    
+    if (!data.ok) throw new Error("Data fetch failed");
+    
+    let html = `<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                  <tr style="text-align: left; border-bottom: 1px solid #4db8e8; color: #fff;">
+                    <th style="padding: 10px 5px;">ENTERED</th>
+                    <th style="padding: 10px 5px;">NAME</th>
+                    <th style="padding: 10px 5px;">CODE</th>
+                    <th style="padding: 10px 5px;">PAID</th>
+                  </tr>`;
+    
+    data.attendees.forEach(att => {
+      const paidColor = String(att.paid).toLowerCase() === 'yes' ? '#00f5a0' : '#ff4d88';
+      html += `<tr style="border-bottom: 1px dashed rgba(77, 184, 232, 0.3);">
+                <td style="padding: 10px 5px;">
+                  <input type="checkbox" style="transform: scale(1.5); cursor: pointer; accent-color: #4db8e8;" 
+                         ${att.checkedIn ? 'checked' : ''} 
+                         onchange="updateCheckIn(${att.row}, this.checked)">
+                </td>
+                <td style="padding: 10px 5px; color: #fff;">${att.name}</td>
+                <td style="padding: 10px 5px; font-weight: bold; color: #FBAF33;">${att.code}</td>
+                <td style="padding: 10px 5px; color: ${paidColor}; text-transform: uppercase; font-weight: bold;">${att.paid || 'NO'}</td>
+               </tr>`;
+    });
+    html += '</table>';
+    container.innerHTML = html;
+    
+  } catch (err) {
+    container.innerHTML = `<span style="color: #ff4d88;">Error: ${err.message}</span>`;
   }
-  // --- Audio Autoplay Hack ---
-  // Browsers block unmuted autoplay on load. This script listens for the user's 
-  // first physical interaction with the page (a click) and starts the music.
-  document.body.addEventListener('click', function() {
-    const audio = document.getElementById('bg-audio');
-    if (audio && audio.paused) {
-      audio.play().catch(() => {
-        // If the browser still strictly blocks it, the user can just hit the native play button
-        console.log("Audio requires manual playback.");
-      });
+}
+
+async function updateCheckIn(rowNum, isChecked) {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'checkin', row: rowNum, status: isChecked })
+  }).catch(err => console.error("Check-in update failed", err));
+}
+
+// ---------- AUDIO CONTROLLER & FIRST-INTERACTION AUTOPLAY ----------
+(function setupAudioDeck() {
+  const audio = document.getElementById('bg-audio');
+  const toggleBtn = document.getElementById('audioToggleBtn');
+  const eqBars = document.getElementById('eqBars');
+  const statusLabel = document.getElementById('audioStatusLabel');
+  if (!audio) return;
+
+  function syncAudioUI() {
+    const playing = !audio.paused && !audio.ended;
+    if (toggleBtn) {
+      toggleBtn.textContent = playing ? "❚❚ Pause Track" : "▶ Play Track";
+      toggleBtn.classList.toggle("playing", playing);
     }
-  }, { once: true }); // The { once: true } ensures this only fires on the very first click
+    if (eqBars) eqBars.classList.toggle("active", playing);
+    if (statusLabel) {
+      statusLabel.textContent = playing ? "BGM_UPLINK_ESTABLISHED" : "BGM_UPLINK_STANDBY";
+    }
+  }
+
+  audio.addEventListener("play", syncAudioUI);
+  audio.addEventListener("pause", syncAudioUI);
+  audio.addEventListener("ended", syncAudioUI);
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (audio.paused) {
+        audio.play().catch(() => {});
+      } else {
+        audio.pause();
+      }
+    });
+  }
+
+  // Start audio on first physical click anywhere on the page (unless clicking the audio controls themselves)
+  document.body.addEventListener('click', function(e) {
+    if (e.target.closest('#bg-audio') || e.target.closest('#audioToggleBtn')) return;
+    if (audio.paused) {
+      audio.play().catch(() => {});
+    }
+  }, { once: true });
+})();
 </script>
 </body>
 </html>
