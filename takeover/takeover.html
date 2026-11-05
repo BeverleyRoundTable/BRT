@@ -2030,18 +2030,10 @@ if (CONFIG.EVENT_NOTE) {
   const ids = Array.isArray(CONFIG.DRIVE_PHOTO_IDS) ? [...CONFIG.DRIVE_PHOTO_IDS] : [];
   if (!ids.length) return;
 
-  // Primary: Google Drive Thumbnail endpoint (most reliable cross-origin)
+  // Primary: Google Drive Thumbnail endpoint
   const driveImgUrl = (id, width = 700) => `https://drive.google.com/thumbnail?id=${id}&sz=w${width}`;
   // Secondary: lh3 Google User Content
   const driveFallbackUrl = (id, width = 700) => `https://lh3.googleusercontent.com/d/${id}=w${width}`;
-  // Tertiary: High-resolution real BRT event imagery from repo (zero broken images guaranteed)
-  const LOCAL_FALLBACKS = [
-    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/assets/ping.png",
-    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/assets/games.jpg",
-    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/assets/beers.png",
-    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/assets/theboys.png",
-    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/assets/chinese.jpg"
-  ];
 
   // Shuffle copy for initial variety
   let deckOrder = ids.map((id, idx) => ({ id, num: idx + 1 }));
@@ -2093,19 +2085,13 @@ if (CONFIG.EVENT_NOTE) {
 
       const primaryUrl = driveImgUrl(item.id, 700);
       const fbUrl = driveFallbackUrl(item.id, 700);
-      const localFb = LOCAL_FALLBACKS[i % LOCAL_FALLBACKS.length];
 
       setTimeout(() => {
         imgEl.referrerPolicy = "no-referrer";
-        let fallbackStep = 0;
         imgEl.onerror = function() {
-          if (fallbackStep === 0) {
-            fallbackStep = 1;
+          if (this.src !== fbUrl) {
             this.referrerPolicy = "no-referrer";
             this.src = fbUrl;
-          } else if (fallbackStep === 1) {
-            fallbackStep = 2;
-            this.src = localFb;
           }
         };
         imgEl.src = primaryUrl;
@@ -2197,16 +2183,10 @@ if (CONFIG.EVENT_NOTE) {
     if (!item) return;
     const hiRes = driveImgUrl(item.id, 1400);
     const fb = driveFallbackUrl(item.id, 1200);
-    const localFb = LOCAL_FALLBACKS[lightboxIndex % LOCAL_FALLBACKS.length];
-    let lbStep = 0;
     lightboxImg.referrerPolicy = "no-referrer";
     lightboxImg.onerror = function() {
-      if (lbStep === 0) {
-        lbStep = 1;
+      if (this.src !== fb) {
         this.src = fb;
-      } else if (lbStep === 1) {
-        lbStep = 2;
-        this.src = localFb;
       }
     };
     lightboxImg.src = hiRes;
