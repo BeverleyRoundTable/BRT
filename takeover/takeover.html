@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-<title>Ping Pong Club Takeover — Beverley Round Table 247</title>
-<meta name="description" content="Beverley Round Table 247 Area Social — Ping Pong Club Takeover on Wednesday 6th October 2027. Get your payment reference, view the live photo feed, and join the night.">
+<title>Ping Pong Club Takeover — Beverley Round Table</title>
+<meta name="description" content="Beverley Round Table Area Social — Ping Pong Club Takeover on Wednesday 6th October 2027. Get your payment reference, view the live photo feed, and join the night.">
 
 <!-- Open Graph / Social Sharing -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Ping Pong Club Takeover | Beverley Round Table 247">
+<meta property="og:title" content="Ping Pong Club Takeover | Beverley Round Table">
 <meta property="og:description" content="Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm. Register and grab your entry reference.">
 <meta property="og:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png">
 <meta property="og:url" content="https://takeover.beverleyroundtable.co.uk">
@@ -230,17 +230,17 @@
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(29, 29, 26, 0.9);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(29, 29, 26, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border-bottom: 1px solid rgba(77, 184, 232, 0.25);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
   }
   .nav-inner {
     max-width: 1180px;
     margin: 0 auto;
-    padding: 0 18px;
-    height: 74px;
+    padding: 0 16px;
+    height: 68px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -249,39 +249,51 @@
   .brand-link {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 11px;
     text-decoration: none;
     color: #fff;
+    min-width: 0;
+    flex-shrink: 1;
   }
   .brand-link img {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
     object-fit: contain;
+    flex-shrink: 0;
     filter: drop-shadow(0 0 8px rgba(77, 184, 232, 0.55));
     transition: transform 0.25s ease;
     cursor: pointer;
   }
   .brand-link:hover img { transform: scale(1.07); }
+  .brand-titles {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
   .brand-text {
     font-family: 'Eurostile', sans-serif;
     font-weight: 700;
-    font-size: clamp(15px, 2.5vw, 21px);
+    font-size: clamp(14px, 2.6vw, 20px);
     text-transform: uppercase;
-    letter-spacing: -0.02em;
-    line-height: 1.05;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    white-space: nowrap;
   }
   .brand-sub {
     display: block;
     font-family: "DM Mono", monospace;
     font-size: 10px;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.16em;
     color: var(--table-blue);
     margin-top: 2px;
+    white-space: nowrap;
   }
   .nav-links {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 14px;
+    flex-shrink: 0;
   }
   .nav-links a {
     font-family: 'Eurostile', sans-serif;
@@ -291,6 +303,7 @@
     color: #D1D5DB;
     text-decoration: none;
     transition: color 0.2s ease, text-shadow 0.2s ease;
+    white-space: nowrap;
   }
   .nav-links a:hover {
     color: var(--table-blue);
@@ -301,10 +314,10 @@
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     color: var(--brt-void) !important;
     background: linear-gradient(135deg, var(--table-blue), var(--brt-gold));
-    padding: 9px 16px;
+    padding: 8px 15px;
     border-radius: 999px;
     text-decoration: none;
     box-shadow: 0 0 16px rgba(77, 184, 232, 0.45);
@@ -317,7 +330,18 @@
   }
   @media (max-width: 720px) {
     .nav-links a.hide-mobile { display: none; }
-    .nav-inner { height: 66px; }
+    .brand-sub { display: none; } /* Hide sub-header on mobile to keep brand text on a single line */
+    .nav-inner { height: 58px; padding: 0 12px; gap: 8px; }
+    .brand-link { gap: 9px; }
+    .brand-link img { width: 36px; height: 36px; }
+    .brand-text { font-size: clamp(13px, 3.8vw, 16px); }
+  }
+  @media (max-width: 480px) {
+    .nav-links a.hide-mobile-sm { display: none; } /* Hide 'Sign Up' link on small mobile so title doesn't wrap */
+    .nav-cta {
+      padding: 6px 12px;
+      font-size: 11px;
+    }
   }
 
   /* ============ MAIN CONTAINER LAYOUT ============ */
@@ -1483,16 +1507,16 @@
   <header class="site-header">
     <div class="nav-inner">
       <div class="brand-link">
-        <img id="navLogo" src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png" alt="Beverley Round Table 247" title="View the secret rules">
-        <div>
-          <div class="brand-text">Beverley <span class="neon-blue">Round Table</span> <span class="neon-gold">247</span></div>
-          <span class="brand-sub">SYS_247 // AREA SOCIAL TAKEOVER</span>
+        <img id="navLogo" src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png" alt="Beverley Round Table" title="View the secret rules">
+        <div class="brand-titles">
+          <div class="brand-text">Beverley <span class="neon-blue">Round Table</span></div>
+          <span class="brand-sub">AREA SOCIAL TAKEOVER</span>
         </div>
       </div>
 
       <nav class="nav-links">
         <a href="#photosSection" class="hide-mobile">Photo Feed</a>
-        <a href="#ticketSection">Sign Up</a>
+        <a href="#ticketSection" class="hide-mobile-sm">Sign Up</a>
         <a href="#stub" class="hide-mobile">Venue Info</a>
         <a href="https://beverleyroundtable.co.uk" target="_blank" rel="noopener" class="nav-cta">Main Site ↗</a>
       </nav>
@@ -1504,7 +1528,7 @@
     <section class="hero-header">
       <div class="hero-badge">
         <span class="live-led"></span>
-        <span>BEVERLEY ROUND TABLE 247 · AREA SOCIAL</span>
+        <span>BEVERLEY ROUND TABLE · AREA SOCIAL</span>
       </div>
       <h1 class="hero-title">
         <span class="neon-blue">PING PONG CLUB</span> <span class="neon-gold">TAKEOVER</span>
@@ -1540,51 +1564,51 @@
       <div class="photo-grid" id="photoGrid">
         <div class="holo-card" data-slot="0">
           <div class="holo-img-wrap">
-            <img class="holo-img" id="holo-img-0" src="https://placehold.co/600x600/1D1D1A/4db8e8?text=BRT+247" alt="Beverley Round Table Takeover Photo 1" fetchpriority="high" decoding="async">
+            <img class="holo-img" id="holo-img-0" referrerpolicy="no-referrer" src="https://placehold.co/600x600/1D1D1A/4db8e8?text=BRT" alt="Beverley Round Table Takeover Photo 1" fetchpriority="high" decoding="async">
           </div>
           <div class="holo-caption">
             <span class="tag">CAM_01</span>
-            <span id="holo-label-0">BRT // 247</span>
+            <span id="holo-label-0">BRT // TAKEOVER</span>
           </div>
         </div>
 
         <div class="holo-card" data-slot="1">
           <div class="holo-img-wrap">
-            <img class="holo-img" id="holo-img-1" src="https://placehold.co/600x600/1D1D1A/FBAF33?text=BRT+247" alt="Beverley Round Table Takeover Photo 2" fetchpriority="high" decoding="async">
+            <img class="holo-img" id="holo-img-1" referrerpolicy="no-referrer" src="https://placehold.co/600x600/1D1D1A/FBAF33?text=BRT" alt="Beverley Round Table Takeover Photo 2" fetchpriority="high" decoding="async">
           </div>
           <div class="holo-caption">
             <span class="tag">CAM_02</span>
-            <span id="holo-label-1">BRT // 247</span>
+            <span id="holo-label-1">BRT // TAKEOVER</span>
           </div>
         </div>
 
         <div class="holo-card" data-slot="2">
           <div class="holo-img-wrap">
-            <img class="holo-img" id="holo-img-2" src="https://placehold.co/600x600/1D1D1A/ff007f?text=BRT+247" alt="Beverley Round Table Takeover Photo 3" fetchpriority="high" decoding="async">
+            <img class="holo-img" id="holo-img-2" referrerpolicy="no-referrer" src="https://placehold.co/600x600/1D1D1A/ff007f?text=BRT" alt="Beverley Round Table Takeover Photo 3" fetchpriority="high" decoding="async">
           </div>
           <div class="holo-caption">
             <span class="tag">CAM_03</span>
-            <span id="holo-label-2">BRT // 247</span>
+            <span id="holo-label-2">BRT // TAKEOVER</span>
           </div>
         </div>
 
         <div class="holo-card desktop-only-slot" data-slot="3">
           <div class="holo-img-wrap">
-            <img class="holo-img" id="holo-img-3" src="https://placehold.co/600x600/1D1D1A/4db8e8?text=BRT+247" alt="Beverley Round Table Takeover Photo 4" loading="lazy" decoding="async">
+            <img class="holo-img" id="holo-img-3" referrerpolicy="no-referrer" src="https://placehold.co/600x600/1D1D1A/4db8e8?text=BRT" alt="Beverley Round Table Takeover Photo 4" loading="lazy" decoding="async">
           </div>
           <div class="holo-caption">
             <span class="tag">CAM_04</span>
-            <span id="holo-label-3">BRT // 247</span>
+            <span id="holo-label-3">BRT // TAKEOVER</span>
           </div>
         </div>
 
         <div class="holo-card desktop-only-slot" data-slot="4">
           <div class="holo-img-wrap">
-            <img class="holo-img" id="holo-img-4" src="https://placehold.co/600x600/1D1D1A/FBAF33?text=BRT+247" alt="Beverley Round Table Takeover Photo 5" loading="lazy" decoding="async">
+            <img class="holo-img" id="holo-img-4" referrerpolicy="no-referrer" src="https://placehold.co/600x600/1D1D1A/FBAF33?text=BRT" alt="Beverley Round Table Takeover Photo 5" loading="lazy" decoding="async">
           </div>
           <div class="holo-caption">
             <span class="tag">CAM_05</span>
-            <span id="holo-label-4">BRT // 247</span>
+            <span id="holo-label-4">BRT // TAKEOVER</span>
           </div>
         </div>
       </div>
@@ -1633,8 +1657,8 @@
       <!-- MAIN HOLO-TICKET -->
       <div class="ticket" role="main">
         <div class="ticket-head-row">
-          <span class="eyebrow"><span class="dot" title="System Override"></span><span id="org">Beverley Round Table 247</span></span>
-          <img class="logo" id="logo" alt="Beverley Round Table 247" hidden>
+          <span class="eyebrow"><span class="dot" title="System Override"></span><span id="org">Beverley Round Table</span></span>
+          <img class="logo" id="logo" alt="Beverley Round Table" hidden>
         </div>
         <h2 class="title" id="eventName">Ping Pong Club Takeover</h2>
         <p class="meta" id="eventSubtitle">Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm</p>
@@ -1779,7 +1803,7 @@
         </div>
       </section>
 
-      <p class="foot" id="foot">Beverley Round Table 247</p>
+      <p class="foot" id="foot">Beverley Round Table</p>
       <p class="help" id="help" hidden></p>
     </div>
   </main>
@@ -1790,7 +1814,7 @@
       <div class="footer-top">
         <div class="footer-brand">
           <img src="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png" alt="BRT Logo">
-          <span>Beverley Round Table 247</span>
+          <span>Beverley Round Table</span>
         </div>
         <div class="footer-links">
           <a href="https://beverleyroundtable.co.uk" target="_blank" rel="noopener">beverleyroundtable.co.uk</a>
@@ -1798,7 +1822,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>&copy; <span id="year">2026</span> Beverley Round Table 247 · Do More.</span>
+        <span>&copy; <span id="year">2027</span> Beverley Round Table · Do More.</span>
         <span>Round Table Area Social</span>
       </div>
     </div>
@@ -1855,7 +1879,7 @@
    EDIT THESE CONFIG LINES, then push to GitHub Pages.
    ====================================================================== */
 const CONFIG = {
-  ORG_NAME:          "Beverley Round Table 247",
+  ORG_NAME:          "Beverley Round Table",
   LOGO_URL:          "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png",
   EVENT_NAME:        "Ping Pong Club Takeover",
   EVENT_SUBTITLE:    "Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm",
@@ -1870,7 +1894,7 @@ const CONFIG = {
   EVENT_START_LOCAL: "2027-10-06T18:30",          // Wednesday 6th October 2027, 6:30pm UK local time
   EVENT_DURATION_MIN: 180,                        // 3 hours
   EVENT_LOCATION:    "The Ping Pong Club, 129-131 Beverley Road, Hull HU3 1TS",
-  EVENT_DETAILS:     "Beverley Round Table 247 Area Social.",
+  EVENT_DETAILS:     "Beverley Round Table Area Social.",
   EVENT_NOTE:        "Private Round Table event — the venue's closed to the public that night, so don't worry if Google says it's shut.",
 
   // ── Google Drive Rotating Photo Feed ──
@@ -2007,8 +2031,18 @@ if (CONFIG.EVENT_NOTE) {
   const ids = Array.isArray(CONFIG.DRIVE_PHOTO_IDS) ? [...CONFIG.DRIVE_PHOTO_IDS] : [];
   if (!ids.length) return;
 
-  const driveImgUrl = (id, width = 700) => `https://lh3.googleusercontent.com/d/${id}=w${width}`;
-  const driveFallbackUrl = (id, width = 700) => `https://drive.google.com/thumbnail?id=${id}&sz=w${width}`;
+  // Primary: Google Drive Thumbnail endpoint (most reliable cross-origin)
+  const driveImgUrl = (id, width = 700) => `https://drive.google.com/thumbnail?id=${id}&sz=w${width}`;
+  // Secondary: lh3 Google User Content
+  const driveFallbackUrl = (id, width = 700) => `https://lh3.googleusercontent.com/d/${id}=w${width}`;
+  // Tertiary: High-resolution real BRT event imagery from repo (zero broken images guaranteed)
+  const LOCAL_FALLBACKS = [
+    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/assets/ping.png",
+    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/assets/games.jpg",
+    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/assets/beers.png",
+    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/assets/theboys.png",
+    "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/assets/chinese.jpg"
+  ];
 
   // Shuffle copy for initial variety
   let deckOrder = ids.map((id, idx) => ({ id, num: idx + 1 }));
@@ -2026,6 +2060,7 @@ if (CONFIG.EVENT_NOTE) {
 
   function preloadImage(id) {
     const img = new Image();
+    img.referrerPolicy = "no-referrer";
     img.src = driveImgUrl(id, 700);
   }
 
@@ -2043,14 +2078,24 @@ if (CONFIG.EVENT_NOTE) {
 
       if (animate) imgEl.classList.add("swapping");
 
-      const nextUrl = driveImgUrl(item.id, 700);
-      const fallbackUrl = driveFallbackUrl(item.id, 700);
+      const primaryUrl = driveImgUrl(item.id, 700);
+      const fbUrl = driveFallbackUrl(item.id, 700);
+      const localFb = LOCAL_FALLBACKS[i % LOCAL_FALLBACKS.length];
 
       setTimeout(() => {
+        imgEl.referrerPolicy = "no-referrer";
+        let fallbackStep = 0;
         imgEl.onerror = function() {
-          if (this.src !== fallbackUrl) this.src = fallbackUrl;
+          if (fallbackStep === 0) {
+            fallbackStep = 1;
+            this.referrerPolicy = "no-referrer";
+            this.src = fbUrl;
+          } else if (fallbackStep === 1) {
+            fallbackStep = 2;
+            this.src = localFb;
+          }
         };
-        imgEl.src = nextUrl;
+        imgEl.src = primaryUrl;
         imgEl.dataset.photoId = item.id;
         imgEl.dataset.photoNum = item.num;
         if (labelEl) {
@@ -2139,8 +2184,17 @@ if (CONFIG.EVENT_NOTE) {
     if (!item) return;
     const hiRes = driveImgUrl(item.id, 1400);
     const fb = driveFallbackUrl(item.id, 1200);
+    const localFb = LOCAL_FALLBACKS[lightboxIndex % LOCAL_FALLBACKS.length];
+    let lbStep = 0;
+    lightboxImg.referrerPolicy = "no-referrer";
     lightboxImg.onerror = function() {
-      if (this.src !== fb) this.src = fb;
+      if (lbStep === 0) {
+        lbStep = 1;
+        this.src = fb;
+      } else if (lbStep === 1) {
+        lbStep = 2;
+        this.src = localFb;
+      }
     };
     lightboxImg.src = hiRes;
     lightboxCaption.textContent = `ARCHIVE_FRAME // IMG_${String(item.num).padStart(2, "0")} OF ${deckOrder.length}`;
