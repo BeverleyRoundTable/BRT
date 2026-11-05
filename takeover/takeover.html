@@ -1548,13 +1548,7 @@
           <span class="live-led"></span>
           <div>
             <h2 class="deck-title">HOLO-FEED // <span class="neon-blue">TAKEOVER ARCHIVE</span></h2>
-            <div class="deck-sub" id="deckCounter">ROTATING DRIVE FEED · 3 MOBILE / 5 DESKTOP</div>
           </div>
-        </div>
-        <div class="deck-controls">
-          <button type="button" class="deck-btn" id="prevPhotosBtn" title="Previous batch">◄ Prev</button>
-          <button type="button" class="deck-btn" id="shufflePhotosBtn" title="Shuffle photos">⟳ Shuffle</button>
-          <button type="button" class="deck-btn" id="nextPhotosBtn" title="Next batch">Next ►</button>
         </div>
       </div>
 
@@ -1566,7 +1560,7 @@
           </div>
           <div class="holo-caption">
             <span class="tag">CAM_01</span>
-            <span id="holo-label-0">BRT // TAKEOVER</span>
+            <span id="holo-label-0">AREA SOCIAL</span>
           </div>
         </div>
 
@@ -1576,7 +1570,7 @@
           </div>
           <div class="holo-caption">
             <span class="tag">CAM_02</span>
-            <span id="holo-label-1">BRT // TAKEOVER</span>
+            <span id="holo-label-1">AREA SOCIAL</span>
           </div>
         </div>
 
@@ -1586,7 +1580,7 @@
           </div>
           <div class="holo-caption">
             <span class="tag">CAM_03</span>
-            <span id="holo-label-2">BRT // TAKEOVER</span>
+            <span id="holo-label-2">AREA SOCIAL</span>
           </div>
         </div>
 
@@ -1596,7 +1590,7 @@
           </div>
           <div class="holo-caption">
             <span class="tag">CAM_04</span>
-            <span id="holo-label-3">BRT // TAKEOVER</span>
+            <span id="holo-label-3">AREA SOCIAL</span>
           </div>
         </div>
 
@@ -1606,7 +1600,7 @@
           </div>
           <div class="holo-caption">
             <span class="tag">CAM_05</span>
-            <span id="holo-label-4">BRT // TAKEOVER</span>
+            <span id="holo-label-4">AREA SOCIAL</span>
           </div>
         </div>
       </div>
@@ -1898,7 +1892,7 @@ const CONFIG = {
   // ── Google Drive Rotating Photo Feed ──
   DRIVE_FOLDER_ID:   "1dAyOr-QU0ITVI-vsbDmAlLu1gmjIIqI_",
   ROTATION_MS:       4500,     // Rotate photos every 4.5 seconds
-  DRIVE_PHOTO_IDS: [
+    DRIVE_PHOTO_IDS: [
     "1PSsRCWHgoyr0sNaZemlMCZnZIK6_h-pi",
     "126VtDXQ0hoGmOOCc2_EY0NBrnbF6J9Nj",
     "1Sxrq1zpdjYPKCyH91vMUss5s-nT2W_qK",
@@ -1915,7 +1909,10 @@ const CONFIG = {
     "1yw6dzCAsaCdYraobRMf5rT23k6kpoUZu",
     "13hhqiulKB0WQLzNR2BNcJI0ZwQzafXrA",
     "1G_jvvGBuXAxzCU7fatHCtW8t7SbLGVdL",
-    "1UEXvEj7RFpJXkM7weka2WT8mZDHgNm4D"
+    "1UEXvEj7RFpJXkM7weka2WT8mZDHgNm4D",
+    "10Pnu-U57bQg10h2cRbHtRDxD0KK4v1tD",
+    "1H9VWryibYAA2LI9dCKeKQ6b71EUHJedR",
+    "1K8wJlb8lf9adw5v2PD5DU5jX8ViqzVB8"
   ],
 
   BANK_NAME:         "Beverley Round Table",
@@ -2093,7 +2090,7 @@ if (CONFIG.EVENT_NOTE) {
         imgEl.dataset.photoId = item.id;
         imgEl.dataset.photoNum = item.num;
         if (labelEl) {
-          labelEl.textContent = "IMG_" + String(item.num).padStart(2, "0") + "/" + String(deckOrder.length).padStart(2, "0");
+          labelEl.textContent = "AREA SOCIAL";
         }
         imgEl.onload = () => imgEl.classList.remove("swapping");
         setTimeout(() => imgEl.classList.remove("swapping"), 260);
@@ -2104,10 +2101,7 @@ if (CONFIG.EVENT_NOTE) {
       if (upcoming) preloadImage(upcoming.id);
     }
 
-    const counterEl = $("deckCounter");
-    if (counterEl) {
-      counterEl.textContent = `SHOWING ${visibleCount} OF ${deckOrder.length} DRIVE PHOTOS · AUTO-ROTATION`;
-    }
+
   }
 
   function stepNext() {
@@ -2134,9 +2128,7 @@ if (CONFIG.EVENT_NOTE) {
     renderSlots(true);
   }
 
-  $("nextPhotosBtn").addEventListener("click", stepNext);
-  $("prevPhotosBtn").addEventListener("click", stepPrev);
-  $("shufflePhotosBtn").addEventListener("click", shuffleDeck);
+
 
   // Pause rotation when hovering over photo deck
   const section = $("photosSection");
@@ -2154,12 +2146,7 @@ if (CONFIG.EVENT_NOTE) {
     }
   }, tickMs);
 
-  window.addEventListener("resize", () => {
-    const counterEl = $("deckCounter");
-    if (counterEl) {
-      counterEl.textContent = `SHOWING ${getVisibleSlotCount()} OF ${deckOrder.length} DRIVE PHOTOS · AUTO-ROTATION`;
-    }
-  });
+
 
   // Lightbox click-to-expand
   const lightbox = $("photoLightbox");
@@ -2185,7 +2172,7 @@ if (CONFIG.EVENT_NOTE) {
       }
     };
     lightboxImg.src = hiRes;
-    lightboxCaption.textContent = `ARCHIVE_FRAME // IMG_${String(item.num).padStart(2, "0")} OF ${deckOrder.length}`;
+    lightboxCaption.textContent = "ARCHIVE_FRAME // AREA SOCIAL";
   }
 
   document.querySelectorAll(".holo-card").forEach((card, slotIdx) => {
