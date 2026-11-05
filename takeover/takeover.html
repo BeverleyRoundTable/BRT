@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>Ping Pong Club Takeover — Beverley Round Table</title>
-<meta name="description" content="Beverley Round Table Area Social — Ping Pong Club Takeover on Wednesday 6th October 2027. Get your payment reference, view the live photo feed, and join the night.">
+<meta name="description" content="Beverley Round Table Area Social — Ping Pong Club Takeover on Wednesday 6th October 2027 (6:30pm — 10:30pm). Get your payment reference, view the live photo feed, and join the night.">
 
 <!-- Open Graph / Social Sharing -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Ping Pong Club Takeover | Beverley Round Table">
-<meta property="og:description" content="Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm. Register and grab your entry reference.">
+<meta property="og:description" content="Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm — 10:30pm. Register and grab your entry reference.">
 <meta property="og:image" content="https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png">
 <meta property="og:url" content="https://takeover.beverleyroundtable.co.uk">
 
@@ -1536,7 +1536,7 @@
       <div class="hero-pills">
         <span class="hero-pill-item"><span class="neon-pink">📅</span> <span>WED 06/10/2027</span></span>
         <span class="hero-pill-sep">|</span>
-        <span class="hero-pill-item"><span class="neon-blue">⏰</span> <span>6:30 PM — 9:30 PM</span></span>
+        <span class="hero-pill-item"><span class="neon-blue">⏰</span> <span>6:30 PM — 10:30 PM</span></span>
         <span class="hero-pill-sep">|</span>
         <span class="hero-pill-item"><span class="neon-gold">📍</span> <span>PING PONG CLUB HULL</span></span>
       </div>
@@ -1660,7 +1660,7 @@
           <img class="logo" id="logo" alt="Beverley Round Table" hidden>
         </div>
         <h2 class="title" id="eventName">Ping Pong Club Takeover</h2>
-        <p class="meta" id="eventSubtitle">Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm</p>
+        <p class="meta" id="eventSubtitle">Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm — 10:30pm</p>
         <p class="amount-line" id="amountLine"></p>
         <p class="notice" id="eventNote" hidden></p>
 
@@ -1881,7 +1881,7 @@ const CONFIG = {
   ORG_NAME:          "Beverley Round Table",
   LOGO_URL:          "https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png",
   EVENT_NAME:        "Ping Pong Club Takeover",
-  EVENT_SUBTITLE:    "Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm",
+  EVENT_SUBTITLE:    "Wednesday 6th October 2027 · Ping Pong Club Hull, 6:30pm — 10:30pm",
   AMOUNT:            "15",     // "15" → "£15". "" hides it.
   AMOUNT_IS_FIXED:   true,     // true = "£15 per person to attend"
   NATWEST_LINK:      "https://paymentrequest.natwestpayit.com/reusable-link/2f1fd0ee-360a-4bbd-8e9a-fd07e641970e",
@@ -1891,7 +1891,7 @@ const CONFIG = {
   WHATSAPP_LINK:     "https://chat.whatsapp.com/JR3KSaRZ8RAFCcvMpCkwWy?s=cl&p=a&ilr=2",
   CONTACT_EMAIL:     "beverley247@roundtable.org.uk",
   EVENT_START_LOCAL: "2027-10-06T18:30",          // Wednesday 6th October 2027, 6:30pm UK local time
-  EVENT_DURATION_MIN: 180,                        // 3 hours
+  EVENT_DURATION_MIN: 240,                        // 4 hours (6:30pm — 10:30pm)
   EVENT_LOCATION:    "The Ping Pong Club, 129-131 Beverley Road, Hull HU3 1TS",
   EVENT_DETAILS:     "Beverley Round Table Area Social.",
   EVENT_NOTE:        "Private Round Table event — the venue's closed to the public that night, so don't worry if Google says it's shut.",
@@ -2052,6 +2052,20 @@ if (CONFIG.EVENT_NOTE) {
   let progressPct = 0;
   const intervalMs = CONFIG.ROTATION_MS || 4500;
   const tickMs = 90;
+
+  // Background live sync from Apps Script if dynamic folder query is deployed
+  if (CONFIG.APPS_SCRIPT_URL) {
+    fetch(CONFIG.APPS_SCRIPT_URL + "?action=photos")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.ok && Array.isArray(data.ids) && data.ids.length > 0) {
+          deckOrder = data.ids.map((id, idx) => ({ id, num: idx + 1 }));
+          cursor = 0;
+          renderSlots(false);
+        }
+      })
+      .catch(() => {});
+  }
 
   function getVisibleSlotCount() {
     return window.innerWidth >= 768 ? 5 : 3;
