@@ -343,7 +343,9 @@ function doGet(e) {
   var action = (params.action || 'init').toLowerCase();
 
   try {
-    ensureSetup_();
+    if (action !== 'ai-assist' && action !== 'verify-pin') {
+      ensureSetup_();
+    }
 
     if (action === 'init' || action === 'state' || action === 'list' || action === 'events') {
       return jsonOk_(buildFullState_());
@@ -422,7 +424,9 @@ function doPost(e) {
   var action = String(payload.action || 'init').toLowerCase();
 
   try {
-    ensureSetup_();
+    if (action !== 'ai-assist' && action !== 'verify-pin') {
+      ensureSetup_();
+    }
 
     if (action === 'init' || action === 'state' || action === 'list') {
       return jsonOk_(buildFullState_());
@@ -1372,8 +1376,13 @@ function resolveFlashModelChain_(apiKey, configuredModel) {
 }
 
 function callGeminiAi_(payload) {
-  var settings = getSettingsMap_();
-  var apiKey = getGeminiApiKey_(settings);
+  var props = PropertiesService.getScriptProperties();
+  var apiKey = String(props.getProperty('GEMINI_API_KEY') || '').trim();
+  var settings = null;
+  if (!apiKey) {
+    settings = getSettingsMap_();
+    apiKey = getGeminiApiKey_(settings);
+  }
   if (!apiKey) {
     var keyErr = new Error('Gemini API key is not configured yet. Click "🍻 BRT Socials Admin -> 5. Set Gemini API Key" (stored in Script Properties).');
     keyErr.code = 'NO_GEMINI_KEY';
@@ -1389,80 +1398,65 @@ function callGeminiAi_(payload) {
   var draftLocation = String(payload.draftLocation || '').trim();
   var draftDescription = String(payload.draftDescription || '').trim();
 
-  // Gather already-planned socials so Gemini avoids duplicates
-  var existingTitles = readSocials_()
-    .filter(function (s) { return s.status !== 'OPEN' && s.title; })
-    .map(function (s) { return s.title + ' (' + s.monthYear + ')'; });
+  // Prefer existingTitles sent from the client to avoid slow Spreadsheet reads
+  var existingTitles = Array.isArray(payload.existingTitles)
+    ? payload.existingTitles.map(function (t) { return String(t || '').trim(); }).filter(Boolean).slice(0, 22)
+    : readSocials_()
+        .filter(function (s) { return s.status !== 'OPEN' && s.title; })
+        .map(function (s) { return s.title + ' (' + s.monthYear + ')'; });
 
-  var clubArea = settings.CLUB_AREA || 'Beverley & East Yorkshire (Hull, Westwood, Molescroft, Walkington)';
+  var clubArea = 'Beverley & East Yorkshire (Hull, Westwood, Molescroft, Walkington)';
+  var clubName = 'Beverley Round Table';
   var ruleDesc = socialType === 'PAID'
-    ? '1ST WEDNESDAY PAID COMMERCIAL SOCIAL: A commercially run activity, venue booking, experience, tour, or paid night out (e.g. axe throwing, karting, padel, clay pigeon shooting, escape room, brewery tour, comedy club, curry & quiz, golf simulator).'
-    : '3RD WEDNESDAY CREATIVE FREE / SUB-£20 SOCIAL: Free to attend or ultra-low-cost creative social where the organizer can spend max £20 total for the entire group on props/accessories (or £0!). Brains and banter over budget (e.g. Beverley Taskmaster, Westwood Torchlight Treasure Hunt, Pub Skittles/Cribbage Knockouts, Blind Crisp/Chocolate Taste Test, Tatty Gift Swap, Street Photography Scavenger Hunt, Paper Aeroplane Olympics).';
+    ? '1ST WED PAID: Commercially run activity, venue booking, experience, or paid night out.'
+    : '3RD WED FREE / SUB-£20: Free to attend or max £20 total group spend on props/kit (brains & banter over budget).';
 
   var promptLines = [
-    'You are the Social Secretary Co-Pilot for ' + (settings.CLUB_NAME || 'Beverley Round Table') + ', a vibrant social club for men aged 18-45 based in ' + clubArea + '.',
-    'Tone: Energetic, witty, welcoming to prospective new members, zero cringe, practical and real-world in East Yorkshire.',
-    '',
-    'Target Slot: ' + displayDate + ' (' + monthYear + ')',
-    'Slot Rule: ' + ruleDesc,
-    existingTitles.length ? ('Already on this year\'s calendar (DO NOT repeat these): ' + existingTitles.join(', ')) : ''
+    'Social Secretary Co-Pilot for ' + clubName + ' (men 18-45, ' + clubArea + '). Energetic, witty, practical, welcoming to new guys.',
+    'Slot: ' + displayDate + ' (' + monthYear + ') | Rule: ' + ruleDesc,
+    existingTitles.length ? ('Already planned (do not repeat): ' + existingTitles.join(', ')) : ''
   ];
 
   if (mode === 'expand') {
     promptLines.push(
-      '',
-      'TASK: A member has started sketching an idea and wants you to expand, sharpen, and guide them into a complete, ready-to-run social plan.',
-      'Draft Title: ' + (draftTitle || '(not set yet)'),
-      'Draft Location: ' + (draftLocation || '(not set yet)'),
-      'Draft Notes / Extra Vibe: ' + (draftDescription || userPrompt || '(expand creatively)'),
-      'Member Guidance Request: ' + (userPrompt || 'Make it sound brilliant, suggest a specific realistic Beverley/Hull venue or meeting point, include timings, cost estimate, and a short prep checklist.'),
-      '',
-      'Return valid JSON with a "suggestions" array containing EXACTLY 1 expanded object.'
+      'TASK: Expand this draft into 1 crisp, ready-to-run social plan (timings are set later on Spond).',
+      'Draft: ' + [draftTitle, draftLocation, draftDescription, userPrompt].filter(Boolean).join(' | '),
+      'Return JSON: {"suggestions": [1 object]}.'
     );
   } else {
     promptLines.push(
-      '',
-      'TASK: Pitch 3 distinct, memorable social ideas tailored to ' + monthYear + ' (think British weather/daylight for that month!) and Beverley/Hull.',
-      userPrompt ? ('Member vibe / theme / constraint: "' + userPrompt + '"') : 'Give a great mix: 1 classic crowd-pleaser, 1 left-field/hilarious idea, and 1 super easy prospective-member icebreaker.',
-      '',
-      'Return valid JSON with a "suggestions" array containing EXACTLY 3 idea objects.'
+      'TASK: Pitch 3 distinct social ideas tailored to ' + monthYear + ' (UK weather/daylight) in Beverley/Hull (timings set later on Spond).',
+      userPrompt ? ('Vibe/constraint: "' + userPrompt + '"') : 'Mix: 1 classic, 1 left-field/hilarious, 1 easy prospective-member icebreaker.',
+      'Return JSON: {"suggestions": [3 objects]}.'
     );
   }
 
   promptLines.push(
-    '',
-    'JSON Schema required:',
-    '{',
-    '  "suggestions": [',
-    '    {',
-    '      "title": "Punchy event title (3-6 words, optional 1 emoji)",',
-    '      "description": "2-3 lively sentences explaining what happens on the night and why mates/newcomers will love it.",',
-    '      "location": "Specific Beverley / East Yorkshire / Hull venue or meeting point",',
-    '      "startTime": "19:30",',
-    '      "endTime": "22:00",',
-    '      "costPerPerson": "' + (socialType === 'PAID' ? 'e.g. £22 pp' : 'Free (or £12 group props)') + '",',
-    '      "accessoriesNeeded": "Short bullet-style kit list / booking notes / prep steps for the organiser",',
-    '      "prospectiveFriendly": true,',
-    '      "whyItWorks": "1 short organizer tip on logistics or welcoming new members"',
-    '    }',
-    '  ]',
-    '}'
+    'Each suggestion object keys: title (3-6 words + optional emoji), description (1-2 punchy sentences), location (specific Beverley/Hull spot), costPerPerson ("' + (socialType === 'PAID' ? '£XX pp' : 'Free / £XX props') + '"), accessoriesNeeded (brief prep/kit list), prospectiveFriendly (true/false), whyItWorks (1 concise sentence).'
   );
 
-  var modelsToTry = resolveFlashModelChain_(apiKey, settings.GEMINI_MODEL);
+  var configuredModel = String(props.getProperty('GEMINI_MODEL') || (settings && settings.GEMINI_MODEL) || 'AUTO').trim();
+  var modelsToTry = resolveFlashModelChain_(apiKey, configuredModel);
+  var maxAttempts = Math.min(modelsToTry.length, 4);
 
   var lastError = null;
-  for (var i = 0; i < modelsToTry.length; i++) {
+  for (var i = 0; i < maxAttempts; i++) {
     var model = modelsToTry[i];
     var endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' +
       encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
 
+    var genConfig = {
+      temperature: 0.85,
+      maxOutputTokens: 650,
+      responseMimeType: 'application/json'
+    };
+    if (/-(2\.5|[3-9](?:\.\d+)?)-flash|^gemini-flash(?:-lite)?-latest$/i.test(model)) {
+      genConfig.thinkingConfig = { thinkingBudget: 0 };
+    }
+
     var requestBody = {
       contents: [{ parts: [{ text: promptLines.join('\n') }] }],
-      generationConfig: {
-        temperature: 0.9,
-        responseMimeType: 'application/json'
-      }
+      generationConfig: genConfig
     };
 
     var res = UrlFetchApp.fetch(endpoint, {
@@ -1474,6 +1468,19 @@ function callGeminiAi_(payload) {
 
     var code = res.getResponseCode();
     var text = res.getContentText();
+
+    // Retry without thinkingConfig if an alias model rejects it with HTTP 400
+    if (code === 400 && genConfig.thinkingConfig && /thinking/i.test(text)) {
+      delete genConfig.thinkingConfig;
+      res = UrlFetchApp.fetch(endpoint, {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify(requestBody),
+        muteHttpExceptions: true
+      });
+      code = res.getResponseCode();
+      text = res.getContentText();
+    }
 
     if (code >= 200 && code < 300) {
       var parsed = JSON.parse(text);
@@ -1728,9 +1735,15 @@ function getAdminPin_(settings) {
 }
 
 function requirePin_(payload, level) {
-  var settings = getSettingsMap_();
-  var tablePin = getTablePin_(settings);
-  var adminPin = getAdminPin_(settings);
+  var props = PropertiesService.getScriptProperties();
+  var tablePin = String(props.getProperty('TABLE_PIN') || '').trim();
+  var adminPin = String(props.getProperty('ADMIN_PIN') || '').trim();
+
+  if (!tablePin && !adminPin) {
+    var settings = getSettingsMap_();
+    tablePin = getTablePin_(settings);
+    adminPin = getAdminPin_(settings);
+  }
   var provided = String((payload && payload.pin) || '').trim();
 
   if (!tablePin && !adminPin) {
