@@ -1033,17 +1033,14 @@ function getDynamicHorizonRange(startYm, monthsAhead) {
     const curYm = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
     const anchorYm = curYm > startFloor ? curYm : startFloor;
 
-    const [startY, startM1] = startFloor.split("-").map(Number);
     const [anchY, anchM1] = anchorYm.split("-").map(Number);
-    const endTotalMonths = (anchY * 12 + (anchM1 - 1)) + (horizonCount - 1);
-    const startTotalMonths = startY * 12 + (startM1 - 1);
 
     return {
         startYm: startFloor,
-        startTotalMonths,
-        totalMonths: Math.max(horizonCount, (endTotalMonths - startTotalMonths) + 1),
-        startYear: startY,
-        startMonth0: startM1 - 1
+        anchorYm,
+        totalMonths: horizonCount,
+        startYear: anchY,
+        startMonth0: anchM1 - 1
     };
 }
 
@@ -1221,9 +1218,11 @@ function buildDemoSeedState() {
 
 function recalcMembersAndStats(rawMembers, rawSocials) {
     const sortedSocials = rawSocials.slice().sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    const floorIso = `${getDynamicHorizonRange(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD).anchorYm}-01`;
+    const activeSocials = sortedSocials.filter(s => s.dateISO >= floorIso);
     const members = rawMembers.map(m => {
-        const paidList = sortedSocials.filter(s => s.status !== "OPEN" && s.socialType === "PAID" && s.organizerName.toLowerCase() === m.name.toLowerCase());
-        const freeList = sortedSocials.filter(s => s.status !== "OPEN" && s.socialType === "FREE" && s.organizerName.toLowerCase() === m.name.toLowerCase());
+        const paidList = activeSocials.filter(s => s.status !== "OPEN" && s.socialType === "PAID" && s.organizerName.toLowerCase() === m.name.toLowerCase());
+        const freeList = activeSocials.filter(s => s.status !== "OPEN" && s.socialType === "FREE" && s.organizerName.toLowerCase() === m.name.toLowerCase());
         const p = paidList.length;
         const f = freeList.length;
         const isPO = isProgrammeOfficerMember(m);
@@ -1245,9 +1244,9 @@ function recalcMembersAndStats(rawMembers, rawSocials) {
         };
     });
 
-    const paidSlots = sortedSocials.filter(s => s.socialType === "PAID");
-    const freeSlots = sortedSocials.filter(s => s.socialType === "FREE");
-    const claimedSlots = sortedSocials.filter(s => s.status !== "OPEN");
+    const paidSlots = activeSocials.filter(s => s.socialType === "PAID");
+    const freeSlots = activeSocials.filter(s => s.socialType === "FREE");
+    const claimedSlots = activeSocials.filter(s => s.status !== "OPEN");
     const planningMembers = members;
     const programmeOfficers = members.filter(m => m.isProgrammeOfficer);
 
@@ -1255,9 +1254,9 @@ function recalcMembersAndStats(rawMembers, rawSocials) {
         members,
         socials: sortedSocials,
         stats: {
-            totalSlots: sortedSocials.length,
+            totalSlots: activeSocials.length,
             claimedSlots: claimedSlots.length,
-            openSlots: sortedSocials.length - claimedSlots.length,
+            openSlots: activeSocials.length - claimedSlots.length,
             paidTotal: paidSlots.length,
             paidClaimed: paidSlots.filter(s => s.status !== "OPEN").length,
             freeTotal: freeSlots.length,
@@ -1559,8 +1558,8 @@ function applyBackendData(data) {
         }
     });
 
-    // Overlay matching canonical 1st/3rd Wednesday slots (plus any pre-start CLAIMED slots if present)
-    const floorIso = `${PLANNER_START_YM}-01`;
+    // Overlay matching canonical 1st/3rd Wednesday slots (plus any pre-horizon CLAIMED slots if present)
+    const floorIso = `${getDynamicHorizonRange(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD).anchorYm}-01`;
     byIso.forEach((s, iso) => {
         if (mergedMap.has(iso)) {
             const canonical = mergedMap.get(iso);
