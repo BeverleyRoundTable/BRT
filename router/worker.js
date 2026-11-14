@@ -291,9 +291,64 @@ export default {
     }
 
     // -------------------------------------------
-    // Route 8: Socials & Social Posts
+    // Route 8: Socials Planner & Calendar (socials.beverleyroundtable.co.uk)
     // -------------------------------------------
-    if (subdomain === "socialposts" || subdomain === "socials") {
+    if (subdomain === "socials") {
+      // Optional: set your deployed Socials Planner Apps Script Web App (/exec) URL
+      // via Cloudflare Worker env var SOCIALS_PLANNER_API_URL or paste it below
+      // (otherwise socials.html uses DEFAULT_SCRIPT_API_URL or ?api=...).
+      const socialsPlannerGasEndpoint = env?.SOCIALS_PLANNER_API_URL || "https://script.google.com/macros/s/AKfycbyOK9b-We-vy3oBYT6xz7glBlWkUoK8JOseHmj7tKpo8uJs-ABg1lxTeMxPRvz3j9g5/exec";
+      const apiParam = url.searchParams.get("api") || socialsPlannerGasEndpoint;
+
+      let path = url.pathname;
+      if (path.startsWith("/socials")) {
+        path = path.replace("/socials", "");
+      }
+
+      let targetHtmlUrl = `${brtPages}/socials${path}`;
+      if (path === "/" || path === "") {
+        targetHtmlUrl = `${brtPages}/socials/socials.html`;
+      }
+
+      const htmlRes = await fetch(targetHtmlUrl);
+      const contentType = htmlRes.headers.get("content-type") || "";
+
+      if (!contentType.includes("text/html") || !apiParam) {
+        return htmlRes;
+      }
+
+      const scriptToInject = `
+        <script>
+          (function() {
+            const _originalGet = URLSearchParams.prototype.get;
+            const _originalHas = URLSearchParams.prototype.has;
+            const targetApi = ${JSON.stringify(apiParam).replace(/</g, '\\u003c')};
+
+            URLSearchParams.prototype.get = function(name) {
+              if (name === 'api') return targetApi;
+              return _originalGet.call(this, name);
+            };
+            URLSearchParams.prototype.has = function(name) {
+              if (name === 'api') return true;
+              return _originalHas.call(this, name);
+            };
+          })();
+        </script>
+      `;
+
+      return new HTMLRewriter()
+        .on("head", {
+          element(el) {
+            el.prepend(scriptToInject, { html: true });
+          }
+        })
+        .transform(htmlRes);
+    }
+
+    // -------------------------------------------
+    // Route 8.1: Social Posts Generator (socialposts.beverleyroundtable.co.uk)
+    // -------------------------------------------
+    if (subdomain === "socialposts") {
       const socialGasEndpoint = "https://script.google.com/macros/s/AKfycbzSNVYKw0BFib-d9ExtsMp2q_t74yeORr2XjyR947Um3Ns6nR2F0bJx2QRMhwQtah6s/exec"; 
       const apiParam = url.searchParams.get("api") || socialGasEndpoint;
 
@@ -304,8 +359,7 @@ export default {
 
       let targetHtmlUrl = `${brtPages}/socials${path}`;
       if (path === "/" || path === "") {
-        if (subdomain === "socialposts") targetHtmlUrl = `${brtPages}/socials/social_posts.html`;
-        else if (subdomain === "socials") targetHtmlUrl = `${brtPages}/socials/socials.html`;
+        targetHtmlUrl = `${brtPages}/socials/social_posts.html`;
       }
       
       const htmlRes = await fetch(targetHtmlUrl);
