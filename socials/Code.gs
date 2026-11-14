@@ -1321,7 +1321,7 @@ function ensureMemberExists_(name) {
 }
 
 // ============================================================================
-// GEMINI AI CO-PILOT INTEGRATION
+// GEMINI AI — PITCH ME IDEAS
 // ============================================================================
 
 function compareSemverDesc_(a, b) {
@@ -1423,14 +1423,9 @@ function callGeminiAi_(payload) {
     throw keyErr;
   }
 
-  var mode = String(payload.mode || 'ideas').toLowerCase(); // 'ideas' | 'expand'
   var socialType = String(payload.socialType || 'FREE').toUpperCase();
   var monthYear = String(payload.monthYear || 'Upcoming Month');
   var displayDate = String(payload.displayDate || 'Wednesday');
-  var userPrompt = String(payload.userPrompt || '').trim();
-  var draftTitle = String(payload.draftTitle || '').trim();
-  var draftLocation = String(payload.draftLocation || '').trim();
-  var draftDescription = String(payload.draftDescription || '').trim();
 
   // Prefer existingTitles sent from the client to avoid slow Spreadsheet reads
   var existingTitles = Array.isArray(payload.existingTitles)
@@ -1446,28 +1441,14 @@ function callGeminiAi_(payload) {
     : 'END OF MONTH FREE / SUB-£20: Free to attend or max £20 total group spend on props/kit (brains & banter over budget).';
 
   var promptLines = [
-    'Social Secretary Co-Pilot for ' + clubName + ' (men 18-45, ' + clubArea + '). Energetic, witty, practical, welcoming to new guys.',
+    'Social Secretary idea generator for ' + clubName + ' (men 18-45, ' + clubArea + '). Energetic, witty, practical, welcoming to new guys.',
     'Slot: ' + displayDate + ' (' + monthYear + ') | Rule: ' + ruleDesc,
-    existingTitles.length ? ('Already planned (do not repeat): ' + existingTitles.join(', ')) : ''
-  ];
-
-  if (mode === 'expand') {
-    promptLines.push(
-      'TASK: Expand this draft into 1 crisp, ready-to-run social plan (timings are set later on Spond).',
-      'Draft: ' + [draftTitle, draftLocation, draftDescription, userPrompt].filter(Boolean).join(' | '),
-      'Return JSON: {"suggestions": [1 object]}.'
-    );
-  } else {
-    promptLines.push(
-      'TASK: Pitch 3 distinct social ideas tailored to ' + monthYear + ' (UK weather/daylight) in Beverley/Hull (timings set later on Spond).',
-      userPrompt ? ('Vibe/constraint: "' + userPrompt + '"') : 'Mix: 1 classic, 1 left-field/hilarious, 1 easy prospective-member icebreaker.',
-      'Return JSON: {"suggestions": [3 objects]}.'
-    );
-  }
-
-  promptLines.push(
+    existingTitles.length ? ('Already planned (do not repeat): ' + existingTitles.join(', ')) : '',
+    'TASK: Pitch 3 distinct social ideas tailored to ' + monthYear + ' (UK weather/daylight) in Beverley/Hull (timings set later on Spond).',
+    'Mix: 1 classic, 1 left-field/hilarious, 1 easy prospective-member icebreaker.',
+    'Return JSON: {"suggestions": [3 objects]}.',
     'Each suggestion object keys: title (3-6 words + optional emoji), description (1-2 punchy sentences), location (specific Beverley/Hull spot), costPerPerson ("' + (socialType === 'PAID' ? '£XX pp' : 'Free / £XX props') + '"), accessoriesNeeded (brief prep/kit list), prospectiveFriendly (true/false), whyItWorks (1 concise sentence).'
-  );
+  ];
 
   var configuredModel = String(props.getProperty('GEMINI_MODEL') || (settings && settings.GEMINI_MODEL) || 'AUTO').trim();
   var modelsToTry = resolveFlashModelChain_(apiKey, configuredModel);
@@ -1530,7 +1511,6 @@ function callGeminiAi_(payload) {
       }
       return {
         model: model,
-        mode: mode,
         suggestions: jsonOut.suggestions
       };
     }

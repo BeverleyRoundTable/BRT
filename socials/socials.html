@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beverley Round Table | Annual Socials Planner & Calendar</title>
-    <meta name="description" content="Beverley Round Table's 12-month alternate Wednesday socials calendar and planner. Start-of-month paid experiences, end-of-month creative free/sub-£20 socials, and AI idea co-pilot.">
+    <meta name="description" content="Beverley Round Table's 12-month alternate Wednesday socials calendar and planner. Start-of-month paid experiences and end-of-month creative free/sub-£20 socials.">
     <meta name="google-site-verification" content="EwLLKDEqyprQpBcZS-P2ofu0ITtlzH70LWmuT3BZeH4" />
 
     <link rel="icon" type="image/png" href="https://brt-23f.pages.dev/media/BRTLogo.png">
@@ -168,7 +168,7 @@
                     <i class="fa-solid fa-plug-circle-exclamation text-brt-gold text-lg shrink-0"></i>
                     <span>
                         <strong class="text-brt-gold uppercase font-heading tracking-wide">Preview Mode:</strong>
-                        Showing interactive sample data. Connect your deployed Google Apps Script Web App URL to sync live with your Google Sheet &amp; Gemini AI.
+                        Showing interactive sample data. Connect your deployed Google Apps Script Web App URL to sync live with your Google Sheet.
                     </span>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -197,18 +197,14 @@
                 </h1>
 
                 <p class="font-body text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-10 leading-relaxed">
-                    Every alternate Wednesday we get together for something proper. Pick an open Wednesday, claim your
-                    <strong class="text-white">1 Paid</strong> and <strong class="text-white">1 Creative Free</strong> social for the year,
-                    or let our embedded <strong class="text-brt-gold">Gemini AI Co-Pilot</strong> pitch &amp; build the night with you.
+                    Every alternate Wednesday we get together for something proper. Pick an open Wednesday and claim your
+                    <strong class="text-white">1 Paid</strong> and <strong class="text-white">1 Creative Free</strong> social for the year.
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <a href="#calendar" class="font-heading uppercase font-bold text-base md:text-lg bg-brt-gold text-brt-dark px-8 py-4 rounded-full hover:bg-white transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(251,175,51,0.3)] inline-flex items-center justify-center gap-2">
                         <i class="fa-solid fa-calendar-days"></i> Browse 12-Month Calendar
                     </a>
-                    <button id="hero-ai-btn" class="font-heading uppercase font-bold text-base md:text-lg bg-transparent border-2 border-brt-gold text-brt-gold px-8 py-4 rounded-full hover:bg-brt-gold hover:text-brt-dark transition-all duration-300 transform hover:-translate-y-1 inline-flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Spark Ideas With Gemini
-                    </button>
                 </div>
             </div>
         </section>
@@ -500,7 +496,7 @@
                             The Social <span class="text-brt-gold">Lineup</span>
                         </h2>
                         <p class="font-body text-gray-400 mt-2">
-                            Claim an open slot, edit your details, or tap <strong class="text-brt-gold">✨ AI Ideas</strong> on any Wednesday.
+                            Claim an open Wednesday slot below or edit your planned social details.
                         </p>
                     </div>
 
@@ -615,7 +611,7 @@
     </footer>
 
     <!-- ===================================================================== -->
-    <!-- MODAL 1: PLAN / EDIT SOCIAL + GEMINI AI CO-PILOT                      -->
+    <!-- MODAL 1: PLAN / EDIT SOCIAL                                           -->
     <!-- ===================================================================== -->
     <div id="planner-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
         <div class="fixed inset-0 bg-black/80 modal-backdrop" data-close="planner-modal"></div>
@@ -645,30 +641,19 @@
                         <select id="f-slot-select" class="w-full px-3.5 py-2.5 bg-brt-darker border border-white/15 rounded-xl text-sm text-white focus:outline-none focus:border-brt-gold"></select>
                     </div>
 
-                    <!-- GEMINI AI CO-PILOT BOX -->
+                    <!-- PITCH ME IDEAS BOX -->
                     <div class="bg-gradient-to-br from-brt-gold/15 via-brt-gold/5 to-transparent border border-brt-gold/35 rounded-2xl p-4">
-                        <div class="flex items-center justify-between gap-2 mb-2">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-wand-magic-sparkles text-brt-gold"></i>
-                                <h4 class="font-heading font-bold text-sm uppercase tracking-wider text-brt-gold">Gemini Social Co-Pilot</h4>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h4 class="font-heading font-bold text-sm uppercase tracking-wider text-brt-gold flex items-center gap-2">
+                                    <i class="fa-solid fa-lightbulb"></i> Stuck for an Idea?
+                                </h4>
+                                <p class="text-xs text-gray-300 mt-0.5">
+                                    Get 3 tailored social ideas for this Wednesday and click <strong>Use This</strong> to fill the form.
+                                </p>
                             </div>
-                            <span id="ai-mode-badge" class="text-[11px] font-semibold text-gray-400">Powered by Gemini</span>
-                        </div>
-                        <p class="text-xs text-gray-300 mb-3">
-                            Stuck for an idea or want to turn a rough thought into a proper night out? Pitch ideas or expand your draft below.
-                        </p>
-
-                        <div class="flex flex-col sm:flex-row gap-2.5 mb-3">
-                            <input type="text" id="ai-prompt" placeholder="Optional vibe: e.g. 'pub challenge near Westwood', 'active night out', 'beer & curry'..."
-                                   class="flex-grow px-3.5 py-2.5 bg-brt-darker border border-white/15 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brt-gold">
-                        </div>
-
-                        <div class="flex flex-wrap gap-2">
-                            <button type="button" id="ai-pitch-btn" class="px-4 py-2 rounded-full bg-brt-gold text-brt-dark font-heading font-bold text-xs uppercase hover:bg-white transition-colors inline-flex items-center gap-2">
-                                <i class="fa-solid fa-sparkles"></i> Pitch Me 3 Ideas
-                            </button>
-                            <button type="button" id="ai-expand-btn" class="px-4 py-2 rounded-full border border-brt-gold text-brt-gold font-heading font-bold text-xs uppercase hover:bg-brt-gold hover:text-brt-dark transition-colors inline-flex items-center gap-2">
-                                <i class="fa-solid fa-up-right-and-down-left-from-center"></i> Expand &amp; Guide My Draft
+                            <button type="button" id="ai-pitch-btn" class="self-start sm:self-auto shrink-0 px-4 py-2.5 rounded-full bg-brt-gold text-brt-dark font-heading font-bold text-xs uppercase hover:bg-white transition-colors inline-flex items-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Pitch Me Ideas
                             </button>
                         </div>
 
@@ -889,7 +874,7 @@
                 <div class="p-6 bg-brt-darker border-b border-white/10 flex items-center justify-between">
                     <div>
                         <h3 class="font-heading font-black text-2xl uppercase text-white">Google Sheet &amp; Script <span class="text-brt-gold">Blueprint</span></h3>
-                        <p class="text-xs text-gray-400 mt-1">How the 3-tab spreadsheet database, auto-sync script, and Gemini AI connect together.</p>
+                        <p class="text-xs text-gray-400 mt-1">How the 3-tab spreadsheet database and auto-sync script connect together.</p>
                     </div>
                     <button type="button" data-close="setup-modal" class="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/10">
                         <i class="fa-solid fa-xmark text-xl"></i>
@@ -1308,28 +1293,8 @@ function recalcDemoState(raw) {
 // ============================================================================
 // BUILT-IN SMART IDEA ENGINE (Fallback if Gemini API key not set or Preview Mode)
 // ============================================================================
-function getBuiltInIdeas(socialType, monthYear, userPrompt, mode, draft) {
-    const promptLower = (userPrompt || "").toLowerCase();
+function getBuiltInIdeas(socialType) {
     const isPaid = socialType === "PAID";
-
-    if (mode === "expand") {
-        const baseTitle = (draft.title || "").trim() || (isPaid ? "Beverley Adventure Night" : "Creative Wednesday Challenge");
-        const baseLoc = (draft.location || "").trim() || (isPaid ? "Beverley / Hull Activity Venue" : "The Monks Walk, Beverley");
-        const extra = (draft.description || userPrompt || "").trim();
-        return [{
-            title: baseTitle,
-            description: `${extra ? extra + " " : ""}Kick off at ${baseLoc} with quick team pairings so newcomers mix effortlessly, followed by 90 minutes of head-to-head action and post-match drinks & banter.`,
-            location: baseLoc,
-            startTime: "19:30",
-            endTime: "22:00",
-            costPerPerson: isPaid ? "£20–£28 pp (confirm numbers 1 week prior)" : "Free (£12–£18 total kitty for props/prizes)",
-            accessoriesNeeded: isPaid
-                ? "Confirm headcount on WhatsApp 7 days out, collect £10 deposit if venue requires."
-                : "Printed scorecards/rule sheets, marker pens, stopwatch, and a cheeky charity-shop trophy.",
-            prospectiveFriendly: true,
-            whyItWorks: "Pair up prospective new members with regular hosts early so nobody stands on the sidelines."
-        }];
-    }
 
     const paidPool = [
         {
@@ -1417,15 +1382,7 @@ function getBuiltInIdeas(socialType, monthYear, userPrompt, mode, draft) {
         }
     ];
 
-    let list = (isPaid ? paidPool : freePool).slice();
-    if (promptLower) {
-        list.sort((a, b) => {
-            const aHit = (a.title + a.description).toLowerCase().includes(promptLower) ? -1 : 0;
-            const bHit = (b.title + b.description).toLowerCase().includes(promptLower) ? -1 : 0;
-            return aHit - bHit;
-        });
-    }
-    return list.slice(0, 3);
+    return (isPaid ? paidPool : freePool).slice(0, 3);
 }
 
 // ============================================================================
@@ -1808,7 +1765,7 @@ function renderProgrammeOversight() {
     `;
 
     radarEl.querySelectorAll("[data-radar-claim]").forEach(btn => {
-        btn.addEventListener("click", () => openPlannerModal(btn.getAttribute("data-radar-claim"), false));
+        btn.addEventListener("click", () => openPlannerModal(btn.getAttribute("data-radar-claim")));
     });
 }
 
@@ -2033,10 +1990,7 @@ function renderCalendar() {
 
     // Bind card buttons
     container.querySelectorAll("[data-claim-slot]").forEach(btn => {
-        btn.addEventListener("click", () => openPlannerModal(btn.getAttribute("data-claim-slot"), false));
-    });
-    container.querySelectorAll("[data-ai-slot]").forEach(btn => {
-        btn.addEventListener("click", () => openPlannerModal(btn.getAttribute("data-ai-slot"), true));
+        btn.addEventListener("click", () => openPlannerModal(btn.getAttribute("data-claim-slot")));
     });
     container.querySelectorAll("[data-delete-slot]").forEach(btn => {
         btn.addEventListener("click", () => handleDeleteSlot(btn.getAttribute("data-delete-slot")));
@@ -2085,11 +2039,6 @@ function renderSlotCard(slot, todayISO) {
                     <button type="button" data-claim-slot="${escAttr(slot.slotId)}"
                         class="flex-grow px-5 py-3 rounded-xl ${isPaid ? "bg-brt-gold text-brt-dark hover:bg-white" : "bg-emerald-400 text-brt-dark hover:bg-white"} font-heading font-bold text-xs uppercase tracking-wider transition-colors">
                         <i class="fa-solid fa-plus mr-1.5"></i> Claim This Wednesday
-                    </button>
-                    <button type="button" data-ai-slot="${escAttr(slot.slotId)}"
-                        class="px-4 py-3 rounded-xl border border-brt-gold/40 text-brt-gold hover:bg-brt-gold hover:text-brt-dark font-heading font-bold text-xs uppercase transition-colors"
-                        title="Get 3 tailored AI ideas for this night">
-                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Ideas
                     </button>
                 </div>
             </div>
@@ -2178,15 +2127,15 @@ function renderSlotCard(slot, todayISO) {
 }
 
 // ============================================================================
-// PLANNER MODAL & GEMINI AI CO-PILOT
+// PLANNER MODAL & PITCH ME IDEAS
 // ============================================================================
-function openPlannerModal(slotId, autoRunAi) {
+function openPlannerModal(slotId) {
     let slot = appState.socials.find(s => s.slotId === slotId);
     const pickerWrap = document.getElementById("modal-slot-picker-wrap");
     const slotSelect = document.getElementById("f-slot-select");
 
     if (!slot) {
-        // Opened via generic "Plan a Social" or "Spark AI Ideas" button -> pick first open slot
+        // Opened via generic "Plan a Social" button -> pick first open slot
         const openSlots = appState.socials.filter(s => s.status === "OPEN");
         const candidates = openSlots.length ? openSlots : appState.socials;
         if (!candidates.length) {
@@ -2206,10 +2155,6 @@ function openPlannerModal(slotId, autoRunAi) {
 
     populateModalWithSlot(slot);
     openModal("planner-modal");
-
-    if (autoRunAi) {
-        runAiAssist("ideas");
-    }
 }
 
 function populateModalWithSlot(slot) {
@@ -2253,9 +2198,6 @@ function populateModalWithSlot(slot) {
     document.getElementById("ai-results").innerHTML = "";
     document.getElementById("ai-status").classList.add("hidden");
     document.getElementById("form-status").classList.add("hidden");
-    document.getElementById("ai-mode-badge").textContent = (!appState.isDemo && appState.hasGeminiKey)
-        ? "Live Gemini AI Connected"
-        : "Smart Co-Pilot (Local Fallback)";
 
     updateOrganizerQuotaHint();
 }
@@ -2339,18 +2281,16 @@ function renderAiSuggestionCards(suggestions, aiResults) {
     });
 }
 
-async function runAiAssist(mode) {
+async function runAiAssist() {
     const slot = appState.socials.find(s => s.slotId === appState.activeModalSlotId);
     if (!slot) return;
 
     const pitchBtn = document.getElementById("ai-pitch-btn");
-    const expandBtn = document.getElementById("ai-expand-btn");
     const aiStatus = document.getElementById("ai-status");
     const aiResults = document.getElementById("ai-results");
 
     pitchBtn.disabled = true;
-    expandBtn.disabled = true;
-    const baseMsg = mode === "expand" ? "Expanding and polishing your idea..." : "Brainstorming tailored Beverley ideas...";
+    const baseMsg = "Pitching tailored Beverley ideas...";
     let elapsedSec = 0;
     aiStatus.className = "mt-3 text-xs rounded-xl px-3 py-2 bg-black/40 text-brt-gold";
     aiStatus.innerHTML = `<span class="mini-spinner mr-2"></span>${baseMsg}`;
@@ -2363,13 +2303,6 @@ async function runAiAssist(mode) {
         }, 1000)
         : null;
 
-    const userPrompt = document.getElementById("ai-prompt").value.trim();
-    const draft = {
-        title: document.getElementById("f-title").value.trim(),
-        location: document.getElementById("f-location").value.trim(),
-        description: document.getElementById("f-description").value.trim()
-    };
-
     try {
         let suggestions = [];
 
@@ -2379,28 +2312,19 @@ async function runAiAssist(mode) {
                 .map(s => `${s.title} (${s.monthYear})`);
 
             const res = await apiPost("ai-assist", {
-                mode,
                 socialType: slot.socialType,
                 monthYear: slot.monthYear,
                 displayDate: slot.displayDate,
-                userPrompt,
-                draftTitle: draft.title,
-                draftLocation: draft.location,
-                draftDescription: draft.description,
                 existingTitles
             }, { timeoutMs: 9000 });
             suggestions = res.suggestions || [];
-            if (res.model) {
-                const aiModeBadge = document.getElementById("ai-mode-badge");
-                if (aiModeBadge) aiModeBadge.textContent = `Live Gemini (${res.model})`;
-            }
             aiStatus.classList.add("hidden");
         } else {
             await new Promise(r => setTimeout(r, 200));
-            suggestions = getBuiltInIdeas(slot.socialType, slot.monthYear, userPrompt, mode, draft);
+            suggestions = getBuiltInIdeas(slot.socialType);
             aiStatus.className = "mt-3 text-xs rounded-xl px-3 py-2 bg-white/5 text-gray-300 border border-white/10";
             aiStatus.textContent = appState.isDemo
-                ? "Preview Co-Pilot ideas shown (connect your Google Sheet + Gemini key for live AI generation)."
+                ? "Preview ideas shown (connect your Google Sheet + Gemini key for live AI ideas)."
                 : "No Gemini API key set in Apps Script Script Properties yet — run \"🍻 BRT Socials Admin -> 5. Set Gemini API Key\" in your Sheet.";
         }
 
@@ -2410,17 +2334,16 @@ async function runAiAssist(mode) {
             aiStatus.className = "mt-3 text-xs rounded-xl px-3 py-2 bg-red-900/30 text-red-300 border border-red-500/30";
             aiStatus.textContent = err.message;
         } else {
-            const fallback = getBuiltInIdeas(slot.socialType, slot.monthYear, userPrompt, mode, draft);
+            const fallback = getBuiltInIdeas(slot.socialType);
             aiStatus.className = "mt-3 text-xs rounded-xl px-3 py-2 bg-amber-500/15 text-amber-200 border border-amber-500/30";
             aiStatus.textContent = err.code === "NO_GEMINI_KEY"
-                ? "Add your GEMINI_API_KEY in Apps Script Script Properties for custom AI prompts — showing built-in Beverley ideas meanwhile:"
+                ? "Add your GEMINI_API_KEY in Apps Script Script Properties for custom AI ideas — showing built-in Beverley ideas meanwhile:"
                 : "Showing instant Beverley ideas (live AI timed out or was busy — click again to retry):";
             renderAiSuggestionCards(fallback, aiResults);
         }
     } finally {
         if (elapsedTimer) clearInterval(elapsedTimer);
         pitchBtn.disabled = false;
-        expandBtn.disabled = false;
     }
 }
 
@@ -2733,9 +2656,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Primary triggers
-    document.getElementById("nav-claim-btn").addEventListener("click", () => openPlannerModal(null, false));
-    document.getElementById("mobile-claim-btn").addEventListener("click", () => openPlannerModal(null, false));
-    document.getElementById("hero-ai-btn").addEventListener("click", () => openPlannerModal(null, true));
+    document.getElementById("nav-claim-btn").addEventListener("click", () => openPlannerModal(null));
+    document.getElementById("mobile-claim-btn").addEventListener("click", () => openPlannerModal(null));
     document.getElementById("manage-members-btn").addEventListener("click", () => openModal("members-modal"));
     const poAssignBtn = document.getElementById("open-po-assign-btn");
     if (poAssignBtn) poAssignBtn.addEventListener("click", () => openModal("members-modal"));
@@ -2843,9 +2765,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Planner AI buttons & Form submission
-    document.getElementById("ai-pitch-btn").addEventListener("click", () => runAiAssist("ideas"));
-    document.getElementById("ai-expand-btn").addEventListener("click", () => runAiAssist("expand"));
+    // Planner AI button & Form submission
+    document.getElementById("ai-pitch-btn").addEventListener("click", () => runAiAssist());
     document.getElementById("social-form").addEventListener("submit", handleSaveSocial);
     document.getElementById("modal-delete-btn").addEventListener("click", () => {
         if (appState.activeModalSlotId) handleDeleteSlot(appState.activeModalSlotId);
