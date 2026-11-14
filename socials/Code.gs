@@ -6,7 +6,7 @@
  *
  * DATABASE STRUCTURE (Auto-created via setupSocialsDatabase() or menu):
  *   1. "Members"  — Add/remove member names in Column B; quotas auto-sync.
- *   2. "Socials"  — 1st Wednesday (PAID) & 3rd Wednesday (FREE / Sub-£20) slots.
+ *   2. "Socials"  — 2nd Wednesday (PAID) & 4th Wednesday (FREE / Sub-£20) slots.
  *                   December is excluded for Beverley Santa Sleigh season.
  *   3. "Settings" — Club defaults, start month & WhatsApp link.
  *                    (Secrets live in Apps Script Script Properties, NOT in cells!)
@@ -90,7 +90,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('🍻 BRT Socials Admin')
     .addItem('1. Initialise / Repair Sheet Structure', 'setupSocialsDatabase')
-    .addItem('2. Generate Next 12 Months (1st & 3rd Weds)', 'menuGenerateCalendar')
+    .addItem('2. Generate Next 12 Months (2nd & 4th Weds)', 'menuGenerateCalendar')
     .addItem('3. Sync Members & Recalculate Quotas', 'menuSyncAll')
     .addSeparator()
     .addItem('4. Test Gemini AI Connection', 'menuTestGemini')
@@ -103,7 +103,7 @@ function menuGenerateCalendar() {
   ensureSetup_();
   var added = ensureCalendarSlots_(true);
   syncMembersAndQuotas_();
-  SpreadsheetApp.getUi().alert('Calendar synced! Added ' + added + ' new 1st/3rd Wednesday slot(s) (December excluded for Santa Sleigh).');
+  SpreadsheetApp.getUi().alert('Calendar synced! Added ' + added + ' new 2nd/4th Wednesday slot(s) (December excluded for Santa Sleigh).');
 }
 
 function menuSyncAll() {
@@ -122,7 +122,7 @@ function menuTestGemini() {
       mode: 'ideas',
       socialType: 'FREE',
       monthYear: 'Next Month',
-      displayDate: '3rd Wednesday',
+      displayDate: '4th Wednesday',
       userPrompt: 'Quick test for a fun free social in Beverley'
     });
     SpreadsheetApp.getUi().alert('Gemini connection works! (Active model: ' + result.model + ')\nSample idea: ' + result.suggestions[0].title);
@@ -317,8 +317,8 @@ function setupSocialsDatabase() {
   socialsSheet.setColumnWidth(20, 175); // UpdatedAt
 
   socialsSheet.getRange('A1').setNote(
-    '1st Wednesday = PAID commercial activity.\n' +
-    '3rd Wednesday = FREE / sub-£20 creative social.\n' +
+    '2nd Wednesday = PAID commercial activity.\n' +
+    '4th Wednesday = FREE / sub-£20 creative social.\n' +
     'December is automatically skipped for Beverley Santa Sleigh.'
   );
 
@@ -598,6 +598,28 @@ function dedupeAndNormalizeSocialsSheet_(sheet, effectiveStartYm) {
       continue;
     }
 
+    var yIso = parseInt(iso.slice(0, 4), 10);
+    var m0Iso = parseInt(iso.slice(5, 7), 10) - 1;
+    var wedsIso = getWednesdaysInMonth_(yIso, m0Iso);
+    var wed2Iso = wedsIso[1] ? (yIso + '-' + pad2_(m0Iso + 1) + '-' + pad2_(wedsIso[1].getUTCDate())) : '';
+    var wed4Iso = wedsIso[3] ? (yIso + '-' + pad2_(m0Iso + 1) + '-' + pad2_(wedsIso[3].getUTCDate())) : '';
+    var socialType = String(r[5] || 'PAID').toUpperCase() === 'FREE' ? 'FREE' : 'PAID';
+    var canonicalOrd = socialType === 'FREE' ? '4th Wednesday' : '2nd Wednesday';
+
+    if (m0Iso === 11 || (iso !== wed2Iso && iso !== wed4Iso)) {
+      if (status === 'OPEN') {
+        changed = true;
+        continue;
+      }
+      if (m0Iso !== 11) {
+        var remappedIso = socialType === 'FREE' ? wed4Iso : wed2Iso;
+        if (remappedIso && remappedIso !== iso) {
+          iso = remappedIso;
+          changed = true;
+        }
+      }
+    }
+
     var cleanDisplay = formatDisplayDateFromIso_(iso);
     var cleanMonth = formatMonthYearFromIso_(iso);
     var cleanStart = formatCellTime_(r[13]) || '19:30';
@@ -608,6 +630,7 @@ function dedupeAndNormalizeSocialsSheet_(sheet, effectiveStartYm) {
       isDateObj(r[0]) || isDateObj(r[1]) ||
       (cleanDisplay && (isDateObj(r[2]) || String(r[2] || '').trim() !== cleanDisplay)) ||
       (cleanMonth && (isDateObj(r[3]) || String(r[3] || '').trim() !== cleanMonth)) ||
+      String(r[4] || '').trim() !== canonicalOrd ||
       isDateObj(r[13]) || String(r[13] || '').trim() !== cleanStart ||
       isDateObj(r[14]) || String(r[14] || '').trim() !== cleanEnd
     ) {
@@ -615,6 +638,7 @@ function dedupeAndNormalizeSocialsSheet_(sheet, effectiveStartYm) {
       r[1] = iso;
       if (cleanDisplay) r[2] = cleanDisplay;
       if (cleanMonth) r[3] = cleanMonth;
+      r[4] = canonicalOrd;
       r[13] = cleanStart;
       r[14] = cleanEnd;
       changed = true;
@@ -700,7 +724,7 @@ function buildSlotRowFromDate_(dateObj, y, m0, ordinal, socialType, budgetRule, 
 }
 
 /**
- * Generates 1st Wednesday (PAID) and 3rd Wednesday (FREE / Sub-£20) slots
+ * Generates 2nd Wednesday (PAID) and 4th Wednesday (FREE / Sub-£20) slots
  * starting from START_YEAR_MONTH (default 2027-02) dynamically rolling MONTHS_AHEAD
  * past max(startMonth, currentMonth) with December excluded for Santa Sleigh.
  * Never overwrites already-existing rows.
@@ -742,17 +766,17 @@ function ensureCalendarSlots_(forceSort) {
     if (m0 === 11) continue;
 
     var wednesdays = getWednesdaysInMonth_(y, m0);
-    // 1st Wednesday = index 0 (PAID), 3rd Wednesday = index 2 (FREE / Sub-£20)
+    // 2nd Wednesday = index 1 (PAID), 4th Wednesday = index 3 (FREE / Sub-£20)
     var targets = [
       {
-        dateObj: wednesdays[0],
-        ordinal: '1st Wednesday',
+        dateObj: wednesdays[1],
+        ordinal: '2nd Wednesday',
         type: 'PAID',
         rule: 'Commercial / Paid Activity'
       },
       {
-        dateObj: wednesdays[2],
-        ordinal: '3rd Wednesday',
+        dateObj: wednesdays[3],
+        ordinal: '4th Wednesday',
         type: 'FREE',
         rule: 'Creative Free / Sub-£20 Group Accessories'
       }
@@ -835,10 +859,10 @@ function saveSocialSlot_(payload) {
     var defStart = settings.DEFAULT_START_TIME || '19:30';
     var defEnd = settings.DEFAULT_END_TIME || '22:00';
     var matchSlot = null;
-    if (weds[0] && (y + '-' + pad2_(m0 + 1) + '-' + pad2_(weds[0].getUTCDate())) === targetIso) {
-      matchSlot = { d: weds[0], ord: '1st Wednesday', type: 'PAID', rule: 'Commercial / Paid Activity' };
-    } else if (weds[2] && (y + '-' + pad2_(m0 + 1) + '-' + pad2_(weds[2].getUTCDate())) === targetIso) {
-      matchSlot = { d: weds[2], ord: '3rd Wednesday', type: 'FREE', rule: 'Creative Free / Sub-£20 Group Accessories' };
+    if (weds[1] && (y + '-' + pad2_(m0 + 1) + '-' + pad2_(weds[1].getUTCDate())) === targetIso) {
+      matchSlot = { d: weds[1], ord: '2nd Wednesday', type: 'PAID', rule: 'Commercial / Paid Activity' };
+    } else if (weds[3] && (y + '-' + pad2_(m0 + 1) + '-' + pad2_(weds[3].getUTCDate())) === targetIso) {
+      matchSlot = { d: weds[3], ord: '4th Wednesday', type: 'FREE', rule: 'Creative Free / Sub-£20 Group Accessories' };
     }
     if (matchSlot) {
       sheet.getRange('A:D').setNumberFormat('@');
@@ -1222,8 +1246,8 @@ function syncMembersAndQuotas_() {
       freeSummary = stats.freeTitles.join(' | ');
 
       if (paidCnt >= 1 && freeCnt >= 1) quotaText = '✅ Complete (1 Paid + 1 Free)';
-      else if (paidCnt >= 1) quotaText = '⏳ Needs Free (3rd Wed)';
-      else if (freeCnt >= 1) quotaText = '⏳ Needs Paid (1st Wed)';
+      else if (paidCnt >= 1) quotaText = '⏳ Needs Free (4th Wed)';
+      else if (freeCnt >= 1) quotaText = '⏳ Needs Paid (2nd Wed)';
       else quotaText = '📋 Needs Both';
     } else if (!mKey) {
       mr[0] = '';
@@ -1418,8 +1442,8 @@ function callGeminiAi_(payload) {
   var clubArea = 'Beverley & East Yorkshire (Hull, Westwood, Molescroft, Walkington)';
   var clubName = 'Beverley Round Table';
   var ruleDesc = socialType === 'PAID'
-    ? '1ST WED PAID: Commercially run activity, venue booking, experience, or paid night out.'
-    : '3RD WED FREE / SUB-£20: Free to attend or max £20 total group spend on props/kit (brains & banter over budget).';
+    ? '2ND WED PAID: Commercially run activity, venue booking, experience, or paid night out.'
+    : '4TH WED FREE / SUB-£20: Free to attend or max £20 total group spend on props/kit (brains & banter over budget).';
 
   var promptLines = [
     'Social Secretary Co-Pilot for ' + clubName + ' (men 18-45, ' + clubArea + '). Energetic, witty, practical, welcoming to new guys.',
@@ -1583,7 +1607,7 @@ function readSocials_() {
       dateISO: dateISO,
       displayDate: formatDisplayDateFromIso_(dateISO) || String(r[2] || dateISO),
       monthYear: formatMonthYearFromIso_(dateISO) || String(r[3] || ''),
-      wednesdayOrdinal: String(r[4] || (socialType === 'PAID' ? '1st Wednesday' : '3rd Wednesday')),
+      wednesdayOrdinal: String(r[4] || (socialType === 'PAID' ? '2nd Wednesday' : '4th Wednesday')),
       socialType: socialType,
       budgetRule: String(r[6] || ''),
       status: status,
