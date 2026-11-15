@@ -602,10 +602,16 @@ function dedupeAndNormalizeSocialsSheet_(sheet, effectiveStartYm) {
     var yIso = parseInt(iso.slice(0, 4), 10);
     var m0Iso = parseInt(iso.slice(5, 7), 10) - 1;
     var pair = getMonthlySocialPair_(yIso, m0Iso);
-    var socialType = String(r[5] || 'PAID').toUpperCase() === 'FREE' ? 'FREE' : 'PAID';
-    var canonicalOrd = socialType === 'FREE' ? 'End of Month (Free)' : 'Start of Month (Paid)';
+    var isExtraIso = Boolean(pair.extraIso && iso === pair.extraIso);
+    var rawType = String(r[5] || 'PAID').toUpperCase();
+    var socialType = isExtraIso
+      ? 'EXTRA'
+      : (rawType === 'FREE' ? 'FREE' : (rawType === 'EXTRA' ? 'EXTRA' : 'PAID'));
+    var canonicalOrd = socialType === 'EXTRA'
+      ? 'Extra Social (5-Week Month)'
+      : (socialType === 'FREE' ? 'End of Month (Free)' : 'Start of Month (Paid)');
 
-    if (m0Iso === 11 || (iso !== pair.paidIso && iso !== pair.freeIso)) {
+    if (m0Iso === 11 || (iso !== pair.paidIso && iso !== pair.freeIso && !isExtraIso)) {
       if (status === 'OPEN') {
         changed = true;
         continue;
@@ -630,6 +636,7 @@ function dedupeAndNormalizeSocialsSheet_(sheet, effectiveStartYm) {
       (cleanDisplay && (isDateObj(r[2]) || String(r[2] || '').trim() !== cleanDisplay)) ||
       (cleanMonth && (isDateObj(r[3]) || String(r[3] || '').trim() !== cleanMonth)) ||
       String(r[4] || '').trim() !== canonicalOrd ||
+      String(r[5] || '').trim().toUpperCase() !== socialType ||
       isDateObj(r[13]) || String(r[13] || '').trim() !== cleanStart ||
       isDateObj(r[14]) || String(r[14] || '').trim() !== cleanEnd
     ) {
@@ -638,6 +645,7 @@ function dedupeAndNormalizeSocialsSheet_(sheet, effectiveStartYm) {
       if (cleanDisplay) r[2] = cleanDisplay;
       if (cleanMonth) r[3] = cleanMonth;
       r[4] = canonicalOrd;
+      r[5] = socialType;
       r[13] = cleanStart;
       r[14] = cleanEnd;
       changed = true;
@@ -714,7 +722,7 @@ function buildSlotRowFromDate_(dateObj, y, m0, ordinal, socialType, budgetRule, 
     '',
     defaultStart,
     defaultEnd,
-    socialType === 'FREE' ? 'Free / Sub-£20 kitty' : '',
+    socialType === 'FREE' ? 'Free / Sub-£20 kitty' : (socialType === 'EXTRA' ? 'Paid or Free / Tour' : ''),
     '',
     true,
     '',
@@ -766,27 +774,14 @@ function ensureCalendarSlots_(forceSort) {
     if (m0 === 11) continue;
 
     var pair = getMonthlySocialPair_(y, m0);
-    // Nearest alternate Wednesday to start of month = PAID, nearest to end of month = FREE / Sub-£20
-    var targets = [
-      {
-        dateObj: pair.paidDate,
-        ordinal: 'Start of Month (Paid)',
-        type: 'PAID',
-        rule: 'Commercial / Paid Activity'
-      },
-      {
-        dateObj: pair.freeDate,
-        ordinal: 'End of Month (Free)',
-        type: 'FREE',
-        rule: 'Creative Free / Sub-£20 Group Accessories'
-      }
-    ];
+    // Start of month = PAID, optional middle 5-week alternate Wed = EXTRA, end of month = FREE / Sub-£20
+    var targets = pair.slots || [];
 
     for (var t = 0; t < targets.length; t++) {
       var item = targets[t];
       if (!item.dateObj) continue;
       var dayNum = item.dateObj.getUTCDate();
-      var iso = y + '-' + pad2_(m0 + 1) + '-' + pad2_(dayNum);
+      var iso = item.iso || (y + '-' + pad2_(m0 + 1) + '-' + pad2_(dayNum));
       if (existingIds[iso]) continue;
 
       rowsToAppend.push(
@@ -860,9 +855,11 @@ function saveSocialSlot_(payload) {
     var defEnd = settings.DEFAULT_END_TIME || '22:00';
     var matchSlot = null;
     if (pair.paidDate && pair.paidIso === targetIso) {
-      matchSlot = { d: pair.paidDate, ord: 'Start of Month (Paid)', type: 'PAID', rule: 'Commercial / Paid Activity' };
+      matchSlot = { d: pair.paidDate, ord: 'Start of Month (Paid)', type: 'PAID', rule: 'Commercial / Paid Activity or Organised Tour' };
+    } else if (pair.extraDate && pair.extraIso === targetIso) {
+      matchSlot = { d: pair.extraDate, ord: 'Extra Social (5-Week Month)', type: 'EXTRA', rule: 'Extra Social · Paid, Organised Tour, or Creative Free' };
     } else if (pair.freeDate && pair.freeIso === targetIso) {
-      matchSlot = { d: pair.freeDate, ord: 'End of Month (Free)', type: 'FREE', rule: 'Creative Free / Sub-£20 Group Accessories' };
+      matchSlot = { d: pair.freeDate, ord: 'End of Month (Free)', type: 'FREE', rule: 'Creative Free / Organised Tour / Sub-£20 Props' };
     }
     if (matchSlot) {
       sheet.getRange('A:D').setNumberFormat('@');
@@ -966,7 +963,7 @@ function deleteSocialSlot_(payload) {
   rowVals[12] = '';
   rowVals[13] = settings.DEFAULT_START_TIME || '19:30';
   rowVals[14] = settings.DEFAULT_END_TIME || '22:00';
-  rowVals[15] = socialType === 'FREE' ? 'Free / Sub-£20 kitty' : '';
+  rowVals[15] = socialType === 'FREE' ? 'Free / Sub-£20 kitty' : (socialType === 'EXTRA' ? 'Paid or Free / Tour' : '');
   rowVals[16] = '';
   rowVals[17] = true;
   rowVals[18] = '';
@@ -1207,6 +1204,20 @@ function syncMembersAndQuotas_() {
           } else if (socialType === 'FREE') {
             orgEntry.freeCount++;
             orgEntry.freeTitles.push(label);
+          } else if (socialType === 'EXTRA') {
+            if (orgEntry.paidCount < 1 && orgEntry.freeCount >= 1) {
+              orgEntry.paidCount++;
+              orgEntry.paidTitles.push(label);
+            } else if (orgEntry.freeCount < 1 && orgEntry.paidCount >= 1) {
+              orgEntry.freeCount++;
+              orgEntry.freeTitles.push(label);
+            } else if (/^£/i.test(String(sr[15] || '').trim())) {
+              orgEntry.paidCount++;
+              orgEntry.paidTitles.push(label);
+            } else {
+              orgEntry.freeCount++;
+              orgEntry.freeTitles.push(label);
+            }
           }
         }
       }
@@ -1437,8 +1448,10 @@ function callGeminiAi_(payload) {
   var clubArea = 'Beverley & East Yorkshire (Hull, Westwood, Molescroft, Walkington)';
   var clubName = 'Beverley Round Table';
   var ruleDesc = socialType === 'PAID'
-    ? 'START OF MONTH PAID: Commercially run activity, venue booking, experience, or paid night out.'
-    : 'END OF MONTH FREE / SUB-£20: Free to attend or max £20 total group spend on props/kit (brains & banter over budget).';
+    ? 'START OF MONTH PAID: Commercially run activity, venue booking, paid organised tour, experience, or paid night out.'
+    : (socialType === 'EXTRA'
+        ? 'EXTRA 5-WEEK-MONTH SOCIAL: Bonus alternate Wednesday — can be a paid activity, an organised tour, or a creative free / sub-£20 social.'
+        : 'END OF MONTH FREE / SUB-£20: Free to attend — can include free organised tours (behind-the-scenes local visits, heritage/brewery/station tours) or creative nights with max £20 total group spend on props/kit.');
 
   var promptLines = [
     'Social Secretary idea generator for ' + clubName + ' (men 18-45, ' + clubArea + '). Energetic, witty, practical, welcoming to new guys.',
@@ -1587,7 +1600,7 @@ function readSocials_() {
       dateISO: dateISO,
       displayDate: formatDisplayDateFromIso_(dateISO) || String(r[2] || dateISO),
       monthYear: formatMonthYearFromIso_(dateISO) || String(r[3] || ''),
-      wednesdayOrdinal: String(r[4] || (socialType === 'PAID' ? 'Start of Month (Paid)' : 'End of Month (Free)')),
+      wednesdayOrdinal: String(r[4] || (socialType === 'PAID' ? 'Start of Month (Paid)' : (socialType === 'EXTRA' ? 'Extra Social (5-Week Month)' : 'End of Month (Free)'))),
       socialType: socialType,
       budgetRule: String(r[6] || ''),
       status: status,
@@ -1819,6 +1832,10 @@ function applySheetConditionalFormatting_(socialsSheet, membersSheet) {
     SpreadsheetApp.newConditionalFormatRule()
       .whenTextEqualTo('FREE')
       .setBackground('#CCFBF1').setFontColor('#0F766E')
+      .setRanges([typeRange]).build(),
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextEqualTo('EXTRA')
+      .setBackground('#EDE9FE').setFontColor('#5B21B6')
       .setRanges([typeRange]).build()
   ];
   socialsSheet.setConditionalFormatRules(rules);
@@ -1864,13 +1881,43 @@ function getMonthlySocialPair_(year, month0) {
   var alt = getAlternateWednesdaysInMonth_(year, month0);
   var paidDate = alt[0];
   var freeDate = alt[alt.length - 1];
+  var extraDate = alt.length >= 3 ? alt[1] : null;
   var paidIso = paidDate ? (year + '-' + pad2_(month0 + 1) + '-' + pad2_(paidDate.getUTCDate())) : '';
   var freeIso = freeDate ? (year + '-' + pad2_(month0 + 1) + '-' + pad2_(freeDate.getUTCDate())) : '';
+  var extraIso = extraDate ? (year + '-' + pad2_(month0 + 1) + '-' + pad2_(extraDate.getUTCDate())) : '';
+  var slots = [
+    {
+      dateObj: paidDate,
+      iso: paidIso,
+      ordinal: 'Start of Month (Paid)',
+      type: 'PAID',
+      rule: 'Commercial / Paid Activity or Organised Tour'
+    }
+  ];
+  if (extraDate) {
+    slots.push({
+      dateObj: extraDate,
+      iso: extraIso,
+      ordinal: 'Extra Social (5-Week Month)',
+      type: 'EXTRA',
+      rule: 'Extra Social · Paid, Organised Tour, or Creative Free'
+    });
+  }
+  slots.push({
+    dateObj: freeDate,
+    iso: freeIso,
+    ordinal: 'End of Month (Free)',
+    type: 'FREE',
+    rule: 'Creative Free / Organised Tour / Sub-£20 Props'
+  });
   return {
     paidDate: paidDate,
     freeDate: freeDate,
+    extraDate: extraDate,
     paidIso: paidIso,
-    freeIso: freeIso
+    freeIso: freeIso,
+    extraIso: extraIso,
+    slots: slots
   };
 }
 

@@ -233,7 +233,7 @@
                         </div>
                         <h3 class="font-heading font-extrabold text-xl uppercase text-white mb-2">Paid Commercial Social</h3>
                         <p class="text-sm text-gray-400 leading-relaxed flex-grow">
-                            Book an activity or commercially run night out — axe throwing, karting, padel, clay shooting, brewery tours, escape rooms, or curry &amp; darts.
+                            Book an activity, <strong class="text-white">organised tour</strong>, or commercially run night out — axe throwing, karting, padel, clay shooting, brewery/venue tours, escape rooms, or curry &amp; darts.
                         </p>
                     </div>
 
@@ -248,7 +248,7 @@
                         </div>
                         <h3 class="font-heading font-extrabold text-xl uppercase text-white mb-2">Creative Free / Sub-£20</h3>
                         <p class="text-sm text-gray-400 leading-relaxed flex-grow">
-                            Banter &amp; brains over budget. Free to attend, with up to <strong class="text-white">£20 total for the group</strong> on props/accessories (or £0!): Taskmaster nights, Westwood challenges, blind taste tests, or pub knockouts.
+                            Banter &amp; brains over budget. Free to attend — including <strong class="text-white">free organised tours</strong> (behind-the-scenes local visits, landmarks, stations, heritage walks) or up to <strong class="text-white">£20 total for the group</strong> on props/accessories: Taskmaster nights, Westwood challenges, blind taste tests, or pub knockouts.
                         </p>
                     </div>
 
@@ -263,7 +263,7 @@
                         </div>
                         <h3 class="font-heading font-extrabold text-xl uppercase text-white mb-2">One Paid + One Free Each</h3>
                         <p class="text-sm text-gray-400 leading-relaxed flex-grow">
-                            Each member claims <strong class="text-white">1 Paid</strong> &amp; <strong class="text-white">1 Free</strong> social to lock in the 12-month calendar. <strong class="text-white">December is excluded</strong> — all hands on deck for our Beverley Santa Sleigh tour!
+                            Each member claims <strong class="text-white">1 Paid</strong> &amp; <strong class="text-white">1 Free</strong> social to lock in the 12-month calendar (5-week months with a 3rd alternate Wednesday include an <strong class="text-white">Extra Social</strong> to keep the fortnightly schedule). <strong class="text-white">December is excluded</strong> — all hands on deck for our Beverley Santa Sleigh tour!
                         </p>
                     </div>
                 </div>
@@ -411,7 +411,7 @@
                         <div class="text-xs font-heading uppercase tracking-wider text-gray-400 mb-1">Year Calendar</div>
                         <div class="flex items-baseline gap-2">
                             <span id="stat-total-claimed" class="font-heading font-black text-3xl text-white">0</span>
-                            <span id="stat-total-slots" class="text-sm text-gray-400 font-semibold">/ 22 slots filled</span>
+                            <span id="stat-total-slots" class="text-sm text-gray-400 font-semibold">/ 23 slots filled</span>
                         </div>
                         <div class="w-full h-2 bg-black/40 rounded-full mt-3 overflow-hidden">
                             <div id="stat-total-bar" class="h-full bg-brt-gold rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -954,7 +954,7 @@
 // ============================================================================
 const DEFAULT_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbyOK9b-We-vy3oBYT6xz7glBlWkUoK8JOseHmj7tKpo8uJs-ABg1lxTeMxPRvz3j9g5/exec";
 const LOCAL_STORAGE_API_KEY = "brt_socials_planner_api_url";
-const LOCAL_STORAGE_DEMO_KEY = "brt_socials_planner_demo_state_v5";
+const LOCAL_STORAGE_DEMO_KEY = "brt_socials_planner_demo_state_v6";
 const LOCAL_STORAGE_PIN_KEY = "brt_socials_member_pin";
 const PLANNER_START_YM = "2027-02";
 const DEFAULT_MONTHS_AHEAD = 12;
@@ -1039,13 +1039,10 @@ function buildRollingCalendarSlots(startYm, monthsAhead) {
         if (m0 === 11) continue; // Exclude December for Beverley Santa Sleigh
 
         const pair = getMonthlySocialPairUTC(y, m0);
-        [
-            { d: pair.paidDate, ord: "Start of Month (Paid)", type: "PAID", rule: "Commercial / Paid Activity" },
-            { d: pair.freeDate, ord: "End of Month (Free)", type: "FREE", rule: "Creative Free / Sub-£20 Group Accessories" }
-        ].forEach((slot) => {
+        pair.slots.forEach((slot) => {
             if (!slot.d) return;
             const day = slot.d.getUTCDate();
-            const iso = `${y}-${String(m0 + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const iso = slot.iso || `${y}-${String(m0 + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             out.push({
                 slotId: iso,
                 dateISO: iso,
@@ -1062,7 +1059,7 @@ function buildRollingCalendarSlots(startYm, monthsAhead) {
                 location: "",
                 startTime: "19:30",
                 endTime: "22:00",
-                costPerPerson: slot.type === "FREE" ? "Free / Sub-£20 kitty" : "",
+                costPerPerson: slot.type === "FREE" ? "Free / Sub-£20 kitty" : (slot.type === "EXTRA" ? "Paid or Free / Tour" : ""),
                 accessoriesNeeded: "",
                 prospectiveFriendly: true
             });
@@ -1132,12 +1129,21 @@ function getWednesdaysUTC(year, month0) {
 function getMonthlySocialPairUTC(year, month0) {
     const weds = getWednesdaysUTC(year, month0);
     const alt = weds.filter(dt => Math.abs(Math.round((dt.getTime() - FORTNIGHTLY_ANCHOR_UTC) / 86400000)) % 14 === 0);
-    const pair = alt.length >= 2 ? alt : [weds[0], weds[2]];
-    const paidDate = pair[0];
-    const freeDate = pair[pair.length - 1];
+    const list = alt.length >= 2 ? alt : [weds[0], weds[2]];
+    const paidDate = list[0];
+    const freeDate = list[list.length - 1];
+    const extraDate = list.length >= 3 ? list[1] : null;
     const paidIso = paidDate ? `${year}-${String(month0 + 1).padStart(2, "0")}-${String(paidDate.getUTCDate()).padStart(2, "0")}` : "";
     const freeIso = freeDate ? `${year}-${String(month0 + 1).padStart(2, "0")}-${String(freeDate.getUTCDate()).padStart(2, "0")}` : "";
-    return { paidDate, freeDate, paidIso, freeIso };
+    const extraIso = extraDate ? `${year}-${String(month0 + 1).padStart(2, "0")}-${String(extraDate.getUTCDate()).padStart(2, "0")}` : "";
+    const slots = [
+        { d: paidDate, iso: paidIso, ord: "Start of Month (Paid)", type: "PAID", rule: "Commercial / Paid Activity or Organised Tour" }
+    ];
+    if (extraDate) {
+        slots.push({ d: extraDate, iso: extraIso, ord: "Extra Social (5-Week Month)", type: "EXTRA", rule: "Extra Social · Paid, Organised Tour, or Creative Free" });
+    }
+    slots.push({ d: freeDate, iso: freeIso, ord: "End of Month (Free)", type: "FREE", rule: "Creative Free / Organised Tour / Sub-£20 Props" });
+    return { paidDate, freeDate, extraDate, paidIso, freeIso, extraIso, slots };
 }
 
 function isProgrammeOfficerMember(m) {
@@ -1221,6 +1227,13 @@ function recalcMembersAndStats(rawMembers, rawSocials) {
     const members = rawMembers.map(m => {
         const paidList = activeSocials.filter(s => s.status !== "OPEN" && s.socialType === "PAID" && s.organizerName.toLowerCase() === m.name.toLowerCase());
         const freeList = activeSocials.filter(s => s.status !== "OPEN" && s.socialType === "FREE" && s.organizerName.toLowerCase() === m.name.toLowerCase());
+        const extraList = activeSocials.filter(s => s.status !== "OPEN" && s.socialType === "EXTRA" && s.organizerName.toLowerCase() === m.name.toLowerCase());
+        extraList.forEach(ex => {
+            if (paidList.length < 1 && freeList.length >= 1) paidList.push(ex);
+            else if (freeList.length < 1 && paidList.length >= 1) freeList.push(ex);
+            else if (/^£/i.test(String(ex.costPerPerson || "").trim())) paidList.push(ex);
+            else freeList.push(ex);
+        });
         const p = paidList.length;
         const f = freeList.length;
         const isPO = isProgrammeOfficerMember(m);
@@ -1280,7 +1293,7 @@ function recalcDemoState(raw) {
             s.title = "";
             s.description = "";
             s.location = "";
-            s.costPerPerson = s.socialType === "FREE" ? "Free / Sub-£20 kitty" : "";
+            s.costPerPerson = s.socialType === "FREE" ? "Free / Sub-£20 kitty" : (s.socialType === "EXTRA" ? "Paid or Free / Tour" : "");
             s.accessoriesNeeded = "";
         }
     });
@@ -1295,8 +1308,19 @@ function recalcDemoState(raw) {
 // ============================================================================
 function getBuiltInIdeas(socialType) {
     const isPaid = socialType === "PAID";
+    const isExtra = socialType === "EXTRA";
 
     const paidPool = [
+        {
+            title: "Brewery & Taproom Organised Tour",
+            description: "Private behind-the-scenes brew-house tour with the head brewer, tasting flights straight from the tanks, and street food in the taproom afterwards.",
+            location: "Beverley / Hull Independent Brewery",
+            startTime: "19:30", endTime: "22:00",
+            costPerPerson: "£20 pp",
+            accessoriesNeeded: "Book private Wednesday evening group tour 2 weeks out",
+            prospectiveFriendly: true,
+            whyItWorks: "Relaxed pace, fascinating behind-the-scenes access, and easy conversation for new guys."
+        },
         {
             title: "Go-Karting Grand Prix & Pints",
             description: "Practice laps, qualifying heats, and a winner-takes-all final on indoor karts, followed by a debrief pint and leaderboard roast.",
@@ -1341,6 +1365,16 @@ function getBuiltInIdeas(socialType) {
 
     const freePool = [
         {
+            title: "Behind-the-Scenes Local Organised Tour",
+            description: "Arrange a free Wednesday evening group visit & Q&A with a local institution — Beverley Minster roof/bell tower host, RNLI Humber/Withernsea crew, fire station, or local heritage guild.",
+            location: "Beverley / East Yorkshire (Hosted Venue)",
+            startTime: "19:30", endTime: "21:30",
+            costPerPerson: "Free (optional pint after)",
+            accessoriesNeeded: "Email/call venue 3 weeks ahead to confirm group numbers & parking",
+            prospectiveFriendly: true,
+            whyItWorks: "Zero entry cost, exclusive local access you can't book on your own, and great club bonding."
+        },
+        {
             title: "Westwood Torchlight Photo Scavenger Hunt",
             description: "Teams get a 12-item absurd photo checklist across Beverley town & the Westwood edges (e.g. 'recreate an album cover by a landmark'). 75 mins to snap & return to the pub to judge.",
             location: "Start & Finish: The Sun Inn / Beverley Market Cross",
@@ -1382,6 +1416,7 @@ function getBuiltInIdeas(socialType) {
         }
     ];
 
+    if (isExtra) return [paidPool[0], freePool[0], freePool[1]];
     return (isPaid ? paidPool : freePool).slice(0, 3);
 }
 
@@ -1507,19 +1542,30 @@ function applyBackendData(data) {
     rawSocials.forEach(s => {
         let iso = normalizeIsoDate(s.dateISO) || normalizeIsoDate(s.slotId);
         if (!iso) return;
-        const socialType = String(s.socialType || "").toUpperCase() === "FREE" ? "FREE" : "PAID";
+        const socialType = String(s.socialType || "").toUpperCase();
         const status = String(s.status || "OPEN").toUpperCase();
         const y = parseInt(iso.slice(0, 4), 10);
         const m0 = parseInt(iso.slice(5, 7), 10) - 1;
         const pair = getMonthlySocialPairUTC(y, m0);
+        const isExtraIso = Boolean(pair.extraIso && iso === pair.extraIso);
 
-        if (m0 === 11 || (iso !== pair.paidIso && iso !== pair.freeIso)) {
+        if (m0 === 11 || (iso !== pair.paidIso && iso !== pair.freeIso && !isExtraIso)) {
             if (status === "OPEN") return;
             if (m0 !== 11) {
                 const remappedIso = socialType === "FREE" ? pair.freeIso : pair.paidIso;
                 if (remappedIso) iso = remappedIso;
             }
         }
+
+        const resolvedType = (pair.extraIso && iso === pair.extraIso)
+            ? "EXTRA"
+            : (socialType === "EXTRA" ? "EXTRA" : (socialType === "FREE" ? "FREE" : "PAID"));
+        const wednesdayOrdinal = resolvedType === "EXTRA"
+            ? "Extra Social (5-Week Month)"
+            : (resolvedType === "PAID" ? "Start of Month (Paid)" : "End of Month (Free)");
+        const budgetRule = resolvedType === "EXTRA"
+            ? "Extra Social · Paid, Organised Tour, or Creative Free"
+            : (resolvedType === "PAID" ? "Commercial / Paid Activity or Organised Tour" : "Creative Free / Organised Tour / Sub-£20 Props");
 
         const cleanLabels = formatCleanFromIso(iso);
         const normalized = {
@@ -1529,9 +1575,9 @@ function applyBackendData(data) {
             dateISO: iso,
             displayDate: cleanLabels.displayDate,
             monthYear: cleanLabels.monthYear,
-            socialType,
-            wednesdayOrdinal: socialType === "PAID" ? "Start of Month (Paid)" : "End of Month (Free)",
-            budgetRule: socialType === "PAID" ? "Commercial / Paid Activity" : "Creative Free / Sub-£20 Group Accessories",
+            socialType: resolvedType,
+            wednesdayOrdinal,
+            budgetRule,
             startTime: normalizeTimeStr(s.startTime, "19:30"),
             endTime: normalizeTimeStr(s.endTime, "22:00")
         };
@@ -1700,8 +1746,8 @@ function renderProgrammeOversight() {
             <div class="flex items-center justify-between gap-2 bg-black/30 rounded-xl px-3 py-2 border border-white/5">
                 <div class="min-w-0">
                     <div class="text-xs font-bold text-white truncate">${escHtml(g.displayDate)}</div>
-                    <div class="text-[10px] uppercase font-heading ${g.socialType === "PAID" ? "text-brt-gold" : "text-emerald-300"}">
-                        ${g.socialType === "PAID" ? "Start of Month · Paid" : "End of Month · Free / Sub-£20"}
+                    <div class="text-[10px] uppercase font-heading ${g.socialType === "PAID" ? "text-brt-gold" : (g.socialType === "EXTRA" ? "text-purple-300" : "text-emerald-300")}">
+                        ${g.socialType === "PAID" ? "Start of Month · Paid" : (g.socialType === "EXTRA" ? "Extra Social · 5-Week Month" : "End of Month · Free / Sub-£20")}
                     </div>
                 </div>
                 <button type="button" data-radar-claim="${escAttr(g.slotId)}"
@@ -1999,6 +2045,7 @@ function renderCalendar() {
 
 function renderSlotCard(slot, todayISO) {
     const isPaid = slot.socialType === "PAID";
+    const isExtra = slot.socialType === "EXTRA";
     const isOpen = slot.status === "OPEN";
     const isPast = slot.dateISO < todayISO;
 
@@ -2006,9 +2053,13 @@ function renderSlotCard(slot, todayISO) {
         ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-brt-gold text-brt-dark">
                 <i class="fa-solid fa-ticket"></i> Start of Month · Paid
            </span>`
-        : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-emerald-400 text-brt-dark">
-                <i class="fa-solid fa-lightbulb"></i> End of Month · Free / Sub-£20
-           </span>`;
+        : isExtra
+            ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-purple-400 text-brt-dark">
+                    <i class="fa-solid fa-calendar-plus"></i> Extra Social · 5-Week Month
+               </span>`
+            : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-emerald-400 text-brt-dark">
+                    <i class="fa-solid fa-lightbulb"></i> End of Month · Free / Sub-£20
+               </span>`;
 
     const statusBadge = isOpen
         ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-white/10 text-gray-300 border border-white/15">Open Slot</span>`
@@ -2018,26 +2069,28 @@ function renderSlotCard(slot, todayISO) {
 
     if (isOpen) {
         return `
-            <div class="rounded-3xl p-6 border-2 border-dashed ${isPaid ? "border-brt-gold/30 hover:border-brt-gold/70" : "border-emerald-400/30 hover:border-emerald-400/70"} bg-white/[0.02] transition-all flex flex-col justify-between ${isPast ? "opacity-60" : ""}">
+            <div class="rounded-3xl p-6 border-2 border-dashed ${isPaid ? "border-brt-gold/30 hover:border-brt-gold/70" : (isExtra ? "border-purple-400/35 hover:border-purple-400/75" : "border-emerald-400/30 hover:border-emerald-400/70")} bg-white/[0.02] transition-all flex flex-col justify-between ${isPast ? "opacity-60" : ""}">
                 <div>
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                         ${typeBadge}
                         ${statusBadge}
                     </div>
                     <div class="font-heading font-black text-2xl text-white mb-1">${escHtml(slot.displayDate)}</div>
-                    <p class="text-xs font-semibold uppercase tracking-wider ${isPaid ? "text-brt-gold" : "text-emerald-300"} mb-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider ${isPaid ? "text-brt-gold" : (isExtra ? "text-purple-300" : "text-emerald-300")} mb-3">
                         ${escHtml(slot.budgetRule)}
                     </p>
                     <p class="text-sm text-gray-400 mb-6">
                         ${isPaid
-                            ? "This alternate Wednesday (nearest the start of the month) is open for a commercial activity or paid night out. Claim it to tick off your 1 Paid social!"
-                            : "This alternate Wednesday (nearest the end of the month) is open for a creative free or sub-£20 group accessories social. Claim it to tick off your 1 Free social!"}
+                            ? "This alternate Wednesday (nearest the start of the month) is open for a commercial activity, organised tour, or paid night out. Claim it to tick off your 1 Paid social!"
+                            : isExtra
+                                ? "A 3rd alternate Wednesday lands this month! Grab this Extra Social for a paid night, organised tour, or creative free activity to keep our fortnightly rhythm going."
+                                : "This alternate Wednesday (nearest the end of the month) is open for a creative free night, free organised tour, or sub-£20 props social. Claim it to tick off your 1 Free social!"}
                     </p>
                 </div>
 
                 <div class="flex flex-wrap gap-2.5 pt-4 border-t border-white/10">
                     <button type="button" data-claim-slot="${escAttr(slot.slotId)}"
-                        class="flex-grow px-5 py-3 rounded-xl ${isPaid ? "bg-brt-gold text-brt-dark hover:bg-white" : "bg-emerald-400 text-brt-dark hover:bg-white"} font-heading font-bold text-xs uppercase tracking-wider transition-colors">
+                        class="flex-grow px-5 py-3 rounded-xl ${isPaid ? "bg-brt-gold text-brt-dark hover:bg-white" : (isExtra ? "bg-purple-400 text-brt-dark hover:bg-white" : "bg-emerald-400 text-brt-dark hover:bg-white")} font-heading font-bold text-xs uppercase tracking-wider transition-colors">
                         <i class="fa-solid fa-plus mr-1.5"></i> Claim This Wednesday
                     </button>
                 </div>
@@ -2050,14 +2103,14 @@ function renderSlotCard(slot, todayISO) {
         `*${slot.title}*\n` +
         `📅 ${slot.displayDate}\n` +
         `📍 ${slot.location || "Location TBC"}\n` +
-        `💷 ${slot.costPerPerson || (isPaid ? "TBC" : "Free")}\n` +
+        `💷 ${slot.costPerPerson || (isPaid ? "TBC" : (isExtra ? "TBC / Free" : "Free"))}\n` +
         `👤 Organised by: ${slot.organizerName}${slot.coOrganizerName ? " & " + slot.coOrganizerName : ""}\n` +
         (slot.description ? `\n${slot.description}\n` : "") +
         `\nCheck Spond for exact timings & RSVP, or view the calendar: https://socials.beverleyroundtable.co.uk`
     );
 
     return `
-        <div class="rounded-3xl p-6 border ${isPaid ? "border-white/15 hover:border-brt-gold/60" : "border-white/15 hover:border-emerald-400/60"} bg-white/5 transition-all flex flex-col justify-between shadow-lg ${isPast ? "opacity-65" : ""}">
+        <div class="rounded-3xl p-6 border ${isPaid ? "border-white/15 hover:border-brt-gold/60" : (isExtra ? "border-white/15 hover:border-purple-400/60" : "border-white/15 hover:border-emerald-400/60")} bg-white/5 transition-all flex flex-col justify-between shadow-lg ${isPast ? "opacity-65" : ""}">
             <div>
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                     <div class="flex flex-wrap items-center gap-2">
@@ -2160,6 +2213,7 @@ function openPlannerModal(slotId) {
 function populateModalWithSlot(slot) {
     appState.activeModalSlotId = slot.slotId;
     const isPaid = slot.socialType === "PAID";
+    const isExtra = slot.socialType === "EXTRA";
     const isEdit = slot.status !== "OPEN";
 
     document.getElementById("f-slot-id").value = slot.slotId;
@@ -2168,18 +2222,34 @@ function populateModalWithSlot(slot) {
     const badge = document.getElementById("modal-type-badge");
     badge.className = isPaid
         ? "font-heading text-xs font-bold uppercase px-3 py-1 rounded-full bg-brt-gold text-brt-dark"
-        : "font-heading text-xs font-bold uppercase px-3 py-1 rounded-full bg-emerald-400 text-brt-dark";
-    badge.textContent = isPaid ? "Start of Month · Paid Commercial" : "End of Month · Creative Free / Sub-£20";
+        : isExtra
+            ? "font-heading text-xs font-bold uppercase px-3 py-1 rounded-full bg-purple-400 text-brt-dark"
+            : "font-heading text-xs font-bold uppercase px-3 py-1 rounded-full bg-emerald-400 text-brt-dark";
+    badge.textContent = isPaid
+        ? "Start of Month · Paid Commercial"
+        : isExtra
+            ? "Extra Social · 5-Week Month"
+            : "End of Month · Creative Free / Tour";
 
     document.getElementById("modal-date-badge").textContent = slot.displayDate;
     document.getElementById("modal-heading").textContent = isEdit ? "Edit Planned Social" : "Claim & Plan This Wednesday";
     document.getElementById("modal-rule-sub").textContent = isPaid
-        ? "Commercial venue, activity booking, or paid group experience (nearest alternate Wednesday to start of month)."
-        : "Free to attend — optional max £20 total group kitty for props/accessories (nearest alternate Wednesday to end of month).";
+        ? "Commercial venue, activity booking, organised tour, or paid group experience (nearest alternate Wednesday to start of month)."
+        : isExtra
+            ? "5-week-month Extra Social maintaining our alternate-Wednesday schedule — paid activity, organised tour, or creative free social."
+            : "Free to attend — organised tour or optional max £20 total group kitty for props/accessories (nearest alternate Wednesday to end of month).";
 
-    document.getElementById("f-cost-label").textContent = isPaid ? "Cost Per Person" : "Group Props / Cost (Free or Sub-£20)";
-    document.getElementById("f-cost").placeholder = isPaid ? "e.g. £24 pp" : "e.g. Free (or £14 group props)";
-    document.getElementById("f-accessories-label").textContent = isPaid ? "Booking / Kit Notes" : "Accessories / Props List (Sub-£20)";
+    document.getElementById("f-cost-label").textContent = isPaid
+        ? "Cost Per Person"
+        : isExtra
+            ? "Estimated Cost (Paid or Free)"
+            : "Group Props / Cost (Free or Sub-£20)";
+    document.getElementById("f-cost").placeholder = isPaid
+        ? "e.g. £24 pp"
+        : isExtra
+            ? "e.g. Free or £20 pp"
+            : "e.g. Free tour (or £14 group props)";
+    document.getElementById("f-accessories-label").textContent = isPaid || isExtra ? "Booking / Kit Notes" : "Accessories / Props List (Sub-£20)";
 
     document.getElementById("f-organizer").value = slot.organizerName || "";
     document.getElementById("f-coorganizer").value = slot.coOrganizerName || "";
@@ -2189,7 +2259,7 @@ function populateModalWithSlot(slot) {
     document.getElementById("f-location").value = slot.location || "";
     document.getElementById("f-start").value = slot.startTime || "19:30";
     document.getElementById("f-end").value = slot.endTime || "22:00";
-    document.getElementById("f-cost").value = slot.costPerPerson || (isPaid ? "" : "Free / Sub-£20 kitty");
+    document.getElementById("f-cost").value = slot.costPerPerson || (isPaid ? "" : (isExtra ? "Paid or Free / Tour" : "Free / Sub-£20 kitty"));
     document.getElementById("f-accessories").value = slot.accessoriesNeeded || "";
     document.getElementById("f-prospective").checked = slot.prospectiveFriendly !== false;
 
@@ -2218,6 +2288,7 @@ function updateOrganizerQuotaHint() {
     }
 
     const isPaid = slot.socialType === "PAID";
+    const isExtra = slot.socialType === "EXTRA";
     const alreadyHoldingThis = slot.organizerName.toLowerCase() === member.name.toLowerCase();
     const currentPaid = member.paidCount;
     const currentFree = member.freeCount;
@@ -2227,6 +2298,14 @@ function updateOrganizerQuotaHint() {
 
     if (alreadyHoldingThis) {
         msg = `<strong>${escHtml(member.name)}</strong> currently holds this slot (${currentPaid}/1 Paid, ${currentFree}/1 Free).`;
+    } else if (isExtra) {
+        if (currentPaid === 0 || currentFree === 0) {
+            const fills = currentPaid === 0 && currentFree >= 1 ? "Paid" : (currentFree === 0 && currentPaid >= 1 ? "Free" : "Paid or Free");
+            msg = `<i class="fa-solid fa-star text-purple-300 mr-1"></i> <strong>${escHtml(member.name)}</strong> can claim this 5-week Extra Social (${currentPaid}/1 Paid, ${currentFree}/1 Free) and it will credit toward their remaining <strong>${fills}</strong> quota!`;
+            cls = "bg-purple-500/10 border-purple-400/35 text-purple-200";
+        } else {
+            msg = `<strong>${escHtml(member.name)}</strong> already completed 1+1 — legend for stepping up to host this 5-week Extra Social!`;
+        }
     } else if (isPaid && currentPaid === 0) {
         msg = `<i class="fa-solid fa-star text-brt-gold mr-1"></i> <strong>${escHtml(member.name)}</strong> still needs a <strong>Start of Month · Paid</strong> social — claiming this ticks off their Paid quota!`;
         cls = "bg-brt-gold/10 border-brt-gold/30 text-brt-gold";
@@ -2425,7 +2504,7 @@ async function handleDeleteSlot(slotId) {
                     location: "",
                     startTime: "19:30",
                     endTime: "22:00",
-                    costPerPerson: appState.socials[idx].socialType === "FREE" ? "Free / Sub-£20 kitty" : "",
+                    costPerPerson: appState.socials[idx].socialType === "FREE" ? "Free / Sub-£20 kitty" : (appState.socials[idx].socialType === "EXTRA" ? "Paid or Free / Tour" : ""),
                     accessoriesNeeded: "",
                     prospectiveFriendly: true
                 };
