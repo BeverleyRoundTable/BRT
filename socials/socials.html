@@ -411,7 +411,7 @@
                         <div class="text-xs font-heading uppercase tracking-wider text-gray-400 mb-1">Year Calendar</div>
                         <div class="flex items-baseline gap-2">
                             <span id="stat-total-claimed" class="font-heading font-black text-3xl text-white">0</span>
-                            <span id="stat-total-slots" class="text-sm text-gray-400 font-semibold">/ 23 slots filled</span>
+                            <span id="stat-total-slots" class="text-sm text-gray-400 font-semibold">/ 21 slots filled</span>
                         </div>
                         <div class="w-full h-2 bg-black/40 rounded-full mt-3 overflow-hidden">
                             <div id="stat-total-bar" class="h-full bg-brt-gold rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -422,7 +422,7 @@
                         <div class="text-xs font-heading uppercase tracking-wider text-brt-gold mb-1">Start of Month · Paid</div>
                         <div class="flex items-baseline gap-2">
                             <span id="stat-paid-claimed" class="font-heading font-black text-3xl text-white">0</span>
-                            <span id="stat-paid-total" class="text-sm text-gray-400 font-semibold">/ 11 planned</span>
+                            <span id="stat-paid-total" class="text-sm text-gray-400 font-semibold">/ 10 planned</span>
                         </div>
                         <div class="w-full h-2 bg-black/40 rounded-full mt-3 overflow-hidden">
                             <div id="stat-paid-bar" class="h-full bg-brt-gold rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -433,7 +433,7 @@
                         <div class="text-xs font-heading uppercase tracking-wider text-emerald-300 mb-1">End of Month · Free / Sub-£20</div>
                         <div class="flex items-baseline gap-2">
                             <span id="stat-free-claimed" class="font-heading font-black text-3xl text-white">0</span>
-                            <span id="stat-free-total" class="text-sm text-gray-400 font-semibold">/ 11 planned</span>
+                            <span id="stat-free-total" class="text-sm text-gray-400 font-semibold">/ 10 planned</span>
                         </div>
                         <div class="w-full h-2 bg-black/40 rounded-full mt-3 overflow-hidden">
                             <div id="stat-free-bar" class="h-full bg-emerald-400 rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -954,10 +954,10 @@
 // ============================================================================
 const DEFAULT_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbyOK9b-We-vy3oBYT6xz7glBlWkUoK8JOseHmj7tKpo8uJs-ABg1lxTeMxPRvz3j9g5/exec";
 const LOCAL_STORAGE_API_KEY = "brt_socials_planner_api_url";
-const LOCAL_STORAGE_DEMO_KEY = "brt_socials_planner_demo_state_v6";
+const LOCAL_STORAGE_DEMO_KEY = "brt_socials_planner_demo_state_v7";
 const LOCAL_STORAGE_PIN_KEY = "brt_socials_member_pin";
 const PLANNER_START_YM = "2027-02";
-const DEFAULT_MONTHS_AHEAD = 12;
+const DEFAULT_MONTHS_AHEAD = 11;
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
@@ -1013,16 +1013,23 @@ function getDynamicHorizonRange(startYm, monthsAhead) {
     const startFloor = /^\d{4}-\d{2}$/.test(String(startYm || "").trim())
         ? String(startYm).trim()
         : PLANNER_START_YM;
-    const horizonCount = Math.max(1, Math.min(24, parseInt(monthsAhead, 10) || DEFAULT_MONTHS_AHEAD));
+    const rawCount = Math.max(1, Math.min(24, parseInt(monthsAhead, 10) || DEFAULT_MONTHS_AHEAD));
     const now = new Date();
     const curYm = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
     const anchorYm = curYm > startFloor ? curYm : startFloor;
+    const horizonCount = (anchorYm === "2027-02" && rawCount === 12)
+        ? 11
+        : (anchorYm > "2027-02" && rawCount === 11 ? 12 : rawCount);
 
     const [anchY, anchM1] = anchorYm.split("-").map(Number);
+    const endDt = new Date(Date.UTC(anchY, (anchM1 - 1) + horizonCount, 0));
+    const ceilingIso = `${endDt.getUTCFullYear()}-${String(endDt.getUTCMonth() + 1).padStart(2, "0")}-${String(endDt.getUTCDate()).padStart(2, "0")}`;
 
     return {
         startYm: startFloor,
         anchorYm,
+        floorIso: `${anchorYm}-01`,
+        ceilingIso,
         totalMonths: horizonCount,
         startYear: anchY,
         startMonth0: anchM1 - 1
@@ -1222,8 +1229,8 @@ function buildDemoSeedState() {
 
 function recalcMembersAndStats(rawMembers, rawSocials) {
     const sortedSocials = rawSocials.slice().sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-    const floorIso = `${getDynamicHorizonRange(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD).anchorYm}-01`;
-    const activeSocials = sortedSocials.filter(s => s.dateISO >= floorIso);
+    const horizon = getDynamicHorizonRange(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD);
+    const activeSocials = sortedSocials.filter(s => s.dateISO >= horizon.floorIso && s.dateISO <= horizon.ceilingIso);
     const members = rawMembers.map(m => {
         const paidList = activeSocials.filter(s => s.status !== "OPEN" && s.socialType === "PAID" && s.organizerName.toLowerCase() === m.name.toLowerCase());
         const freeList = activeSocials.filter(s => s.status !== "OPEN" && s.socialType === "FREE" && s.organizerName.toLowerCase() === m.name.toLowerCase());
@@ -1531,13 +1538,14 @@ function applyBackendData(data) {
     const rawMembers = Array.isArray(data.members) ? data.members : [];
     const rawSocials = Array.isArray(data.socials) ? data.socials : [];
 
-    // Seed strict 22-slot (11 non-Dec months × 1 Paid + 1 Free) rolling schedule
+    // Seed rolling calendar slots (Feb-Nov 2027 = 21 slots; full 12-month windows thereafter)
+    const range = getDynamicHorizonRange(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD);
     const mergedMap = new Map();
     buildRollingCalendarSlots(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD).forEach(gen => {
         mergedMap.set(gen.dateISO, gen);
     });
 
-    // Normalize raw Sheet rows (handles Date-coerced SlotID/DisplayDate/MonthYear/Time strings), migrate/prune off-schedule legacy Wednesday rows & deduplicate
+    // Normalize raw Sheet rows (handles Date-coerced SlotID/DisplayDate/MonthYear/Time strings), migrate/prune off-schedule or out-of-window rows & deduplicate
     const byIso = new Map();
     rawSocials.forEach(s => {
         let iso = normalizeIsoDate(s.dateISO) || normalizeIsoDate(s.slotId);
@@ -1556,6 +1564,8 @@ function applyBackendData(data) {
                 if (remappedIso) iso = remappedIso;
             }
         }
+
+        if (status === "OPEN" && (iso < range.floorIso || iso > range.ceilingIso)) return;
 
         const resolvedType = (pair.extraIso && iso === pair.extraIso)
             ? "EXTRA"
@@ -1588,7 +1598,6 @@ function applyBackendData(data) {
     });
 
     // Overlay matching canonical alternate-Wednesday slots (plus any pre-horizon CLAIMED slots if present)
-    const floorIso = `${getDynamicHorizonRange(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD).anchorYm}-01`;
     byIso.forEach((s, iso) => {
         if (mergedMap.has(iso)) {
             const canonical = mergedMap.get(iso);
@@ -1600,7 +1609,7 @@ function applyBackendData(data) {
                 displayDate: canonical.displayDate,
                 monthYear: canonical.monthYear
             });
-        } else if (iso < floorIso && s.status !== "OPEN") {
+        } else if (iso < range.floorIso && s.status !== "OPEN") {
             mergedMap.set(iso, s);
         }
     });

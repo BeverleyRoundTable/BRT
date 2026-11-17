@@ -72,8 +72,8 @@ var SETTINGS_HEADERS = ['Key', 'Value', 'Notes'];
 var DEFAULT_SETTINGS = [
   ['SECURITY_STORAGE', 'Script Properties (Private)', 'Use menu "🍻 BRT Socials Admin -> 🔐 Set Gemini Key / 🔒 Set Table PIN" — never paste secrets into cells'],
   ['GEMINI_MODEL', 'AUTO', 'AUTO = dynamically picks the latest free-tier Gemini Flash model (or enter a specific model name)'],
-  ['START_YEAR_MONTH', '2027-02', 'YYYY-MM start month (defaults to 2027-02; dynamically rolls 12 months ahead as time passes).'],
-  ['MONTHS_AHEAD', '12', 'Calendar months to generate from start month (December excluded for Santa Sleigh)'],
+  ['START_YEAR_MONTH', '2027-02', 'YYYY-MM start month (defaults to 2027-02; dynamically rolls ahead as time passes).'],
+  ['MONTHS_AHEAD', '11', 'Calendar months to generate from start month (11 from 2027-02 = Feb–Nov 2027, Dec excluded for Santa Sleigh)'],
   ['CLUB_NAME', 'Beverley Round Table', 'Displayed in AI prompts and public event feed'],
   ['CLUB_AREA', 'Beverley & East Yorkshire (Hull, Westwood, Molescroft, Walkington)', 'Local context for Gemini suggestions'],
   ['DEFAULT_START_TIME', '19:30', 'Default start time for Wednesday socials'],
@@ -497,16 +497,29 @@ function ensureSetup_() {
   }
 }
 
+function resolveEffectiveMonthsAhead_(anchorYm, settings) {
+  var raw = parseInt((settings && settings.MONTHS_AHEAD) || '11', 10) || 11;
+  if (anchorYm === '2027-02' && raw === 12) return 11;
+  if (anchorYm > '2027-02' && raw === 11) return 12;
+  return Math.max(1, Math.min(24, raw));
+}
+
 function getActiveHorizonFloorIso_(sheet, settings) {
   var tz = Session.getScriptTimeZone() || 'Europe/London';
   var currentYm = Utilities.formatDate(new Date(), tz, 'yyyy-MM');
   var startYm = resolveEffectiveStartMonth_(sheet, settings);
   var anchorYm = currentYm > startYm ? currentYm : startYm;
+  var monthsAhead = resolveEffectiveMonthsAhead_(anchorYm, settings);
+  var anchorParts = anchorYm.split('-');
+  var endDt = new Date(Date.UTC(parseInt(anchorParts[0], 10), (parseInt(anchorParts[1], 10) - 1) + monthsAhead, 0));
+  var ceilingIso = endDt.getUTCFullYear() + '-' + pad2_(endDt.getUTCMonth() + 1) + '-' + pad2_(endDt.getUTCDate());
   return {
     startYm: startYm,
     currentYm: currentYm,
     anchorYm: anchorYm,
-    floorIso: anchorYm + '-01'
+    monthsAhead: monthsAhead,
+    floorIso: anchorYm + '-01',
+    ceilingIso: ceilingIso
   };
 }
 
@@ -524,7 +537,7 @@ function buildFullState_() {
   var activeMembers = members.filter(function (m) { return m.active; });
   var planningMembers = activeMembers;
   var programmeOfficers = activeMembers.filter(function (m) { return m.isProgrammeOfficer; });
-  var windowSocials = socials.filter(function (s) { return s.dateISO >= horizon.floorIso; });
+  var windowSocials = socials.filter(function (s) { return s.dateISO >= horizon.floorIso && s.dateISO <= horizon.ceilingIso; });
   var totalSlots = windowSocials.length;
   var paidSlots = windowSocials.filter(function (s) { return s.socialType === 'PAID'; });
   var freeSlots = windowSocials.filter(function (s) { return s.socialType === 'FREE'; });
@@ -567,9 +580,9 @@ function buildFullState_() {
 
 /**
  * Normalizes existing Socials rows to YYYY-MM-DD text keys, removes duplicate
- * rows caused by Google Sheets date-coercion, and prunes unclaimed pre-start OPEN rows.
+ * rows caused by Google Sheets date-coercion, and prunes unclaimed out-of-window OPEN rows.
  */
-function dedupeAndNormalizeSocialsSheet_(sheet, effectiveStartYm) {
+function dedupeAndNormalizeSocialsSheet_(sheet, effectiveStartYm, ceilingIso) {
   sheet.getRange('A:D').setNumberFormat('@');
   sheet.getRange('N:O').setNumberFormat('@');
   var lastRow = sheet.getLastRow();
@@ -594,7 +607,7 @@ function dedupeAndNormalizeSocialsSheet_(sheet, effectiveStartYm) {
     }
 
     var status = String(r[7] || 'OPEN').toUpperCase();
-    if (iso < floorIso && status === 'OPEN') {
+    if ((iso < floorIso || (ceilingIso && iso > ceilingIso)) && status === 'OPEN') {
       changed = true;
       continue;
     }
@@ -743,13 +756,13 @@ function ensureCalendarSlots_(forceSort) {
   var settings = getSettingsMap_();
 
   var horizon = getActiveHorizonFloorIso_(sheet, settings);
-  dedupeAndNormalizeSocialsSheet_(sheet, horizon.anchorYm);
+  dedupeAndNormalizeSocialsSheet_(sheet, horizon.anchorYm, horizon.ceilingIso);
 
   var anchorParts = horizon.anchorYm.split('-');
   var anchorYear = parseInt(anchorParts[0], 10);
   var anchorMonth0 = parseInt(anchorParts[1], 10) - 1;
 
-  var monthsAhead = Math.max(1, Math.min(24, parseInt(settings.MONTHS_AHEAD || '12', 10) || 12));
+  var monthsAhead = horizon.monthsAhead;
   var defaultStart = settings.DEFAULT_START_TIME || '19:30';
   var defaultEnd = settings.DEFAULT_END_TIME || '22:00';
 
