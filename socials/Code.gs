@@ -497,25 +497,29 @@ function ensureSetup_() {
   }
 }
 
-function resolveEffectiveMonthsAhead_(anchorYm, settings) {
-  var raw = parseInt((settings && settings.MONTHS_AHEAD) || '11', 10) || 11;
-  if (anchorYm === '2027-02' && raw === 12) return 11;
-  if (anchorYm > '2027-02' && raw === 11) return 12;
-  return Math.max(1, Math.min(24, raw));
-}
-
 function getActiveHorizonFloorIso_(sheet, settings) {
   var tz = Session.getScriptTimeZone() || 'Europe/London';
   var currentYm = Utilities.formatDate(new Date(), tz, 'yyyy-MM');
+  var curParts = currentYm.split('-');
+  var curYear = parseInt(curParts[0], 10);
+  var curMonth1 = parseInt(curParts[1], 10);
+
+  // 2027 social year = Feb-Nov 2027; 2028+ social years = Jan-Nov of that year (switches in Dec of prior year)
+  var targetYear = curYear < 2027 ? 2027 : (curMonth1 === 12 ? curYear + 1 : curYear);
   var startYm = resolveEffectiveStartMonth_(sheet, settings);
-  var anchorYm = currentYm > startYm ? currentYm : startYm;
-  var monthsAhead = resolveEffectiveMonthsAhead_(anchorYm, settings);
-  var anchorParts = anchorYm.split('-');
-  var endDt = new Date(Date.UTC(parseInt(anchorParts[0], 10), (parseInt(anchorParts[1], 10) - 1) + monthsAhead, 0));
-  var ceilingIso = endDt.getUTCFullYear() + '-' + pad2_(endDt.getUTCMonth() + 1) + '-' + pad2_(endDt.getUTCDate());
+  if (startYm && startYm > targetYear + '-11') {
+    targetYear = parseInt(startYm.slice(0, 4), 10);
+  }
+
+  var startMonth1 = targetYear === 2027 ? 2 : 1;
+  var anchorYm = targetYear + '-' + pad2_(startMonth1);
+  var monthsAhead = 12 - startMonth1; // 10 months (Feb-Nov) in 2027; 11 months (Jan-Nov) in 2028+
+  var ceilingIso = targetYear + '-11-30';
+
   return {
     startYm: startYm,
     currentYm: currentYm,
+    targetYear: targetYear,
     anchorYm: anchorYm,
     monthsAhead: monthsAhead,
     floorIso: anchorYm + '-01',
@@ -1209,7 +1213,7 @@ function syncMembersAndQuotas_() {
           sr[8] = orgEntry.canonicalName;
           socialsDirty = true;
         }
-        if (dateISO >= horizon.floorIso) {
+        if (dateISO >= horizon.floorIso && dateISO <= horizon.ceilingIso) {
           var label = (title || 'Untitled') + ' (' + displayDate + ')';
           if (socialType === 'PAID') {
             orgEntry.paidCount++;

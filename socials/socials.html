@@ -1009,30 +1009,35 @@ function normalizeTimeStr(val, fallback) {
     return fallback || "19:30";
 }
 
-function getDynamicHorizonRange(startYm, monthsAhead) {
+function getDynamicHorizonRange(startYm) {
     const startFloor = /^\d{4}-\d{2}$/.test(String(startYm || "").trim())
         ? String(startYm).trim()
         : PLANNER_START_YM;
-    const rawCount = Math.max(1, Math.min(24, parseInt(monthsAhead, 10) || DEFAULT_MONTHS_AHEAD));
     const now = new Date();
-    const curYm = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-    const anchorYm = curYm > startFloor ? curYm : startFloor;
-    const horizonCount = (anchorYm === "2027-02" && rawCount === 12)
-        ? 11
-        : (anchorYm > "2027-02" && rawCount === 11 ? 12 : rawCount);
+    const curYear = now.getUTCFullYear();
+    const curMonth1 = now.getUTCMonth() + 1;
 
-    const [anchY, anchM1] = anchorYm.split("-").map(Number);
-    const endDt = new Date(Date.UTC(anchY, (anchM1 - 1) + horizonCount, 0));
-    const ceilingIso = `${endDt.getUTCFullYear()}-${String(endDt.getUTCMonth() + 1).padStart(2, "0")}-${String(endDt.getUTCDate()).padStart(2, "0")}`;
+    // 2027 social year = Feb-Nov 2027; 2028+ social years = Jan-Nov of that year (switches in Dec of prior year)
+    let targetYear = curYear < 2027 ? 2027 : (curMonth1 === 12 ? curYear + 1 : curYear);
+    if (startFloor > `${targetYear}-11`) {
+        targetYear = parseInt(startFloor.slice(0, 4), 10);
+    }
+
+    const startMonth1 = targetYear === 2027 ? 2 : 1;
+    const anchorYm = `${targetYear}-${String(startMonth1).padStart(2, "0")}`;
+    const horizonCount = 12 - startMonth1; // 10 months (Feb-Nov) in 2027; 11 months (Jan-Nov) in 2028+
+    const floorIso = `${anchorYm}-01`;
+    const ceilingIso = `${targetYear}-11-30`;
 
     return {
         startYm: startFloor,
+        targetYear,
         anchorYm,
-        floorIso: `${anchorYm}-01`,
+        floorIso,
         ceilingIso,
         totalMonths: horizonCount,
-        startYear: anchY,
-        startMonth0: anchM1 - 1
+        startYear: targetYear,
+        startMonth0: startMonth1 - 1
     };
 }
 
@@ -1991,7 +1996,7 @@ function renderCalendar() {
         const maxYear = parseInt(maxYm.slice(0, 4), 10);
         for (let y = minYear; y <= maxYear; y++) {
             const decYm = `${y}-12`;
-            if (decYm >= minYm && decYm <= maxYm && !monthGroups[decYm]) {
+            if (((decYm >= minYm && decYm <= maxYm) || monthGroups[`${y}-11`]) && !monthGroups[decYm]) {
                 monthGroups[decYm] = { monthYear: `December ${y}`, isDecember: true, year: y, slots: [] };
             }
         }
