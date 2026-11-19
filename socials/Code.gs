@@ -71,7 +71,7 @@ var SETTINGS_HEADERS = ['Key', 'Value', 'Notes'];
 
 var DEFAULT_SETTINGS = [
   ['SECURITY_STORAGE', 'Script Properties (Private)', 'Use menu "🍻 BRT Socials Admin -> 🔐 Set Gemini Key / 🔒 Set Table PIN" — never paste secrets into cells'],
-  ['GEMINI_MODEL', 'AUTO', 'AUTO = dynamically picks the latest free-tier Gemini Flash model (or enter a specific model name)'],
+  ['GEMINI_MODEL', 'AUTO', 'AUTO = uses Gemini 4 Hydrogen (Free Tier) with automatic Flash fallback (or enter a specific model ID)'],
   ['START_YEAR_MONTH', '2027-02', 'YYYY-MM start month (defaults to 2027-02; dynamically rolls ahead as time passes).'],
   ['MONTHS_AHEAD', '11', 'Calendar months to generate from start month (11 from 2027-02 = Feb–Nov 2027, Dec excluded for Santa Sleigh)'],
   ['CLUB_NAME', 'Beverley Round Table', 'Displayed in AI prompts and public event feed'],
@@ -1401,73 +1401,93 @@ function appendUniqueModels_(target, items) {
   }
 }
 
+var FREE_TIER_HYDROGEN_CHAIN = [
+  'gemini-4-hydrogen',
+  'gemini-3.8-flash',
+  'gemini-flash-latest',
+  'gemini-2.5-flash',
+  'gemini-flash-lite-latest',
+  'gemini-2.5-flash-lite'
+];
+
+function isGemini4Model_(model) {
+  return /gemini-4|hydrogen|neon|argon|carbon/i.test(String(model || ''));
+}
+
+function buildSocialsGeminiConfig_(model, opts) {
+  opts = opts || {};
+  var maxTokens = Number(opts.maxOutputTokens || 2048);
+  var cfg = {
+    maxOutputTokens: isGemini4Model_(model) ? Math.max(maxTokens, 2048) : maxTokens
+  };
+  if (opts.responseMimeType) {
+    cfg.responseMimeType = opts.responseMimeType;
+  }
+  if (isGemini4Model_(model)) {
+    cfg.thinkingConfig = { thinkingLevel: String(opts.thinkingLevel || 'LOW').toUpperCase() };
+    return cfg;
+  }
+  if (opts.temperature != null) {
+    cfg.temperature = opts.temperature;
+  }
+  if (/-(2\.5|[3-9](?:\.\d+)?)-flash|^gemini-flash(?:-lite)?-latest$/i.test(String(model || ''))) {
+    cfg.thinkingConfig = { thinkingBudget: 0 };
+  }
+  return cfg;
+}
+
+function extractVisibleGeminiText_(parsed) {
+  var parts = parsed && parsed.candidates && parsed.candidates[0] &&
+    parsed.candidates[0].content && parsed.candidates[0].content.parts;
+  if (!Array.isArray(parts) || parts.length === 0) return '';
+  var visible = [];
+  for (var p = 0; p < parts.length; p++) {
+    if (parts[p] && typeof parts[p].text === 'string' && !parts[p].thought) {
+      visible.push(parts[p].text);
+    }
+  }
+  var joined = visible.join('').trim();
+  if (joined) return joined;
+  for (var q = 0; q < parts.length; q++) {
+    if (parts[q] && typeof parts[q].text === 'string' && parts[q].text.trim()) {
+      return parts[q].text.trim();
+    }
+  }
+  return '';
+}
+
+function parseGeminiJsonOutput_(rawContent) {
+  if (!rawContent) return null;
+  var cleaned = String(rawContent)
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    var m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) {
+      return JSON.parse(m[0]);
+    }
+    throw e;
+  }
+}
+
 /**
- * Dynamically discovers the newest free-tier Gemini Flash & Flash-Lite models
- * available to this API key (cached 6 hours), with rolling-alias fallbacks.
+ * Resolves the Free Tier Gemini cascade starting with Gemini 4 Hydrogen,
+ * avoiding slow model-listing round trips on Apps Script cold starts.
  */
 function resolveFlashModelChain_(apiKey, configuredModel) {
   var cfg = String(configuredModel || '').trim();
-  var cfgUpper = cfg.toUpperCase();
-  var cacheKey = 'BRT_DYNAMIC_FLASH_MODELS_V1';
-  var discovered = null;
-
-  try {
-    if (typeof CacheService !== 'undefined') {
-      var cachedRaw = CacheService.getScriptCache().get(cacheKey);
-      if (cachedRaw) discovered = JSON.parse(cachedRaw);
-    }
-  } catch (cacheReadErr) {}
-
-  if (!discovered) {
-    var flashModels = [];
-    var flashLiteModels = [];
-    try {
-      var listUrl = 'https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(apiKey);
-      var listRes = UrlFetchApp.fetch(listUrl, { method: 'get', muteHttpExceptions: true });
-      if (listRes.getResponseCode() >= 200 && listRes.getResponseCode() < 300) {
-        var listJson = JSON.parse(listRes.getContentText() || '{}');
-        var models = Array.isArray(listJson.models) ? listJson.models : [];
-        for (var i = 0; i < models.length; i++) {
-          var item = models[i];
-          var methods = Array.isArray(item.supportedGenerationMethods) ? item.supportedGenerationMethods : [];
-          if (methods.indexOf('generateContent') === -1) continue;
-
-          var name = String(item.name || '');
-          var mFlash = /^models\/(gemini-(\d+(?:\.\d+)?)-flash)$/i.exec(name);
-          if (mFlash) {
-            flashModels.push({ id: mFlash[1], ver: mFlash[2] });
-            continue;
-          }
-          var mLite = /^models\/(gemini-(\d+(?:\.\d+)?)-flash-lite)$/i.exec(name);
-          if (mLite) {
-            flashLiteModels.push({ id: mLite[1], ver: mLite[2] });
-          }
-        }
-        flashModels.sort(compareSemverDesc_);
-        flashLiteModels.sort(compareSemverDesc_);
-      }
-    } catch (discoverErr) {}
-
-    discovered = {
-      flash: flashModels.map(function (x) { return x.id; }),
-      lite: flashLiteModels.map(function (x) { return x.id; })
-    };
-
-    try {
-      if (typeof CacheService !== 'undefined' && (discovered.flash.length || discovered.lite.length)) {
-        CacheService.getScriptCache().put(cacheKey, JSON.stringify(discovered), 21600);
-      }
-    } catch (cacheWriteErr) {}
-  }
-
+  var cfgLower = cfg.toLowerCase();
   var modelsToTry = [];
-  if (cfg && cfgUpper !== 'AUTO' && cfgUpper !== 'LATEST' && cfg !== 'gemini-2.5-flash') {
+
+  if (cfg && cfgLower !== 'auto' && cfgLower !== 'latest' &&
+      cfgLower !== 'gemini-2.5-flash' && cfgLower !== 'gemini-3.8-flash' &&
+      cfgLower !== 'gemini-flash-latest') {
     appendUniqueModels_(modelsToTry, [cfg]);
   }
-  appendUniqueModels_(modelsToTry, discovered.flash || []);
-  appendUniqueModels_(modelsToTry, ['gemini-flash-latest', 'gemini-2.5-flash']);
-  appendUniqueModels_(modelsToTry, discovered.lite || []);
-  appendUniqueModels_(modelsToTry, ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash']);
+  appendUniqueModels_(modelsToTry, FREE_TIER_HYDROGEN_CHAIN);
   return modelsToTry;
 }
 
@@ -1510,7 +1530,7 @@ function callGeminiAi_(payload) {
     existingTitles.length ? ('Already planned (do not repeat): ' + existingTitles.join(', ')) : '',
     'TASK: Pitch 3 distinct social ideas tailored to ' + monthYear + ' (UK weather/daylight) in Beverley/Hull (timings set later on Spond).',
     'Mix: 1 classic, 1 left-field/hilarious, 1 easy prospective-member icebreaker.',
-    'Return JSON: {"suggestions": [3 objects]}.',
+    'Return ONLY valid JSON: {"suggestions": [3 objects]}.',
     'Each suggestion object keys: title (3-6 words + optional emoji), description (1-2 punchy sentences), location (specific Beverley/Hull spot), costPerPerson ("' + (socialType === 'PAID' ? '£XX pp' : 'Free / £XX props') + '"), accessoriesNeeded (brief prep/kit list), prospectiveFriendly (true/false), whyItWorks (1 concise sentence).'
   ];
 
@@ -1524,14 +1544,12 @@ function callGeminiAi_(payload) {
     var endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' +
       encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
 
-    var genConfig = {
+    var genConfig = buildSocialsGeminiConfig_(model, {
       temperature: 0.85,
-      maxOutputTokens: 650,
+      maxOutputTokens: 2048,
+      thinkingLevel: 'LOW',
       responseMimeType: 'application/json'
-    };
-    if (/-(2\.5|[3-9](?:\.\d+)?)-flash|^gemini-flash(?:-lite)?-latest$/i.test(model)) {
-      genConfig.thinkingConfig = { thinkingBudget: 0 };
-    }
+    });
 
     var requestBody = {
       contents: [{ parts: [{ text: promptLines.join('\n') }] }],
@@ -1548,9 +1566,13 @@ function callGeminiAi_(payload) {
     var code = res.getResponseCode();
     var text = res.getContentText();
 
-    // Retry without thinkingConfig if an alias model rejects it with HTTP 400
-    if (code === 400 && genConfig.thinkingConfig && /thinking/i.test(text)) {
-      delete genConfig.thinkingConfig;
+    // Retry without thinkingConfig or responseMimeType if a model variant rejects it with HTTP 400
+    if (code === 400 && (genConfig.thinkingConfig || genConfig.responseMimeType)) {
+      if (genConfig.thinkingConfig && /thinking/i.test(text)) {
+        delete genConfig.thinkingConfig;
+      } else if (genConfig.responseMimeType && /mime|json/i.test(text)) {
+        delete genConfig.responseMimeType;
+      }
       res = UrlFetchApp.fetch(endpoint, {
         method: 'post',
         contentType: 'application/json',
@@ -1563,25 +1585,30 @@ function callGeminiAi_(payload) {
 
     if (code >= 200 && code < 300) {
       var parsed = JSON.parse(text);
-      var rawContent = parsed && parsed.candidates && parsed.candidates[0] &&
-        parsed.candidates[0].content && parsed.candidates[0].content.parts &&
-        parsed.candidates[0].content.parts[0] && parsed.candidates[0].content.parts[0].text;
-
-      if (!rawContent) throw new Error('Gemini returned an empty response.');
-      var cleaned = rawContent.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-      var jsonOut = JSON.parse(cleaned);
-      if (!jsonOut || !Array.isArray(jsonOut.suggestions)) {
-        throw new Error('Gemini JSON missing suggestions array.');
+      var rawContent = extractVisibleGeminiText_(parsed);
+      if (!rawContent) {
+        lastError = 'Gemini returned an empty response (' + model + ').';
+        continue;
       }
-      return {
-        model: model,
-        suggestions: jsonOut.suggestions
-      };
+      try {
+        var jsonOut = parseGeminiJsonOutput_(rawContent);
+        if (!jsonOut || !Array.isArray(jsonOut.suggestions)) {
+          lastError = 'Gemini JSON missing suggestions array (' + model + ').';
+          continue;
+        }
+        return {
+          model: model,
+          suggestions: jsonOut.suggestions
+        };
+      } catch (parseErr) {
+        lastError = 'Gemini returned invalid JSON (' + model + '): ' + parseErr.message;
+        continue;
+      }
     }
 
     lastError = 'Gemini HTTP ' + code + ' (' + model + '): ' + text.slice(0, 300);
-    // Try next Flash/Flash-Lite model on retired model (404), free-tier rate limit (429), or transient server errors (500/503)
-    if (code !== 404 && code !== 429 && code !== 503 && code !== 500) break;
+    // Try next Free Tier model on 404/400/429/500/503
+    if (code !== 404 && code !== 400 && code !== 429 && code !== 503 && code !== 500) break;
   }
 
   throw new Error(lastError || 'Gemini API call failed.');
@@ -1705,29 +1732,41 @@ function matchSpondWithGemini_(payload) {
 
   var configuredModel = String(props.getProperty('GEMINI_MODEL') || 'AUTO').trim();
   var modelsToTry = resolveFlashModelChain_(apiKey, configuredModel);
-  var model = modelsToTry[0] || 'gemini-flash-latest';
-  var endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
-  var res = UrlFetchApp.fetch(endpoint, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 1024, responseMimeType: 'application/json' }
-    }),
-    muteHttpExceptions: true
-  });
+  var maxAttempts = Math.min(modelsToTry.length, 3);
+  var lastErr = 'Gemini API call failed.';
 
-  if (res.getResponseCode() < 200 || res.getResponseCode() >= 300) {
-    throw new Error('Gemini HTTP ' + res.getResponseCode());
+  for (var i = 0; i < maxAttempts; i++) {
+    var model = modelsToTry[i];
+    var endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
+    var genConfig = buildSocialsGeminiConfig_(model, {
+      temperature: 0.1,
+      maxOutputTokens: 2048,
+      thinkingLevel: 'LOW',
+      responseMimeType: 'application/json'
+    });
+    var res = UrlFetchApp.fetch(endpoint, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: genConfig
+      }),
+      muteHttpExceptions: true
+    });
+
+    var code = res.getResponseCode();
+    if (code >= 200 && code < 300) {
+      var parsed = JSON.parse(res.getContentText() || '{}');
+      var rawText = extractVisibleGeminiText_(parsed);
+      if (!rawText) return { matches: [] };
+      var out = parseGeminiJsonOutput_(rawText);
+      return { model: model, matches: Array.isArray(out && out.matches) ? out.matches : [] };
+    }
+    lastErr = 'Gemini HTTP ' + code + ' (' + model + ')';
+    if (code !== 404 && code !== 400 && code !== 429 && code !== 503 && code !== 500) break;
   }
-  var parsed = JSON.parse(res.getContentText() || '{}');
-  var rawText = parsed && parsed.candidates && parsed.candidates[0] &&
-    parsed.candidates[0].content && parsed.candidates[0].content.parts &&
-    parsed.candidates[0].content.parts[0] && parsed.candidates[0].content.parts[0].text;
-  if (!rawText) return { matches: [] };
-  var clean = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-  var out = JSON.parse(clean);
-  return { matches: Array.isArray(out.matches) ? out.matches : [] };
+
+  throw new Error(lastErr);
 }
 
 // ============================================================================

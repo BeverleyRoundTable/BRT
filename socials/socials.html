@@ -3173,7 +3173,7 @@ async function runAiAssist() {
                 monthYear: slot.monthYear,
                 displayDate: slot.displayDate,
                 existingTitles
-            }, { timeoutMs: 9000 });
+            }, { timeoutMs: 25000 });
             suggestions = res.suggestions || [];
             aiStatus.classList.add("hidden");
         } else {
@@ -3195,7 +3195,9 @@ async function runAiAssist() {
             aiStatus.className = "mt-3 text-xs rounded-xl px-3 py-2 bg-amber-500/15 text-amber-200 border border-amber-500/30";
             aiStatus.textContent = err.code === "NO_GEMINI_KEY"
                 ? "Add your GEMINI_API_KEY in Apps Script Script Properties for custom AI ideas — showing built-in Beverley ideas meanwhile:"
-                : "Showing instant Beverley ideas (live AI timed out or was busy — click again to retry):";
+                : err.code === "TIMEOUT"
+                    ? "Live AI took longer than 25s — showing instant Beverley ideas (click again to retry):"
+                    : `Showing instant Beverley ideas (${err.message || "live AI busy — click again to retry"}):`;
             renderAiSuggestionCards(fallback, aiResults);
         }
     } finally {
