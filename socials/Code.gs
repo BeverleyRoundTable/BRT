@@ -79,7 +79,8 @@ var DEFAULT_SETTINGS = [
   ['DEFAULT_START_TIME', '19:30', 'Default start time for Wednesday socials'],
   ['DEFAULT_END_TIME', '22:00', 'Default finish time for Wednesday socials'],
   ['WHATSAPP_INVITE_URL', 'https://chat.whatsapp.com/CjoA2cYnR5H9D9N8w1WeuR', 'Prospective & member WhatsApp group link'],
-  ['AUTO_RELEASE_ON_MEMBER_DELETE', 'TRUE', 'If TRUE, removing a member releases their future OPEN/planned slots']
+  ['AUTO_RELEASE_ON_MEMBER_DELETE', 'TRUE', 'If TRUE, removing a member releases their future OPEN/planned slots'],
+  ['SPOND_CALENDAR_API_URL', 'https://script.google.com/macros/s/AKfycbyJjIbq-XZ9W8owbbp0PizZ2adE-Z3SK1bAxPDEjjDjmYhqpKXMwlHEuWrOUyNeTg/exec', 'Google Calendar Web App endpoint for cross-referencing Spond lock-ins by date']
 ];
 
 // ============================================================================
@@ -96,7 +97,20 @@ function onOpen() {
     .addItem('4. Test Gemini AI Connection', 'menuTestGemini')
     .addItem('5. 🔐 Set Gemini API Key (Script Properties)', 'menuSetGeminiKey')
     .addItem('6. 🔒 Set Table PIN / Admin PIN (Script Properties)', 'menuSetPins')
+    .addSeparator()
+    .addItem('7. 🔄 Sync Spond Calendar Matches', 'menuSyncSpondCalendar')
     .addToUi();
+}
+
+function menuSyncSpondCalendar() {
+  ensureSetup_();
+  var res = syncSpondMatches_();
+  SpreadsheetApp.getUi().alert(
+    'Spond Calendar Cross-Check Complete!\n\n' +
+    'Calendar events checked: ' + res.calendarCount + '\n' +
+    'Auto-confirmed (IDEA -> CONFIRMED): ' + res.confirmedCount + '\n' +
+    'Exact-date matches already confirmed: ' + res.alreadyConfirmedCount
+  );
 }
 
 function menuGenerateCalendar() {
@@ -403,6 +417,14 @@ function doGet(e) {
       return jsonOk_(aiData);
     }
 
+    if (action === 'sync-spond') {
+      requirePin_(params, 'member');
+      return withScriptLock_(function () {
+        var syncResult = syncSpondMatches_(params.calUrl);
+        return jsonOk_(syncResult);
+      });
+    }
+
     return jsonError_('Unknown action: ' + action);
   } catch (err) {
     return jsonError_(err && err.message ? err.message : String(err), err && err.code);
@@ -425,7 +447,7 @@ function doPost(e) {
   var action = String(payload.action || 'init').toLowerCase();
 
   try {
-    if (action !== 'ai-assist' && action !== 'verify-pin') {
+    if (action !== 'ai-assist' && action !== 'ai-match-spond' && action !== 'verify-pin') {
       ensureSetup_();
     }
 
@@ -476,6 +498,18 @@ function doPost(e) {
     if (action === 'ai-assist') {
       requirePin_(payload, 'member');
       return jsonOk_(callGeminiAi_(payload));
+    }
+
+    if (action === 'ai-match-spond') {
+      requirePin_(payload, 'member');
+      return jsonOk_(matchSpondWithGemini_(payload));
+    }
+
+    if (action === 'sync-spond') {
+      requirePin_(payload, 'member');
+      return withScriptLock_(function () {
+        return jsonOk_(syncSpondMatches_(payload.calUrl));
+      });
     }
 
     return jsonError_('Unknown POST action: ' + action);
@@ -1551,6 +1585,149 @@ function callGeminiAi_(payload) {
   }
 
   throw new Error(lastError || 'Gemini API call failed.');
+}
+
+// ============================================================================
+// SPOND GOOGLE CALENDAR SYNC & GEMINI SEMANTIC MATCHING
+// ============================================================================
+
+function syncSpondMatches_(overrideUrl) {
+  var settings = getSettingsMap_();
+  var calUrl = String(
+    overrideUrl ||
+    settings.SPOND_CALENDAR_API_URL ||
+    'https://script.google.com/macros/s/AKfycbyJjIbq-XZ9W8owbbp0PizZ2adE-Z3SK1bAxPDEjjDjmYhqpKXMwlHEuWrOUyNeTg/exec'
+  ).trim();
+  if (!calUrl) throw new Error('SPOND_CALENDAR_API_URL not configured.');
+
+  var sep = calUrl.indexOf('?') === -1 ? '?' : '&';
+  var resp = UrlFetchApp.fetch(calUrl + sep + 'type=total', { muteHttpExceptions: true });
+  if (resp.getResponseCode() !== 200) {
+    throw new Error('Calendar script returned HTTP ' + resp.getResponseCode());
+  }
+  var calRaw = JSON.parse(resp.getContentText() || '[]');
+  var calList = Array.isArray(calRaw) ? calRaw : [];
+
+  var byDate = {};
+  var tz = Session.getScriptTimeZone() || 'Europe/London';
+  for (var c = 0; c < calList.length; c++) {
+    var ev = calList[c];
+    var dtRaw = ev && (ev.DateTime || ev.dateTime);
+    if (!dtRaw) continue;
+    var dtObj = new Date(dtRaw);
+    if (isNaN(dtObj.getTime())) continue;
+    var iso = Utilities.formatDate(dtObj, tz, 'yyyy-MM-dd');
+    var timeStr = Utilities.formatDate(dtObj, tz, 'HH:mm');
+    if (!byDate[iso]) {
+      byDate[iso] = {
+        title: String(ev.Title || ev.title || '').trim(),
+        location: String(ev.Location || ev.location || '').trim(),
+        timeStr: timeStr,
+        img: String(ev.Img || ev.img || '').trim()
+      };
+    }
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAMES.SOCIALS);
+  if (!sheet || sheet.getLastRow() < 2) {
+    return { calendarCount: calList.length, confirmedCount: 0, alreadyConfirmedCount: 0 };
+  }
+
+  var range = sheet.getRange(2, 1, sheet.getLastRow() - 1, SOCIALS_HEADERS.length);
+  var rows = range.getValues();
+  var confirmedCount = 0;
+  var alreadyConfirmedCount = 0;
+  var dirty = false;
+  var nowIso = new Date().toISOString();
+
+  for (var r = 0; r < rows.length; r++) {
+    var row = rows[r];
+    var rowIso = formatCellDateISO_(row[1]) || formatCellDateISO_(row[0]);
+    if (!rowIso || !byDate[rowIso]) continue;
+
+    var calEv = byDate[rowIso];
+    var status = String(row[7] || 'OPEN').toUpperCase();
+    if (status === 'IDEA') {
+      row[7] = 'CONFIRMED';
+      var curLoc = String(row[12] || '').trim();
+      if ((!curLoc || /^(tbc|to be confirmed)$/i.test(curLoc)) && calEv.location && !/^tbc$/i.test(calEv.location)) {
+        row[12] = calEv.location;
+      }
+      if (calEv.timeStr && calEv.timeStr !== '00:00') {
+        row[13] = calEv.timeStr;
+      }
+      if (!String(row[18] || '').trim() && calEv.img) {
+        row[18] = calEv.img;
+      }
+      row[19] = nowIso;
+      confirmedCount++;
+      dirty = true;
+    } else if (status === 'CONFIRMED') {
+      alreadyConfirmedCount++;
+    }
+  }
+
+  if (dirty) {
+    sheet.getRange('A:D').setNumberFormat('@');
+    sheet.getRange('N:O').setNumberFormat('@');
+    range.setValues(rows);
+    SpreadsheetApp.flush();
+  }
+
+  return {
+    calendarCount: calList.length,
+    confirmedCount: confirmedCount,
+    alreadyConfirmedCount: alreadyConfirmedCount,
+    state: dirty ? buildFullState_() : null
+  };
+}
+
+function matchSpondWithGemini_(payload) {
+  var props = PropertiesService.getScriptProperties();
+  var apiKey = String(props.getProperty('GEMINI_API_KEY') || '').trim();
+  if (!apiKey) {
+    apiKey = getGeminiApiKey_(getSettingsMap_());
+  }
+  if (!apiKey) throw new Error('GEMINI_API_KEY not configured.');
+
+  var slots = Array.isArray(payload.slots) ? payload.slots : [];
+  var calEvents = Array.isArray(payload.calendarEvents) ? payload.calendarEvents : [];
+  if (!slots.length || !calEvents.length) return { matches: [] };
+
+  var prompt = [
+    'Match Beverley Round Table Social Planner drafts to Google Calendar / Spond events that may have different titles or shifted by a week.',
+    'Only match pairs that clearly refer to the same social activity.',
+    'PLANNER SLOTS: ' + JSON.stringify(slots),
+    'CALENDAR EVENTS: ' + JSON.stringify(calEvents),
+    'Return ONLY JSON: {"matches":[{"slotId":"YYYY-MM-DD","eventId":"...","confidence":0.9,"reason":"short reason"}]}'
+  ].join('\n');
+
+  var configuredModel = String(props.getProperty('GEMINI_MODEL') || 'AUTO').trim();
+  var modelsToTry = resolveFlashModelChain_(apiKey, configuredModel);
+  var model = modelsToTry[0] || 'gemini-flash-latest';
+  var endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
+  var res = UrlFetchApp.fetch(endpoint, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 1024, responseMimeType: 'application/json' }
+    }),
+    muteHttpExceptions: true
+  });
+
+  if (res.getResponseCode() < 200 || res.getResponseCode() >= 300) {
+    throw new Error('Gemini HTTP ' + res.getResponseCode());
+  }
+  var parsed = JSON.parse(res.getContentText() || '{}');
+  var rawText = parsed && parsed.candidates && parsed.candidates[0] &&
+    parsed.candidates[0].content && parsed.candidates[0].content.parts &&
+    parsed.candidates[0].content.parts[0] && parsed.candidates[0].content.parts[0].text;
+  if (!rawText) return { matches: [] };
+  var clean = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+  var out = JSON.parse(clean);
+  return { matches: Array.isArray(out.matches) ? out.matches : [] };
 }
 
 // ============================================================================

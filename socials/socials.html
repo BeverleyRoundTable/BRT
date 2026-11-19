@@ -450,6 +450,40 @@
                     </div>
                 </div>
 
+                <!-- Spond / Google Calendar Cross-Reference Bar -->
+                <div id="spond-sync-bar" class="mb-10 bg-gradient-to-r from-teal-950/60 via-brt-dark to-brt-dark border border-teal-400/25 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div class="flex items-start sm:items-center gap-3.5 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-400/35 text-teal-300 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-calendar-check text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="font-heading font-black text-sm uppercase tracking-wider text-white">Spond Calendar Cross-Check</h3>
+                                <span id="spond-feed-pill" class="px-2.5 py-0.5 rounded-full text-[10px] font-heading font-bold uppercase bg-white/10 text-gray-300 border border-white/10">
+                                    Checking Google Calendar...
+                                </span>
+                            </div>
+                            <p id="spond-sync-summary" class="text-xs text-gray-300 mt-1">
+                                Matching Wednesday planner dates against Spond events in Google Calendar.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                        <button type="button" id="spond-filter-locked-btn" class="px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/35 text-emerald-200 hover:bg-emerald-500 hover:text-brt-dark font-heading font-bold text-[11px] uppercase transition-colors">
+                            <span id="stat-spond-locked">0</span> In Spond
+                        </button>
+                        <button type="button" id="spond-filter-pending-btn" class="px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/35 text-amber-200 hover:bg-amber-400 hover:text-brt-dark font-heading font-bold text-[11px] uppercase transition-colors">
+                            <span id="stat-spond-pending">0</span> To Add to Spond
+                        </button>
+                        <button type="button" id="spond-sync-sheet-btn" class="hidden px-3.5 py-1.5 rounded-full bg-teal-400 text-brt-dark hover:bg-white font-heading font-bold text-[11px] uppercase transition-colors inline-flex items-center gap-1.5">
+                            <i class="fa-solid fa-check-double"></i> Confirm <span id="spond-autoconfirm-count">0</span> in Sheet
+                        </button>
+                        <button type="button" id="spond-refresh-btn" class="px-3 py-1.5 rounded-full border border-white/15 hover:border-teal-400 text-gray-300 hover:text-teal-300 font-heading font-bold text-[11px] uppercase transition-colors" title="Re-sync Google Calendar Spond feed">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Member Quota Header & Roster -->
                 <div class="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -529,6 +563,12 @@
                         </button>
                         <button data-filter="PROSPECTIVE" class="filter-pill px-4 py-2 rounded-full font-heading font-bold text-xs uppercase tracking-wider bg-white/5 text-gray-300 border border-white/10 hover:border-brt-gold transition-colors">
                             <i class="fa-solid fa-handshake mr-1"></i> Prospective Picks
+                        </button>
+                        <button data-filter="SPOND_OK" class="filter-pill px-4 py-2 rounded-full font-heading font-bold text-xs uppercase tracking-wider bg-white/5 text-gray-300 border border-white/10 hover:border-teal-400 transition-colors">
+                            <i class="fa-solid fa-calendar-check mr-1"></i> In Spond
+                        </button>
+                        <button data-filter="NEEDS_SPOND" class="filter-pill px-4 py-2 rounded-full font-heading font-bold text-xs uppercase tracking-wider bg-white/5 text-gray-300 border border-white/10 hover:border-amber-400 transition-colors">
+                            <i class="fa-regular fa-clock mr-1"></i> Needs Spond
                         </button>
                     </div>
 
@@ -660,6 +700,9 @@
                         <div id="ai-status" class="hidden mt-3 text-xs rounded-xl px-3 py-2"></div>
                         <div id="ai-results" class="hidden mt-4 space-y-3"></div>
                     </div>
+
+                    <!-- SPOND / GOOGLE CALENDAR MATCH BANNER -->
+                    <div id="modal-spond-box" class="hidden rounded-2xl p-3.5 border"></div>
 
                     <!-- SOCIAL DETAILS FORM -->
                     <form id="social-form" class="space-y-4">
@@ -844,12 +887,17 @@
                 </div>
                 <div class="p-6 space-y-4">
                     <div>
-                        <label for="api-url-input" class="block text-xs font-heading uppercase tracking-wider text-gray-300 mb-1.5">Google Apps Script Web App URL</label>
+                        <label for="api-url-input" class="block text-xs font-heading uppercase tracking-wider text-gray-300 mb-1.5">Socials Planner Apps Script Web App URL</label>
                         <input type="url" id="api-url-input" placeholder="https://script.google.com/macros/s/.../exec"
                                class="w-full px-3.5 py-2.5 bg-brt-darker border border-white/15 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brt-gold">
                     </div>
+                    <div>
+                        <label for="cal-api-url-input" class="block text-xs font-heading uppercase tracking-wider text-teal-300 mb-1.5">Google Calendar / Spond Sync Script URL</label>
+                        <input type="url" id="cal-api-url-input" placeholder="https://script.google.com/macros/s/.../exec"
+                               class="w-full px-3.5 py-2.5 bg-brt-darker border border-white/15 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-teal-400">
+                    </div>
                     <p class="text-xs text-gray-400 leading-relaxed">
-                        Saving here stores the URL in your browser so you can verify everything right away. For all members on <code class="text-brt-gold">socials.beverleyroundtable.co.uk</code>, also paste it into <code class="text-brt-gold">DEFAULT_SCRIPT_API_URL</code> in <code class="text-brt-gold">socials.html</code> (or <code class="text-brt-gold">router/worker.js</code>).
+                        Saving here stores the URLs in your browser so you can verify everything right away. For all members on <code class="text-brt-gold">socials.beverleyroundtable.co.uk</code>, defaults live in <code class="text-brt-gold">socials.html</code> and <code class="text-brt-gold">router/worker.js</code>.
                     </p>
                     <div class="flex justify-between items-center gap-3 pt-2">
                         <button type="button" id="api-clear-btn" class="px-4 py-2.5 rounded-full border border-white/15 text-gray-400 hover:text-white font-heading font-bold text-xs uppercase">
@@ -953,7 +1001,9 @@
 // CONFIGURATION — Paste your deployed Google Apps Script Web App URL below
 // ============================================================================
 const DEFAULT_SCRIPT_API_URL = "https://script.google.com/macros/s/AKfycbyOK9b-We-vy3oBYT6xz7glBlWkUoK8JOseHmj7tKpo8uJs-ABg1lxTeMxPRvz3j9g5/exec";
+const DEFAULT_CALENDAR_API_URL = "https://script.google.com/macros/s/AKfycbyJjIbq-XZ9W8owbbp0PizZ2adE-Z3SK1bAxPDEjjDjmYhqpKXMwlHEuWrOUyNeTg/exec";
 const LOCAL_STORAGE_API_KEY = "brt_socials_planner_api_url";
+const LOCAL_STORAGE_CAL_API_KEY = "brt_socials_calendar_api_url";
 const LOCAL_STORAGE_DEMO_KEY = "brt_socials_planner_demo_state_v7";
 const LOCAL_STORAGE_PIN_KEY = "brt_socials_member_pin";
 const PLANNER_START_YM = "2027-02";
@@ -1093,6 +1143,18 @@ function getConfiguredApiUrl() {
     return "";
 }
 
+function getConfiguredCalendarApiUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const fromParam = (params.get("calApi") || "").trim();
+    if (isValidGasUrl(fromParam)) return fromParam;
+
+    const fromStorage = (localStorage.getItem(LOCAL_STORAGE_CAL_API_KEY) || "").trim();
+    if (isValidGasUrl(fromStorage)) return fromStorage;
+
+    if (isValidGasUrl(DEFAULT_CALENDAR_API_URL)) return DEFAULT_CALENDAR_API_URL.trim();
+    return "";
+}
+
 function isValidGasUrl(u) {
     return Boolean(
         u &&
@@ -1106,6 +1168,7 @@ function isValidGasUrl(u) {
 // ============================================================================
 const appState = {
     apiUrl: "",
+    calendarApiUrl: "",
     isDemo: true,
     hasGeminiKey: false,
     pinRequired: false,
@@ -1115,7 +1178,14 @@ const appState = {
     members: [],
     socials: [],
     stats: null,
-    filterType: "ALL",       // ALL | OPEN | PAID | FREE | PROSPECTIVE
+    calendarEvents: [],
+    calendarStatus: "idle", // idle | loading | ready | error
+    calendarError: "",
+    unmatchedCalendarEvents: [],
+    aiSpondMatches: {},
+    autoSyncedSlotIds: {},
+    spondSyncInFlight: false,
+    filterType: "ALL",       // ALL | OPEN | PAID | FREE | PROSPECTIVE | SPOND_OK | NEEDS_SPOND
     filterMember: "",
     searchText: "",
     showPast: false,
@@ -1631,16 +1701,515 @@ function applyBackendData(data) {
         const waBtn = document.getElementById("whatsapp-cta");
         if (waBtn) waBtn.href = data.whatsappUrl;
     }
+    applySpondCrossReference();
     updatePinBadges();
     renderAll();
 }
 
+// ============================================================================
+// SPOND / GOOGLE CALENDAR CROSS-REFERENCE ENGINE
+// ============================================================================
+function stripCalendarEmojis(str) {
+    return String(str || "")
+        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E0}-\u{1F1FF}\u{E0000}-\u{E007F}\uFE0F\u200D]/gu, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function parseCalendarFeedDateUK(dateTimeVal) {
+    const raw = String(dateTimeVal || "").trim();
+    if (!raw) return { dateISO: "", timeStr: "" };
+
+    // If pure YYYY-MM-DD without time
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        return { dateISO: raw, timeStr: "" };
+    }
+
+    const dt = new Date(raw);
+    if (!Number.isNaN(dt.getTime())) {
+        try {
+            const parts = new Intl.DateTimeFormat("en-GB", {
+                timeZone: "Europe/London",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false
+            }).formatToParts(dt);
+            const map = {};
+            parts.forEach(p => { map[p.type] = p.value; });
+            const hh = map.hour === "24" ? "00" : map.hour;
+            return {
+                dateISO: `${map.year}-${map.month}-${map.day}`,
+                timeStr: `${hh}:${map.minute}`
+            };
+        } catch {
+            return {
+                dateISO: dt.toISOString().slice(0, 10),
+                timeStr: dt.toISOString().slice(11, 16)
+            };
+        }
+    }
+
+    const fallbackIso = normalizeIsoDate(raw);
+    return { dateISO: fallbackIso, timeStr: normalizeTimeStr(raw, "") };
+}
+
+const SPOND_STOP_WORDS = new Set([
+    "a", "an", "and", "at", "beverley", "brt", "club", "event", "for", "in",
+    "lesson", "night", "of", "on", "or", "round", "session", "social", "table",
+    "takeover", "tbc", "the", "to", "with"
+]);
+
+function tokenizeForSpondMatch(str) {
+    return stripCalendarEmojis(str)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .map(w => w.trim())
+        .filter(w => w.length >= 2 && !SPOND_STOP_WORDS.has(w));
+}
+
+function getBigramsSet(str) {
+    const clean = stripCalendarEmojis(str).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const set = new Set();
+    for (let i = 0; i < clean.length - 1; i++) {
+        set.add(clean.slice(i, i + 2));
+    }
+    return set;
+}
+
+function computeSpondFuzzyScore(slot, calEv) {
+    const slotTitle = stripCalendarEmojis(slot.title || "");
+    const calTitle = stripCalendarEmojis(calEv.cleanTitle || calEv.title || "");
+    if (!slotTitle || !calTitle) return 0;
+
+    const aLower = slotTitle.toLowerCase();
+    const bLower = calTitle.toLowerCase();
+    if (aLower === bLower) return 1.0;
+
+    const aTokens = tokenizeForSpondMatch(`${slot.title} ${slot.location || ""}`);
+    const bTokens = tokenizeForSpondMatch(`${calEv.cleanTitle} ${calEv.location || ""}`);
+    const orgFirst = String(slot.organizerName || "").trim().split(/\s+/)[0]?.toLowerCase() || "";
+    if (orgFirst && orgFirst.length >= 3 && bLower.includes(orgFirst) && !aTokens.includes(orgFirst)) {
+        aTokens.push(orgFirst);
+    }
+
+    const setA = new Set(aTokens);
+    const setB = new Set(bTokens);
+    let intersection = 0;
+    setA.forEach(t => {
+        if (setB.has(t)) {
+            intersection += 1;
+        } else {
+            for (const bt of setB) {
+                if ((t.length >= 4 && bt.includes(t)) || (bt.length >= 4 && t.includes(bt))) {
+                    intersection += 0.7;
+                    break;
+                }
+            }
+        }
+    });
+    const union = new Set([...setA, ...setB]).size || 1;
+    const tokenJaccard = intersection / union;
+
+    // Dice bigram similarity on title
+    const bgA = getBigramsSet(slotTitle);
+    const bgB = getBigramsSet(calTitle);
+    let bgCommon = 0;
+    bgA.forEach(g => { if (bgB.has(g)) bgCommon++; });
+    const dice = (bgA.size + bgB.size) ? (2 * bgCommon) / (bgA.size + bgB.size) : 0;
+
+    return Math.max(tokenJaccard, dice * 0.9 + tokenJaccard * 0.25);
+}
+
+function isoDaysDiff(isoA, isoB) {
+    const a = Date.parse(`${isoA}T00:00:00Z`);
+    const b = Date.parse(`${isoB}T00:00:00Z`);
+    if (Number.isNaN(a) || Number.isNaN(b)) return 9999;
+    return Math.round((b - a) / 86400000);
+}
+
+function normalizeCalendarEvents(rawList) {
+    if (!Array.isArray(rawList)) return [];
+    const seen = new Set();
+    const out = [];
+    rawList.forEach((ev, idx) => {
+        const rawTitle = String(ev.Title || ev.title || "").trim();
+        if (!rawTitle) return;
+        const parsed = parseCalendarFeedDateUK(ev.DateTime || ev.dateTime || ev.dateISO || "");
+        if (!parsed.dateISO) return;
+        const cleanTitle = stripCalendarEmojis(rawTitle) || rawTitle;
+        const id = `${parsed.dateISO}|${cleanTitle.toLowerCase()}|${idx}`;
+        if (seen.has(id)) return;
+        seen.add(id);
+        const cleanLabels = formatCleanFromIso(parsed.dateISO);
+        out.push({
+            id,
+            title: rawTitle,
+            cleanTitle,
+            dateISO: parsed.dateISO,
+            timeStr: parsed.timeStr,
+            displayDate: cleanLabels.displayDate.replace(/^Wed\s/, () => {
+                const dt = new Date(`${parsed.dateISO}T12:00:00Z`);
+                const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                return `${days[dt.getUTCDay()]} `;
+            }),
+            location: String(ev.Location || ev.location || "").trim(),
+            img: String(ev.Img || ev.img || "").trim(),
+            isDecemberSleigh: parsed.dateISO.slice(5, 7) === "12" && /sleigh/i.test(cleanTitle)
+        });
+    });
+    return out.sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+}
+
+function applySpondCrossReference() {
+    const socials = appState.socials || [];
+    const calEvents = appState.calendarEvents || [];
+    const usedCalIds = new Set();
+
+    // Reset previous match state
+    socials.forEach(s => {
+        s.spondMatch = null;
+        s.effectiveStatus = s.status;
+        s.spondAutoConfirmed = false;
+    });
+
+    if (calEvents.length > 0) {
+        // Group calendar events by dateISO
+        const byDate = new Map();
+        calEvents.forEach(ev => {
+            if (!byDate.has(ev.dateISO)) byDate.set(ev.dateISO, []);
+            byDate.get(ev.dateISO).push(ev);
+        });
+
+        // PASS 1: Exact Date Match (ignores title completely — per planner workflow)
+        socials.forEach(slot => {
+            const matchesOnDate = byDate.get(slot.dateISO);
+            if (!matchesOnDate || !matchesOnDate.length) return;
+
+            let bestEv = matchesOnDate[0];
+            if (matchesOnDate.length > 1) {
+                bestEv = matchesOnDate.slice().sort((a, b) => computeSpondFuzzyScore(slot, b) - computeSpondFuzzyScore(slot, a))[0];
+            }
+            usedCalIds.add(bestEv.id);
+            slot.spondMatch = {
+                type: "exact_date",
+                event: bestEv,
+                eventsOnDate: matchesOnDate,
+                daysDiff: 0,
+                score: 1
+            };
+            if (slot.status === "IDEA") {
+                slot.effectiveStatus = "CONFIRMED";
+                slot.spondAutoConfirmed = true;
+            }
+        });
+
+        // PASS 2: Fuzzy / AI Match across nearby shifted dates (±21 days or same YYYY-MM)
+        socials.forEach(slot => {
+            if (slot.spondMatch || slot.status === "OPEN" || !slot.title) return;
+
+            const aiCached = appState.aiSpondMatches[slot.slotId];
+            if (aiCached) {
+                const matchedEv = calEvents.find(ev => !usedCalIds.has(ev.id) && ev.id === aiCached.eventId);
+                if (matchedEv) {
+                    usedCalIds.add(matchedEv.id);
+                    slot.spondMatch = {
+                        type: "fuzzy_match",
+                        event: matchedEv,
+                        daysDiff: isoDaysDiff(slot.dateISO, matchedEv.dateISO),
+                        score: aiCached.confidence || 0.9,
+                        viaAi: true,
+                        reason: aiCached.reason || ""
+                    };
+                    return;
+                }
+            }
+
+            let bestEv = null;
+            let bestScore = 0;
+            calEvents.forEach(ev => {
+                if (usedCalIds.has(ev.id) || ev.isDecemberSleigh) return;
+                const diff = Math.abs(isoDaysDiff(slot.dateISO, ev.dateISO));
+                const sameMonth = slot.dateISO.slice(0, 7) === ev.dateISO.slice(0, 7);
+                if (!sameMonth && diff > 21) return;
+
+                const score = computeSpondFuzzyScore(slot, ev);
+                if (score >= 0.42 && score > bestScore) {
+                    bestScore = score;
+                    bestEv = ev;
+                }
+            });
+
+            if (bestEv) {
+                usedCalIds.add(bestEv.id);
+                slot.spondMatch = {
+                    type: "fuzzy_match",
+                    event: bestEv,
+                    daysDiff: isoDaysDiff(slot.dateISO, bestEv.dateISO),
+                    score: bestScore,
+                    viaAi: false
+                };
+            }
+        });
+    }
+
+    // Track unmatched calendar events inside active planner horizon (excluding Dec Sleigh Season)
+    const range = getDynamicHorizonRange(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD);
+    appState.unmatchedCalendarEvents = calEvents.filter(ev =>
+        !usedCalIds.has(ev.id) &&
+        !ev.isDecemberSleigh &&
+        ev.dateISO >= range.floorIso &&
+        ev.dateISO <= range.ceilingIso
+    );
+
+    // Update Spond stats on appState.stats
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const activeWindowSocials = socials.filter(s => s.dateISO >= range.floorIso && s.dateISO <= range.ceilingIso);
+    const claimedUpcoming = activeWindowSocials.filter(s => s.dateISO >= todayISO && s.status !== "OPEN");
+    const exactLocked = activeWindowSocials.filter(s => s.spondMatch && s.spondMatch.type === "exact_date");
+    const autoConfirmed = activeWindowSocials.filter(s => s.spondAutoConfirmed);
+    const shiftedMatches = activeWindowSocials.filter(s => s.spondMatch && s.spondMatch.type === "fuzzy_match");
+    const openInSpond = activeWindowSocials.filter(s => s.status === "OPEN" && s.spondMatch);
+    const needsSpond = claimedUpcoming.filter(s => !s.spondMatch);
+
+    if (appState.stats) {
+        appState.stats.spondLockedCount = exactLocked.length;
+        appState.stats.spondAutoConfirmedCount = autoConfirmed.length;
+        appState.stats.spondShiftedCount = shiftedMatches.length;
+        appState.stats.spondOpenMatchedCount = openInSpond.length;
+        appState.stats.spondPendingAddCount = needsSpond.length;
+    }
+}
+
+async function loadSpondCalendar() {
+    appState.calendarApiUrl = getConfiguredCalendarApiUrl();
+    if (!appState.calendarApiUrl) {
+        appState.calendarStatus = "idle";
+        appState.calendarEvents = [];
+        applySpondCrossReference();
+        renderAll();
+        return;
+    }
+
+    appState.calendarStatus = "loading";
+    appState.calendarError = "";
+    renderSpondSummaryBar();
+
+    try {
+        const sep = appState.calendarApiUrl.includes("?") ? "&" : "?";
+        const res = await fetch(`${appState.calendarApiUrl}${sep}type=total`, {
+            method: "GET",
+            cache: "no-store"
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rawJson = await res.json();
+        const list = Array.isArray(rawJson) ? rawJson : (Array.isArray(rawJson.events) ? rawJson.events : []);
+        appState.calendarEvents = normalizeCalendarEvents(list);
+        appState.calendarStatus = "ready";
+        applySpondCrossReference();
+        renderAll();
+        updateConnectionStatusPill();
+        autoPersistSpondConfirmationsIfPinSaved();
+    } catch (err) {
+        console.warn("Spond calendar fetch warning:", err);
+        appState.calendarStatus = "error";
+        appState.calendarError = err.message || "Could not load Google Calendar feed";
+        applySpondCrossReference();
+        renderAll();
+        updateConnectionStatusPill();
+    }
+}
+
+function updateConnectionStatusPill() {
+    const statusPill = document.getElementById("connection-status-pill");
+    if (!statusPill) return;
+    if (appState.isDemo) {
+        statusPill.innerHTML = `<span class="text-brt-gold"><i class="fa-solid fa-flask mr-1"></i> Preview Mode (Local Demo)</span>`;
+        return;
+    }
+    const calPart = appState.calendarStatus === "ready"
+        ? ` &middot; <span class="text-teal-300"><i class="fa-solid fa-calendar-check mr-1"></i>Spond Synced (${appState.calendarEvents.length})</span>`
+        : appState.calendarStatus === "error"
+            ? ` &middot; <span class="text-amber-300"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Spond Feed Offline</span>`
+            : "";
+    statusPill.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Connected to Google Sheet</span>${calPart}`;
+}
+
+function buildSpondAutoConfirmPayload(slot) {
+    const calEv = slot.spondMatch && slot.spondMatch.event;
+    const curLoc = String(slot.location || "").trim();
+    const useLoc = (!curLoc || /^(tbc|to be confirmed)$/i.test(curLoc)) && calEv && calEv.location && !/^tbc$/i.test(calEv.location)
+        ? calEv.location
+        : curLoc;
+    const useStart = (calEv && calEv.timeStr && calEv.timeStr !== "00:00") ? calEv.timeStr : (slot.startTime || "19:30");
+    return {
+        slotId: slot.backendSlotId || slot.slotId,
+        dateISO: slot.dateISO,
+        expectedCurrentOrganizer: slot.organizerName,
+        organizerName: slot.organizerName,
+        coOrganizerName: slot.coOrganizerName || "",
+        title: slot.title,
+        status: "CONFIRMED",
+        description: slot.description || "",
+        location: useLoc,
+        startTime: useStart,
+        endTime: slot.endTime || "22:00",
+        costPerPerson: slot.costPerPerson || "",
+        accessoriesNeeded: slot.accessoriesNeeded || "",
+        prospectiveFriendly: slot.prospectiveFriendly !== false,
+        imgUrl: slot.imgUrl || (calEv && calEv.img) || ""
+    };
+}
+
+async function autoPersistSpondConfirmationsIfPinSaved() {
+    if (appState.isDemo || !appState.memberPin || appState.spondSyncInFlight) return;
+    const toConfirm = appState.socials.filter(s => s.spondAutoConfirmed && !appState.autoSyncedSlotIds[s.slotId]);
+    if (!toConfirm.length) return;
+    await syncSpondConfirmationsToSheet({ silent: true });
+}
+
+async function syncSpondConfirmationsToSheet(options) {
+    const silent = Boolean(options && options.silent);
+    const candidates = appState.socials.filter(s => s.spondAutoConfirmed);
+    if (!candidates.length || appState.spondSyncInFlight) return;
+
+    if (appState.isDemo) {
+        candidates.forEach(s => { s.status = "CONFIRMED"; s.spondAutoConfirmed = false; });
+        applyBackendData(recalcDemoState({ members: appState.members, socials: appState.socials }));
+        return;
+    }
+
+    if (silent && !appState.memberPin) return;
+
+    appState.spondSyncInFlight = true;
+    const btn = document.getElementById("spond-sync-sheet-btn");
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="mini-spinner mr-1"></span> Syncing...`;
+    }
+
+    try {
+        let latestData = null;
+        for (const slot of candidates) {
+            appState.autoSyncedSlotIds[slot.slotId] = true;
+            latestData = await apiPost("save-social", buildSpondAutoConfirmPayload(slot));
+        }
+        if (latestData) {
+            applyBackendData(latestData);
+        }
+    } catch (err) {
+        if (!silent) {
+            alert("Could not save Spond confirmations to Sheet: " + err.message);
+        }
+    } finally {
+        appState.spondSyncInFlight = false;
+        renderSpondSummaryBar();
+    }
+}
+
+async function runAiSpondCrossCheck() {
+    if (appState.isDemo || !appState.hasGeminiKey) return;
+    const unmatchedSlots = appState.socials.filter(s => s.status !== "OPEN" && !s.spondMatch && s.title);
+    const unmatchedCal = appState.unmatchedCalendarEvents || [];
+    if (!unmatchedSlots.length || !unmatchedCal.length) return;
+
+    try {
+        const res = await apiPost("ai-match-spond", {
+            slots: unmatchedSlots.map(s => ({
+                slotId: s.slotId,
+                dateISO: s.dateISO,
+                title: s.title,
+                location: s.location,
+                organizerName: s.organizerName
+            })),
+            calendarEvents: unmatchedCal.map(ev => ({
+                id: ev.id,
+                dateISO: ev.dateISO,
+                title: ev.cleanTitle,
+                location: ev.location
+            }))
+        }, { timeoutMs: 12000 });
+
+        if (res && Array.isArray(res.matches)) {
+            res.matches.forEach(m => {
+                if (m && m.slotId && m.eventId) {
+                    appState.aiSpondMatches[m.slotId] = m;
+                }
+            });
+            applySpondCrossReference();
+            renderAll();
+        }
+    } catch (err) {
+        console.warn("AI Spond match fallback:", err.message);
+    }
+}
+
+function renderSpondSummaryBar() {
+    const pill = document.getElementById("spond-feed-pill");
+    const summaryEl = document.getElementById("spond-sync-summary");
+    const lockedCountEl = document.getElementById("stat-spond-locked");
+    const pendingCountEl = document.getElementById("stat-spond-pending");
+    const syncSheetBtn = document.getElementById("spond-sync-sheet-btn");
+    const autoCountEl = document.getElementById("spond-autoconfirm-count");
+    if (!pill || !summaryEl) return;
+
+    const s = appState.stats || {};
+    const locked = s.spondLockedCount || 0;
+    const autoConf = s.spondAutoConfirmedCount || 0;
+    const pending = s.spondPendingAddCount || 0;
+    const openMatched = s.spondOpenMatchedCount || 0;
+    const shifted = s.spondShiftedCount || 0;
+
+    if (lockedCountEl) lockedCountEl.textContent = locked + shifted;
+    if (pendingCountEl) pendingCountEl.textContent = pending;
+
+    if (syncSheetBtn && autoCountEl) {
+        autoCountEl.textContent = autoConf;
+        syncSheetBtn.classList.toggle("hidden", autoConf === 0);
+        syncSheetBtn.disabled = false;
+        syncSheetBtn.innerHTML = `<i class="fa-solid fa-check-double"></i> Confirm ${autoConf} in Sheet`;
+    }
+
+    if (appState.calendarStatus === "loading") {
+        pill.className = "px-2.5 py-0.5 rounded-full text-[10px] font-heading font-bold uppercase bg-teal-500/20 text-teal-200 border border-teal-400/30";
+        pill.innerHTML = `<span class="mini-spinner mr-1"></span> Syncing Google Calendar...`;
+        summaryEl.textContent = "Fetching live Spond / Google Calendar events to cross-reference by date.";
+        return;
+    }
+
+    if (appState.calendarStatus === "error") {
+        pill.className = "px-2.5 py-0.5 rounded-full text-[10px] font-heading font-bold uppercase bg-red-500/20 text-red-300 border border-red-500/30";
+        pill.textContent = "Calendar Sync Offline";
+        summaryEl.textContent = `Could not reach Google Calendar script (${appState.calendarError || "network error"}). Click refresh to retry.`;
+        return;
+    }
+
+    if (appState.calendarStatus === "ready") {
+        pill.className = "px-2.5 py-0.5 rounded-full text-[10px] font-heading font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-400/35";
+        pill.textContent = `${appState.calendarEvents.length} Calendar Events Synced`;
+        const bits = [];
+        bits.push(`${locked} exact date match${locked === 1 ? "" : "es"} in Spond`);
+        if (autoConf > 0) bits.push(`${autoConf} IDEA${autoConf === 1 ? "" : "s"} auto-confirmed by Spond date`);
+        if (shifted > 0) bits.push(`${shifted} shifted-date fuzzy match${shifted === 1 ? "" : "es"}`);
+        if (openMatched > 0) bits.push(`${openMatched} open slot${openMatched === 1 ? "" : "s"} ready to pre-fill from Spond`);
+        bits.push(`${pending} planned social${pending === 1 ? "" : "s"} still to add to Spond`);
+        summaryEl.textContent = bits.join(" · ");
+    }
+}
+
 async function loadState() {
     appState.apiUrl = getConfiguredApiUrl();
+    appState.calendarApiUrl = getConfiguredCalendarApiUrl();
     appState.isDemo = !appState.apiUrl;
 
     const banner = document.getElementById("api-banner");
     const statusPill = document.getElementById("connection-status-pill");
+
+    // Fetch live Google Calendar / Spond events in parallel without blocking initial Sheet render
+    loadSpondCalendar();
 
     if (appState.isDemo) {
         banner.classList.remove("hidden");
@@ -1651,11 +2220,13 @@ async function loadState() {
     }
 
     banner.classList.add("hidden");
-    statusPill.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Connected to Google Sheet</span>`;
+    updateConnectionStatusPill();
 
     try {
         const data = await apiGet("init");
         applyBackendData(data);
+        updateConnectionStatusPill();
+        autoPersistSpondConfirmationsIfPinSaved();
     } catch (err) {
         console.error("Failed to load sheet state:", err);
         statusPill.innerHTML = `<span class="text-red-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Sheet Sync Error</span>`;
@@ -1678,6 +2249,7 @@ async function loadState() {
 // ============================================================================
 function renderAll() {
     renderStats();
+    renderSpondSummaryBar();
     renderProgrammeOversight();
     renderMembersSection();
     populateMemberDropdowns();
@@ -1743,15 +2315,21 @@ function renderProgrammeOversight() {
     const todayISO = new Date().toISOString().slice(0, 10);
     const upcomingSlots = appState.socials.filter(s => s.dateISO >= todayISO);
     const openGaps = upcomingSlots.filter(s => s.status === "OPEN");
-    const draftIdeas = upcomingSlots.filter(s => s.status === "IDEA");
+    const draftIdeas = upcomingSlots.filter(s => (s.effectiveStatus || s.status) === "IDEA");
+    const autoConfirmedSlots = upcomingSlots.filter(s => s.spondAutoConfirmed);
+    const needsSpondList = upcomingSlots.filter(s => s.status !== "OPEN" && !s.spondMatch);
+    const shiftedList = upcomingSlots.filter(s => s.spondMatch && s.spondMatch.type === "fuzzy_match");
+    const openInSpondList = upcomingSlots.filter(s => s.status === "OPEN" && s.spondMatch);
     const membersNeedingSlots = appState.members.filter(m => m.paidCount < 1 || m.freeCount < 1);
 
-    if (openGaps.length === 0 && draftIdeas.length === 0 && membersNeedingSlots.length === 0) {
+    if (openGaps.length === 0 && draftIdeas.length === 0 && membersNeedingSlots.length === 0 && needsSpondList.length === 0) {
         healthPill.className = "text-[10px] font-heading font-bold uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/35";
-        healthPill.textContent = "All Covered · Zero Gaps";
+        healthPill.textContent = "All Covered · Spond Synced";
     } else {
         healthPill.className = "text-[10px] font-heading font-bold uppercase px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/35";
-        healthPill.textContent = `${openGaps.length} Open · ${draftIdeas.length} TBC`;
+        healthPill.textContent = appState.calendarStatus === "ready"
+            ? `${openGaps.length} Open · ${draftIdeas.length} TBC · ${needsSpondList.length} No Spond`
+            : `${openGaps.length} Open · ${draftIdeas.length} TBC`;
     }
 
     const nextThreeGaps = openGaps.slice(0, 3);
@@ -1766,7 +2344,7 @@ function renderProgrammeOversight() {
                 </div>
                 <button type="button" data-radar-claim="${escAttr(g.slotId)}"
                     class="shrink-0 px-2.5 py-1 rounded-lg bg-brt-gold text-brt-dark hover:bg-white font-heading font-bold text-[10px] uppercase transition-colors">
-                    Fill Gap
+                    ${g.spondMatch ? "Pre-Fill" : "Fill Gap"}
                 </button>
             </div>
         `).join("")
@@ -1785,7 +2363,76 @@ function renderProgrammeOversight() {
                 </button>
             </div>
         `).join("")
-        : `<div class="text-xs text-gray-400">All claimed socials are confirmed with venues &amp; times.</div>`;
+        : `<div class="text-xs text-gray-400">${autoConfirmedSlots.length ? "Remaining claimed socials are confirmed or synced with Spond." : "All claimed socials are confirmed with venues &amp; times."}</div>`;
+
+    let spondRadarHtml = "";
+    if (appState.calendarStatus === "ready") {
+        const radarItems = [];
+        autoConfirmedSlots.forEach(s => {
+            radarItems.push(`
+                <div class="flex items-center justify-between gap-2 bg-emerald-950/35 rounded-xl px-3 py-2 border border-emerald-400/30">
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-emerald-200 truncate">Auto-Confirmed via Spond: ${escHtml(s.title)}</div>
+                        <div class="text-[10px] text-gray-300 truncate">${escHtml(s.displayDate)} &middot; Spond: ${escHtml(s.spondMatch.event.cleanTitle)}</div>
+                    </div>
+                    <button type="button" data-radar-claim="${escAttr(s.slotId)}" class="shrink-0 px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-200 hover:bg-emerald-400 hover:text-brt-dark font-heading font-bold text-[10px] uppercase">View</button>
+                </div>
+            `);
+        });
+        openInSpondList.forEach(s => {
+            radarItems.push(`
+                <div class="flex items-center justify-between gap-2 bg-teal-950/35 rounded-xl px-3 py-2 border border-teal-400/30">
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-teal-200 truncate">In Spond (Unclaimed): ${escHtml(s.spondMatch.event.cleanTitle)}</div>
+                        <div class="text-[10px] text-gray-300 truncate">${escHtml(s.displayDate)} &middot; ${escHtml(s.spondMatch.event.location || "Venue TBC")}</div>
+                    </div>
+                    <button type="button" data-radar-claim="${escAttr(s.slotId)}" class="shrink-0 px-2 py-1 rounded-lg bg-teal-400 text-brt-dark hover:bg-white font-heading font-bold text-[10px] uppercase">Claim</button>
+                </div>
+            `);
+        });
+        shiftedList.forEach(s => {
+            radarItems.push(`
+                <div class="flex items-center justify-between gap-2 bg-sky-950/35 rounded-xl px-3 py-2 border border-sky-400/30">
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-sky-200 truncate">Date Shift: ${escHtml(s.title)}</div>
+                        <div class="text-[10px] text-gray-300 truncate">Planner ${escHtml(s.displayDate)} &harr; Spond ${escHtml(s.spondMatch.event.displayDate)}</div>
+                    </div>
+                    <button type="button" data-radar-claim="${escAttr(s.slotId)}" class="shrink-0 px-2 py-1 rounded-lg border border-sky-400/40 text-sky-200 hover:bg-sky-400 hover:text-brt-dark font-heading font-bold text-[10px] uppercase">Check</button>
+                </div>
+            `);
+        });
+        if (!radarItems.length && needsSpondList.length) {
+            needsSpondList.slice(0, 3).forEach(s => {
+                radarItems.push(`
+                    <div class="flex items-center justify-between gap-2 bg-black/30 rounded-xl px-3 py-2 border border-white/5">
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold text-white truncate">${escHtml(s.title || s.displayDate)}</div>
+                            <div class="text-[10px] text-amber-300 truncate">${escHtml(s.displayDate)} &middot; Add to Spond (${escHtml(s.organizerName)})</div>
+                        </div>
+                        <button type="button" data-radar-claim="${escAttr(s.slotId)}" class="shrink-0 px-2 py-1 rounded-lg border border-white/15 text-gray-300 hover:border-brt-gold hover:text-brt-gold font-heading font-bold text-[10px] uppercase">Edit</button>
+                    </div>
+                `);
+            });
+        }
+
+        const unmatchedSlots = upcomingSlots.filter(s => s.status !== "OPEN" && !s.spondMatch && s.title);
+        const canRunAiMatch = !appState.isDemo && appState.hasGeminiKey && unmatchedSlots.length > 0 && (appState.unmatchedCalendarEvents || []).length > 0;
+
+        spondRadarHtml = `
+            <div class="bg-black/25 rounded-2xl p-3.5 border border-teal-400/25 space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] font-heading font-bold uppercase text-teal-200">
+                    <span><i class="fa-solid fa-calendar-check mr-1.5"></i> Spond Sync Watch (${needsSpondList.length} To Add)</span>
+                    <div class="flex items-center gap-1.5">
+                        ${canRunAiMatch ? `<button type="button" id="radar-ai-spond-btn" class="px-2 py-0.5 rounded-full bg-indigo-500/25 border border-indigo-400/40 text-indigo-200 hover:bg-indigo-400 hover:text-brt-dark text-[10px] font-heading font-bold uppercase">AI Match</button>` : ""}
+                        ${autoConfirmedSlots.length ? `<button type="button" id="radar-spond-confirm-btn" class="px-2 py-0.5 rounded-full bg-teal-400 text-brt-dark hover:bg-white text-[10px] font-heading font-bold uppercase">Save ${autoConfirmedSlots.length}</button>` : ""}
+                    </div>
+                </div>
+                <div class="space-y-1.5">
+                    ${radarItems.length ? radarItems.join("") : `<div class="text-xs text-emerald-300"><i class="fa-solid fa-circle-check mr-1"></i> All planned socials are matched in Spond!</div>`}
+                </div>
+            </div>
+        `;
+    }
 
     const chasingHtml = membersNeedingSlots.length
         ? membersNeedingSlots.map(m => {
@@ -1802,6 +2449,8 @@ function renderProgrammeOversight() {
         : `<span class="text-xs text-emerald-300"><i class="fa-solid fa-check-double mr-1"></i> Every Tabler has picked their 1 + 1!</span>`;
 
     radarEl.innerHTML = `
+        ${spondRadarHtml}
+
         <div class="bg-black/25 rounded-2xl p-3.5 border border-white/10 space-y-2">
             <div class="flex items-center justify-between text-[11px] font-heading font-bold uppercase text-gray-300">
                 <span><i class="fa-regular fa-calendar-plus text-brt-gold mr-1.5"></i> Next Open Gaps (${openGaps.length} total)</span>
@@ -1827,6 +2476,20 @@ function renderProgrammeOversight() {
     radarEl.querySelectorAll("[data-radar-claim]").forEach(btn => {
         btn.addEventListener("click", () => openPlannerModal(btn.getAttribute("data-radar-claim")));
     });
+    const radarConfirmBtn = document.getElementById("radar-spond-confirm-btn");
+    if (radarConfirmBtn) {
+        radarConfirmBtn.addEventListener("click", () => syncSpondConfirmationsToSheet({ silent: false }));
+    }
+    const radarAiBtn = document.getElementById("radar-ai-spond-btn");
+    if (radarAiBtn) {
+        radarAiBtn.addEventListener("click", async () => {
+            radarAiBtn.disabled = true;
+            radarAiBtn.textContent = "Matching...";
+            await runAiSpondCrossCheck();
+            radarAiBtn.disabled = false;
+            radarAiBtn.textContent = "AI Match";
+        });
+    }
 }
 
 function renderMembersSection() {
@@ -1950,6 +2613,8 @@ function renderCalendar() {
         if (appState.filterType === "PAID" && s.socialType !== "PAID") return false;
         if (appState.filterType === "FREE" && s.socialType !== "FREE") return false;
         if (appState.filterType === "PROSPECTIVE" && (s.status === "OPEN" || !s.prospectiveFriendly)) return false;
+        if (appState.filterType === "SPOND_OK" && !s.spondMatch) return false;
+        if (appState.filterType === "NEEDS_SPOND" && (s.status === "OPEN" || Boolean(s.spondMatch))) return false;
 
         if (appState.filterMember) {
             const mLow = appState.filterMember.toLowerCase();
@@ -1958,7 +2623,8 @@ function renderCalendar() {
         }
 
         if (search) {
-            const blob = `${s.displayDate} ${s.monthYear} ${s.title} ${s.description} ${s.location} ${s.organizerName} ${s.coOrganizerName} ${s.wednesdayOrdinal}`.toLowerCase();
+            const spondBlob = s.spondMatch ? `${s.spondMatch.event.cleanTitle} ${s.spondMatch.event.location} ${s.spondMatch.event.displayDate}` : "";
+            const blob = `${s.displayDate} ${s.monthYear} ${s.title} ${s.description} ${s.location} ${s.organizerName} ${s.coOrganizerName} ${s.wednesdayOrdinal} ${spondBlob}`.toLowerCase();
             if (!blob.includes(search)) return false;
         }
         return true;
@@ -2062,6 +2728,9 @@ function renderSlotCard(slot, todayISO) {
     const isExtra = slot.socialType === "EXTRA";
     const isOpen = slot.status === "OPEN";
     const isPast = slot.dateISO < todayISO;
+    const effectiveStatus = slot.effectiveStatus || slot.status;
+    const match = slot.spondMatch || null;
+    const calReady = appState.calendarStatus === "ready";
 
     const typeBadge = isPaid
         ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-brt-gold text-brt-dark">
@@ -2076,14 +2745,49 @@ function renderSlotCard(slot, todayISO) {
                </span>`;
 
     const statusBadge = isOpen
-        ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-white/10 text-gray-300 border border-white/15">Open Slot</span>`
-        : slot.status === "IDEA"
-            ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/35">Idea Claimed</span>`
-            : `<span class="px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/35">Confirmed</span>`;
+        ? (match
+            ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-teal-500/20 text-teal-200 border border-teal-400/40"><i class="fa-solid fa-calendar-check mr-1"></i>In Spond · Unclaimed</span>`
+            : `<span class="px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-white/10 text-gray-300 border border-white/15">Open Slot</span>`)
+        : slot.spondAutoConfirmed
+            ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-emerald-500/25 text-emerald-200 border border-emerald-400/45"><i class="fa-solid fa-calendar-check mr-1"></i>Confirmed · Auto via Spond</span>`
+            : effectiveStatus === "IDEA"
+                ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/35">Idea Claimed</span>`
+                : `<span class="px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/35">Confirmed</span>`;
+
+    let spondBadge = "";
+    if (!isOpen && calReady) {
+        if (match && match.type === "exact_date" && !slot.spondAutoConfirmed) {
+            spondBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-teal-500/20 text-teal-200 border border-teal-400/40"><i class="fa-solid fa-calendar-check"></i> In Spond</span>`;
+        } else if (match && match.type === "fuzzy_match") {
+            const shortSpondDate = match.event.displayDate.replace(/\s+\d{4}$/, "");
+            spondBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-sky-500/20 text-sky-200 border border-sky-400/40" title="Matched to Spond event on ${escAttr(match.event.displayDate)}"><i class="fa-solid fa-calendar-day"></i> Spond: ${escHtml(shortSpondDate)}</span>`;
+        } else if (!match) {
+            spondBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-heading font-bold uppercase bg-amber-500/15 text-amber-200 border border-amber-400/35"><i class="fa-regular fa-clock"></i> Needs Spond</span>`;
+        }
+    }
+
+    const spondStripHtml = match ? `
+        <div class="mb-4 rounded-2xl px-3.5 py-2.5 text-xs border ${match.type === "exact_date" ? "bg-teal-950/35 border-teal-400/30 text-teal-100" : "bg-sky-950/35 border-sky-400/30 text-sky-100"}">
+            <div class="flex flex-wrap items-center justify-between gap-1.5 font-heading font-bold uppercase text-[10px] tracking-wider ${match.type === "exact_date" ? "text-teal-300" : "text-sky-300"} mb-1">
+                <span>
+                    <i class="fa-solid ${match.type === "exact_date" ? "fa-link" : "fa-code-compare"} mr-1"></i>
+                    ${match.type === "exact_date"
+                        ? "Matched by Date in Google Calendar / Spond"
+                        : `Fuzzy ${match.viaAi ? "AI " : ""}Match — Spond Date: ${escHtml(match.event.displayDate)}`}
+                </span>
+                ${match.event.timeStr ? `<span><i class="fa-regular fa-clock mr-1"></i>${escHtml(match.event.timeStr)}</span>` : ""}
+            </div>
+            <div class="font-semibold text-white">${escHtml(match.event.title)}</div>
+            ${match.event.location ? `<div class="text-[11px] text-gray-300 mt-0.5"><i class="fa-solid fa-location-dot mr-1 text-teal-300"></i>${escHtml(match.event.location)}</div>` : ""}
+        </div>
+    ` : "";
 
     if (isOpen) {
+        const openBorderCls = match
+            ? "border-teal-400/55 hover:border-teal-300 bg-teal-950/15"
+            : (isPaid ? "border-brt-gold/30 hover:border-brt-gold/70 bg-white/[0.02]" : (isExtra ? "border-purple-400/35 hover:border-purple-400/75 bg-white/[0.02]" : "border-emerald-400/30 hover:border-emerald-400/70 bg-white/[0.02]"));
         return `
-            <div class="rounded-3xl p-6 border-2 border-dashed ${isPaid ? "border-brt-gold/30 hover:border-brt-gold/70" : (isExtra ? "border-purple-400/35 hover:border-purple-400/75" : "border-emerald-400/30 hover:border-emerald-400/70")} bg-white/[0.02] transition-all flex flex-col justify-between ${isPast ? "opacity-60" : ""}">
+            <div class="rounded-3xl p-6 border-2 border-dashed ${openBorderCls} transition-all flex flex-col justify-between ${isPast ? "opacity-60" : ""}">
                 <div>
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                         ${typeBadge}
@@ -2093,30 +2797,33 @@ function renderSlotCard(slot, todayISO) {
                     <p class="text-xs font-semibold uppercase tracking-wider ${isPaid ? "text-brt-gold" : (isExtra ? "text-purple-300" : "text-emerald-300")} mb-3">
                         ${escHtml(slot.budgetRule)}
                     </p>
-                    <p class="text-sm text-gray-400 mb-6">
-                        ${isPaid
-                            ? "This alternate Wednesday (nearest the start of the month) is open for a commercial activity, organised tour, or paid night out. Claim it to tick off your 1 Paid social!"
-                            : isExtra
-                                ? "A 3rd alternate Wednesday lands this month! Grab this Extra Social for a paid night, organised tour, or creative free activity to keep our fortnightly rhythm going."
-                                : "This alternate Wednesday (nearest the end of the month) is open for a creative free night, free organised tour, or sub-£20 props social. Claim it to tick off your 1 Free social!"}
-                    </p>
+                    ${spondStripHtml || `
+                        <p class="text-sm text-gray-400 mb-6">
+                            ${isPaid
+                                ? "This alternate Wednesday (nearest the start of the month) is open for a commercial activity, organised tour, or paid night out. Claim it to tick off your 1 Paid social!"
+                                : isExtra
+                                    ? "A 3rd alternate Wednesday lands this month! Grab this Extra Social for a paid night, organised tour, or creative free activity to keep our fortnightly rhythm going."
+                                    : "This alternate Wednesday (nearest the end of the month) is open for a creative free night, free organised tour, or sub-£20 props social. Claim it to tick off your 1 Free social!"}
+                        </p>
+                    `}
                 </div>
 
                 <div class="flex flex-wrap gap-2.5 pt-4 border-t border-white/10">
                     <button type="button" data-claim-slot="${escAttr(slot.slotId)}"
-                        class="flex-grow px-5 py-3 rounded-xl ${isPaid ? "bg-brt-gold text-brt-dark hover:bg-white" : (isExtra ? "bg-purple-400 text-brt-dark hover:bg-white" : "bg-emerald-400 text-brt-dark hover:bg-white")} font-heading font-bold text-xs uppercase tracking-wider transition-colors">
-                        <i class="fa-solid fa-plus mr-1.5"></i> Claim This Wednesday
+                        class="flex-grow px-5 py-3 rounded-xl ${match ? "bg-teal-400 text-brt-dark hover:bg-white" : (isPaid ? "bg-brt-gold text-brt-dark hover:bg-white" : (isExtra ? "bg-purple-400 text-brt-dark hover:bg-white" : "bg-emerald-400 text-brt-dark hover:bg-white"))} font-heading font-bold text-xs uppercase tracking-wider transition-colors">
+                        <i class="fa-solid ${match ? "fa-calendar-check" : "fa-plus"} mr-1.5"></i> ${match ? "Claim & Pre-Fill from Spond" : "Claim This Wednesday"}
                     </button>
                 </div>
             </div>
         `;
     }
 
+    const displayLoc = slot.location || (match && match.event.location) || "Location TBC";
     const whatsappText = encodeURIComponent(
         `🍻 *Beverley Round Table Social*\n` +
         `*${slot.title}*\n` +
         `📅 ${slot.displayDate}\n` +
-        `📍 ${slot.location || "Location TBC"}\n` +
+        `📍 ${displayLoc}\n` +
         `💷 ${slot.costPerPerson || (isPaid ? "TBC" : (isExtra ? "TBC / Free" : "Free"))}\n` +
         `👤 Organised by: ${slot.organizerName}${slot.coOrganizerName ? " & " + slot.coOrganizerName : ""}\n` +
         (slot.description ? `\n${slot.description}\n` : "") +
@@ -2124,12 +2831,13 @@ function renderSlotCard(slot, todayISO) {
     );
 
     return `
-        <div class="rounded-3xl p-6 border ${isPaid ? "border-white/15 hover:border-brt-gold/60" : (isExtra ? "border-white/15 hover:border-purple-400/60" : "border-white/15 hover:border-emerald-400/60")} bg-white/5 transition-all flex flex-col justify-between shadow-lg ${isPast ? "opacity-65" : ""}">
+        <div class="rounded-3xl p-6 border ${match && match.type === "exact_date" ? "border-teal-400/35 hover:border-teal-300/75" : (isPaid ? "border-white/15 hover:border-brt-gold/60" : (isExtra ? "border-white/15 hover:border-purple-400/60" : "border-white/15 hover:border-emerald-400/60"))} bg-white/5 transition-all flex flex-col justify-between shadow-lg ${isPast ? "opacity-65" : ""}">
             <div>
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                     <div class="flex flex-wrap items-center gap-2">
                         ${typeBadge}
                         ${statusBadge}
+                        ${spondBadge}
                     </div>
                     ${slot.prospectiveFriendly
                         ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-heading font-bold uppercase bg-sky-500/15 text-sky-300 border border-sky-500/30">
@@ -2146,6 +2854,8 @@ function renderSlotCard(slot, todayISO) {
 
                 ${slot.description ? `<p class="text-sm text-gray-300 leading-relaxed mb-4">${escHtml(slot.description)}</p>` : ""}
 
+                ${spondStripHtml}
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-gray-300 bg-black/25 rounded-2xl p-3.5 mb-4 border border-white/5">
                     <div class="flex items-start gap-2">
                         <i class="fa-solid fa-user-check text-brt-gold mt-0.5 w-3.5"></i>
@@ -2156,7 +2866,7 @@ function renderSlotCard(slot, todayISO) {
                     </div>
                     <div class="flex items-start gap-2">
                         <i class="fa-solid fa-location-dot text-brt-gold mt-0.5 w-3.5"></i>
-                        <span>${escHtml(slot.location || "Location TBC")}</span>
+                        <span>${escHtml(displayLoc)}</span>
                     </div>
                     <div class="flex items-start gap-2">
                         <i class="fa-solid fa-sterling-sign text-brt-gold mt-0.5 w-3.5"></i>
@@ -2265,17 +2975,67 @@ function populateModalWithSlot(slot) {
             : "e.g. Free tour (or £14 group props)";
     document.getElementById("f-accessories-label").textContent = isPaid || isExtra ? "Booking / Kit Notes" : "Accessories / Props List (Sub-£20)";
 
+    const match = slot.spondMatch || null;
+    const spondBox = document.getElementById("modal-spond-box");
+
     document.getElementById("f-organizer").value = slot.organizerName || "";
     document.getElementById("f-coorganizer").value = slot.coOrganizerName || "";
-    document.getElementById("f-title").value = slot.title || "";
-    document.getElementById("f-status").value = isEdit ? slot.status : "CONFIRMED";
+    document.getElementById("f-title").value = slot.title || (isOpenSlotMatch(isEdit, match) ? match.event.cleanTitle : "");
+    document.getElementById("f-status").value = isEdit ? (slot.spondAutoConfirmed ? "CONFIRMED" : slot.status) : "CONFIRMED";
     document.getElementById("f-description").value = slot.description || "";
-    document.getElementById("f-location").value = slot.location || "";
-    document.getElementById("f-start").value = slot.startTime || "19:30";
+    document.getElementById("f-location").value = slot.location || (isOpenSlotMatch(isEdit, match) ? match.event.location : "");
+    document.getElementById("f-start").value = (isOpenSlotMatch(isEdit, match) && match.event.timeStr) ? match.event.timeStr : (slot.startTime || "19:30");
     document.getElementById("f-end").value = slot.endTime || "22:00";
     document.getElementById("f-cost").value = slot.costPerPerson || (isPaid ? "" : (isExtra ? "Paid or Free / Tour" : "Free / Sub-£20 kitty"));
     document.getElementById("f-accessories").value = slot.accessoriesNeeded || "";
     document.getElementById("f-prospective").checked = slot.prospectiveFriendly !== false;
+
+    if (spondBox) {
+        if (match && match.event) {
+            const ev = match.event;
+            const isExact = match.type === "exact_date";
+            spondBox.className = isExact
+                ? "rounded-2xl p-3.5 border border-teal-400/35 bg-teal-950/35 space-y-2"
+                : "rounded-2xl p-3.5 border border-sky-400/35 bg-sky-950/35 space-y-2";
+            spondBox.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-[11px] font-heading font-bold uppercase tracking-wider ${isExact ? "text-teal-300" : "text-sky-300"}">
+                        <i class="fa-solid fa-calendar-check mr-1"></i>
+                        ${isExact ? "Matched in Spond (Exact Date)" : `Spond Match (${escHtml(ev.displayDate)})`}
+                    </span>
+                    <button type="button" id="apply-spond-details-btn"
+                        class="px-3 py-1 rounded-full ${isExact ? "bg-teal-400 text-brt-dark" : "bg-sky-400 text-brt-dark"} hover:bg-white font-heading font-bold text-[10px] uppercase transition-colors">
+                        Pull Spond Details
+                    </button>
+                </div>
+                <div class="text-xs text-white font-semibold">${escHtml(ev.title)}</div>
+                <div class="text-[11px] text-gray-300 flex flex-wrap gap-x-4 gap-y-1">
+                    <span><i class="fa-regular fa-calendar mr-1 text-teal-300"></i>${escHtml(ev.displayDate)}${ev.timeStr ? ` at ${escHtml(ev.timeStr)}` : ""}</span>
+                    ${ev.location ? `<span><i class="fa-solid fa-location-dot mr-1 text-teal-300"></i>${escHtml(ev.location)}</span>` : ""}
+                </div>
+            `;
+            spondBox.classList.remove("hidden");
+            const applyBtn = document.getElementById("apply-spond-details-btn");
+            if (applyBtn) {
+                applyBtn.addEventListener("click", () => {
+                    if (!document.getElementById("f-title").value.trim()) {
+                        document.getElementById("f-title").value = ev.cleanTitle || ev.title;
+                    }
+                    if (ev.location && !/^tbc$/i.test(ev.location)) {
+                        document.getElementById("f-location").value = ev.location;
+                    }
+                    if (ev.timeStr && ev.timeStr !== "00:00") {
+                        document.getElementById("f-start").value = ev.timeStr;
+                    }
+                    document.getElementById("f-status").value = "CONFIRMED";
+                    applyBtn.textContent = "Applied ✓";
+                });
+            }
+        } else {
+            spondBox.classList.add("hidden");
+            spondBox.innerHTML = "";
+        }
+    }
 
     document.getElementById("modal-delete-btn").classList.toggle("hidden", !isEdit);
     document.getElementById("ai-results").classList.add("hidden");
@@ -2284,6 +3044,10 @@ function populateModalWithSlot(slot) {
     document.getElementById("form-status").classList.add("hidden");
 
     updateOrganizerQuotaHint();
+}
+
+function isOpenSlotMatch(isEdit, match) {
+    return !isEdit && Boolean(match && match.event);
 }
 
 function updateOrganizerQuotaHint() {
@@ -2679,6 +3443,8 @@ function openModal(id) {
     }
     if (id === "api-modal") {
         document.getElementById("api-url-input").value = appState.apiUrl || "";
+        const calInput = document.getElementById("cal-api-url-input");
+        if (calInput) calInput.value = appState.calendarApiUrl || "";
     }
     document.getElementById(id).classList.remove("hidden");
     document.body.classList.add("overflow-hidden");
@@ -2689,21 +3455,25 @@ function closeModal(id) {
     document.body.classList.remove("overflow-hidden");
 }
 
-function resetAllFilters() {
-    appState.filterType = "ALL";
-    appState.filterMember = "";
-    appState.searchText = "";
-    document.getElementById("filter-member").value = "";
-    document.getElementById("filter-search").value = "";
+function setCalendarFilterType(filterKey) {
+    appState.filterType = filterKey;
     document.querySelectorAll(".filter-pill").forEach(p => {
-        const active = p.dataset.filter === "ALL";
+        const active = p.dataset.filter === filterKey;
         p.classList.toggle("bg-brt-gold", active);
         p.classList.toggle("text-brt-dark", active);
         p.classList.toggle("bg-white/5", !active);
         p.classList.toggle("text-gray-300", !active);
     });
-    renderMembersSection();
     renderCalendar();
+}
+
+function resetAllFilters() {
+    appState.filterMember = "";
+    appState.searchText = "";
+    document.getElementById("filter-member").value = "";
+    document.getElementById("filter-search").value = "";
+    renderMembersSection();
+    setCalendarFilterType("ALL");
 }
 
 function escHtml(str) {
@@ -2760,19 +3530,29 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("open-setup-modal-banner-btn").addEventListener("click", () => openModal("setup-modal"));
     document.getElementById("footer-setup-btn").addEventListener("click", () => openModal("setup-modal"));
 
+    // Spond Cross-Reference bar actions
+    const spondRefreshBtn = document.getElementById("spond-refresh-btn");
+    if (spondRefreshBtn) spondRefreshBtn.addEventListener("click", () => loadSpondCalendar());
+    const spondSyncSheetBtn = document.getElementById("spond-sync-sheet-btn");
+    if (spondSyncSheetBtn) spondSyncSheetBtn.addEventListener("click", () => syncSpondConfirmationsToSheet({ silent: false }));
+    const spondLockedBtn = document.getElementById("spond-filter-locked-btn");
+    if (spondLockedBtn) {
+        spondLockedBtn.addEventListener("click", () => {
+            setCalendarFilterType(appState.filterType === "SPOND_OK" ? "ALL" : "SPOND_OK");
+            document.getElementById("calendar").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+    }
+    const spondPendingBtn = document.getElementById("spond-filter-pending-btn");
+    if (spondPendingBtn) {
+        spondPendingBtn.addEventListener("click", () => {
+            setCalendarFilterType(appState.filterType === "NEEDS_SPOND" ? "ALL" : "NEEDS_SPOND");
+            document.getElementById("calendar").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+    }
+
     // Filter pills
     document.querySelectorAll(".filter-pill").forEach(pill => {
-        pill.addEventListener("click", () => {
-            appState.filterType = pill.dataset.filter;
-            document.querySelectorAll(".filter-pill").forEach(p => {
-                const active = p === pill;
-                p.classList.toggle("bg-brt-gold", active);
-                p.classList.toggle("text-brt-dark", active);
-                p.classList.toggle("bg-white/5", !active);
-                p.classList.toggle("text-gray-300", !active);
-            });
-            renderCalendar();
-        });
+        pill.addEventListener("click", () => setCalendarFilterType(pill.dataset.filter));
     });
 
     document.getElementById("filter-member").addEventListener("change", (e) => {
@@ -2868,16 +3648,25 @@ document.addEventListener("DOMContentLoaded", () => {
     // API Connect Modal
     document.getElementById("api-save-btn").addEventListener("click", () => {
         const val = document.getElementById("api-url-input").value.trim();
+        const calInput = document.getElementById("cal-api-url-input");
+        const calVal = calInput ? calInput.value.trim() : "";
         if (!isValidGasUrl(val)) {
             alert("Please enter a valid Google Apps Script Web App URL starting with https://script.google.com/macros/s/ and ending in /exec");
             return;
         }
+        if (calVal && !isValidGasUrl(calVal)) {
+            alert("Please enter a valid Google Calendar Apps Script URL starting with https://script.google.com/macros/s/ and ending in /exec (or leave blank for default).");
+            return;
+        }
         localStorage.setItem(LOCAL_STORAGE_API_KEY, val);
+        if (calVal) localStorage.setItem(LOCAL_STORAGE_CAL_API_KEY, calVal);
+        else localStorage.removeItem(LOCAL_STORAGE_CAL_API_KEY);
         closeModal("api-modal");
         loadState();
     });
     document.getElementById("api-clear-btn").addEventListener("click", () => {
         localStorage.removeItem(LOCAL_STORAGE_API_KEY);
+        localStorage.removeItem(LOCAL_STORAGE_CAL_API_KEY);
         closeModal("api-modal");
         loadState();
     });
