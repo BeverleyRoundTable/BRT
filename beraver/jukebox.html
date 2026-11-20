@@ -172,9 +172,12 @@
                     totalRaised = data.total;
                     raisedEl.innerText = totalRaised;
                 }
+                const donationAmount = Number(data.amount);
                 if (data.id && data.id !== lastDonationId) {
-                    if (!isInitialLoad) triggerDonationAlert(data.name, data.amount);
-                    lastDonationId = data.id; 
+                    lastDonationId = data.id;
+                    if (Number.isFinite(donationAmount) && donationAmount > 0 && !isInitialLoad) {
+                        triggerDonationAlert(data.name || 'Supporter', donationAmount);
+                    }
                 }
                 isInitialLoad = false;
             } catch (error) {}

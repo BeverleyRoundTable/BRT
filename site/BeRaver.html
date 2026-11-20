@@ -455,15 +455,18 @@
                     totalRaised = data.total;
                     raisedEl.innerText = totalRaised;
                 }
+                const donationAmount = Number(data.amount);
                 if (data.id && data.id !== lastDonationId) {
-                    if (isInitialLoad) {
-                        if (latestEl) {
-                            latestEl.innerHTML = `LATEST: <span class="text-white">${data.name || 'Supporter'}</span> dropped <span class="text-beraverPink neon-text-pink">£${data.amount || 0}</span>!`;
+                    lastDonationId = data.id;
+                    if (Number.isFinite(donationAmount) && donationAmount > 0) {
+                        if (isInitialLoad) {
+                            if (latestEl) {
+                                latestEl.innerHTML = `LATEST: <span class="text-white">${data.name || 'Supporter'}</span> dropped <span class="text-beraverPink neon-text-pink">£${donationAmount}</span>!`;
+                            }
+                        } else {
+                            triggerDonationAlert(data.name || 'Supporter', donationAmount);
                         }
-                    } else {
-                        triggerDonationAlert(data.name || 'Supporter', data.amount || 0);
                     }
-                    lastDonationId = data.id; 
                 }
                 isInitialLoad = false;
             } catch (error) {}

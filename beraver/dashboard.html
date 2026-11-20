@@ -262,19 +262,21 @@
                     }
                 }
                 
-                // 2. Process new individual drops
+                // 2. Process new individual drops (ignore £0 pings / free tickets)
+                const donorAmount = Number(data.amount);
                 if (data.id && data.id !== lastDonationId) {
-                    const donorName = data.name || "Anonymous Raver";
-                    const donorAmount = data.amount || 0;
-                    const donorMessage = data.message || "";
+                    lastDonationId = data.id;
+                    if (Number.isFinite(donorAmount) && donorAmount > 0) {
+                        const donorName = data.name || "Anonymous Raver";
+                        const donorMessage = data.message || "";
 
-                    if (!isInitialLoad) {
-                        triggerDonationDrop(donorName, donorAmount, donorMessage);
-                    } else {
-                        // Just seed the feed on page load without blowing the horns
-                        addDonationToFeed(donorName, donorAmount, donorMessage);
+                        if (!isInitialLoad) {
+                            triggerDonationDrop(donorName, donorAmount, donorMessage);
+                        } else {
+                            // Just seed the feed on page load without blowing the horns
+                            addDonationToFeed(donorName, donorAmount, donorMessage);
+                        }
                     }
-                    lastDonationId = data.id; 
                 }
                 isInitialLoad = false;
             } catch (error) {
