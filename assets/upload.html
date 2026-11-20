@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>BRT Event Image Studio | Beverley Round Table</title>
+  <link rel="icon" type="image/png" href="https://beverleyroundtable.co.uk/media/BRTLogo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    @font-face {
+      font-family: 'Eurostile';
+      src: url('https://beverleyroundtable.co.uk/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+      font-weight: 700 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    :root {
+      --bg: #11110f;
+      --surface: #1d1d1a;
+      --surface-2: #262622;
+      --border: rgba(255, 255, 255, 0.12);
+      --gold: #fbaf33;
+      --gold-dim: rgba(251, 175, 51, 0.16);
+      --red: #d31c1c;
+      --green: #22c55e;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top right, rgba(251, 175, 51, 0.08), transparent 45%), var(--bg);
+      color: var(--text);
+      font-family: 'Open Sans', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+    .brand-font {
+      font-family: 'Eurostile', 'Open Sans', sans-serif;
+      letter-spacing: 0.03em;
+    }
+    .hidden { display: none !important; }
+    .lock-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .lock-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--gold);
+      border-radius: 18px;
+      padding: 28px 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .btn:hover:not(:disabled) { border-color: var(--gold); color: #fff; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-gold {
+      background: var(--gold);
+      color: #111;
+      border-color: var(--gold);
+    }
+    .btn-gold:hover:not(:disabled) { filter: brightness(1.06); color: #000; }
+    .btn-danger {
+      background: rgba(211, 28, 28, 0.16);
+      border-color: rgba(211, 28, 28, 0.5);
+      color: #fca5a5;
+    }
+    .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 8px; }
+    .input {
+      width: 100%;
+      padding: 11px 13px;
+      background: #121210;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+    .input:focus { border-color: var(--gold); }
+    header.topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(17, 17, 15, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+    }
+    .topbar-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .tabs {
+      display: inline-flex;
+      background: var(--surface);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      gap: 4px;
+    }
+    .tab-btn {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: var(--gold);
+      color: #111;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 18px;
+      margin-top: 18px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+    .card.drag-over {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px var(--gold-dim);
+      transform: translateY(-2px);
+    }
+    .preview-box {
+      position: relative;
+      height: 175px;
+      background: #121210;
+      overflow: hidden;
+    }
+    .preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: rgba(17, 17, 15, 0.88);
+      border: 1px solid var(--border);
+    }
+    .badge-r2 { color: var(--gold); border-color: var(--gold); }
+    .badge-gh { color: #86efac; border-color: rgba(34, 197, 94, 0.6); }
+    .badge-drive { color: #93c5fd; border-color: rgba(59, 130, 246, 0.5); }
+    .badge-warn { color: #fca5a5; border-color: rgba(239, 68, 68, 0.7); }
+    .drop-hint {
+      position: absolute;
+      inset: 0;
+      background: rgba(17, 17, 15, 0.8);
+      color: var(--gold);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+      text-align: center;
+      padding: 12px;
+    }
+    .card.drag-over .drop-hint { display: flex; }
+    .card-body {
+      padding: 14px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0;
+      line-height: 1.3;
+    }
+    .card-meta {
+      font-size: 12.5px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: auto;
+      padding-top: 8px;
+    }
+    .dropzone {
+      border: 2px dashed rgba(251, 175, 51, 0.45);
+      background: rgba(251, 175, 51, 0.05);
+      border-radius: 16px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .dropzone.drag-over {
+      border-color: var(--gold);
+      background: rgba(251, 175, 51, 0.14);
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal {
+      width: 100%;
+      max-width: 780px;
+      max-height: 85vh;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .modal-body {
+      padding: 16px 18px;
+      overflow-y: auto;
+    }
+    .lib-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .lib-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      text-align: left;
+      padding: 0;
+      color: var(--text);
+    }
+    .lib-item:hover { border-color: var(--gold); }
+    .lib-item img {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+      display: block;
+    }
+    .lib-item .name {
+      padding: 6px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 80;
+      background: #181815;
+      border: 1px solid var(--gold);
+      color: #fff;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: min(92vw, 420px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Lock Screen -->
+  <div id="lockScreen" class="lock-wrap">
+    <form id="loginForm" class="lock-card">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <img src="https://beverleyroundtable.co.uk/media/BRTLogo.png" alt="BRT" style="width:44px; height:44px; object-fit:contain;">
+        <div>
+          <h1 class="brand-font" style="margin:0; font-size:18px; color:var(--gold);">BRT Event Image Studio</h1>
+          <div style="font-size:12px; color:var(--muted);">assets.beverleyroundtable.co.uk</div>
+        </div>
+      </div>
+      <p style="font-size:13px; color:var(--muted); margin:0 0 14px; line-height:1.5;">
+        Enter the BRT club upload passcode to manage event photos on <strong>beverleyroundtable.co.uk</strong> and upload images to R2.
+      </p>
+      <label for="pinInput" style="display:block; font-size:12px; font-weight:700; margin-bottom:6px; color:#d1d5db;">Upload Passcode</label>
+      <input id="pinInput" type="password" class="input" placeholder="Enter passcode" autocomplete="current-password" required>
+      <label style="display:flex; align-items:center; gap:8px; margin:12px 0 16px; font-size:12.5px; color:var(--muted); cursor:pointer;">
+        <input id="rememberPin" type="checkbox" checked style="accent-color:var(--gold);">
+        <span>Remember passcode on this device</span>
+      </label>
+      <div id="loginError" class="hidden" style="color:#fca5a5; background:rgba(211,28,28,0.16); border:1px solid rgba(211,28,28,0.5); border-radius:8px; padding:8px 10px; font-size:12.5px; margin-bottom:12px;"></div>
+      <button id="loginBtn" type="submit" class="btn btn-gold" style="width:100%; padding:11px;">
+        <i class="fa-solid fa-unlock-keyhole"></i> Unlock Studio
+      </button>
+    </form>
+  </div>
+
+  <!-- Main Studio App -->
+  <div id="studioApp" class="hidden">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <img src="https://beverleyroundtable.co.uk/media/BRTLogo.png" alt="BRT" style="width:36px; height:36px; object-fit:contain;">
+          <div>
+            <div class="brand-font" style="font-size:16px; color:var(--gold);">BRT Event Image Studio</div>
+            <div style="font-size:12px; color:var(--muted);">R2 Custom Overrides · No Spond URLs Needed</div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button type="button" class="tab-btn active" data-tab="events">
+            <i class="fa-regular fa-calendar-check"></i> Upcoming Events
+          </button>
+          <button type="button" class="tab-btn" data-tab="library">
+            <i class="fa-solid fa-images"></i> Upload &amp; Library
+          </button>
+        </div>
+
+        <div style="display:flex; gap:8px; align-items:center;">
+          <a href="https://beverleyroundtable.co.uk/#events" target="_blank" rel="noopener" class="btn btn-sm">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> View Live Site
+          </a>
+          <button id="refreshBtn" type="button" class="btn btn-sm">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+          <button id="logoutBtn" type="button" class="btn btn-sm btn-danger" title="Lock Studio">
+            <i class="fa-solid fa-lock"></i> Lock
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- Tab 1: Upcoming Events -->
+      <section id="tabEvents">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:6px;">
+          <p style="margin:0; font-size:13.5px; color:var(--muted);">
+            Drag &amp; drop a photo onto any event card (or click <strong>Upload Photo</strong>) to update its live image on <strong>beverleyroundtable.co.uk</strong> immediately.
+          </p>
+          <input id="eventSearch" type="search" class="input" placeholder="Search events..." style="max-width:260px; padding:8px 12px; font-size:13px;">
+        </div>
+        <div id="eventsLoading" style="padding:40px 0; text-align:center; color:var(--muted);">
+          <i class="fa-solid fa-spinner fa-spin"></i> Loading upcoming events &amp; R2 overrides...
+        </div>
+        <div id="eventsGrid" class="grid"></div>
+      </section>
+
+      <!-- Tab 2: Quick Upload & Asset Library -->
+      <section id="tabLibrary" class="hidden">
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:20px;">
+          <h2 class="brand-font" style="margin:0 0 8px; font-size:16px; color:var(--gold);">Quick Image Upload (R2 CDN)</h2>
+          <p style="margin:0 0 14px; font-size:13px; color:var(--muted);">
+            Upload a photo to get an instant <code>https://assets.beverleyroundtable.co.uk/images/...</code> URL (also handy if you want a URL for Spond or socials). Images are auto-optimised to WebP/JPEG before uploading.
+          </p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+            <input id="quickSlug" type="text" class="input" placeholder="Optional short filename (e.g. archery or dnd_taster)" style="max-width:340px;">
+            <input id="quickFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden">
+          </div>
+          <div id="quickDropzone" class="dropzone">
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size:28px; color:var(--gold); margin-bottom:8px; display:block;"></i>
+            <div style="font-weight:700; font-size:14px;">Drag &amp; drop an image here, or click to select</div>
+            <div style="font-size:12px; color:var(--muted); margin-top:4px;">JPEG, PNG, WebP or GIF · Max 5 MB after optimisation</div>
+          </div>
+
+          <div id="quickResult" class="hidden" style="margin-top:16px; padding:12px; background:#121210; border:1px solid var(--gold); border-radius:12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <img id="quickResultImg" src="" alt="Uploaded preview" style="width:68px; height:48px; object-fit:cover; border-radius:8px;">
+            <input id="quickResultUrl" type="text" readonly class="input" style="flex:1; min-width:220px; font-size:12.5px;">
+            <button id="copyQuickUrlBtn" type="button" class="btn btn-gold btn-sm">
+              <i class="fa-regular fa-copy"></i> Copy URL
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <h3 class="brand-font" style="margin:0; font-size:15px; color:#fff;">Uploaded R2 Images (<span id="libCount">0</span>)</h3>
+        </div>
+        <div id="libraryGrid" class="grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Hidden reusable file input for Event Card Upload -->
+  <input id="eventFileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden">
+
+  <!-- Library Picker Modal -->
+  <div id="pickerModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <strong class="brand-font" style="color:var(--gold); font-size:14px;">Pick Existing R2 Image</strong>
+          <div id="pickerSubtitle" style="font-size:12px; color:var(--muted); margin-top:2px;"></div>
+        </div>
+        <button id="closePickerBtn" type="button" class="btn btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="pickerBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+    const EVENTS_API_URL = 'https://script.google.com/macros/s/AKfycbyJjIbq-XZ9W8owbbp0PizZ2adE-Z3SK1bAxPDEjjDjmYhqpKXMwlHEuWrOUyNeTg/exec?type=upcoming';
+    const PLACEHOLDER_IMG = 'https://placehold.co/600x400/1D1D1A/FBAF33?text=BRT+Event';
+
+    const state = {
+      pin: '',
+      events: [],
+      overrides: {},
+      assets: [],
+      pendingUploadEventTitle: null,
+      pickerEventTitle: null
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function escHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    function normalizeEventKey(title) {
+      return String(title || '')
+        .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+    }
+
+    let toastTimer = null;
+    function showToast(msg, isError = false) {
+      const el = $('toast');
+      el.style.borderColor = isError ? '#ef4444' : 'var(--gold)';
+      el.innerHTML = `<i class="fa-solid ${isError ? 'fa-circle-exclamation' : 'fa-circle-check'}" style="color:${isError ? '#fca5a5' : 'var(--gold)'};"></i><span>${escHtml(msg)}</span>`;
+      el.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.add('hidden'), 4200);
+    }
+
+    function formatDate(dt) {
+      const d = new Date(dt);
+      if (isNaN(d.getTime())) return String(dt || '');
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} @ ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    async function verifyPin(pin) {
+      const res = await fetch('/api/auth-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Upload-Pin': pin },
+        body: JSON.stringify({ pin })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      return true;
+    }
+
+    async function compressImage(file) {
+      if (!file) throw new Error('No file selected');
+      if (file.type === 'image/gif' && file.size <= 5 * 1024 * 1024) {
+        return file;
+      }
+      const bitmap = await createImageBitmap(file).catch(() => null);
+      if (!bitmap) return file;
+
+      const maxDim = 1400;
+      let w = bitmap.width;
+      let h = bitmap.height;
+      if (w > maxDim || h > maxDim) {
+        if (w >= h) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      if (typeof bitmap.close === 'function') bitmap.close();
+
+      let blob = await new Promise(r => canvas.toBlob(r, 'image/webp', 0.85));
+      let outName = (file.name || 'image').replace(/\.[a-z0-9]+$/i, '') + '.webp';
+      if (!blob || blob.type !== 'image/webp') {
+        blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.86));
+        outName = (file.name || 'image').replace(/\.[a-z0-9]+$/i, '') + '.jpg';
+      }
+      if (!blob) return file;
+      return new File([blob], outName, { type: blob.type });
+    }
+
+    async function uploadImageFile(rawFile, { eventTitle = '', slug = '' } = {}) {
+      const optimized = await compressImage(rawFile);
+      if (optimized.size > 5 * 1024 * 1024) {
+        throw new Error('Image still exceeds 5 MB after compression. Please use a smaller file.');
+      }
+      const fd = new FormData();
+      fd.append('file', optimized);
+      if (eventTitle) fd.append('eventTitle', eventTitle);
+      if (slug) fd.append('slug', slug);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'X-Upload-Pin': state.pin },
+        body: fd
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || `Upload failed (${res.status})`);
+      }
+      return data;
+    }
+
+    function detectImageSource(overrideEntry, fallbackImg) {
+      if (overrideEntry && overrideEntry.url) {
+        return { cls: 'badge-r2', label: 'Custom R2', url: overrideEntry.url, isOverride: true };
+      }
+      const img = String(fallbackImg || '').trim();
+      if (!img) return { cls: 'badge-warn', label: 'No Image', url: PLACEHOLDER_IMG, isOverride: false };
+      if (img.includes('assets.beverleyroundtable.co.uk')) {
+        return { cls: 'badge-gh', label: 'BRT Asset', url: img, isOverride: false };
+      }
+      if (img.includes('drive.google.com')) {
+        return { cls: 'badge-drive', label: 'Drive / AI', url: img, isOverride: false };
+      }
+      return { cls: 'badge-drive', label: 'External URL', url: img, isOverride: false };
+    }
+
+    function renderEvents() {
+      const grid = $('eventsGrid');
+      const query = ($('eventSearch').value || '').trim().toLowerCase();
+      const sorted = [...state.events].sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
+      const filtered = query
+        ? sorted.filter(ev => `${ev.Title || ''} ${ev.Location || ''}`.toLowerCase().includes(query))
+        : sorted;
+
+      if (!filtered.length) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--muted);">No matching upcoming events found.</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map((ev, idx) => {
+        const key = normalizeEventKey(ev.Title);
+        const ov = state.overrides[key];
+        const info = detectImageSource(ov, ev.Img);
+        const rawIdx = state.events.indexOf(ev);
+        return `
+          <article class="card" data-ev-idx="${rawIdx}">
+            <div class="preview-box">
+              <img src="${escHtml(info.url)}" alt="${escHtml(ev.Title)}" loading="lazy" data-preview-img>
+              <span class="badge ${info.cls}" data-badge>${escHtml(info.label)}</span>
+              <div class="drop-hint">Drop image to set for<br>${escHtml(ev.Title)}</div>
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">${escHtml(ev.Title)}</h3>
+              <div class="card-meta">
+                <span><i class="fa-regular fa-calendar" style="color:var(--gold); width:16px;"></i> ${escHtml(formatDate(ev.DateTime))}</span>
+                <span><i class="fa-solid fa-location-dot" style="color:var(--gold); width:16px;"></i> ${escHtml(ev.Location || 'TBC')}</span>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn btn-gold btn-sm" data-action="upload" data-ev-idx="${rawIdx}">
+                  <i class="fa-solid fa-upload"></i> Upload Photo
+                </button>
+                <button type="button" class="btn btn-sm" data-action="pick" data-ev-idx="${rawIdx}">
+                  <i class="fa-regular fa-images"></i> Library
+                </button>
+                ${info.url !== PLACEHOLDER_IMG ? `
+                  <button type="button" class="btn btn-sm" data-action="copy" data-url="${escHtml(info.url)}" title="Copy current image URL">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                ` : ''}
+                ${info.isOverride ? `
+                  <button type="button" class="btn btn-danger btn-sm" data-action="reset" data-ev-idx="${rawIdx}" title="Remove Custom R2 override">
+                    <i class="fa-solid fa-rotate-left"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      grid.querySelectorAll('img[data-preview-img]').forEach(img => {
+        img.addEventListener('error', () => {
+          img.src = PLACEHOLDER_IMG;
+          const badge = img.parentElement.querySelector('[data-badge]');
+          if (badge) {
+            badge.className = 'badge badge-warn';
+            badge.textContent = 'Broken / Fallback';
+          }
+        }, { once: true });
+      });
+    }
+
+    function renderLibrary() {
+      $('libCount').textContent = state.assets.length;
+      const grid = $('libraryGrid');
+      if (!state.assets.length) {
+        grid.innerHTML = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--muted);">No R2 images uploaded yet.</div>';
+        return;
+      }
+      grid.innerHTML = state.assets.map(a => `
+        <div class="card">
+          <div class="preview-box" style="height:150px;">
+            <img src="${escHtml(a.url)}" alt="${escHtml(a.filename)}" loading="lazy">
+          </div>
+          <div class="card-body" style="padding:10px 12px;">
+            <div style="font-size:12.5px; font-weight:700; color:#fff; word-break:break-all;">${escHtml(a.filename)}</div>
+            <div style="font-size:11px; color:var(--muted);">${Math.round((a.size || 0) / 1024)} KB</div>
+            <div class="card-actions" style="padding-top:4px;">
+              <button type="button" class="btn btn-gold btn-sm" data-lib-copy="${escHtml(a.url)}">
+                <i class="fa-regular fa-copy"></i> Copy URL
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" data-lib-delete="${escHtml(a.key)}" data-lib-name="${escHtml(a.filename)}">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadAllData() {
+      $('eventsLoading').classList.remove('hidden');
+      try {
+        const [evRes, ovRes, libRes] = await Promise.all([
+          fetch(EVENTS_API_URL),
+          fetch('/api/event-images?nocache=1'),
+          fetch('/api/assets', { headers: { 'X-Upload-Pin': state.pin } })
+        ]);
+        const events = evRes.ok ? await evRes.json() : [];
+        const ovData = ovRes.ok ? await ovRes.json() : {};
+        const libData = libRes.ok ? await libRes.json() : {};
+
+        state.events = Array.isArray(events) ? events : [];
+        state.overrides = (ovData && ovData.overrides) || {};
+        state.assets = Array.isArray(libData.assets) ? libData.assets : [];
+
+        renderEvents();
+        renderLibrary();
+      } catch (err) {
+        showToast('Failed to load events: ' + err.message, true);
+      } finally {
+        $('eventsLoading').classList.add('hidden');
+      }
+    }
+
+    async function handleAssignForEvent(evTitle, file) {
+      showToast(`Optimising & uploading for "${evTitle}"...`);
+      try {
+        const res = await uploadImageFile(file, { eventTitle });
+        const key = res.assignedEventKey || normalizeEventKey(evTitle);
+        state.overrides[key] = { url: res.url, key: res.key, title: evTitle, updatedAt: new Date().toISOString() };
+        state.assets.unshift({ key: res.key, filename: res.filename, url: res.url, size: file.size, uploaded: new Date().toISOString() });
+        renderEvents();
+        renderLibrary();
+        showToast(`Saved! "${evTitle}" is live on beverleyroundtable.co.uk`);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function openPickerModal(evTitle) {
+      state.pickerEventTitle = evTitle;
+      $('pickerSubtitle').textContent = `Assign to: ${evTitle}`;
+      const body = $('pickerBody');
+      if (!state.assets.length) {
+        body.innerHTML = '<div style="padding:24px; text-align:center; color:var(--muted);">No R2 images in library yet — use Upload Photo first.</div>';
+      } else {
+        body.innerHTML = `<div class="lib-grid">${state.assets.map((a, idx) => `
+          <button type="button" class="lib-item" data-pick-idx="${idx}">
+            <img src="${escHtml(a.url)}" alt="${escHtml(a.filename)}" loading="lazy">
+            <div class="name">${escHtml(a.filename)}</div>
+          </button>
+        `).join('')}</div>`;
+      }
+      $('pickerModal').classList.remove('hidden');
+    }
+
+    // Event bindings
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pin = $('pinInput').value.trim();
+      const errBox = $('loginError');
+      errBox.classList.add('hidden');
+      $('loginBtn').disabled = true;
+      try {
+        await verifyPin(pin);
+        state.pin = pin;
+        if ($('rememberPin').checked) {
+          localStorage.setItem('brt_asset_pin', pin);
+        } else {
+          localStorage.removeItem('brt_asset_pin');
+        }
+        $('lockScreen').classList.add('hidden');
+        $('studioApp').classList.remove('hidden');
+        await loadAllData();
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.classList.remove('hidden');
+      } finally {
+        $('loginBtn').disabled = false;
+      }
+    });
+
+    $('logoutBtn').addEventListener('click', () => {
+      state.pin = '';
+      localStorage.removeItem('brt_asset_pin');
+      $('pinInput').value = '';
+      $('studioApp').classList.add('hidden');
+      $('lockScreen').classList.remove('hidden');
+    });
+
+    $('refreshBtn').addEventListener('click', loadAllData);
+    $('eventSearch').addEventListener('input', renderEvents);
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+        const tab = btn.dataset.tab;
+        $('tabEvents').classList.toggle('hidden', tab !== 'events');
+        $('tabLibrary').classList.toggle('hidden', tab !== 'library');
+      });
+    });
+
+    // Event cards: click actions & per-card drag-and-drop
+    const eventsGrid = $('eventsGrid');
+    eventsGrid.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      if (action === 'copy') {
+        await navigator.clipboard?.writeText(btn.dataset.url || '');
+        showToast('Copied image URL to clipboard');
+        return;
+      }
+      const ev = state.events[Number(btn.dataset.evIdx)];
+      if (!ev) return;
+
+      if (action === 'upload') {
+        state.pendingUploadEventTitle = ev.Title;
+        $('eventFileInput').value = '';
+        $('eventFileInput').click();
+      } else if (action === 'pick') {
+        openPickerModal(ev.Title);
+      } else if (action === 'reset') {
+        if (!confirm(`Reset custom image for "${ev.Title}" back to calendar/default?`)) return;
+        try {
+          const res = await fetch('/api/event-images', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'X-Upload-Pin': state.pin },
+            body: JSON.stringify({ eventTitle: ev.Title })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to reset override');
+          state.overrides = data.overrides || {};
+          renderEvents();
+          showToast(`Removed Custom R2 override for "${ev.Title}"`);
+        } catch (err) {
+          showToast(err.message, true);
+        }
+      }
+    });
+
+    eventsGrid.addEventListener('dragover', (e) => {
+      const card = e.target.closest('.card[data-ev-idx]');
+      if (!card) return;
+      e.preventDefault();
+      card.classList.add('drag-over');
+    });
+    eventsGrid.addEventListener('dragleave', (e) => {
+      const card = e.target.closest('.card[data-ev-idx]');
+      if (card && !card.contains(e.relatedTarget)) card.classList.remove('drag-over');
+    });
+    eventsGrid.addEventListener('drop', async (e) => {
+      const card = e.target.closest('.card[data-ev-idx]');
+      if (!card) return;
+      e.preventDefault();
+      card.classList.remove('drag-over');
+      const file = e.dataTransfer?.files?.[0];
+      const ev = state.events[Number(card.dataset.evIdx)];
+      if (file && ev) await handleAssignForEvent(ev.Title, file);
+    });
+
+    $('eventFileInput').addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      const title = state.pendingUploadEventTitle;
+      if (file && title) await handleAssignForEvent(title, file);
+    });
+
+    // Picker modal
+    $('closePickerBtn').addEventListener('click', () => $('pickerModal').classList.add('hidden'));
+    $('pickerModal').addEventListener('click', (e) => {
+      if (e.target === $('pickerModal')) $('pickerModal').classList.add('hidden');
+    });
+    $('pickerBody').addEventListener('click', async (e) => {
+      const item = e.target.closest('.lib-item[data-pick-idx]');
+      if (!item || !state.pickerEventTitle) return;
+      const asset = state.assets[Number(item.dataset.pickIdx)];
+      if (!asset) return;
+      $('pickerModal').classList.add('hidden');
+      try {
+        const res = await fetch('/api/event-images', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Upload-Pin': state.pin },
+          body: JSON.stringify({ eventTitle: state.pickerEventTitle, url: asset.url, key: asset.key })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to assign image');
+        state.overrides = data.overrides || {};
+        renderEvents();
+        showToast(`Assigned ${asset.filename} to "${state.pickerEventTitle}"`);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    });
+
+    // Quick upload & Library
+    async function handleQuickUpload(file) {
+      if (!file) return;
+      showToast('Optimising & uploading image to R2...');
+      try {
+        const slug = $('quickSlug').value.trim();
+        const res = await uploadImageFile(file, { slug });
+        $('quickResultImg').src = res.url;
+        $('quickResultUrl').value = res.url;
+        $('quickResult').classList.remove('hidden');
+        $('quickSlug').value = '';
+        state.assets.unshift({ key: res.key, filename: res.filename, url: res.url, size: file.size, uploaded: new Date().toISOString() });
+        renderLibrary();
+        showToast('Uploaded to R2 CDN!');
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    $('quickDropzone').addEventListener('click', () => {
+      $('quickFileInput').value = '';
+      $('quickFileInput').click();
+    });
+    $('quickFileInput').addEventListener('change', (e) => handleQuickUpload(e.target.files?.[0]));
+    $('quickDropzone').addEventListener('dragover', (e) => { e.preventDefault(); $('quickDropzone').classList.add('drag-over'); });
+    $('quickDropzone').addEventListener('dragleave', () => $('quickDropzone').classList.remove('drag-over'));
+    $('quickDropzone').addEventListener('drop', (e) => {
+      e.preventDefault();
+      $('quickDropzone').classList.remove('drag-over');
+      handleQuickUpload(e.dataTransfer?.files?.[0]);
+    });
+    $('copyQuickUrlBtn').addEventListener('click', async () => {
+      await navigator.clipboard?.writeText($('quickResultUrl').value);
+      showToast('Copied URL to clipboard');
+    });
+
+    $('libraryGrid').addEventListener('click', async (e) => {
+      const copyBtn = e.target.closest('button[data-lib-copy]');
+      if (copyBtn) {
+        await navigator.clipboard?.writeText(copyBtn.dataset.libCopy || '');
+        showToast('Copied URL to clipboard');
+        return;
+      }
+      const delBtn = e.target.closest('button[data-lib-delete]');
+      if (delBtn) {
+        const key = delBtn.dataset.libDelete;
+        const name = delBtn.dataset.libName;
+        if (!confirm(`Delete "${name}" from R2? Any event using it will fall back to its sheet image.`)) return;
+        try {
+          const res = await fetch('/api/assets', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'X-Upload-Pin': state.pin },
+            body: JSON.stringify({ key })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to delete asset');
+          state.assets = state.assets.filter(a => a.key !== key);
+          if (data.overrides) state.overrides = data.overrides;
+          renderLibrary();
+          renderEvents();
+          showToast(`Deleted ${name}`);
+        } catch (err) {
+          showToast(err.message, true);
+        }
+      }
+    });
+
+    // Auto-unlock if ?pin= or remembered PIN is valid
+    (async () => {
+      const urlPin = new URLSearchParams(location.search).get('pin');
+      const savedPin = urlPin || localStorage.getItem('brt_asset_pin') || '';
+      if (!savedPin) return;
+      try {
+        await verifyPin(savedPin);
+        state.pin = savedPin;
+        if (urlPin) {
+          localStorage.setItem('brt_asset_pin', savedPin);
+          history.replaceState(null, '', location.pathname);
+        }
+        $('lockScreen').classList.add('hidden');
+        $('studioApp').classList.remove('hidden');
+        await loadAllData();
+      } catch (e) {
+        localStorage.removeItem('brt_asset_pin');
+      }
+    })();
+  </script>
+</body>
+</html>

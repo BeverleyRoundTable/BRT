@@ -443,29 +443,56 @@ function applyGalleryImages(data) {
     }
 }
 
-// Fetch and Render Events with instant Cache
+// Fetch and Render Events with instant Cache (+ R2 Custom Event Image Overrides)
+const EVENT_IMAGE_OVERRIDES_URL = 'https://assets.beverleyroundtable.co.uk/api/event-images';
+
+function normalizeEventKey(title) {
+    return String(title || '')
+        .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+}
+
 async function fetchEvents() {
     const container = document.getElementById('events-container');
     const loader = document.getElementById('events-loader');
     const errorDiv = document.getElementById('events-error');
     const CACHE_KEY = 'brt_events_cache';
+    const OVERRIDES_CACHE_KEY = 'brt_event_overrides_cache';
     
     const cached = sessionStorage.getItem(CACHE_KEY);
+    let cachedOverrides = {};
+    try {
+        cachedOverrides = JSON.parse(sessionStorage.getItem(OVERRIDES_CACHE_KEY) || '{}') || {};
+    } catch (e) {}
+
     if (cached) {
         loader.classList.add('hidden');
-        renderEventsCards(JSON.parse(cached), container);
+        renderEventsCards(JSON.parse(cached), container, cachedOverrides);
     }
 
     try {
-        const response = await fetch(`${API_URL}?type=upcoming`);
-        if (!response.ok) throw new Error('Network response was not ok');
+        const [eventsRes, overridesRes] = await Promise.all([
+            fetch(`${API_URL}?type=upcoming`),
+            fetch(EVENT_IMAGE_OVERRIDES_URL).catch(() => null)
+        ]);
+        if (!eventsRes.ok) throw new Error('Network response was not ok');
         
-        const events = await response.json();
+        const events = await eventsRes.json();
+        let overrides = cachedOverrides;
+        if (overridesRes && overridesRes.ok) {
+            const ovJson = await overridesRes.json().catch(() => null);
+            if (ovJson && ovJson.overrides && typeof ovJson.overrides === 'object') {
+                overrides = ovJson.overrides;
+                sessionStorage.setItem(OVERRIDES_CACHE_KEY, JSON.stringify(overrides));
+            }
+        }
         sessionStorage.setItem(CACHE_KEY, JSON.stringify(events));
         
         loader.classList.add('hidden');
         container.innerHTML = ''; // Clear prior render
-        renderEventsCards(events, container);
+        renderEventsCards(events, container, overrides);
 
     } catch (error) {
         console.error("Error fetching events:", error);
@@ -476,7 +503,7 @@ async function fetchEvents() {
     }
 }
 
-function renderEventsCards(events, container) {
+function renderEventsCards(events, container, overrides = {}) {
     if (events.length === 0) {
         container.innerHTML = `<div class="col-span-full text-center py-10"><p class="font-body text-gray-400 text-lg">No upcoming events scheduled right now. Check back soon!</p></div>`;
         return;
@@ -490,7 +517,11 @@ function renderEventsCards(events, container) {
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
         const formattedDate = `${days[dateObj.getDay()]} ${dateObj.getDate()} ${months[dateObj.getMonth()]} @ ${dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
-        const imgUrl = (event.Img && event.Img.trim() !== "") ? event.Img : 'https://placehold.co/600x400/1D1D1A/FBAF33?text=BRT+Event';
+        const customEntry = overrides && overrides[normalizeEventKey(event.Title)];
+        const customImg = typeof customEntry === 'string' ? customEntry : (customEntry && customEntry.url ? customEntry.url : '');
+        const imgUrl = (customImg && customImg.trim() !== "")
+            ? customImg.trim()
+            : ((event.Img && event.Img.trim() !== "") ? event.Img : 'https://placehold.co/600x400/1D1D1A/FBAF33?text=BRT+Event');
 
         const card = document.createElement('div');
         card.className = 'bg-white/5 rounded-2xl overflow-hidden border border-white/10 flex flex-col group hover:border-brt-gold/50 transition-all duration-300 transform hover:-translate-y-2';
