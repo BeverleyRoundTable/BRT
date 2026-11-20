@@ -382,6 +382,7 @@ const CHAPTERS = {
 
 const DEFAULT_CHAPTER = 'beverley';
 const EVENTS_SHOWN = 5;
+const EVENT_IMAGE_OVERRIDES_URL = 'https://assets.beverleyroundtable.co.uk/api/event-images';
 
 /* ---------- boot ---------- */
 const params     = new URLSearchParams(location.search);
@@ -426,26 +427,38 @@ function setHref(id, url){
   else if (el) el.addEventListener('click', e => e.preventDefault());
 }
 
-/* ---------- events: DIRECT fetch, exactly like the quiz ---------- */
+/* ---------- events: DIRECT fetch + R2 overrides ---------- */
+function normalizeEventKey(title){
+  return String(title || '')
+    .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
 function loadEvents(){
   const url = CH.events;
   if (!url) { eventsFallback(); return; }
-  fetch(url)
-    .then(r => r.json())
-    .then(data => {
+  Promise.all([
+    fetch(url).then(r => r.json()),
+    fetch(EVENT_IMAGE_OVERRIDES_URL).then(r => (r.ok ? r.json() : null)).catch(() => null)
+  ])
+    .then(([data, ovData]) => {
       const list = Array.isArray(data) ? data : (data && data.events) || [];
-      if (list.length) renderEvents(list.slice(0, EVENTS_SHOWN), false);
+      const overrides = (ovData && ovData.overrides && typeof ovData.overrides === 'object') ? ovData.overrides : {};
+      if (list.length) renderEvents(list.slice(0, EVENTS_SHOWN), false, overrides);
       else eventsFallback();
     })
     .catch(() => eventsFallback());
 }
 
 function eventsFallback(){
-  if (!onProd) renderEvents(DEMO_EVENTS, true);
-  else renderEvents([], false);
+  if (!onProd) renderEvents(DEMO_EVENTS, true, {});
+  else renderEvents([], false, {});
 }
 
-function renderEvents(events, demo){
+function renderEvents(events, demo, overrides){
+  overrides = overrides || {};
   const grid = document.getElementById('evGrid');
   grid.innerHTML = '';
   if (!events.length){
@@ -458,7 +471,13 @@ function renderEvents(events, demo){
     const title = ev.Title || ev.title || 'Round Table social';
     const dtRaw = ev.DateTime || ev.startISO || ev.date || '';
     const loc   = ev.Location || ev.location || '';
-    const img   = ev.Img || ev.image || '';
+    const customEntry = overrides[normalizeEventKey(title)];
+    const customImg = typeof customEntry === 'string'
+      ? customEntry
+      : (customEntry && customEntry.url ? customEntry.url : '');
+    const img = (customImg && customImg.trim() !== '')
+      ? customImg.trim()
+      : (ev.Img || ev.image || '');
     const d     = new Date(dtRaw);
     const valid = !isNaN(d.getTime());
 
@@ -471,7 +490,7 @@ function renderEvents(events, demo){
     const card = document.createElement('div');
     card.className = 'ev-card';
     let html = '';
-    if (img) html += '<img class="ev-img" src="' + escapeHtml(img) + '" alt="' + escapeHtml(title) + '" loading="lazy">';
+    if (img) html += '<img class="ev-img" src="' + escapeHtml(img) + '" alt="' + escapeHtml(title) + '" loading="lazy" onerror="this.style.display=\'none\'">';
     html +=
       '<div class="ev-layout">' +
         '<div class="ev-date"><div class="d">' + escapeHtml(String(day)) + '</div>' + (mon ? '<div class="m">' + mon + '</div>' : '') + '</div>' +
