@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>BRT Event Image Studio | Beverley Round Table</title>
-  <link rel="icon" type="image/png" href="https://beverleyroundtable.co.uk/media/BRTLogo.png">
+  <link rel="icon" type="image/png" href="https://brt-23f.pages.dev/media/BRTLogo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
   <style>
     @font-face {
       font-family: 'Eurostile';
-      src: url('https://beverleyroundtable.co.uk/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
+      src: url('https://brt-23f.pages.dev/site/Eurostile_Extended_2_Bold.woff2') format('woff2');
       font-weight: 700 900;
       font-style: normal;
       font-display: swap;
@@ -334,6 +334,62 @@
       gap: 8px;
       max-width: min(92vw, 420px);
     }
+    .guide-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-bottom: 18px;
+    }
+    .guide-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .guide-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+    }
+    .guide-step {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .guide-step strong { color: #fff; }
+    .guide-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: var(--gold);
+      color: #111;
+      font-weight: 800;
+      font-size: 12px;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+    .guide-notes {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .guide-notes strong { color: #e5e7eb; }
   </style>
 </head>
 <body>
@@ -342,7 +398,7 @@
   <div id="lockScreen" class="lock-wrap">
     <form id="loginForm" class="lock-card">
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-        <img src="https://beverleyroundtable.co.uk/media/BRTLogo.png" alt="BRT" style="width:44px; height:44px; object-fit:contain;">
+        <img src="https://brt-23f.pages.dev/media/BRTLogo.png" onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png';" alt="BRT" style="width:44px; height:44px; object-fit:contain;">
         <div>
           <h1 class="brand-font" style="margin:0; font-size:18px; color:var(--gold);">BRT Event Image Studio</h1>
           <div style="font-size:12px; color:var(--muted);">assets.beverleyroundtable.co.uk</div>
@@ -369,7 +425,7 @@
     <header class="topbar">
       <div class="topbar-inner">
         <div style="display:flex; align-items:center; gap:12px;">
-          <img src="https://beverleyroundtable.co.uk/media/BRTLogo.png" alt="BRT" style="width:36px; height:36px; object-fit:contain;">
+          <img src="https://brt-23f.pages.dev/media/BRTLogo.png" onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/BeverleyRoundTable/BRT/main/media/BRTLogo.png';" alt="BRT" style="width:36px; height:36px; object-fit:contain;">
           <div>
             <div class="brand-font" style="font-size:16px; color:var(--gold);">BRT Event Image Studio</div>
             <div style="font-size:12px; color:var(--muted);">R2 Custom Overrides · No Spond URLs Needed</div>
@@ -386,6 +442,9 @@
         </div>
 
         <div style="display:flex; gap:8px; align-items:center;">
+          <button id="guideToggleBtn" type="button" class="btn btn-sm" title="Show or hide instructions">
+            <i class="fa-regular fa-circle-question"></i> How It Works
+          </button>
           <a href="https://beverleyroundtable.co.uk/#events" target="_blank" rel="noopener" class="btn btn-sm">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> View Live Site
           </a>
@@ -400,6 +459,50 @@
     </header>
 
     <main class="container">
+      <section id="quickGuideCard" class="guide-card">
+        <div class="guide-head">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-book-open" style="color:var(--gold);"></i>
+            <strong class="brand-font" style="font-size:14px; color:var(--gold);">How to Link an Event Photo to beverleyroundtable.co.uk</strong>
+          </div>
+          <button id="hideGuideBtn" type="button" class="btn btn-sm">
+            <i class="fa-solid fa-eye-slash"></i> Hide Guide
+          </button>
+        </div>
+
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div style="display:flex; align-items:center; margin-bottom:6px;">
+              <span class="guide-num">1</span><strong>Create the event in Spond</strong>
+            </div>
+            You <strong>don't need</strong> to paste image links into Spond descriptions anymore. Once Spond syncs to Google Calendar, the event appears automatically in <strong>Upcoming Events</strong> below.
+          </div>
+          <div class="guide-step">
+            <div style="display:flex; align-items:center; margin-bottom:6px;">
+              <span class="guide-num">2</span><strong>Find your event below</strong>
+            </div>
+            Open the <strong>Upcoming Events</strong> tab (use the search box if there are lots of events).
+          </div>
+          <div class="guide-step">
+            <div style="display:flex; align-items:center; margin-bottom:6px;">
+              <span class="guide-num">3</span><strong>Add your photo</strong>
+            </div>
+            <strong>Drag &amp; drop</strong> an image straight onto the event card, or click <strong>Upload Photo</strong> (or <strong>From Library</strong> to reuse an existing upload). Large photos are auto-optimised.
+          </div>
+          <div class="guide-step">
+            <div style="display:flex; align-items:center; margin-bottom:6px;">
+              <span class="guide-num">4</span><strong>Live immediately!</strong>
+            </div>
+            Your photo appears on <strong>beverleyroundtable.co.uk</strong> right away, replacing the AI fallback. No waiting for a sync.
+          </div>
+        </div>
+
+        <div class="guide-notes">
+          <span><i class="fa-solid fa-clock-rotate-left" style="color:var(--gold); margin-right:5px;"></i><strong>Auto-cleanup:</strong> Event photos are automatically deleted from storage <strong>14 days after the event finishes</strong> (recurring events &amp; standalone Library uploads are kept).</span>
+          <span><i class="fa-solid fa-link" style="color:var(--gold); margin-right:5px;"></i><strong>Need a link for Spond / WhatsApp / socials?</strong> Switch to the <strong>Upload &amp; Library</strong> tab to upload any image and click <strong>Copy URL</strong>.</span>
+        </div>
+      </section>
+
       <!-- Tab 1: Upcoming Events -->
       <section id="tabEvents">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:6px;">
@@ -956,6 +1059,27 @@
         }
       }
     });
+
+    // Collapsible Quick Guide ("How It Works")
+    const GUIDE_STORAGE_KEY = 'brt_studio_guide_hidden';
+    function setGuideVisible(visible) {
+      const card = $('quickGuideCard');
+      const btn = $('guideToggleBtn');
+      if (card) card.classList.toggle('hidden', !visible);
+      if (btn) {
+        btn.style.borderColor = visible ? 'var(--gold)' : '';
+        btn.style.color = visible ? 'var(--gold)' : '';
+      }
+      try {
+        localStorage.setItem(GUIDE_STORAGE_KEY, visible ? '0' : '1');
+      } catch (e) {}
+    }
+    setGuideVisible(localStorage.getItem(GUIDE_STORAGE_KEY) !== '1');
+    $('guideToggleBtn')?.addEventListener('click', () => {
+      const isHidden = $('quickGuideCard')?.classList.contains('hidden');
+      setGuideVisible(Boolean(isHidden));
+    });
+    $('hideGuideBtn')?.addEventListener('click', () => setGuideVisible(false));
 
     // Auto-unlock if ?pin= or remembered PIN is valid
     (async () => {
