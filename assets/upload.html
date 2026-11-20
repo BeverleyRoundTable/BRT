@@ -445,6 +445,9 @@
           <button id="guideToggleBtn" type="button" class="btn btn-sm" title="Show or hide instructions">
             <i class="fa-regular fa-circle-question"></i> How It Works
           </button>
+          <a href="https://socials.beverleyroundtable.co.uk" class="btn btn-sm" title="Back to Socials Planner">
+            <i class="fa-regular fa-calendar-days"></i> Socials Planner
+          </a>
           <a href="https://beverleyroundtable.co.uk/#events" target="_blank" rel="noopener" class="btn btn-sm">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> View Live Site
           </a>
@@ -502,6 +505,8 @@
           <span><i class="fa-solid fa-link" style="color:var(--gold); margin-right:5px;"></i><strong>Need a link for Spond / WhatsApp / socials?</strong> Switch to the <strong>Upload &amp; Library</strong> tab to upload any image and click <strong>Copy URL</strong>.</span>
         </div>
       </section>
+
+      <div id="deepLinkBanner" class="hidden" style="background:rgba(251, 175, 51, 0.12); border:1px solid rgba(251, 175, 51, 0.45); border-radius:14px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;"></div>
 
       <!-- Tab 1: Upcoming Events -->
       <section id="tabEvents">
@@ -573,6 +578,7 @@
   <script>
     const EVENTS_API_URL = 'https://script.google.com/macros/s/AKfycbyJjIbq-XZ9W8owbbp0PizZ2adE-Z3SK1bAxPDEjjDjmYhqpKXMwlHEuWrOUyNeTg/exec?type=upcoming';
     const PLACEHOLDER_IMG = 'https://placehold.co/600x400/1D1D1A/FBAF33?text=BRT+Event';
+    const initialEventQuery = (new URLSearchParams(location.search).get('event') || '').trim();
 
     const state = {
       pin: '',
@@ -580,7 +586,8 @@
       overrides: {},
       assets: [],
       pendingUploadEventTitle: null,
-      pickerEventTitle: null
+      pickerEventTitle: null,
+      deepLinkApplied: false
     };
 
     const $ = id => document.getElementById(id);
@@ -704,13 +711,76 @@
       return { cls: 'badge-drive', label: 'External URL', url: img, isOverride: false };
     }
 
+    function filterMatchingEvents(query) {
+      const sorted = [...state.events].sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
+      const rawQ = String(query || '').trim().toLowerCase();
+      const cleanQ = normalizeEventKey(query);
+      if (!rawQ && !cleanQ) return sorted;
+      return sorted.filter(ev => {
+        const hayRaw = `${ev.Title || ''} ${ev.Location || ''}`.toLowerCase();
+        const hayClean = normalizeEventKey(`${ev.Title || ''} ${ev.Location || ''}`);
+        return (rawQ && hayRaw.includes(rawQ)) || (cleanQ && hayClean.includes(cleanQ));
+      });
+    }
+
+    function clearDeepLinkFilter() {
+      $('eventSearch').value = '';
+      $('deepLinkBanner')?.classList.add('hidden');
+      renderEvents();
+    }
+
+    function applyInitialDeepLinkBanner() {
+      const banner = $('deepLinkBanner');
+      if (!banner) return;
+      if (!initialEventQuery) {
+        banner.classList.add('hidden');
+        return;
+      }
+      const matched = filterMatchingEvents(initialEventQuery);
+      if (matched.length > 0) {
+        banner.innerHTML = `
+          <div style="font-size:13px; color:#f3f4f6; line-height:1.45;">
+            <i class="fa-solid fa-link" style="color:var(--gold); margin-right:6px;"></i>
+            Linked from Socials Planner: <strong style="color:var(--gold);">${escHtml(initialEventQuery)}</strong> — drag &amp; drop a photo onto the card below.
+          </div>
+          <button id="clearDeepLinkBtn" type="button" class="btn btn-sm">
+            <i class="fa-solid fa-layer-group"></i> Show All Events
+          </button>
+        `;
+        banner.classList.remove('hidden');
+        const firstCard = $('eventsGrid')?.querySelector('.card');
+        if (firstCard) {
+          firstCard.style.borderColor = 'var(--gold)';
+          firstCard.style.boxShadow = '0 0 0 2px var(--gold-dim)';
+          setTimeout(() => firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120);
+        }
+      } else {
+        banner.innerHTML = `
+          <div style="font-size:13px; color:#f3f4f6; line-height:1.45;">
+            <i class="fa-regular fa-clock" style="color:var(--gold); margin-right:6px;"></i>
+            <strong>${escHtml(initialEventQuery)}</strong> isn't in the synced Spond/Google Calendar yet — add it to Spond first so it shows up here, or pre-upload a photo in <strong>Upload &amp; Library</strong> now.
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button id="openLibraryFromBannerBtn" type="button" class="btn btn-gold btn-sm">
+              <i class="fa-solid fa-images"></i> Open Upload &amp; Library
+            </button>
+            <button id="clearDeepLinkBtn" type="button" class="btn btn-sm">
+              <i class="fa-solid fa-layer-group"></i> Show All Events
+            </button>
+          </div>
+        `;
+        banner.classList.remove('hidden');
+        $('openLibraryFromBannerBtn')?.addEventListener('click', () => {
+          document.querySelector('.tab-btn[data-tab="library"]')?.click();
+        });
+      }
+      $('clearDeepLinkBtn')?.addEventListener('click', clearDeepLinkFilter);
+    }
+
     function renderEvents() {
       const grid = $('eventsGrid');
-      const query = ($('eventSearch').value || '').trim().toLowerCase();
-      const sorted = [...state.events].sort((a, b) => new Date(a.DateTime) - new Date(b.DateTime));
-      const filtered = query
-        ? sorted.filter(ev => `${ev.Title || ''} ${ev.Location || ''}`.toLowerCase().includes(query))
-        : sorted;
+      const query = ($('eventSearch').value || '').trim();
+      const filtered = filterMatchingEvents(query);
 
       if (!filtered.length) {
         grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--muted);">No matching upcoming events found.</div>';
@@ -814,7 +884,14 @@
         state.overrides = (ovData && ovData.overrides) || {};
         state.assets = Array.isArray(libData.assets) ? libData.assets : [];
 
-        renderEvents();
+        if (initialEventQuery && !state.deepLinkApplied) {
+          state.deepLinkApplied = true;
+          $('eventSearch').value = initialEventQuery;
+          renderEvents();
+          applyInitialDeepLinkBanner();
+        } else {
+          renderEvents();
+        }
         renderLibrary();
       } catch (err) {
         showToast('Failed to load events: ' + err.message, true);
@@ -826,7 +903,7 @@
     async function handleAssignForEvent(evTitle, file) {
       showToast(`Optimising & uploading for "${evTitle}"...`);
       try {
-        const res = await uploadImageFile(file, { eventTitle });
+        const res = await uploadImageFile(file, { eventTitle: evTitle });
         const key = res.assignedEventKey || normalizeEventKey(evTitle);
         state.overrides[key] = { url: res.url, key: res.key, title: evTitle, updatedAt: new Date().toISOString() };
         state.assets.unshift({ key: res.key, filename: res.filename, url: res.url, size: file.size, uploaded: new Date().toISOString() });
@@ -890,7 +967,12 @@
     });
 
     $('refreshBtn').addEventListener('click', loadAllData);
-    $('eventSearch').addEventListener('input', renderEvents);
+    $('eventSearch').addEventListener('input', () => {
+      if (!$('eventSearch').value.trim()) {
+        $('deepLinkBanner')?.classList.add('hidden');
+      }
+      renderEvents();
+    });
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1091,7 +1173,10 @@
         state.pin = savedPin;
         if (urlPin) {
           localStorage.setItem('brt_asset_pin', savedPin);
-          history.replaceState(null, '', location.pathname);
+          const nextParams = new URLSearchParams(location.search);
+          nextParams.delete('pin');
+          const nextQs = nextParams.toString();
+          history.replaceState(null, '', location.pathname + (nextQs ? `?${nextQs}` : ''));
         }
         $('lockScreen').classList.add('hidden');
         $('studioApp').classList.remove('hidden');
