@@ -577,6 +577,80 @@ export default {
         return corsJson({ ok: true, deleted: key, overrides: nextOverrides }, 200, { "Cache-Control": "no-store" });
       }
 
+      // Prune past event image overrides and delete their unreferenced R2 objects
+      if (lowerPath === "/api/prune-past" && request.method === "POST") {
+        let body = {};
+        try { body = await request.json(); } catch (e) {}
+        const auth = verifyUploadAuth(request, env, body.pin);
+        if (!auth.ok) return corsJson({ ok: false, error: auth.error }, auth.status);
+        if (!env?.BRT_ASSETS) return corsJson({ ok: false, error: "BRT_ASSETS R2 binding missing" }, 500);
+
+        const rawPast = Array.isArray(body.pastTitles) ? body.pastTitles : [];
+        const rawActive = Array.isArray(body.activeTitles) ? body.activeTitles : [];
+        const pastSet = new Set(rawPast.map(normalizeEventKey).filter(Boolean));
+        const activeSet = new Set(rawActive.map(normalizeEventKey).filter(Boolean));
+
+        const current = await readEventImagesMap(env);
+        const currentOverrides = current.overrides || {};
+
+        if (pastSet.size === 0) {
+          return corsJson({
+            ok: true,
+            prunedOverrides: [],
+            deletedKeys: [],
+            deletedUrls: [],
+            remainingOverrides: Object.keys(currentOverrides).length,
+            overrides: currentOverrides
+          }, 200, { "Cache-Control": "no-store" });
+        }
+
+        const nextOverrides = {};
+        const prunedOverrides = [];
+        const candidateKeys = new Set();
+
+        for (const [eventKey, entry] of Object.entries(currentOverrides)) {
+          if (pastSet.has(eventKey) && !activeSet.has(eventKey)) {
+            prunedOverrides.push(eventKey);
+            const r2Key = entry && typeof entry.key === "string" ? entry.key.trim() : "";
+            if (/^images\/[a-zA-Z0-9._-]+$/.test(r2Key) && !r2Key.includes("..")) {
+              candidateKeys.add(r2Key);
+            }
+          } else {
+            nextOverrides[eventKey] = entry;
+          }
+        }
+
+        const stillReferencedKeys = new Set(
+          Object.values(nextOverrides)
+            .map(v => (v && typeof v.key === "string" ? v.key.trim() : ""))
+            .filter(Boolean)
+        );
+
+        const deletedKeys = [];
+        const deletedUrls = [];
+        for (const key of candidateKeys) {
+          if (stillReferencedKeys.has(key)) continue;
+          await env.BRT_ASSETS.delete(key);
+          deletedKeys.push(key);
+          deletedUrls.push(`https://assets.beverleyroundtable.co.uk/${key}`);
+        }
+
+        let finalOverrides = currentOverrides;
+        if (prunedOverrides.length > 0) {
+          const saved = await writeEventImagesMap(env, nextOverrides);
+          finalOverrides = saved.overrides;
+        }
+
+        return corsJson({
+          ok: true,
+          prunedOverrides,
+          deletedKeys,
+          deletedUrls,
+          remainingOverrides: Object.keys(finalOverrides).length,
+          overrides: finalOverrides
+        }, 200, { "Cache-Control": "no-store" });
+      }
+
       // Serve R2 image first, fallback to Pages /assets/...
       let cleanPath = path;
       if (cleanPath.startsWith("/assets/")) {
