@@ -205,7 +205,7 @@
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <a href="#calendar" class="font-heading uppercase font-bold text-base md:text-lg bg-brt-gold text-brt-dark px-8 py-4 rounded-full hover:bg-white transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(251,175,51,0.3)] inline-flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-calendar-days"></i> Browse 12-Month Calendar
+                        <i class="fa-solid fa-calendar-days"></i> Browse Rolling Calendar
                     </a>
                 </div>
             </div>
@@ -219,7 +219,7 @@
                         The Wednesday <span class="text-brt-gold">Formula</span>
                     </h2>
                     <p class="font-body text-gray-400 max-w-2xl mx-auto">
-                        Simple, fair, and zero guesswork for current members &amp; prospective guests. Every member organises two nights across the year (excluding December for the Santa Sleigh).
+                        Simple, fair, and zero guesswork for current members &amp; prospective guests. Every member organises two nights per calendar year (excluding December for the Santa Sleigh), with new months unlocking automatically 6 months ahead.
                     </p>
                 </div>
 
@@ -410,7 +410,7 @@
                 <!-- Stats Strip -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
                     <div class="bg-white/5 border border-white/10 rounded-2xl p-5">
-                        <div class="text-xs font-heading uppercase tracking-wider text-gray-400 mb-1">Year Calendar</div>
+                        <div id="stat-calendar-label" class="text-xs font-heading uppercase tracking-wider text-gray-400 mb-1">2027 Calendar</div>
                         <div class="flex items-baseline gap-2">
                             <span id="stat-total-claimed" class="font-heading font-black text-3xl text-white">0</span>
                             <span id="stat-total-slots" class="text-sm text-gray-400 font-semibold">/ 21 slots filled</span>
@@ -443,7 +443,7 @@
                     </div>
 
                     <div class="bg-white/5 border border-white/10 rounded-2xl p-5">
-                        <div class="text-xs font-heading uppercase tracking-wider text-gray-400 mb-1">Tablers 1+1 Complete</div>
+                        <div id="stat-quota-year-label" class="text-xs font-heading uppercase tracking-wider text-gray-400 mb-1">2027 Tablers 1+1 Complete</div>
                         <div class="flex items-baseline gap-2">
                             <span id="stat-members-done" class="font-heading font-black text-3xl text-white">0</span>
                             <span id="stat-members-total" class="text-sm text-gray-400 font-semibold">/ 0 Tablers</span>
@@ -493,11 +493,14 @@
                 <div class="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                         <div>
-                            <h2 class="font-heading font-black text-2xl md:text-3xl uppercase text-white">
-                                Member <span class="text-brt-gold">Quotas</span>
-                            </h2>
-                            <p class="text-sm text-gray-400 mt-1">
-                                Click any member to filter their socials, or add/remove names (synced with the Google Sheet — deleting a member auto-releases their future open/planned slots).
+                            <div class="flex flex-wrap items-center gap-3">
+                                <h2 class="font-heading font-black text-2xl md:text-3xl uppercase text-white">
+                                    Member <span class="text-brt-gold">Quotas</span>
+                                </h2>
+                                <div id="quota-year-tabs" class="flex flex-wrap items-center gap-1.5"></div>
+                            </div>
+                            <p id="quota-year-caption" class="text-sm text-gray-400 mt-1">
+                                Each year tracks its own 1 Paid + 1 Free allowance; booking into upcoming rolling dates banks toward that year&rsquo;s quota.
                             </p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
@@ -523,19 +526,19 @@
             </div>
         </section>
 
-        <!-- 12-MONTH SOCIALS CALENDAR -->
+        <!-- ROLLING SOCIALS CALENDAR -->
         <section id="calendar" class="py-16 md:py-24 bg-brt-dark scroll-mt-20">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
                     <div>
-                        <span class="font-heading font-bold uppercase tracking-widest text-xs text-brt-gold mb-2 block">
-                            Alternate Wednesday Schedule
+                        <span id="calendar-horizon-badge" class="font-heading font-bold uppercase tracking-widest text-xs text-brt-gold mb-2 block">
+                            Alternate Wednesday Schedule · Rolling 6 Months Ahead
                         </span>
                         <h2 class="font-heading font-black text-4xl md:text-5xl uppercase text-white">
                             The Social <span class="text-brt-gold">Lineup</span>
                         </h2>
                         <p class="font-body text-gray-400 mt-2">
-                            Claim an open Wednesday slot below or edit your planned social details.
+                            Claim an open Wednesday slot below or bank an idea onto upcoming dates as new months roll open.
                         </p>
                     </div>
 
@@ -941,7 +944,7 @@
                         <ol class="list-decimal ml-5 space-y-1.5 text-gray-300">
                             <li>Create a blank Google Sheet (e.g. <strong class="text-white">BRT Annual Socials Database</strong>) and keep Sheet sharing set to <em>Restricted / Private to you</em>.</li>
                             <li>Open <strong class="text-white">Extensions &rarr; Apps Script</strong> and paste <code class="text-brt-gold">socials/Code.gs</code> from your GitHub repo.</li>
-                            <li>Run <code class="text-brt-gold">setupSocialsDatabase()</code> once (or reload the Sheet and click <strong class="text-white">🍻 BRT Socials Admin &rarr; 1. Initialise</strong>) — it builds all 3 tabs and 12 months of alternate Wednesdays automatically (excluding December).</li>
+                            <li>Run <code class="text-brt-gold">setupSocialsDatabase()</code> once (or reload the Sheet and click <strong class="text-white">🍻 BRT Socials Admin &rarr; 1. Initialise</strong>) — it builds all 3 tabs and keeps alternate Wednesdays unlocked 6 months ahead automatically (excluding December).</li>
                             <li>Type your member names into <strong class="text-white">Members</strong> Column B.</li>
                             <li>Keep secrets out of Sheet cells: click <strong class="text-white">🍻 BRT Socials Admin &rarr; 5. Set Gemini API Key</strong> and <strong class="text-white">6. Set Table PIN / Admin PIN</strong> (stored privately in <code class="text-brt-gold">Script Properties</code>).</li>
                             <li>Click <strong class="text-white">Deploy &rarr; New deployment &rarr; Web app</strong> (Execute as: <em>Me</em>, Who has access: <em>Anyone</em>), then copy the <code class="text-brt-gold">/exec</code> URL. Visitors view the calendar read-only, while saving socials or using AI requires the Table PIN.</li>
@@ -984,7 +987,7 @@
                                 <li class="text-emerald-300">🔒 Script Prop: TABLE_PIN (Private)</li>
                                 <li class="text-indigo-300">🛡️ Script Prop: ADMIN_PIN (opt.)</li>
                                 <li>GEMINI_MODEL (AUTO = latest Flash)</li>
-                                <li>START_YEAR_MONTH / MONTHS_AHEAD</li>
+                                <li>START_YEAR_MONTH / ROLLING_LOOKAHEAD_MONTHS</li>
                                 <li>DEFAULT_START_TIME / END_TIME</li>
                                 <li>WHATSAPP_INVITE_URL</li>
                                 <li>AUTO_RELEASE_ON_MEMBER_DELETE</li>
@@ -1015,7 +1018,7 @@ const LOCAL_STORAGE_CAL_API_KEY = "brt_socials_calendar_api_url";
 const LOCAL_STORAGE_DEMO_KEY = "brt_socials_planner_demo_state_v7";
 const LOCAL_STORAGE_PIN_KEY = "brt_socials_member_pin";
 const PLANNER_START_YM = "2027-02";
-const DEFAULT_MONTHS_AHEAD = 11;
+const DEFAULT_ROLLING_LOOKAHEAD_MONTHS = 6;
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
@@ -1067,40 +1070,98 @@ function normalizeTimeStr(val, fallback) {
     return fallback || "19:30";
 }
 
-function getDynamicHorizonRange(startYm) {
+function addMonthsToYearMonth(ym, deltaMonths) {
+    const m = /^(\d{4})-(\d{2})$/.exec(String(ym || "").trim());
+    if (!m) return "2027-11";
+    const y = parseInt(m[1], 10);
+    const m0 = parseInt(m[2], 10) - 1;
+    const dt = new Date(Date.UTC(y, m0 + (Number(deltaMonths) || 0), 1));
+    return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthDiffInclusive(startYm, endYm) {
+    const a = /^(\d{4})-(\d{2})$/.exec(String(startYm || "").trim());
+    const b = /^(\d{4})-(\d{2})$/.exec(String(endYm || "").trim());
+    if (!a || !b) return 0;
+    return (parseInt(b[1], 10) - parseInt(a[1], 10)) * 12 + (parseInt(b[2], 10) - parseInt(a[2], 10)) + 1;
+}
+
+function lastDayIsoOfYearMonth(ym) {
+    const m = /^(\d{4})-(\d{2})$/.exec(String(ym || "").trim());
+    if (!m) return "2027-11-30";
+    const y = parseInt(m[1], 10);
+    const mon1 = parseInt(m[2], 10);
+    const lastDay = new Date(Date.UTC(y, mon1, 0)).getUTCDate();
+    return `${y}-${String(mon1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+}
+
+function resolveRollingLookaheadMonths(rawVal) {
+    const n = Number(rawVal);
+    if (!Number.isFinite(n) || n < 3 || n > 24) return DEFAULT_ROLLING_LOOKAHEAD_MONTHS;
+    return Math.round(n);
+}
+
+function getDynamicHorizonRange(startYm, lookaheadOrOverride, nowOverride) {
     const startFloor = /^\d{4}-\d{2}$/.test(String(startYm || "").trim())
         ? String(startYm).trim()
         : PLANNER_START_YM;
-    const now = new Date();
+    const horizonOpt = (lookaheadOrOverride && typeof lookaheadOrOverride === "object")
+        ? lookaheadOrOverride
+        : null;
+    const now = (nowOverride && typeof nowOverride.getUTCFullYear === "function") ? nowOverride : new Date();
     const curYear = now.getUTCFullYear();
     const curMonth1 = now.getUTCMonth() + 1;
+    const currentYm = `${curYear}-${String(curMonth1).padStart(2, "0")}`;
 
-    // 2027 social year = Feb-Nov 2027; 2028+ social years = Jan-Nov of that year (switches in Dec of prior year)
-    let targetYear = curYear < 2027 ? 2027 : (curMonth1 === 12 ? curYear + 1 : curYear);
-    if (startFloor > `${targetYear}-11`) {
-        targetYear = parseInt(startFloor.slice(0, 4), 10);
+    const lookaheadMonths = resolveRollingLookaheadMonths(
+        horizonOpt && horizonOpt.lookaheadMonths != null ? horizonOpt.lookaheadMonths : lookaheadOrOverride
+    );
+
+    let activeQuotaYear = curYear < 2027 ? 2027 : curYear;
+    if (horizonOpt && Number.isFinite(Number(horizonOpt.activeQuotaYear))) {
+        activeQuotaYear = Math.round(Number(horizonOpt.activeQuotaYear));
     }
 
-    const startMonth1 = targetYear === 2027 ? 2 : 1;
-    const anchorYm = `${targetYear}-${String(startMonth1).padStart(2, "0")}`;
-    const horizonCount = 12 - startMonth1; // 10 months (Feb-Nov) in 2027; 11 months (Jan-Nov) in 2028+
-    const floorIso = `${anchorYm}-01`;
-    const ceilingIso = `${targetYear}-11-30`;
+    let anchorYm = (horizonOpt && /^\d{4}-\d{2}$/.test(String(horizonOpt.anchorYm || "")))
+        ? String(horizonOpt.anchorYm)
+        : (curYear <= 2027 ? "2027-02" : `${curYear}-01`);
+
+    if (!horizonOpt && startFloor > anchorYm) {
+        anchorYm = startFloor;
+        const startY = parseInt(startFloor.slice(0, 4), 10);
+        if (startY > activeQuotaYear) activeQuotaYear = startY;
+    }
+
+    const rollingCeilingYm = addMonthsToYearMonth(currentYm, lookaheadMonths);
+    const minLaunchCeilingYm = curYear <= 2027 ? "2027-11" : rollingCeilingYm;
+    let ceilingYm = rollingCeilingYm > minLaunchCeilingYm ? rollingCeilingYm : minLaunchCeilingYm;
+    if (horizonOpt && /^\d{4}-\d{2}$/.test(String(horizonOpt.ceilingYm || ""))) {
+        ceilingYm = String(horizonOpt.ceilingYm);
+    }
+    if (ceilingYm < anchorYm) ceilingYm = anchorYm;
+
+    const totalMonths = Math.max(1, monthDiffInclusive(anchorYm, ceilingYm));
+    const startYear = parseInt(anchorYm.slice(0, 4), 10);
+    const startMonth0 = parseInt(anchorYm.slice(5, 7), 10) - 1;
 
     return {
         startYm: startFloor,
-        targetYear,
+        currentYm,
+        targetYear: activeQuotaYear,
+        activeQuotaYear,
+        lookaheadMonths,
         anchorYm,
-        floorIso,
-        ceilingIso,
-        totalMonths: horizonCount,
-        startYear: targetYear,
-        startMonth0: startMonth1 - 1
+        ceilingYm,
+        floorIso: `${anchorYm}-01`,
+        ceilingIso: lastDayIsoOfYearMonth(ceilingYm),
+        totalMonths,
+        startYear,
+        startMonth0
     };
 }
 
-function buildRollingCalendarSlots(startYm, monthsAhead) {
-    const range = getDynamicHorizonRange(startYm, monthsAhead);
+function buildRollingCalendarSlots(startYm, lookaheadOrOverride, nowOverride) {
+    const range = getDynamicHorizonRange(startYm, lookaheadOrOverride, nowOverride);
     const out = [];
     for (let mOffset = 0; mOffset < range.totalMonths; mOffset++) {
         const dt = new Date(Date.UTC(range.startYear, range.startMonth0 + mOffset, 1));
@@ -1186,6 +1247,11 @@ const appState = {
     members: [],
     socials: [],
     stats: null,
+    statsByYear: {},
+    activeQuotaYear: 2027,
+    selectedQuotaYear: null,
+    quotaYears: [2027],
+    lookaheadMonths: DEFAULT_ROLLING_LOOKAHEAD_MONTHS,
     calendarEvents: [],
     eventImageOverrides: {},
     calendarStatus: "idle", // idle | loading | ready | error
@@ -1294,7 +1360,7 @@ function buildDemoSeedState() {
         }
     ];
 
-    const socials = buildRollingCalendarSlots(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD);
+    const socials = buildRollingCalendarSlots(PLANNER_START_YM, DEFAULT_ROLLING_LOOKAHEAD_MONTHS);
     const seenMonths = [];
     socials.forEach(s => {
         const ym = s.dateISO.slice(0, 7);
@@ -1311,63 +1377,140 @@ function buildDemoSeedState() {
     return recalcDemoState({ members: demoMembers, socials });
 }
 
-function recalcMembersAndStats(rawMembers, rawSocials) {
-    const sortedSocials = rawSocials.slice().sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-    const horizon = getDynamicHorizonRange(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD);
-    const activeSocials = sortedSocials.filter(s => s.dateISO >= horizon.floorIso && s.dateISO <= horizon.ceilingIso);
-    const members = rawMembers.map(m => {
-        const paidList = activeSocials.filter(s => s.status !== "OPEN" && s.socialType === "PAID" && s.organizerName.toLowerCase() === m.name.toLowerCase());
-        const freeList = activeSocials.filter(s => s.status !== "OPEN" && s.socialType === "FREE" && s.organizerName.toLowerCase() === m.name.toLowerCase());
-        const extraList = activeSocials.filter(s => s.status !== "OPEN" && s.socialType === "EXTRA" && s.organizerName.toLowerCase() === m.name.toLowerCase());
-        extraList.forEach(ex => {
-            if (paidList.length < 1 && freeList.length >= 1) paidList.push(ex);
-            else if (freeList.length < 1 && paidList.length >= 1) freeList.push(ex);
-            else if (/^£/i.test(String(ex.costPerPerson || "").trim())) paidList.push(ex);
-            else freeList.push(ex);
-        });
-        const p = paidList.length;
-        const f = freeList.length;
-        const isPO = isProgrammeOfficerMember(m);
+function getSelectedQuotaYear() {
+    const years = Array.isArray(appState.quotaYears) && appState.quotaYears.length
+        ? appState.quotaYears
+        : [appState.activeQuotaYear || 2027];
+    if (appState.selectedQuotaYear && years.includes(appState.selectedQuotaYear)) {
+        return appState.selectedQuotaYear;
+    }
+    return appState.activeQuotaYear && years.includes(appState.activeQuotaYear)
+        ? appState.activeQuotaYear
+        : years[0];
+}
 
-        let quotaStatus = "📋 Needs Both";
-        if (p >= 1 && f >= 1) quotaStatus = "✅ Complete (1 Paid + 1 Free)";
-        else if (p >= 1) quotaStatus = "⏳ Needs Free (End of Month)";
-        else if (f >= 1) quotaStatus = "⏳ Needs Paid (Start of Month)";
+function getMemberYearQuota(member, year) {
+    const yrStr = String(year || getSelectedQuotaYear());
+    const byYear = member && member.quotasByYear && member.quotasByYear[yrStr];
+    if (byYear) return byYear;
+    if (Number(yrStr) === Number(appState.activeQuotaYear) && member) {
+        return {
+            paidCount: Number(member.paidCount || 0),
+            freeCount: Number(member.freeCount || 0),
+            paidSocialTitle: member.paidSocialTitle || "",
+            freeSocialTitle: member.freeSocialTitle || "",
+            quotaStatus: member.quotaStatus || "📋 Needs Both"
+        };
+    }
+    return {
+        paidCount: 0,
+        freeCount: 0,
+        paidSocialTitle: "",
+        freeSocialTitle: "",
+        quotaStatus: "📋 Needs Both"
+    };
+}
+
+function recalcMembersAndStats(rawMembers, rawSocials, horizonOverride, nowOverride) {
+    const sortedSocials = rawSocials.slice().sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    const horizon = getDynamicHorizonRange(PLANNER_START_YM, horizonOverride || DEFAULT_ROLLING_LOOKAHEAD_MONTHS, nowOverride);
+
+    const yearsSet = new Set([horizon.activeQuotaYear]);
+    sortedSocials.forEach(s => {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s.dateISO || "")) {
+            const yr = parseInt(s.dateISO.slice(0, 4), 10);
+            if (yr >= 2026) yearsSet.add(yr);
+        }
+    });
+    const quotaYears = Array.from(yearsSet).sort((a, b) => a - b);
+
+    const members = rawMembers.map(m => {
+        const quotasByYear = {};
+        const mLow = m.name.toLowerCase();
+        quotaYears.forEach(yr => {
+            const yrStr = String(yr);
+            const yrSocials = sortedSocials.filter(s => (s.dateISO || "").slice(0, 4) === yrStr);
+            const paidList = yrSocials.filter(s => s.status !== "OPEN" && s.socialType === "PAID" && s.organizerName.toLowerCase() === mLow);
+            const freeList = yrSocials.filter(s => s.status !== "OPEN" && s.socialType === "FREE" && s.organizerName.toLowerCase() === mLow);
+            const extraList = yrSocials.filter(s => s.status !== "OPEN" && s.socialType === "EXTRA" && s.organizerName.toLowerCase() === mLow);
+            extraList.forEach(ex => {
+                if (paidList.length < 1 && freeList.length >= 1) paidList.push(ex);
+                else if (freeList.length < 1 && paidList.length >= 1) freeList.push(ex);
+                else if (/^£/i.test(String(ex.costPerPerson || "").trim())) paidList.push(ex);
+                else freeList.push(ex);
+            });
+            const p = paidList.length;
+            const f = freeList.length;
+            let quotaStatus = "📋 Needs Both";
+            if (p >= 1 && f >= 1) quotaStatus = "✅ Complete (1 Paid + 1 Free)";
+            else if (p >= 1) quotaStatus = "⏳ Needs Free (End of Month)";
+            else if (f >= 1) quotaStatus = "⏳ Needs Paid (Start of Month)";
+
+            quotasByYear[yrStr] = {
+                paidCount: p,
+                freeCount: f,
+                paidSocialTitle: paidList.map(s => `${s.title} (${s.displayDate})`).join(" | "),
+                freeSocialTitle: freeList.map(s => `${s.title} (${s.displayDate})`).join(" | "),
+                quotaStatus
+            };
+        });
+
+        const activeQuota = quotasByYear[String(horizon.activeQuotaYear)] || {
+            paidCount: 0, freeCount: 0, paidSocialTitle: "", freeSocialTitle: "", quotaStatus: "📋 Needs Both"
+        };
+        const isPO = isProgrammeOfficerMember(m);
 
         return {
             ...m,
             active: true,
             isProgrammeOfficer: isPO,
-            paidCount: p,
-            freeCount: f,
-            paidSocialTitle: paidList.map(s => `${s.title} (${s.displayDate})`).join(" | "),
-            freeSocialTitle: freeList.map(s => `${s.title} (${s.displayDate})`).join(" | "),
-            quotaStatus
+            paidCount: activeQuota.paidCount,
+            freeCount: activeQuota.freeCount,
+            paidSocialTitle: activeQuota.paidSocialTitle,
+            freeSocialTitle: activeQuota.freeSocialTitle,
+            quotaStatus: activeQuota.quotaStatus,
+            quotasByYear
         };
     });
 
-    const paidSlots = activeSocials.filter(s => s.socialType === "PAID");
-    const freeSlots = activeSocials.filter(s => s.socialType === "FREE");
-    const claimedSlots = activeSocials.filter(s => s.status !== "OPEN");
-    const planningMembers = members;
     const programmeOfficers = members.filter(m => m.isProgrammeOfficer);
-
-    return {
-        members,
-        socials: sortedSocials,
-        stats: {
-            totalSlots: activeSocials.length,
+    const statsByYear = {};
+    quotaYears.forEach(yr => {
+        const yrStr = String(yr);
+        const yrSocials = sortedSocials.filter(s => (s.dateISO || "").slice(0, 4) === yrStr);
+        const paidSlots = yrSocials.filter(s => s.socialType === "PAID");
+        const freeSlots = yrSocials.filter(s => s.socialType === "FREE");
+        const claimedSlots = yrSocials.filter(s => s.status !== "OPEN");
+        statsByYear[yrStr] = {
+            year: yr,
+            totalSlots: yrSocials.length,
             claimedSlots: claimedSlots.length,
-            openSlots: activeSocials.length - claimedSlots.length,
+            openSlots: yrSocials.length - claimedSlots.length,
             paidTotal: paidSlots.length,
             paidClaimed: paidSlots.filter(s => s.status !== "OPEN").length,
             freeTotal: freeSlots.length,
             freeClaimed: freeSlots.filter(s => s.status !== "OPEN").length,
-            activeMembersCount: planningMembers.length,
-            completedQuotaMembers: planningMembers.filter(m => m.paidCount >= 1 && m.freeCount >= 1).length,
+            activeMembersCount: members.length,
+            completedQuotaMembers: members.filter(m => {
+                const q = m.quotasByYear[yrStr];
+                return q && q.paidCount >= 1 && q.freeCount >= 1;
+            }).length,
             totalRosterCount: members.length,
             programmeOfficersCount: programmeOfficers.length
-        }
+        };
+    });
+
+    const activeYearKey = String(horizon.activeQuotaYear);
+    return {
+        members,
+        socials: sortedSocials,
+        horizon: {
+            ...horizon,
+            years: quotaYears
+        },
+        quotaYears,
+        statsByYear,
+        stats: statsByYear[activeYearKey] || Object.values(statsByYear)[0]
     };
 }
 
@@ -1622,10 +1765,11 @@ function applyBackendData(data) {
     const rawMembers = Array.isArray(data.members) ? data.members : [];
     const rawSocials = Array.isArray(data.socials) ? data.socials : [];
 
-    // Seed rolling calendar slots (Feb-Nov 2027 = 21 slots; full 12-month windows thereafter)
-    const range = getDynamicHorizonRange(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD);
+    // Seed rolling calendar slots (6-month lookahead window past today; min Feb-Nov 2027 launch season)
+    const backendHorizon = data && data.horizon ? data.horizon : null;
+    const range = getDynamicHorizonRange(PLANNER_START_YM, backendHorizon || DEFAULT_ROLLING_LOOKAHEAD_MONTHS);
     const mergedMap = new Map();
-    buildRollingCalendarSlots(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD).forEach(gen => {
+    buildRollingCalendarSlots(PLANNER_START_YM, range).forEach(gen => {
         mergedMap.set(gen.dateISO, gen);
     });
 
@@ -1698,10 +1842,30 @@ function applyBackendData(data) {
         }
     });
 
-    const computed = recalcMembersAndStats(rawMembers, Array.from(mergedMap.values()));
+    const computed = recalcMembersAndStats(rawMembers, Array.from(mergedMap.values()), range);
     appState.members = computed.members;
     appState.socials = computed.socials;
     appState.stats = computed.stats;
+    appState.statsByYear = computed.statsByYear;
+    appState.horizon = computed.horizon;
+    appState.activeQuotaYear = computed.horizon.activeQuotaYear;
+    appState.quotaYears = computed.quotaYears;
+    appState.lookaheadMonths = computed.horizon.lookaheadMonths;
+    if (!appState.selectedQuotaYear || !appState.quotaYears.includes(appState.selectedQuotaYear)) {
+        appState.selectedQuotaYear = appState.activeQuotaYear;
+    }
+
+    const horizonBadgeEl = document.getElementById("calendar-horizon-badge");
+    if (horizonBadgeEl) {
+        const ceilParts = String(computed.horizon.ceilingYm || "").split("-");
+        const ceilLabel = ceilParts.length === 2
+            ? `${SHORT_MONTHS[parseInt(ceilParts[1], 10) - 1]} ${ceilParts[0]}`
+            : "";
+        horizonBadgeEl.textContent = ceilLabel
+            ? `Alternate Wednesday Schedule · Rolling ${computed.horizon.lookaheadMonths} Months Ahead (Through ${ceilLabel})`
+            : `Alternate Wednesday Schedule · Rolling ${computed.horizon.lookaheadMonths} Months Ahead`;
+    }
+
     appState.hasGeminiKey = Boolean(data.hasGeminiKey);
     appState.pinRequired = Boolean(data.pinRequired);
     appState.hasSeparateAdminPin = Boolean(data.hasSeparateAdminPin);
@@ -1966,7 +2130,7 @@ function applySpondCrossReference() {
     }
 
     // Track unmatched calendar events inside active planner horizon (excluding Dec Sleigh Season)
-    const range = getDynamicHorizonRange(PLANNER_START_YM, DEFAULT_MONTHS_AHEAD);
+    const range = appState.horizon || getDynamicHorizonRange(PLANNER_START_YM, appState.lookaheadMonths || DEFAULT_ROLLING_LOOKAHEAD_MONTHS);
     appState.unmatchedCalendarEvents = calEvents.filter(ev =>
         !usedCalIds.has(ev.id) &&
         !ev.isDecemberSleigh &&
@@ -2310,10 +2474,16 @@ function renderAll() {
 }
 
 function renderStats() {
-    const s = appState.stats || {
+    const selectedYear = getSelectedQuotaYear();
+    const s = (appState.statsByYear && appState.statsByYear[String(selectedYear)]) || appState.stats || {
         totalSlots: 0, claimedSlots: 0, paidTotal: 0, paidClaimed: 0,
         freeTotal: 0, freeClaimed: 0, activeMembersCount: 0, completedQuotaMembers: 0, programmeOfficersCount: 0
     };
+
+    const calLabelEl = document.getElementById("stat-calendar-label");
+    if (calLabelEl) calLabelEl.textContent = `${selectedYear} Calendar`;
+    const quotaLabelEl = document.getElementById("stat-quota-year-label");
+    if (quotaLabelEl) quotaLabelEl.textContent = `${selectedYear} Tablers 1+1 Complete`;
 
     document.getElementById("stat-total-claimed").textContent = s.claimedSlots;
     document.getElementById("stat-total-slots").textContent = `/ ${s.totalSlots} slots filled`;
@@ -2373,7 +2543,11 @@ function renderProgrammeOversight() {
     const needsSpondList = upcomingSlots.filter(s => s.status !== "OPEN" && !s.spondMatch);
     const shiftedList = upcomingSlots.filter(s => s.spondMatch && s.spondMatch.type === "fuzzy_match");
     const openInSpondList = upcomingSlots.filter(s => s.status === "OPEN" && s.spondMatch);
-    const membersNeedingSlots = appState.members.filter(m => m.paidCount < 1 || m.freeCount < 1);
+    const selectedQuotaYr = getSelectedQuotaYear();
+    const membersNeedingSlots = appState.members.filter(m => {
+        const q = getMemberYearQuota(m, selectedQuotaYr);
+        return q.paidCount < 1 || q.freeCount < 1;
+    });
 
     if (openGaps.length === 0 && draftIdeas.length === 0 && membersNeedingSlots.length === 0 && needsSpondList.length === 0) {
         healthPill.className = "text-[10px] font-heading font-bold uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/35";
@@ -2489,9 +2663,10 @@ function renderProgrammeOversight() {
 
     const chasingHtml = membersNeedingSlots.length
         ? membersNeedingSlots.map(m => {
-            const needLabel = m.paidCount < 1 && m.freeCount < 1
+            const q = getMemberYearQuota(m, selectedQuotaYr);
+            const needLabel = q.paidCount < 1 && q.freeCount < 1
                 ? "Needs Paid + Free"
-                : m.paidCount < 1 ? "Needs Paid (Start of Month)" : "Needs Free (End of Month)";
+                : q.paidCount < 1 ? "Needs Paid (Start of Month)" : "Needs Free (End of Month)";
             return `
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-gray-200">
                     <strong>${escHtml(m.name)}</strong>
@@ -2499,7 +2674,7 @@ function renderProgrammeOversight() {
                 </span>
             `;
         }).join("")
-        : `<span class="text-xs text-emerald-300"><i class="fa-solid fa-check-double mr-1"></i> Every Tabler has picked their 1 + 1!</span>`;
+        : `<span class="text-xs text-emerald-300"><i class="fa-solid fa-check-double mr-1"></i> Every Tabler has picked their ${selectedQuotaYr} 1 + 1!</span>`;
 
     radarEl.innerHTML = `
         ${spondRadarHtml}
@@ -2520,7 +2695,7 @@ function renderProgrammeOversight() {
 
         <div class="bg-black/25 rounded-2xl p-3.5 border border-white/10 space-y-2">
             <div class="text-[11px] font-heading font-bold uppercase text-gray-300">
-                <i class="fa-solid fa-bullhorn text-indigo-300 mr-1.5"></i> Tablers Still to Lock 1 + 1 (${membersNeedingSlots.length})
+                <i class="fa-solid fa-bullhorn text-indigo-300 mr-1.5"></i> Tablers Still to Lock ${selectedQuotaYr} 1 + 1 (${membersNeedingSlots.length})
             </div>
             <div class="flex flex-wrap gap-1.5">${chasingHtml}</div>
         </div>
@@ -2545,7 +2720,58 @@ function renderProgrammeOversight() {
     }
 }
 
+function renderQuotaYearTabs() {
+    const tabsEl = document.getElementById("quota-year-tabs");
+    const captionEl = document.getElementById("quota-year-caption");
+    const years = Array.isArray(appState.quotaYears) && appState.quotaYears.length
+        ? appState.quotaYears
+        : [appState.activeQuotaYear || 2027];
+    const selectedYr = getSelectedQuotaYear();
+
+    if (tabsEl) {
+        tabsEl.innerHTML = years.map(yr => {
+            const isSel = Number(yr) === Number(selectedYr);
+            const yrStats = appState.statsByYear && appState.statsByYear[String(yr)];
+            const openCount = yrStats ? yrStats.openSlots : null;
+            const suffix = (yr > (appState.activeQuotaYear || 2027) && openCount != null)
+                ? ` <span class="opacity-80 font-normal">(${openCount} open)</span>`
+                : "";
+            return `
+                <button type="button" data-quota-year="${yr}"
+                    class="px-3 py-1 rounded-full font-heading font-bold text-xs uppercase transition-colors ${
+                        isSel
+                            ? "bg-brt-gold text-brt-dark"
+                            : "bg-black/35 text-gray-300 border border-white/15 hover:border-brt-gold hover:text-brt-gold"
+                    }">
+                    ${yr}${suffix}
+                </button>
+            `;
+        }).join("");
+
+        tabsEl.querySelectorAll("[data-quota-year]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                appState.selectedQuotaYear = parseInt(btn.getAttribute("data-quota-year"), 10);
+                renderStats();
+                renderProgrammeOversight();
+                renderMembersSection();
+                if (!document.getElementById("members-modal").classList.contains("hidden")) {
+                    renderMembersModalList();
+                }
+            });
+        });
+    }
+
+    if (captionEl) {
+        const hasFutureYears = years.some(y => y > (appState.activeQuotaYear || 2027));
+        captionEl.textContent = hasFutureYears
+            ? `Viewing ${selectedYr} quotas (1 Paid + 1 Free per year). Future dates unlocked in the 6-month rolling window bank toward their own year — click a year tab or member card to inspect.`
+            : `Viewing ${selectedYr} quotas (1 Paid + 1 Free per year). Click any member to filter their socials — new months open automatically 6 months ahead.`;
+    }
+}
+
 function renderMembersSection() {
+    renderQuotaYearTabs();
+
     const grid = document.getElementById("members-grid");
     const clearBtn = document.getElementById("clear-member-filter-btn");
     clearBtn.classList.toggle("hidden", !appState.filterMember);
@@ -2560,16 +2786,32 @@ function renderMembersSection() {
         return;
     }
 
+    const selectedYr = getSelectedQuotaYear();
+    const futureYears = (appState.quotaYears || []).filter(y => y > selectedYr);
+
     grid.innerHTML = appState.members.map(m => {
+        const q = getMemberYearQuota(m, selectedYr);
         const isSelected = appState.filterMember.toLowerCase() === m.name.toLowerCase();
         const isPO = isProgrammeOfficerMember(m);
-        const paidDone = m.paidCount >= 1;
-        const freeDone = m.freeCount >= 1;
+        const paidDone = q.paidCount >= 1;
+        const freeDone = q.freeCount >= 1;
         const allDone = paidDone && freeDone;
 
+        const bankedFuture = futureYears.map(fy => {
+            const fq = getMemberYearQuota(m, fy);
+            const totalBanked = fq.paidCount + fq.freeCount;
+            return totalBanked > 0 ? { year: fy, count: totalBanked } : null;
+        }).filter(Boolean);
+
+        const bankedBadgeHtml = bankedFuture.length
+            ? `<div class="mt-2 pt-2 border-t border-white/10 flex flex-wrap gap-1.5 text-[10px]">
+                ${bankedFuture.map(b => `<span class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 font-semibold"><i class="fa-solid fa-bookmark mr-1"></i>${b.year} Banked: ${b.count}/2</span>`).join("")}
+               </div>`
+            : "";
+
         const statusBadge = allDone
-            ? `<span class="shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xs" title="1 Paid + 1 Free Complete"><i class="fa-solid fa-check"></i></span>`
-            : `<span class="shrink-0 w-6 h-6 rounded-full bg-white/5 text-gray-400 flex items-center justify-center text-[10px] font-bold">${m.paidCount + m.freeCount}/2</span>`;
+            ? `<span class="shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xs" title="${selectedYr} Complete (1 Paid + 1 Free)"><i class="fa-solid fa-check"></i></span>`
+            : `<span class="shrink-0 w-6 h-6 rounded-full bg-white/5 text-gray-400 flex items-center justify-center text-[10px] font-bold">${q.paidCount + q.freeCount}/2</span>`;
 
         const cardStyle = isPO
             ? (isSelected
@@ -2602,19 +2844,20 @@ function renderMembersSection() {
                         paidDone
                             ? "bg-brt-gold/15 border-brt-gold/35 text-brt-gold font-semibold"
                             : "bg-black/30 border-white/10 text-gray-400"
-                    }" title="${escAttr(m.paidSocialTitle || 'Needs Paid (start of month) social')}">
+                    }" title="${escAttr(q.paidSocialTitle || `Needs ${selectedYr} Paid (start of month) social`)}">
                         <i class="fa-solid ${paidDone ? "fa-circle-check" : "fa-circle-dot"} mr-1"></i>
-                        Paid: ${m.paidCount}/1
+                        Paid: ${q.paidCount}/1
                     </div>
                     <div class="px-2 py-1 rounded-lg border ${
                         freeDone
                             ? "bg-emerald-500/15 border-emerald-500/35 text-emerald-300 font-semibold"
                             : "bg-black/30 border-white/10 text-gray-400"
-                    }" title="${escAttr(m.freeSocialTitle || 'Needs Free/Sub-£20 (end of month) social')}">
+                    }" title="${escAttr(q.freeSocialTitle || `Needs ${selectedYr} Free/Sub-£20 (end of month) social`)}">
                         <i class="fa-solid ${freeDone ? "fa-circle-check" : "fa-circle-dot"} mr-1"></i>
-                        Free: ${m.freeCount}/1
+                        Free: ${q.freeCount}/1
                     </div>
                 </div>
+                ${bankedBadgeHtml}
             </button>
         `;
     }).join("");
@@ -3188,33 +3431,35 @@ function updateOrganizerQuotaHint() {
         return;
     }
 
+    const slotYear = parseInt(String(slot.dateISO || "").slice(0, 4), 10) || getSelectedQuotaYear();
+    const yrQuota = getMemberYearQuota(member, slotYear);
     const isPaid = slot.socialType === "PAID";
     const isExtra = slot.socialType === "EXTRA";
     const alreadyHoldingThis = slot.organizerName.toLowerCase() === member.name.toLowerCase();
-    const currentPaid = member.paidCount;
-    const currentFree = member.freeCount;
+    const currentPaid = yrQuota.paidCount;
+    const currentFree = yrQuota.freeCount;
 
     let msg = "";
     let cls = "bg-white/5 border-white/15 text-gray-300";
 
     if (alreadyHoldingThis) {
-        msg = `<strong>${escHtml(member.name)}</strong> currently holds this slot (${currentPaid}/1 Paid, ${currentFree}/1 Free).`;
+        msg = `<strong>${escHtml(member.name)}</strong> currently holds this ${slotYear} slot (${slotYear} quota: ${currentPaid}/1 Paid, ${currentFree}/1 Free).`;
     } else if (isExtra) {
         if (currentPaid === 0 || currentFree === 0) {
             const fills = currentPaid === 0 && currentFree >= 1 ? "Paid" : (currentFree === 0 && currentPaid >= 1 ? "Free" : "Paid or Free");
-            msg = `<i class="fa-solid fa-star text-purple-300 mr-1"></i> <strong>${escHtml(member.name)}</strong> can claim this 5-week Extra Social (${currentPaid}/1 Paid, ${currentFree}/1 Free) and it will credit toward their remaining <strong>${fills}</strong> quota!`;
+            msg = `<i class="fa-solid fa-star text-purple-300 mr-1"></i> <strong>${escHtml(member.name)}</strong> can claim this 5-week Extra Social (${slotYear}: ${currentPaid}/1 Paid, ${currentFree}/1 Free) and credit toward their remaining <strong>${slotYear} ${fills}</strong> quota!`;
             cls = "bg-purple-500/10 border-purple-400/35 text-purple-200";
         } else {
-            msg = `<strong>${escHtml(member.name)}</strong> already completed 1+1 — legend for stepping up to host this 5-week Extra Social!`;
+            msg = `<strong>${escHtml(member.name)}</strong> already completed ${slotYear} 1+1 — legend for stepping up to host this 5-week Extra Social!`;
         }
     } else if (isPaid && currentPaid === 0) {
-        msg = `<i class="fa-solid fa-star text-brt-gold mr-1"></i> <strong>${escHtml(member.name)}</strong> still needs a <strong>Start of Month · Paid</strong> social — claiming this ticks off their Paid quota!`;
+        msg = `<i class="fa-solid fa-star text-brt-gold mr-1"></i> <strong>${escHtml(member.name)}</strong> still needs a <strong>${slotYear} Start of Month · Paid</strong> social — claiming this ticks off their ${slotYear} Paid quota!`;
         cls = "bg-brt-gold/10 border-brt-gold/30 text-brt-gold";
     } else if (!isPaid && currentFree === 0) {
-        msg = `<i class="fa-solid fa-star text-emerald-300 mr-1"></i> <strong>${escHtml(member.name)}</strong> still needs an <strong>End of Month · Free/Sub-£20</strong> social — claiming this ticks off their Free quota!`;
+        msg = `<i class="fa-solid fa-star text-emerald-300 mr-1"></i> <strong>${escHtml(member.name)}</strong> still needs an <strong>${slotYear} End of Month · Free/Sub-£20</strong> social — claiming this ticks off their ${slotYear} Free quota!`;
         cls = "bg-emerald-500/10 border-emerald-500/30 text-emerald-300";
     } else {
-        msg = `<strong>${escHtml(member.name)}</strong> already has ${isPaid ? currentPaid : currentFree} ${isPaid ? "Paid" : "Free"} social(s) planned — awesome if stepping up for an extra!`;
+        msg = `<strong>${escHtml(member.name)}</strong> already has ${isPaid ? currentPaid : currentFree} ${slotYear} ${isPaid ? "Paid" : "Free"} social(s) planned — awesome if stepping up for an extra!`;
     }
 
     hintBox.className = `text-xs rounded-xl px-3.5 py-2.5 border ${cls}`;
@@ -3433,8 +3678,11 @@ function renderMembersModalList() {
         return;
     }
 
+    const selectedYr = getSelectedQuotaYear();
+
     listEl.innerHTML = appState.members.map(m => {
         const isPO = isProgrammeOfficerMember(m);
+        const q = getMemberYearQuota(m, selectedYr);
         return `
             <div class="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div class="min-w-0">
@@ -3446,7 +3694,8 @@ function renderMembersModalList() {
                     </div>
                     <div class="text-xs text-gray-400 mt-0.5">
                         ${escHtml(m.role || "Member")} &middot;
-                        <span class="text-brt-gold">Paid: ${m.paidCount}/1</span> &middot; <span class="text-emerald-300">Free: ${m.freeCount}/1</span>
+                        <span class="text-gray-300">${selectedYr}:</span>
+                        <span class="text-brt-gold">Paid: ${q.paidCount}/1</span> &middot; <span class="text-emerald-300">Free: ${q.freeCount}/1</span>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">

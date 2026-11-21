@@ -72,8 +72,9 @@ var SETTINGS_HEADERS = ['Key', 'Value', 'Notes'];
 var DEFAULT_SETTINGS = [
   ['SECURITY_STORAGE', 'Script Properties (Private)', 'Use menu "🍻 BRT Socials Admin -> 🔐 Set Gemini Key / 🔒 Set Table PIN" — never paste secrets into cells'],
   ['GEMINI_MODEL', 'AUTO', 'AUTO = uses Gemini 4 Hydrogen (Free Tier) with automatic Flash fallback (or enter a specific model ID)'],
-  ['START_YEAR_MONTH', '2027-02', 'YYYY-MM start month (defaults to 2027-02; dynamically rolls ahead as time passes).'],
-  ['MONTHS_AHEAD', '11', 'Calendar months to generate from start month (11 from 2027-02 = Feb–Nov 2027, Dec excluded for Santa Sleigh)'],
+  ['START_YEAR_MONTH', '2027-02', 'YYYY-MM start floor for launch season (2027-02). Future dates roll forward automatically.'],
+  ['MONTHS_AHEAD', '11', 'Legacy floor span; superseded by ROLLING_LOOKAHEAD_MONTHS once rolling dates pass Nov 2027.'],
+  ['ROLLING_LOOKAHEAD_MONTHS', '6', 'Rolling lookahead window in calendar months from today (6 = always keep next 6 months open; Dec excluded for Santa Sleigh)'],
   ['CLUB_NAME', 'Beverley Round Table', 'Displayed in AI prompts and public event feed'],
   ['CLUB_AREA', 'Beverley & East Yorkshire (Hull, Westwood, Molescroft, Walkington)', 'Local context for Gemini suggestions'],
   ['DEFAULT_START_TIME', '19:30', 'Default start time for Wednesday socials'],
@@ -91,7 +92,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('🍻 BRT Socials Admin')
     .addItem('1. Initialise / Repair Sheet Structure', 'setupSocialsDatabase')
-    .addItem('2. Generate Next 12 Months (Alternate Weds)', 'menuGenerateCalendar')
+    .addItem('2. Sync Rolling 6-Month Calendar (Alt Weds)', 'menuGenerateCalendar')
     .addItem('3. Sync Members & Recalculate Quotas', 'menuSyncAll')
     .addSeparator()
     .addItem('4. Test Gemini AI Connection', 'menuTestGemini')
@@ -531,33 +532,170 @@ function ensureSetup_() {
   }
 }
 
+function addMonthsToYearMonth_(ym, deltaMonths) {
+  var m = /^(\d{4})-(\d{2})$/.exec(String(ym || '').trim());
+  if (!m) return '2027-11';
+  var y = parseInt(m[1], 10);
+  var m0 = parseInt(m[2], 10) - 1;
+  var dt = new Date(Date.UTC(y, m0 + (Number(deltaMonths) || 0), 1));
+  return dt.getUTCFullYear() + '-' + pad2_(dt.getUTCMonth() + 1);
+}
+
+function monthDiffInclusive_(startYm, endYm) {
+  var a = /^(\d{4})-(\d{2})$/.exec(String(startYm || '').trim());
+  var b = /^(\d{4})-(\d{2})$/.exec(String(endYm || '').trim());
+  if (!a || !b) return 0;
+  return (parseInt(b[1], 10) - parseInt(a[1], 10)) * 12 + (parseInt(b[2], 10) - parseInt(a[2], 10)) + 1;
+}
+
+function lastDayIsoOfYearMonth_(ym) {
+  var m = /^(\d{4})-(\d{2})$/.exec(String(ym || '').trim());
+  if (!m) return '2027-11-30';
+  var y = parseInt(m[1], 10);
+  var mon1 = parseInt(m[2], 10);
+  var lastDay = new Date(Date.UTC(y, mon1, 0)).getUTCDate();
+  return y + '-' + pad2_(mon1) + '-' + pad2_(lastDay);
+}
+
+function resolveRollingLookaheadMonths_(settings) {
+  var raw = Number(settings && settings.ROLLING_LOOKAHEAD_MONTHS);
+  if (!isFinite(raw) || raw < 3 || raw > 24) return 6;
+  return Math.round(raw);
+}
+
 function getActiveHorizonFloorIso_(sheet, settings) {
   var tz = Session.getScriptTimeZone() || 'Europe/London';
   var currentYm = Utilities.formatDate(new Date(), tz, 'yyyy-MM');
   var curParts = currentYm.split('-');
   var curYear = parseInt(curParts[0], 10);
-  var curMonth1 = parseInt(curParts[1], 10);
 
-  // 2027 social year = Feb-Nov 2027; 2028+ social years = Jan-Nov of that year (switches in Dec of prior year)
-  var targetYear = curYear < 2027 ? 2027 : (curMonth1 === 12 ? curYear + 1 : curYear);
+  var lookaheadMonths = resolveRollingLookaheadMonths_(settings);
   var startYm = resolveEffectiveStartMonth_(sheet, settings);
-  if (startYm && startYm > targetYear + '-11') {
-    targetYear = parseInt(startYm.slice(0, 4), 10);
+  var activeQuotaYear = curYear < 2027 ? 2027 : curYear;
+  var baseFloorYm = curYear <= 2027 ? '2027-02' : (curYear + '-01');
+  if (startYm && startYm > baseFloorYm) {
+    baseFloorYm = startYm;
+    var startY = parseInt(startYm.slice(0, 4), 10);
+    if (startY > activeQuotaYear) activeQuotaYear = startY;
   }
 
-  var startMonth1 = targetYear === 2027 ? 2 : 1;
-  var anchorYm = targetYear + '-' + pad2_(startMonth1);
-  var monthsAhead = 12 - startMonth1; // 10 months (Feb-Nov) in 2027; 11 months (Jan-Nov) in 2028+
-  var ceilingIso = targetYear + '-11-30';
+  var rollingCeilingYm = addMonthsToYearMonth_(currentYm, lookaheadMonths);
+  // Keep initial 2027 Feb-Nov schedule intact until 6 months ahead crosses into 2028 (July 2027+)
+  var minLaunchCeilingYm = curYear <= 2027 ? '2027-11' : rollingCeilingYm;
+  var ceilingYm = rollingCeilingYm > minLaunchCeilingYm ? rollingCeilingYm : minLaunchCeilingYm;
+  if (ceilingYm < baseFloorYm) ceilingYm = baseFloorYm;
+
+  var monthsSpan = Math.max(1, monthDiffInclusive_(baseFloorYm, ceilingYm));
 
   return {
     startYm: startYm,
     currentYm: currentYm,
-    targetYear: targetYear,
-    anchorYm: anchorYm,
-    monthsAhead: monthsAhead,
-    floorIso: anchorYm + '-01',
-    ceilingIso: ceilingIso
+    targetYear: activeQuotaYear,
+    activeQuotaYear: activeQuotaYear,
+    lookaheadMonths: lookaheadMonths,
+    anchorYm: baseFloorYm,
+    ceilingYm: ceilingYm,
+    monthsAhead: monthsSpan,
+    floorIso: baseFloorYm + '-01',
+    ceilingIso: lastDayIsoOfYearMonth_(ceilingYm)
+  };
+}
+
+function buildYearQuotaStats_(members, socials, horizon) {
+  var yearsMap = {};
+  yearsMap[horizon.activeQuotaYear] = true;
+  for (var i = 0; i < socials.length; i++) {
+    var dIso = socials[i].dateISO || '';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dIso)) continue;
+    var yr = parseInt(dIso.slice(0, 4), 10);
+    if (yr >= 2026) yearsMap[yr] = true;
+  }
+
+  var years = Object.keys(yearsMap).map(function (k) { return parseInt(k, 10); }).sort(function (a, b) { return a - b; });
+  var statsByYear = {};
+  var memberQuotasById = {};
+  for (var mIdx = 0; mIdx < members.length; mIdx++) {
+    memberQuotasById[members[mIdx].name.toLowerCase()] = {};
+  }
+
+  for (var yIdx = 0; yIdx < years.length; yIdx++) {
+    var yr = years[yIdx];
+    var yrStr = String(yr);
+    var yrSocials = socials.filter(function (s) { return (s.dateISO || '').slice(0, 4) === yrStr; });
+    var paidSlots = yrSocials.filter(function (s) { return s.socialType === 'PAID'; });
+    var freeSlots = yrSocials.filter(function (s) { return s.socialType === 'FREE'; });
+    var claimedSlots = yrSocials.filter(function (s) { return s.status !== 'OPEN'; });
+    var paidClaimed = paidSlots.filter(function (s) { return s.status !== 'OPEN'; });
+    var freeClaimed = freeSlots.filter(function (s) { return s.status !== 'OPEN'; });
+
+    var completedCount = 0;
+    for (var j = 0; j < members.length; j++) {
+      var mem = members[j];
+      var mLow = mem.name.toLowerCase();
+      var paidList = [];
+      var freeList = [];
+      var extraList = [];
+
+      for (var k = 0; k < yrSocials.length; k++) {
+        var sl = yrSocials[k];
+        if (sl.status === 'OPEN' || !sl.organizerName) continue;
+        if (sl.organizerName.toLowerCase() !== mLow) continue;
+        if (sl.socialType === 'PAID') paidList.push(sl);
+        else if (sl.socialType === 'FREE') freeList.push(sl);
+        else if (sl.socialType === 'EXTRA') extraList.push(sl);
+      }
+
+      for (var exIdx = 0; exIdx < extraList.length; exIdx++) {
+        var ex = extraList[exIdx];
+        if (paidList.length < 1 && freeList.length >= 1) paidList.push(ex);
+        else if (freeList.length < 1 && paidList.length >= 1) freeList.push(ex);
+        else if (/^£/i.test(String(ex.costPerPerson || '').trim())) paidList.push(ex);
+        else freeList.push(ex);
+      }
+
+      var pCnt = paidList.length;
+      var fCnt = freeList.length;
+      if (pCnt >= 1 && fCnt >= 1) completedCount++;
+
+      var qStatus = '📋 Needs Both';
+      if (pCnt >= 1 && fCnt >= 1) qStatus = '✅ Complete (1 Paid + 1 Free)';
+      else if (pCnt >= 1) qStatus = '⏳ Needs Free (End of Month)';
+      else if (fCnt >= 1) qStatus = '⏳ Needs Paid (Start of Month)';
+
+      var fmtList = function (arr) {
+        return arr.map(function (item) {
+          return (item.title || 'Untitled') + ' (' + (item.displayDate || item.dateISO) + ')';
+        }).join(' | ');
+      };
+
+      memberQuotasById[mLow][yrStr] = {
+        paidCount: pCnt,
+        freeCount: fCnt,
+        paidSocialTitle: fmtList(paidList),
+        freeSocialTitle: fmtList(freeList),
+        quotaStatus: qStatus
+      };
+    }
+
+    statsByYear[yrStr] = {
+      year: yr,
+      totalSlots: yrSocials.length,
+      claimedSlots: claimedSlots.length,
+      openSlots: yrSocials.length - claimedSlots.length,
+      paidTotal: paidSlots.length,
+      paidClaimed: paidClaimed.length,
+      freeTotal: freeSlots.length,
+      freeClaimed: freeClaimed.length,
+      activeMembersCount: members.length,
+      completedQuotaMembers: completedCount,
+      totalRosterCount: members.length
+    };
+  }
+
+  return {
+    years: years,
+    statsByYear: statsByYear,
+    memberQuotasById: memberQuotasById
   };
 }
 
@@ -573,18 +711,28 @@ function buildFullState_() {
   var socials = readSocials_();
 
   var activeMembers = members.filter(function (m) { return m.active; });
-  var planningMembers = activeMembers;
   var programmeOfficers = activeMembers.filter(function (m) { return m.isProgrammeOfficer; });
-  var windowSocials = socials.filter(function (s) { return s.dateISO >= horizon.floorIso && s.dateISO <= horizon.ceilingIso; });
-  var totalSlots = windowSocials.length;
-  var paidSlots = windowSocials.filter(function (s) { return s.socialType === 'PAID'; });
-  var freeSlots = windowSocials.filter(function (s) { return s.socialType === 'FREE'; });
-  var claimedSlots = windowSocials.filter(function (s) { return s.status !== 'OPEN'; });
-  var paidClaimed = paidSlots.filter(function (s) { return s.status !== 'OPEN'; });
-  var freeClaimed = freeSlots.filter(function (s) { return s.status !== 'OPEN'; });
-  var completedMembers = planningMembers.filter(function (m) {
-    return m.paidCount >= 1 && m.freeCount >= 1;
-  });
+
+  var yearly = buildYearQuotaStats_(activeMembers, socials, horizon);
+  for (var i = 0; i < activeMembers.length; i++) {
+    var mKey = activeMembers[i].name.toLowerCase();
+    activeMembers[i].quotasByYear = yearly.memberQuotasById[mKey] || {};
+  }
+
+  var activeYearKey = String(horizon.activeQuotaYear);
+  var activeYearStats = yearly.statsByYear[activeYearKey] || {
+    totalSlots: 0,
+    claimedSlots: 0,
+    openSlots: 0,
+    paidTotal: 0,
+    paidClaimed: 0,
+    freeTotal: 0,
+    freeClaimed: 0,
+    activeMembersCount: activeMembers.length,
+    completedQuotaMembers: 0,
+    totalRosterCount: activeMembers.length
+  };
+  activeYearStats.programmeOfficersCount = programmeOfficers.length;
 
   var tablePin = getTablePin_(settings);
   var adminPin = getAdminPin_(settings);
@@ -597,21 +745,17 @@ function buildFullState_() {
     hasSeparateAdminPin: Boolean(adminPin && adminPin !== tablePin),
     defaultStartTime: settings.DEFAULT_START_TIME || '19:30',
     defaultEndTime: settings.DEFAULT_END_TIME || '22:00',
+    horizon: {
+      activeQuotaYear: horizon.activeQuotaYear,
+      lookaheadMonths: horizon.lookaheadMonths,
+      floorIso: horizon.floorIso,
+      ceilingIso: horizon.ceilingIso,
+      years: yearly.years
+    },
     members: activeMembers,
     socials: socials,
-    stats: {
-      totalSlots: totalSlots,
-      claimedSlots: claimedSlots.length,
-      openSlots: totalSlots - claimedSlots.length,
-      paidTotal: paidSlots.length,
-      paidClaimed: paidClaimed.length,
-      freeTotal: freeSlots.length,
-      freeClaimed: freeClaimed.length,
-      activeMembersCount: planningMembers.length,
-      completedQuotaMembers: completedMembers.length,
-      totalRosterCount: activeMembers.length,
-      programmeOfficersCount: programmeOfficers.length
-    },
+    stats: activeYearStats,
+    statsByYear: yearly.statsByYear,
     generatedAt: new Date().toISOString()
   };
 }
@@ -791,7 +935,12 @@ function buildSlotRowFromDate_(dateObj, y, m0, ordinal, socialType, budgetRule, 
 function ensureCalendarSlots_(forceSort) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAMES.SOCIALS);
+  var settingsSheet = ss.getSheetByName(SHEET_NAMES.SETTINGS);
   var settings = getSettingsMap_();
+  if (settingsSheet && !settings.ROLLING_LOOKAHEAD_MONTHS) {
+    seedDefaultSettings_(settingsSheet);
+    settings = getSettingsMap_();
+  }
 
   var horizon = getActiveHorizonFloorIso_(sheet, settings);
   dedupeAndNormalizeSocialsSheet_(sheet, horizon.anchorYm, horizon.ceilingIso);
@@ -1190,14 +1339,16 @@ function syncMembersAndQuotas_() {
         paidCount: 0,
         freeCount: 0,
         paidTitles: [],
-        freeTitles: []
+        freeTitles: [],
+        extraSlots: []
       };
     }
   }
 
-  // Scan Socials tab: release orphaned future slots if AUTO_RELEASE_ON_MEMBER_DELETE is TRUE, and tally quotas
+  // Scan Socials tab: release orphaned future slots if AUTO_RELEASE_ON_MEMBER_DELETE is TRUE, and tally quotas for activeQuotaYear (Option A)
   var autoRelease = String(settings.AUTO_RELEASE_ON_MEMBER_DELETE || 'TRUE').toUpperCase() !== 'FALSE';
   var horizon = getActiveHorizonFloorIso_(socialsSheet, settings);
+  var activeQuotaYearStr = String(horizon.activeQuotaYear);
   var tz = Session.getScriptTimeZone() || 'Europe/London';
   var todayISO = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
 
@@ -1247,7 +1398,7 @@ function syncMembersAndQuotas_() {
           sr[8] = orgEntry.canonicalName;
           socialsDirty = true;
         }
-        if (dateISO >= horizon.floorIso && dateISO <= horizon.ceilingIso) {
+        if ((dateISO || '').slice(0, 4) === activeQuotaYearStr) {
           var label = (title || 'Untitled') + ' (' + displayDate + ')';
           if (socialType === 'PAID') {
             orgEntry.paidCount++;
@@ -1256,19 +1407,10 @@ function syncMembersAndQuotas_() {
             orgEntry.freeCount++;
             orgEntry.freeTitles.push(label);
           } else if (socialType === 'EXTRA') {
-            if (orgEntry.paidCount < 1 && orgEntry.freeCount >= 1) {
-              orgEntry.paidCount++;
-              orgEntry.paidTitles.push(label);
-            } else if (orgEntry.freeCount < 1 && orgEntry.paidCount >= 1) {
-              orgEntry.freeCount++;
-              orgEntry.freeTitles.push(label);
-            } else if (/^£/i.test(String(sr[15] || '').trim())) {
-              orgEntry.paidCount++;
-              orgEntry.paidTitles.push(label);
-            } else {
-              orgEntry.freeCount++;
-              orgEntry.freeTitles.push(label);
-            }
+            orgEntry.extraSlots.push({
+              label: label,
+              costPerPerson: String(sr[15] || '').trim()
+            });
           }
         }
       }
@@ -1279,6 +1421,28 @@ function syncMembersAndQuotas_() {
       if (coOrgName && !activeByLower[coOrgName.toLowerCase()] && autoRelease && dateISO >= todayISO) {
         sr[9] = '';
         socialsDirty = true;
+      }
+    }
+  }
+
+  // Resolve EXTRA slots after PAID/FREE totals for activeQuotaYear are known
+  var activeKeys = Object.keys(activeByLower);
+  for (var ak = 0; ak < activeKeys.length; ak++) {
+    var entry = activeByLower[activeKeys[ak]];
+    for (var ex = 0; ex < entry.extraSlots.length; ex++) {
+      var exItem = entry.extraSlots[ex];
+      if (entry.paidCount < 1 && entry.freeCount >= 1) {
+        entry.paidCount++;
+        entry.paidTitles.push(exItem.label);
+      } else if (entry.freeCount < 1 && entry.paidCount >= 1) {
+        entry.freeCount++;
+        entry.freeTitles.push(exItem.label);
+      } else if (/^£/i.test(exItem.costPerPerson)) {
+        entry.paidCount++;
+        entry.paidTitles.push(exItem.label);
+      } else {
+        entry.freeCount++;
+        entry.freeTitles.push(exItem.label);
       }
     }
   }
